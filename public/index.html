@@ -1506,9 +1506,13 @@
       <label>
         Storm dates:
         <select id="dateSelect" disabled>
-          <option value="">Pick a state first…</option>
+          <option value="">Pick State + Scope + Storm type, then click Get Dates.</option>
         </select>
       </label>
+      <div id="datePagingControls" style="display:flex; gap:8px; align-items:center;">
+        <span id="datesLoadedStatus" style="font-size:.85rem; opacity:.8;"></span>
+        <button id="loadNextDatesBtn" class="pill-btn" style="padding:4px 8px; display:none;">Load next 3 months</button>
+      </div>
     </div>
 
     <!-- TOP CONTROLS -->
@@ -2186,6 +2190,7 @@ window.App = {
   geocoder: null,
   markers: [],
   loadedStorms: [],
+  allStorms: [],
   currentUserProfile: null,
   destination: null,
   clickMarker: null,
@@ -2195,6 +2200,41 @@ window.App = {
   selectedDate: null,
   noaaReports: [],
 };
+
+// Strictly click-gated dates paging state
+let AppDates = {
+  monthsLoaded: 0,
+  maxMonths: 12,
+  pageSizeMonths: 3,
+  loaded: new Set(),
+  ranges: []
+};
+
+function toYMD(d) {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
+
+function toISO(d) {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function addMonths(dateObj, delta) {
+  const d = new Date(Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate()));
+  d.setUTCMonth(d.getUTCMonth() + delta);
+  return d;
+}
+
+function addDays(dateObj, delta) {
+  const d = new Date(dateObj.getTime());
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d;
+}
 
 /* =========================================================
    VIEW SWITCHING
@@ -2532,6 +2572,20 @@ function computeStartEndForLoadedMonths(loadedMonths) {
   return { start, end };
 }
 
+function updatePagingUi() {
+  const statusEl = document.getElementById("datesLoadedStatus");
+  const btn = document.getElementById("loadNextDatesBtn");
+  if (statusEl) statusEl.textContent = `Loaded ${Math.min(AppDates.monthsLoaded, AppDates.maxMonths)} of ${AppDates.maxMonths} months`;
+  if (btn) {
+    if (AppDates.monthsLoaded >= AppDates.maxMonths) {
+      btn.style.display = "none";
+    } else {
+      btn.style.display = "inline-flex";
+      btn.disabled = false;
+    }
+  }
+}
+
 function setStormDateOptions(datesDash, append = false) {
   const dateSelect = document.getElementById("dateSelect");
   
@@ -2571,28 +2625,8 @@ function setStormDateOptions(datesDash, append = false) {
     dateSelect.appendChild(opt);
   }
 
-  // Add "Load more" option if not at max months
-  if (DatePagination.loadedMonths < 12) {
-    const existingLoadMore = Array.from(dateSelect.options).find(o => o.value === LOAD_MORE_VALUE);
-    if (!existingLoadMore) {
-      const optLoadMore = document.createElement("option");
-      optLoadMore.value = LOAD_MORE_VALUE;
-      optLoadMore.textContent = "Load more (3 more months)";
-      dateSelect.appendChild(optLoadMore);
-    }
-  } else {
-    // Remove "Load more" if at max and show message
-    const existingLoadMore = Array.from(dateSelect.options).find(o => o.value === LOAD_MORE_VALUE);
-    if (existingLoadMore) {
-      dateSelect.removeChild(existingLoadMore);
-    }
-    const statusEl = document.getElementById("dateStatus");
-    if (statusEl) {
-      statusEl.textContent = "You've reached the full year's storm dates.";
-    }
-  }
-
   dateSelect.disabled = false;
+  updatePagingUi();
 }
 
 function setDateStatus(msg) {
@@ -2604,27 +2638,175 @@ function resetDatesUi(msg) {
   const dateSelect = document.getElementById("dateSelect");
   if (dateSelect) {
     dateSelect.disabled = true;
-    dateSelect.innerHTML = '<option value="">Click Get Dates</option>';
+    dateSelect.innerHTML = '<option value="">Pick State + Scope + Storm type, then click Get Dates.</option>';
   }
   setDateStatus(msg || "");
 }
 
-let _getDatesTimer = null;
-function scheduleGetDates(reason = "") {
-  clearTimeout(_getDatesTimer);
-  _getDatesTimer = setTimeout(() => {
-    const st = (document.getElementById("stateSelect")?.value || "").trim();
-    const scope = (document.getElementById("scopeSelect")?.value || "").trim();
-    const type = (document.getElementById("stormTypeTop")?.value || "").trim();
-    if (!st || !scope || !type) return;
-    onStateChanged();
-  }, 400);
+function resetPagingAndUi() {
+  AppDates = {
+    monthsLoaded: 0,
+    maxMonths: 12,
+    pageSizeMonths: 3,
+    loaded: new Set(),
+    ranges: []
+  };
+  App.availableDates = [];
+  App.allStorms = [];
+  App.loadedStorms = [];
+  App.selectedDate = null;
+  resetDatesUi("");
+  updatePagingUi();
+}
+
+function computeNextPageRange() {
+  const today = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()));
+  if (AppDates.monthsLoaded === 0 || AppDates.ranges.length === 0) {
+    const end = today;
+    const start = addMonths(end, -AppDates.pageSizeMonths);
+    return { start, end };
+  }
+  const prevStart = AppDates.ranges[AppDates.ranges.length - 1].start;
+  const newEnd = addDays(prevStart, -1);
+  const newStart = addMonths(newEnd, -AppDates.pageSizeMonths);
+  return { start: newStart, end: newEnd };
+}
+
+async function fetchDatesForRange(st, scope, type) {
+  const dateSelect = document.getElementById("dateSelect");
+  const { start, end } = computeNextPageRange();
+  const startYmd = toYMD(start);
+  const endYmd = toYMD(end);
+
+  console.log("Loading date page", { start: startYmd, end: endYmd, monthsLoadedNext: AppDates.monthsLoaded + AppDates.pageSizeMonths });
+
+  const bbox = await getBboxForSelectedState(st);
+  if (!bbox) {
+    setDateStatus("Could not determine bbox for this state.");
+    return false;
+  }
+
+  let resp;
+  try {
+    resp = await fetchNoaaHailReports({ mode: "reports", start: startYmd, end: endYmd, bbox });
+  } catch (e) {
+    const bodySnippet = e?.message || String(e);
+    console.log("Dates fetch failed", { start: startYmd, end: endYmd, status: "error", bodySnippet: String(bodySnippet).slice(0, 200) });
+    setDateStatus("Dates fetch failed.");
+    if (dateSelect) {
+      dateSelect.disabled = true;
+      dateSelect.innerHTML = '<option value="">Dates fetch failed</option>';
+    }
+    return false;
+  }
+
+  let storms = Array.isArray(resp?.storms) ? resp.storms : [];
+  let dates = Array.isArray(resp?.availableDates) ? resp.availableDates : [];
+
+  // Scope filtering for city
+  if (scope === "city") {
+    const city = (document.getElementById("cityInput")?.value || "").trim();
+    if (!city) {
+      setDateStatus("Enter a city to filter dates.");
+      return false;
+    }
+    try {
+      const geocoder = App.geocoder || (App.geocoder = new google.maps.Geocoder());
+      const result = await new Promise((resolve, reject) => {
+        geocoder.geocode({ address: city }, (results, status) => {
+          if (status === "OK" && results && results[0]) resolve(results[0]);
+          else reject(new Error(status || "GEOCODE_FAILED"));
+        });
+      });
+      const loc = result.geometry?.location;
+      const centerLat = typeof loc?.lat === "function" ? loc.lat() : Number(loc?.lat);
+      const centerLng = typeof loc?.lng === "function" ? loc.lng() : Number(loc?.lng);
+      const radiusMi = Number(document.getElementById("radiusSelect")?.value) || 10;
+      const radiusKm = milesToKm(radiusMi);
+
+      // Filter storms by type then radius
+      const t = String(type || "").toLowerCase();
+      const typeFiltered = storms.filter((s) => {
+        if (!t || t === "all") return true;
+        const ev = String(s?.event || s?.type || s?.props?.event || "").toLowerCase();
+        return ev.includes(t);
+      });
+      storms = typeFiltered.filter((s) => {
+        const lat = Number(s?.lat ?? s?.latitude ?? s?.Latitude ?? s?.geometry?.coordinates?.[1]);
+        const lng = Number(s?.lng ?? s?.longitude ?? s?.Longitude ?? s?.lon ?? s?.geometry?.coordinates?.[0]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+        const dKm = haversineKm(centerLat, centerLng, lat, lng);
+        return Number.isFinite(dKm) && dKm <= radiusKm;
+      });
+      dates = uniqueSortedDatesFromStorms(storms);
+    } catch (err) {
+      setDateStatus("City not found.");
+      return false;
+    }
+  }
+
+  // Robustly derive dates if not provided
+  if (!Array.isArray(dates) || dates.length === 0) {
+    dates = uniqueSortedDatesFromStorms(storms);
+  }
+
+  // Filter to page range (inclusive)
+  const startIso = toISO(start);
+  const endIso = toISO(end);
+  const inRange = (d) => d >= startIso && d <= endIso;
+  const pageDates = dates.filter(inRange);
+
+  // Accumulate storms and dates
+  App.allStorms = App.allStorms.concat(storms);
+  App.loadedStorms = App.allStorms;
+  pageDates.forEach((d) => AppDates.loaded.add(d));
+
+  // Update paging counters and ranges
+  AppDates.monthsLoaded = Math.min(AppDates.maxMonths, AppDates.monthsLoaded + AppDates.pageSizeMonths);
+  AppDates.ranges.push({ start, end });
+
+  // Populate select
+  const allDatesSorted = Array.from(AppDates.loaded).sort((a, b) => String(b).localeCompare(String(a)));
+  setStormDateOptions(allDatesSorted, false);
+  App.availableDates = allDatesSorted;
+  setDateStatus(`${allDatesSorted.length} date(s) loaded.`);
+  return true;
+}
+
+async function startDatesFlow() {
+  const st = (document.getElementById("stateSelect")?.value || "").trim();
+  const scope = (document.getElementById("scopeSelect")?.value || "").trim();
+  const type = (document.getElementById("stormTypeTop")?.value || "").trim();
+  console.log("Get Dates clicked", { state: st, scope, type });
+  if (!st || !scope || !type) {
+    setDateStatus("Pick State + Scope + Storm type.");
+    return;
+  }
+  resetPagingAndUi();
+  const ok = await fetchDatesForRange(st, scope, type);
+  if (ok) {
+    const dateSelect = document.getElementById("dateSelect");
+    if (dateSelect) dateSelect.disabled = false;
+  }
+}
+
+async function loadNextDatesPage() {
+  if (AppDates.monthsLoaded >= AppDates.maxMonths) {
+    updatePagingUi();
+    return;
+  }
+  const st = (document.getElementById("stateSelect")?.value || "").trim();
+  const scope = (document.getElementById("scopeSelect")?.value || "").trim();
+  const type = (document.getElementById("stormTypeTop")?.value || "").trim();
+  await fetchDatesForRange(st, scope, type);
 }
 
 function updateGetDatesBtnState() {
   const st = (document.getElementById("stateSelect")?.value || "").trim();
+  const scope = (document.getElementById("scopeSelect")?.value || "").trim();
+  const type = (document.getElementById("stormTypeTop")?.value || "").trim();
   const btn = document.getElementById("getDatesBtn");
-  if (btn) btn.disabled = !st;
+  if (btn) btn.disabled = !(st && scope && type);
 }
 
 function setupCityAutocomplete() {
@@ -2651,8 +2833,8 @@ function setupCityAutocomplete() {
       input.value;
 
     if (name) input.value = name;
-    resetDatesUi("City selected. Getting dates…");
-    scheduleGetDates("autocomplete");
+    resetDatesUi("City selected.");
+    updateGetDatesBtnState();
   });
 }
 
@@ -2817,58 +2999,18 @@ async function onStormDateChanged() {
 
   if (!st || !dateDash) return;
 
-  // Handle "Load more" option
-  if (dateDash === LOAD_MORE_VALUE) {
-    if (DatePagination.loadedMonths >= DatePagination.maxMonths) {
-      setDateStatus("You've reached the full year's storm dates.");
-      return;
-    }
-
-    DatePagination.loadedMonths = Math.min(
-      DatePagination.maxMonths,
-      DatePagination.loadedMonths + DatePagination.stepMonths
-    );
-
-    // Re-fetch with new window
-    const bbox = await getBboxForSelectedState(st);
-    if (!bbox) {
-      setDateStatus("Could not determine bbox for this state.");
-      return;
-    }
-
-    const w = computeStartEndForLoadedMonths(DatePagination.loadedMonths);
-    const resp = await fetchNoaaHailReports({
-      mode: "reports",
-      start: w.start,
-      end: w.end,
-      bbox
-    });
-
-    const newDatesDash = Array.isArray(resp?.availableDates) ? resp.availableDates : [];
-    setStormDateOptions(newDatesDash, false);
-    dateSelect.value = "";
-    return;
-  }
-
-  const bbox = STATE_BBOX?.[st];
-  if (!bbox) {
-    setDateStatus("No bbox preset for this state yet.");
-    return;
-  }
-
-  const compact = dashToCompact(dateDash);
-
-  setDateStatus(`Loading ${st} reports for ${dateDash}…`);
-
-  await fetchNoaaHailReports({
-    mode: "reports",
-    start: compact,
-    end: compact,
-    bbox
-  });
-
-  const count = Array.isArray(App.loadedStorms) ? App.loadedStorms.length : 0;
+  // Strict: no NOAA/proxy fetch on dropdown change. Use already loaded storms.
+  App.selectedDate = dateDash;
+  const count = Array.isArray(App.loadedStorms)
+    ? App.loadedStorms.filter((s) => {
+        const dateValue = extractStormDateValue(s);
+        if (!dateValue) return false;
+        const k = new Date(dateValue).toISOString().split('T')[0];
+        return k === dateDash;
+      }).length
+    : 0;
   setDateStatus(`${st} ${dateDash}: ${count.toLocaleString()} storm(s).`);
+  renderStormList();
 }
 
 function clearStormMarkers() {
@@ -3519,17 +3661,6 @@ function wireAuth() {
         if (userEmailLabel) userEmailLabel.textContent = user.email || "user";
 
         setupProfileAndSubs(user);
-        // Refetch NOAA storms after login
-        (async () => {
-          try {
-            const storms = await fetchNoaaHailReports();
-            App.loadedStorms = storms || [];
-            App.availableDates = storms || [];
-            renderStormList();
-          } catch (e) {
-            console.error("Post-login NOAA refetch failed:", e);
-          }
-        })();
         showOnlyView(App.views.hubView);
         if (App.els.stormListPanel) App.els.stormListPanel.style.display = "block";
         renderStormList();
@@ -3618,32 +3749,33 @@ function wireMapControls() {
   }
 
   const reload = () => loadStormsForSelection();
-
+  // Disable auto-fetch on state change; only update UI button state
   if (App.els.stateSelect) {
-    App.els.stateSelect.addEventListener("change", reload);
+    App.els.stateSelect.addEventListener("change", () => {
+      resetDatesUi("State changed.");
+      updateGetDatesBtnState();
+    });
     updateGetDatesBtnState();
   }
   document.getElementById("dateSelect")?.addEventListener("change", onStormDateChanged);
   updateCityUiVisibility();
 
   document.getElementById("stateSelect")?.addEventListener("change", () => {
-    resetDatesUi("State changed. Getting dates…");
-    scheduleGetDates("state");
+    resetDatesUi("State changed.");
     updateGetDatesBtnState();
   });
 
   document.getElementById("scopeSelect")?.addEventListener("change", () => {
     updateCityUiVisibility();
-    resetDatesUi("Scope changed. Getting dates…");
-    scheduleGetDates("scope");
+    resetDatesUi("Scope changed.");
+    updateGetDatesBtnState();
   });
 
   document.getElementById("stormTypeTop")?.addEventListener("change", () => {
-    const v = String(document.getElementById("stormTypeTop")?.value || "hail");
+    const v = String(document.getElementById("stormTypeTop")?.value || "");
     if (App.els?.stormSelect) App.els.stormSelect.value = v;
-    if (typeof loadStormsForSelection === "function") loadStormsForSelection();
-    resetDatesUi("Storm type changed. Getting dates…");
-    scheduleGetDates("type");
+    resetDatesUi("Storm type changed.");
+    updateGetDatesBtnState();
   });
 
   // DATE RANGE controls
@@ -3662,8 +3794,8 @@ function wireMapControls() {
   document.getElementById("radiusSelect")?.addEventListener("change", () => {
     const scope = document.getElementById("scopeSelect")?.value || "";
     if (scope === "city") {
-      resetDatesUi("Radius changed. Getting dates…");
-      scheduleGetDates("radius");
+      resetDatesUi("Radius changed.");
+      updateGetDatesBtnState();
     }
   });
 
@@ -3672,8 +3804,8 @@ function wireMapControls() {
     cityInput.addEventListener("blur", () => {
       const scope = document.getElementById("scopeSelect")?.value || "";
       if (scope === "city") {
-        resetDatesUi("City changed. Getting dates…");
-        scheduleGetDates("city");
+        resetDatesUi("City changed.");
+        updateGetDatesBtnState();
       }
     });
     cityInput.addEventListener("keydown", (e) => {
@@ -3681,25 +3813,43 @@ function wireMapControls() {
         e.preventDefault();
         const scope = document.getElementById("scopeSelect")?.value || "";
         if (scope === "city") {
-          resetDatesUi("City changed. Getting dates…");
-          scheduleGetDates("city");
+          resetDatesUi("City changed.");
+          updateGetDatesBtnState();
         }
       }
     });
   }
 
-  if (App.els.stateTextInput) App.els.stateTextInput.addEventListener("blur", reload);
+  // Prevent any implicit NOAA/proxy fetches from text/other control changes
+  if (App.els.stateTextInput) App.els.stateTextInput.addEventListener("blur", () => {
+    resetDatesUi("State input changed.");
+    updateGetDatesBtnState();
+  });
   if (App.els.stormSelect) {
-    App.els.stormSelect.addEventListener("change", reload);
+    App.els.stormSelect.addEventListener("change", () => {
+      resetDatesUi("Storm type changed.");
+      updateGetDatesBtnState();
+    });
   }
-  if (App.els.minValueInput) App.els.minValueInput.addEventListener("change", reload);
+  if (App.els.minValueInput) App.els.minValueInput.addEventListener("change", () => {
+    // Local filter only; no network
+    renderStormList();
+  });
 
   const btn = document.getElementById("getDatesBtn");
   if (btn && !btn.dataset.bound) {
     btn.dataset.bound = "1";
-    btn.addEventListener("click", (e) => {
+    btn.addEventListener("click", async (e) => {
       e.preventDefault();
-      onStateChanged();
+      await startDatesFlow();
+    });
+  }
+
+  const loadNextBtn = document.getElementById("loadNextDatesBtn");
+  if (loadNextBtn && !loadNextBtn.dataset.bound) {
+    loadNextBtn.dataset.bound = "1";
+    loadNextBtn.addEventListener("click", async () => {
+      await loadNextDatesPage();
     });
   }
 
@@ -3746,7 +3896,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   wireMapControls();
   if (App.els?.stormSelect) {
     const top = document.getElementById("stormTypeTop");
-    if (top) top.value = App.els.stormSelect.value || "hail";
+    if (top) top.value = ""; // ensure placeholder by default
   }
   wireNavigation();
   wireAuth();
@@ -3757,15 +3907,7 @@ window.addEventListener("DOMContentLoaded", async () => {
    document.getElementById("stormListPanel").style.display = "block";
   }
 
-  // Preload NOAA storm dates on startup
-  try {
-    const storms = await fetchNoaaHailReports();
-    App.loadedStorms = storms || [];
-    App.availableDates = storms || [];
-    renderStormList();
-  } catch (e) {
-    console.error("Startup NOAA preload failed:", e);
-  }
+  // No NOAA/proxy preloads allowed before Get Dates click
 });
 
 document.addEventListener("DOMContentLoaded", ensureStormListClickHandler);

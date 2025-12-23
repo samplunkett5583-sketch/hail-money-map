@@ -1,0 +1,2 @@
+﻿Set-Content -Path .\noaa-fix.patch -Value (Get-Clipboard) -Encoding UTF8
+
