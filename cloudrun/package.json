@@ -1,0 +1,12 @@
+{
+  "name": "noaaplsrproxy-cloudrun",
+  "version": "1.0.0",
+  "description": "Cloud Run proxy for NOAA SWDI PLSR",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

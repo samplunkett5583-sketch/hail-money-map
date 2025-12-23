@@ -1,0 +1,3779 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Hail Money Map – Full App</title>
+
+   <!-- Google Font -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
+  />
+
+ <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script  src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDuNue4UyVgq4Xsh1dtOjqFum7K-OJ1k4k",
+    authDomain: "hailmoneymap.firebaseapp.com",
+    projectId: "hailmoneymap",
+    storageBucket: "hailmoneymap.appspot.com",
+    messagingSenderId: "153623806900",
+    appId: "1:153623806900:web:a6f50f206ce2f973afe8e1"
+  };
+
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+
+  window.auth = firebase.auth();
+  window.db = firebase.firestore();
+  window.storage = firebase.storage();
+
+  // --- State bounding boxes (minLon,minLat,maxLon,maxLat) ---
+  const STATE_BBOX = {
+    AL: "-88.4732,30.2233,-84.8891,35.0080",
+    AZ: "-114.8165,31.3322,-109.0452,37.0043",
+    CO: "-109.0603,36.9924,-102.0416,41.0034",
+    MO: "-95.7747,35.9957,-89.0988,40.6136",
+    TX: "-106.6456,25.8371,-93.5080,36.5007"
+  };
+
+  const LOAD_MORE_VALUE = "__LOAD_MORE__";
+
+  // --- Date helpers ---
+  function dashToCompact(ymdDash) {
+    // "2024-05-26" -> "20240526"
+    return String(ymdDash || "").replaceAll("-", "");
+  }
+
+  function compactToDash(ymdCompact) {
+    // "20240526" -> "2024-05-26"
+    const s = String(ymdCompact || "");
+    if (s.length !== 8) return s;
+    return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
+  }
+
+  function getLastNDaysRange(nDays) {
+    const end = new Date();
+    const start = new Date(end);
+    start.setDate(start.getDate() - (nDays - 1));
+
+    const toCompact = (d) => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate() + 0).padStart(2, "0");
+      return `${yyyy}${mm}${dd}`;
+    };
+
+    return {
+      start: toCompact(start),
+      end: toCompact(end)
+    };
+  }
+
+  function fmtYYYYMMDD_utc(d) {
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    return `${y}${m}${day}`;
+  }
+
+  function utcToday() {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  }
+
+  function addDaysUTC(dateUTC, days) {
+    return new Date(dateUTC.getTime() + days * 24 * 60 * 60 * 1000);
+  }
+
+  function getWindowForLoadedMonths(months) {
+    const today = utcToday();
+    const end = fmtYYYYMMDD_utc(today);
+    const daysBack = months * 30;
+    const startDate = addDaysUTC(today, -daysBack);
+    const start = fmtYYYYMMDD_utc(startDate);
+    return { start, end };
+  }
+
+  function milesToKm(mi) { return Number(mi) * 1.609344; }
+
+  async function getBboxForSelectedState(st) {
+    // Use preset if available
+    const preset = STATE_BBOX?.[st];
+    if (preset) return preset;
+
+    // Fallback: use Google geocoder bounds for the state
+    if (!window.google?.maps?.Geocoder) return null;
+
+    const geocoder = App.geocoder || (App.geocoder = new google.maps.Geocoder());
+
+    const result = await new Promise((resolve, reject) => {
+      geocoder.geocode({ address: st + ", USA" }, (results, status) => {
+        if (status === "OK" && results && results[0]) resolve(results[0]);
+        else reject(new Error(status || "GEOCODE_FAILED"));
+      });
+    });
+
+    const b = result?.geometry?.bounds || result?.geometry?.viewport || null;
+    if (!b) return null;
+
+    const sw = b.getSouthWest();
+    const ne = b.getNorthEast();
+
+    const minLat = sw.lat();
+    const minLng = sw.lng();
+    const maxLat = ne.lat();
+    const maxLng = ne.lng();
+
+    if (![minLat, minLng, maxLat, maxLng].every(Number.isFinite)) return null;
+
+    // bbox format: "minLon,minLat,maxLon,maxLat"
+    return `${minLng},${minLat},${maxLng},${maxLat}`;
+  }
+
+  function haversineKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const toRad = (x) => (x * Math.PI) / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+
+  function uniqueSortedDatesFromStorms(storms) {
+    const set = new Set();
+    for (const s of storms || []) {
+      const v =
+        s?.props?.valid ||
+        s?.props?.VALID ||
+        s?.props?.Valid ||
+        s?.props?.begin ||
+        s?.props?.BEGIN ||
+        s?.props?.start ||
+        s?.props?.START ||
+        null;
+
+      if (typeof v === "string") {
+        if (v.length >= 10 && /^\d{4}-\d{2}-\d{2}/.test(v)) {
+          set.add(v.slice(0, 10));
+        } else if (/^\d{8}$/.test(v)) {
+          set.add(`${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6,8)}`);
+        }
+      }
+    }
+    return [...set].sort((a, b) => String(b).localeCompare(String(a)));
+  }
+</script>
+
+
+<style>
+    :root {
+      --bg-dark: #020617;
+      --bg-card: rgba(15, 23, 42, 0.96);
+      --bg-soft: rgba(15, 23, 42, 0.85);
+      --border-subtle: rgba(148, 163, 184, 0.2);
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.16);
+      --accent-strong: #0ea5e9;
+      --text-main: #e5e7eb;
+      --text-soft: #9ca3af;
+      --pill-bg: #020617;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont,
+        sans-serif;
+      background: radial-gradient(circle at top, #0f172a 0, #020617 52%);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font-family: inherit;
+    }
+
+       /* Full app layout */
+    #appRoot {
+      display: none;
+      min-height: 100vh;
+      flex-direction: column;
+    }
+
+       .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.98);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand {
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand span:last-child {
+      color: var(--accent);
+    }
+
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--pill-bg);
+      border-radius: 999px;
+      padding: 4px 10px;
+      border: 1px solid var(--border-subtle);
+      font-size: 0.78rem;
+    }
+
+    .role-tag {
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.7rem;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill-btn {
+      border-radius: 999px;
+      padding: 4px 10px;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-main);
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    .pill-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .danger-btn {
+      border-color: rgba(248, 113, 113, 0.6);
+      color: #fecaca;
+    }
+
+    .danger-btn:hover {
+      border-color: var(--danger);
+      color: #fee2e2;
+    }
+
+    .primary-btn {
+      border-radius: 999px;
+      padding: 8px 14px;
+      background: linear-gradient(
+        to right,
+        var(--accent),
+        var(--accent-strong)
+      );
+      border: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #0b1120;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .primary-btn:hover {
+      filter: brightness(1.05);
+    }
+
+    /* Floating wellness pill under header (Steps + Water) */
+    .wellness-pill-bar {
+      display: flex;
+      justify-content: center;
+      padding: 6px 10px 2px;
+      background: transparent;
+    }
+
+    .wellness-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      font-size: 0.78rem;
+      box-shadow: 0 12px 22px rgba(15, 23, 42, 0.8);
+    }
+
+    .small-pill-btn {
+      padding: 2px 8px;
+      font-size: 0.74rem;
+    }
+
+    main {
+      flex: 1;
+      padding: 10px;
+    }
+
+    .view {
+      display: none;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .view-inner {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-subtle);
+      padding: 12px;
+      box-shadow: 0 18px 35px rgba(15, 23, 42, 0.75);
+      min-height: calc(100vh - 150px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .view-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .view-header h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .subtext {
+      font-size: 0.82rem;
+      color: var(--text-soft);
+    }
+
+    /* Auth screen */
+    #authScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .auth-card {
+      background: var(--bg-card);
+      border-radius: 18px;
+      padding: 22px;
+      width: 100%;
+      max-width: 380px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.8);
+    }
+
+    .auth-card h1 {
+      font-size: 1.3rem;
+      margin-bottom: 6px;
+    }
+
+    .auth-card p {
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      margin-bottom: 18px;
+    }
+
+    .field-label {
+      font-size: 0.78rem;
+      margin-bottom: 4px;
+      color: var(--text-soft);
+    }
+
+    .field-input {
+      width: 100%;
+      padding: 10px 11px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+    }
+
+    .field-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
+    }
+
+    #authStatus {
+      font-size: 0.8rem;
+      color: #fca5a5;
+      min-height: 18px;
+      margin-top: 4px;
+    }
+
+    /* Menu grid */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 10px;
+    }
+
+    .menu-card {
+      border-radius: 14px;
+      padding: 12px;
+      background: radial-gradient(
+        circle at top left,
+        rgba(56, 189, 248, 0.12),
+        rgba(15, 23, 42, 0.95)
+      );
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease,
+        border-color 0.1s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 0.9rem;
+    }
+
+    .menu-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent-soft);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.7);
+    }
+
+    .menu-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .menu-sub {
+      font-size: 0.8rem;
+      color: var(--text-soft);
+    }
+
+    /* Hub layout */
+    .hub-columns {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .hub-section {
+      background: var(--bg-soft);
+      border-radius: 14px;
+      padding: 10px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .hub-section h3 {
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .hub-company-chat {
+      margin-top: 10px;
+    }
+
+    /* make company chat section a flex column so the log can stretch */
+    #companyChatHubSection {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* My Team / stats */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .stat-box {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 10px;
+      padding: 8px;
+      border: 1px solid var(--border-subtle);
+      font-size: 0.84rem;
+    }
+
+    .stat-label {
+      color: var(--text-soft);
+      font-size: 0.72rem;
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-weight: 600;
+    }
+
+    /* Maps layout */
+    .maps-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      height: calc(100vh - 160px);
+    }
+
+    .maps-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .maps-control-group {
+      display: flex;
+      flex-direction: column;
+      min-width: 160px;
+      font-size: 0.82rem;
+    }
+
+    .maps-control-group.small {
+      max-width: 200px;
+    }
+
+    .maps-address-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .maps-address-row .flex-1 {
+      flex: 1;
+    }
+
+    .maps-main-split {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 0;
+    }
+
+    .map-panel {
+      flex: 1;
+      min-height: 42vh;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    /* storm dates panel – big box when shown */
+    .storm-list-panel {
+      display: none; /* hidden until state + storm type picked */
+      flex-direction: column;
+      gap: 0.4rem;
+      min-height: 35vh; /* nice big box for the dates list */
+    }
+
+    .map-status {
+      font-size: 0.8rem;
+      color: var(--text-soft);
+    }
+
+    .storm-list {
+      flex: 1;
+      overflow-y: auto;
+      border-radius: 12px;
+      background: var(--bg-soft);
+      padding: 6px;
+    }
+
+    .storm-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      font-size: 0.86rem;
+      cursor: pointer;
+      margin-bottom: 4px;
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .storm-item:hover {
+      border-color: var(--accent-soft);
+      background: rgba(15, 23, 42, 1);
+    }
+
+    .stormbait-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      font-size: 0.86rem;
+      cursor: pointer;
+      margin-bottom: 4px;
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .stormbait-item:hover {
+      border-color: var(--accent-soft);
+      background: rgba(15, 23, 42, 1);
+    }
+
+    /* Shared form controls */
+    .control-label {
+      font-size: 0.78rem;
+      color: var(--text-soft);
+      margin-bottom: 3px;
+    }
+
+    .control-input {
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text-main);
+      font-size: 0.84rem;
+    }
+
+    .control-input::placeholder {
+      color: #6b7280;
+    }
+
+    .control-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
+    }
+
+    /* Directory */
+    .dir-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .dir-tab {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      font-size: 0.78rem;
+      color: var(--text-soft);
+      cursor: pointer;
+    }
+
+    .dir-tab.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .dir-people-grid {
+      margin-top: 6px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 8px;
+    }
+
+    .dir-person {
+      display: flex;
+      gap: 8px;
+      padding: 7px 8px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--border-subtle);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .dir-person:hover {
+      border-color: var(--accent-soft);
+    }
+
+    .dir-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .dir-main {
+      flex: 1;
+    }
+
+    .dir-name {
+      font-weight: 600;
+      font-size: 0.86rem;
+    }
+
+    .dir-role {
+      font-size: 0.75rem;
+      color: var(--text-soft);
+    }
+
+    /* Chat */
+    .chat-log {
+      flex: 1;
+      overflow-y: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      padding: 6px;
+      background: rgba(15, 23, 42, 0.95);
+      font-size: 0.8rem;
+      max-height: 220px;
+    }
+
+    /* Make the COMPANY CHAT log fill the box */
+    #chatLogHub {
+      flex: 1;
+      max-height: none;
+    }
+
+    .chat-msg {
+      margin-bottom: 5px;
+      padding: 4px 5px;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 1);
+    }
+
+    .chat-meta {
+      font-size: 0.7rem;
+      color: var(--text-soft);
+      margin-top: 1px;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .chat-input-row input {
+      flex: 1;
+    }
+
+    /* Insurance */
+    .ins-list {
+      margin-top: 6px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--border-subtle);
+      padding: 4px;
+      font-size: 0.8rem;
+      max-height: 55vh;
+      overflow-y: auto;
+    }
+
+    .ins-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 5px 6px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .ins-item:hover {
+      background: rgba(15, 23, 42, 1);
+      border-radius: 8px;
+    }
+
+    .ins-name {
+      font-weight: 500;
+    }
+
+    .ins-phone {
+      color: var(--text-soft);
+      font-size: 0.75rem;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+
+    th,
+    td {
+      padding: 4px 6px;
+      text-align: left;
+    }
+
+    th {
+      font-size: 0.74rem;
+      color: var(--text-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    /* My Team tabs */
+    .myteam-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 260px;
+      margin: 0 auto 8px auto;
+    }
+
+    .myteam-tab {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.95);
+      font-size: 0.8rem;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .myteam-tab.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .myteam-subview {
+      display: none;
+    }
+
+    .myteam-subview.active {
+      display: block;
+    }
+
+    /* Admin subtabs */
+    .admin-subtabs {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 260px;
+      margin: 0 auto 8px auto;
+    }
+
+    .admin-subtab-btn {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.95);
+      font-size: 0.8rem;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .admin-subtab-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .admin-subview {
+      display: none;
+    }
+
+    .admin-subview.active {
+      display: block;
+    }
+
+    /* Jobs list */
+    .job-item {
+      padding: 4px 6px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .job-item:hover {
+      background: rgba(15, 23, 42, 1);
+    }
+
+    /* ===== HUB – LEFT FLIP TABS ===== */
+    .hub-left-layout {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hub-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 260px;
+      width: 100%;
+    }
+
+    .hub-tab {
+      position: relative;
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.98);
+      color: var(--text-main);
+      cursor: pointer;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    .hub-tab:hover {
+      border-color: var(--accent-soft);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.7);
+    }
+
+    .hub-tab-inner {
+      min-height: 56px;
+    }
+
+    .hub-tab-front {
+      display: block;
+    }
+
+    .hub-tab-back {
+      display: none;
+      font-size: 0.8rem;
+      color: var(--text-soft);
+    }
+
+    .hub-tab.flipped .hub-tab-front {
+      display: none;
+    }
+
+    .hub-tab.flipped .hub-tab-back {
+      display: block;
+    }
+
+    .hub-tab-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .hub-tab-sub {
+      margin-top: 2px;
+      font-size: 0.78rem;
+      color: var(--text-soft);
+    }
+
+    /* ===== HUB – FULL SCREEN LEADS OVERLAY ===== */
+    .leads-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.88);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .leads-overlay.open {
+      display: flex;
+    }
+
+    .leads-overlay-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 14px;
+      width: min(900px, 96vw);
+      max-height: 80vh;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .leads-overlay-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .leads-overlay-header h3 {
+      font-size: 0.95rem;
+    }
+
+    .leads-overlay-close {
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-soft);
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .leads-overlay-close:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .leads-list {
+      flex: 1;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      margin-top: 4px;
+    }
+
+    .lead-row {
+      padding: 6px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .lead-row:last-child {
+      border-bottom: none;
+    }
+
+    .lead-status {
+      margin-top: 2px;
+      font-size: 0.75rem;
+      color: var(--text-soft);
+    }
+
+    /* Responsive tweaks – bigger text on phones */
+    @media (max-width: 768px) {
+      body {
+        font-size: 1.02rem;
+      }
+
+      .view-inner {
+        min-height: auto;
+      }
+
+      .hub-columns {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .maps-layout {
+        height: auto;
+      }
+
+      .maps-main-split {
+        min-height: 60vh;
+      }
+
+      .map-panel {
+        min-height: 50vh;
+      }
+
+      .storm-list-panel {
+        min-height: 40vh;
+      }
+
+      .chat-log {
+        max-height: 260px;
+      }
+    }
+  </style>
+</head>
+<body>
+   
+<!-- =================== AUTH SCREEN =================== -->
+  <div id="authScreen">
+    <div class="auth-card">
+      <h1>Hail Money Map</h1>
+      <p>Log in with your company email.</p>
+
+      <label class="field-label" for="authEmail">Email</label>
+      <input
+        id="authEmail"
+        type="email"
+        class="field-input"
+        placeholder="you@company.com"
+      />
+
+      <label class="field-label" for="authPassword">Password</label>
+      <input
+        id="authPassword"
+        type="password"
+        class="field-input"
+        placeholder="••••••••"
+      />
+
+      <button
+        id="loginBtn"
+        class="primary-btn"
+        style="width: 100%; margin-top: 4px"
+      >
+        Sign In
+      </button>
+
+      <div id="authStatus"></div>
+    </div>
+  </div>
+
+<!-- =================== APP ROOT =================== -->
+  <div id="appRoot">
+    <header class="topbar">
+      <div class="brand">
+        <span>HAIL MONEY MAP</span>
+      </div>
+
+      <div class="top-actions">
+        <div class="user-pill">
+          <span id="userEmailLabel">user@company.com</span>
+          <span id="userRoleTag" class="role-tag">REP</span>
+        </div>
+        <button id="signOutBtn" class="pill-btn danger-btn">
+          Sign Out
+        </button>
+      </div>
+    </header>
+
+    <!-- Steps + Water pill (top of every page) -->
+    <div id="wellnessPillBar" class="wellness-pill-bar">
+      <div class="wellness-pill">
+        <span id="stepsClickable" style="cursor: pointer;">
+          🚶 <span id="stepsValueTop">0</span> /
+          <span id="stepGoalLabel">8000</span> steps
+        </span>
+
+        <span id="waterClickable" style="cursor: pointer;">
+          💧 <span id="waterValueTop">0</span> /
+          <span id="waterGoalLabel">80</span> oz
+        </span>
+
+        <button id="setGoalsBtn" class="pill-btn small-pill-btn">
+          Goals
+        </button>
+      </div>
+    </div>
+
+    <main>
+
+ <!-- =================== HUB / DASHBOARD =================== -->
+      <section id="hubView" class="view active">
+        <div class="view-inner">
+          <div class="view-header">
+            <div>
+              <h2>Company Hub</h2>
+            </div>
+
+            <div style="display: flex; gap: 6px;">
+              <button id="hubToMenuBtn" class="pill-btn">
+                Main Menu
+              </button>
+              <button id="hubCompanyChatBtn" class="pill-btn">
+                Company Chat
+              </button>
+            </div>
+          </div>
+
+          <div class="hub-columns">
+            <!-- LEFT SIDE: FLIP TABS -->
+            <div class="hub-section">
+              <div class="hub-left-layout">
+                <div class="hub-tabs">
+                  <!-- LEADS TAB -->
+                  <button class="hub-tab" data-hub-target="leads">
+                    <div class="hub-tab-inner">
+                      <div class="hub-tab-front">
+                        <div class="hub-tab-title">Leads</div>
+                        <div class="hub-tab-sub">
+                          Tap to open all leads in the system
+                        </div>
+                      </div>
+
+                      <div class="hub-tab-back">
+                        <div class="hub-tab-title">Leads</div>
+                        <div class="hub-tab-sub">
+                          Tap again to view the full lead list.
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <!-- YEAR TO DATE TAB -->
+                  <button class="hub-tab" data-hub-target="ytd">
+                    <div class="hub-tab-inner">
+                      <div class="hub-tab-front">
+                        <div class="hub-tab-title">Year to Date</div>
+                        <div class="hub-tab-sub">
+                          Total company production this year
+                        </div>
+                      </div>
+
+                      <div class="hub-tab-back">
+                        <div class="hub-tab-title">Year to Date</div>
+                        <div class="hub-tab-sub">
+                          Sold this year:
+                          <span id="hubYtdTotal">$0</span><br />
+                          Previous year:
+                          <span id="hubYtdPrevious">$0</span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <!-- MONTH TO DATE TAB -->
+                  <button class="hub-tab" data-hub-target="mtd">
+                    <div class="hub-tab-inner">
+                      <div class="hub-tab-front">
+                        <div class="hub-tab-title">Month to Date</div>
+                        <div class="hub-tab-sub">
+                          Total for current month
+                        </div>
+                      </div>
+
+                      <div class="hub-tab-back">
+                        <div class="hub-tab-title">Month to Date</div>
+                        <div class="hub-tab-sub">
+                          This month:
+                          <span id="hubMtdTotal">$0</span><br />
+                          Previous month:
+                          <span id="hubMtdPrevious">$0</span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <!-- WEEKLY BONUSES TAB -->
+                  <button class="hub-tab" data-hub-target="bonuses">
+                    <div class="hub-tab-inner">
+                      <div class="hub-tab-front">
+                        <div class="hub-tab-title">Weekly Bonuses</div>
+                        <div class="hub-tab-sub">
+                          Tap to see bonus breakdown
+                        </div>
+                      </div>
+
+                      <div class="hub-tab-back">
+                        <div class="hub-tab-title">Weekly Bonuses</div>
+                        <div
+                          class="hub-tab-sub"
+                          id="hubBonusesText"
+                        >
+                          Example: 4 conts = $200, 6 conts = $400, 8+ conts = $700.
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT SIDE: LEADERBOARD -->
+            <div class="hub-section">
+              <h3>Weekly Leaderboard</h3>
+              <div
+                id="weeklyLeaderboardBox"
+                style="margin-top: 4px; font-size: 0.84rem;"
+              >
+                No leaderboard data yet.
+              </div>
+            </div>
+          </div>
+
+          <!-- COMPANY CHAT AT BOTTOM -->
+          <div
+            id="companyChatHubSection"
+            class="hub-section hub-company-chat"
+          >
+            <h3>Company Chat</h3>
+
+            <div
+              id="chatLogHub"
+              class="chat-log"
+              style="margin-top: 4px;"
+            ></div>
+
+            <div class="chat-input-row">
+              <input
+                id="chatInputHub"
+                class="control-input"
+                placeholder="Type a company-wide message…"
+              />
+              <button
+                id="chatSendBtnHub"
+                class="primary-btn"
+              >
+                Send
+              </button>
+            </div>
+
+            <div
+              id="stepsLogStatus"
+              style="margin-top: 4px; font-size: 0.8rem; color: var(--text-soft);"
+            ></div>
+          </div>
+
+          <!-- FULL SCREEN LEADS OVERLAY -->
+          <div id="leadsOverlay" class="leads-overlay">
+            <div class="leads-overlay-card">
+              <div class="leads-overlay-header">
+                <h3>All Leads</h3>
+                <button
+                  id="leadsOverlayClose"
+                  class="leads-overlay-close"
+                  type="button"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div id="leadsList" class="leads-list">
+                Loading leads…
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+<!-- =================== MAIN MENU =================== -->
+  <section id="mainMenuView" class="view">
+    <div class="view-inner">
+     <div class="view-header">
+        <div>
+          <h2>Main Menu</h2>
+        </div>
+      </div>
+
+      <div class="menu-grid">
+        <div id="menuMaps" class="menu-card">
+          <div class="menu-title">$Maps</div>
+          <div class="menu-sub">
+            Storm swaths, high-value streets, directions.
+         </div>
+        </div>
+
+       <div id="menuDirectory" class="menu-card">
+         <div class="menu-title">Company Directory</div>
+          <div class="menu-sub">Leadership, regionals, managers, reps.</div>
+       </div>
+
+       <div id="menuInsurance" class="menu-card">
+         <div class="menu-title">Insurance Contacts</div>
+         <div class="menu-sub">Carrier phone numbers and notes.</div>
+       </div>
+
+        <div id="menuMe" class="menu-card">
+         <div class="menu-title">My Stats</div>
+          <div class="menu-sub">Your personal production snapshot.</div>
+        </div>
+
+       <div id="menuMyTeam" class="menu-card">
+          <div class="menu-title">My Team</div>
+          <div class="menu-sub">Team chat, jobs, Zoom, payroll.</div>
+       </div>
+
+        <div id="menuAdmin" class="menu-card" style="display: none">
+          <div class="menu-title">Admin</div>
+          <div class="menu-sub">Users, steps, teams, payroll.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== $MAPS VIEW =================== -->
+<section id="mapsView" class="view">
+  <div class="view-inner maps-layout">
+    <div class="view-header">
+      <div>
+        <h2>$Maps</h2>
+      </div>
+      <button id="mapsBackBtn" class="pill-btn">Back to Menu</button>
+    </div>
+
+    <div id="stormControls" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:8px 0;">
+      <label>
+        State:
+        <select id="stateSelect">
+          <option value="">Select…</option>
+          <option value="AL">Alabama</option>
+          <option value="AK">Alaska</option>
+          <option value="AZ">Arizona</option>
+          <option value="AR">Arkansas</option>
+          <option value="CA">California</option>
+          <option value="CO">Colorado</option>
+          <option value="CT">Connecticut</option>
+          <option value="DE">Delaware</option>
+          <option value="DC">District of Columbia</option>
+          <option value="FL">Florida</option>
+          <option value="GA">Georgia</option>
+          <option value="HI">Hawaii</option>
+          <option value="ID">Idaho</option>
+          <option value="IL">Illinois</option>
+          <option value="IN">Indiana</option>
+          <option value="IA">Iowa</option>
+          <option value="KS">Kansas</option>
+          <option value="KY">Kentucky</option>
+          <option value="LA">Louisiana</option>
+          <option value="ME">Maine</option>
+          <option value="MD">Maryland</option>
+          <option value="MA">Massachusetts</option>
+          <option value="MI">Michigan</option>
+          <option value="MN">Minnesota</option>
+          <option value="MS">Mississippi</option>
+          <option value="MO">Missouri</option>
+          <option value="MT">Montana</option>
+          <option value="NE">Nebraska</option>
+          <option value="NV">Nevada</option>
+          <option value="NH">New Hampshire</option>
+          <option value="NJ">New Jersey</option>
+          <option value="NM">New Mexico</option>
+          <option value="NY">New York</option>
+          <option value="NC">North Carolina</option>
+          <option value="ND">North Dakota</option>
+          <option value="OH">Ohio</option>
+          <option value="OK">Oklahoma</option>
+          <option value="OR">Oregon</option>
+          <option value="PA">Pennsylvania</option>
+          <option value="RI">Rhode Island</option>
+          <option value="SC">South Carolina</option>
+          <option value="SD">South Dakota</option>
+          <option value="TN">Tennessee</option>
+          <option value="TX">Texas</option>
+          <option value="UT">Utah</option>
+          <option value="VT">Vermont</option>
+          <option value="VA">Virginia</option>
+          <option value="WA">Washington</option>
+          <option value="WV">West Virginia</option>
+          <option value="WI">Wisconsin</option>
+          <option value="WY">Wyoming</option>
+        </select>
+      </label>
+
+      <label>
+        Scope:
+        <select id="scopeSelect">
+          <option value="" selected>Select scope…</option>
+          <option value="state">Statewide dates</option>
+          <option value="city">City-only dates</option>
+        </select>
+      </label>
+
+      <label>
+        Storm type:
+        <select id="stormTypeTop">
+          <option value="" selected>Select type…</option>
+          <option value="hail">Hail</option>
+          <option value="wind">Wind</option>
+          <option value="all">All</option>
+        </select>
+      </label>
+
+      <label id="cityLabel" style="display:none;">
+        City:
+        <input id="cityInput" type="text" placeholder="e.g. Clayton, MO" style="width:180px;" />
+      </label>
+
+      <label id="radiusLabel" style="display:none;">
+        Radius:
+        <select id="radiusSelect">
+          <option value="5">5 mi</option>
+          <option value="10" selected>10 mi</option>
+          <option value="25">25 mi</option>
+        </select>
+      </label>
+
+      <button id="getDatesBtn" class="pill-btn" disabled>Get Dates</button>
+
+      <span id="dateStatus" style="opacity:.8;"></span>
+    </div>
+
+    <div id="stormDateRow" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:6px 0 10px;">
+      <label>
+        Storm dates:
+        <select id="dateSelect" disabled>
+          <option value="">Pick a state first…</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- TOP CONTROLS -->
+    <div class="maps-controls">
+      <!-- STATE -->
+      <div class="maps-control-group" style="display:none;">
+        <label class="control-label">State</label>
+        <select id="stateSelect" class="control-input">
+          <option value="">Select a state…</option>
+          <option value="AL">Alabama</option>
+          <option value="AK">Alaska</option>
+          <option value="AZ">Arizona</option>
+          <option value="AR">Arkansas</option>
+          <option value="CA">California</option>
+          <option value="CO">Colorado</option>
+          <option value="CT">Connecticut</option>
+          <option value="DE">Delaware</option>
+          <option value="FL">Florida</option>
+          <option value="GA">Georgia</option>
+          <option value="HI">Hawaii</option>
+          <option value="ID">Idaho</option>
+          <option value="IL">Illinois</option>
+          <option value="IN">Indiana</option>
+          <option value="IA">Iowa</option>
+          <option value="KS">Kansas</option>
+          <option value="KY">Kentucky</option>
+          <option value="LA">Louisiana</option>
+          <option value="ME">Maine</option>
+          <option value="MD">Maryland</option>
+          <option value="MA">Massachusetts</option>
+          <option value="MI">Michigan</option>
+          <option value="MN">Minnesota</option>
+          <option value="MS">Mississippi</option>
+          <option value="MO">Missouri</option>
+          <option value="MT">Montana</option>
+          <option value="NE">Nebraska</option>
+          <option value="NV">Nevada</option>
+          <option value="NH">New Hampshire</option>
+          <option value="NJ">New Jersey</option>
+          <option value="NM">New Mexico</option>
+          <option value="NY">New York</option>
+          <option value="NC">North Carolina</option>
+          <option value="ND">North Dakota</option>
+          <option value="OH">Ohio</option>
+          <option value="OK">Oklahoma</option>
+          <option value="OR">Oregon</option>
+          <option value="PA">Pennsylvania</option>
+          <option value="RI">Rhode Island</option>
+          <option value="SC">South Carolina</option>
+          <option value="SD">South Dakota</option>
+          <option value="TN">Tennessee</option>
+          <option value="TX">Texas</option>
+          <option value="UT">Utah</option>
+          <option value="VT">Vermont</option>
+          <option value="VA">Virginia</option>
+          <option value="WA">Washington</option>
+          <option value="WV">West Virginia</option>
+          <option value="WI">Wisconsin</option>
+          <option value="WY">Wyoming</option>
+        </select>
+
+        <input
+          id="stateTextInput"
+          type="text"
+          class="control-input"
+          placeholder="Or type state (MO / Missouri)…"
+          style="margin-top: 4px"
+        />
+      </div>
+
+      <!-- STORM TYPE -->
+      <div class="maps-control-group" style="display:none;">
+        <label class="control-label">Storm Type</label>
+        <select id="stormSelect" class="control-input">
+          <option value="">Pick storm type…</option>
+          <option value="hail">Hail</option>
+          <option value="wind">Wind</option>
+          <option value="tornado">Tornado</option>
+        </select>
+      </div>
+
+      <!-- MIN VALUE -->
+      <div class="maps-control-group small">
+        <label class="control-label">Min street value ($)</label>
+        <input
+          id="minValueInput"
+          type="number"
+          class="control-input"
+          placeholder="0"
+        />
+      </div>
+
+      <!-- SEARCH WITHIN LIST -->
+      <div class="maps-control-group small">
+        <label class="control-label">Filter storms by name/date</label>
+        <input
+          id="stormSearchInput"
+          type="text"
+          class="control-input"
+          placeholder="Search storms…"
+        />
+      </div>
+    </div>
+
+    <!-- ADDRESS SEARCH -->
+    <div class="maps-address-row">
+      <input
+        id="addressInput"
+        type="text"
+        class="control-input flex-1"
+        placeholder="Type any address and hit Go…"
+      />
+      <button id="searchLocationBtn" class="primary-btn">
+        Go to Address
+      </button>
+    </div>
+
+    <!-- MAP + STORM LIST -->
+    <div class="maps-main-split">
+      <div id="stormMap" class="map-panel"></div>
+
+      <div id="stormListPanel" class="storm-list-panel">
+        <div id="mapStatus" class="map-status">
+          Pick a state and storm type.
+        </div>
+        <div id="directionsArea" class="directions-area">
+          <button id="directionsBtn" class="pill-btn" disabled>Directions</button>
+        </div>
+        <div id="stormList" class="storm-list"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== DIRECTORY VIEW =================== -->
+<section id="directoryView" class="view">
+  <div class="view-inner">
+    <div class="view-header">
+      <div>
+        <h2>Company Directory</h2>
+      </div>
+      <button id="directoryBackBtn" class="pill-btn">
+        Back to Menu
+      </button>
+    </div>
+
+    <div class="dir-tabs">
+      <button class="dir-tab active" data-dir-cat="leadership">
+        Leadership
+      </button>
+      <button class="dir-tab" data-dir-cat="regional">
+        Regional Managers
+      </button>
+      <button class="dir-tab" data-dir-cat="manager">Managers</button>
+      <button class="dir-tab" data-dir-cat="rep">Sales Reps</button>
+      <button class="dir-tab" data-dir-cat="ops">Ops / Office</button>
+    </div>
+
+    <div
+      id="dirCategoryLabel"
+      style="font-size: 0.82rem; color: var(--text-soft)"
+    >
+      Showing: leadership
+    </div>
+
+    <div id="dirPeopleGrid" class="dir-people-grid"></div>
+  </div>
+</section>
+
+<!-- =================== INSURANCE VIEW =================== -->
+<section id="insuranceView" class="view">
+  <div class="view-inner">
+    <div class="view-header">
+      <div>
+        <h2>Insurance Contacts</h2>
+      </div>
+      <button id="insuranceBackBtn" class="pill-btn">
+        Back to Menu
+      </button>
+    </div>
+
+    <div style="display: flex; gap: 6px; margin-bottom: 6px">
+      <input
+        id="insuranceSearchInput"
+        class="control-input"
+        style="flex: 1"
+        placeholder="Search by carrier name…"
+      />
+    </div>
+
+    <div id="insuranceList" class="ins-list">Loading…</div>
+  </div>
+</section>
+
+<!-- =================== ME VIEW =================== -->
+<section id="meView" class="view">
+  <div class="view-inner">
+    <div class="view-header">
+      <div>
+        <h2>My Stats</h2>
+      </div>
+      <button id="meBackBtn" class="pill-btn">Back to Menu</button>
+    </div>
+
+    <div class="stats-row" style="margin-top: 8px">
+      <div class="stat-box">
+        <div class="stat-label">Conts this week</div>
+        <div class="stat-value" id="meContWeek_2">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Sold this month</div>
+        <div class="stat-value" id="meSoldMonth_2">$0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Sold this year</div>
+        <div class="stat-value" id="meSoldYear_2">$0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Last paycheck</div>
+        <div class="stat-value" id="meLastPay_2">$0</div>
+      </div>
+    </div>
+
+    <div class="stat-box" style="margin-top: 10px">
+      <div class="stat-label">Next paycheck (projected)</div>
+      <div class="stat-value" id="meNextPay_2">$0</div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== MY TEAM VIEW =================== -->
+<section id="myTeamView" class="view">
+  <div class="view-inner">
+    <div class="view-header">
+      <div>
+        <h2>My Team</h2>
+      </div>
+      <button id="myTeamBackBtn" class="pill-btn">Back to Menu</button>
+    </div>
+
+    <!-- Centered tabs: Chat, My Stats, My Jobs, Zoom, Payroll -->
+    <div class="myteam-tabs">
+      <button class="myteam-tab active" data-myteam-tab="chat">
+        Chat
+      </button>
+      <button class="myteam-tab" data-myteam-tab="stats">
+        My Stats
+      </button>
+      <button class="myteam-tab" data-myteam-tab="jobs">
+        My Jobs
+      </button>
+      <button class="myteam-tab" data-myteam-tab="zoom">
+        Zoom
+      </button>
+      <button class="myteam-tab" data-myteam-tab="payroll">
+        Payroll
+      </button>
+    </div>
+
+    <!-- CHAT SUBVIEW -->
+    <div
+      id="myTeamChatView"
+      class="myteam-subview active hub-section"
+      style="min-height: 0"
+    >
+      <h3>Team Chat</h3>
+      <div
+        id="teamChatLog"
+        class="chat-log"
+        style="margin-top: 5px"
+      ></div>
+      <div class="chat-input-row">
+        <input
+          id="teamChatInput"
+          class="control-input"
+          placeholder="Type a message to your team…"
+        />
+        <button id="teamChatSendBtn" class="primary-btn">
+          Send
+        </button>
+      </div>
+    </div>
+
+    <!-- STATS SUBVIEW -->
+    <div
+      id="myTeamStatsView"
+      class="myteam-subview hub-section"
+      style="min-height: 0"
+    >
+      <h3>My Stats</h3>
+      <div class="stats-row" style="margin-top: 8px">
+        <div class="stat-box">
+          <div class="stat-label">Conts this week</div>
+          <div class="stat-value" id="myTeamContWeek">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Conts this month</div>
+          <div class="stat-value" id="myTeamContMonth">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Conts this year</div>
+          <div class="stat-value" id="myTeamContYear">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JOBS SUBVIEW -->
+    <div
+      id="myTeamJobsView"
+      class="myteam-subview hub-section"
+      style="min-height: 0"
+    >
+      <h3>My Jobs</h3>
+      <div
+        id="myJobsList"
+        style="
+          margin-top: 6px;
+          max-height: 55vh;
+          overflow-y: auto;
+          font-size: 0.8rem;
+        "
+      >
+        <!-- Jobs will be loaded here -->
+      </div>
+    </div>
+
+    <!-- ZOOM SUBVIEW -->
+    <div
+      id="myTeamZoomView"
+      class="myteam-subview hub-section"
+      style="min-height: 0"
+    >
+      <h3>Zoom</h3>
+      <p style="font-size: 0.82rem; margin-top: 4px">
+        Tap below to join the weekly Zoom meeting.
+      </p>
+      <button
+        id="joinZoomBtn"
+        class="primary-btn"
+        style="margin-top: 8px"
+      >
+        Join Zoom
+      </button>
+    </div>
+
+    <!-- PAYROLL SUBVIEW -->
+    <div
+      id="myTeamPayrollView"
+      class="myteam-subview hub-section"
+      style="min-height: 0"
+    >
+      <h3>Payroll Request</h3>
+      <div style="margin-top: 6px; font-size: 0.8rem">
+        <label class="control-label" for="payAmountInput">
+          Amount requested ($)
+        </label>
+        <input
+          id="payAmountInput"
+          class="control-input"
+          type="number"
+          placeholder="0.00"
+        />
+
+        <label
+          class="control-label"
+          for="payWeekInput"
+          style="margin-top: 6px"
+        >
+          Week of (YYYY-MM-DD)
+        </label>
+        <input
+          id="payWeekInput"
+          class="control-input"
+          type="text"
+          placeholder="2025-01-01"
+        />
+
+        <label
+          class="control-label"
+          for="payNoteInput"
+          style="margin-top: 6px"
+        >
+          Notes
+        </label>
+        <textarea
+          id="payNoteInput"
+          class="control-input"
+          rows="3"
+          placeholder="Breakdown of what you are owed…"
+        ></textarea>
+
+        <button
+          id="payRequestSubmitBtn"
+          class="primary-btn"
+          style="margin-top: 8px"
+        >
+          Submit Pay Request
+        </button>
+
+        <div
+          id="payRequestStatus"
+          style="margin-top: 4px; font-size: 0.8rem; color: var(--text-soft)"
+        ></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== GOALS VIEW (STEPS + WATER) =================== -->
+<section id="goalsView" class="view">
+  <div class="view-inner">
+    <div class="view-header">
+      <div>
+        <h2>Goals</h2>
+      </div>
+      <button id="goalsBackBtn" class="pill-btn">Back</button>
+    </div>
+
+    <div class="hub-section">
+      <h3>Daily Goals</h3>
+      <div style="margin-top: 6px; font-size: 0.8rem">
+        <label class="control-label" for="stepGoalInput">
+          Step goal (steps per day)
+        </label>
+        <input
+          id="stepGoalInput"
+          class="control-input"
+          type="number"
+          placeholder="8000"
+        />
+
+        <label
+          class="control-label"
+          for="waterGoalInput"
+          style="margin-top: 6px"
+        >
+          Water goal (oz per day)
+        </label>
+        <input
+          id="waterGoalInput"
+          class="control-input"
+          type="number"
+          placeholder="80"
+        />
+
+        <button
+          id="goalsSaveBtn"
+          class="primary-btn"
+          style="margin-top: 8px"
+        >
+          Save Goals
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== ADMIN VIEW =================== -->
+<section id="adminView" class="view">
+  <div class="view-inner">
+    <div class="view-header">
+      <div>
+        <h2>Admin</h2>
+      </div>
+      <button id="adminBackBtn" class="pill-btn">Back to Menu</button>
+    </div>
+
+    <!-- Centered tabs: Add User, Step Dashboard, Teams, Payroll -->
+    <div class="admin-subtabs">
+      <button class="admin-subtab-btn active" data-admin-tab="addUser">
+        Add User
+      </button>
+      <button class="admin-subtab-btn" data-admin-tab="steps">
+        Step Dashboard
+      </button>
+      <button class="admin-subtab-btn" data-admin-tab="teams">
+        Teams
+      </button>
+      <button class="admin-subtab-btn" data-admin-tab="payroll">
+        Payroll
+      </button>
+    </div>
+
+    <!-- ADD USER SUBVIEW -->
+    <div
+      id="adminAddUserView"
+      class="admin-subview active hub-section"
+      style="margin-bottom: 10px"
+    >
+      <h3>Add User</h3>
+      <div
+        style="
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 5px;
+          font-size: 0.8rem;
+        "
+      >
+        <input
+          id="adminNewEmail"
+          class="control-input"
+          style="min-width: 180px"
+          placeholder="Email"
+        />
+        <input
+          id="adminNewTempPassword"
+          class="control-input"
+          style="min-width: 140px"
+          placeholder="Temp password"
+        />
+        <select
+          id="adminNewRole"
+          class="control-input"
+          style="min-width: 120px"
+        >
+          <option value="rep">rep</option>
+          <option value="manager">manager</option>
+          <option value="regional">regional</option>
+          <option value="admin">admin</option>
+        </select>
+        <input
+          id="adminNewState"
+          class="control-input"
+          style="min-width: 80px"
+          placeholder="State (MO)"
+        />
+        <input
+          id="adminNewTeam"
+          class="control-input"
+          style="min-width: 100px"
+          placeholder="Team ID"
+        />
+        <button id="adminAddUserBtn" class="primary-btn">
+          Create User
+        </button>
+      </div>
+
+      <div
+        id="adminStatus"
+        style="margin-top: 4px; font-size: 0.8rem; color: var(--text-soft)"
+      ></div>
+
+      <div
+        class="hub-section"
+        style="margin-top: 10px; max-height: 40vh; overflow-y: auto"
+      >
+        <h3>All Users</h3>
+        <div
+          id="adminUsersList"
+          style="margin-top: 6px; font-size: 0.8rem"
+        >
+          Loading…
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP DASHBOARD SUBVIEW -->
+    <div
+      id="adminStepsView"
+      class="admin-subview hub-section"
+      style="max-height: 55vh; overflow-y: auto"
+    >
+      <h3>Step Dashboard</h3>
+      <div style="margin-top: 6px">
+        <input
+          id="stepsSearchInput"
+          class="control-input"
+          placeholder="Search by email or name…"
+        />
+      </div>
+      <div
+        id="stepsDashList"
+        style="margin-top: 6px; font-size: 0.8rem"
+      >
+        Loading…
+      </div>
+    </div>
+
+    <!-- TEAMS SUBVIEW -->
+    <div
+      id="adminTeamsView"
+      class="admin-subview hub-section"
+      style="max-height: 55vh; overflow-y: auto"
+    >
+      <h3>Teams & Regions</h3>
+      <div style="margin-top: 6px; font-size: 0.8rem">
+        <label class="control-label" for="newRegionName">
+          Create region
+        </label>
+        <div style="display: flex; gap: 6px; margin-bottom: 6px">
+          <input
+            id="newRegionName"
+            class="control-input"
+            placeholder="West Region"
+          />
+          <button id="createRegionBtn" class="primary-btn">
+            Create
+          </button>
+        </div>
+
+        <div
+          id="regionsList"
+          style="margin-top: 4px; max-height: 30vh; overflow-y: auto"
+        >
+          <!-- Regions will be listed here -->
+        </div>
+
+        <div
+          id="regionDetail"
+          style="
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(148,163,184,0.3);
+          "
+        >
+          <h4
+            id="regionDetailTitle"
+            style="font-size: 0.9rem; margin-bottom: 6px"
+          >
+            Select a region…
+          </h4>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+              max-width: 260px;
+            "
+          >
+            <button id="regionAddManagerBtn" class="primary-btn">
+              Add Manager
+            </button>
+            <button id="regionAddRepBtn" class="primary-btn">
+              Add Rep
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYROLL SUBVIEW -->
+    <div
+      id="adminPayrollView"
+      class="admin-subview hub-section"
+      style="max-height: 55vh; overflow-y: auto"
+    >
+      <h3>Payroll Requests</h3>
+      <div
+        id="adminPayrollList"
+        style="margin-top: 6px; font-size: 0.8rem"
+      >
+        Loading…
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+</div>
+>
+
+<!-- =================== JAVASCRIPT (REWRITTEN) =================== -->
+<script>
+"use strict";
+
+const DEBUG_STORMS = true;
+
+/* =========================================================
+   GLOBAL APP STATE
+   ========================================================= */
+window.App = {
+  views: {},
+  els: {},
+  map: null,
+  geocoder: null,
+  markers: [],
+  loadedStorms: [],
+  currentUserProfile: null,
+  destination: null,
+  clickMarker: null,
+  lastMapClick: null,
+  infoWindow: null,
+  activeStorm: null,
+  selectedDate: null,
+  noaaReports: [],
+};
+
+/* =========================================================
+   VIEW SWITCHING
+   ========================================================= */
+function showOnlyView(viewEl) {
+  if (!viewEl) {
+    console.error("showOnlyView: viewEl is null/undefined");
+    return;
+  }
+
+  document.querySelectorAll("#appRoot .view").forEach((el) => {
+    el.style.display = (el === viewEl) ? "block" : "none";
+  });
+
+  // Maps view: trigger resize so the map paints correctly
+  if (viewEl.id === "mapsView") {
+    setTimeout(() => {
+      if (typeof initMap === "function") initMap();
+      if (App.map && window.google && google.maps && google.maps.event) {
+        google.maps.event.trigger(App.map, "resize");
+        const c = App.map.getCenter();
+        if (c) App.map.setCenter(c);
+      }
+    }, 50);
+  }
+}
+
+/* =========================================================
+   GOOGLE MAPS
+   ========================================================= */
+window.initMap = function initMap() {
+
+  const mapEl = document.getElementById("stormMap");
+  if (!mapEl) return;
+  if (App.map) return;
+
+  App.map = new google.maps.Map(mapEl, {
+    center: { lat: 39.5, lng: -98.35 },
+    zoom: 4,
+    mapTypeId: "roadmap",
+    streetViewControl: false,
+    fullscreenControl: true,
+  });
+
+  App.geocoder = new google.maps.Geocoder();
+
+  App.infoWindow = new google.maps.InfoWindow();
+
+  // Add click listener for house inspection
+  App.map.addListener('click', (e) => {
+    if (App.map.getZoom() >= 17) {
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+
+      let infoText = '';
+      if (App.activeStorm) {
+        const stormDate = App.activeStorm.dateKey ? new Date(App.activeStorm.dateKey + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : formatStormDate(App.activeStorm);
+        const hailText = App.activeStorm.maxHail || 'N/A';
+        const windText = App.activeStorm.maxWind || 'N/A';
+        infoText = `
+          <div>Storm date: ${stormDate}</div>
+          <div>Hail size: ${hailText}</div>
+          <div>Wind speed: ${windText}</div>
+        `;
+      } else {
+        infoText = '<div>No storm selected.</div>';
+      }
+
+      const content = `
+        <div style="font-family: Poppins, sans-serif; padding: 10px;">
+          ${infoText}
+          <button onclick="getDirectionsToHouse(${lat}, ${lng})" style="display: block; margin-bottom: 5px; padding: 8px 12px; background: #38bdf8; color: white; border: none; border-radius: 4px; cursor: pointer;">Get directions</button>
+          <button onclick="startInspection(${lat}, ${lng})" style="display: block; padding: 8px 12px; background: #0ea5e9; color: white; border: none; border-radius: 4px; cursor: pointer;">Start inspection</button>
+        </div>
+      `;
+      App.infoWindow.setContent(content);
+      App.infoWindow.setPosition(e.latLng);
+      App.infoWindow.open(App.map);
+    }
+  });
+}
+
+function getDirectionsToHouse(lat, lng) {
+  const url = `https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=${lat},${lng}&travelmode=driving`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function startInspection(lat, lng) {
+  // Placeholder function for starting inspection
+  console.log('Starting inspection at', lat, lng);
+  // TODO: Implement inspection logic
+}
+
+function formatStormDate(storm) {
+  if (!storm) return 'Unknown date';
+  const dateValue = storm.date || storm.stormDate || storm.eventDate || storm.timestamp || storm.ts || storm.startTime || storm.start || storm.datetime || storm.dateString;
+  if (!dateValue) return 'Unknown date';
+  let date;
+  if (typeof dateValue === 'number') {
+    // Assume milliseconds if > 1e10, else seconds
+    const timestamp = dateValue > 1e10 ? dateValue : dateValue * 1000;
+    date = new Date(timestamp);
+  } else if (typeof dateValue === 'string') {
+    date = new Date(dateValue);
+  } else if (dateValue instanceof Date) {
+    date
+ 
+    return 'Unknown date';
+  }
+  if (isNaN(date.getTime())) return 'Unknown date';
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function extractStormDateValue(storm) {
+  if (!storm) return null;
+  const s = storm.properties || storm.data || storm.stats || storm;
+  const dateValue = s.eventDate || s.stormDate || s.date || s.validDate || s.day || s.startDate || s.startTime || s.timestamp || s.ts || s.time || s.datetime || s.valid || s.begin || s.start || s.dateString;
+  if (!dateValue) return null;
+  if (typeof dateValue === 'number') {
+    // Assume milliseconds if > 1e10, else seconds
+    return dateValue > 1e10 ? dateValue : dateValue * 1000;
+  } else if (typeof dateValue === 'string') {
+    const date = new Date(dateValue);
+    return isNaN(date.getTime()) ? null : date.getTime();
+  } else if (dateValue instanceof Date) {
+    return dateValue.getTime();
+  }
+  return null;
+}
+
+async function fetchNoaaHailReports(overrides = {}) {
+  const PROXY_BASE = "https://noaaplsrproxy-jzyejnppqa-uc.a.run.app";
+  const urlParams = new URLSearchParams(window.location.search);
+  const overrideMode = overrides.mode || "";
+  const overrideStart = overrides.start || "";
+  const overrideEnd = overrides.end || "";
+  const overrideBbox = overrides.bbox || "";
+
+  // Compute mode
+  const mode = overrides.mode === "reports" ? "reports"
+             : (urlParams.get("mode") === "reports" ? "reports" : "radar");
+
+  // Added logging after mode is computed
+  console.log("[FETCH NOAA] mode =", mode, "overrideMode =", overrides.mode, "urlParamMode =", urlParams.get("mode"));
+
+  // Defaults: last 31 days
+  const endDate = new Date();
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - 31);
+  const formatDate = (d) =>
+    d.getFullYear() +
+    ("0" + (d.getMonth() + 1)).slice(-2) +
+    ("0" + d.getDate()).slice(-2);
+
+  const startDateStr = overrideStart || urlParams.get("start") || formatDate(startDate);
+  const endDateStr = overrideEnd || urlParams.get("end") || formatDate(endDate);
+  const bbox = overrideBbox || urlParams.get("bbox") || "-106.65,25.84,-93.51,36.50";
+  const limit = "20000";
+  const base = PROXY_BASE.endsWith("/") ? PROXY_BASE.slice(0, -1) : PROXY_BASE;
+
+  // Helper to extract YYYY-MM-DD from storm entries
+  function extractDateDashFromStorm(s) {
+    const v =
+      s?.props?.valid ||
+      s?.props?.VALID ||
+      s?.props?.Valid ||
+      s?.props?.begin ||
+      s?.props?.BEGIN ||
+      s?.props?.start ||
+      s?.props?.START ||
+      null;
+
+    if (typeof v === "string") {
+      if (v.length >= 10 && /^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+      if (/^\d{8}$/.test(v)) return `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6,8)}`;
+    }
+    return null;
+  }
+
+  if (mode === "reports") {
+    // FIRST line inside reports-mode
+    console.log("[FETCH NOAA] entering reports chunking");
+
+    // Split into 30-day UTC chunks and merge results
+    const parseYmd = (s) => {
+      const y = Number(s.slice(0, 4));
+      const m = Number(s.slice(4, 6));
+      const d = Number(s.slice(6, 8));
+      return new Date(Date.UTC(y, m - 1, d));
+    };
+    const fmtYmd = (d) =>
+      d.getUTCFullYear() +
+      String(d.getUTCMonth() + 1).padStart(2, "0") +
+      String(d.getUTCDate()).padStart(2, "0");
+
+    let startUTC = parseYmd(startDateStr);
+    let endUTC = parseYmd(endDateStr);
+    if (startUTC > endUTC) {
+      const tmp = startUTC;
+      startUTC = endUTC;
+      endUTC = tmp;
+    }
+
+    const mergedStorms = [];
+    const dateSet = new Set();
+
+    // Generate chunks of up to 30 days (inclusive)
+    let curStart = new Date(startUTC);
+    let chunkIdx = 0;
+    while (curStart <= endUTC) {
+      const curEnd = new Date(curStart);
+      curEnd.setUTCDate(curEnd.getUTCDate() + 29); // 30-day window
+      if (curEnd > endUTC) curEnd.setTime(endUTC.getTime());
+
+      const cs = fmtYmd(curStart);
+      const ce = fmtYmd(curEnd);
+      const url = `${base}/noaaPlsrProxy?mode=reports&start=${cs}&end=${ce}&bbox=${encodeURIComponent(bbox)}&eventType=Hail&limit=${limit}`;
+      console.log("[NOAA] chunk", chunkIdx, "range:", cs, "->", ce, "URL =", url);
+
+      let chunkData;
+      try {
+        const resp = await fetch(url);
+        const raw = await resp.text();
+        const ct = String(resp.headers.get("content-type") || "").toLowerCase();
+        if (!resp.ok) {
+          throw new Error(`[NOAA chunk ${chunkIdx} ${cs}-${ce}] HTTP ${resp.status} ${resp.statusText || ""} body: ${raw.slice(0,500)}`);
+        }
+        try {
+          if (!ct.includes("application/json")) {
+            console.warn(`[NOAA chunk ${chunkIdx} ${cs}-${ce}] Unexpected content-type:`, ct);
+          }
+          chunkData = JSON.parse(raw);
+        } catch (parseErr) {
+          throw new Error(`[NOAA chunk ${chunkIdx} ${cs}-${ce}] Parse error content-type=${ct} body-start=${raw.slice(0,200)}`);
+        }
+      } catch (e) {
+        console.error("NOAA chunk fetch failed:", e);
+        throw e;
+      }
+
+      const stormsOutChunk = Array.isArray(chunkData?.storms) ? chunkData.storms : [];
+      stormsOutChunk.forEach((s) => {
+        mergedStorms.push(s);
+        const d = extractDateDashFromStorm(s);
+        if (d) dateSet.add(d);
+      });
+
+      // Advance to next day after curEnd
+      const nextStart = new Date(curEnd);
+      nextStart.setUTCDate(nextStart.getUTCDate() + 1);
+      curStart = nextStart;
+      chunkIdx++;
+    }
+
+    const datesOut = [...dateSet].sort((a, b) => String(b).localeCompare(String(a)));
+
+    console.log("NOAA storms length (merged):", mergedStorms.length);
+    console.log("NOAA availableDates length (merged):", datesOut.length);
+    console.log("NOAA firstDate (merged):", datesOut[0]);
+    if (!datesOut.length) {
+      if (!mergedStorms.length) {
+        console.warn("[NOAA] No dates: no storms returned in requested range.");
+      } else {
+        console.warn("[NOAA] No dates: storms missing NOAA date fields (valid/begin/start).");
+      }
+    }
+
+    App.loadedStorms = mergedStorms;
+    App.availableDates = datesOut;
+    return { storms: mergedStorms, availableDates: datesOut };
+  }
+
+  // Radar mode remains single-request
+  console.log("[FETCH NOAA] using radar single-request path");
+  const eventTypeParam = ""; // radar path: no eventType
+  const url = `${base}/noaaPlsrProxy?mode=${mode}&start=${startDateStr}&end=${endDateStr}&bbox=${encodeURIComponent(bbox)}${eventTypeParam}&limit=${limit}`;
+
+  console.log("NOAA proxy URL:", url, "mode:", mode);
+  let data;
+  try {
+    const resp = await fetch(url);
+    const raw = await resp.text();
+    console.log("[NOAA] url =", url);
+    console.log("[NOAA] status =", resp.status);
+    console.log("[NOAA] raw =", raw);
+
+    const ct = String(resp.headers.get("content-type") || "").toLowerCase();
+    if (!resp.ok) {
+      throw new Error(`[NOAA single ${startDateStr}-${endDateStr}] HTTP ${resp.status} ${resp.statusText || ""} body: ${raw.slice(0,500)}`);
+    }
+    try {
+      if (!ct.includes("application/json")) {
+        console.warn(`[NOAA single ${startDateStr}-${endDateStr}] Unexpected content-type:`, ct);
+      }
+      data = JSON.parse(raw);
+    } catch (parseErr) {
+      throw new Error(`[NOAA single ${startDateStr}-${endDateStr}] Parse error content-type=${ct} body-start=${raw.slice(0,200)}`);
+    }
+  } catch (e) {
+    console.error("NOAA fetch failed:", e);
+    throw e;
+  }
+
+  const stormsOut = Array.isArray(data?.storms) ? data.storms : [];
+  const datesOut = [...new Set((stormsOut || []).map(extractDateDashFromStorm).filter(Boolean))]
+    .sort((a, b) => String(b).localeCompare(String(a)));
+
+  console.log("NOAA storms length:", stormsOut.length);
+  console.log("NOAA availableDates length:", datesOut.length);
+  console.log("NOAA firstDate:", datesOut[0]);
+  if (!datesOut.length) {
+    if (!stormsOut.length) {
+      console.warn("[NOAA] No dates: no storms returned in requested range.");
+    } else {
+      console.warn("[NOAA] No dates: storms missing NOAA date fields (valid/begin/start).");
+    }
+  }
+
+  App.loadedStorms = stormsOut;
+  App.availableDates = datesOut;
+  return { storms: stormsOut, availableDates: datesOut };
+}
+
+const DatePagination = {
+  loadedMonths: 3,
+  maxMonths: 12,
+  stepMonths: 3
+};
+
+function computeStartEndForLoadedMonths(loadedMonths) {
+  const today = utcToday();
+  const end = fmtYYYYMMDD_utc(today);
+  const daysBack = loadedMonths * 30;
+  const start = fmtYYYYMMDD_utc(addDaysUTC(today, -daysBack));
+  return { start, end };
+}
+
+function setStormDateOptions(datesDash, append = false) {
+  const dateSelect = document.getElementById("dateSelect");
+  
+  if (!append) {
+    dateSelect.innerHTML = "";
+  }
+
+  if (!Array.isArray(datesDash) || datesDash.length === 0) {
+    if (!append) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "No dates found for this state/range";
+      dateSelect.appendChild(opt);
+      dateSelect.disabled = true;
+    }
+    return;
+  }
+
+  // Sort newest -> oldest (YYYY-MM-DD sorts lexicographically)
+  const sorted = [...datesDash].sort((a, b) => String(b).localeCompare(String(a)));
+
+  if (!append) {
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = "Select a date…";
+    dateSelect.appendChild(opt0);
+  }
+
+  for (const d of sorted) {
+    // Skip if already exists (for append)
+    if (append && Array.from(dateSelect.options).some(o => o.value === d)) {
+      continue;
+    }
+    const opt = document.createElement("option");
+    opt.value = d;
+    opt.textContent = d;
+    dateSelect.appendChild(opt);
+  }
+
+  // Add "Load more" option if not at max months
+  if (DatePagination.loadedMonths < 12) {
+    const existingLoadMore = Array.from(dateSelect.options).find(o => o.value === LOAD_MORE_VALUE);
+    if (!existingLoadMore) {
+      const optLoadMore = document.createElement("option");
+      optLoadMore.value = LOAD_MORE_VALUE;
+      optLoadMore.textContent = "Load more (3 more months)";
+      dateSelect.appendChild(optLoadMore);
+    }
+  } else {
+    // Remove "Load more" if at max and show message
+    const existingLoadMore = Array.from(dateSelect.options).find(o => o.value === LOAD_MORE_VALUE);
+    if (existingLoadMore) {
+      dateSelect.removeChild(existingLoadMore);
+    }
+    const statusEl = document.getElementById("dateStatus");
+    if (statusEl) {
+      statusEl.textContent = "You've reached the full year's storm dates.";
+    }
+  }
+
+  dateSelect.disabled = false;
+}
+
+function setDateStatus(msg) {
+  const el = document.getElementById("dateStatus");
+  if (el) el.textContent = msg || "";
+}
+
+function resetDatesUi(msg) {
+  const dateSelect = document.getElementById("dateSelect");
+  if (dateSelect) {
+    dateSelect.disabled = true;
+    dateSelect.innerHTML = '<option value="">Click Get Dates</option>';
+  }
+  setDateStatus(msg || "");
+}
+
+let _getDatesTimer = null;
+function scheduleGetDates(reason = "") {
+  clearTimeout(_getDatesTimer);
+  _getDatesTimer = setTimeout(() => {
+    const st = (document.getElementById("stateSelect")?.value || "").trim();
+    const scope = (document.getElementById("scopeSelect")?.value || "").trim();
+    const type = (document.getElementById("stormTypeTop")?.value || "").trim();
+    if (!st || !scope || !type) return;
+    onStateChanged();
+  }, 400);
+}
+
+function updateGetDatesBtnState() {
+  const st = (document.getElementById("stateSelect")?.value || "").trim();
+  const btn = document.getElementById("getDatesBtn");
+  if (btn) btn.disabled = !st;
+}
+
+function setupCityAutocomplete() {
+  const input = document.getElementById("cityInput");
+  if (!input) return;
+
+  if (App.cityAutocomplete) return;
+
+  if (!window.google?.maps?.places?.Autocomplete) {
+    console.warn("Google Places library not available.");
+    return;
+  }
+
+  App.cityAutocomplete = new google.maps.places.Autocomplete(input, {
+    types: ["(cities)"],
+    componentRestrictions: { country: "us" }
+  });
+
+  App.cityAutocomplete.addListener("place_changed", () => {
+    const place = App.cityAutocomplete.getPlace();
+    const name =
+      place?.formatted_address ||
+      place?.name ||
+      input.value;
+
+    if (name) input.value = name;
+    resetDatesUi("City selected. Getting dates…");
+    scheduleGetDates("autocomplete");
+  });
+}
+
+function updateCityUiVisibility() {
+  const scope = document.getElementById("scopeSelect")?.value || "state";
+  const show = scope === "city";
+  const cityLabel = document.getElementById("cityLabel");
+  const radiusLabel = document.getElementById("radiusLabel");
+
+  if (cityLabel) cityLabel.style.display = show ? "" : "none";
+  if (radiusLabel) radiusLabel.style.display = show ? "" : "none";
+
+  if (show) {
+    setupCityAutocomplete();
+  }
+}
+
+document.getElementById("scopeSelect")?.addEventListener("change", () => {
+  DatePagination.loadedMonths = 3;
+  updateCityUiVisibility();
+});
+
+async function onStateChanged() {
+  DatePagination.loadedMonths = 3;
+  
+  const stateSelect = document.getElementById("stateSelect");
+  const dateSelect = document.getElementById("dateSelect");
+  const cityInput = document.getElementById("cityInput");
+  const radiusSelect = document.getElementById("radiusSelect");
+
+  const st = (stateSelect?.value || "").trim();
+  const scope = (document.getElementById("scopeSelect")?.value || "").trim();
+  const stormTypeTop = (document.getElementById("stormTypeTop")?.value || "").trim();
+
+  if (!st || !scope || !stormTypeTop) {
+    resetDatesUi("Pick State + Scope + Storm type.");
+    return;
+  }
+
+  if (dateSelect) {
+    dateSelect.disabled = true;
+    dateSelect.innerHTML = '<option value="">Loading dates...</option>';
+  }
+  setDateStatus("Loading available dates...");
+
+  const bbox = await getBboxForSelectedState(st);
+  if (!bbox) {
+    setDateStatus("Could not determine bbox for this state.");
+    if (dateSelect) dateSelect.disabled = true;
+    return;
+  }
+
+  const w = computeStartEndForLoadedMonths(DatePagination.loadedMonths);
+  let resp;
+  try {
+    resp = await fetchNoaaHailReports({
+      mode: "reports",
+      start: w.start,
+      end: w.end,
+      bbox
+    });
+  } catch (e) {
+    setDateStatus("Dates fetch failed: " + (e?.message || String(e)));
+    if (dateSelect) {
+      dateSelect.disabled = true;
+      dateSelect.innerHTML = '<option value="">Dates fetch failed</option>';
+    }
+    return;
+  }
+
+  const stormsForDates = Array.isArray(resp?.storms) ? resp.storms : [];
+  const datesForState = Array.isArray(resp?.availableDates) ? resp.availableDates : [];
+
+  setDateStatus(`Fetched ${stormsForDates.length.toLocaleString()} reports (bbox ${bbox}).`);
+
+  if (scope === "city") {
+    const city = (cityInput?.value || "").trim();
+    if (!city) {
+      setDateStatus("Enter a city to filter dates.");
+      if (dateSelect) {
+        dateSelect.disabled = true;
+        dateSelect.innerHTML = '<option value="">Enter a city first…</option>';
+      }
+      return;
+    }
+
+    try {
+      const geocoder = App.geocoder || (App.geocoder = new google.maps.Geocoder());
+      const result = await new Promise((resolve, reject) => {
+        geocoder.geocode({ address: city }, (results, status) => {
+          if (status === "OK" && results && results[0]) {
+            resolve(results[0]);
+          } else {
+            reject(new Error(status || "GEOCODE_FAILED"));
+          }
+        });
+      });
+
+      const loc = result.geometry?.location;
+      const centerLat = typeof loc?.lat === "function" ? loc.lat() : Number(loc?.lat);
+      const centerLng = typeof loc?.lng === "function" ? loc.lng() : Number(loc?.lng);
+
+      if (!Number.isFinite(centerLat) || !Number.isFinite(centerLng)) {
+        throw new Error("GEOCODE_NO_COORDS");
+      }
+
+      const radiusMi = Number(radiusSelect?.value) || 10;
+      const radiusKm = milesToKm(radiusMi);
+
+      // Step 1: respect current storm type selection
+      const stormType =
+        String(document.getElementById("stormTypeTop")?.value || App.els?.stormSelect?.value || "hail")
+          .toLowerCase();
+
+      const typeFiltered = (App.loadedStorms || []).filter((s) => {
+        if (!stormType || stormType === "all") return true;
+        const t =
+          String(s?.event || s?.type || s?.props?.event || "")
+            .toLowerCase();
+        return t.includes(stormType);
+      });
+
+      // Step 2: filter by city radius
+      const filtered = typeFiltered.filter((s) => {
+        const lat = Number(s?.lat ?? s?.latitude ?? s?.Latitude ?? s?.geometry?.coordinates?.[1]);
+        const lng = Number(s?.lng ?? s?.longitude ?? s?.Longitude ?? s?.lon ?? s?.geometry?.coordinates?.[0]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+        const distKm = haversineKm(centerLat, centerLng, lat, lng);
+        return Number.isFinite(distKm) && distKm <= radiusKm;
+      });
+
+      const cityDates = uniqueSortedDatesFromStorms(filtered);
+      console.log("[DATES] sending to setStormDateOptions count =", cityDates?.length);
+      setStormDateOptions(cityDates);
+      setDateStatus(`${city}: ${cityDates.length} date(s) found.`);
+      return;
+    } catch (err) {
+      console.error("City geocode failed", err);
+      setDateStatus("City not found.");
+      if (dateSelect) {
+        dateSelect.disabled = true;
+        dateSelect.innerHTML = '<option value="">City not found</option>';
+      }
+      return;
+    }
+  }
+
+  const dates = Array.isArray(App.availableDates) ? App.availableDates : [];
+  console.log("[DATES] sending to setStormDateOptions count =", dates?.length);
+  setStormDateOptions(dates);
+  setDateStatus(dates.length ? `${dates.length} date(s) found.` : "No dates found.");
+}
+
+async function onStormDateChanged() {
+  const stateSelect = document.getElementById("stateSelect");
+  const dateSelect = document.getElementById("dateSelect");
+
+  console.log("[DATE SELECT] value=", dateSelect.value);
+
+  const st = (stateSelect?.value || "").trim();
+  const dateDash = (dateSelect?.value || "").trim();
+
+  if (!st || !dateDash) return;
+
+  // Handle "Load more" option
+  if (dateDash === LOAD_MORE_VALUE) {
+    if (DatePagination.loadedMonths >= DatePagination.maxMonths) {
+      setDateStatus("You've reached the full year's storm dates.");
+      return;
+    }
+
+    DatePagination.loadedMonths = Math.min(
+      DatePagination.maxMonths,
+      DatePagination.loadedMonths + DatePagination.stepMonths
+    );
+
+    // Re-fetch with new window
+    const bbox = await getBboxForSelectedState(st);
+    if (!bbox) {
+      setDateStatus("Could not determine bbox for this state.");
+      return;
+    }
+
+    const w = computeStartEndForLoadedMonths(DatePagination.loadedMonths);
+    const resp = await fetchNoaaHailReports({
+      mode: "reports",
+      start: w.start,
+      end: w.end,
+      bbox
+    });
+
+    const newDatesDash = Array.isArray(resp?.availableDates) ? resp.availableDates : [];
+    setStormDateOptions(newDatesDash, false);
+    dateSelect.value = "";
+    return;
+  }
+
+  const bbox = STATE_BBOX?.[st];
+  if (!bbox) {
+    setDateStatus("No bbox preset for this state yet.");
+    return;
+  }
+
+  const compact = dashToCompact(dateDash);
+
+  setDateStatus(`Loading ${st} reports for ${dateDash}…`);
+
+  await fetchNoaaHailReports({
+    mode: "reports",
+    start: compact,
+    end: compact,
+    bbox
+  });
+
+  const count = Array.isArray(App.loadedStorms) ? App.loadedStorms.length : 0;
+  setDateStatus(`${st} ${dateDash}: ${count.toLocaleString()} storm(s).`);
+}
+
+function clearStormMarkers() {
+  App.markers.forEach((m) => m.setMap(null));
+  App.markers = [];
+}
+
+function focusStormOnMap(stormId, rawLat, rawLng) {
+  const lat = Number(rawLat);
+  const lng = Number(rawLng);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    // Fallback to geocode
+    const storm = App.loadedStorms.find(s => s.id === stormId);
+    if (storm) {
+      const query = `${storm.state}, USA`;
+      App.geocoder.geocode({ address: query }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+          App.map.panTo(results[0].geometry.location);
+          App.map.setZoom(18);
+          console.log('NO_COORDS_FALLBACK_GEOCODE', { stormId, state: storm.state, type: storm.type, date: storm.dateString, query });
+        } else {
+          const query2 = `${storm.state} ${storm.type} storm`;
+          App.geocoder.geocode({ address: query2 }, (results2, status2) => {
+            if (status2 === 'OK' && results2[0]) {
+              App.map.panTo(results2[0].geometry.location);
+              App.map.setZoom(18);
+              console.log('NO_COORDS_FALLBACK_GEOCODE', { stormId, state: storm.state, type: storm.type, date: storm.dateString, query: query2 });
+            } else {
+              console.log('NO_COORDS_FALLBACK_GEOCODE_FAILED', { stormId, state: storm.state, type: storm.type, date: storm.dateString, queries: [query, query2] });
+            }
+          });
+        }
+      });
+    }
+    return;
+  }
+
+  if (!App.map) {
+    console.log("DEBUG_STORMBAIT_CLICK: Map not ready");
+    return;
+  }
+
+  if (DEBUG_STORMS) {
+    console.log("DEBUG_STORMBAIT_CLICK: Focusing on storm", stormId, { lat, lng });
+  }
+
+  App.map.panTo({ lat, lng });
+  App.map.setZoom(18); // zoom to house level
+
+  // Check if marker already exists
+  let marker = App.markers.find(m => m.stormId === stormId);
+  if (!marker) {
+    marker = new google.maps.Marker({
+      map: App.map,
+      position: { lat, lng },
+      title: "Storm",
+    });
+    marker.stormId = stormId;
+    marker.addListener('click', (e) => {
+      e.domEvent?.stopPropagation();
+    });
+    App.markers.push(marker);
+  }
+
+  // Glow effect: bounce the marker
+  marker.setAnimation(google.maps.Animation.BOUNCE);
+  setTimeout(() => {
+    marker.setAnimation(null);
+  }, 2000);
+}
+
+/* =========================================================
+   STATE + TYPE NORMALIZATION
+   ========================================================= */
+const STATE_NAME_TO_CODE = {
+  ALABAMA:"AL", ALASKA:"AK", ARIZONA:"AZ", ARKANSAS:"AR", CALIFORNIA:"CA",
+  COLORADO:"CO", CONNECTICUT:"CT", DELAWARE:"DE", FLORIDA:"FL", GEORGIA:"GA",
+  HAWAII:"HI", IDAHO:"ID", ILLINOIS:"IL", INDIANA:"IN", IOWA:"IA", KANSAS:"KS",
+  KENTUCKY:"KY", LOUISIANA:"LA", MAINE:"ME", MARYLAND:"MD", MASSACHUSETTS:"MA",
+  MICHIGAN:"MI", MINNESOTA:"MN", MISSISSIPPI:"MS", MISSOURI:"MO", MONTANA:"MT",
+  NEBRASKA:"NE", NEVADA:"NV", "NEW HAMPSHIRE":"NH", "NEW JERSEY":"NJ",
+  "NEW MEXICO":"NM", "NEW YORK":"NY", "NORTH CAROLINA":"NC", "NORTH DAKOTA":"ND",
+  OHIO:"OH", OKLAHOMA:"OK", OREGON:"OR", PENNSYLVANIA:"PA", "RHODE ISLAND":"RI",
+  "SOUTH CAROLINA":"SC", "SOUTH DAKOTA":"SD", TENNESSEE:"TN", TEXAS:"TX",
+  UTAH:"UT", VERMONT:"VT", VIRGINIA:"VA", WASHINGTON:"WA", "WEST VIRGINIA":"WV",
+  WISCONSIN:"WI", WYOMING:"WY",
+};
+
+function getSelectedStateCode() {
+  const sel = (App.els.stateSelect?.value || "").trim().toUpperCase();
+  if (sel) return sel;
+
+  const typedRaw = (App.els.stateTextInput?.value || "").trim();
+  if (!typedRaw) return "";
+
+  const typed = typedRaw.toUpperCase().replace(/\s+/g, " ");
+  if (typed.length === 2 && /^[A-Z]{2}$/.test(typed)) return typed;
+
+  return STATE_NAME_TO_CODE[typed] || "";
+}
+
+function getSelectedStormType() {
+  return String(document.getElementById("stormTypeTop")?.value || App.els.stormSelect?.value || "hail").trim().toLowerCase();
+}
+
+/* =========================================================
+   STORM LIST UI
+   ========================================================= */
+
+function ensureStormListClickHandler() {
+  const el = document.querySelector("#stormList");
+  if (!el) {
+    console.warn("DEBUG_STORMBAIT: #stormList missing");
+    return;
+  }
+  if (el.dataset.stormbaitBound === "1") {
+    console.log("DEBUG_STORMBAIT: already bound");
+    return;
+  }
+  el.dataset.stormbaitBound = "1";
+  console.log("DEBUG_STORMBAIT: bound click handler", el);
+
+  el.addEventListener("click", (e) => {
+    console.log("DEBUG_STORMBAIT_CLICK_RAW", { target: e.target, id: e.target?.id, className: e.target?.className });
+
+    const item = e.target.closest(".stormbait-item");
+    if (!item) {
+      console.log("DEBUG_STORMBAIT_NO_ITEM", e.target);
+      return;
+    }
+
+    window.__STORMBAIT_HANDLER_HIT__ = (window.__STORMBAIT_HANDLER_HIT__ || 0) + 1;
+    window.lastStormClicked = { stormId: item.dataset.stormId, rawLat: item.dataset.lat, rawLng: item.dataset.lng, hit: window.__STORMBAIT_HANDLER_HIT__, at: new Date().toISOString() };
+    if (window.App) App.lastStormClicked = window.lastStormClicked;
+    console.log("DEBUG_STORMBAIT_HANDLER_STAMP", window.lastStormClicked);
+
+    item.style.outline = "2px solid red";
+    setTimeout(() => item.style.outline = "", 500);
+
+    if (item.dataset.dateKey) {
+      // Date selected
+      if (App.noaaReports.length) {
+        const dateKey = item.dataset.dateKey;
+        const reports = App.noaaReports.filter(r => r.VALID_TIME.split('T')[0] === dateKey);
+        const maxHail = Math.max(...reports.map(r => parseFloat(r.MAGNITUDE) || 0));
+        const maxWind = Math.max(...reports.map(r => parseFloat(r.WIND_SPEED) || 0)) || null;
+        App.activeStorm = {
+          dateKey,
+          reports,
+          maxHail,
+          maxWind
+        };
+        // Pan to centroid
+        const lats = reports.map(r => parseFloat(r.LAT)).filter(n => !isNaN(n));
+        const lngs = reports.map(r => parseFloat(r.LON)).filter(n => !isNaN(n));
+        if (lats.length && lngs.length) {
+          const avgLat = lats.reduce((a,b)=>a+b,0)/lats.length;
+          const avgLng = lngs.reduce((a,b)=>a+b,0)/lngs.length;
+          App.map.panTo({lat: avgLat, lng: avgLng});
+          App.map.setZoom(10);
+        }
+      } else {
+        App.selectedDate = item.dataset.dateKey;
+        renderStormList();
+      }
+      return;
+    }
+
+    const stormId = item.dataset.stormId;
+    const rawLat = item.dataset.lat;
+    const rawLng = item.dataset.lng;
+
+    const storm = App.loadedStorms.find(s => s.id === stormId);
+    if (storm) {
+      App.activeStorm = storm;
+      focusStormOnMap(stormId, rawLat, rawLng);
+    }
+
+    // Set destination if coords available
+    const lat = parseFloat(rawLat);
+    const lng = parseFloat(rawLng);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      App.destination = { lat, lng };
+      if (App.els.mapStatus) App.els.mapStatus.textContent = "Destination set. Click 'Directions' to open Google Maps.";
+      if (App.els.directionsBtn) App.els.directionsBtn.disabled = false;
+    }
+  });
+}
+
+function renderStormList() {
+  const listEl = App.els.stormList;
+  if (!listEl) return;
+
+  listEl.innerHTML = "";
+
+  if (!App.selectedDate) {
+    // Show unique dates from storms returned by fetchNoaaHailReports()
+    const storms = App.availableDates || App.loadedStorms || [];
+    const keys = [...new Set(storms.map(s => s && s.date).filter(Boolean))];
+    if (!keys.length) {
+      listEl.innerHTML = "<div class='map-status'>No dates found.</div>";
+      return;
+    }
+    keys.sort((a, b) => b.localeCompare(a));
+    keys.forEach((key) => {
+      const div = document.createElement("div");
+      div.className = "stormbait-item";
+      const date = new Date(key + 'T00:00:00');
+      div.textContent = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      div.dataset.dateKey = key;
+      listEl.appendChild(div);
+    });
+  } else {
+    // Show storms for selected date
+    const stormsForDate = App.loadedStorms.filter((s) => {
+      const dateValue = extractStormDateValue(s);
+      if (!dateValue) return false;
+      const dateKey = new Date(dateValue).toISOString().split('T')[0];
+      return dateKey === App.selectedDate;
+    });
+
+    if (!stormsForDate.length) {
+      listEl.innerHTML = "<div class='map-status'>No storms for this date.</div>";
+      return;
+    }
+
+    const search = (App.els.stormSearchInput?.value || "").trim().toLowerCase();
+
+    const rows = stormsForDate.filter((s) => {
+      if (!search) return true;
+      const text = [
+        s.name, s.dateString, s.city, s.state, s.type
+      ].filter(Boolean).join(" ").toLowerCase();
+      return text.includes(search);
+    });
+
+    if (!rows.length) {
+      listEl.innerHTML = "<div class='map-status'>No storms match that filter.</div>";
+      return;
+    }
+
+    rows.forEach((s) => {
+      const div = document.createElement("div");
+      div.className = "stormbait-item";
+      div.textContent =
+        (s.dateString || "") +
+        " • " +
+        (s.name || "Storm") +
+        (s.city ? " – " + s.city : "") +
+        (typeof s.avgValue === "number" ? " • $" + s.avgValue.toLocaleString() : "");
+
+      div.dataset.stormId = s.id;
+
+      // Derive coordinates robustly
+      const lat = Number(s.lat ?? s.latitude ?? s.Latitude ?? s.coordinates?.lat ?? (Array.isArray(s.coordinates) && s.coordinates.length >= 2 ? s.coordinates[1] : NaN));
+      const lng = Number(s.lng ?? s.longitude ?? s.Longitude ?? s.coordinates?.lng ?? s.lon ?? (Array.isArray(s.coordinates) && s.coordinates.length >= 2 ? s.coordinates[0] : NaN));
+
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        div.dataset.lat = lat;
+        div.dataset.lng = lng;
+      } else {
+        div.dataset.hasCoords = "0";
+        div.textContent += " (no coords)";
+      }
+
+      listEl.appendChild(div);
+    });
+  }
+
+  ensureStormListClickHandler();
+}
+
+/* =========================================================
+   LOAD STORMS (FIRESTORE)
+   ========================================================= */
+async function loadStormsForSelection() {
+  const storms = await fetchNoaaHailReports();
+  App.loadedStorms = storms || [];
+  renderStormList();
+  return;
+  // Ensure map exists if user is in maps view
+  if (typeof initMap === "function") initMap();
+  clearStormMarkers();
+
+  const state = getSelectedStateCode();
+  const stormType =
+    String(document.getElementById("stormTypeTop")?.value || App.els?.stormSelect?.value || "hail").trim();
+  const type = stormType;
+
+  if (DEBUG_STORMS) {
+    console.log("DEBUG_STORMS: Query inputs - state:", state, "type:", type);
+  }
+
+  // Hide panel until both filters exist
+  if (!state || !type) {
+    if (App.els.stormListPanel) App.els.stormListPanel.style.display = "none";
+    if (App.els.mapStatus) App.els.mapStatus.textContent = "Pick a state and storm type.";
+    App.loadedStorms = [];
+    renderStormList();
+    return;
+  }
+
+  if (App.els.stormListPanel) App.els.stormListPanel.style.display = "flex";
+  if (App.els.mapStatus) App.els.mapStatus.textContent = `Loading storms for ${state} (${type})…`;
+  if (App.els.stormList) App.els.stormList.innerHTML = "";
+
+  if (!window.db) {
+    if (App.els.mapStatus) App.els.mapStatus.textContent = "Firestore not ready (db missing).";
+    return;
+  }
+
+  // Optional: min value filter (only applied client-side unless you store it in Firestore field + index)
+  const minValue = Number(App.els.minValueInput?.value || 0) || 0;
+
+  if (DEBUG_STORMS) {
+    console.log("DEBUG_STORMS: Query constraints - collection: stormDates, where state == '" + state + "', type == '" + type + "', orderBy date desc, limit 200");
+  }
+
+  try {
+    if (state === 'TX' && type === 'hail') {
+      if (App.els.mapStatus) App.els.mapStatus.textContent = "Loading storm dates…";
+      const hailReports = await fetchNoaaHailReports();
+      App.noaaReports = hailReports;
+      const dateKeys = [...new Set(hailReports.map(r => r.VALID_TIME.split('T')[0]))];
+      const uniqueDates = dateKeys.sort((a, b) => b.localeCompare(a)).map(key => {
+        const date = new Date(key + 'T00:00:00');
+        return {
+          key,
+          display: date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+        };
+      });
+      App.uniqueDates = uniqueDates;
+      console.log("NOAA TX hail dates (12 months):", uniqueDates.length, uniqueDates.slice(0, 10));
+      if (App.els.mapStatus) App.els.mapStatus.textContent = "Tap a storm date below to zoom the map.";
+      renderStormList();
+    } else {
+    if (DEBUG_STORMS) {
+      console.log("DEBUG_STORMBAIT: Firebase app projectId:", firebase.app().options.projectId);
+      console.log("DEBUG_STORMBAIT: Using window.db:", window.db ? "yes" : "no");
+      console.log("DEBUG_STORMBAIT: Filtered query - collection: stormDates");
+    }
+
+    const snap = await window.db
+      .collection("stormDates")
+      .where("state", "==", state)
+      .where("type", "==", type)
+      .orderBy("date", "desc")
+      .limit(200)
+      .get();
+
+    if (DEBUG_STORMS) {
+      console.log("DEBUG_STORMBAIT: Docs returned:", snap.size);
+    }
+
+    if (snap.empty) {
+      if (App.els.mapStatus) App.els.mapStatus.textContent = "No storms found for that combo.";
+      App.loadedStorms = [];
+      renderStormList();
+      clearStormMarkers();
+
+      if (DEBUG_STORMS) {
+        console.log("DEBUG_STORMBAIT: 0 docs returned, fetching latest 5 docs for debug...");
+        console.log(`DEBUG_STORMBAIT: state raw=${JSON.stringify(state)} len=${state.length}`);
+        console.log(`DEBUG_STORMBAIT: type raw=${JSON.stringify(type)} len=${type.length}`);
+        console.log("DEBUG_STORMBAIT: Debug query - collection: stormDates, orderBy date desc, limit 5");
+        try {
+          const debugSnap = await window.db.collection("stormDates").orderBy("date", "desc").limit(5).get();
+          console.log("DEBUG_STORMBAIT: Latest 5 docs:");
+          debugSnap.forEach((doc) => {
+            const data = doc.data();
+            console.log("ID:", doc.id, "state:", data.state, "type:", data.type, "date:", data.date);
+          });
+        } catch (debugErr) {
+          console.error("DEBUG_STORMBAIT: Error in debug query:", debugErr);
+        }
+
+        console.log("DEBUG_STORMBAIT: Checking specific doc existence...");
+        try {
+          const docRef = window.db.doc("stormDates/TX_hail_2025-10-01");
+          const docSnap = await docRef.get();
+          if (docSnap.exists) {
+            const data = docSnap.data();
+            console.log("DEBUG_STORMBAIT: Doc exists");
+            console.log(`DEBUG_STORMBAIT: docStateRaw=${JSON.stringify(data.state)} len=${data.state ? data.state.length : 0}`);
+            console.log(`DEBUG_STORMBAIT: docTypeRaw=${JSON.stringify(data.type)} len=${data.type ? data.type.length : 0}`);
+          } else {
+            console.log("DEBUG_STORMBAIT: Doc does not exist");
+          }
+        } catch (docErr) {
+          console.error("DEBUG_STORMBAIT: Error fetching doc:", docErr);
+        }
+
+        console.log("DEBUG_STORMBAIT: Running isolated query A: where state == '" + state + "', orderBy date desc, limit 5");
+        try {
+          const queryA = window.db.collection("stormDates").where("state", "==", state).orderBy("date", "desc").limit(5);
+          const snapA = await queryA.get();
+          console.log("DEBUG_STORMBAIT: Query A docs count:", snapA.size);
+          const idsA = [];
+          snapA.forEach(doc => idsA.push(doc.id));
+          console.log("DEBUG_STORMBAIT: Query A IDs:", idsA.slice(0, 3));
+        } catch (errA) {
+          console.error("DEBUG_STORMBAIT: Error in Query A:", errA);
+        }
+
+        console.log("DEBUG_STORMBAIT: Running isolated query B: where type == '" + type + "', orderBy date desc, limit 5");
+        try {
+          const queryB = window.db.collection("stormDates").where("type", "==", type).orderBy("date", "desc").limit(5);
+          const snapB = await queryB.get();
+          console.log("DEBUG_STORMBAIT: Query B docs count:", snapB.size);
+          const idsB = [];
+          snapB.forEach(doc => idsB.push(doc.id));
+          console.log("DEBUG_STORMBAIT: Query B IDs:", idsB.slice(0, 3));
+        } catch (errB) {
+          console.error("DEBUG_STORMBAIT: Error in Query B:", errB);
+        }
+      }
+
+      return;
+    }
+
+    const storms = [];
+    snap.forEach((doc) => {
+      const d = doc.data() || {};
+      d.id = doc.id;
+
+      if (typeof d.dateString === "string") {
+        d.dateString = d.dateString.trim();
+      } else if (d.date && typeof d.date.toDate === "function") {
+        d.dateString = d.date.toDate().toLocaleDateString();
+      } else if (typeof d.date === "string") {
+        d.dateString = d.date.trim();
+      } else {
+        d.dateString = "";
+      }
+
+      // Normalize for search + display
+      d.state = (d.state || state || "").toUpperCase();
+      d.type = (d.type || type || "").toLowerCase();
+
+      // Ensure lat/lng are numbers from possible fields
+      d.lat = Number(d.lat ?? d.beginLatitude ?? d.latitude ?? d.Latitude ?? d.coordinates?.lat ?? (Array.isArray(d.coordinates) && d.coordinates.length >= 2 ? d.coordinates[1] : NaN));
+      d.lng = Number(d.lng ?? d.beginLongitude ?? d.longitude ?? d.Longitude ?? d.coordinates?.lng ?? d.lon ?? (Array.isArray(d.coordinates) && d.coordinates.length >= 2 ? d.coordinates[0] : NaN));
+
+      storms.push(d);
+    });
+
+    App.loadedStorms = storms.filter((s) => {
+      if (minValue <= 0) return true;
+      return typeof s.avgValue === "number" ? s.avgValue >= minValue : true;
+    });
+
+    App.selectedDate = null;
+
+    // Extract unique dates
+    const dateValues = App.loadedStorms.map(extractStormDateValue).filter(d => d !== null);
+    const dateKeys = [...new Set(dateValues.map(ms => new Date(ms).toISOString().split('T')[0]))];
+    const uniqueDates = dateKeys.sort((a, b) => b.localeCompare(a)).map(key => {
+      const date = new Date(key + 'T00:00:00');
+      return {
+        key,
+        display: date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+      };
+    });
+    App.uniqueDates = uniqueDates;
+    console.log("TX HAIL unique dates:", uniqueDates.length, uniqueDates.slice(0, 10));
+
+    if (App.els.mapStatus) App.els.mapStatus.textContent = "Tap a storm date below to zoom the map.";
+    renderStormList();
+    }
+  } catch (err) {
+    console.error("Error loading storms:", err);
+    console.error("Error code:", err.code);
+    console.error("Error message:", err.message);
+    console.error("Full error object:", err);
+
+    let uiMessage = `Error loading storms (${err.code}). Check Console for details.`;
+
+    if (err.code === "failed-precondition" || (err.message && err.message.toLowerCase().includes("index"))) {
+      console.error("Missing Firestore composite index. Create index for collection 'stormDates' with fields: state (asc), type (asc), date (desc)");
+      if (err.message && err.message.includes("https://")) {
+        const urlMatch = err.message.match(/(https:\/\/[^\s]+)/);
+        if (urlMatch) {
+          console.error("Index creation URL:", urlMatch[1]);
+        }
+      }
+      uiMessage = "Error loading storms (missing index). Create composite index for stormDates collection. See Console for URL.";
+    } else if (err.code === "permission-denied") {
+      console.error("Firestore permission denied. Rules blocked read on collection 'stormDates' with query: where state == '" + state + "', type == '" + type + "', orderBy date desc");
+      uiMessage = "Error loading storms (permission denied). Firestore rules blocked the query. Check security rules.";
+    }
+
+    if (App.els.mapStatus) {
+      App.els.mapStatus.textContent = uiMessage;
+    }
+    if (App.els.stormList) App.els.stormList.innerHTML = "";
+  }
+}
+
+/* =========================================================
+   NAV WIRING
+   ========================================================= */
+function wireNavigation() {
+  // Views
+  App.views.hubView = document.getElementById("hubView");
+  App.views.mainMenuView = document.getElementById("mainMenuView");
+  App.views.mapsView = document.getElementById("mapsView");
+  App.views.directoryView = document.getElementById("directoryView");
+  App.views.insuranceView = document.getElementById("insuranceView");
+  App.views.meView = document.getElementById("meView");
+  App.views.myTeamView = document.getElementById("myTeamView");
+  App.views.adminView = document.getElementById("adminView");
+
+  // Buttons/cards
+  const hubToMenuBtn = document.getElementById("hubToMenuBtn");
+  const menuMaps = document.getElementById("menuMaps");
+  const menuDirectory = document.getElementById("menuDirectory");
+  const menuInsurance = document.getElementById("menuInsurance");
+  const menuMe = document.getElementById("menuMe");
+  const menuMyTeam = document.getElementById("menuMyTeam");
+  const menuAdmin = document.getElementById("menuAdmin");
+
+  // Back buttons
+  const mapsBackBtn = document.getElementById("mapsBackBtn");
+  const directoryBackBtn = document.getElementById("directoryBackBtn");
+  const insuranceBackBtn = document.getElementById("insuranceBackBtn");
+  const meBackBtn = document.getElementById("meBackBtn");
+  const myTeamBackBtn = document.getElementById("myTeamBackBtn");
+  const adminBackBtn = document.getElementById("adminBackBtn");
+
+  if (hubToMenuBtn) hubToMenuBtn.addEventListener("click", () => showOnlyView(App.views.mainMenuView));
+
+  if (menuMaps) menuMaps.addEventListener("click", () => showOnlyView(App.views.mapsView));
+  if (menuDirectory) menuDirectory.addEventListener("click", () => showOnlyView(App.views.directoryView));
+  if (menuInsurance) menuInsurance.addEventListener("click", () => showOnlyView(App.views.insuranceView));
+  if (menuMe) menuMe.addEventListener("click", () => showOnlyView(App.views.meView));
+  if (menuMyTeam) menuMyTeam.addEventListener("click", () => showOnlyView(App.views.myTeamView));
+  if (menuAdmin) menuAdmin.addEventListener("click", () => showOnlyView(App.views.adminView));
+
+  if (mapsBackBtn) mapsBackBtn.addEventListener("click", () => showOnlyView(App.views.mainMenuView));
+  if (directoryBackBtn) directoryBackBtn.addEventListener("click", () => showOnlyView(App.views.mainMenuView));
+  if (insuranceBackBtn) insuranceBackBtn.addEventListener("click", () => showOnlyView(App.views.mainMenuView));
+  if (meBackBtn) meBackBtn.addEventListener("click", () => showOnlyView(App.views.mainMenuView));
+  if (myTeamBackBtn) myTeamBackBtn.addEventListener("click", () => showOnlyView(App.views.mainMenuView));
+  if (adminBackBtn) adminBackBtn.addEventListener("click", () => showOnlyView(App.views.mainMenuView));
+}
+
+/* =========================================================
+   PROFILE + SUBSCRIPTIONS
+   ========================================================= */
+function safeCall(fn) {
+  try { if (typeof fn === "function") fn(); } catch (e) { console.error(e); }
+}
+
+function setupProfileAndSubs(user) {
+  if (!user || !window.db) return;
+
+  window.db.collection("users").doc(user.uid).get()
+    .then((doc) => {
+      const roleTag = document.getElementById("userRoleTag");
+      const adminCard = document.getElementById("menuAdmin");
+
+      if (doc.exists) {
+        App.currentUserProfile = doc.data() || {};
+        const role = (App.currentUserProfile.role || "rep").toLowerCase();
+
+        if (roleTag) roleTag.textContent = role.toUpperCase();
+        if (adminCard) adminCard.style.display = (role === "admin" || role === "owner") ? "flex" : "none";
+
+        if (App.currentUserProfile.teamId && typeof window.subscribeTeamChat === "function") {
+          window.subscribeTeamChat(App.currentUserProfile.teamId);
+        }
+      } else {
+        App.currentUserProfile = null;
+        if (roleTag) roleTag.textContent = "REP";
+        if (adminCard) adminCard.style.display = "none";
+      }
+    })
+    .catch((err) => console.error("Error loading profile:", err));
+
+  safeCall(window.subscribeCompanyChat);
+  safeCall(window.loadAdminUsers);
+  safeCall(window.loadStepsDashboard);
+  safeCall(window.loadRegions);
+  safeCall(window.loadAdminPayroll);
+}
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+function wireAuth() {
+  const loginBtn = document.getElementById("loginBtn");
+  const authEmail = document.getElementById("authEmail");
+  const authPassword = document.getElementById("authPassword");
+  const authStatus = document.getElementById("authStatus");
+  const signOutBtn = document.getElementById("signOutBtn");
+
+  function setAuthStatus(msg, isError) {
+    if (!authStatus) return;
+    authStatus.style.color = isError ? "#fca5a5" : "#86efac";
+    authStatus.textContent = msg || "";
+  }
+
+  function doLogin() {
+    const email = (authEmail?.value || "").trim();
+    const pass = (authPassword?.value || "").trim();
+
+    if (!email || !pass) {
+      setAuthStatus("Enter email + password.", true);
+      return;
+    }
+
+    setAuthStatus("Signing in…", false);
+    if (loginBtn) loginBtn.disabled = true;
+
+    window.auth.signInWithEmailAndPassword(email, pass)
+      .then(() => {
+        setAuthStatus("", false);
+        if (authPassword) authPassword.value = "";
+      })
+      .catch((err) => {
+        console.error("Login error:", err);
+        setAuthStatus(err?.message || "Login failed.", true);
+      })
+      .finally(() => {
+        if (loginBtn) loginBtn.disabled = false;
+      });
+  }
+
+  if (loginBtn) loginBtn.addEventListener("click", doLogin);
+  if (authPassword) authPassword.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") doLogin();
+  });
+
+  if (signOutBtn) signOutBtn.addEventListener("click", () => {
+    window.auth.signOut().catch((err) => console.error("Sign out error:", err));
+  });
+
+  const authScreen = document.getElementById("authScreen");
+  const appRoot = document.getElementById("appRoot");
+  const userEmailLabel = document.getElementById("userEmailLabel");
+
+  if (window.auth && typeof window.auth.onAuthStateChanged === "function") {
+    window.auth.onAuthStateChanged((user) => {
+      if (user) {
+        if (authScreen) authScreen.style.display = "none";
+        if (appRoot) appRoot.style.display = "flex";
+        if (userEmailLabel) userEmailLabel.textContent = user.email || "user";
+
+        setupProfileAndSubs(user);
+        // Refetch NOAA storms after login
+        (async () => {
+          try {
+            const storms = await fetchNoaaHailReports();
+            App.loadedStorms = storms || [];
+            App.availableDates = storms || [];
+            renderStormList();
+          } catch (e) {
+            console.error("Post-login NOAA refetch failed:", e);
+          }
+        })();
+        showOnlyView(App.views.hubView);
+        if (App.els.stormListPanel) App.els.stormListPanel.style.display = "block";
+        renderStormList();
+      } else {
+        if (appRoot) appRoot.style.display = "none";
+        if (authScreen) authScreen.style.display = "flex";
+        if (authStatus) authStatus.textContent = "";
+      }
+    });
+  } else {
+    console.error("auth is not available or onAuthStateChanged missing.");
+  }
+}
+
+/* =========================================================
+   MAP CONTROLS WIRING
+   ========================================================= */
+function wireMapControls() {
+  App.els.stormList = document.getElementById("stormList");
+  App.els.stormSearchInput = document.getElementById("stormSearchInput");
+  App.els.stateSelect = document.getElementById("stateSelect");
+  App.els.stateTextInput = document.getElementById("stateTextInput");
+  App.els.stormSelect = document.getElementById("stormSelect");
+  App.els.minValueInput = document.getElementById("minValueInput");
+  App.els.stormListPanel = document.getElementById("stormListPanel");
+  App.els.mapStatus = document.getElementById("mapStatus");
+  App.els.directionsBtn = document.getElementById("directionsBtn");
+  App.els.searchLocationBtn = document.getElementById("searchLocationBtn");
+  App.els.addressInput = document.getElementById("addressInput");
+
+  if (App.els.stormList) {
+    App.els.stormList.addEventListener("click", (e) => {
+      const item = e.target.closest(".stormbait-item");
+      if (!item) return;
+      const stormId = item.dataset.stormId;
+      const storm = App.loadedStorms.find(s => s.id === stormId);
+
+      const rawLat = item.dataset.lat;
+      const rawLng = item.dataset.lng;
+      let lat = Number(rawLat);
+      let lng = Number(rawLng);
+
+      window.lastStormClicked = { stormId, rawLat, rawLng, lat, lng, dataset: storm, time: new Date().toISOString() };
+      App.lastStormClicked = window.lastStormClicked;
+      console.log("DEBUG_STORMBAIT_SAVED", window.lastStormClicked);
+
+      if (!storm) return;
+
+      // Extract coordinates from possible fields
+      const stormRawLat = storm.lat ?? storm.latitude ?? storm.Latitude;
+      const stormRawLng = storm.lng ?? storm.longitude ?? storm.Longitude ?? storm.lon;
+      lat = Number(stormRawLat);
+      lng = Number(stormRawLng);
+
+      window.__STORMBAIT_HANDLER_HIT__ = (window.__STORMBAIT_HANDLER_HIT__ || 0) + 1;
+      window.lastStormClicked = { stormId, rawLat, rawLng, lat, lng, hit: window.__STORMBAIT_HANDLER_HIT__, at: new Date().toISOString() };
+      if (window.App) App.lastStormClicked = window.lastStormClicked;
+      console.log("DEBUG_STORMBAIT_HANDLER_STAMP", window.lastStormClicked);
+
+      if (DEBUG_STORMS) {
+        console.log("DEBUG_STORMBAIT_CLICK", { stormId, rawLat, rawLng, parsedLat: lat, parsedLng: lng });
+      }
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        console.log("DEBUG_STORMBAIT_CLICK_INVALID_COORDS", { stormId, rawLat, rawLng });
+        const marker = App.markers.find(m => m.stormId === stormId);
+        if (marker) {
+          const pos = marker.getPosition();
+          lat = pos.lat();
+          lng = pos.lng();
+          storm.lat = lat;
+          storm.lng = lng;
+        } else {
+          if (App.els.mapStatus) App.els.mapStatus.textContent = "No coordinates for this storm — can’t zoom.";
+          return;
+        }
+      }
+
+      focusStormOnMap(storm.id, lat, lng);
+
+      // Set destination
+      App.destination = { lat, lng };
+      if (App.els.mapStatus) App.els.mapStatus.textContent = "Destination set. Click 'Directions' to open Google Maps.";
+      if (App.els.directionsBtn) App.els.directionsBtn.disabled = false;
+    });
+  }
+
+  const reload = () => loadStormsForSelection();
+
+  if (App.els.stateSelect) {
+    App.els.stateSelect.addEventListener("change", reload);
+    updateGetDatesBtnState();
+  }
+  document.getElementById("dateSelect")?.addEventListener("change", onStormDateChanged);
+  updateCityUiVisibility();
+
+  document.getElementById("stateSelect")?.addEventListener("change", () => {
+    resetDatesUi("State changed. Getting dates…");
+    scheduleGetDates("state");
+    updateGetDatesBtnState();
+  });
+
+  document.getElementById("scopeSelect")?.addEventListener("change", () => {
+    updateCityUiVisibility();
+    resetDatesUi("Scope changed. Getting dates…");
+    scheduleGetDates("scope");
+  });
+
+  document.getElementById("stormTypeTop")?.addEventListener("change", () => {
+    const v = String(document.getElementById("stormTypeTop")?.value || "hail");
+    if (App.els?.stormSelect) App.els.stormSelect.value = v;
+    if (typeof loadStormsForSelection === "function") loadStormsForSelection();
+    resetDatesUi("Storm type changed. Getting dates…");
+    scheduleGetDates("type");
+  });
+
+  // DATE RANGE controls
+  document.getElementById("range3")?.addEventListener("click", () => {
+    console.log("[DATE RANGE] last 3 months clicked");
+  });
+
+  document.getElementById("range6")?.addEventListener("click", () => {
+    console.log("[DATE RANGE] load next 3 months clicked");
+  });
+
+  document.getElementById("range12")?.addEventListener("click", () => {
+    console.log("[DATE RANGE] load next 6 months clicked");
+  });
+
+  document.getElementById("radiusSelect")?.addEventListener("change", () => {
+    const scope = document.getElementById("scopeSelect")?.value || "";
+    if (scope === "city") {
+      resetDatesUi("Radius changed. Getting dates…");
+      scheduleGetDates("radius");
+    }
+  });
+
+  const cityInput = document.getElementById("cityInput");
+  if (cityInput) {
+    cityInput.addEventListener("blur", () => {
+      const scope = document.getElementById("scopeSelect")?.value || "";
+      if (scope === "city") {
+        resetDatesUi("City changed. Getting dates…");
+        scheduleGetDates("city");
+      }
+    });
+    cityInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const scope = document.getElementById("scopeSelect")?.value || "";
+        if (scope === "city") {
+          resetDatesUi("City changed. Getting dates…");
+          scheduleGetDates("city");
+        }
+      }
+    });
+  }
+
+  if (App.els.stateTextInput) App.els.stateTextInput.addEventListener("blur", reload);
+  if (App.els.stormSelect) {
+    App.els.stormSelect.addEventListener("change", reload);
+  }
+  if (App.els.minValueInput) App.els.minValueInput.addEventListener("change", reload);
+
+  const btn = document.getElementById("getDatesBtn");
+  if (btn && !btn.dataset.bound) {
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      onStateChanged();
+    });
+  }
+
+  updateGetDatesBtnState();
+
+  if (App.els.stormSearchInput) App.els.stormSearchInput.addEventListener("input", renderStormList);
+
+  if (App.els.searchLocationBtn && App.els.addressInput) {
+    App.els.searchLocationBtn.addEventListener("click", () => {
+      const addr = (App.els.addressInput.value || "").trim();
+      if (!addr || !App.geocoder || !App.map) return;
+
+      App.geocoder.geocode({ address: addr }, (results, status) => {
+        if (status === "OK" && results[0]) {
+          App.map.setCenter(results[0].geometry.location);
+          App.map.setZoom(16);
+        } else {
+          alert("Could not find that address.");
+        }
+      });
+    });
+
+    App.els.addressInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        App.els.searchLocationBtn.click();
+      }
+    });
+  }
+
+  if (App.els.directionsBtn) {
+    App.els.directionsBtn.addEventListener("click", () => {
+      if (!App.destination || !Number.isFinite(App.destination.lat) || !Number.isFinite(App.destination.lng)) return;
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${App.destination.lat},${App.destination.lng}&travelmode=driving`;
+      window.open(url, '_blank');
+    });
+  }
+}
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+window.addEventListener("DOMContentLoaded", async () => {
+  wireMapControls();
+  if (App.els?.stormSelect) {
+    const top = document.getElementById("stormTypeTop");
+    if (top) top.value = App.els.stormSelect.value || "hail";
+  }
+  wireNavigation();
+  wireAuth();
+  updateCityUiVisibility();
+
+  // Default: storm list panel hidden
+  if (document.getElementById("stormListPanel")) {
+   document.getElementById("stormListPanel").style.display = "block";
+  }
+
+  // Preload NOAA storm dates on startup
+  try {
+    const storms = await fetchNoaaHailReports();
+    App.loadedStorms = storms || [];
+    App.availableDates = storms || [];
+    renderStormList();
+  } catch (e) {
+    console.error("Startup NOAA preload failed:", e);
+  }
+});
+
+document.addEventListener("DOMContentLoaded", ensureStormListClickHandler);
+</script>
+
+<!-- GOOGLE MAPS (KEY + CALLBACK) -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places&callback=initMap"></script>
+
+<!-- NOAA importer (dev tool) -->
+<script src="noaa_import.js"></script>
+

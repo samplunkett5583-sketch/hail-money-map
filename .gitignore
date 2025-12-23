@@ -1,0 +1,29 @@
+﻿# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env / secrets
+.env
+.env.*
+serviceAccount.json
+**/serviceAccount.json
+*.pem
+*.key
+
+# Firebase / GCP
+.firebase/
+firebase-debug.log*
+gcloud-debug.log*
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+
+# Build outputs
+dist/
+build/

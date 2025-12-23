@@ -1,0 +1,28 @@
+{
+  "functions": {
+    "source": "functions"
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "port": 5500
+  },
+  "emulators": {
+    "functions": {
+      "port": 5015
+    },
+    "hosting": {
+      "port": 5500
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4402
+    }
+  }
+}
+
+
