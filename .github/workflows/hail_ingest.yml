@@ -28,13 +28,15 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         run: |
-          echo "SUPABASE_URL=${SUPABASE_URL:0:20}...${SUPABASE_URL: -12}"
+          echo "SUPABASE_URL=${SUPABASE_URL}"
+          node -e "const u=new URL(process.env.SUPABASE_URL); console.log('SUPABASE_HOST='+u.host)"
 
       - name: Run ingest
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/ingest_stormevents_hail.mjs
+
 
 
 
