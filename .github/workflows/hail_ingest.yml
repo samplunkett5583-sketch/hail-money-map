@@ -1,14 +1,15 @@
 name: Nightly StormEvents Hail Ingest
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: "15 8 * * *" # daily 08:15 UTC
-  workflow_dispatch: {}
+    - cron: "0 6 * * *"
 
 jobs:
   ingest:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,8 +24,17 @@ jobs:
           npm init -y
           npm install @supabase/supabase-js csv-parse
 
+      - name: Debug Supabase URL
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: |
+          echo "SUPABASE_URL=${SUPABASE_URL:0:20}...${SUPABASE_URL: -12}"
+
       - name: Run ingest
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/ingest_stormevents_hail.mjs
+
+
+
