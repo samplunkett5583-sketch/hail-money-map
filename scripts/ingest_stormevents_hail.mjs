@@ -80,9 +80,18 @@ function stableKey(parts) {
 }
 
 async function upsertRaw(batch) {
+  // Dedupe by dedupe_key, keep last occurrence
+  const seen = new Map();
+  for (const row of batch) {
+    if (row.dedupe_key) {
+      seen.set(row.dedupe_key, row);
+    }
+  }
+  const deduped = Array.from(seen.values());
+  
   const { error } = await supabase
     .from("stormevents_raw")
-    .upsert(batch, { onConflict: "dedupe_key" });
+    .upsert(deduped, { onConflict: "dedupe_key" });
   if (error) throw error;
 }
 
