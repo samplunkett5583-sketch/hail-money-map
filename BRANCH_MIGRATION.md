@@ -47,7 +47,7 @@ git push -u origin main
 
 #### 2. Update GitHub Repository Settings
 
-1. Navigate to: https://github.com/samplunkett5583-sketch/hail-money-map/settings/branches
+1. Navigate to your repository's Settings → Branches page
 2. Click "Switch default branch" or the edit icon next to the default branch
 3. Select `main` as the new default branch
 4. Confirm the change

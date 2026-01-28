@@ -17,7 +17,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history
-          ref: master  # Checkout master branch
       
       - name: Configure Git
         run: |
@@ -32,8 +31,17 @@ jobs:
             exit 0
           fi
           
-          # Create main branch from current commit (which is master)
-          git checkout -b main
+          # Check if master branch exists
+          if ! git ls-remote --heads origin master | grep -q master; then
+            echo "Error: master branch does not exist on remote"
+            exit 1
+          fi
+          
+          # Fetch master branch
+          git fetch origin master
+          
+          # Create main branch from master
+          git branch main origin/master
           
           # Push main branch to origin
           git push origin main
