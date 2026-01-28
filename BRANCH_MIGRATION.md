@@ -21,13 +21,20 @@ Migrate the repository's default branch from `master` to `main`.
 
 #### 1. Create the `main` branch
 
-Run the provided script:
+**Option A: Use GitHub Actions (Recommended)**
+
+1. Go to the Actions tab in your repository
+2. Find the "Create Main Branch" workflow
+3. Click "Run workflow" to trigger it manually
+4. The workflow will automatically create and push the `main` branch
+
+**Option B: Use the provided script**
 
 ```bash
 ./scripts/create-main-branch.sh
 ```
 
-Or manually:
+**Option C: Manual creation**
 
 ```bash
 # Fetch master if needed
