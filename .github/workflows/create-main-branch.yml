@@ -1,0 +1,51 @@
+name: Create Main Branch
+
+# This workflow creates a 'main' branch from 'master' to facilitate
+# migrating the repository's default branch
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  create-main-branch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Create and push main branch
+        run: |
+          # Check if main branch already exists on remote
+          if git ls-remote --heads origin main | grep -q main; then
+            echo "main branch already exists on remote"
+            exit 0
+          fi
+          
+          # Check if master branch exists
+          if ! git ls-remote --heads origin master | grep -q master; then
+            echo "Error: master branch does not exist on remote"
+            exit 1
+          fi
+          
+          # Fetch master branch
+          git fetch origin master
+          
+          # Create main branch from master
+          git branch main origin/master
+          
+          # Push main branch to origin
+          git push origin main
+          
+          echo "✓ Successfully created 'main' branch"
+          echo ""
+          echo "Next step: Go to repository Settings > Branches and change default branch to 'main'"
