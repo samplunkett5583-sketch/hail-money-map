@@ -6,7 +6,7 @@
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   />
-  <title>Hail Money Map – Full App</title>
+  <title>Hail Money Map â€“ Full App</title>
 
    <!-- Google Font -->
   <link
@@ -552,26 +552,306 @@
       height: calc(100vh - 160px);
     }
 
-    .maps-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
+    /* =================== MAPS: HAILTRACE-STYLE (UI/CSS ONLY) =================== */
+    /* Rail + left panel + full-height map; preserves existing JS IDs. */
+    #mapsView.view,
+    #mapsView.view.active {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      max-width: none;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
     }
 
-    .maps-control-group {
+    #mapsView .ht-maps-shell {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* Left icon rail */
+    #htIconRail {
+      width: 56px;
+      min-width: 56px;
+      background: #0b1220;
+      border-right: 1px solid rgba(148, 163, 184, 0.16);
+      padding: 10px 6px;
       display: flex;
       flex-direction: column;
-      min-width: 160px;
-      font-size: 0.82rem;
+      gap: 10px;
+      align-items: center;
     }
 
-    .maps-control-group.small {
-      max-width: 200px;
+    #htIconRail .ht-rail-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(2, 6, 23, 0.45);
+      color: #e5e7eb;
+      font-weight: 600;
+      cursor: pointer;
     }
 
-    .maps-address-row {
+    #htIconRail .ht-rail-btn.active {
+      border-color: rgba(56, 189, 248, 0.75);
+      background: rgba(56, 189, 248, 0.18);
+      color: #ffffff;
+    }
+
+    /* Left panel */
+    #mapsView .ht-left-panel.ht-left-panel {
+      width: 380px;
+      min-width: 380px;
+      height: 100%;
+      border-right: 1px solid rgba(15, 23, 42, 0.12);
       display: flex;
-      gap: 0.5rem;
+      flex-direction: column;
+      padding: 12px;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    #mapsView .ht-left-top {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    #mapsView #mapsBackBtn {
+      border-radius: 999px;
+      padding: 6px 10px;
+      border: 1px solid rgba(15, 23, 42, 0.14);
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    #mapsView #mapsBackBtn:hover {
+      border-color: rgba(56, 189, 248, 0.85);
+      color: #0369a1;
+    }
+
+    /* Address search row */
+    #mapsView .maps-address-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    #mapsView .ht-address-inputwrap {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+    }
+
+    #mapsView #addressInput {
+      width: 100%;
+      padding: 10px 34px 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: #f1f5f9;
+      color: #0f172a;
+      font-size: 0.85rem;
+    }
+
+    #mapsView #addressInput::placeholder {
+      color: rgba(15, 23, 42, 0.55);
+    }
+
+    #mapsView .ht-input-x {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    #mapsView #searchLocationBtn {
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* Compact controls rows */
+    #mapsView #stormControls,
+    #mapsView #stormDateRow,
+    #mapsView .maps-controls {
+      background: #f8fafc;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    #mapsView #stormControls {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    #mapsView #stormControls label,
+    #mapsView #stormDateRow label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.72rem;
+      color: rgba(15, 23, 42, 0.72);
+    }
+
+    #mapsView #stormControls select,
+    #mapsView #stormDateRow select,
+    #mapsView #stormControls input {
+      padding: 9px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.84rem;
+      min-width: 160px;
+    }
+
+    #mapsView #stormControls button.pill-btn,
+    #mapsView #stormDateRow button.pill-btn {
+      border-radius: 12px;
+      padding: 8px 10px;
+      border: 1px solid rgba(15, 23, 42, 0.14);
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.8rem;
+    }
+
+    /* Recent header */
+    #mapsView .ht-recent {
+      padding: 2px 2px 0;
+    }
+
+    #mapsView .ht-recent-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    #mapsView .ht-recent-sub {
+      margin-top: 2px;
+      font-size: 0.78rem;
+      color: rgba(15, 23, 42, 0.55);
+    }
+
+    /* List area scrolls */
+    #mapsView #stormListPanel {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+      flex: 1;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid rgba(60, 60, 60, 0.6);
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 10px;
+    }
+
+    #mapsView .storm-list {
+      background: #f8fafc;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+    }
+
+    #mapsView .storm-item,
+    #mapsView .stormbait-item {
+      background: #ffffff;
+      color: #0f172a;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    #mapsView .storm-item:hover,
+    #mapsView .stormbait-item:hover {
+      border-color: rgba(56, 189, 248, 0.45);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    /* Map fills the remaining screen */
+    #mapsView .ht-map-wrap {
+      flex: 1;
+      height: 100%;
+      min-width: 0;
+      background: #ffffff;
+    }
+
+    #mapsView #stormMap {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      overflow: hidden;
+      background: #e2e8f0;
+    }
+
+    /* Maps mini tabs (UI only; no routing/handlers yet) */
+    #mapsMiniTabs.maps-mini-tabs {
+      display: flex;
+      width: 100%;
+      gap: 0;
+      margin: 6px 0 10px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+
+    #mapsMiniTabs.maps-mini-tabs button {
+      flex: 1 1 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 8px;
+      background: transparent;
+      border: 0;
+      color: #0f172a;
+      cursor: pointer;
+    }
+
+    #mapsMiniTabs.maps-mini-tabs button + button {
+      border-left: 1px solid rgba(15, 23, 42, 0.10);
+    }
+
+    #mapsMiniTabs.maps-mini-tabs button.active {
+      background: #ffffff;
+    }
+
+    #mapsMiniTabs .tab-ico {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.16);
+    }
+
+    #mapsMiniTabs .tab-txt {
+      font-size: 0.75rem;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      opacity: 0.95;
     }
 
     .maps-address-row .flex-1 {
@@ -593,12 +873,16 @@
       overflow: hidden;
     }
 
-    /* storm dates panel – big box when shown */
+    /* storm dates panel â€“ big box when shown */
     .storm-list-panel {
       display: none; /* hidden until state + storm type picked */
       flex-direction: column;
       gap: 0.4rem;
       min-height: 35vh; /* nice big box for the dates list */
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(120, 120, 120, 0.75);
     }
 
     .map-status {
@@ -610,7 +894,7 @@
       flex: 1;
       overflow-y: auto;
       border-radius: 12px;
-      background: var(--bg-soft);
+      background: transparent;
       padding: 6px;
     }
 
@@ -643,6 +927,50 @@
       border-color: var(--accent-soft);
       background: rgba(15, 23, 42, 1);
     }
+
+    /* --- FORCE left panel glass look (override any earlier whites) --- */
+    #mapsView .storm-list-panel,
+    #mapsView #stormListPanel,
+    #mapsView .ht-left,
+    #mapsView .left-panel,
+    #mapsView .panel {
+      background: rgba(255, 255, 255, 0.25) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+      border: 2px solid rgba(90, 90, 90, 0.75) !important;
+      box-shadow: none !important;
+    }
+
+    /* Make the â€œcards/sectionsâ€ inside the panel transparent too */
+    #mapsView .storm-list-panel > *,
+    #mapsView .storm-list-panel .card,
+    #mapsView .storm-list-panel .panel-card,
+    #mapsView .storm-list-panel .section,
+    #mapsView .storm-list-panel .box {
+      background: rgba(255, 255, 255, 0.18) !important;
+      border: 1px solid rgba(120, 120, 120, 0.55) !important;
+    }
+
+    /* Tabs/buttons inside: transparent with gray border + black text */
+    #mapsView .storm-list-panel button,
+    #mapsView .storm-list-panel .tab,
+    #mapsView .storm-list-panel .maps-tab {
+      background: rgba(255, 255, 255, 0.15) !important;
+      border: 1px solid rgba(120, 120, 120, 0.75) !important;
+      color: #000 !important;
+    }
+
+#mapsView .ht-left-panel * {
+  background-color: transparent !important;
+}
+
+#mapsView .ht-left-panel button,
+#mapsView .ht-left-panel select,
+#mapsView .ht-left-panel input {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(120, 120, 120, 0.6);
+  color: #000 !important;
+}
 
     /* Shared form controls */
     .control-label {
@@ -919,7 +1247,7 @@
       background: rgba(15, 23, 42, 1);
     }
 
-    /* ===== HUB – LEFT FLIP TABS ===== */
+    /* ===== HUB â€“ LEFT FLIP TABS ===== */
     .hub-left-layout {
       display: flex;
       flex-direction: column;
@@ -986,7 +1314,7 @@
       color: var(--text-soft);
     }
 
-    /* ===== HUB – FULL SCREEN LEADS OVERLAY ===== */
+    /* ===== HUB â€“ FULL SCREEN LEADS OVERLAY ===== */
     .leads-overlay {
       position: fixed;
       inset: 0;
@@ -1061,7 +1389,7 @@
       color: var(--text-soft);
     }
 
-    /* Responsive tweaks – bigger text on phones */
+    /* Responsive tweaks â€“ bigger text on phones */
     @media (max-width: 768px) {
       body {
         font-size: 1.02rem;
@@ -1095,6 +1423,247 @@
         max-height: 260px;
       }
     }
+
+    #mapsView .ht-left-panel button,
+    #mapsView .ht-left-panel .ht-tabs button,
+    #mapsView .ht-left-panel [role="button"] {
+      background: transparent !important;
+      border: 1px solid rgba(90, 90, 90, 0.75) !important;
+      color: #111 !important;
+    }
+
+    #mapsView .ht-left-panel input,
+    #mapsView .ht-left-panel select {
+      background: rgba(255, 255, 255, 0.20) !important;
+      border: 1px solid rgba(90, 90, 90, 0.55) !important;
+      color: #111 !important;
+    }
+
+    #mapsView .ht-left-panel .maps-address-row,
+    #mapsView .ht-left-panel #mapsMiniTabs,
+    #mapsView .ht-left-panel #stormControls,
+    #mapsView .ht-left-panel #stormDateRow,
+    #mapsView .ht-left-panel .maps-controls,
+    #mapsView .ht-left-panel .ht-recent,
+    #mapsView .ht-left-panel #stormListPanel {
+      background: rgba(255, 255, 255, 0.18) !important;
+      border: 1px solid rgba(90, 90, 90, 0.6) !important;
+      border-radius: 12px;
+      color: #111 !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+    #mapsView .ht-left-panel .maps-mini-tabs button {
+      background: transparent !important;
+      border: 1px solid rgba(90, 90, 90, 0.60) !important;
+      color: #111 !important;
+    }
+
+    #mapsView .ht-left-panel input,
+    #mapsView .ht-left-panel select,
+    #mapsView .ht-left-panel label,
+    #mapsView .ht-left-panel .control-label,
+    #mapsView .ht-left-panel .ht-recent-title,
+    #mapsView .ht-left-panel .ht-recent-sub,
+    #mapsView .ht-left-panel .map-status {
+      color: #111 !important;
+    }
+
+    #mapsView .ht-left-panel {
+      background: rgba(255,255,255,0.35) !important;
+      border: 1px solid rgba(90,90,90,0.75) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+#mapsView .ht-left-panel input,
+#mapsView .ht-left-panel select,
+#mapsView .ht-left-panel textarea,
+#mapsView .ht-left-panel .segmented,
+#mapsView .ht-left-panel .segmented button,
+#mapsView .ht-left-panel .filter-group,
+#mapsView .ht-left-panel .control,
+#mapsView .ht-left-panel .control * {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #000 !important;
+  border: 1px solid rgba(120,120,120,0.75) !important;
+}
+
+#mapsView .ht-left-panel button,
+#mapsView .ht-left-panel .ht-btn,
+#mapsView .ht-left-panel a,
+#mapsView .ht-left-panel .ht-left-panel-btn {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid rgba(120,120,120,0.75) !important;
+  color: #000 !important;
+}
+
+/* Hide upper storm selection blocks */
+#mapsView .ht-left-panel > div:has(select),
+#mapsView .ht-left-panel > div:has(button):has(select),
+#mapsView .ht-left-panel > div:has(label):has(select),
+#mapsView .ht-left-panel > div:has(.storm-dates),
+#mapsView .ht-left-panel > div:has(select[aria-label]),
+#mapsView .ht-left-panel > div:has(option) {
+  display: none !important;
+}
+
+    /* ===== NEW SIDEBAR CATEGORY TABS ===== */
+    .sidebar-tabs {
+      display: flex;
+      width: 100%;
+      gap: 0;
+      margin: 10px 0;
+      border: 1px solid rgba(90, 90, 90, 0.75);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .sidebar-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 8px;
+      background: transparent;
+      border: 0;
+      color: #111;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .sidebar-tab + .sidebar-tab {
+      border-left: 1px solid rgba(90, 90, 90, 0.5);
+    }
+
+    .sidebar-tab:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .sidebar-tab.active {
+      background: rgba(16, 185, 129, 0.25);
+      color: #059669;
+      font-weight: 600;
+    }
+
+    .sidebar-tab .tab-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .sidebar-tab .tab-label {
+      font-size: 0.72rem;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      font-weight: 500;
+    }
+
+/* Anchor for bottom-pinned money box (does NOT reorder other sections) */
+#mapsView .ht-left-panel {
+  position: relative !important;
+  padding-bottom: 170px !important; /* reserve space so content doesn't overlap pinned box */
+}
+
+/* Pin the Min street value / Search storms box to the bottom */
+#mapsView .ht-left-panel > div:has(input[type="number"]):has(input[placeholder="Search storms..."]) {
+  position: absolute !important;
+  bottom: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+}
+
+/* 1) Hide top shortcut tiles (Weather / Person / Property / Lead List) */
+#mapsView .ht-left-panel .shortcut-row,
+#mapsView .ht-left-panel .quick-actions {
+  display: none !important;
+}
+
+/* 2) Hide storm picker + directions blocks entirely */
+#mapsView .ht-left-panel .storm-picker,
+#mapsView .ht-left-panel .directions,
+#mapsView .ht-left-panel .no-dates {
+  display: none !important;
+}
+
+/* 3) Clean up "Most Recent Events" (title only) */
+#mapsView .ht-left-panel .recent-events small,
+#mapsView .ht-left-panel .recent-events .subtitle {
+  display: none !important;
+}
+
+/* 4) Prepare panel for bottom-pinned money box */
+#mapsView .ht-left-panel {
+  position: relative !important;
+  padding-bottom: 140px !important;
+}
+
+/* 5) Pin Min street value box to bottom */
+#mapsView .ht-left-panel > div:has(input[type="number"]) {
+  position: absolute !important;
+  bottom: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+}
+
+/* 6) Remove extra inputs inside money box */
+#mapsView .ht-left-panel input[placeholder="Search storms..."],
+#mapsView .ht-left-panel label:has(+ input[placeholder="Search storms..."]) {
+  display: none !important;
+}
+
+/* Bottom money box: remove search */
+#mapsView .ht-left-panel input[placeholder="Search storms..."] {
+  display: none !important;
+}
+
+#mapsView .ht-left-panel input[placeholder="Search storms..."] ~ * ,
+#mapsView .ht-left-panel label:has(+ input[placeholder="Search storms..."]) {
+  display: none !important;
+}
+
+/* Hide shortcut tiles row (Weather / Person / Property / Lead List) */
+#mapsView .ht-left-panel .shortcut-row,
+#mapsView .ht-left-panel .quick-actions,
+#mapsView .ht-left-panel .icon-tiles,
+#mapsView .ht-left-panel .icon-grid {
+  display: none !important;
+}
+
+/* Clear contents inside Most Recent Events */
+#mapsView .ht-left-panel .recent-events small,
+#mapsView .ht-left-panel .recent-events p,
+#mapsView .ht-left-panel .recent-events button {
+  display: none !important;
+}
+
+#mapsView .ht-left-panel {
+  background-color: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Let panel translucency show through (kill solid child backgrounds) */
+#mapsView .ht-left-panel > * {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Make left-panel containers transparent so panel translucency shows */
+#mapsView .ht-left-panel .maps-address-row,
+#mapsView .ht-left-panel .maps-mini-tabs,
+#mapsView .ht-left-panel .ht-recent,
+#mapsView .ht-left-panel .storm-list-panel,
+#mapsView .ht-left-panel .maps-controls {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
   </style>
 </head>
 <body>
@@ -1118,7 +1687,7 @@
         id="authPassword"
         type="password"
         class="field-input"
-        placeholder="••••••••"
+        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
       />
 
       <button
@@ -1155,12 +1724,12 @@
     <div id="wellnessPillBar" class="wellness-pill-bar">
       <div class="wellness-pill">
         <span id="stepsClickable" style="cursor: pointer;">
-          🚶 <span id="stepsValueTop">0</span> /
+          ðŸš¶ <span id="stepsValueTop">0</span> /
           <span id="stepGoalLabel">8000</span> steps
         </span>
 
         <span id="waterClickable" style="cursor: pointer;">
-          💧 <span id="waterValueTop">0</span> /
+          ðŸ’§ <span id="waterValueTop">0</span> /
           <span id="waterGoalLabel">80</span> oz
         </span>
 
@@ -1312,7 +1881,7 @@
               <input
                 id="chatInputHub"
                 class="control-input"
-                placeholder="Type a company-wide message…"
+                placeholder="Type a company-wide messageâ€¦"
               />
               <button
                 id="chatSendBtnHub"
@@ -1343,7 +1912,7 @@
               </div>
 
               <div id="leadsList" class="leads-list">
-                Loading leads…
+                Loading leadsâ€¦
               </div>
             </div>
           </div>
@@ -1397,19 +1966,55 @@
 
 <!-- =================== $MAPS VIEW =================== -->
 <section id="mapsView" class="view">
-  <div class="view-inner maps-layout">
-    <div class="view-header">
-      <div>
-        <h2>$Maps</h2>
-      </div>
-      <button id="mapsBackBtn" class="pill-btn">Back to Menu</button>
+  <div class="ht-maps-shell">
+    <div id="htIconRail" aria-label="Maps rail">
+      <button type="button" class="ht-rail-btn active" aria-label="Maps">M</button>
+      <button type="button" class="ht-rail-btn" aria-label="Campaigns">C</button>
+      <button type="button" class="ht-rail-btn" aria-label="Assets">A</button>
     </div>
 
-    <div id="stormControls" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:8px 0;">
+    <div class="ht-left-panel">
+      <div class="ht-left-top">
+      </div>
+
+      <!-- ADDRESS SEARCH (keeps existing IDs/wiring) -->
+      <div class="maps-address-row">
+        <div class="ht-address-inputwrap">
+          <input
+            id="addressInput"
+            type="text"
+            class="control-input flex-1"
+            placeholder="Search addressâ€¦"
+          />
+          <span class="ht-input-x" aria-hidden="true">Ã—</span>
+        </div>
+        <button id="searchLocationBtn" class="primary-btn" type="button">
+          Go
+        </button>
+      </div>
+
+      <!-- MINI TABS (keeps existing IDs/wiring) -->
+      <div id="mapsMiniTabs" class="maps-mini-tabs">
+        <button id="tabMaps" class="active" type="button">
+          <span class="tab-ico" aria-hidden="true"></span>
+          <span class="tab-txt">Maps</span>
+        </button>
+        <button id="tabCampaigns" type="button">
+          <span class="tab-ico" aria-hidden="true"></span>
+          <span class="tab-txt">Campaigns</span>
+        </button>
+        <button id="tabAssets" type="button">
+          <span class="tab-ico" aria-hidden="true"></span>
+          <span class="tab-txt">Assets</span>
+        </button>
+      </div>
+
+      <!-- Keep hail-dates controls in DOM, but compact and inside left panel -->
+      <div id="stormControls">
       <label>
         State:
         <select id="stateSelect">
-          <option value="">Select…</option>
+          <option value="">Selectâ€¦</option>
           <option value="AL">Alabama</option>
           <option value="AK">Alaska</option>
           <option value="AZ">Arizona</option>
@@ -1467,7 +2072,7 @@
       <label>
         Scope:
         <select id="scopeSelect">
-          <option value="" selected>Select scope…</option>
+          <option value="" selected>Select scopeâ€¦</option>
           <option value="state">Statewide dates</option>
           <option value="city">City-only dates</option>
         </select>
@@ -1476,7 +2081,7 @@
       <label>
         Storm type:
         <select id="stormTypeTop">
-          <option value="" selected>Select type…</option>
+          <option value="" selected>Select typeâ€¦</option>
           <option value="hail">Hail</option>
           <option value="wind">Wind</option>
           <option value="all">All</option>
@@ -1500,9 +2105,9 @@
       <button id="getDatesBtn" class="pill-btn" disabled>Get Dates</button>
 
       <span id="dateStatus" style="opacity:.8;"></span>
-    </div>
+      </div>
 
-    <div id="stormDateRow" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:6px 0 10px;">
+      <div id="stormDateRow">
       <label>
         Storm dates:
         <select id="dateSelect" disabled>
@@ -1513,86 +2118,10 @@
         <span id="datesLoadedStatus" style="font-size:.85rem; opacity:.8;"></span>
         <button id="loadNextDatesBtn" class="pill-btn" style="padding:4px 8px; display:none;">Load next 3 months</button>
       </div>
-    </div>
-
-    <!-- TOP CONTROLS -->
-    <div class="maps-controls">
-      <!-- STATE -->
-      <div class="maps-control-group" style="display:none;">
-        <label class="control-label">State</label>
-        <select id="stateSelect" class="control-input">
-          <option value="">Select a state…</option>
-          <option value="AL">Alabama</option>
-          <option value="AK">Alaska</option>
-          <option value="AZ">Arizona</option>
-          <option value="AR">Arkansas</option>
-          <option value="CA">California</option>
-          <option value="CO">Colorado</option>
-          <option value="CT">Connecticut</option>
-          <option value="DE">Delaware</option>
-          <option value="FL">Florida</option>
-          <option value="GA">Georgia</option>
-          <option value="HI">Hawaii</option>
-          <option value="ID">Idaho</option>
-          <option value="IL">Illinois</option>
-          <option value="IN">Indiana</option>
-          <option value="IA">Iowa</option>
-          <option value="KS">Kansas</option>
-          <option value="KY">Kentucky</option>
-          <option value="LA">Louisiana</option>
-          <option value="ME">Maine</option>
-          <option value="MD">Maryland</option>
-          <option value="MA">Massachusetts</option>
-          <option value="MI">Michigan</option>
-          <option value="MN">Minnesota</option>
-          <option value="MS">Mississippi</option>
-          <option value="MO">Missouri</option>
-          <option value="MT">Montana</option>
-          <option value="NE">Nebraska</option>
-          <option value="NV">Nevada</option>
-          <option value="NH">New Hampshire</option>
-          <option value="NJ">New Jersey</option>
-          <option value="NM">New Mexico</option>
-          <option value="NY">New York</option>
-          <option value="NC">North Carolina</option>
-          <option value="ND">North Dakota</option>
-          <option value="OH">Ohio</option>
-          <option value="OK">Oklahoma</option>
-          <option value="OR">Oregon</option>
-          <option value="PA">Pennsylvania</option>
-          <option value="RI">Rhode Island</option>
-          <option value="SC">South Carolina</option>
-          <option value="SD">South Dakota</option>
-          <option value="TN">Tennessee</option>
-          <option value="TX">Texas</option>
-          <option value="UT">Utah</option>
-          <option value="VT">Vermont</option>
-          <option value="VA">Virginia</option>
-          <option value="WA">Washington</option>
-          <option value="WV">West Virginia</option>
-          <option value="WI">Wisconsin</option>
-          <option value="WY">Wyoming</option>
-        </select>
-
-        <input
-          id="stateTextInput"
-          type="text"
-          class="control-input"
-          placeholder="Or type state (MO / Missouri)…"
-          style="margin-top: 4px"
-        />
       </div>
 
-      <!-- STORM TYPE -->
-      <div class="maps-control-group" style="display:none;">
-        <label class="control-label">Storm Type</label>
-        <select id="stormSelect" class="control-input">
-          <option value="">Pick storm type…</option>
-          <option value="hail">Hail</option>
-          <option value="wind">Wind</option>
-          <option value="tornado">Tornado</option>
-        </select>
-      </div>
+      <!-- TOP CONTROLS (keep existing IDs like minValueInput/stormSearchInput) -->
+      <div class="maps-controls">
 
       <!-- MIN VALUE -->
       <div class="maps-control-group small">
@@ -1606,43 +2135,19 @@
       </div>
 
       <!-- SEARCH WITHIN LIST -->
-      <div class="maps-control-group small">
-        <label class="control-label">Filter storms by name/date</label>
-        <input
-          id="stormSearchInput"
-          type="text"
-          class="control-input"
-          placeholder="Search storms…"
-        />
       </div>
-    </div>
 
-    <!-- ADDRESS SEARCH -->
-    <div class="maps-address-row">
-      <input
-        id="addressInput"
-        type="text"
-        class="control-input flex-1"
-        placeholder="Type any address and hit Go…"
-      />
-      <button id="searchLocationBtn" class="primary-btn">
-        Go to Address
-      </button>
-    </div>
-
-    <!-- MAP + STORM LIST -->
-    <div class="maps-main-split">
-      <div id="stormMap" class="map-panel"></div>
+      <div class="ht-recent">
+        <div class="ht-recent-title">Most Recent Events</div>
+      </div>
 
       <div id="stormListPanel" class="storm-list-panel">
-        <div id="mapStatus" class="map-status">
-          Pick a state and storm type.
-        </div>
-        <div id="directionsArea" class="directions-area">
-          <button id="directionsBtn" class="pill-btn" disabled>Directions</button>
-        </div>
         <div id="stormList" class="storm-list"></div>
       </div>
+    </div>
+
+    <div class="ht-map-wrap">
+      <div id="stormMap" class="map-panel"></div>
     </div>
   </div>
 </section>
@@ -1699,11 +2204,11 @@
         id="insuranceSearchInput"
         class="control-input"
         style="flex: 1"
-        placeholder="Search by carrier name…"
+        placeholder="Search by carrier nameâ€¦"
       />
     </div>
 
-    <div id="insuranceList" class="ins-list">Loading…</div>
+    <div id="insuranceList" class="ins-list">Loadingâ€¦</div>
   </div>
 </section>
 
@@ -1788,7 +2293,7 @@
         <input
           id="teamChatInput"
           class="control-input"
-          placeholder="Type a message to your team…"
+          placeholder="Type a message to your teamâ€¦"
         />
         <button id="teamChatSendBtn" class="primary-btn">
           Send
@@ -1901,7 +2406,7 @@
           id="payNoteInput"
           class="control-input"
           rows="3"
-          placeholder="Breakdown of what you are owed…"
+          placeholder="Breakdown of what you are owedâ€¦"
         ></textarea>
 
         <button
@@ -2065,7 +2570,7 @@
           id="adminUsersList"
           style="margin-top: 6px; font-size: 0.8rem"
         >
-          Loading…
+          Loadingâ€¦
         </div>
       </div>
     </div>
@@ -2081,14 +2586,14 @@
         <input
           id="stepsSearchInput"
           class="control-input"
-          placeholder="Search by email or name…"
+          placeholder="Search by email or nameâ€¦"
         />
       </div>
       <div
         id="stepsDashList"
         style="margin-top: 6px; font-size: 0.8rem"
       >
-        Loading…
+        Loadingâ€¦
       </div>
     </div>
 
@@ -2133,7 +2638,7 @@
             id="regionDetailTitle"
             style="font-size: 0.9rem; margin-bottom: 6px"
           >
-            Select a region…
+            Select a regionâ€¦
           </h4>
           <div
             style="
@@ -2165,7 +2670,7 @@
         id="adminPayrollList"
         style="margin-top: 6px; font-size: 0.8rem"
       >
-        Loading…
+        Loadingâ€¦
       </div>
     </div>
   </div>
@@ -2278,6 +2783,8 @@ window.initMap = function initMap() {
     streetViewControl: false,
     fullscreenControl: true,
   });
+
+  App.map.setZoom(5);
 
   App.geocoder = new google.maps.Geocoder();
 
@@ -2610,7 +3117,7 @@ function setStormDateOptions(datesDash, append = false) {
   if (!append) {
     const opt0 = document.createElement("option");
     opt0.value = "";
-    opt0.textContent = "Select a date…";
+    opt0.textContent = "Select a dateâ€¦";
     dateSelect.appendChild(opt0);
   }
 
@@ -2916,7 +3423,7 @@ async function onStateChanged() {
       setDateStatus("Enter a city to filter dates.");
       if (dateSelect) {
         dateSelect.disabled = true;
-        dateSelect.innerHTML = '<option value="">Enter a city first…</option>';
+        dateSelect.innerHTML = '<option value="">Enter a city firstâ€¦</option>';
       }
       return;
     }
@@ -3258,10 +3765,10 @@ function renderStormList() {
       div.className = "stormbait-item";
       div.textContent =
         (s.dateString || "") +
-        " • " +
+        " â€¢ " +
         (s.name || "Storm") +
-        (s.city ? " – " + s.city : "") +
-        (typeof s.avgValue === "number" ? " • $" + s.avgValue.toLocaleString() : "");
+        (s.city ? " â€“ " + s.city : "") +
+        (typeof s.avgValue === "number" ? " â€¢ $" + s.avgValue.toLocaleString() : "");
 
       div.dataset.stormId = s.id;
 
@@ -3315,7 +3822,7 @@ async function loadStormsForSelection() {
   }
 
   if (App.els.stormListPanel) App.els.stormListPanel.style.display = "flex";
-  if (App.els.mapStatus) App.els.mapStatus.textContent = `Loading storms for ${state} (${type})…`;
+  if (App.els.mapStatus) App.els.mapStatus.textContent = `Loading storms for ${state} (${type})â€¦`;
   if (App.els.stormList) App.els.stormList.innerHTML = "";
 
   if (!window.db) {
@@ -3332,7 +3839,7 @@ async function loadStormsForSelection() {
 
   try {
     if (state === 'TX' && type === 'hail') {
-      if (App.els.mapStatus) App.els.mapStatus.textContent = "Loading storm dates…";
+      if (App.els.mapStatus) App.els.mapStatus.textContent = "Loading storm datesâ€¦";
       const hailReports = await fetchNoaaHailReports();
       App.noaaReports = hailReports;
       const dateKeys = [...new Set(hailReports.map(r => r.VALID_TIME.split('T')[0]))];
@@ -3623,7 +4130,7 @@ function wireAuth() {
       return;
     }
 
-    setAuthStatus("Signing in…", false);
+    setAuthStatus("Signing inâ€¦", false);
     if (loginBtn) loginBtn.disabled = true;
 
     window.auth.signInWithEmailAndPassword(email, pass)
@@ -3734,7 +4241,7 @@ function wireMapControls() {
           storm.lat = lat;
           storm.lng = lng;
         } else {
-          if (App.els.mapStatus) App.els.mapStatus.textContent = "No coordinates for this storm — can’t zoom.";
+          if (App.els.mapStatus) App.els.mapStatus.textContent = "No coordinates for this storm â€” canâ€™t zoom.";
           return;
         }
       }
@@ -3906,6 +4413,22 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (document.getElementById("stormListPanel")) {
    document.getElementById("stormListPanel").style.display = "block";
   }
+
+
+  // Wire up sidebar category tabs
+  document.querySelectorAll('.sidebar-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      // Remove active class from all tabs
+      document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+      // Add active class to clicked tab
+      this.classList.add('active');
+      
+      const tabType = this.dataset.tab;
+      console.log('Switched to tab:', tabType);
+      
+      // TODO: Show/hide content panels when ready
+    });
+  });
 
   // No NOAA/proxy preloads allowed before Get Dates click
 });
