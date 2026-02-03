@@ -67,10 +67,9 @@ serve(async (req: Request) => {
 
     for (;;) {
       let q = supabase
-        .from("stormevents_raw")
-        .select("begin_date_time")
-        .gte("begin_date_time", fromIso)
-        .order("begin_date_time", { ascending: false })
+        .from("hail_reports")
+        .select("event_date")
+        .order("event_date", { ascending: false })
         .range(offset, offset + pageSize - 1);
 
       if (state) q = q.ilike("state", state);
@@ -81,12 +80,9 @@ serve(async (req: Request) => {
 
       if (!data || data.length === 0) break;
 
-      for (const row of data as Array<{ begin_date_time: unknown }>) {
-        const v = row.begin_date_time;
-        if (typeof v === "string") {
-          const d = v.slice(0, 10);
-          if (/^\d{4}-\d{2}-\d{2}$/.test(d)) dateSet.add(d);
-        }
+      for (const row of data as Array<{ event_date: unknown }>) {
+        const v = row.event_date;
+        if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) dateSet.add(v);
       }
 
       if (data.length < pageSize) break;
