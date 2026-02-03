@@ -4314,9 +4314,10 @@ window.initMap = function initMap() {
     zoom: 4,
     mapTypeId: google.maps.MapTypeId.HYBRID,
     styles: brightHybridStyles,
+    zoomControl: false,
     streetViewControl: false,
     mapTypeControl: false,
-    fullscreenControl: true,
+    fullscreenControl: false,
   });
 
   App.map.setOptions({ mapTypeControl: false });
