@@ -3479,6 +3479,38 @@ div.ht-left-panel {
 "use strict";
 
 const DEBUG_STORMS = false;
+(() => {
+  const IDS = ['debugStormDatesBox', 'debugStormDatesText'];
+
+  const nuke = () => {
+    IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+  };
+
+  // run immediately
+  nuke();
+
+  // run after DOM ready
+  document.addEventListener('DOMContentLoaded', nuke);
+
+  // run after ANY future DOM mutation
+  new MutationObserver(nuke).observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+
+  // hard block re-creation
+  IDS.forEach(id => {
+    Object.defineProperty(window, id, {
+      get() { return null; },
+      set() {}
+    });
+  });
+})();
+
+
 
 /* =========================================================
    GLOBAL APP STATE
