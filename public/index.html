@@ -3599,7 +3599,6 @@ function showOnlyView(viewEl) {
       debugStormDatesTop();
       debugStormDatesFields();
       debugStormDatesFieldsToUI();
-      loadRecentEventsPage(0);
       wireNewPagerOnce();
       ensureTotalEventsCountLoaded().then((n) => {
         const el = document.getElementById("totalEventsCount");
@@ -3610,6 +3609,7 @@ function showOnlyView(viewEl) {
         const c = App.map.getCenter();
         if (c) App.map.setCenter(c);
       }
+      loadRecentEventsPage(0);
     }, 50);
   }
 }
