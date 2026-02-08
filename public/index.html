@@ -49,6 +49,9 @@
 
   const LOAD_MORE_VALUE = "__LOAD_MORE__";
 
+  const SUPABASE_URL = "https://ehegjhlkadtpnkborlbz.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_EvGtl1XOWp8cfi6kfM2zUg_hnX2ldb_";
+
   // --- Date helpers ---
   function dashToCompact(ymdDash) {
     // "2024-05-26" -> "20240526"
@@ -3768,58 +3771,28 @@ async function debugStormDatesFieldsToUI() {
 
 async function fetchStormDatesPage(idx, pageSize) {
   // returns { items, lastDoc, hasNext, mode }
-  if (!window.db) return { items: [], lastDoc: null, hasNext: false, mode: "none" };
-
-  async function runMode(mode) {
-    let q = window.db.collection("stormDates");
-    if (mode === "dateString") q = q.orderBy("dateString", "desc");
-    if (mode === "date") q = q.orderBy("date", "desc");
-    q = q.limit(pageSize);
-
-    App.recentsPageLastDocByMode = App.recentsPageLastDocByMode || {};
-    App.recentsPageLastDocByMode[mode] = App.recentsPageLastDocByMode[mode] || {};
-
-    if (idx > 0) {
-      const prevCursor = App.recentsPageLastDocByMode[mode][idx - 1];
-      if (!prevCursor) return { items: null, lastDoc: null, hasNext: false, mode };
-      q = q.startAfter(prevCursor);
+  try {
+    App.recentsAllDates = App.recentsAllDates || null;
+    if (!Array.isArray(App.recentsAllDates)) {
+      const url = `${SUPABASE_URL}/functions/v1/hail-dates`;
+      const resp = await fetch(url, {
+        headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      const raw = await resp.text();
+      if (!resp.ok) throw new Error(`hail-dates HTTP ${resp.status}: ${raw.slice(0, 200)}`);
+      const json = JSON.parse(raw);
+      const dates = Array.isArray(json?.dates) ? json.dates : [];
+      App.recentsAllDates = dates.filter((d) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d));
     }
 
-    const snap = await q.get();
-    const items = [];
-    snap.forEach((doc) => {
-      const d = doc.data() || {};
-      const dateDash =
-        (typeof d.dateString === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d.dateString)) ? d.dateString :
-        (typeof d.dateDash === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d.dateDash)) ? d.dateDash :
-        "";
-
-      if (!dateDash && d.date && typeof d.date.toDate === "function") {
-        const dt = d.date.toDate();
-        if (dt && !isNaN(dt.getTime())) {
-          const y = dt.getFullYear();
-          const m = String(dt.getMonth()+1).padStart(2,"0");
-          const day = String(dt.getDate()).padStart(2,"0");
-          items.push({ dateDash: `${y}-${m}-${day}` });
-          return;
-        }
-      }
-
-      if (dateDash) items.push({ dateDash });
-    });
-
-    const lastDoc = snap.docs && snap.docs.length ? snap.docs[snap.docs.length - 1] : null;
-    const hasNext = snap.size === pageSize;
-    App.recentsPageLastDocByMode[mode][idx] = lastDoc;
-
-    return { items, lastDoc, hasNext, mode };
+    const start = Math.max(0, Number(idx) || 0) * (Number(pageSize) || 0);
+    const slice = App.recentsAllDates.slice(start, start + pageSize);
+    const items = slice.map((dateDash) => ({ dateDash }));
+    const hasNext = start + pageSize < App.recentsAllDates.length;
+    return { items, lastDoc: null, hasNext, mode: "supabase" };
+  } catch {
+    return { items: [], lastDoc: null, hasNext: false, mode: "error" };
   }
-
-  let res = await runMode("dateString");
-  if (res.items && res.items.length) return res;
-
-  res = await runMode("date");
-  return res.items ? res : { items: [], lastDoc: null, hasNext: false, mode: "none" };
 }
 
 async function ensureTotalEventsCountLoaded() {
@@ -4274,12 +4247,6 @@ async function loadRecentEventsPage(pageIndex) {
       });
     }
     if (nextBtn) nextBtn.disabled = !(App.recentsHasNext && App.recentsHasNext[idx] === true);
-    return;
-  }
-
-  if (!window.db) {
-    if (listEl) listEl.innerHTML = "";
-    console.log('[RECENTS] Loaded', 0, 'events for page', idx);
     return;
   }
 
