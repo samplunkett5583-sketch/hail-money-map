@@ -1,9 +1,9 @@
 name: Monthly Hail Ingestion
 
 on:
-  # Run on the 2nd day of every month at 2:00 AM UTC
+  # Run daily at 06:00 AM UTC
   schedule:
-    - cron: '0 2 2 * *'
+    - cron: '0 6 * * *'
   
   # Allow manual trigger
   workflow_dispatch:
