@@ -3594,6 +3594,7 @@ function showOnlyView(viewEl) {
 
   // Maps view: trigger resize so the map paints correctly
   if (viewEl.id === "mapsView") {
+    loadRecentEventsPage(0);
     setTimeout(() => {
       if (typeof initMap === "function") initMap();
       debugStormDatesTop();
@@ -3609,7 +3610,6 @@ function showOnlyView(viewEl) {
         const c = App.map.getCenter();
         if (c) App.map.setCenter(c);
       }
-      loadRecentEventsPage(0);
     }, 50);
   }
 }
@@ -3776,7 +3776,7 @@ async function fetchStormDatesPage(idx, pageSize) {
     if (!Array.isArray(App.recentsAllDates)) {
       const url = `${SUPABASE_URL}/functions/v1/hail-dates`;
       const resp = await fetch(url, {
-        headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+        headers: { apikey: SUPABASE_ANON_KEY }
       });
       const raw = await resp.text();
       if (!resp.ok) throw new Error(`hail-dates HTTP ${resp.status}: ${raw.slice(0, 200)}`);
