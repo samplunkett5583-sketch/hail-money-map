@@ -22,8 +22,20 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      - name: Debug paths
+        run: |
+          pwd
+          ls -la
+          echo "----- package.json -----"
+          cat package.json || echo "NO ROOT package.json"
+          echo "----- node_modules -----"
+          ls node_modules || echo "NO node_modules"
+
       - name: Run hail ingest
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/ingest_stormevents_hail.mjs
+
+
+          
