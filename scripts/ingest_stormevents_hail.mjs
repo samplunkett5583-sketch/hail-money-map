@@ -7,6 +7,8 @@ import { createClient } from "@supabase/supabase-js";
 import { parse } from "csv-parse";
 
 const NOAA_DIR = "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/";
+const NOAA_PROXY_BASE =
+  process.env.NOAA_PROXY_BASE || "https://noaaplsrproxy-jzyejnppqa-uc.a.run.app";
 const BATCH_SIZE = 500;
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -56,6 +58,115 @@ function downloadToFile(url, destPath) {
         fs.unlink(destPath, () => reject(err));
       });
   });
+}
+
+function fetchJson(url) {
+  return new Promise((resolve, reject) => {
+    https
+      .get(url, (res) => {
+        if (res.statusCode !== 200) {
+          reject(new Error(`HTTP ${res.statusCode} for ${url}`));
+          res.resume();
+          return;
+        }
+        let data = "";
+        res.setEncoding("utf8");
+        res.on("data", (c) => (data += c));
+        res.on("end", () => {
+          try {
+            resolve(JSON.parse(data));
+          } catch (e) {
+            reject(e);
+          }
+        });
+      })
+      .on("error", reject);
+  });
+}
+
+function ymd(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function ymdCompact(ymdStr) {
+  return ymdStr.replace(/-/g, "");
+}
+
+async function ingestRollingReportsPass(days = 14) {
+  const endYmd = ymd(new Date());
+  const startDate = new Date(endYmd + "T00:00:00Z");
+  startDate.setUTCDate(startDate.getUTCDate() - Number(days || 14));
+  const startYmd = ymd(startDate);
+
+  console.log(`Rolling reports pass: ${startYmd} → ${endYmd} (inclusive)`);
+
+  const start = ymdCompact(startYmd);
+  const end = ymdCompact(endYmd);
+  const limit = "20000";
+  const bboxes = [
+    "-125,24,-110,50",
+    "-110,24,-95,50",
+    "-95,24,-80,50",
+    "-80,24,-66,50",
+    "-170,51,-130,72",
+    "-161,18,-154,23",
+  ];
+
+  let storms = [];
+  for (const bbox of bboxes) {
+    const url =
+      `${NOAA_PROXY_BASE}/noaaPlsrProxy?mode=reports` +
+      `&start=${start}&end=${end}` +
+      `&bbox=${encodeURIComponent(bbox)}` +
+      `&limit=${limit}`;
+
+    const j = await fetchJson(url);
+    const chunk = Array.isArray(j?.storms) ? j.storms : [];
+    storms = storms.concat(chunk);
+    if (chunk.length >= Number(limit)) {
+      console.warn(`Rolling reports warning: bbox ${bbox} hit limit=${limit}`);
+    }
+  }
+
+  let batch = [];
+  let kept = 0;
+
+  for (const s of storms) {
+    const lat = Number(s?.lat);
+    const lon = Number(s?.lon);
+    const dateStr = typeof s?.date === "string" ? s.date : null;
+    const hailSize = s?.hailSize === "" || s?.hailSize == null ? null : Number(s.hailSize);
+    const ztime = typeof s?.ztime === "string" && s.ztime ? s.ztime : null;
+
+    if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) continue;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+
+    kept++;
+
+    const key = `${dateStr}_${String(lat)}_${String(lon)}_${String(hailSize ?? "")}`;
+
+    batch.push({
+      dedupe_key: key,
+      event_date: dateStr,
+      event_type: "hail",
+      state: null,
+      hail_size: Number.isFinite(hailSize) ? hailSize : null,
+      lat,
+      lon,
+      ztime,
+    });
+
+    if (batch.length >= BATCH_SIZE) {
+      await supabase.from("hail_reports").upsert(batch, { onConflict: "dedupe_key" });
+      batch = [];
+    }
+  }
+
+  if (batch.length) {
+    await supabase.from("hail_reports").upsert(batch, { onConflict: "dedupe_key" });
+  }
+
+  console.log(`Rolling reports pass done. attempted_upserts=${kept}`);
 }
 
 async function pickLatestDetailsGz() {
@@ -167,6 +278,13 @@ async function main() {
 
   console.log("Sync done. Rows affected (approx):", data);
   console.log(`DONE. seen=${seen} kept_hail=${kept}`);
+
+  await ingestRollingReportsPass(14);
+
+  console.log("Calling sync_hail_reports_from_raw() after rolling pass...");
+  const { data: data2, error: error2 } = await supabase.rpc("sync_hail_reports_from_raw");
+  if (error2) throw error2;
+  console.log("Sync done (rolling pass). Rows affected (approx):", data2);
 }
 
 main().catch((e) => {
