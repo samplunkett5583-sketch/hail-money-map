@@ -7,8 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import { parse } from "csv-parse";
 
 const NOAA_DIR = "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/";
-const NOAA_PROXY_BASE =
-  process.env.NOAA_PROXY_BASE || "https://noaaplsrproxy-jzyejnppqa-uc.a.run.app";
+const NOAA_PROXY_BASE = process.env.NOAA_PROXY_BASE || "https://noaaplsrproxy-jzyejnppqa-uc.a.run.app";
 const BATCH_SIZE = 500;
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -92,13 +91,13 @@ function ymdCompact(ymdStr) {
   return ymdStr.replace(/-/g, "");
 }
 
-async function ingestRollingReportsPass(days = 14) {
+async function ingestRollingReportsPass(supabaseClient, days = 14) {
   const endYmd = ymd(new Date());
   const startDate = new Date(endYmd + "T00:00:00Z");
   startDate.setUTCDate(startDate.getUTCDate() - Number(days || 14));
   const startYmd = ymd(startDate);
 
-  console.log(`Rolling reports pass: ${startYmd} → ${endYmd} (inclusive)`);
+  console.log(`Rolling reports pass: ${startYmd} -> ${endYmd} (inclusive)`);
 
   const start = ymdCompact(startYmd);
   const end = ymdCompact(endYmd);
@@ -143,7 +142,7 @@ async function ingestRollingReportsPass(days = 14) {
 
     kept++;
 
-    const key = `${dateStr}_${String(lat)}_${String(lon)}_${String(hailSize ?? "")}`;
+    const key = `${dateStr}_${lat}_${lon}_${hailSize ?? ""}`;
 
     batch.push({
       dedupe_key: key,
@@ -157,13 +156,19 @@ async function ingestRollingReportsPass(days = 14) {
     });
 
     if (batch.length >= BATCH_SIZE) {
-      await supabase.from("hail_reports").upsert(batch, { onConflict: "dedupe_key" });
+      const { error } = await supabaseClient
+        .from("hail_reports")
+        .upsert(batch, { onConflict: "dedupe_key" });
+      if (error) throw error;
       batch = [];
     }
   }
 
   if (batch.length) {
-    await supabase.from("hail_reports").upsert(batch, { onConflict: "dedupe_key" });
+    const { error } = await supabaseClient
+      .from("hail_reports")
+      .upsert(batch, { onConflict: "dedupe_key" });
+    if (error) throw error;
   }
 
   console.log(`Rolling reports pass done. attempted_upserts=${kept}`);
@@ -279,12 +284,7 @@ async function main() {
   console.log("Sync done. Rows affected (approx):", data);
   console.log(`DONE. seen=${seen} kept_hail=${kept}`);
 
-  await ingestRollingReportsPass(14);
-
-  console.log("Calling sync_hail_reports_from_raw() after rolling pass...");
-  const { data: data2, error: error2 } = await supabase.rpc("sync_hail_reports_from_raw");
-  if (error2) throw error2;
-  console.log("Sync done (rolling pass). Rows affected (approx):", data2);
+  await ingestRollingReportsPass(supabase, 14);
 }
 
 main().catch((e) => {
