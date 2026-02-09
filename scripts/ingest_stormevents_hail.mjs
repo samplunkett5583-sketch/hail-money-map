@@ -284,6 +284,7 @@ async function main() {
   console.log("Sync done. Rows affected (approx):", data);
   console.log(`DONE. seen=${seen} kept_hail=${kept}`);
 
+  console.log(">>> ENTERING rolling reports section <<<");
   await ingestRollingReportsPass(supabase, 14);
 }
 
