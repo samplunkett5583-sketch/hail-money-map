@@ -156,18 +156,44 @@ async function ingestRollingReportsPass(supabaseClient, days = 14) {
     });
 
     if (batch.length >= BATCH_SIZE) {
+      // De-dupe within this batch to avoid Postgres "cannot affect row a second time"
+      // when multiple rows share the same conflict key in a single upsert command.
+      const byKey = new Map();
+      for (const e of batch) {
+        const k = e?.dedupe_key;
+        if (!k) continue;
+        byKey.set(k, e);
+      }
+      const dedupedBatch = Array.from(byKey.values());
+
+      console.log(
+        `[UPSERT] Upserting ${dedupedBatch.length} hail_reports rows (deduped from ${batch.length})...`
+      );
+
       const { error } = await supabaseClient
         .from("hail_reports")
-        .upsert(batch, { onConflict: "dedupe_key" });
+        .upsert(dedupedBatch, { onConflict: "dedupe_key" });
       if (error) throw error;
       batch = [];
     }
   }
 
   if (batch.length) {
+    const byKey = new Map();
+    for (const e of batch) {
+      const k = e?.dedupe_key;
+      if (!k) continue;
+      byKey.set(k, e);
+    }
+    const dedupedBatch = Array.from(byKey.values());
+
+    console.log(
+      `[UPSERT] Upserting ${dedupedBatch.length} hail_reports rows (deduped from ${batch.length})...`
+    );
+
     const { error } = await supabaseClient
       .from("hail_reports")
-      .upsert(batch, { onConflict: "dedupe_key" });
+      .upsert(dedupedBatch, { onConflict: "dedupe_key" });
     if (error) throw error;
   }
 
@@ -196,9 +222,17 @@ function stableKey(parts) {
 }
 
 async function upsertRaw(batch) {
+  const byKey = new Map();
+  for (const e of batch) {
+    const k = e?.dedupe_key;
+    if (!k) continue;
+    byKey.set(k, e);
+  }
+  const dedupedBatch = Array.from(byKey.values());
+
   const { error } = await supabase
     .from("stormevents_raw")
-    .upsert(batch, { onConflict: "dedupe_key" });
+    .upsert(dedupedBatch, { onConflict: "dedupe_key" });
   if (error) throw error;
 }
 
