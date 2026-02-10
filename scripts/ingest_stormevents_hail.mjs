@@ -64,7 +64,7 @@ function downloadToFile(url, destPath) {
 }
 
 function fetchJson(url) {
-  const maxRetries = 3;
+  const maxRetries = 4;
   return (async () => {
     let lastErr;
 
@@ -104,7 +104,7 @@ function fetchJson(url) {
           e?.code === "EAI_AGAIN";
 
         if (attempt < maxRetries && retryable) {
-          await sleep(750 * (attempt + 1));
+          await sleep(1000 * (attempt + 1));
           continue;
         }
         throw e;
@@ -351,7 +351,11 @@ async function main() {
   console.log(`DONE. seen=${seen} kept_hail=${kept}`);
 
   console.log(">>> ENTERING rolling reports section <<<");
-  await ingestRollingReportsPass(supabase, 14);
+  try {
+    await ingestRollingReportsPass(supabase, 14);
+  } catch (e) {
+    console.warn("[ROLLING] Failed (continuing without rolling reports):", e?.message || e);
+  }
 }
 
 main().catch((e) => {
