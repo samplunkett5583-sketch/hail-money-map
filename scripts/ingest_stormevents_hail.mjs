@@ -22,6 +22,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
 
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 function fetchText(url) {
   return new Promise((resolve, reject) => {
     https
@@ -60,27 +64,55 @@ function downloadToFile(url, destPath) {
 }
 
 function fetchJson(url) {
-  return new Promise((resolve, reject) => {
-    https
-      .get(url, (res) => {
-        if (res.statusCode !== 200) {
-          reject(new Error(`HTTP ${res.statusCode} for ${url}`));
-          res.resume();
-          return;
-        }
-        let data = "";
-        res.setEncoding("utf8");
-        res.on("data", (c) => (data += c));
-        res.on("end", () => {
-          try {
-            resolve(JSON.parse(data));
-          } catch (e) {
-            reject(e);
-          }
+  const maxRetries = 3;
+  return (async () => {
+    let lastErr;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await new Promise((resolve, reject) => {
+          https
+            .get(url, (res) => {
+              const status = res.statusCode || 0;
+              let data = "";
+              res.setEncoding("utf8");
+              res.on("data", (c) => (data += c));
+              res.on("end", () => {
+                if (status !== 200) {
+                  const err = new Error(`HTTP ${status} for ${url}`);
+                  // Mark some HTTP errors as retryable (timeouts/upstream flakiness/rate limit).
+                  err.retryable = status === 429 || status === 502 || status === 503 || status === 504;
+                  err.body = data;
+                  reject(err);
+                  return;
+                }
+                try {
+                  resolve(JSON.parse(data));
+                } catch (e) {
+                  reject(e);
+                }
+              });
+            })
+            .on("error", reject);
         });
-      })
-      .on("error", reject);
-  });
+      } catch (e) {
+        lastErr = e;
+        const retryable =
+          e?.retryable === true ||
+          e?.code === "ECONNRESET" ||
+          e?.code === "ETIMEDOUT" ||
+          e?.code === "EAI_AGAIN";
+
+        if (attempt < maxRetries && retryable) {
+          await sleep(750 * (attempt + 1));
+          continue;
+        }
+        throw e;
+      }
+    }
+
+    throw lastErr;
+  })();
 }
 
 function ymd(date) {
