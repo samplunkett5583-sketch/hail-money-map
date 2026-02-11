@@ -41,7 +41,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          NOAA_PROXY_BASE: ${{ secrets.NOAA_PROXY_BASE || 'https://noaaplsrproxy-jzyejnppqa-uc.a.run.app' }}
+          NOAA_PROXY_BASE: ${{ secrets.NOAA_PROXY_BASE }}
         run: |
           ARGS=""
           if [ -n "${{ inputs.month }}" ]; then
@@ -50,6 +50,7 @@ jobs:
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             ARGS="$ARGS --dry-run"
           fi
+          echo "NOAA_PROXY_BASE=$NOAA_PROXY_BASE"
           node scripts/ingest-monthly-hail.mjs $ARGS
       
       - name: Report status
