@@ -4,7 +4,7 @@ const http = require('http');
 const { URL } = require('url');
 
 const PORT = process.env.PORT || 8080;
-const FETCH_TIMEOUT_MS = 25000;
+const FETCH_TIMEOUT_MS = 120000;
 const MAX_DATESONLY_DAYS = 31;
 const DEFAULT_LIMIT = '20000';
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
