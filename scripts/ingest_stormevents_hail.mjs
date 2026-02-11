@@ -133,7 +133,8 @@ async function ingestRollingReportsPass(supabaseClient, days = 14) {
 
   const start = ymdCompact(startYmd);
   const end = ymdCompact(endYmd);
-  const limit = "20000";
+  // Use smaller tiles + smaller limit to avoid upstream NOAA timeouts (504)
+  const limit = 5000;
   const bboxes = [
     "-125,24,-110,50",
     "-110,24,-95,50",
@@ -151,11 +152,16 @@ async function ingestRollingReportsPass(supabaseClient, days = 14) {
       `&bbox=${encodeURIComponent(bbox)}` +
       `&limit=${limit}`;
 
-    const j = await fetchJson(url);
-    const chunk = Array.isArray(j?.storms) ? j.storms : [];
-    storms = storms.concat(chunk);
-    if (chunk.length >= Number(limit)) {
-      console.warn(`Rolling reports warning: bbox ${bbox} hit limit=${limit}`);
+    try {
+      const j = await fetchJson(url);
+      const chunk = Array.isArray(j?.storms) ? j.storms : [];
+      storms = storms.concat(chunk);
+      if (chunk.length >= limit) {
+        console.warn(`Rolling reports warning: bbox ${bbox} hit limit=${limit}`);
+      }
+    } catch (e) {
+      console.warn(`Rolling reports tile failed (skipping bbox ${bbox}):`, e?.message || e);
+      continue;
     }
   }
 
