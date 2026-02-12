@@ -6,7 +6,7 @@ const { URL } = require('url');
 const PORT = process.env.PORT || 8080;
 const FETCH_TIMEOUT_MS = 120000;
 const MAX_DATESONLY_DAYS = 31;
-const DEFAULT_LIMIT = '20000';
+const DEFAULT_LIMIT = '50000';
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
 
 function setCors(res) {
@@ -143,10 +143,30 @@ async function fetchWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS, accept = 'app
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { headers: { Accept: accept }, signal: controller.signal });
+    return await fetch(url, {
+      headers: {
+        Accept: accept,
+        'User-Agent': 'hail-money-map-noaa-proxy/1.0',
+      },
+      signal: controller.signal,
+    });
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+function logUpstreamFailure(upstreamUrl, resp, text) {
+  const snippet = (text || '').slice(0, 2000);
+  console.error(
+    '[UPSTREAM_FAIL]',
+    JSON.stringify({
+      upstreamUrl,
+      status: resp?.status,
+      statusText: resp?.statusText,
+      contentType: resp?.headers?.get?.('content-type') || null,
+      bodySnippet: snippet,
+    })
+  );
 }
 
 function buildUpstreamUrl(product, chunkStartStr, chunkEndStr, bbox, limit, eventTypeParam, token) {
@@ -378,11 +398,16 @@ const server = http.createServer(async (req, res) => {
     if (debugEnabled) console.log(`noaaPlsrProxy chunk ${debugInfo.chunks.length}: ${chunkStartStr}:${chunkEndStr}`);
 
     try {
-      const resp = await fetchWithTimeout(upstreamUrl, FETCH_TIMEOUT_MS, isReports ? 'text/csv,*/*' : 'application/json,*/*');
+      const resp = await fetchWithTimeout(
+        upstreamUrl,
+        FETCH_TIMEOUT_MS,
+        isReports ? 'text/csv,*/*' : 'application/json,*/*'
+      );
       const text = await resp.text();
       recordDebug(chunkEntry, upstreamUrl, resp, text);
 
       if (!resp.ok) {
+        logUpstreamFailure(upstreamUrl, resp, text);
         if (datesOnly) return { skipped: true };
         res.setHeader('X-Upstream-Url', upstreamUrl);
         res.setHeader('X-Upstream-Status', String(resp.status));
@@ -427,6 +452,15 @@ const server = http.createServer(async (req, res) => {
         }
       }
     } catch (err) {
+      console.error(
+        '[UPSTREAM_EXCEPTION]',
+        JSON.stringify({
+          upstreamUrl,
+          message: err?.message || String(err),
+          name: err?.name,
+          stack: err?.stack,
+        })
+      );
       if (err.name === 'AbortError') {
         if (chunkEntry) chunkEntry.timeout = true;
         if (datesOnly) return { skipped: true };
