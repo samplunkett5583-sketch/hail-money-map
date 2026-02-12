@@ -13,35 +13,35 @@ jobs:
     timeout-minutes: 45
 
     steps:
-          - name: Checkout
-            uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-          - name: Setup Node
-           uses: actions/setup-node@v4
-            with:
-              node-version: "20"
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-          - name: Install deps
-            run: npm ci
+      - name: Install deps
+        run: npm ci
 
-          - name: Debug paths
-            run: |
-              pwd
-              ls -la
-              echo "----- package.json -----"
-              cat package.json || echo "NO ROOT package.json"
-              echo "----- node_modules -----"
-              ls node_modules || echo "NO node_modules"
-                
-          - name: Run hail ingest
-            env:
-              SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-              SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-              NOAA_PROXY_BASE: ${{ secrets.NOAA_PROXY_BASE }}
-            run: |
-              echo "NOAA_PROXY_BASE=$NOAA_PROXY_BASE"
-              node scripts/ingest_stormevents_hail.mjs
-          
+      - name: Debug paths
+        run: |
+          pwd
+          ls -la
+          echo "----- package.json -----"
+          cat package.json || echo "NO ROOT package.json"
+          echo "----- node_modules -----"
+          ls node_modules || echo "NO node_modules"
+            
+      - name: Run hail ingest
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NOAA_PROXY_BASE: ${{ secrets.NOAA_PROXY_BASE }}
+        run: |
+          echo "NOAA_PROXY_BASE=$NOAA_PROXY_BASE"
+          node scripts/ingest_stormevents_hail.mjs
+
 
 
 
