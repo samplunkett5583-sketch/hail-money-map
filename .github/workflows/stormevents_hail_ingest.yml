@@ -40,6 +40,7 @@ jobs:
           NOAA_PROXY_BASE: ${{ secrets.NOAA_PROXY_BASE }}
         run: |
           echo "NOAA_PROXY_BASE=$NOAA_PROXY_BASE"
+          grep -n "ENTERING rolling" scripts/ingest_stormevents_hail.mjs || true
           node scripts/ingest_stormevents_hail.mjs
 
 
