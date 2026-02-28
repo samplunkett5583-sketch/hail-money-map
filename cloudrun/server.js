@@ -170,11 +170,11 @@ function logUpstreamFailure(upstreamUrl, resp, text) {
 }
 
 function buildUpstreamUrl(product, chunkStartStr, chunkEndStr, bbox, limit, eventTypeParam, token) {
-  return `https://www.ncdc.noaa.gov/swdiws/json/${product}/${chunkStartStr}:${chunkEndStr}?bbox=${encodeURIComponent(bbox)}&limit=${limit}${eventTypeParam}&token=${encodeURIComponent(token)}`;
+  return `https://www.ncei.noaa.gov/swdiws/json/${product}/${chunkStartStr}:${chunkEndStr}?bbox=${encodeURIComponent(bbox)}&limit=${limit}${eventTypeParam}&token=${encodeURIComponent(token)}`;
 }
 
 function buildPlsrUrl(chunkStartStr, chunkEndStr, bbox, limit, token) {
-  return `https://www.ncdc.noaa.gov/swdiws/csv/plsr/${chunkStartStr}:${chunkEndStr}?bbox=${encodeURIComponent(bbox)}&limit=${limit}&token=${encodeURIComponent(token)}`;
+  return `https://www.ncei.noaa.gov/swdiws/csv/plsr/${chunkStartStr}:${chunkEndStr}?bbox=${encodeURIComponent(bbox)}&limit=${limit}&token=${encodeURIComponent(token)}`;
 }
 
 function parseCsvPlsrDatesOnly(csvText) {
