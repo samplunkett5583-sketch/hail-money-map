@@ -6,7 +6,7 @@
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   />
-  <title>Hail Money Map – Full App</title>
+  <title>Hail Money Map â€“ Full App</title>
 
    <!-- Google Font -->
   <link
@@ -19,6 +19,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
   const firebaseConfig = {
@@ -48,6 +49,16 @@
   };
 
   const LOAD_MORE_VALUE = "__LOAD_MORE__";
+
+  const SUPABASE_URL = "https://ehegjhlkadtpnkborlbz.supabase.co";
+  const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZWdqaGxrYWR0cG5rYm9ybGJ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjcwNTY2NiwiZXhwIjoyMDgyMjgxNjY2fQ.KbEohwp-boV53yY31Ut3epMtN564STGsl9T9KtFeGLQ";
+
+  // --- Create Supabase client ---
+  window.sb = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+  window.supabaseClient = window.sb;
 
   // --- Date helpers ---
   function dashToCompact(ymdDash) {
@@ -552,26 +563,346 @@
       height: calc(100vh - 160px);
     }
 
-    .maps-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
+    /* =================== MAPS: HAILTRACE-STYLE (UI/CSS ONLY) =================== */
+    /* Rail + left panel + full-height map; preserves existing JS IDs. */
+    #mapsView.view,
+    #mapsView.view.active {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      max-width: none;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
     }
 
-    .maps-control-group {
+    #mapsView .ht-maps-shell {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* Left icon rail */
+    #htIconRail {
+      width: 56px;
+      min-width: 56px;
+      background: #0b1220;
+      border-right: 1px solid rgba(148, 163, 184, 0.16);
+      padding: 10px 6px;
       display: flex;
       flex-direction: column;
-      min-width: 160px;
-      font-size: 0.82rem;
+      gap: 10px;
+      align-items: center;
     }
 
-    .maps-control-group.small {
-      max-width: 200px;
+    #htIconRail .ht-rail-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(2, 6, 23, 0.45);
+      color: #e5e7eb;
+      font-weight: 600;
+      cursor: pointer;
     }
 
-    .maps-address-row {
+    #htIconRail .ht-rail-btn.active {
+      border-color: rgba(56, 189, 248, 0.75);
+      background: rgba(56, 189, 248, 0.18);
+      color: #ffffff;
+    }
+
+    /* Left panel */
+    #mapsView .ht-left-panel.ht-left-panel {
+      width: 380px;
+      min-width: 380px;
+      height: 100%;
+      border-right: 1px solid rgba(15, 23, 42, 0.12);
       display: flex;
-      gap: 0.5rem;
+      flex-direction: column;
+      padding: 12px;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    #mapsView .ht-left-top {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    #mapsView #mapsBackBtn {
+      border-radius: 999px;
+      padding: 6px 10px;
+      border: 1px solid rgba(15, 23, 42, 0.14);
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    #mapsView #mapsBackBtn:hover {
+      border-color: rgba(56, 189, 248, 0.85);
+      color: #0369a1;
+    }
+
+    /* Address search row */
+    #mapsView .maps-address-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    #mapsView .ht-address-inputwrap {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+    }
+
+    #mapsView #addressInput {
+      width: 100%;
+      padding: 10px 34px 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: #f1f5f9;
+      color: #0f172a;
+      font-size: 0.85rem;
+    }
+
+    #mapsView #addressInput::placeholder {
+      color: rgba(15, 23, 42, 0.55);
+    }
+
+    #mapsView .ht-input-x {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    #mapsView #searchLocationBtn {
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* Compact controls rows */
+    #mapsView #stormControls,
+    #mapsView #stormDateRow,
+    #mapsView .maps-controls {
+      background: #f8fafc;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    #mapsView #stormControls {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    #mapsView #stormControls label,
+    #mapsView #stormDateRow label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.72rem;
+      color: rgba(15, 23, 42, 0.72);
+    }
+
+    #mapsView #stormControls select,
+    #mapsView #stormDateRow select,
+    #mapsView #stormControls input {
+      padding: 9px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.84rem;
+      min-width: 160px;
+    }
+
+    #mapsView #stormControls button.pill-btn,
+    #mapsView #stormDateRow button.pill-btn {
+      border-radius: 12px;
+      padding: 8px 10px;
+      border: 1px solid rgba(15, 23, 42, 0.14);
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.8rem;
+    }
+
+    /* Recent header */
+    #mapsView .ht-recent {
+      padding: 2px 2px 0;
+    }
+
+    #mapsView .ht-recent-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    #mapsView .ht-recent-sub {
+      margin-top: 2px;
+      font-size: 0.78rem;
+      color: rgba(15, 23, 42, 0.55);
+    }
+
+    #mapsView .ht-left-panel .ht-recent-title {
+      color: #fff !important;
+    }
+
+    #mapsView #recentEventsList {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #mapsView .recent-event-row {
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 10px;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    #mapsView #recentEventsPaging {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+    }
+
+    #mapsView #recentEventsPaging button {
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    #mapsView #recentEventsPaging button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    /* List area scrolls */
+    #mapsView #stormListPanel {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+      flex: 1;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid rgba(60, 60, 60, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 10px;
+    }
+
+    #mapsView .storm-list {
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+    }
+
+    #mapsView .storm-item,
+    #mapsView .stormbait-item {
+      background: #ffffff;
+      color: #0f172a;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    #mapsView .storm-item:hover,
+    #mapsView .stormbait-item:hover {
+      border-color: rgba(56, 189, 248, 0.45);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    /* Map fills the remaining screen */
+    #mapsView .ht-map-wrap {
+      flex: 1;
+      height: 100%;
+      min-width: 0;
+      background: #ffffff;
+    }
+
+    #mapsView #stormMap {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      overflow: hidden;
+      background: #e2e8f0;
+    }
+
+    /* Maps mini tabs (UI only; no routing/handlers yet) */
+    #mapsMiniTabs.maps-mini-tabs {
+      display: flex;
+      width: 100%;
+      gap: 0;
+      margin: 6px 0 10px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+
+    #mapsMiniTabs.maps-mini-tabs button {
+      flex: 1 1 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 8px;
+      background: transparent;
+      border: 0;
+      color: #0f172a;
+      cursor: pointer;
+    }
+
+    #mapsMiniTabs.maps-mini-tabs button + button {
+      border-left: 1px solid rgba(15, 23, 42, 0.10);
+    }
+
+    #mapsMiniTabs.maps-mini-tabs button.active {
+      background: #ffffff;
+    }
+
+    #mapsMiniTabs .tab-ico {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.16);
+    }
+
+    #mapsMiniTabs .tab-txt {
+      font-size: 0.75rem;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      opacity: 0.95;
     }
 
     .maps-address-row .flex-1 {
@@ -593,12 +924,15 @@
       overflow: hidden;
     }
 
-    /* storm dates panel – big box when shown */
+    /* storm dates panel â€“ big box when shown */
     .storm-list-panel {
       display: none; /* hidden until state + storm type picked */
       flex-direction: column;
       gap: 0.4rem;
       min-height: 35vh; /* nice big box for the dates list */
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(120, 120, 120, 0.75);
     }
 
     .map-status {
@@ -610,7 +944,6 @@
       flex: 1;
       overflow-y: auto;
       border-radius: 12px;
-      background: var(--bg-soft);
       padding: 6px;
     }
 
@@ -643,6 +976,46 @@
       border-color: var(--accent-soft);
       background: rgba(15, 23, 42, 1);
     }
+
+    /* --- FORCE left panel glass look (override any earlier whites) --- */
+    #mapsView .storm-list-panel,
+    #mapsView #stormListPanel,
+    #mapsView .ht-left,
+    #mapsView .left-panel,
+    #mapsView .panel {
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+      border: 2px solid rgba(90, 90, 90, 0.75) !important;
+    }
+
+    /* Make the â€œcards/sectionsâ€ inside the panel transparent too */
+    #mapsView .storm-list-panel > *,
+    #mapsView .storm-list-panel .card,
+    #mapsView .storm-list-panel .panel-card,
+    #mapsView .storm-list-panel .section,
+    #mapsView .storm-list-panel .box {
+      border: 1px solid rgba(120, 120, 120, 0.55) !important;
+    }
+
+    /* Tabs/buttons inside: transparent with gray border + black text */
+    #mapsView .storm-list-panel button,
+    #mapsView .storm-list-panel .tab,
+    #mapsView .storm-list-panel .maps-tab {
+      border: 1px solid rgba(120, 120, 120, 0.75) !important;
+      color: #000 !important;
+    }
+
+#mapsView .ht-left-panel * {
+  background-color: transparent !important;
+}
+
+#mapsView .ht-left-panel button,
+#mapsView .ht-left-panel select,
+#mapsView .ht-left-panel input {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(120, 120, 120, 0.6);
+  color: #000 !important;
+}
 
     /* Shared form controls */
     .control-label {
@@ -919,7 +1292,7 @@
       background: rgba(15, 23, 42, 1);
     }
 
-    /* ===== HUB – LEFT FLIP TABS ===== */
+    /* ===== HUB â€“ LEFT FLIP TABS ===== */
     .hub-left-layout {
       display: flex;
       flex-direction: column;
@@ -986,7 +1359,7 @@
       color: var(--text-soft);
     }
 
-    /* ===== HUB – FULL SCREEN LEADS OVERLAY ===== */
+    /* ===== HUB â€“ FULL SCREEN LEADS OVERLAY ===== */
     .leads-overlay {
       position: fixed;
       inset: 0;
@@ -1061,7 +1434,7 @@
       color: var(--text-soft);
     }
 
-    /* Responsive tweaks – bigger text on phones */
+    /* Responsive tweaks â€“ bigger text on phones */
     @media (max-width: 768px) {
       body {
         font-size: 1.02rem;
@@ -1095,6 +1468,943 @@
         max-height: 260px;
       }
     }
+
+    #mapsView .ht-left-panel button,
+    #mapsView .ht-left-panel .ht-tabs button,
+    #mapsView .ht-left-panel [role="button"] {
+      background: transparent !important;
+      border: 1px solid rgba(90, 90, 90, 0.75) !important;
+      color: #111 !important;
+    }
+
+    #mapsView .ht-left-panel input,
+    #mapsView .ht-left-panel select {
+      background: rgba(255, 255, 255, 0.20) !important;
+      border: 1px solid rgba(90, 90, 90, 0.55) !important;
+      color: #111 !important;
+    }
+
+    #mapsView .ht-left-panel .maps-address-row,
+    #mapsView .ht-left-panel #mapsMiniTabs,
+    #mapsView .ht-left-panel #stormControls,
+    #mapsView .ht-left-panel #stormDateRow,
+    #mapsView .ht-left-panel .maps-controls,
+    #mapsView .ht-left-panel .ht-recent,
+    #mapsView .ht-left-panel #stormListPanel {
+      border: 1px solid rgba(90, 90, 90, 0.6) !important;
+      border-radius: 12px;
+      color: #111 !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+    #mapsView .ht-left-panel .maps-mini-tabs button {
+      background: transparent !important;
+      border: 1px solid rgba(90, 90, 90, 0.60) !important;
+      color: #111 !important;
+    }
+
+    #mapsView .ht-left-panel input,
+    #mapsView .ht-left-panel select,
+    #mapsView .ht-left-panel label,
+    #mapsView .ht-left-panel .control-label,
+    #mapsView .ht-left-panel .ht-recent-title,
+    #mapsView .ht-left-panel .ht-recent-sub,
+    #mapsView .ht-left-panel .map-status {
+      color: #111 !important;
+    }
+
+    #mapsView .ht-left-panel {
+      background: rgba(255,255,255,0.35) !important;
+      border: 1px solid rgba(90,90,90,0.75) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+#mapsView .ht-left-panel input,
+#mapsView .ht-left-panel select,
+#mapsView .ht-left-panel textarea,
+#mapsView .ht-left-panel .segmented,
+#mapsView .ht-left-panel .segmented button,
+#mapsView .ht-left-panel .filter-group,
+#mapsView .ht-left-panel .control,
+#mapsView .ht-left-panel .control * {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #000 !important;
+  border: 1px solid rgba(120,120,120,0.75) !important;
+}
+
+#mapsView .ht-left-panel button,
+#mapsView .ht-left-panel .ht-btn,
+#mapsView .ht-left-panel a,
+#mapsView .ht-left-panel .ht-left-panel-btn {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid rgba(120,120,120,0.75) !important;
+  color: #000 !important;
+}
+
+/* Hide upper storm selection blocks */
+#mapsView .ht-left-panel > div:has(select),
+#mapsView .ht-left-panel > div:has(button):has(select),
+#mapsView .ht-left-panel > div:has(label):has(select),
+#mapsView .ht-left-panel > div:has(.storm-dates),
+#mapsView .ht-left-panel > div:has(select[aria-label]),
+#mapsView .ht-left-panel > div:has(option) {
+  display: none !important;
+}
+
+    /* ===== NEW SIDEBAR CATEGORY TABS ===== */
+    .sidebar-tabs {
+      display: flex;
+      width: 100%;
+      gap: 0;
+      margin: 10px 0;
+      border: 1px solid rgba(90, 90, 90, 0.75);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .sidebar-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 8px;
+      background: transparent;
+      border: 0;
+      color: #111;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .sidebar-tab + .sidebar-tab {
+      border-left: 1px solid rgba(90, 90, 90, 0.5);
+    }
+
+    .sidebar-tab:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .sidebar-tab.active {
+      background: rgba(16, 185, 129, 0.25);
+      color: #059669;
+      font-weight: 600;
+    }
+
+    .sidebar-tab .tab-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .sidebar-tab .tab-label {
+      font-size: 0.72rem;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      font-weight: 500;
+    }
+
+/* Anchor for bottom-pinned money box (does NOT reorder other sections) */
+#mapsView .ht-left-panel {
+  position: relative !important;
+  padding-bottom: 170px !important; /* reserve space so content doesn't overlap pinned box */
+}
+
+/* Pin the Min street value / Search storms box to the bottom */
+#mapsView .ht-left-panel > div:has(input[type="number"]):has(input[placeholder="Search storms..."]) {
+  position: absolute !important;
+  bottom: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+}
+
+/* 1) Hide top shortcut tiles (Weather / Person / Property / Lead List) */
+#mapsView .ht-left-panel .shortcut-row,
+#mapsView .ht-left-panel .quick-actions {
+  display: none !important;
+}
+
+/* 2) Hide storm picker + directions blocks entirely */
+#mapsView .ht-left-panel .storm-picker,
+#mapsView .ht-left-panel .directions,
+#mapsView .ht-left-panel .no-dates {
+  display: none !important;
+}
+
+/* 3) Clean up "Most Recent Events" (title only) */
+#mapsView .ht-left-panel .recent-events small,
+#mapsView .ht-left-panel .recent-events .subtitle {
+  display: none !important;
+}
+
+/* 4) Prepare panel for bottom-pinned money box */
+#mapsView .ht-left-panel {
+  position: relative !important;
+  padding-bottom: 140px !important;
+}
+
+/* 5) Pin Min street value box to bottom */
+#mapsView .ht-left-panel > div:has(input[type="number"]) {
+  position: absolute !important;
+  bottom: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+}
+
+/* 6) Remove extra inputs inside money box */
+#mapsView .ht-left-panel input[placeholder="Search storms..."],
+#mapsView .ht-left-panel label:has(+ input[placeholder="Search storms..."]) {
+  display: none !important;
+}
+
+/* Bottom money box: remove search */
+#mapsView .ht-left-panel input[placeholder="Search storms..."] {
+  display: none !important;
+}
+
+#mapsView .ht-left-panel input[placeholder="Search storms..."] ~ * ,
+#mapsView .ht-left-panel label:has(+ input[placeholder="Search storms..."]) {
+  display: none !important;
+}
+
+/* Hide shortcut tiles row (Weather / Person / Property / Lead List) */
+#mapsView .ht-left-panel .shortcut-row,
+#mapsView .ht-left-panel .quick-actions,
+#mapsView .ht-left-panel .icon-tiles,
+#mapsView .ht-left-panel .icon-grid {
+  display: none !important;
+}
+
+/* Clear contents inside Most Recent Events */
+#mapsView .ht-left-panel .recent-events small,
+#mapsView .ht-left-panel .recent-events p,
+#mapsView .ht-left-panel .recent-events button {
+  display: none !important;
+}
+
+#mapsView .ht-left-panel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Let panel translucency show through (kill solid child backgrounds) */
+#mapsView .ht-left-panel > * {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Make left-panel containers transparent so panel translucency shows */
+#mapsView .ht-left-panel .maps-address-row,
+#mapsView .ht-left-panel .maps-mini-tabs,
+#mapsView .ht-left-panel .ht-recent,
+#mapsView .ht-left-panel .storm-list-panel,
+#mapsView .ht-left-panel .maps-controls {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+#mapsView .ht-left-panel > div,
+#mapsView .ht-left-panel > section,
+#mapsView #stormControls,
+#mapsView #stormDateRow,
+#mapsView .maps-controls,
+#mapsView .ht-recent,
+#mapsView #stormListPanel,
+#mapsView .storm-list,
+#mapsView .storm-list-panel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#mapsView #stormListPanel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#mapsView > div > div.ht-left-panel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+div.ht-left-panel {
+  background: rgba(255, 255, 255, 0.35) !important;
+  background-color: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#mapsView .storm-list-panel,
+#mapsView .storm-list,
+#mapsView .storm-list .map-status {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#mapsView .ht-left-panel {
+  background: rgba(255, 255, 255, 0.35) !important;
+  background-color: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#mapsView .map-status,
+#mapsView .map-status::before,
+#mapsView .map-status::after {
+  border: 1px solid rgba(100, 100, 100, 0.7) !important;
+  color: #000 !important;
+}
+
+#mapsView #stormListPanel,
+#mapsView #stormListPanel::before,
+#mapsView #stormListPanel::after,
+#mapsView #stormList,
+#mapsView #stormList::before,
+#mapsView #stormList::after,
+#mapsView .storm-list,
+#mapsView .storm-list::before,
+#mapsView .storm-list::after,
+#mapsView .map-status,
+#mapsView .map-status::before,
+#mapsView .map-status::after {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#mapsView,
+#mapsView > div,
+#mapsView > div > div {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+#mapsView .ht-left-panel {
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  background: rgba(255, 255, 255, 0.35) !important;
+  background-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+    /* =========================
+       FINAL OVERRIDES (WINNING)
+       Glass left panel + gray outlines + remove header divider + remove blue glow
+       CSS ONLY
+    ========================== */
+
+    /* Left panel: real translucent "glass" */
+    #mapsView .ht-left-panel,
+    #mapsView > div > div.ht-left-panel,
+    div.ht-left-panel {
+      background: rgba(255,255,255,0.08) !important;
+      border: 1px solid rgba(210,210,210,0.45) !important;
+      backdrop-filter: blur(30px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(30px) saturate(160%) !important;
+      box-shadow: none !important;
+    }
+
+    /* Remove the thin divider line under the header area */
+    #mapsView .ht-left-top,
+    #mapsView .maps-header,
+    #mapsView .ht-header,
+    #mapsView .ht-left-panel .ht-left-top {
+      border-bottom: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Buttons ("buns") outlined in gray */
+    #mapsView .ht-left-panel button,
+    #mapsView .ht-left-panel .ht-btn,
+    #mapsView .ht-left-panel .pill-btn,
+    #mapsView .ht-left-panel .primary-btn,
+    #mapsView .ht-left-panel .maps-tab,
+    #mapsView .ht-left-panel .maps-mini-tabs button {
+      background: rgba(255,255,255,0.08) !important;
+      border: 1px solid rgba(210,210,210,0.42) !important;
+      box-shadow: none !important;
+      color: #111 !important;
+    }
+
+    /* NO outlines on non-buttons / section containers */
+    #mapsView .ht-left-panel .maps-address-row,
+    #mapsView .ht-left-panel #mapsMiniTabs,
+    #mapsView .ht-left-panel #stormControls,
+    #mapsView .ht-left-panel #stormDateRow,
+    #mapsView .ht-left-panel .maps-controls,
+    #mapsView .ht-left-panel .ht-recent,
+    #mapsView .ht-left-panel #stormListPanel {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Specifically ensure these are NOT styled like buttons */
+    #mapsView .ht-left-panel .ht-recent-title,
+    #mapsView .ht-left-panel .map-status,
+    #mapsView .ht-left-panel #stormListPanel .map-status {
+      background: transparent !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    #mapsView .ht-left-panel input,
+    #mapsView .ht-left-panel select,
+    #mapsView .ht-left-panel textarea {
+      background: rgba(255,255,255,0.06) !important;
+      border: 1px solid rgba(210,210,210,0.55) !important;
+      color: #111 !important;
+      box-shadow: none !important;
+      outline: none !important;
+    }
+
+    /* Remove the blue Hail Money Maps logo in the top-left */
+    #mapsView .ht-brand,
+    #mapsView .ht-logo,
+    #mapsView .ht-brand-badge,
+    #mapsView .ht-brand img,
+    #mapsView .ht-logo img {
+      display: none !important;
+    }
+
+    /* Remove the blue "helmet" badge background (keep the icon itself) */
+    #mapsView .ht-brand,
+    #mapsView .ht-logo,
+    #mapsView .ht-brand-badge,
+    #mapsView .ht-brand * ,
+    #mapsView .ht-logo * {
+      box-shadow: none !important;
+      filter: none !important;
+      outline: none !important;
+    }
+    #mapsView .ht-brand,
+    #mapsView .ht-logo,
+    #mapsView .ht-brand-badge {
+      background: transparent !important;
+      border: 1px solid rgba(140,140,140,0.70) !important;
+    }
+
+    /* =========================
+       TRUE GLASS LEFT PANEL
+       NO COLOR. MAP SHOWS THROUGH.
+       ========================= */
+
+    #mapsView .ht-left-panel,
+    #mapsView > div > div.ht-left-panel,
+    div.ht-left-panel {
+      background: transparent !important;
+      background-color: transparent !important;
+      border: 1px solid rgba(200,200,200,0.45) !important;
+      backdrop-filter: blur(26px) !important;
+      -webkit-backdrop-filter: blur(26px) !important;
+      box-shadow: none !important;
+    }
+
+    /* STOP. The dark is coming from a dimmer/scrim on the MAP LAYER (not the panel).
+       Kill common overlays + any brightness/opacity filters. */
+    #mapsView::before,
+    #mapsView::after {
+      content: none !important;
+      display: none !important;
+    }
+
+    #mapsView,
+    #mapsView * {
+      filter: none !important;
+      opacity: 1 !important;
+    }
+
+    #mapsView .overlay,
+    #mapsView .map-overlay,
+    #mapsView .scrim,
+    #mapsView .dim,
+    #mapsView .shade,
+    #mapsView .glass-scrim,
+    #mapsView .ht-scrim {
+      display: none !important;
+    }
+
+    /* Google Maps layers: ensure nothing is being darkened */
+    #mapsView .gm-style,
+    #mapsView .gm-style * {
+      filter: none !important;
+      opacity: 1 !important;
+    }
+
+    /* Inputs only (these need borders, nothing else) */
+    #mapsView .ht-left-panel input,
+    #mapsView .ht-left-panel select,
+    #mapsView .ht-left-panel textarea {
+      background: transparent !important;
+      border: 1px solid rgba(200,200,200,0.55) !important;
+      color: #111 !important;
+    }
+
+    /* =========================
+       REMOVE DARK WRAPPER BEHIND LEFT PANEL
+       LET MAP SHOW THROUGH
+       ========================= */
+
+    /* The container that holds the left panel */
+    #mapsView > div,
+    #mapsView > div > div {
+      background: transparent !important;
+    }
+
+    /* Left panel itself: true glass */
+    #mapsView .ht-left-panel {
+      background: transparent !important;
+      background-color: transparent !important;
+      border: 1px solid rgba(200,200,200,0.45) !important;
+      backdrop-filter: blur(22px) !important;
+      -webkit-backdrop-filter: blur(22px) !important;
+      box-shadow: none !important;
+    }
+
+    /* =========================
+       MAP ONLY MODE — HARD RESET
+       Hide EVERYTHING except the map
+       ========================= */
+
+    /* Hide all direct children of mapsView */
+    #mapsView > * {
+      display: none !important;
+    }
+
+    /* Re-enable the map (Google Maps / canvas variants) */
+    #mapsView #map,
+    #mapsView .map,
+    #mapsView .map-container,
+    #mapsView .maps-canvas,
+    #mapsView .gm-style,
+    #mapsView .gm-style * {
+      display: block !important;
+      visibility: visible !important;
+    }
+
+    /* Ensure the map fills the viewport */
+    #mapsView,
+    #mapsView #map,
+    #mapsView .map,
+    #mapsView .map-container,
+    #mapsView .gm-style {
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      left: 0 !important;
+      top: 0 !important;
+    }
+
+    /* =========================
+       FIX: MAP ONLY MODE (restore map wrapper, then hide left UI)
+       ========================= */
+
+    /* Undo the previous hard-hide that blanked everything */
+    #mapsView > div {
+      display: block !important;
+      visibility: visible !important;
+    }
+
+    /* Hide ALL left-side UI */
+    #mapsView .ht-left-panel,
+    #mapsView > div > div.ht-left-panel,
+    #mapsView #stormListPanel,
+    #mapsView .ht-left-rail,
+    #mapsView .left-rail,
+    #mapsView #mapsLeftRail {
+      display: none !important;
+    }
+
+    /* Make the map fill the view */
+    #mapsView #map,
+    #mapsView .gm-style,
+    #mapsView .ht-map,
+    #mapsView .map,
+    #mapsView .map-container {
+      width: 100% !important;
+      height: 100% !important;
+      margin-left: 0 !important;
+      left: 0 !important;
+    }
+
+    /* Custom Google Maps map type control (LEFT_TOP) */
+    .gm-custom-maptype {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.25);
+      border-radius: 2px;
+      font-family: Roboto, Arial, sans-serif;
+      font-size: 13px;
+      color: #202124;
+      margin: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    .gm-custom-maptype-tabs {
+      display: flex;
+      border-bottom: 1px solid rgba(0,0,0,0.15);
+    }
+
+    .gm-custom-maptype-tabs button {
+      appearance: none;
+      background: transparent;
+      border: 0;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
+    }
+
+    .gm-custom-maptype-tabs button.active {
+      background: rgba(0,0,0,0.06);
+      font-weight: 600;
+    }
+
+    .gm-custom-maptype-options {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px 10px;
+    }
+
+    .gm-custom-maptype-opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .gm-custom-maptype-opt.disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    .gm-custom-maptype-opt input {
+      margin: 0;
+    }
+
+    /* FINAL OVERRIDE: remove the top header bar (brand/email/role/sign out) */
+    #appRoot > header.topbar,
+    header.topbar,
+    .topbar {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: 0 !important;
+    }
+
+    /* FINAL OVERRIDE: remove the left vertical rail (M/C/A) */
+    #mapsView #htIconRail,
+    #htIconRail {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      min-width: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: 0 !important;
+    }
+
+    #mapsView #htIconRail .ht-rail-btn,
+    #htIconRail .ht-rail-btn {
+      display: none !important;
+    }
+
+    /* HARD-KILL: Google MapType control (Map / Satellite / Terrain / Labels) */
+    #mapsView .gm-style .gm-style-mtc,
+    #mapsView .gm-style .gmnoprint.gm-style-mtc,
+    .gm-style .gm-style-mtc,
+    .gm-style .gmnoprint.gm-style-mtc {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    /* LEFT MAP OVERLAY: two empty translucent "glass" boxes */
+    #mapsView .ht-map-wrap {
+      position: relative;
+    }
+
+    #mapsView .ht-map-glass-stack {
+      position: absolute;
+      left: 18px;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      flex-direction: row;
+      gap: 0;
+      width: 360px;
+      height: 100vh;
+      pointer-events: none;
+    }
+
+    #mapsView .ht-map-glass-box {
+      height: 100%;
+      box-sizing: border-box;
+      background: transparent;
+      border: 3px solid rgba(200, 200, 200, 0.6);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 12px;
+      flex: 0 0 auto;
+      position: relative;
+    }
+
+    #mapsView .ht-map-glass-logo {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      width: 54px;
+      height: 54px;
+      object-fit: contain;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #mapsView .ht-map-glass-box:first-child {
+      width: 25%;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    #mapsView .ht-map-glass-box:last-child {
+      width: 75%;
+      border-left: 0;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+
+    #mapsView .ht-map-glass-stack {
+      pointer-events: auto;
+    }
+
+    #mapsView .ht-map-glass-box:last-child {
+      padding: 14px;
+    }
+
+    #mapsView .ht-map-glass-search {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      background: transparent;
+      border: 3px solid rgba(200, 200, 200, 0.6);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: #fff;
+      outline: none;
+    }
+
+    #mapsView .ht-map-glass-search::placeholder {
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    #mapsView .ht-map-glass-navrow {
+      display: flex;
+      gap: 0;
+      margin-top: 14px;
+      width: calc(100% + 28px);
+      margin-left: -14px;
+      margin-right: -14px;
+    }
+
+    #mapsView .glass-nav-item {
+      flex: 1 1 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      background: transparent;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      overflow: visible;
+    }
+
+    #mapsView .glass-nav-item .nav-icon {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      display: block;
+    }
+
+    #mapsView .glass-nav-item .nav-button {
+      width: 100%;
+      box-sizing: border-box;
+      background: transparent;
+      border: 3px solid rgba(200, 200, 200, 0.6);
+      padding: 18px 10px;
+      min-height: 58px;
+      font-size: 14px;
+      color: #fff;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+    }
+
+    #mapsView .glass-nav-item:not(:first-child):not(:last-child) .nav-button {
+      border-radius: 0;
+    }
+
+    #mapsView .glass-nav-item + .glass-nav-item .nav-button {
+      border-left: 0;
+    }
+
+    #mapsView .glass-nav-item:first-child .nav-button {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    #mapsView .glass-nav-item:last-child .nav-button {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+
+    #mapsView .ht-map-glass-most-recent {
+      margin-top: 14px;
+      color: #fff;
+    }
+
+    .ht-events-meta { margin-top: 8px; color: #fff; }
+    .ht-total-events { margin: 6px 0 10px; font-weight: 600; font-size: 13px; color: #fff; }
+
+    .ht-events-list { display: flex; flex-direction: column; gap: 8px; }
+    .ht-date-item {
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .ht-date-item:hover { background: rgba(255,255,255,0.12); }
+    .ht-date-item:active { background: rgba(255,255,255,0.16); }
+
+    .ht-event-rowline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      color: #fff;
+      cursor: pointer;
+    }
+    .ht-event-rowline:hover { background: rgba(255,255,255,0.12); }
+    .ht-event-rowline .ht-event-check { width: 18px; height: 18px; }
+    .ht-event-date-text { flex: 1; font-weight: 600; }
+
+    #eventDatesList { display: flex; flex-direction: column; gap: 12px; }
+
+    .ht-event-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .ht-event-toprow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      color: #fff;
+    }
+
+    .ht-event-date { flex: 1; font-weight: 700; color: #fff; }
+
+    .ht-event-actions { display: flex; align-items: center; gap: 10px; opacity: 0.9; }
+    .ht-act-ico { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+    .ht-act-ico svg { width: 18px; height: 18px; }
+
+    .ht-event-divider { height: 1px; background: rgba(255,255,255,0.14); }
+
+    .ht-event-pills { display: flex; gap: 10px; padding: 10px 12px 12px; flex-wrap: wrap; }
+    .ht-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: #fff;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .ht-pill svg { width: 16px; height: 16px; opacity: 0.95; }
+
+    .ht-event-check { display: inline-flex; align-items: center; }
+    .ht-event-check input { position: absolute; opacity: 0; pointer-events: none; }
+    .ht-check-box {
+      width: 18px; height: 18px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.45);
+      background: rgba(0,0,0,0.12);
+      display: inline-block;
+    }
+
+    .ht-events-pager {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      gap: 10px;
+    }
+    .ht-pager-status { color: rgba(255,255,255,0.85); font-size: 12px; white-space: nowrap; }
+    .ht-pager-btn {
+      flex: 1;
+      padding: 10px 12px;
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .ht-pager-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Subtle overall lightening of the map view (CSS-only) */
+    #mapsView #stormMap,
+    #mapsView #stormMap .gm-style {
+      filter: brightness(1.06) saturate(1.05) contrast(1.02) !important;
+    }
+
+    /* LEFT GLASS MENU: force all lettering white (overlay only) */
+    #mapsView .ht-map-glass-stack,
+    #mapsView .ht-map-glass-stack * {
+      color: #fff !important;
+    }
+
+    #mapsView .ht-map-glass-stack input,
+    #mapsView .ht-map-glass-stack textarea,
+    #mapsView .ht-map-glass-stack select {
+      color: #fff !important;
+      -webkit-text-fill-color: #fff;
+    }
+
+    #mapsView .ht-map-glass-stack input::placeholder,
+    #mapsView .ht-map-glass-stack textarea::placeholder {
+      color: rgba(255, 255, 255, 0.75) !important;
+    }
+
   </style>
 </head>
 <body>
@@ -1118,7 +2428,7 @@
         id="authPassword"
         type="password"
         class="field-input"
-        placeholder="••••••••"
+        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
       />
 
       <button
@@ -1155,12 +2465,12 @@
     <div id="wellnessPillBar" class="wellness-pill-bar">
       <div class="wellness-pill">
         <span id="stepsClickable" style="cursor: pointer;">
-          🚶 <span id="stepsValueTop">0</span> /
+          ðŸš¶ <span id="stepsValueTop">0</span> /
           <span id="stepGoalLabel">8000</span> steps
         </span>
 
         <span id="waterClickable" style="cursor: pointer;">
-          💧 <span id="waterValueTop">0</span> /
+          ðŸ’§ <span id="waterValueTop">0</span> /
           <span id="waterGoalLabel">80</span> oz
         </span>
 
@@ -1312,7 +2622,7 @@
               <input
                 id="chatInputHub"
                 class="control-input"
-                placeholder="Type a company-wide message…"
+                placeholder="Type a company-wide messageâ€¦"
               />
               <button
                 id="chatSendBtnHub"
@@ -1343,7 +2653,7 @@
               </div>
 
               <div id="leadsList" class="leads-list">
-                Loading leads…
+                Loading leadsâ€¦
               </div>
             </div>
           </div>
@@ -1397,19 +2707,55 @@
 
 <!-- =================== $MAPS VIEW =================== -->
 <section id="mapsView" class="view">
-  <div class="view-inner maps-layout">
-    <div class="view-header">
-      <div>
-        <h2>$Maps</h2>
-      </div>
-      <button id="mapsBackBtn" class="pill-btn">Back to Menu</button>
+  <div class="ht-maps-shell">
+    <div id="htIconRail" aria-label="Maps rail">
+      <button type="button" class="ht-rail-btn active" aria-label="Maps">M</button>
+      <button type="button" class="ht-rail-btn" aria-label="Campaigns">C</button>
+      <button type="button" class="ht-rail-btn" aria-label="Assets">A</button>
     </div>
 
-    <div id="stormControls" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:8px 0;">
+    <div class="ht-left-panel">
+      <div class="ht-left-top">
+      </div>
+
+      <!-- ADDRESS SEARCH (keeps existing IDs/wiring) -->
+      <div class="maps-address-row">
+        <div class="ht-address-inputwrap">
+          <input
+            id="addressInput"
+            type="text"
+            class="control-input flex-1"
+            placeholder="Search addressâ€¦"
+          />
+          <span class="ht-input-x" aria-hidden="true">Ã—</span>
+        </div>
+        <button id="searchLocationBtn" class="primary-btn" type="button">
+          Go
+        </button>
+      </div>
+
+      <!-- MINI TABS (keeps existing IDs/wiring) -->
+      <div id="mapsMiniTabs" class="maps-mini-tabs">
+        <button id="tabMaps" class="active" type="button">
+          <span class="tab-ico" aria-hidden="true"></span>
+          <span class="tab-txt">Maps</span>
+        </button>
+        <button id="tabCampaigns" type="button">
+          <span class="tab-ico" aria-hidden="true"></span>
+          <span class="tab-txt">Campaigns</span>
+        </button>
+        <button id="tabAssets" type="button">
+          <span class="tab-ico" aria-hidden="true"></span>
+          <span class="tab-txt">Assets</span>
+        </button>
+      </div>
+
+      <!-- Keep hail-dates controls in DOM, but compact and inside left panel -->
+      <div id="stormControls">
       <label>
         State:
         <select id="stateSelect">
-          <option value="">Select…</option>
+          <option value="">Selectâ€¦</option>
           <option value="AL">Alabama</option>
           <option value="AK">Alaska</option>
           <option value="AZ">Arizona</option>
@@ -1467,7 +2813,7 @@
       <label>
         Scope:
         <select id="scopeSelect">
-          <option value="" selected>Select scope…</option>
+          <option value="" selected>Select scopeâ€¦</option>
           <option value="state">Statewide dates</option>
           <option value="city">City-only dates</option>
         </select>
@@ -1476,7 +2822,7 @@
       <label>
         Storm type:
         <select id="stormTypeTop">
-          <option value="" selected>Select type…</option>
+          <option value="" selected>Select typeâ€¦</option>
           <option value="hail">Hail</option>
           <option value="wind">Wind</option>
           <option value="all">All</option>
@@ -1500,9 +2846,9 @@
       <button id="getDatesBtn" class="pill-btn" disabled>Get Dates</button>
 
       <span id="dateStatus" style="opacity:.8;"></span>
-    </div>
+      </div>
 
-    <div id="stormDateRow" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:6px 0 10px;">
+      <div id="stormDateRow">
       <label>
         Storm dates:
         <select id="dateSelect" disabled>
@@ -1513,86 +2859,10 @@
         <span id="datesLoadedStatus" style="font-size:.85rem; opacity:.8;"></span>
         <button id="loadNextDatesBtn" class="pill-btn" style="padding:4px 8px; display:none;">Load next 3 months</button>
       </div>
-    </div>
-
-    <!-- TOP CONTROLS -->
-    <div class="maps-controls">
-      <!-- STATE -->
-      <div class="maps-control-group" style="display:none;">
-        <label class="control-label">State</label>
-        <select id="stateSelect" class="control-input">
-          <option value="">Select a state…</option>
-          <option value="AL">Alabama</option>
-          <option value="AK">Alaska</option>
-          <option value="AZ">Arizona</option>
-          <option value="AR">Arkansas</option>
-          <option value="CA">California</option>
-          <option value="CO">Colorado</option>
-          <option value="CT">Connecticut</option>
-          <option value="DE">Delaware</option>
-          <option value="FL">Florida</option>
-          <option value="GA">Georgia</option>
-          <option value="HI">Hawaii</option>
-          <option value="ID">Idaho</option>
-          <option value="IL">Illinois</option>
-          <option value="IN">Indiana</option>
-          <option value="IA">Iowa</option>
-          <option value="KS">Kansas</option>
-          <option value="KY">Kentucky</option>
-          <option value="LA">Louisiana</option>
-          <option value="ME">Maine</option>
-          <option value="MD">Maryland</option>
-          <option value="MA">Massachusetts</option>
-          <option value="MI">Michigan</option>
-          <option value="MN">Minnesota</option>
-          <option value="MS">Mississippi</option>
-          <option value="MO">Missouri</option>
-          <option value="MT">Montana</option>
-          <option value="NE">Nebraska</option>
-          <option value="NV">Nevada</option>
-          <option value="NH">New Hampshire</option>
-          <option value="NJ">New Jersey</option>
-          <option value="NM">New Mexico</option>
-          <option value="NY">New York</option>
-          <option value="NC">North Carolina</option>
-          <option value="ND">North Dakota</option>
-          <option value="OH">Ohio</option>
-          <option value="OK">Oklahoma</option>
-          <option value="OR">Oregon</option>
-          <option value="PA">Pennsylvania</option>
-          <option value="RI">Rhode Island</option>
-          <option value="SC">South Carolina</option>
-          <option value="SD">South Dakota</option>
-          <option value="TN">Tennessee</option>
-          <option value="TX">Texas</option>
-          <option value="UT">Utah</option>
-          <option value="VT">Vermont</option>
-          <option value="VA">Virginia</option>
-          <option value="WA">Washington</option>
-          <option value="WV">West Virginia</option>
-          <option value="WI">Wisconsin</option>
-          <option value="WY">Wyoming</option>
-        </select>
-
-        <input
-          id="stateTextInput"
-          type="text"
-          class="control-input"
-          placeholder="Or type state (MO / Missouri)…"
-          style="margin-top: 4px"
-        />
       </div>
 
-      <!-- STORM TYPE -->
-      <div class="maps-control-group" style="display:none;">
-        <label class="control-label">Storm Type</label>
-        <select id="stormSelect" class="control-input">
-          <option value="">Pick storm type…</option>
-          <option value="hail">Hail</option>
-          <option value="wind">Wind</option>
-          <option value="tornado">Tornado</option>
-        </select>
-      </div>
+      <!-- TOP CONTROLS (keep existing IDs like minValueInput/stormSearchInput) -->
+      <div class="maps-controls">
 
       <!-- MIN VALUE -->
       <div class="maps-control-group small">
@@ -1606,42 +2876,83 @@
       </div>
 
       <!-- SEARCH WITHIN LIST -->
-      <div class="maps-control-group small">
-        <label class="control-label">Filter storms by name/date</label>
-        <input
-          id="stormSearchInput"
-          type="text"
-          class="control-input"
-          placeholder="Search storms…"
-        />
+      </div>
+
+      <div class="ht-recent">
+        <div class="ht-recent-title">Most Recent Events</div>
+        <div id="recentEventsList" aria-label="Most Recent Events List"></div>
+        <div id="recentEventsPaging" aria-label="Most Recent Events Paging">
+          <button id="recentEventsPrev" type="button" disabled>Prev</button>
+          <button id="recentEventsNext" type="button">Next</button>
+        </div>
+      </div>
+
+      <div id="stormListPanel" class="storm-list-panel">
+        <div id="stormList" class="storm-list"></div>
       </div>
     </div>
 
-    <!-- ADDRESS SEARCH -->
-    <div class="maps-address-row">
-      <input
-        id="addressInput"
-        type="text"
-        class="control-input flex-1"
-        placeholder="Type any address and hit Go…"
-      />
-      <button id="searchLocationBtn" class="primary-btn">
-        Go to Address
-      </button>
-    </div>
-
-    <!-- MAP + STORM LIST -->
-    <div class="maps-main-split">
+    <div class="ht-map-wrap">
       <div id="stormMap" class="map-panel"></div>
+      <div class="ht-map-glass-stack" aria-hidden="true">
+        <div class="ht-map-glass-box">
+          <img class="ht-map-glass-logo" src="/assets/hmm-globe.png" alt="Hail Money Map" />
+        </div>
+        <div class="ht-map-glass-box">
+          <input class="ht-map-glass-search" type="text" placeholder="Search" />
 
-      <div id="stormListPanel" class="storm-list-panel">
-        <div id="mapStatus" class="map-status">
-          Pick a state and storm type.
+          <div class="ht-map-glass-navrow" aria-label="Quick navigation">
+            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Maps">
+              <svg class="nav-icon" viewBox="0 0 64 64" role="img" aria-label="Maps" focusable="false">
+                <path d="M32 58c10-14 18-25 18-34 0-10-8-18-18-18S14 14 14 24c0 9 8 20 18 34z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round" />
+                <circle cx="32" cy="24" r="6" fill="none" stroke="currentColor" stroke-width="6" />
+              </svg>
+              <div class="nav-button">Maps</div>
+            </div>
+
+            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Jobs">
+              <svg class="nav-icon" viewBox="0 0 64 64" role="img" aria-label="Jobs" focusable="false">
+                <path d="M8 30L32 12l24 18" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M16 28v26h32V28" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M26 54V40h12v14" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <div class="nav-button">Jobs</div>
+            </div>
+
+            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Assets">
+              <svg class="nav-icon" viewBox="0 0 64 64" role="img" aria-label="Assets" focusable="false">
+                <rect x="14" y="20" width="30" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="6" />
+                <rect x="22" y="12" width="30" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="6" opacity="0.9" />
+              </svg>
+              <div class="nav-button">Assets</div>
+            </div>
+          </div>
+
+          <div class="ht-map-glass-most-recent">Most Recent Events</div>
+
+          <div class="ht-events-meta">
+            <div class="ht-total-events">
+              Total Events: <span id="totalEventsCount">—</span>
+            </div>
+
+            <div id="debugStormDatesBox" style="display:none; margin-top:10px;">
+              <div style="font-weight:700; color:#fff; margin-bottom:6px;">DEBUG</div>
+              <textarea id="debugStormDatesText" readonly
+                style="width:100%; height:160px; resize:vertical; padding:10px; color:#fff;
+                       background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.18);
+                       border-radius:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+                       font-size:12px;"></textarea>
+            </div>
+
+            <div id="eventDatesList" class="ht-events-list" role="list"></div>
+
+            <div class="ht-events-pager">
+              <button type="button" id="prevDatesBtn" class="ht-pager-btn" disabled>Previous</button>
+              <span id="datesStatus" class="ht-pager-status">1–5</span>
+              <button type="button" id="nextDatesBtn" class="ht-pager-btn">Next</button>
+            </div>
+          </div>
         </div>
-        <div id="directionsArea" class="directions-area">
-          <button id="directionsBtn" class="pill-btn" disabled>Directions</button>
-        </div>
-        <div id="stormList" class="storm-list"></div>
       </div>
     </div>
   </div>
@@ -1699,11 +3010,11 @@
         id="insuranceSearchInput"
         class="control-input"
         style="flex: 1"
-        placeholder="Search by carrier name…"
+        placeholder="Search by carrier nameâ€¦"
       />
     </div>
 
-    <div id="insuranceList" class="ins-list">Loading…</div>
+    <div id="insuranceList" class="ins-list">Loadingâ€¦</div>
   </div>
 </section>
 
@@ -1788,7 +3099,7 @@
         <input
           id="teamChatInput"
           class="control-input"
-          placeholder="Type a message to your team…"
+          placeholder="Type a message to your teamâ€¦"
         />
         <button id="teamChatSendBtn" class="primary-btn">
           Send
@@ -1901,7 +3212,7 @@
           id="payNoteInput"
           class="control-input"
           rows="3"
-          placeholder="Breakdown of what you are owed…"
+          placeholder="Breakdown of what you are owedâ€¦"
         ></textarea>
 
         <button
@@ -2065,7 +3376,7 @@
           id="adminUsersList"
           style="margin-top: 6px; font-size: 0.8rem"
         >
-          Loading…
+          Loadingâ€¦
         </div>
       </div>
     </div>
@@ -2081,14 +3392,14 @@
         <input
           id="stepsSearchInput"
           class="control-input"
-          placeholder="Search by email or name…"
+          placeholder="Search by email or nameâ€¦"
         />
       </div>
       <div
         id="stepsDashList"
         style="margin-top: 6px; font-size: 0.8rem"
       >
-        Loading…
+        Loadingâ€¦
       </div>
     </div>
 
@@ -2133,7 +3444,7 @@
             id="regionDetailTitle"
             style="font-size: 0.9rem; margin-bottom: 6px"
           >
-            Select a region…
+            Select a regionâ€¦
           </h4>
           <div
             style="
@@ -2165,7 +3476,7 @@
         id="adminPayrollList"
         style="margin-top: 6px; font-size: 0.8rem"
       >
-        Loading…
+        Loadingâ€¦
       </div>
     </div>
   </div>
@@ -2178,7 +3489,39 @@
 <script>
 "use strict";
 
-const DEBUG_STORMS = true;
+const DEBUG_STORMS = false;
+(() => {
+  const IDS = ['debugStormDatesBox', 'debugStormDatesText'];
+
+  const nuke = () => {
+    IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+  };
+
+  // run immediately
+  nuke();
+
+  // run after DOM ready
+  document.addEventListener('DOMContentLoaded', nuke);
+
+  // run after ANY future DOM mutation
+  new MutationObserver(nuke).observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+
+  // hard block re-creation
+  IDS.forEach(id => {
+    Object.defineProperty(window, id, {
+      get() { return null; },
+      set() {}
+    });
+  });
+})();
+
+
 
 /* =========================================================
    GLOBAL APP STATE
@@ -2200,6 +3543,14 @@ window.App = {
   selectedDate: null,
   noaaReports: [],
 };
+
+App.recentsPageIndex = App.recentsPageIndex || 0;
+App.recentsPages = App.recentsPages || {}; // idx -> items array
+App.recentsPageLastDoc = App.recentsPageLastDoc || {}; // idx -> last Firestore doc snapshot for that page
+App.recentsHasNext = App.recentsHasNext || {}; // idx -> boolean
+
+App.selectedDates = App.selectedDates || new Set();
+App.swathLayersByDate = App.swathLayersByDate || {};
 
 // Strictly click-gated dates paging state
 let AppDates = {
@@ -2251,8 +3602,17 @@ function showOnlyView(viewEl) {
 
   // Maps view: trigger resize so the map paints correctly
   if (viewEl.id === "mapsView") {
+    loadRecentEventsPage(0);
     setTimeout(() => {
       if (typeof initMap === "function") initMap();
+      debugStormDatesTop();
+      debugStormDatesFields();
+      debugStormDatesFieldsToUI();
+      wireNewPagerOnce();
+      ensureTotalEventsCountLoaded().then((n) => {
+        const el = document.getElementById("totalEventsCount");
+        if (el && n != null) el.textContent = String(n);
+      });
       if (App.map && window.google && google.maps && google.maps.event) {
         google.maps.event.trigger(App.map, "resize");
         const c = App.map.getCenter();
@@ -2260,6 +3620,935 @@ function showOnlyView(viewEl) {
       }
     }, 50);
   }
+}
+
+async function debugStormDatesTop() {
+  if (App._didStormDatesDebug) return;
+  App._didStormDatesDebug = true;
+  if (!window.db) return;
+
+  try {
+    const snap1 = await window.db.collection("stormDates").orderBy("date", "desc").limit(5).get();
+    console.log("[DEBUG stormDates] top by date desc:", snap1.docs.map(d => d.data()?.dateString || d.data()?.dateDash || d.data()?.date || d.id));
+
+    const snap2 = await window.db.collection("stormDates").orderBy("dateString", "desc").limit(5).get();
+    console.log("[DEBUG stormDates] top by dateString desc:", snap2.docs.map(d => d.data()?.dateString || d.data()?.dateDash || d.data()?.date || d.id));
+
+    const jan = await window.db.collection("stormDates")
+      .where("dateString", ">=", "2026-01-01")
+      .where("dateString", "<=", "2026-01-31")
+      .orderBy("dateString", "desc")
+      .limit(5)
+      .get();
+    console.log("[DEBUG stormDates] Jan 2026 by dateString:", jan.docs.map(d => d.data()?.dateString || d.id), "count=", jan.size);
+  } catch (e) {
+    console.error("[DEBUG stormDates] error:", e);
+  }
+}
+
+async function debugStormDatesFields() {
+  if (App._didFieldsDebug) return;
+  App._didFieldsDebug = true;
+  if (!window.db) {
+    console.log("[DEBUG_FIELDS] window.db missing");
+    return;
+  }
+
+  async function run(label, q) {
+    try {
+      const snap = await q.get();
+      console.log(`[DEBUG_FIELDS] ${label} count=`, snap.size);
+      const rows = snap.docs.slice(0, 3).map((doc) => {
+        const d = doc.data() || {};
+        const keys = Object.keys(d).slice(0, 25);
+        return {
+          id: doc.id,
+          keys,
+          date: d.date,
+          dateString: d.dateString,
+          dateDash: d.dateDash,
+          type: d.type,
+          state: d.state,
+          hasPolygon: !!(d.polygon || d.geojson || d.geometry),
+        };
+      });
+      console.log(`[DEBUG_FIELDS] ${label} sample=`, rows);
+    } catch (e) {
+      console.error(`[DEBUG_FIELDS] ${label} ERROR=`, e);
+    }
+  }
+
+  await run("orderBy date desc", window.db.collection("stormDates").orderBy("date", "desc").limit(5));
+  await run("orderBy dateString desc", window.db.collection("stormDates").orderBy("dateString", "desc").limit(5));
+  await run("orderBy dateDash desc", window.db.collection("stormDates").orderBy("dateDash", "desc").limit(5));
+
+  try {
+    const jan1 = await window.db.collection("stormDates")
+      .where("dateString", ">=", "2026-01-01")
+      .where("dateString", "<=", "2026-01-31")
+      .orderBy("dateString", "desc")
+      .limit(3)
+      .get();
+    console.log("[DEBUG_FIELDS] Jan 2026 by dateString count=", jan1.size, jan1.docs.map(d=>d.data()?.dateString || d.id));
+  } catch (e) {
+    console.error("[DEBUG_FIELDS] Jan 2026 by dateString ERROR=", e);
+  }
+
+  try {
+    const jan2 = await window.db.collection("stormDates")
+      .where("dateDash", ">=", "2026-01-01")
+      .where("dateDash", "<=", "2026-01-31")
+      .orderBy("dateDash", "desc")
+      .limit(3)
+      .get();
+    console.log("[DEBUG_FIELDS] Jan 2026 by dateDash count=", jan2.size, jan2.docs.map(d=>d.data()?.dateDash || d.id));
+  } catch (e) {
+    console.error("[DEBUG_FIELDS] Jan 2026 by dateDash ERROR=", e);
+  }
+}
+
+async function debugStormDatesFieldsToUI() {
+  try {
+    const box = document.getElementById("debugStormDatesBox");
+    const ta = document.getElementById("debugStormDatesText");
+    if (!box || !ta) return;
+
+    box.style.display = "block";
+    ta.value = "Running debug...\n";
+
+    if (!window.db) {
+      ta.value += "window.db missing\n";
+      return;
+    }
+
+    async function sample(label, q) {
+      try {
+        const snap = await q.get();
+        const out = {
+          label,
+          count: snap.size,
+          sample: snap.docs.slice(0, 3).map((doc) => {
+            const d = doc.data() || {};
+            return {
+              id: doc.id,
+              keys: Object.keys(d).slice(0, 40),
+              date: d.date ?? null,
+              dateString: d.dateString ?? null,
+              dateDash: d.dateDash ?? null,
+              type: d.type ?? null,
+              state: d.state ?? null,
+              hasPolygon: !!(d.polygon || d.geojson || d.geometry),
+            };
+          }),
+        };
+        ta.value += JSON.stringify(out, null, 2) + "\n\n";
+      } catch (e) {
+        ta.value += JSON.stringify({ label, error: String(e && e.message ? e.message : e) }, null, 2) + "\n\n";
+      }
+    }
+
+    await sample("orderBy date desc", window.db.collection("stormDates").orderBy("date", "desc").limit(5));
+    await sample("orderBy dateString desc", window.db.collection("stormDates").orderBy("dateString", "desc").limit(5));
+    await sample("orderBy dateDash desc", window.db.collection("stormDates").orderBy("dateDash", "desc").limit(5));
+
+    try {
+      const jan1 = await window.db.collection("stormDates")
+        .where("dateString", ">=", "2026-01-01")
+        .where("dateString", "<=", "2026-01-31")
+        .orderBy("dateString", "desc")
+        .limit(3)
+        .get();
+      ta.value += JSON.stringify({ label: "Jan 2026 by dateString", count: jan1.size, values: jan1.docs.map(d => d.data()?.dateString || d.id) }, null, 2) + "\n\n";
+    } catch (e) {
+      ta.value += JSON.stringify({ label: "Jan 2026 by dateString", error: String(e && e.message ? e.message : e) }, null, 2) + "\n\n";
+    }
+
+    try {
+      const jan2 = await window.db.collection("stormDates")
+        .where("dateDash", ">=", "2026-01-01")
+        .where("dateDash", "<=", "2026-01-31")
+        .orderBy("dateDash", "desc")
+        .limit(3)
+        .get();
+      ta.value += JSON.stringify({ label: "Jan 2026 by dateDash", count: jan2.size, values: jan2.docs.map(d => d.data()?.dateDash || d.id) }, null, 2) + "\n\n";
+    } catch (e) {
+      ta.value += JSON.stringify({ label: "Jan 2026 by dateDash", error: String(e && e.message ? e.message : e) }, null, 2) + "\n\n";
+    }
+  } catch {}
+}
+
+async function fetchStormDatesPage(idx, pageSize) {
+  // returns { items, lastDoc, hasNext, mode }
+  try {
+    App.recentsAllDates = App.recentsAllDates || null;
+    if (!Array.isArray(App.recentsAllDates)) {
+      const supabase = App.supabase || App.sb || window.supabaseClient || window.sb;
+      let json = null;
+
+      if (supabase && supabase.functions && typeof supabase.functions.invoke === "function") {
+        const { data, error } = await supabase.functions.invoke("hail-dates", { method: "GET" });
+        if (error) throw error;
+        json = data;
+      } else {
+        const url = `${SUPABASE_URL}/functions/v1/hail-dates`;
+        const resp = await fetch(url, {
+          headers: { apikey: SUPABASE_ANON_KEY }
+        });
+        const raw = await resp.text();
+        if (!resp.ok) throw new Error(`hail-dates HTTP ${resp.status}: ${raw.slice(0, 200)}`);
+        json = JSON.parse(raw);
+      }
+
+      const dates = Array.isArray(json?.dates) ? json.dates : [];
+      App.recentsAllDates = dates.filter((d) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d));
+    }
+
+    const start = Math.max(0, Number(idx) || 0) * (Number(pageSize) || 0);
+    const slice = App.recentsAllDates.slice(start, start + pageSize);
+    const items = slice.map((dateDash) => ({ dateDash }));
+    const hasNext = start + pageSize < App.recentsAllDates.length;
+    return { items, lastDoc: null, hasNext, mode: "supabase" };
+  } catch {
+    return { items: [], lastDoc: null, hasNext: false, mode: "error" };
+  }
+}
+
+async function ensureTotalEventsCountLoaded() {
+  try {
+    if (App.totalEventsCount != null) return App.totalEventsCount;
+    if (!window.db) return null;
+
+    const col = window.db.collection("stormDates");
+    if (col && typeof col.count === "function") {
+      const agg = await col.count().get();
+      const n = agg?.data?.()?.count;
+      if (typeof n === "number") App.totalEventsCount = n;
+    } else {
+      const snap = await col.get();
+      App.totalEventsCount = snap?.size ?? null;
+    }
+    return App.totalEventsCount;
+  } catch {
+    return null;
+  }
+}
+
+function formatDateDisplay(dateStr) {
+  try {
+    const s = String(dateStr || "");
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return s;
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    if (isNaN(d.getTime())) return s;
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+  } catch {
+    return String(dateStr || "");
+  }
+}
+
+function iconSvg(name) {
+  const common = 'viewBox="0 0 24 24" aria-hidden="true" focusable="false"';
+  if (name === "home") return `<svg ${common}><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+  if (name === "heart") return `<svg ${common}><path d="M12 21s-7-4.4-9.2-8.6C1.3 9.1 3.2 6 6.7 6c1.8 0 3.3 1 4.3 2.3C12 7 13.5 6 15.3 6c3.5 0 5.4 3.1 3.9 6.4C19 16.6 12 21 12 21Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+  if (name === "copy") return `<svg ${common}><rect x="9" y="9" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3" y="3" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2" opacity="0.8"/></svg>`;
+  if (name === "chev") return `<svg ${common}><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+  if (name === "wind") return `<svg ${common}><path d="M3 8h10a2 2 0 1 0-2-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 12h14a2 2 0 1 1-2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 16h9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  if (name === "tornado") return `<svg ${common}><path d="M5 5h14M6 9h12M7 13h10M9 17h6M10 21h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  if (name === "hail") return `<svg ${common}><path d="M12 3l8 4v10l-8 4-8-4V7l8-4Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="11" r="1.4" fill="currentColor"/><circle cx="14" cy="13" r="1.4" fill="currentColor"/><circle cx="13" cy="10" r="1.2" fill="currentColor" opacity="0.9"/></svg>`;
+  return "";
+}
+
+function normalizeDateDash(d) {
+  if (!d) return null;
+
+  // Preferred explicit string
+  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    return d;
+  }
+
+  // Firestore Timestamp
+  if (d.toDate && typeof d.toDate === "function") {
+    const dt = d.toDate();
+    if (!isNaN(dt)) {
+      return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
+    }
+  }
+
+  // Loose string fallback
+  if (typeof d === "string") {
+    const m = d.match(/(\d{4})\D?(\d{2})\D?(\d{2})/);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  }
+
+  return null;
+}
+
+function renderNewEventDates(items, pageIndex, pageSize) {
+  const list = document.getElementById("eventDatesList");
+  const prevBtn = document.getElementById("prevDatesBtn");
+  const nextBtn = document.getElementById("nextDatesBtn");
+  const status = document.getElementById("datesStatus");
+
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  (items || []).forEach((item) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ht-date-item";
+    btn.textContent = item.dateDash;
+
+    btn.addEventListener("click", () => {
+      console.log("[EVENT CLICK]", item.dateDash);
+      showHailSwathsForDate(item.dateDash);
+    });
+
+    list.appendChild(btn);
+  });
+
+  const idx = Math.max(0, Number(pageIndex) || 0);
+  if (prevBtn) prevBtn.disabled = idx <= 0;
+  if (nextBtn) nextBtn.disabled = (items || []).length < pageSize;
+
+  if (status) {
+    const start = idx * pageSize + 1;
+    const end = idx * pageSize + (items || []).length;
+    status.textContent = `${start}-${end}`;
+  }
+}
+
+function wireNewPagerOnce() {
+  if (App._newPagerWired) return;
+  App._newPagerWired = true;
+
+  const prev = document.getElementById("prevDatesBtn");
+  const next = document.getElementById("nextDatesBtn");
+
+  if (prev) {
+    prev.addEventListener("click", () => {
+      const idx = Math.max(0, Number(App.recentsPageIndex) || 0);
+      loadRecentEventsPage(Math.max(0, idx - 1));
+    });
+  }
+
+  if (next) {
+    next.addEventListener("click", () => {
+      const idx = Math.max(0, Number(App.recentsPageIndex) || 0);
+      loadRecentEventsPage(idx + 1);
+    });
+  }
+}
+
+function toDateDashFromDoc(d) {
+  if (!d) return "";
+  // prefer explicit date string fields
+  const s = d.dateString || d.dateDash || d.date_yyyymmdd || d.date || "";
+  if (typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  // Firestore Timestamp in d.date
+  if (d.date && typeof d.date.toDate === "function") {
+    const dt = d.date.toDate();
+    if (dt && !isNaN(dt.getTime())) {
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      const day = String(dt.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+  }
+
+  // loose string parse (20260125, 2026/01/25, etc)
+  if (typeof s === "string") {
+    const m = s.match(/(\d{4})\D?(\d{2})\D?(\d{2})/);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  }
+  return "";
+}
+
+function renderNewRecentRows(items, pageIndex, pageSize) {
+  const list = document.getElementById("eventDatesList");
+  const prev2 = document.getElementById("prevDatesBtn");
+  const next2 = document.getElementById("nextDatesBtn");
+  const status = document.getElementById("datesStatus");
+
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  (items || []).forEach((it) => {
+    const row = document.createElement("div");
+    row.className = "ht-event-rowline";
+
+    const check = document.createElement("input");
+    check.type = "checkbox";
+    check.className = "ht-event-check";
+    check.addEventListener("click", (e) => e.stopPropagation());
+    check.checked = !!(App.selectedDates && App.selectedDates.has(it.dateDash));
+
+    check.addEventListener("change", async () => {
+      if (check.checked) {
+        const ok = await addStormDate(it.dateDash);
+        if (!ok) check.checked = false;
+      } else {
+        removeStormDate(it.dateDash);
+      }
+    });
+
+    const label = document.createElement("div");
+    label.className = "ht-event-date-text";
+    label.textContent = it.dateDash;
+
+    row.appendChild(check);
+    row.appendChild(label);
+
+    row.addEventListener("click", () => {
+      console.log("[RECENTS_NEW] click", it.dateDash);
+      showHailSwathsForDate(it.dateDash);
+    });
+
+    list.appendChild(row);
+  });
+
+  const idx = Math.max(0, Number(pageIndex) || 0);
+  if (prev2) prev2.disabled = idx <= 0;
+  const hasNext = App.recentsHasNext && App.recentsHasNext[idx] === true;
+  if (next2) next2.disabled = !hasNext;
+
+  if (status) {
+    const start = idx * pageSize + 1;
+    const end = idx * pageSize + (items || []).length;
+    status.textContent = (items && items.length) ? `${start}–${end}` : "—";
+  }
+}
+
+async function addStormDate(dateDash) {
+  if (!dateDash) return false;
+  if (App.selectedDates.has(dateDash)) return true;
+  if (App.selectedDates.size >= 10) {
+    alert("You can select up to 10 storms at a time.");
+    return false;
+  }
+  App.selectedDates.add(dateDash);
+  await showHailSwathsForDate(dateDash, { additive: true });
+  return true;
+}
+
+function removeStormDate(dateDash) {
+  if (!dateDash) return;
+  App.selectedDates.delete(dateDash);
+  const layer = App.swathLayersByDate[dateDash];
+  if (layer) {
+    layer.setMap(null);
+    delete App.swathLayersByDate[dateDash];
+  }
+}
+
+function renderDatesIntoNewUI(dates, pageIndex, pageSize) {
+  const list2 = document.getElementById("eventDatesList");
+  const prev2 = document.getElementById("prevDatesBtn");
+  const next2 = document.getElementById("nextDatesBtn");
+  const status = document.getElementById("datesStatus");
+
+  // Render dates list (card layout)
+  if (list2) {
+    list2.innerHTML = "";
+    (dates || []).forEach((entry) => {
+      const item = (typeof entry === "string") ? { date: entry } : (entry || {});
+      const date = item.date || item.dateString || item.dateDash || "";
+      const card = document.createElement("div");
+      card.className = "ht-event-card";
+      card.dataset.date = date;
+
+      card.innerHTML = `
+      <div class="ht-event-toprow">
+        <label class="ht-event-check">
+          <input type="checkbox" aria-label="Select event" />
+          <span class="ht-check-box" aria-hidden="true"></span>
+        </label>
+
+        <div class="ht-event-date">${formatDateDisplay(date)}</div>
+
+        <div class="ht-event-actions" aria-hidden="true">
+          <span class="ht-act-ico">${iconSvg("home")}</span>
+          <span class="ht-act-ico">${iconSvg("heart")}</span>
+          <span class="ht-act-ico">${iconSvg("copy")}</span>
+          <span class="ht-act-ico ht-act-chev">${iconSvg("chev")}</span>
+        </div>
+      </div>
+
+      <div class="ht-event-divider"></div>
+
+      <div class="ht-event-pills">
+        ${item.windMph != null ? `<span class="ht-pill">${iconSvg("wind")}<span>${item.windMph} MPH</span></span>` : ""}
+        ${item.tornadoEf != null ? `<span class="ht-pill">${iconSvg("tornado")}<span>EF${item.tornadoEf}</span></span>` : ""}
+        ${item.hailIn != null ? `<span class="ht-pill">${iconSvg("hail")}<span>${item.hailIn}\"</span></span>` : ""}
+      </div>
+    `;
+
+      // click card loads swaths (ignore checkbox clicks)
+      card.addEventListener("click", (e) => {
+        const t = e.target;
+        if (t && (t.tagName === "INPUT" || t.closest(".ht-event-check"))) return;
+        showHailSwathsForDate(date);
+      });
+
+      list2.appendChild(card);
+    });
+  }
+
+  // Pager state
+  const idx = Math.max(0, Number(pageIndex) || 0);
+  if (prev2) prev2.disabled = idx <= 0;
+  if (next2) next2.disabled = (dates || []).length < pageSize;
+
+  // Status like "1–5" or "6–10"
+  if (status) {
+    const start = idx * pageSize + 1;
+    const end = idx * pageSize + (dates || []).length;
+    status.textContent = (dates && dates.length) ? `${start}–${end}` : "—";
+  }
+}
+
+function wireNewPagerButtonsOnce() {
+  if (App._wiredNewDatesPager) return;
+  App._wiredNewDatesPager = true;
+
+  const prev2 = document.getElementById("prevDatesBtn");
+  const next2 = document.getElementById("nextDatesBtn");
+
+  if (prev2) {
+    prev2.addEventListener("click", () => {
+      const idx = Math.max(0, Number(App.recentsPageIndex) || 0);
+      loadRecentEventsPage(Math.max(0, idx - 1));
+    });
+  }
+  if (next2) {
+    next2.addEventListener("click", () => {
+      const idx = Math.max(0, Number(App.recentsPageIndex) || 0);
+      loadRecentEventsPage(idx + 1);
+    });
+  }
+}
+
+function cleanLsrOverlays() {
+  try {
+    (window._lsrOverlays || []).forEach(o => o.setMap && o.setMap(null));
+  } catch {}
+  window._lsrOverlays = [];
+}
+
+function clearLsrOverlays() {
+  cleanLsrOverlays();
+}
+
+function hailInToRadiusMeters(hailIn) {
+  const h = Number(hailIn);
+  if (!Number.isFinite(h) || h <= 0) return 3000; // default
+  // 0.5" ~ 5km, 1" ~ 10km, 2" ~ 20km, 3" ~ 30km (simple, readable scaling)
+  return Math.max(2000, Math.min(40000, h * 10000));
+}
+
+function hailInToColor(hailIn) {
+  const h = Number(hailIn);
+  if (!Number.isFinite(h)) return "#00e5ff";
+  if (h >= 3) return "#ff00ff";
+  if (h >= 2) return "#ff3b30";
+  if (h >= 1.5) return "#ff9500";
+  if (h >= 1) return "#ffd60a";
+  return "#00e5ff";
+}
+
+function drawLsrPointsOnMap(points) {
+  cleanLsrOverlays();
+  const map = App.map;
+  if (!map) return;
+
+  const bounds = new google.maps.LatLngBounds();
+
+  (points || []).forEach(p => {
+    const lat = Number(p.lat);
+    const lon = Number(p.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+
+    const hailIn = Number(p.hail_in);
+    const color = hailInToColor(hailIn);
+    const radius = hailInToRadiusMeters(hailIn);
+
+    const center = { lat, lng: lon };
+    bounds.extend(center);
+
+    const circle = new google.maps.Circle({
+      map,
+      center,
+      radius,
+      strokeColor: color,
+      strokeOpacity: 0.9,
+      strokeWeight: 2,
+      fillColor: color,
+      fillOpacity: 0.25,
+      clickable: true,
+      zIndex: 999999,
+    });
+
+    let when = "";
+    try {
+      when = p.event_time ? new Date(p.event_time).toLocaleString() : "";
+    } catch {}
+
+    const info = new google.maps.InfoWindow({
+      content: `
+        <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; font-size: 13px; line-height: 1.35;">
+          <div><b>Hail:</b> ${Number.isFinite(hailIn) ? hailIn : "?"}"</div>
+          <div><b>Time:</b> ${when}</div>
+          <div><b>Lat/Lon:</b> ${lat.toFixed(3)}, ${lon.toFixed(3)}</div>
+        </div>
+      `,
+    });
+
+    circle.addListener("click", () => {
+      try { info.setPosition(center); } catch {}
+      try { info.open(map); } catch {}
+    });
+
+    window._lsrOverlays = window._lsrOverlays || [];
+    window._lsrOverlays.push(circle);
+  });
+
+  // Only auto-zoom if we actually drew something
+  try {
+    if (points && points.length) map.fitBounds(bounds, 40);
+  } catch {}
+}
+
+async function fetchLsrPointsByDate(dateDash) {
+  const url = `${SUPABASE_URL}/functions/v1/hail-lsr-by-date?date=${encodeURIComponent(dateDash)}`;
+  const resp = await fetch(url, {
+    headers: { apikey: SUPABASE_ANON_KEY }
+  });
+  const raw = await resp.text();
+  if (!resp.ok) throw new Error(`hail-lsr-by-date HTTP ${resp.status}: ${raw.slice(0, 200)}`);
+  const json = JSON.parse(raw);
+  const points = Array.isArray(json?.points) ? json.points : [];
+  drawLsrPointsOnMap(points);
+  return points;
+}
+
+async function drawLsrPointsFallbackForDate(dateDash) {
+  if (!dateDash) return 0;
+  if (!App.map || !window.google?.maps) return 0;
+
+  let points = [];
+  try {
+    points = await fetchLsrPointsByDate(dateDash);
+  } catch (e) {
+    console.warn("[LSR] fetch failed", e);
+    return 0;
+  }
+
+  try { drawLsrPointsOnMap(points); } catch {}
+  return Array.isArray(window._lsrOverlays) ? window._lsrOverlays.length : 0;
+}
+
+function dateDashToYmd(dateDash) {
+  if (!dateDash) return "";
+  if (/^\d{8}$/.test(dateDash)) return dateDash;
+  const m = String(dateDash).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return "";
+  return `${m[1]}${m[2]}${m[3]}`;
+}
+
+function wktShapeToGeoJson(shape) {
+  if (!shape) return null;
+  const s = String(shape).trim();
+  if (!s) return null;
+
+  const upper = s.toUpperCase();
+  const parseCoordPair = (pair) => {
+    const parts = pair.trim().split(/\s+/);
+    if (parts.length < 2) return null;
+    const lon = Number(parts[0]);
+    const lat = Number(parts[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    return [lon, lat];
+  };
+  const parseRing = (ringStr) => {
+    const pts = ringStr.split(",").map(parseCoordPair).filter(Boolean);
+    return pts.length ? pts : null;
+  };
+
+  // POINT(lon lat)
+  if (upper.startsWith("POINT")) {
+    const m = s.match(/POINT\s*\(\s*([+-]?\d+(?:\.\d+)?)\s+([+-]?\d+(?:\.\d+)?)\s*\)/i);
+    if (!m) return null;
+    const lon = Number(m[1]);
+    const lat = Number(m[2]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    return { type: "Point", coordinates: [lon, lat] };
+  }
+
+  // POLYGON((ring),(hole))
+  if (upper.startsWith("POLYGON")) {
+    const start = s.indexOf("((");
+    const end = s.lastIndexOf("))");
+    if (start < 0 || end < 0 || end <= start + 1) return null;
+    const inner = s.slice(start + 2, end);
+    const ringStrings = inner.split(") , (".replace(/ /g, "")); // unlikely path, keep compatibility
+    const rings = (inner.includes("),(")) ? inner.split("),(" ) : [inner];
+    const outRings = [];
+    for (const r of rings) {
+      const ring = parseRing(r.replace(/^\(|\)$/g, ""));
+      if (ring) outRings.push(ring);
+    }
+    if (!outRings.length) return null;
+    return { type: "Polygon", coordinates: outRings };
+  }
+
+  // MULTIPOLYGON(((...)),((...)))
+  if (upper.startsWith("MULTIPOLYGON")) {
+    const start = s.indexOf("((");
+    const end = s.lastIndexOf("))");
+    if (start < 0 || end < 0 || end <= start + 1) return null;
+    let inner = s.slice(start, end + 2);
+    inner = inner.replace(/^MULTIPOLYGON\s*/i, "").trim();
+    inner = inner.replace(/^\(/, "").replace(/\)$/, "");
+
+    const polygonParts = inner.split(")),((");
+    const polys = [];
+    for (let part of polygonParts) {
+      part = part.replace(/^\(\(/, "").replace(/\)\)$/, "");
+      const rings = (part.includes("),(")) ? part.split("),(" ) : [part];
+      const outRings = [];
+      for (const r of rings) {
+        const ring = parseRing(r.replace(/^\(|\)$/g, ""));
+        if (ring) outRings.push(ring);
+      }
+      if (outRings.length) polys.push(outRings);
+    }
+    if (!polys.length) return null;
+    return { type: "MultiPolygon", coordinates: polys };
+  }
+
+  return null;
+}
+
+async function loadHailReports(dateDash) {
+  return drawLsrPointsFallbackForDate(dateDash);
+}
+
+async function loadRadarSwaths(dateDash, layer) {
+  if (!dateDash) return 0;
+  if (!layer || typeof layer.addGeoJson !== "function") return 0;
+
+  const st = (typeof getSelectedStateCode === "function") ? getSelectedStateCode() : "";
+  const bbox = st ? await getBboxForSelectedState(st) : null;
+  if (!bbox) {
+    console.warn("[RADAR] missing bbox/state; skipping radar swaths");
+    return 0;
+  }
+
+  const ymd = dateDashToYmd(dateDash);
+  if (!ymd) {
+    console.warn("[RADAR] invalid dateDash", dateDash);
+    return 0;
+  }
+
+  const resp = await fetchNoaaHailReports({ mode: "radar", start: ymd, end: ymd, bbox });
+  const storms = Array.isArray(resp?.storms) ? resp.storms : [];
+  let added = 0;
+
+  for (const s of storms) {
+    const props = s?.props || {};
+    const shape = props.SHAPE || props.shape || null;
+    const geom = wktShapeToGeoJson(shape) || (Number.isFinite(Number(s?.lon)) && Number.isFinite(Number(s?.lat))
+      ? { type: "Point", coordinates: [Number(s.lon), Number(s.lat)] }
+      : null);
+    if (!geom) continue;
+
+    try {
+      layer.addGeoJson({
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            geometry: geom,
+            properties: Object.assign({ dateDash }, props)
+          }
+        ]
+      });
+      added++;
+    } catch (e) {
+      // Ignore bad geometries; keep going
+    }
+  }
+
+  console.log("[RADAR] added features:", added);
+  return added;
+}
+
+async function showHailSwathsForDate(dateDash, opts = {}) {
+  if (!dateDash) return;
+  if (!App.map && typeof initMap === "function") initMap();
+  if (!App.map || !window.google?.maps) return;
+
+  try { clearStormMarkers(); } catch {}
+  if (opts.additive !== true) {
+    try { clearLsrOverlays(); } catch {}
+  }
+
+  if (opts.additive !== true) {
+    try {
+      (App.reportCircles || []).forEach((c) => {
+        try { c.setMap && c.setMap(null); } catch {}
+      });
+    } catch {}
+    App.reportCircles = [];
+  }
+
+  if (opts.additive !== true) {
+    try {
+      if (App.recentsSwathLayer) {
+        App.recentsSwathLayer.setMap(null);
+        App.recentsSwathLayer = null;
+      }
+    } catch {}
+
+    try {
+      if (App.swathLayersByDate) {
+        Object.keys(App.swathLayersByDate).forEach((k) => {
+          try { App.swathLayersByDate[k]?.setMap(null); } catch {}
+          delete App.swathLayersByDate[k];
+        });
+      }
+    } catch {}
+
+    try {
+      if (App.selectedDates && typeof App.selectedDates.clear === "function") {
+        App.selectedDates.clear();
+      }
+    } catch {}
+  }
+
+  const layer = new google.maps.Data({ map: App.map });
+  layer.setStyle({
+    fillColor: "#00c2ff",
+    fillOpacity: 0.22,
+    strokeColor: "#ffffff",
+    strokeOpacity: 0.9,
+    strokeWeight: 2,
+  });
+  if (opts.additive === true) {
+    App.swathLayersByDate[dateDash] = layer;
+  } else {
+    App.recentsSwathLayer = layer;
+  }
+
+  console.log("[SWATH_CLICK] dateDash=", dateDash);
+
+  // Load both: (1) hail reports (LSR points) and (2) radar swaths via NOAA proxy
+  await Promise.all([
+    (async () => {
+      try {
+        await loadHailReports(dateDash);
+      } catch (e) {
+        console.error("[SWATH] LSR draw failed", e);
+      }
+    })(),
+    (async () => {
+      try {
+        await loadRadarSwaths(dateDash, layer);
+      } catch (e) {
+        console.error("[SWATH] Radar swath load failed", e);
+      }
+    })(),
+  ]);
+
+  if (opts.additive !== true) {
+    let hasAny = Array.isArray(App.reportCircles) && App.reportCircles.length > 0;
+    if (!hasAny) {
+      try { layer.forEach(() => { hasAny = true; }); } catch {}
+    }
+    if (!hasAny) {
+      try { await loadHailReports(dateDash); } catch {}
+    }
+  }
+
+  try {
+    const bounds = new google.maps.LatLngBounds();
+    layer.forEach((feature) => {
+      const g = feature.getGeometry();
+      if (g && typeof g.forEachLatLng === "function") {
+        g.forEachLatLng((latLng) => bounds.extend(latLng));
+      }
+    });
+    if (!bounds.isEmpty()) App.map.fitBounds(bounds);
+  } catch {}
+}
+
+async function loadRecentEventsPage(pageIndex) {
+  const pageSize = 5;
+  const idx = Math.max(0, Number(pageIndex) || 0);
+  App.recentsPageIndex = idx;
+
+  App.recentsPages = App.recentsPages || {};
+  App.recentsPageLastDoc = App.recentsPageLastDoc || {};
+  App.recentsHasNext = App.recentsHasNext || {};
+
+  const listEl = document.getElementById("recentEventsList");
+  const prevBtn = document.getElementById("recentEventsPrev");
+  const nextBtn = document.getElementById("recentEventsNext");
+
+  if (prevBtn) prevBtn.disabled = idx <= 0;
+  if (nextBtn) nextBtn.disabled = true;
+
+  if (App.recentsPages[idx]) {
+    const items = App.recentsPages[idx];
+    renderNewRecentRows(items, idx, pageSize);
+    if (listEl) {
+      listEl.innerHTML = "";
+      items.forEach((it) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "recent-event-row";
+        btn.textContent = it.dateDash;
+        btn.addEventListener("click", () => {
+          console.log('[RECENTS] Click date', it.dateDash);
+          showHailSwathsForDate(it.dateDash);
+        });
+        listEl.appendChild(btn);
+      });
+    }
+    if (nextBtn) nextBtn.disabled = !(App.recentsHasNext && App.recentsHasNext[idx] === true);
+    return;
+  }
+
+  const res = await fetchStormDatesPage(idx, pageSize);
+  const items = res.items || [];
+
+  App.recentsPages[idx] = items;
+  App.recentsHasNext[idx] = (res.hasNext === true);
+
+  console.log('[RECENTS] Loaded', items.length, 'events for page', idx);
+
+  if (listEl) {
+    listEl.innerHTML = "";
+    items.forEach((it) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "recent-event-row";
+      btn.textContent = it.dateDash;
+      btn.addEventListener("click", () => {
+        console.log('[RECENTS] Click date', it.dateDash);
+        showHailSwathsForDate(it.dateDash);
+      });
+      listEl.appendChild(btn);
+    });
+  }
+
+  if (prevBtn) prevBtn.disabled = idx <= 0;
+  if (nextBtn) nextBtn.disabled = !(App.recentsHasNext && App.recentsHasNext[idx] === true);
+
+  renderNewRecentRows(items, idx, pageSize);
 }
 
 /* =========================================================
@@ -2271,13 +4560,196 @@ window.initMap = function initMap() {
   if (!mapEl) return;
   if (App.map) return;
 
+  const brightHybridStyles = [
+    {
+      elementType: "geometry",
+      stylers: [{ lightness: 35 }, { contrast: -25 }, { saturation: 20 }],
+    },
+    {
+      elementType: "labels.text.fill",
+      stylers: [{ lightness: 25 }],
+    },
+    {
+      elementType: "labels.text.stroke",
+      stylers: [{ lightness: -15 }],
+    },
+    {
+      featureType: "water",
+      elementType: "geometry",
+      stylers: [{ color: "#6bb6ff" }, { lightness: 35 }, { saturation: 25 }],
+    },
+  ];
+
   App.map = new google.maps.Map(mapEl, {
     center: { lat: 39.5, lng: -98.35 },
     zoom: 4,
-    mapTypeId: "roadmap",
+    mapTypeId: google.maps.MapTypeId.HYBRID,
+    styles: brightHybridStyles,
+    zoomControl: false,
     streetViewControl: false,
-    fullscreenControl: true,
+    mapTypeControl: false,
+    fullscreenControl: false,
   });
+
+  App.map.setOptions({ mapTypeControl: false });
+
+  const map = App.map;
+  const killMapTypeUI = () => {
+    try {
+      const pos = google.maps.ControlPosition;
+      // Clear common stacks where MapType UI gets injected
+      map.controls[pos.TOP_LEFT]?.clear?.();
+      map.controls[pos.LEFT_TOP]?.clear?.();
+      map.controls[pos.TOP_RIGHT]?.clear?.();
+      // Fallback: remove any injected DOM node if it still exists
+      document.querySelectorAll('.gm-style-mtc').forEach(n => n.remove());
+    } catch {}
+  };
+
+  killMapTypeUI();
+  google.maps.event.addListenerOnce(map, 'idle', killMapTypeUI);
+  google.maps.event.addListenerOnce(map, 'tilesloaded', killMapTypeUI);
+
+  // Re-apply bright HYBRID styles on first idle so they stick.
+  google.maps.event.addListenerOnce(map, 'idle', () => {
+    try {
+      map.setOptions({
+        mapTypeId: google.maps.MapTypeId.HYBRID,
+        styles: brightHybridStyles,
+      });
+    } catch {}
+  });
+
+  // HARD-KILL: built-in Google MapType control (keeps reappearing)
+  (function hardKillMapTypeControl(container) {
+    if (!container) return;
+
+    const kill = () => {
+      container.querySelectorAll('.gm-style-mtc, .gm-style .gm-style-mtc').forEach((el) => el.remove());
+    };
+
+    kill();
+    const observer = new MutationObserver(() => kill());
+    observer.observe(container, { childList: true, subtree: true });
+  })(mapEl);
+
+  App.map.setZoom(5);
+
+  // Custom Map/Satellite control (LEFT_TOP)
+  (function addCustomMapTypeControl(map) {
+    const controlDiv = document.createElement("div");
+    controlDiv.className = "gm-custom-maptype";
+
+    const tabs = document.createElement("div");
+    tabs.className = "gm-custom-maptype-tabs";
+
+    const btnMap = document.createElement("button");
+    btnMap.type = "button";
+    btnMap.textContent = "Map";
+
+    const btnSat = document.createElement("button");
+    btnSat.type = "button";
+    btnSat.textContent = "Satellite";
+
+    tabs.appendChild(btnMap);
+    tabs.appendChild(btnSat);
+
+    const options = document.createElement("div");
+    options.className = "gm-custom-maptype-options";
+
+    const mkRow = (labelText) => {
+      const row = document.createElement("label");
+      row.className = "gm-custom-maptype-opt";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      const span = document.createElement("span");
+      span.textContent = labelText;
+      row.appendChild(cb);
+      row.appendChild(span);
+      return { row, cb };
+    };
+
+    const terrainRow = mkRow("Terrain");
+    const labelsRow = mkRow("Labels");
+    options.appendChild(terrainRow.row);
+    options.appendChild(labelsRow.row);
+
+    controlDiv.appendChild(tabs);
+    controlDiv.appendChild(options);
+
+    map.controls[google.maps.ControlPosition.LEFT_TOP].push(controlDiv);
+
+    const state = {
+      tab: "map",
+      terrain: false,
+      labels: false,
+    };
+
+    const syncUI = () => {
+      btnMap.classList.toggle("active", state.tab === "map");
+      btnSat.classList.toggle("active", state.tab === "satellite");
+      terrainRow.cb.checked = !!state.terrain;
+      labelsRow.cb.checked = !!state.labels;
+      labelsRow.cb.disabled = (state.tab !== "satellite");
+      labelsRow.row.classList.toggle("disabled", labelsRow.cb.disabled);
+    };
+
+    const applyMapType = () => {
+      if (state.terrain) {
+        map.setMapTypeId("terrain");
+        return;
+      }
+
+      if (state.tab === "map") {
+        map.setMapTypeId("roadmap");
+        return;
+      }
+
+      // Satellite tab
+      map.setMapTypeId(state.labels ? "hybrid" : "satellite");
+    };
+
+    btnMap.addEventListener("click", () => {
+      state.tab = "map";
+      syncUI();
+      applyMapType();
+    });
+
+    btnSat.addEventListener("click", () => {
+      state.tab = "satellite";
+      syncUI();
+      applyMapType();
+    });
+
+    terrainRow.cb.addEventListener("change", () => {
+      state.terrain = !!terrainRow.cb.checked;
+      syncUI();
+      applyMapType();
+    });
+
+    labelsRow.cb.addEventListener("change", () => {
+      state.labels = !!labelsRow.cb.checked;
+      syncUI();
+      applyMapType();
+    });
+
+    // Initialize state from current map type
+    const initial = String(map.getMapTypeId() || "roadmap").toLowerCase();
+    if (initial === "terrain") {
+      state.terrain = true;
+      state.tab = "map";
+    } else if (initial === "satellite") {
+      state.tab = "satellite";
+      state.labels = false;
+    } else if (initial === "hybrid") {
+      state.tab = "satellite";
+      state.labels = true;
+    } else {
+      state.tab = "map";
+    }
+
+    syncUI();
+  })(App.map);
 
   App.geocoder = new google.maps.Geocoder();
 
@@ -2374,8 +4846,8 @@ async function fetchNoaaHailReports(overrides = {}) {
   const overrideBbox = overrides.bbox || "";
 
   // Compute mode
-  const mode = overrides.mode === "reports" ? "reports"
-             : (urlParams.get("mode") === "reports" ? "reports" : "radar");
+  const modeRaw = String(overrideMode || urlParams.get("mode") || "radar").trim().toLowerCase();
+  const mode = (modeRaw === "reports") ? "reports" : "radar";
 
   // Added logging after mode is computed
   console.log("[FETCH NOAA] mode =", mode, "overrideMode =", overrides.mode, "urlParamMode =", urlParams.get("mode"));
@@ -2610,7 +5082,7 @@ function setStormDateOptions(datesDash, append = false) {
   if (!append) {
     const opt0 = document.createElement("option");
     opt0.value = "";
-    opt0.textContent = "Select a date…";
+    opt0.textContent = "Select a dateâ€¦";
     dateSelect.appendChild(opt0);
   }
 
@@ -2916,7 +5388,7 @@ async function onStateChanged() {
       setDateStatus("Enter a city to filter dates.");
       if (dateSelect) {
         dateSelect.disabled = true;
-        dateSelect.innerHTML = '<option value="">Enter a city first…</option>';
+        dateSelect.innerHTML = '<option value="">Enter a city firstâ€¦</option>';
       }
       return;
     }
@@ -3258,10 +5730,10 @@ function renderStormList() {
       div.className = "stormbait-item";
       div.textContent =
         (s.dateString || "") +
-        " • " +
+        " â€¢ " +
         (s.name || "Storm") +
-        (s.city ? " – " + s.city : "") +
-        (typeof s.avgValue === "number" ? " • $" + s.avgValue.toLocaleString() : "");
+        (s.city ? " â€“ " + s.city : "") +
+        (typeof s.avgValue === "number" ? " â€¢ $" + s.avgValue.toLocaleString() : "");
 
       div.dataset.stormId = s.id;
 
@@ -3315,7 +5787,7 @@ async function loadStormsForSelection() {
   }
 
   if (App.els.stormListPanel) App.els.stormListPanel.style.display = "flex";
-  if (App.els.mapStatus) App.els.mapStatus.textContent = `Loading storms for ${state} (${type})…`;
+  if (App.els.mapStatus) App.els.mapStatus.textContent = `Loading storms for ${state} (${type})â€¦`;
   if (App.els.stormList) App.els.stormList.innerHTML = "";
 
   if (!window.db) {
@@ -3332,7 +5804,7 @@ async function loadStormsForSelection() {
 
   try {
     if (state === 'TX' && type === 'hail') {
-      if (App.els.mapStatus) App.els.mapStatus.textContent = "Loading storm dates…";
+      if (App.els.mapStatus) App.els.mapStatus.textContent = "Loading storm datesâ€¦";
       const hailReports = await fetchNoaaHailReports();
       App.noaaReports = hailReports;
       const dateKeys = [...new Set(hailReports.map(r => r.VALID_TIME.split('T')[0]))];
@@ -3623,7 +6095,7 @@ function wireAuth() {
       return;
     }
 
-    setAuthStatus("Signing in…", false);
+    setAuthStatus("Signing inâ€¦", false);
     if (loginBtn) loginBtn.disabled = true;
 
     window.auth.signInWithEmailAndPassword(email, pass)
@@ -3734,7 +6206,7 @@ function wireMapControls() {
           storm.lat = lat;
           storm.lng = lng;
         } else {
-          if (App.els.mapStatus) App.els.mapStatus.textContent = "No coordinates for this storm — can’t zoom.";
+          if (App.els.mapStatus) App.els.mapStatus.textContent = "No coordinates for this storm â€” canâ€™t zoom.";
           return;
         }
       }
@@ -3789,6 +6261,14 @@ function wireMapControls() {
 
   document.getElementById("range12")?.addEventListener("click", () => {
     console.log("[DATE RANGE] load next 6 months clicked");
+  });
+
+  document.getElementById("recentEventsPrev")?.addEventListener("click", () => {
+    loadRecentEventsPage((App.recentsPageIndex || 0) - 1);
+  });
+
+  document.getElementById("recentEventsNext")?.addEventListener("click", () => {
+    loadRecentEventsPage((App.recentsPageIndex || 0) + 1);
   });
 
   document.getElementById("radiusSelect")?.addEventListener("change", () => {
@@ -3906,6 +6386,22 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (document.getElementById("stormListPanel")) {
    document.getElementById("stormListPanel").style.display = "block";
   }
+
+
+  // Wire up sidebar category tabs
+  document.querySelectorAll('.sidebar-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      // Remove active class from all tabs
+      document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+      // Add active class to clicked tab
+      this.classList.add('active');
+      
+      const tabType = this.dataset.tab;
+      console.log('Switched to tab:', tabType);
+      
+      // TODO: Show/hide content panels when ready
+    });
+  });
 
   // No NOAA/proxy preloads allowed before Get Dates click
 });

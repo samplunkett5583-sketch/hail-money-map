@@ -7,6 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import { parse } from "csv-parse";
 
 const NOAA_DIR = "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/";
+const NOAA_PROXY_BASE = process.env.NOAA_PROXY_BASE || "https://noaaplsrproxy-jzyejnppqa-uc.a.run.app";
 const BATCH_SIZE = 500;
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -20,6 +21,10 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 function fetchText(url) {
   return new Promise((resolve, reject) => {
@@ -58,6 +63,181 @@ function downloadToFile(url, destPath) {
   });
 }
 
+function fetchJson(url) {
+  const maxRetries = 4;
+  return (async () => {
+    let lastErr;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await new Promise((resolve, reject) => {
+          https
+            .get(url, (res) => {
+              const status = res.statusCode || 0;
+              let data = "";
+              res.setEncoding("utf8");
+              res.on("data", (c) => (data += c));
+              res.on("end", () => {
+                if (status !== 200) {
+                  const err = new Error(`HTTP ${status} for ${url}`);
+                  // Mark some HTTP errors as retryable (timeouts/upstream flakiness/rate limit).
+                  err.retryable = status === 429 || status === 502 || status === 503 || status === 504;
+                  err.body = data;
+                  reject(err);
+                  return;
+                }
+                try {
+                  resolve(JSON.parse(data));
+                } catch (e) {
+                  reject(e);
+                }
+              });
+            })
+            .on("error", reject);
+        });
+      } catch (e) {
+        lastErr = e;
+        const retryable =
+          e?.retryable === true ||
+          e?.code === "ECONNRESET" ||
+          e?.code === "ETIMEDOUT" ||
+          e?.code === "EAI_AGAIN";
+
+        if (attempt < maxRetries && retryable) {
+          await sleep(1000 * (attempt + 1));
+          continue;
+        }
+        throw e;
+      }
+    }
+
+    throw lastErr;
+  })();
+}
+
+function ymd(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function ymdCompact(ymdStr) {
+  return ymdStr.replace(/-/g, "");
+}
+
+async function ingestRollingReportsPass(supabaseClient, days = 14) {
+  const endYmd = ymd(new Date());
+  const startDate = new Date(endYmd + "T00:00:00Z");
+  startDate.setUTCDate(startDate.getUTCDate() - Number(days || 14));
+  const startYmd = ymd(startDate);
+
+  console.log(`Rolling reports pass: ${startYmd} -> ${endYmd} (inclusive)`);
+
+  const start = ymdCompact(startYmd);
+  const end = ymdCompact(endYmd);
+  // Use smaller tiles + smaller limit to avoid upstream NOAA timeouts (504)
+  const limit = 5000;
+  const bboxes = [
+    "-125,24,-110,50",
+    "-110,24,-95,50",
+    "-95,24,-80,50",
+    "-80,24,-66,50",
+    "-170,51,-130,72",
+    "-161,18,-154,23",
+  ];
+
+  let storms = [];
+  for (const bbox of bboxes) {
+    const url =
+      `${NOAA_PROXY_BASE}/noaaPlsrProxy?mode=reports` +
+      `&start=${start}&end=${end}` +
+      `&bbox=${encodeURIComponent(bbox)}` +
+      `&limit=${limit}`;
+
+    try {
+      const j = await fetchJson(url);
+      const chunk = Array.isArray(j?.storms) ? j.storms : [];
+      storms = storms.concat(chunk);
+      if (chunk.length >= limit) {
+        console.warn(`Rolling reports warning: bbox ${bbox} hit limit=${limit}`);
+      }
+    } catch (e) {
+      console.warn(`Rolling reports tile failed (skipping bbox ${bbox}):`, e?.message || e);
+      continue;
+    }
+  }
+
+  let batch = [];
+  let kept = 0;
+
+  for (const s of storms) {
+    const lat = Number(s?.lat);
+    const lon = Number(s?.lon);
+    const dateStr = typeof s?.date === "string" ? s.date : null;
+    const hailSize = s?.hailSize === "" || s?.hailSize == null ? null : Number(s.hailSize);
+    const ztime = typeof s?.ztime === "string" && s.ztime ? s.ztime : null;
+
+    if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) continue;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+
+    kept++;
+
+    const key = `${dateStr}_${lat}_${lon}_${hailSize ?? ""}`;
+
+    batch.push({
+      dedupe_key: key,
+      event_date: dateStr,
+      event_type: "hail",
+      state: null,
+      hail_size: Number.isFinite(hailSize) ? hailSize : null,
+      lat,
+      lon,
+      ztime,
+    });
+
+    if (batch.length >= BATCH_SIZE) {
+      // De-dupe within this batch to avoid Postgres "cannot affect row a second time"
+      // when multiple rows share the same conflict key in a single upsert command.
+      const byKey = new Map();
+      for (const e of batch) {
+        const k = e?.dedupe_key;
+        if (!k) continue;
+        byKey.set(k, e);
+      }
+      const dedupedBatch = Array.from(byKey.values());
+
+      console.log(
+        `[UPSERT] Upserting ${dedupedBatch.length} hail_reports rows (deduped from ${batch.length})...`
+      );
+
+      const { error } = await supabaseClient
+        .from("hail_reports")
+        .upsert(dedupedBatch, { onConflict: "dedupe_key" });
+      if (error) throw error;
+      batch = [];
+    }
+  }
+
+  if (batch.length) {
+    const byKey = new Map();
+    for (const e of batch) {
+      const k = e?.dedupe_key;
+      if (!k) continue;
+      byKey.set(k, e);
+    }
+    const dedupedBatch = Array.from(byKey.values());
+
+    console.log(
+      `[UPSERT] Upserting ${dedupedBatch.length} hail_reports rows (deduped from ${batch.length})...`
+    );
+
+    const { error } = await supabaseClient
+      .from("hail_reports")
+      .upsert(dedupedBatch, { onConflict: "dedupe_key" });
+    if (error) throw error;
+  }
+
+  console.log(`Rolling reports pass done. attempted_upserts=${kept}`);
+}
+
 async function pickLatestDetailsGz() {
   const html = await fetchText(NOAA_DIR);
   const re = /StormEvents_details-ftp_v1\.0_d\d{4}_c(\d{8})\.csv\.gz/g;
@@ -80,18 +260,18 @@ function stableKey(parts) {
 }
 
 async function upsertRaw(batch) {
-  // Dedupe by dedupe_key, keep last occurrence
-  const seen = new Map();
-  for (const row of batch) {
-    if (row.dedupe_key) {
-      seen.set(row.dedupe_key, row);
-    }
+// Dedupe by dedupe_key, keep last occurrence
+const seen = new Map();
+for (const row of batch) {
+  if (row.dedupe_key) {
+    seen.set(row.dedupe_key, row);
   }
-  const deduped = Array.from(seen.values());
-  
-  const { error } = await supabase
-    .from("stormevents_raw")
-    .upsert(deduped, { onConflict: "dedupe_key" });
+}
+const deduped = Array.from(seen.values());
+
+const { error } = await supabase
+  .from("stormevents_raw")
+  .upsert(deduped, { onConflict: "dedupe_key" });
   if (error) throw error;
 }
 
@@ -176,6 +356,13 @@ async function main() {
 
   console.log("Sync done. Rows affected (approx):", data);
   console.log(`DONE. seen=${seen} kept_hail=${kept}`);
+
+  console.log(">>> ENTERING rolling reports section <<<");
+  try {
+    await ingestRollingReportsPass(supabase, 14);
+  } catch (e) {
+    console.warn("[ROLLING] Failed (continuing without rolling reports):", e?.message || e);
+  }
 }
 
 main().catch((e) => {
