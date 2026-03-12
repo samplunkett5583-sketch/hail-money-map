@@ -3,8 +3,8 @@ name: LSR Hail Ingest
 on:
   workflow_dispatch:
   schedule:
-    # 12:15Z daily (06:15 America/Chicago during standard time; 07:15 during daylight time)
-    - cron: "15 12 * * *"
+    # originally daily at 12:15Z; changed to every 5 minutes
+    - cron: "*/5 * * * *"
 
 jobs:
   ingest:
