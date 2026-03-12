@@ -19,6 +19,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
   const firebaseConfig = {
@@ -50,7 +51,14 @@
   const LOAD_MORE_VALUE = "__LOAD_MORE__";
 
   const SUPABASE_URL = "https://ehegjhlkadtpnkborlbz.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_EvGtl1XOWp8cfi6kfM2zUg_hnX2ldb_";
+  const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZWdqaGxrYWR0cG5rYm9ybGJ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjcwNTY2NiwiZXhwIjoyMDgyMjgxNjY2fQ.KbEohwp-boV53yY31Ut3epMtN564STGsl9T9KtFeGLQ";
+
+  // --- Create Supabase client ---
+  window.sb = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+  window.supabaseClient = window.sb;
 
   // --- Date helpers ---
   function dashToCompact(ymdDash) {
@@ -3774,13 +3782,23 @@ async function fetchStormDatesPage(idx, pageSize) {
   try {
     App.recentsAllDates = App.recentsAllDates || null;
     if (!Array.isArray(App.recentsAllDates)) {
-      const url = `${SUPABASE_URL}/functions/v1/hail-dates`;
-      const resp = await fetch(url, {
-        headers: { apikey: SUPABASE_ANON_KEY }
-      });
-      const raw = await resp.text();
-      if (!resp.ok) throw new Error(`hail-dates HTTP ${resp.status}: ${raw.slice(0, 200)}`);
-      const json = JSON.parse(raw);
+      const supabase = App.supabase || App.sb || window.supabaseClient || window.sb;
+      let json = null;
+
+      if (supabase && supabase.functions && typeof supabase.functions.invoke === "function") {
+        const { data, error } = await supabase.functions.invoke("hail-dates", { method: "GET" });
+        if (error) throw error;
+        json = data;
+      } else {
+        const url = `${SUPABASE_URL}/functions/v1/hail-dates`;
+        const resp = await fetch(url, {
+          headers: { apikey: SUPABASE_ANON_KEY }
+        });
+        const raw = await resp.text();
+        if (!resp.ok) throw new Error(`hail-dates HTTP ${resp.status}: ${raw.slice(0, 200)}`);
+        json = JSON.parse(raw);
+      }
+
       const dates = Array.isArray(json?.dates) ? json.dates : [];
       App.recentsAllDates = dates.filter((d) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d));
     }
@@ -4113,12 +4131,279 @@ function wireNewPagerButtonsOnce() {
   }
 }
 
+function cleanLsrOverlays() {
+  try {
+    (window._lsrOverlays || []).forEach(o => o.setMap && o.setMap(null));
+  } catch {}
+  window._lsrOverlays = [];
+}
+
+function clearLsrOverlays() {
+  cleanLsrOverlays();
+}
+
+function hailInToRadiusMeters(hailIn) {
+  const h = Number(hailIn);
+  if (!Number.isFinite(h) || h <= 0) return 3000; // default
+  // 0.5" ~ 5km, 1" ~ 10km, 2" ~ 20km, 3" ~ 30km (simple, readable scaling)
+  return Math.max(2000, Math.min(40000, h * 10000));
+}
+
+function hailInToColor(hailIn) {
+  const h = Number(hailIn);
+  if (!Number.isFinite(h)) return "#00e5ff";
+  if (h >= 3) return "#ff00ff";
+  if (h >= 2) return "#ff3b30";
+  if (h >= 1.5) return "#ff9500";
+  if (h >= 1) return "#ffd60a";
+  return "#00e5ff";
+}
+
+function drawLsrPointsOnMap(points) {
+  cleanLsrOverlays();
+  const map = App.map;
+  if (!map) return;
+
+  const bounds = new google.maps.LatLngBounds();
+
+  (points || []).forEach(p => {
+    const lat = Number(p.lat);
+    const lon = Number(p.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+
+    const hailIn = Number(p.hail_in);
+    const color = hailInToColor(hailIn);
+    const radius = hailInToRadiusMeters(hailIn);
+
+    const center = { lat, lng: lon };
+    bounds.extend(center);
+
+    const circle = new google.maps.Circle({
+      map,
+      center,
+      radius,
+      strokeColor: color,
+      strokeOpacity: 0.9,
+      strokeWeight: 2,
+      fillColor: color,
+      fillOpacity: 0.25,
+      clickable: true,
+      zIndex: 999999,
+    });
+
+    let when = "";
+    try {
+      when = p.event_time ? new Date(p.event_time).toLocaleString() : "";
+    } catch {}
+
+    const info = new google.maps.InfoWindow({
+      content: `
+        <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; font-size: 13px; line-height: 1.35;">
+          <div><b>Hail:</b> ${Number.isFinite(hailIn) ? hailIn : "?"}"</div>
+          <div><b>Time:</b> ${when}</div>
+          <div><b>Lat/Lon:</b> ${lat.toFixed(3)}, ${lon.toFixed(3)}</div>
+        </div>
+      `,
+    });
+
+    circle.addListener("click", () => {
+      try { info.setPosition(center); } catch {}
+      try { info.open(map); } catch {}
+    });
+
+    window._lsrOverlays = window._lsrOverlays || [];
+    window._lsrOverlays.push(circle);
+  });
+
+  // Only auto-zoom if we actually drew something
+  try {
+    if (points && points.length) map.fitBounds(bounds, 40);
+  } catch {}
+}
+
+async function fetchLsrPointsByDate(dateDash) {
+  const url = `${SUPABASE_URL}/functions/v1/hail-lsr-by-date?date=${encodeURIComponent(dateDash)}`;
+  const resp = await fetch(url, {
+    headers: { apikey: SUPABASE_ANON_KEY }
+  });
+  const raw = await resp.text();
+  if (!resp.ok) throw new Error(`hail-lsr-by-date HTTP ${resp.status}: ${raw.slice(0, 200)}`);
+  const json = JSON.parse(raw);
+  const points = Array.isArray(json?.points) ? json.points : [];
+  drawLsrPointsOnMap(points);
+  return points;
+}
+
+async function drawLsrPointsFallbackForDate(dateDash) {
+  if (!dateDash) return 0;
+  if (!App.map || !window.google?.maps) return 0;
+
+  let points = [];
+  try {
+    points = await fetchLsrPointsByDate(dateDash);
+  } catch (e) {
+    console.warn("[LSR] fetch failed", e);
+    return 0;
+  }
+
+  try { drawLsrPointsOnMap(points); } catch {}
+  return Array.isArray(window._lsrOverlays) ? window._lsrOverlays.length : 0;
+}
+
+function dateDashToYmd(dateDash) {
+  if (!dateDash) return "";
+  if (/^\d{8}$/.test(dateDash)) return dateDash;
+  const m = String(dateDash).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return "";
+  return `${m[1]}${m[2]}${m[3]}`;
+}
+
+function wktShapeToGeoJson(shape) {
+  if (!shape) return null;
+  const s = String(shape).trim();
+  if (!s) return null;
+
+  const upper = s.toUpperCase();
+  const parseCoordPair = (pair) => {
+    const parts = pair.trim().split(/\s+/);
+    if (parts.length < 2) return null;
+    const lon = Number(parts[0]);
+    const lat = Number(parts[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    return [lon, lat];
+  };
+  const parseRing = (ringStr) => {
+    const pts = ringStr.split(",").map(parseCoordPair).filter(Boolean);
+    return pts.length ? pts : null;
+  };
+
+  // POINT(lon lat)
+  if (upper.startsWith("POINT")) {
+    const m = s.match(/POINT\s*\(\s*([+-]?\d+(?:\.\d+)?)\s+([+-]?\d+(?:\.\d+)?)\s*\)/i);
+    if (!m) return null;
+    const lon = Number(m[1]);
+    const lat = Number(m[2]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    return { type: "Point", coordinates: [lon, lat] };
+  }
+
+  // POLYGON((ring),(hole))
+  if (upper.startsWith("POLYGON")) {
+    const start = s.indexOf("((");
+    const end = s.lastIndexOf("))");
+    if (start < 0 || end < 0 || end <= start + 1) return null;
+    const inner = s.slice(start + 2, end);
+    const ringStrings = inner.split(") , (".replace(/ /g, "")); // unlikely path, keep compatibility
+    const rings = (inner.includes("),(")) ? inner.split("),(" ) : [inner];
+    const outRings = [];
+    for (const r of rings) {
+      const ring = parseRing(r.replace(/^\(|\)$/g, ""));
+      if (ring) outRings.push(ring);
+    }
+    if (!outRings.length) return null;
+    return { type: "Polygon", coordinates: outRings };
+  }
+
+  // MULTIPOLYGON(((...)),((...)))
+  if (upper.startsWith("MULTIPOLYGON")) {
+    const start = s.indexOf("((");
+    const end = s.lastIndexOf("))");
+    if (start < 0 || end < 0 || end <= start + 1) return null;
+    let inner = s.slice(start, end + 2);
+    inner = inner.replace(/^MULTIPOLYGON\s*/i, "").trim();
+    inner = inner.replace(/^\(/, "").replace(/\)$/, "");
+
+    const polygonParts = inner.split(")),((");
+    const polys = [];
+    for (let part of polygonParts) {
+      part = part.replace(/^\(\(/, "").replace(/\)\)$/, "");
+      const rings = (part.includes("),(")) ? part.split("),(" ) : [part];
+      const outRings = [];
+      for (const r of rings) {
+        const ring = parseRing(r.replace(/^\(|\)$/g, ""));
+        if (ring) outRings.push(ring);
+      }
+      if (outRings.length) polys.push(outRings);
+    }
+    if (!polys.length) return null;
+    return { type: "MultiPolygon", coordinates: polys };
+  }
+
+  return null;
+}
+
+async function loadHailReports(dateDash) {
+  return drawLsrPointsFallbackForDate(dateDash);
+}
+
+async function loadRadarSwaths(dateDash, layer) {
+  if (!dateDash) return 0;
+  if (!layer || typeof layer.addGeoJson !== "function") return 0;
+
+  const st = (typeof getSelectedStateCode === "function") ? getSelectedStateCode() : "";
+  const bbox = st ? await getBboxForSelectedState(st) : null;
+  if (!bbox) {
+    console.warn("[RADAR] missing bbox/state; skipping radar swaths");
+    return 0;
+  }
+
+  const ymd = dateDashToYmd(dateDash);
+  if (!ymd) {
+    console.warn("[RADAR] invalid dateDash", dateDash);
+    return 0;
+  }
+
+  const resp = await fetchNoaaHailReports({ mode: "radar", start: ymd, end: ymd, bbox });
+  const storms = Array.isArray(resp?.storms) ? resp.storms : [];
+  let added = 0;
+
+  for (const s of storms) {
+    const props = s?.props || {};
+    const shape = props.SHAPE || props.shape || null;
+    const geom = wktShapeToGeoJson(shape) || (Number.isFinite(Number(s?.lon)) && Number.isFinite(Number(s?.lat))
+      ? { type: "Point", coordinates: [Number(s.lon), Number(s.lat)] }
+      : null);
+    if (!geom) continue;
+
+    try {
+      layer.addGeoJson({
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            geometry: geom,
+            properties: Object.assign({ dateDash }, props)
+          }
+        ]
+      });
+      added++;
+    } catch (e) {
+      // Ignore bad geometries; keep going
+    }
+  }
+
+  console.log("[RADAR] added features:", added);
+  return added;
+}
+
 async function showHailSwathsForDate(dateDash, opts = {}) {
   if (!dateDash) return;
   if (!App.map && typeof initMap === "function") initMap();
   if (!App.map || !window.google?.maps) return;
 
   try { clearStormMarkers(); } catch {}
+  if (opts.additive !== true) {
+    try { clearLsrOverlays(); } catch {}
+  }
+
+  if (opts.additive !== true) {
+    try {
+      (App.reportCircles || []).forEach((c) => {
+        try { c.setMap && c.setMap(null); } catch {}
+      });
+    } catch {}
+    App.reportCircles = [];
+  }
 
   if (opts.additive !== true) {
     try {
@@ -4158,48 +4443,35 @@ async function showHailSwathsForDate(dateDash, opts = {}) {
     App.recentsSwathLayer = layer;
   }
 
-  if (!window.db) return;
-
   console.log("[SWATH_CLICK] dateDash=", dateDash);
 
-  let snap = await window.db.collection("stormDates")
-    .where("dateString", "==", dateDash)
-    .limit(50)
-    .get();
+  // Load both: (1) hail reports (LSR points) and (2) radar swaths via NOAA proxy
+  await Promise.all([
+    (async () => {
+      try {
+        await loadHailReports(dateDash);
+      } catch (e) {
+        console.error("[SWATH] LSR draw failed", e);
+      }
+    })(),
+    (async () => {
+      try {
+        await loadRadarSwaths(dateDash, layer);
+      } catch (e) {
+        console.error("[SWATH] Radar swath load failed", e);
+      }
+    })(),
+  ]);
 
-  if (snap.empty) {
-    snap = await window.db.collection("stormDates")
-      .where("dateDash", "==", dateDash)
-      .limit(50)
-      .get();
-  }
-
-  if (snap.empty) {
-    const [y, m, d] = String(dateDash).split("-").map(Number);
-    if (y && m && d) {
-      const start = new Date(y, m - 1, d, 0, 0, 0);
-      const end = new Date(y, m - 1, d, 23, 59, 59);
-      snap = await window.db.collection("stormDates")
-        .where("date", ">=", start)
-        .where("date", "<=", end)
-        .limit(50)
-        .get();
+  if (opts.additive !== true) {
+    let hasAny = Array.isArray(App.reportCircles) && App.reportCircles.length > 0;
+    if (!hasAny) {
+      try { layer.forEach(() => { hasAny = true; }); } catch {}
+    }
+    if (!hasAny) {
+      try { await loadHailReports(dateDash); } catch {}
     }
   }
-
-  console.log("[SWATH] query for", dateDash, "docs:", snap.size);
-
-  snap.forEach((doc) => {
-    const d = doc.data() || {};
-    const geom = d.polygon || d.geojson || d.geometry || null;
-    if (!geom || !geom.type || !geom.coordinates) return;
-    try {
-      layer.addGeoJson({
-        type: "FeatureCollection",
-        features: [{ type: "Feature", geometry: geom, properties: { id: doc.id } }],
-      });
-    } catch {}
-  });
 
   try {
     const bounds = new google.maps.LatLngBounds();
@@ -4574,8 +4846,8 @@ async function fetchNoaaHailReports(overrides = {}) {
   const overrideBbox = overrides.bbox || "";
 
   // Compute mode
-  const mode = overrides.mode === "reports" ? "reports"
-             : (urlParams.get("mode") === "reports" ? "reports" : "radar");
+  const modeRaw = String(overrideMode || urlParams.get("mode") || "radar").trim().toLowerCase();
+  const mode = (modeRaw === "reports") ? "reports" : "radar";
 
   // Added logging after mode is computed
   console.log("[FETCH NOAA] mode =", mode, "overrideMode =", overrides.mode, "urlParamMode =", urlParams.get("mode"));

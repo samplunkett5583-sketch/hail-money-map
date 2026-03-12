@@ -35,17 +35,10 @@ serve(async (req: Request) => {
     }
 
     const url = new URL(req.url);
-    let state = url.searchParams.get("state")?.trim();
-    const eventType = url.searchParams.get("event_type")?.trim();
-
-    if (state) {
-      state = state.toUpperCase();
-      if (state.length === 2) {
-        if (state === "FL") state = "FLORIDA";
-      }
+    const date = url.searchParams.get("date")?.trim() ?? "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return json({ error: "Invalid date. Use date=YYYY-MM-DD" }, 400);
     }
-
-    const eventTypeNormalized = eventType ? eventType.toLowerCase() : undefined;
 
     const globalHeaders: Record<string, string> = {};
     const authHeader = req.headers.get("Authorization");
@@ -56,49 +49,16 @@ serve(async (req: Request) => {
       global: { headers: globalHeaders },
     });
 
-    const now = new Date();
-    const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    from.setUTCMonth(from.getUTCMonth() - 24);
-    const fromIso = from.toISOString();
+    const { data, error } = await supabase
+      .from("hail_lsr_raw")
+      .select("lat, lon, hail_in, event_time")
+      .eq("event_date", date)
+      .order("event_time", { ascending: true });
 
-    const pageSize = 1000;
-    const dateSet = new Set<string>();
+    if (error) return json({ error: error.message }, 500);
 
-    const useUnionTables = !state && !eventTypeNormalized;
-    const tables = useUnionTables ? ["hail_reports", "hail_lsr_raw"] : ["hail_reports"];
-
-    for (const table of tables) {
-      let offset = 0;
-      for (;;) {
-        let q = supabase
-          .from(table)
-          .select("event_date")
-          .order("event_date", { ascending: false })
-          .range(offset, offset + pageSize - 1);
-
-        // Preserve existing behavior for filtered queries (hail_reports only).
-        if (!useUnionTables) {
-          if (state) q = q.ilike("state", state);
-          if (eventTypeNormalized) q = q.ilike("event_type", eventTypeNormalized);
-        }
-
-        const { data, error } = await q;
-        if (error) return json({ error: error.message }, 500);
-
-        if (!data || data.length === 0) break;
-
-        for (const row of data as Array<{ event_date: unknown }>) {
-          const v = row.event_date;
-          if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) dateSet.add(v);
-        }
-
-        if (data.length < pageSize) break;
-        offset += pageSize;
-      }
-    }
-
-    const dates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
-    return json({ dates });
+    const points = Array.isArray(data) ? data : [];
+    return json({ points });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }
