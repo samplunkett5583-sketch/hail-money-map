@@ -2,8 +2,10 @@
   "name": "hail-money-map",
   "private": true,
   "type": "module",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.39.3",
-    "csv-parse": "^5.5.6"
-  }
+ "dependencies": {
+  "@supabase/supabase-js": "^2.39.3",
+  "csv-parse": "^5.5.6",
+  "csv-parser": "^3.2.0",
+  "firebase-admin": "^13.6.0"
+}
 }

@@ -260,17 +260,18 @@ function stableKey(parts) {
 }
 
 async function upsertRaw(batch) {
-  const byKey = new Map();
-  for (const e of batch) {
-    const k = e?.dedupe_key;
-    if (!k) continue;
-    byKey.set(k, e);
+// Dedupe by dedupe_key, keep last occurrence
+const seen = new Map();
+for (const row of batch) {
+  if (row.dedupe_key) {
+    seen.set(row.dedupe_key, row);
   }
-  const dedupedBatch = Array.from(byKey.values());
+}
+const deduped = Array.from(seen.values());
 
-  const { error } = await supabase
-    .from("stormevents_raw")
-    .upsert(dedupedBatch, { onConflict: "dedupe_key" });
+const { error } = await supabase
+  .from("stormevents_raw")
+  .upsert(deduped, { onConflict: "dedupe_key" });
   if (error) throw error;
 }
 
