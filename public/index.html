@@ -2893,7 +2893,79 @@ div.ht-left-panel {
     </div>
 
     <div class="ht-map-wrap">
-      <div id="stormMap" class="map-panel"></div>
+      <div id="stormMap" class="map-panel" style="position:relative;">
+        <!-- Swath Opacity Control (Maps page only) -->
+        <div class="ht-swath-opacity-control" id="swathOpacityControl" style="position: absolute; left: 16px; top: 72px; z-index: 50; display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
+          <button id="swathOpacityToggleBtn" class="ht-swath-opacity-btn" type="button" aria-label="Swath Opacity" style="background: rgba(20,20,30,0.72); border: 1.5px solid rgba(255,255,255,0.22); border-radius: 10px; padding: 7px 9px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); cursor: pointer; display: flex; align-items: center;">
+            <!-- Inline SVG icon for opacity -->
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <circle cx="11" cy="11" r="8" stroke="white" stroke-width="2" fill="none"/>
+              <ellipse cx="11" cy="11" rx="7" ry="4" fill="white" fill-opacity="0.25"/>
+              <ellipse cx="11" cy="11" rx="7" ry="4" fill="white" fill-opacity="0.12"/>
+              <ellipse cx="11" cy="11" rx="7" ry="2" fill="white" fill-opacity="0.35"/>
+            </svg>
+          </button>
+          <input id="swathOpacitySlider" class="ht-swath-opacity-slider" type="range" min="0" max="100" value="100" style="display:none; margin-top:10px; width:32px; height:120px; writing-mode: bt-lr; -webkit-appearance: slider-vertical; background: transparent; accent-color: #fff; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.10); outline: none; pointer-events: auto;" />
+        </div>
+      </div>
+      <style>
+      #mapsView .ht-swath-opacity-btn:hover {
+        background: rgba(40,40,60,0.85) !important;
+        border-color: #fff !important;
+      }
+      #mapsView .ht-swath-opacity-slider.show {
+        display: block !important;
+      }
+      </style>
+      <script>
+      // Swath Opacity Control (Maps page only)
+      document.addEventListener('DOMContentLoaded', function() {
+        var toggleBtn = document.getElementById('swathOpacityToggleBtn');
+        var slider = document.getElementById('swathOpacitySlider');
+        if (toggleBtn && slider) {
+          toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            slider.classList.toggle('show');
+            slider.style.display = slider.classList.contains('show') ? 'block' : 'none';
+          });
+          // Hide slider if clicking outside
+          document.addEventListener('click', function(e) {
+            if (!toggleBtn.contains(e.target) && !slider.contains(e.target)) {
+              slider.classList.remove('show');
+              slider.style.display = 'none';
+            }
+          });
+          slider.addEventListener('input', function() {
+            var val = Number(slider.value);
+            var opacity = Math.max(0, Math.min(1, val / 100));
+            // Try all supported swath layer targets
+            var targets = [
+              window.App?.swathLayersByDate,
+              window.App?.swaths,
+              window.App?.featureLayer,
+              window.App?.recentsSwathLayer
+            ];
+            targets.forEach(function(target) {
+              if (!target) return;
+              if (Array.isArray(target)) {
+                target.forEach(function(layer) {
+                  if (layer?.setOptions) {
+                    layer.setOptions({ fillOpacity: opacity, strokeOpacity: Math.max(opacity, 0.2) });
+                  }
+                  if (layer?.setStyle) {
+                    layer.setStyle({ fillOpacity: opacity, strokeOpacity: Math.max(opacity, 0.2) });
+                  }
+                });
+              } else if (target?.setOptions) {
+                target.setOptions({ fillOpacity: opacity, strokeOpacity: Math.max(opacity, 0.2) });
+              } else if (target?.setStyle) {
+                target.setStyle({ fillOpacity: opacity, strokeOpacity: Math.max(opacity, 0.2) });
+              }
+            });
+          });
+        }
+      });
+      </script>
       <div class="ht-map-glass-stack" aria-hidden="true">
         <div class="ht-map-glass-box">
           <img class="ht-map-glass-logo" src="/assets/hmm-globe.png" alt="Hail Money Map" />
