@@ -6,6 +6,9 @@ on:
     # originally daily at 12:15Z; changed to every 5 minutes
     - cron: "*/5 * * * *"
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   ingest:
     runs-on: ubuntu-latest
@@ -18,8 +21,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: 24
+          cache: npm
 
       - name: Install deps
         run: npm ci

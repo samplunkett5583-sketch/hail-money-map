@@ -191,6 +191,9 @@
 
 
 <style>
+        #swathOpacityValue {
+          color: #000 !important;
+        }
     :root {
       --bg-dark: #020617;
       --bg-card: rgba(15, 23, 42, 0.96);
@@ -2895,8 +2898,14 @@ div.ht-left-panel {
     <div class="ht-map-wrap">
       <div id="stormMap" class="map-panel"></div>
       <div class="ht-map-glass-stack" aria-hidden="true">
-        <div class="ht-map-glass-box">
-          <img class="ht-map-glass-logo" src="/assets/hmm-globe.png" alt="Hail Money Map" />
+        <div class="ht-map-glass-box" style="z-index:10000; overflow:visible;">
+          <img class="ht-map-glass-logo" src="/assets/hmm-globe.png" alt="Hail Money Map" id="moneyGlobeLogo" />
+          <img src="/assets/swath opacity-icon.png" alt="Swath Opacity Icon" id="swathOpacityIcon" style="display:block; margin:68px auto 0; width:54px; height:54px; cursor:pointer;" />
+          <div id="swathOpacitySliderWrap" style="display:none; position:absolute; left:24px; top:110px; width:320px; z-index:9999; background:rgba(255,255,255,0.95); border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.18); padding:18px 18px 12px 18px;">
+            <div id="swathOpacityValue" style="text-align:center; margin-bottom:8px; font-size:16px; color:#000;">SWATH Opacity: 100%</div>
+            <div id="swathOpacityValue" style="text-align:center; margin-bottom:8px; font-size:16px; color:#000 !important;"></div>
+            <input id="swathOpacitySlider" type="range" min="0" max="100" value="100" style="width:100%; height:32px;" />
+          </div>
         </div>
         <div class="ht-map-glass-box">
           <input class="ht-map-glass-search" type="text" placeholder="Search" />
@@ -3491,6 +3500,96 @@ div.ht-left-panel {
 
 const DEBUG_STORMS = false;
 (() => {
+  // Attach click handler to money-globe logo to return to main menu view
+  document.addEventListener('DOMContentLoaded', function() {
+    const logo = document.getElementById('moneyGlobeLogo');
+    if (logo) {
+      logo.addEventListener('click', function() {
+        // Use existing navigation logic
+        if (window.App && App.views && App.views.mainMenuView && typeof showOnlyView === 'function') {
+          showOnlyView(App.views.mainMenuView);
+        }
+      });
+    }
+
+    // Swath opacity slider show/hide logic
+    const icon = document.getElementById('swathOpacityIcon');
+    const slider = document.getElementById('swathOpacitySlider');
+    if (icon && slider) {
+      // Hide slider by default
+      const sliderWrap = document.getElementById('swathOpacitySliderWrap');
+      sliderWrap.style.display = 'none';
+      sliderWrap.style.pointerEvents = 'none';
+      icon.addEventListener('click', function() {
+        sliderWrap.style.display = 'block';
+        sliderWrap.style.pointerEvents = 'auto';
+        slider.focus();
+        document.getElementById('swathOpacityValue').textContent = `SWATH Opacity: ${slider.value}%`;
+      });
+      // Hide slider after mouseup, pointerup, change, or blur
+      const hideSlider = () => {
+        slider.blur(); // Remove focus before hiding to fix aria-hidden warning
+        sliderWrap.style.display = 'none';
+        sliderWrap.style.pointerEvents = 'none';
+      };
+      slider.addEventListener('mouseup', hideSlider);
+      slider.addEventListener('pointerup', hideSlider);
+      slider.addEventListener('change', hideSlider);
+      slider.addEventListener('blur', hideSlider);
+
+      // Wire slider input to update swath overlay opacity
+      slider.addEventListener('input', function() {
+        // Temporary debug log for live overlays
+        var overlays = window._lsrOverlays || [];
+        var firstOverlay = overlays.length ? overlays[0] : null;
+        console.log('[SWATH_OPACITY_DEBUG]', {
+          collection: 'window._lsrOverlays',
+          overlayCount: overlays.length,
+          firstOverlayType: firstOverlay && firstOverlay.constructor ? firstOverlay.constructor.name : null,
+          hasSetOptions: !!(firstOverlay && typeof firstOverlay.setOptions === 'function'),
+          sliderValue: slider.value
+        });
+        var percentValue = Number(slider.value);
+        var opacityValue = percentValue / 100;
+        var label = document.getElementById('swathOpacityValue');
+
+        if (label) {
+          label.textContent = `SWATH Opacity: ${percentValue}%`;
+          label.style.color = '#000';
+          label.style.setProperty('color', '#000', 'important');
+        }
+
+        overlays.forEach(function(overlay) {
+          if (!overlay) return;
+          if (typeof overlay.setOptions === 'function') {
+            overlay.setOptions({ fillOpacity: opacityValue, strokeOpacity: opacityValue });
+          } else if (typeof overlay.setStyle === 'function') {
+            overlay.setStyle({ fillOpacity: opacityValue, strokeOpacity: opacityValue });
+          }
+        });
+      });
+
+      // Patch for deduplication: monkey-patch google.maps.Circle creation to skip exact duplicates
+      if (window.google && google.maps && google.maps.Circle) {
+        const origCircle = google.maps.Circle;
+        google.maps.Circle = function(opts) {
+          // Dedupe key: center lat/lng, radius, fillColor
+          const key = opts && opts.center && opts.radius && opts.fillColor
+            ? `${opts.center.lat},${opts.center.lng},${opts.radius},${opts.fillColor}`
+            : null;
+          if (key) {
+            window._swathCircleKeys = window._swathCircleKeys || new Set();
+            if (window._swathCircleKeys.has(key)) {
+              // Skip duplicate
+              return null;
+            }
+            window._swathCircleKeys.add(key);
+          }
+          return new origCircle(opts);
+        };
+      }
+    }
+  });
   const IDS = ['debugStormDatesBox', 'debugStormDatesText'];
 
   const nuke = () => {
