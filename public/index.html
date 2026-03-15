@@ -1973,51 +1973,19 @@ div.ht-left-panel {
     }
 
     /* =========================
-       MAP ONLY MODE — HARD RESET
-       Hide EVERYTHING except the map
+       MAP ONLY MODE — clean layout
        ========================= */
 
-    /* Hide all direct children of mapsView */
-    #mapsView > * {
-      display: none !important;
-    }
-
-    /* Re-enable the map (Google Maps / canvas variants) */
-    #mapsView #map,
-    #mapsView .map,
-    #mapsView .map-container,
-    #mapsView .maps-canvas,
-    #mapsView .gm-style,
-    #mapsView .gm-style * {
-      display: block !important;
+    /* Restore the maps shell as a proper flex container */
+    #mapsView > .ht-maps-shell,
+    #mapsView > div.ht-maps-shell {
+      display: flex !important;
       visibility: visible !important;
+      height: 100vh !important;
+      width: 100vw !important;
     }
 
-    /* Ensure the map fills the viewport */
-    #mapsView,
-    #mapsView #map,
-    #mapsView .map,
-    #mapsView .map-container,
-    #mapsView .gm-style {
-      width: 100% !important;
-      height: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      left: 0 !important;
-      top: 0 !important;
-    }
-
-    /* =========================
-       FIX: MAP ONLY MODE (restore map wrapper, then hide left UI)
-       ========================= */
-
-    /* Undo the previous hard-hide that blanked everything */
-    #mapsView > div {
-      display: block !important;
-      visibility: visible !important;
-    }
-
-    /* Hide ALL left-side UI */
+    /* Hide the left panel; keep the icon rail */
     #mapsView .ht-left-panel,
     #mapsView > div > div.ht-left-panel,
     #mapsView #stormListPanel,
@@ -2027,15 +1995,20 @@ div.ht-left-panel {
       display: none !important;
     }
 
-    /* Make the map fill the view */
-    #mapsView #map,
-    #mapsView .gm-style,
-    #mapsView .ht-map,
-    #mapsView .map,
-    #mapsView .map-container {
+    /* Map wrap fills all remaining flex space */
+    #mapsView .ht-map-wrap {
+      flex: 1 !important;
+      height: 100% !important;
+      min-width: 0 !important;
+      position: relative !important;
+    }
+
+    /* Storm map canvas fills its container */
+    #mapsView #stormMap {
       width: 100% !important;
       height: 100% !important;
-      margin-left: 0 !important;
+      position: absolute !important;
+      top: 0 !important;
       left: 0 !important;
     }
 
