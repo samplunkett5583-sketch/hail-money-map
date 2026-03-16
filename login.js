@@ -4,7 +4,7 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
   const email = document.getElementById("authEmail").value;
   const password = document.getElementById("authPassword").value;
 
-  console.log("Attempt login with:", email, password);
+  console.log("Attempt login with:", email);
 
   // Temporary fake login check — replace later with real backend
   if (email === "sam@company.com" && password === "password123") {
