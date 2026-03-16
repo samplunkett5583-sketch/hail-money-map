@@ -2689,14 +2689,14 @@ div.ht-left-panel {
 <section id="mapsView" class="view">
   <div class="ht-maps-shell">
     <div id="htIconRail" aria-label="Maps rail">
-      <button type="button" class="ht-rail-btn active" aria-label="Swath"><img src="/assets/swath-icon.png" alt="Swath" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="Company Jobs"><img src="/assets/company-jobs-icon.png" alt="Company Jobs" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="My Jobs"><img src="/assets/my-jobs-icon.png" alt="My Jobs" style="width:28px;height:28px;object-fit:contain;"></button>
+      <button type="button" class="ht-rail-btn active" aria-label="Swath"><img src="/assets/swath-icon.svg" alt="Swath" style="width:28px;height:28px;object-fit:contain;"></button>
+      <button type="button" class="ht-rail-btn" aria-label="Company Jobs"><img src="/assets/company-jobs-icon.svg" alt="Company Jobs" style="width:28px;height:28px;object-fit:contain;"></button>
+      <button type="button" class="ht-rail-btn" aria-label="My Jobs"><img src="/assets/my-jobs-icon.svg" alt="My Jobs" style="width:28px;height:28px;object-fit:contain;"></button>
       <button type="button" class="ht-rail-btn" aria-label="Campaign"><img src="/assets/campaign-icon.png" alt="Campaign" style="width:28px;height:28px;object-fit:contain;"></button>
       <button type="button" class="ht-rail-btn" aria-label="Drone"><img src="/assets/drone-icon.png" alt="Drone" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="Calendar"><img src="/assets/calendar-icon.png" alt="Calendar" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="Downloads"><img src="/assets/downloads-icon.png" alt="Downloads" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="Settings"><img src="/assets/settings-icon.png" alt="Settings" style="width:28px;height:28px;object-fit:contain;"></button>
+      <button type="button" class="ht-rail-btn" aria-label="Calendar"><img src="/assets/calendar-icon.svg" alt="Calendar" style="width:28px;height:28px;object-fit:contain;"></button>
+      <button type="button" class="ht-rail-btn" aria-label="Downloads"><img src="/assets/downloads-icon.svg" alt="Downloads" style="width:28px;height:28px;object-fit:contain;"></button>
+      <button type="button" class="ht-rail-btn" aria-label="Settings"><img src="/assets/settings-icon.svg" alt="Settings" style="width:28px;height:28px;object-fit:contain;"></button>
     </div>
 
     <div class="ht-left-panel">
@@ -2893,23 +2893,31 @@ div.ht-left-panel {
           <input class="ht-map-glass-search" type="text" placeholder="Search" />
 
           <div class="ht-map-glass-navrow" aria-label="Quick navigation">
-            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Directions">
-              <img class="nav-icon" src="/assets/directions-icon.png" alt="Directions" style="width:44px;height:44px;object-fit:contain;">
+            <div id="glassDirectionsBtn" class="glass-nav-item" role="button" tabindex="0" aria-label="Directions">
+              <img class="nav-icon" src="/assets/directions-icon.svg" alt="Directions" style="width:44px;height:44px;object-fit:contain;">
               <div class="nav-button">Directions</div>
             </div>
 
-            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Inspection">
-              <img class="nav-icon" src="/assets/inspection-icon.png" alt="Inspection" style="width:44px;height:44px;object-fit:contain;">
+            <div id="glassInspectionBtn" class="glass-nav-item" role="button" tabindex="0" aria-label="Inspection">
+              <img class="nav-icon" src="/assets/inspection-icon.svg" alt="Inspection" style="width:44px;height:44px;object-fit:contain;">
               <div class="nav-button">Inspection</div>
             </div>
 
             <div class="glass-nav-item" role="button" tabindex="0" aria-label="Lead">
-              <img class="nav-icon" src="/assets/lead-icon.png" alt="Lead" style="width:44px;height:44px;object-fit:contain;">
+              <img class="nav-icon" src="/assets/lead-icon.svg" alt="Lead" style="width:44px;height:44px;object-fit:contain;">
               <div class="nav-button">Lead</div>
             </div>
           </div>
 
-          <div class="ht-map-glass-most-recent">Most Recent Events</div>
+          <!-- Location photo + address after map click -->
+          <div id="locationPhotoWrap" style="display:none; margin:8px 0; border-radius:10px; overflow:hidden; position:relative;">
+            <img id="locationStreetViewImg" src="" alt="Street view" style="width:100%; height:120px; object-fit:cover; border-radius:10px; display:block;" />
+            <div id="locationAddressLabel" style="padding:6px 10px; font-size:0.78rem; color:#fff; background:rgba(0,0,0,0.55); border-radius:0 0 10px 10px;"></div>
+          </div>
+
+          <div class="ht-map-glass-most-recent">
+            <span id="recentEventsTitle">Most Recent Events</span>
+          </div>
 
           <div class="ht-events-meta">
             <div class="ht-total-events">
@@ -4826,8 +4834,14 @@ window.initMap = function initMap() {
 
   App.infoWindow = new google.maps.InfoWindow();
 
-  // Add click listener for house inspection
+  // Add click listener: update location panel at any zoom; show infoWindow at zoom >= 17
   App.map.addListener('click', (e) => {
+    // Always: update Recent Events panel & street view for clicked location
+    if (typeof handleMapClickForLocation === 'function') {
+      handleMapClickForLocation(e.latLng);
+    }
+
+    // At high zoom: also show infoWindow with storm/inspection details
     if (App.map.getZoom() >= 17) {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
@@ -4866,9 +4880,14 @@ function getDirectionsToHouse(lat, lng) {
 }
 
 function startInspection(lat, lng) {
-  // Placeholder function for starting inspection
-  console.log('Starting inspection at', lat, lng);
-  // TODO: Implement inspection logic
+  if (lat != null && lng != null) {
+    App.clickedLocation = { lat, lng };
+    App.destination = { lat, lng };
+  }
+  if (typeof openInspectionModal === 'function') {
+    openInspectionModal();
+    if (typeof wireInspectionModal === 'function') wireInspectionModal();
+  }
 }
 
 function formatStormDate(storm) {
@@ -6486,3 +6505,686 @@ document.addEventListener("DOMContentLoaded", ensureStormListClickHandler);
 <!-- NOAA importer (dev tool) -->
 <script src="noaa_import.js"></script>
 
+
+<!-- Demo swaths data -->
+<script src="demo_swaths.js"></script>
+
+<!-- =================== INSPECTION MODAL =================== -->
+<div id="inspectionModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(2,6,23,0.88); align-items:center; justify-content:center;">
+  <div style="background:rgba(15,23,42,0.98); border:1px solid rgba(56,189,248,0.35); border-radius:18px; padding:24px 22px; width:min(400px,96vw); max-height:90vh; overflow-y:auto; box-shadow:0 20px 48px rgba(0,0,0,0.8);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="color:#38bdf8; font-size:1.05rem; margin:0;">Start Inspection</h3>
+      <button id="inspectionModalClose" style="background:none; border:1px solid rgba(148,163,184,0.4); border-radius:50%; width:28px; height:28px; color:#94a3b8; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;">&times;</button>
+    </div>
+
+    <label style="display:block; margin-bottom:12px;">
+      <span style="font-size:0.82rem; color:#94a3b8; display:block; margin-bottom:4px;">Property Address</span>
+      <input id="inspAddressInput" type="text" placeholder="e.g. 123 Main St, Scottsdale AZ" style="width:100%; padding:10px 12px; background:rgba(255,255,255,0.08); border:1px solid rgba(56,189,248,0.3); border-radius:10px; color:#f1f5f9; font-size:0.9rem; box-sizing:border-box;" />
+    </label>
+
+    <label style="display:block; margin-bottom:12px;">
+      <span style="font-size:0.82rem; color:#94a3b8; display:block; margin-bottom:4px;">Notes / Missing Information</span>
+      <textarea id="inspNotesInput" rows="3" placeholder="Any missing info, damage notes, etc." style="width:100%; padding:10px 12px; background:rgba(255,255,255,0.08); border:1px solid rgba(56,189,248,0.3); border-radius:10px; color:#f1f5f9; font-size:0.88rem; box-sizing:border-box; resize:vertical;"></textarea>
+    </label>
+
+    <label style="display:block; margin-bottom:16px;">
+      <span style="font-size:0.82rem; color:#94a3b8; display:block; margin-bottom:4px;">Take Photo(s)</span>
+      <input id="inspPhotoInput" type="file" accept="image/*" capture="environment" multiple style="display:none;" />
+      <button id="inspCameraBtn" style="padding:10px 18px; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; border-radius:10px; color:#38bdf8; font-size:0.88rem; cursor:pointer; width:100%;">📷 Open Camera / Select Photos</button>
+      <div id="inspPhotoPreview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"></div>
+    </label>
+
+    <button id="inspSaveBtn" style="width:100%; padding:12px; background:#38bdf8; border:none; border-radius:10px; color:#020617; font-size:0.95rem; font-weight:600; cursor:pointer;">Save Job</button>
+  </div>
+</div>
+
+<!-- =================== JOBS PANEL =================== -->
+<div id="jobsPanel" style="display:none; position:fixed; top:0; right:0; width:min(380px,100vw); height:100vh; z-index:9999; background:rgba(15,23,42,0.98); border-left:1px solid rgba(56,189,248,0.25); box-shadow:-8px 0 32px rgba(0,0,0,0.6); overflow-y:auto; padding:16px 14px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <h3 style="color:#38bdf8; font-size:1rem; margin:0;">Jobs</h3>
+    <button id="jobsPanelClose" style="background:none; border:1px solid rgba(148,163,184,0.4); border-radius:50%; width:28px; height:28px; color:#94a3b8; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;">&times;</button>
+  </div>
+  <div style="display:flex; gap:8px; margin-bottom:14px;">
+    <button id="tabMyJobs" class="jobs-tab-btn active" data-jobs-tab="my" style="flex:1; padding:8px; border-radius:8px; border:1px solid #38bdf8; background:rgba(56,189,248,0.15); color:#38bdf8; font-size:0.82rem; cursor:pointer;">My Jobs</button>
+    <button id="tabAllJobs" class="jobs-tab-btn" data-jobs-tab="all" style="flex:1; padding:8px; border-radius:8px; border:1px solid rgba(148,163,184,0.3); background:transparent; color:#94a3b8; font-size:0.82rem; cursor:pointer;">All Company Jobs</button>
+    <button id="tabDownloads" class="jobs-tab-btn" data-jobs-tab="downloads" style="flex:1; padding:8px; border-radius:8px; border:1px solid rgba(148,163,184,0.3); background:transparent; color:#94a3b8; font-size:0.82rem; cursor:pointer;">Downloads</button>
+  </div>
+  <div id="jobsTabMyJobs" class="jobs-tab-content">
+    <div id="myJobsList2" style="display:flex; flex-direction:column; gap:10px;"></div>
+    <div id="myJobsEmpty" style="color:#64748b; font-size:0.83rem; text-align:center; padding:24px 0;">No jobs yet. Start an inspection to create one.</div>
+  </div>
+  <div id="jobsTabAllJobs" class="jobs-tab-content" style="display:none;">
+    <div id="allJobsList" style="display:flex; flex-direction:column; gap:10px;"></div>
+    <div id="allJobsEmpty" style="color:#64748b; font-size:0.83rem; text-align:center; padding:24px 0;">No company jobs yet.</div>
+  </div>
+  <div id="jobsTabDownloads" class="jobs-tab-content" style="display:none;">
+    <div style="color:#64748b; font-size:0.78rem; margin-bottom:10px;">Saved storm dates (max 10). Uncheck to remove.</div>
+    <div id="downloadsList" style="display:flex; flex-direction:column; gap:8px;"></div>
+    <div id="downloadsEmpty" style="color:#64748b; font-size:0.83rem; text-align:center; padding:24px 0;">No saved dates. Check a job to save it here.</div>
+  </div>
+</div>
+
+<!-- =================== TOAST =================== -->
+<div id="appToast" style="display:none; position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:999999; background:rgba(15,23,42,0.96); border:1px solid rgba(56,189,248,0.4); border-radius:12px; padding:12px 22px; color:#f1f5f9; font-size:0.88rem; box-shadow:0 8px 24px rgba(0,0,0,0.5); max-width:90vw; text-align:center; pointer-events:none;"></div>
+
+<!-- =================== FEATURE SCRIPTS =================== -->
+<script>
+/* ============================================================
+   TOAST HELPER
+   ============================================================ */
+function showToast(msg, ms) {
+  const el = document.getElementById('appToast');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(el._tid);
+  el._tid = setTimeout(() => { el.style.display = 'none'; }, ms || 3200);
+}
+
+/* ============================================================
+   FEATURE 1 – REALISTIC RADAR SWATH RENDERING
+   ============================================================ */
+App.demoSwathPolygons = App.demoSwathPolygons || [];
+
+function clearDemoSwaths() {
+  (App.demoSwathPolygons || []).forEach(p => { try { p.setMap(null); } catch {} });
+  App.demoSwathPolygons = [];
+}
+
+function renderDemoSwaths() {
+  if (!App.map || !window.google || !window.demoSwaths) return;
+  clearDemoSwaths();
+
+  window.demoSwaths.forEach(swath => {
+    const layers = swath.layers;
+    if (!layers || !layers.length) return;
+
+    // Render each intensity layer (outermost first → innermost last on top)
+    layers.forEach(layer => {
+      const path = (layer.polygon || []).map(p => ({ lat: p.lat, lng: p.lng }));
+      if (path.length < 3) return;
+
+      const polygon = new google.maps.Polygon({
+        paths: path,
+        map: App.map,
+        fillColor: layer.color,
+        fillOpacity: layer.opacity,
+        strokeColor: layer.color,
+        strokeOpacity: layer.opacity * 0.8,
+        strokeWeight: 1,
+        clickable: false,
+        zIndex: 1
+      });
+
+      App.demoSwathPolygons.push(polygon);
+    });
+  });
+}
+
+/* ============================================================
+   FEATURE 2 – MAP CLICK: LOCATION-SPECIFIC DATES + STREET VIEW
+   ============================================================ */
+App.clickedLocation = null;
+
+function getSwathsNearLocation(lat, lng, radiusMiles) {
+  const radiusKm = (radiusMiles || 25) * 1.609344;
+  const nearby = [];
+
+  (window.demoSwaths || []).forEach(swath => {
+    const allLayers = swath.layers || [];
+    // Use the outer layer polygon centroid for distance check
+    const pts = allLayers.length ? (allLayers[0].polygon || []) : (swath.polygon || []);
+    if (!pts.length) return;
+
+    const cLat = pts.reduce((s, p) => s + p.lat, 0) / pts.length;
+    const cLng = pts.reduce((s, p) => s + p.lng, 0) / pts.length;
+
+    const km = haversineKm(lat, lng, cLat, cLng);
+    if (km <= radiusKm) {
+      nearby.push({ swath, distKm: km });
+    }
+  });
+
+  nearby.sort((a, b) => a.distKm - b.distKm);
+  return nearby.map(n => n.swath);
+}
+
+function updateRecentEventsForLocation(lat, lng, address) {
+  const nearby = getSwathsNearLocation(lat, lng, 25);
+
+  // Update title
+  const titleEl = document.getElementById('recentEventsTitle');
+  if (titleEl) {
+    titleEl.textContent = address
+      ? 'Recent storms near ' + address
+      : 'Recent storms near this location';
+  }
+
+  const list = document.getElementById('eventDatesList');
+  if (!list) return;
+  list.innerHTML = '';
+
+  if (!nearby.length) {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'color:#64748b; font-size:0.83rem; padding:12px 0;';
+    msg.textContent = 'No recorded storms within 25 miles of this location.';
+    list.appendChild(msg);
+    return;
+  }
+
+  nearby.forEach(swath => {
+    const row = document.createElement('div');
+    row.className = 'ht-event-rowline';
+    row.style.cssText = 'display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid rgba(148,163,184,0.15); cursor:pointer;';
+
+    const check = document.createElement('input');
+    check.type = 'checkbox';
+    check.style.cssText = 'width:16px; height:16px; cursor:pointer; flex-shrink:0;';
+    check.addEventListener('click', e => e.stopPropagation());
+    check.addEventListener('change', () => {
+      if (check.checked) {
+        addToDownloads({ id: swath.id, label: swath.label, date: swath.date, maxHailInches: swath.maxHailInches });
+      } else {
+        removeFromDownloads(swath.id);
+      }
+    });
+
+    const info = document.createElement('div');
+    info.style.cssText = 'flex:1; min-width:0;';
+    info.innerHTML = `<div style="color:#f1f5f9; font-size:0.85rem; font-weight:500;">${swath.label}</div>
+      <div style="color:#94a3b8; font-size:0.76rem;">⚡ ${swath.maxHailInches}" hail</div>`;
+
+    row.appendChild(check);
+    row.appendChild(info);
+
+    row.addEventListener('click', () => {
+      if (swath.layers && swath.layers.length) {
+        renderDemoSwaths();
+        // Zoom into swath
+        try {
+          const outerPts = swath.layers[0].polygon;
+          const bounds = new google.maps.LatLngBounds();
+          outerPts.forEach(p => bounds.extend({ lat: p.lat, lng: p.lng }));
+          App.map.fitBounds(bounds);
+        } catch {}
+      }
+    });
+
+    list.appendChild(row);
+  });
+}
+
+function showStreetViewThumbnail(lat, lng) {
+  const wrap = document.getElementById('locationPhotoWrap');
+  const img = document.getElementById('locationStreetViewImg');
+  if (!wrap || !img) return;
+
+  const apiKey = 'AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I';
+  const w = 360, h = 120;
+  const url = `https://maps.googleapis.com/maps/api/streetview?size=${w}x${h}&location=${lat},${lng}&fov=90&heading=235&pitch=10&key=${apiKey}`;
+
+  img.src = url;
+  img.onerror = () => {
+    // Fallback: static satellite thumbnail
+    img.src = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=17&size=${w}x${h}&maptype=satellite&key=${apiKey}`;
+    img.onerror = () => { wrap.style.display = 'none'; };
+  };
+  wrap.style.display = 'block';
+}
+
+function handleMapClickForLocation(latLng) {
+  const lat = latLng.lat();
+  const lng = latLng.lng();
+  App.clickedLocation = { lat, lng };
+  App.destination = { lat, lng };
+
+  // Enable directions button
+  if (App.els.directionsBtn) App.els.directionsBtn.disabled = false;
+
+  // Show street view thumbnail
+  showStreetViewThumbnail(lat, lng);
+
+  // Reverse geocode for address
+  if (App.geocoder) {
+    App.geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      let address = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      if (status === 'OK' && results && results[0]) {
+        address = results[0].formatted_address || address;
+        // Pre-fill inspection address
+        const inspAddr = document.getElementById('inspAddressInput');
+        if (inspAddr) inspAddr.value = address;
+      }
+      const addrLabel = document.getElementById('locationAddressLabel');
+      if (addrLabel) addrLabel.textContent = address;
+      updateRecentEventsForLocation(lat, lng, address);
+    });
+  } else {
+    updateRecentEventsForLocation(lat, lng, null);
+  }
+
+  // Place/move click marker
+  if (App.clickMarker) {
+    App.clickMarker.setPosition(latLng);
+  } else {
+    App.clickMarker = new google.maps.Marker({
+      position: latLng,
+      map: App.map,
+      title: 'Selected location',
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: '#38bdf8',
+        fillOpacity: 0.9,
+        strokeColor: '#ffffff',
+        strokeWeight: 2
+      }
+    });
+  }
+}
+
+/* ============================================================
+   FEATURE 3 – DIRECTIONS ICON BUTTON
+   ============================================================ */
+function wireDirectionsGlassBtn() {
+  const btn = document.getElementById('glassDirectionsBtn');
+  if (!btn || btn.dataset.wired) return;
+  btn.dataset.wired = '1';
+  btn.style.cursor = 'pointer';
+
+  btn.addEventListener('click', () => {
+    const dest = App.destination || App.clickedLocation;
+    if (!dest || !Number.isFinite(dest.lat) || !Number.isFinite(dest.lng)) {
+      showToast('Please select a location on the map first.', 3000);
+      return;
+    }
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}&travelmode=driving`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  });
+
+  btn.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); }
+  });
+}
+
+/* ============================================================
+   FEATURE 4 – INSPECTION MODAL + JOB FOLDER
+   ============================================================ */
+const JOBS_KEY = 'hmm_jobs_v1';
+
+function loadJobs() {
+  try { return JSON.parse(localStorage.getItem(JOBS_KEY) || '[]'); } catch { return []; }
+}
+
+function saveJobs(jobs) {
+  try { localStorage.setItem(JOBS_KEY, JSON.stringify(jobs)); } catch {}
+}
+
+function addJob(job) {
+  const jobs = loadJobs();
+  jobs.unshift(job); // newest first
+  saveJobs(jobs);
+  renderJobsPanels();
+}
+
+function openInspectionModal() {
+  const modal = document.getElementById('inspectionModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  // Pre-fill address if location selected
+  const inspAddr = document.getElementById('inspAddressInput');
+  if (inspAddr && App.clickedLocation) {
+    if (!inspAddr.value && App.geocoder) {
+      App.geocoder.geocode({ location: App.clickedLocation }, (results, status) => {
+        if (status === 'OK' && results && results[0]) {
+          inspAddr.value = results[0].formatted_address || '';
+        }
+      });
+    }
+  }
+
+  // Clear previous photo preview
+  const preview = document.getElementById('inspPhotoPreview');
+  if (preview) preview.innerHTML = '';
+  const photoInput = document.getElementById('inspPhotoInput');
+  if (photoInput) photoInput.value = '';
+  const notesInput = document.getElementById('inspNotesInput');
+  if (notesInput) notesInput.value = '';
+}
+
+function closeInspectionModal() {
+  const modal = document.getElementById('inspectionModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function wireInspectionModal() {
+  const closeBtn = document.getElementById('inspectionModalClose');
+  if (closeBtn && !closeBtn.dataset.wired) {
+    closeBtn.dataset.wired = '1';
+    closeBtn.addEventListener('click', closeInspectionModal);
+  }
+
+  const modal = document.getElementById('inspectionModal');
+  if (modal && !modal.dataset.wired) {
+    modal.dataset.wired = '1';
+    modal.addEventListener('click', e => { if (e.target === modal) closeInspectionModal(); });
+  }
+
+  const cameraBtn = document.getElementById('inspCameraBtn');
+  const photoInput = document.getElementById('inspPhotoInput');
+  if (cameraBtn && photoInput && !cameraBtn.dataset.wired) {
+    cameraBtn.dataset.wired = '1';
+    cameraBtn.addEventListener('click', () => photoInput.click());
+    photoInput.addEventListener('change', () => {
+      const preview = document.getElementById('inspPhotoPreview');
+      if (!preview) return;
+      preview.innerHTML = '';
+      Array.from(photoInput.files || []).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e2 => {
+          const img = document.createElement('img');
+          img.src = e2.target.result;
+          img.style.cssText = 'width:72px; height:72px; object-fit:cover; border-radius:8px; border:1px solid rgba(56,189,248,0.3);';
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+  }
+
+  const saveBtn = document.getElementById('inspSaveBtn');
+  if (saveBtn && !saveBtn.dataset.wired) {
+    saveBtn.dataset.wired = '1';
+    saveBtn.addEventListener('click', async () => {
+      const address = (document.getElementById('inspAddressInput')?.value || '').trim();
+      const notes = (document.getElementById('inspNotesInput')?.value || '').trim();
+      const photoInput2 = document.getElementById('inspPhotoInput');
+      const photos = [];
+
+      const files = Array.from(photoInput2?.files || []);
+      for (const f of files) {
+        try {
+          const dataUrl = await new Promise((res, rej) => {
+            const rd = new FileReader();
+            rd.onload = e => res(e.target.result);
+            rd.onerror = rej;
+            rd.readAsDataURL(f);
+          });
+          photos.push(dataUrl);
+        } catch {}
+      }
+
+      const job = {
+        id: 'job_' + Date.now(),
+        address: address || 'Unknown address',
+        notes,
+        photos,
+        lat: App.clickedLocation?.lat || null,
+        lng: App.clickedLocation?.lng || null,
+        createdAt: new Date().toISOString(),
+        user: window.auth?.currentUser?.email || 'me'
+      };
+
+      addJob(job);
+      closeInspectionModal();
+      showToast('Job saved! View it in the Jobs panel.', 3000);
+      // Open jobs panel
+      openJobsPanel('my');
+    });
+  }
+}
+
+function wireInspectionGlassBtn() {
+  const btn = document.getElementById('glassInspectionBtn');
+  if (!btn || btn.dataset.wired) return;
+  btn.dataset.wired = '1';
+  btn.style.cursor = 'pointer';
+
+  btn.addEventListener('click', () => {
+    openInspectionModal();
+    wireInspectionModal();
+  });
+
+  btn.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); }
+  });
+}
+
+/* ============================================================
+   FEATURE 5 – JOBS PANEL + DOWNLOADS TAB
+   ============================================================ */
+const DOWNLOADS_KEY = 'hmm_downloads_v1';
+const MAX_DOWNLOADS = 10;
+
+function loadDownloads() {
+  try { return JSON.parse(localStorage.getItem(DOWNLOADS_KEY) || '[]'); } catch { return []; }
+}
+
+function saveDownloads(dl) {
+  try { localStorage.setItem(DOWNLOADS_KEY, JSON.stringify(dl)); } catch {}
+}
+
+function addToDownloads(item) {
+  const dl = loadDownloads();
+  if (dl.find(d => d.id === item.id)) {
+    showToast('Already saved to Downloads.', 2400);
+    return false;
+  }
+  if (dl.length >= MAX_DOWNLOADS) {
+    showToast('Maximum 10 saved dates reached. Please remove one from Downloads first.', 4000);
+    return false;
+  }
+  dl.unshift(item);
+  saveDownloads(dl);
+  renderDownloadsTab();
+  showToast('Saved to Downloads ✓', 2200);
+  return true;
+}
+
+function removeFromDownloads(id) {
+  const dl = loadDownloads().filter(d => d.id !== id);
+  saveDownloads(dl);
+  renderDownloadsTab();
+}
+
+function renderJobCard(job, tab) {
+  const card = document.createElement('div');
+  card.style.cssText = 'background:rgba(255,255,255,0.04); border:1px solid rgba(56,189,248,0.18); border-radius:12px; padding:12px 14px;';
+
+  const dl = loadDownloads();
+  const isSaved = !!dl.find(d => d.id === job.id);
+
+  card.innerHTML = `
+    <div style="display:flex; align-items:flex-start; gap:10px;">
+      <input type="checkbox" data-job-id="${job.id}" ${isSaved ? 'checked' : ''} style="width:16px; height:16px; margin-top:3px; cursor:pointer; flex-shrink:0;" title="Save to Downloads" />
+      <div style="flex:1; min-width:0;">
+        <div style="color:#f1f5f9; font-size:0.87rem; font-weight:600; word-break:break-word;">${job.address}</div>
+        <div style="color:#64748b; font-size:0.76rem; margin-top:2px;">${new Date(job.createdAt).toLocaleString()}</div>
+        ${job.notes ? `<div style="color:#94a3b8; font-size:0.78rem; margin-top:4px;">${job.notes}</div>` : ''}
+        ${job.photos && job.photos.length ? `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">${job.photos.map(p => `<img src="${p}" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid rgba(56,189,248,0.25);" />`).join('')}</div>` : ''}
+      </div>
+    </div>
+  `;
+
+  const cb = card.querySelector('input[type="checkbox"]');
+  if (cb) {
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        const ok = addToDownloads({ id: job.id, label: job.address, date: job.createdAt.split('T')[0], address: job.address });
+        if (!ok) cb.checked = false;
+      } else {
+        removeFromDownloads(job.id);
+      }
+    });
+  }
+
+  return card;
+}
+
+function renderJobsPanels() {
+  const jobs = loadJobs();
+  const currentUser = window.auth?.currentUser?.email || 'me';
+
+  // My Jobs
+  const myList = document.getElementById('myJobsList2');
+  const myEmpty = document.getElementById('myJobsEmpty');
+  if (myList) {
+    const myJobs = jobs.filter(j => j.user === currentUser || !j.user);
+    myList.innerHTML = '';
+    if (myEmpty) myEmpty.style.display = myJobs.length ? 'none' : 'block';
+    myJobs.forEach(j => myList.appendChild(renderJobCard(j, 'my')));
+  }
+
+  // All Company Jobs
+  const allList = document.getElementById('allJobsList');
+  const allEmpty = document.getElementById('allJobsEmpty');
+  if (allList) {
+    allList.innerHTML = '';
+    if (allEmpty) allEmpty.style.display = jobs.length ? 'none' : 'block';
+    jobs.forEach(j => allList.appendChild(renderJobCard(j, 'all')));
+  }
+
+  renderDownloadsTab();
+}
+
+function renderDownloadsTab() {
+  const dl = loadDownloads();
+  const dlList = document.getElementById('downloadsList');
+  const dlEmpty = document.getElementById('downloadsEmpty');
+
+  if (!dlList) return;
+  dlList.innerHTML = '';
+  if (dlEmpty) dlEmpty.style.display = dl.length ? 'none' : 'block';
+
+  dl.forEach(item => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(255,255,255,0.04); border:1px solid rgba(56,189,248,0.15); border-radius:10px;';
+    row.innerHTML = `
+      <input type="checkbox" checked style="width:16px; height:16px; cursor:pointer; flex-shrink:0;" />
+      <div style="flex:1; min-width:0;">
+        <div style="color:#f1f5f9; font-size:0.85rem; font-weight:500; word-break:break-word;">${item.label || item.address || item.id}</div>
+        <div style="color:#64748b; font-size:0.75rem;">${item.date || ''}</div>
+      </div>
+    `;
+    const cb = row.querySelector('input');
+    cb.addEventListener('change', () => {
+      if (!cb.checked) {
+        removeFromDownloads(item.id);
+      }
+    });
+    dlList.appendChild(row);
+  });
+}
+
+function openJobsPanel(tab) {
+  const panel = document.getElementById('jobsPanel');
+  if (!panel) return;
+  panel.style.display = 'block';
+  renderJobsPanels();
+  switchJobsTab(tab || 'my');
+}
+
+function switchJobsTab(tab) {
+  const tabs = ['my', 'all', 'downloads'];
+  tabs.forEach(t => {
+    const btn = document.querySelector(`.jobs-tab-btn[data-jobs-tab="${t}"]`);
+    const content = document.getElementById('jobsTab' + (t === 'my' ? 'MyJobs' : t === 'all' ? 'AllJobs' : 'Downloads'));
+    if (btn) {
+      if (t === tab) {
+        btn.style.background = 'rgba(56,189,248,0.15)';
+        btn.style.borderColor = '#38bdf8';
+        btn.style.color = '#38bdf8';
+      } else {
+        btn.style.background = 'transparent';
+        btn.style.borderColor = 'rgba(148,163,184,0.3)';
+        btn.style.color = '#94a3b8';
+      }
+    }
+    if (content) content.style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+function wireJobsPanel() {
+  const closeBtn = document.getElementById('jobsPanelClose');
+  if (closeBtn && !closeBtn.dataset.wired) {
+    closeBtn.dataset.wired = '1';
+    closeBtn.addEventListener('click', () => {
+      document.getElementById('jobsPanel').style.display = 'none';
+    });
+  }
+
+  document.querySelectorAll('.jobs-tab-btn').forEach(btn => {
+    if (btn.dataset.wired) return;
+    btn.dataset.wired = '1';
+    btn.addEventListener('click', () => {
+      switchJobsTab(btn.dataset.jobsTab);
+    });
+  });
+
+  // Rail button wiring: My Jobs, All Company Jobs, Downloads
+  document.querySelectorAll('#htIconRail .ht-rail-btn').forEach(btn => {
+    if (btn.dataset.wired) return;
+    btn.dataset.wired = '1';
+    const label = btn.getAttribute('aria-label') || '';
+    if (label === 'My Jobs') {
+      btn.addEventListener('click', () => openJobsPanel('my'));
+    } else if (label === 'Company Jobs') {
+      btn.addEventListener('click', () => openJobsPanel('all'));
+    } else if (label === 'Downloads') {
+      btn.addEventListener('click', () => openJobsPanel('downloads'));
+    }
+  });
+}
+
+/* ============================================================
+   MAP CLICK HANDLER OVERRIDE
+   ============================================================ */
+function rewireMapClickHandler() {
+  if (!App.map || !window.google) return;
+  if (App._customClickListenerAdded) return;
+  App._customClickListenerAdded = true;
+
+  App.map.addListener('click', e => {
+    handleMapClickForLocation(e.latLng);
+  });
+}
+
+/* ============================================================
+   BOOT – wire everything after map + DOM are ready
+   ============================================================ */
+function bootFeatures() {
+  wireDirectionsGlassBtn();
+  wireInspectionGlassBtn();
+  wireInspectionModal();
+  wireJobsPanel();
+
+  // Render demo swaths when map is ready
+  if (App.map && window.demoSwaths) {
+    renderDemoSwaths();
+    rewireMapClickHandler();
+  }
+}
+
+// Hook into initMap callback
+const _origInitMap = window.initMap;
+window.initMap = function() {
+  if (_origInitMap) _origInitMap.apply(this, arguments);
+  // Wait a tick for map to be fully initialized
+  setTimeout(() => {
+    bootFeatures();
+    renderDemoSwaths();
+    rewireMapClickHandler();
+  }, 800);
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  wireInspectionModal();
+  wireJobsPanel();
+  // If map already initialized
+  if (App.map) {
+    bootFeatures();
+    renderDemoSwaths();
+    rewireMapClickHandler();
+  }
+});
+</script>
