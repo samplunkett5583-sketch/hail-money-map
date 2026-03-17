@@ -2690,10 +2690,11 @@ div.ht-left-panel {
 <section id="mapsView" class="view">
   <div class="ht-maps-shell">
     <div id="htIconRail" aria-label="Maps rail">
-      <button type="button" class="ht-rail-btn active" aria-label="Swath"><img src="/assets/swath-icon.svg" alt="Swath" style="width:28px;height:28px;object-fit:contain;"></button>
+      <button type="button" class="ht-rail-btn active" aria-label="HMM Globe"><img src="/assets/hmm-globe.png" alt="HMM Globe" style="width:28px;height:28px;object-fit:contain;"></button>
+      <button type="button" class="ht-rail-btn" aria-label="Campaign"><img src="/assets/campaign-icon.png" alt="Campaign" style="width:28px;height:28px;object-fit:contain;"></button>
       <button type="button" class="ht-rail-btn" aria-label="Company Jobs"><img src="/assets/company-jobs-icon.svg" alt="Company Jobs" style="width:28px;height:28px;object-fit:contain;"></button>
       <button type="button" class="ht-rail-btn" aria-label="My Jobs"><img src="/assets/my-jobs-icon.svg" alt="My Jobs" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="Campaign"><img src="/assets/campaign-icon.png" alt="Campaign" style="width:28px;height:28px;object-fit:contain;"></button>
+      <button type="button" class="ht-rail-btn" aria-label="Swath"><img src="/assets/swath-icon.svg" alt="Swath" style="width:28px;height:28px;object-fit:contain;"></button>
       <button type="button" class="ht-rail-btn" aria-label="Drone"><img src="/assets/drone-icon.png" alt="Drone" style="width:28px;height:28px;object-fit:contain;"></button>
       <button type="button" class="ht-rail-btn" aria-label="Calendar"><img src="/assets/calendar-icon.svg" alt="Calendar" style="width:28px;height:28px;object-fit:contain;"></button>
       <button type="button" class="ht-rail-btn" aria-label="Downloads"><img src="/assets/downloads-icon.svg" alt="Downloads" style="width:28px;height:28px;object-fit:contain;"></button>
@@ -2883,7 +2884,7 @@ div.ht-left-panel {
       <div class="ht-map-glass-stack" aria-hidden="true">
         <div class="ht-map-glass-box" style="z-index:10000; overflow:visible;">
           <img class="ht-map-glass-logo" src="/assets/hmm-globe.png" alt="Hail Money Map" id="moneyGlobeLogo" />
-          <img src="/assets/swath opacity-icon.png" alt="Swath Opacity Icon" id="swathOpacityIcon" style="display:block; margin:68px auto 0; width:54px; height:54px; cursor:pointer;" />
+          <img src="/assets/swath%20opacity-icon.png" alt="Swath Opacity Icon" id="swathOpacityIcon" style="display:block; margin:68px auto 0; width:54px; height:54px; cursor:pointer;" />
           <div id="swathOpacitySliderWrap" style="display:none; position:absolute; left:24px; top:110px; width:320px; z-index:9999; background:rgba(255,255,255,0.95); border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.18); padding:18px 18px 12px 18px;">
             <div id="swathOpacityValue" style="text-align:center; margin-bottom:8px; font-size:16px; color:#000;">SWATH Opacity: 100%</div>
             <input id="swathOpacitySlider" type="range" min="0" max="100" value="100" style="width:100%; height:32px;" />
@@ -2903,7 +2904,7 @@ div.ht-left-panel {
               <div class="nav-button">Inspection</div>
             </div>
 
-            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Lead">
+            <div id="glassLeadBtn" class="glass-nav-item" role="button" tabindex="0" aria-label="Lead">
               <img class="nav-icon" src="/assets/lead-icon.svg" alt="Lead" style="width:44px;height:44px;object-fit:contain;">
               <div class="nav-button">Lead</div>
             </div>
@@ -6860,13 +6861,10 @@ function wireDirectionsGlassBtn() {
   btn.style.cursor = 'pointer';
 
   btn.addEventListener('click', () => {
-    const dest = App.destination || App.clickedLocation;
-    if (!dest || !Number.isFinite(dest.lat) || !Number.isFinite(dest.lng)) {
-      showToast('Please select a location on the map first.', 3000);
-      return;
-    }
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}&travelmode=driving`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window._mapClickMode = 'directions';
+    const mapDiv = document.getElementById('stormMap');
+    if (mapDiv) mapDiv.style.cursor = 'crosshair';
+    showToast('Click the map to get directions to that location', 4000);
   });
 
   btn.addEventListener('keydown', e => {
@@ -7009,8 +7007,10 @@ function wireInspectionGlassBtn() {
   btn.style.cursor = 'pointer';
 
   btn.addEventListener('click', () => {
-    openInspectionModal();
-    wireInspectionModal();
+    window._mapClickMode = 'inspection';
+    const mapDiv = document.getElementById('stormMap');
+    if (mapDiv) mapDiv.style.cursor = 'crosshair';
+    showToast('Click the map to start an inspection at that location', 4000);
   });
 
   btn.addEventListener('keydown', e => {
@@ -7207,12 +7207,71 @@ function wireJobsPanel() {
 /* ============================================================
    MAP CLICK HANDLER OVERRIDE
    ============================================================ */
+/* ============================================================
+   FEATURE – LEAD GLASS BUTTON
+   ============================================================ */
+function wireLeadGlassBtn() {
+  const btn = document.getElementById('glassLeadBtn');
+  if (!btn || btn.dataset.wired) return;
+  btn.dataset.wired = '1';
+  btn.style.cursor = 'pointer';
+
+  btn.addEventListener('click', () => {
+    window._mapClickMode = 'lead';
+    const mapDiv = document.getElementById('stormMap');
+    if (mapDiv) mapDiv.style.cursor = 'crosshair';
+    showToast('Click the map to create a lead at that location', 4000);
+  });
+
+  btn.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); }
+  });
+}
+
 function rewireMapClickHandler() {
   if (!App.map || !window.google) return;
   if (App._customClickListenerAdded) return;
   App._customClickListenerAdded = true;
 
+  function resetClickMode() {
+    window._mapClickMode = null;
+    const mapDiv = document.getElementById('stormMap');
+    if (mapDiv) mapDiv.style.cursor = 'default';
+  }
+
   App.map.addListener('click', e => {
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+    const mode = window._mapClickMode;
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
+        lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      resetClickMode();
+      return;
+    }
+
+    if (mode === 'directions') {
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank', 'noopener,noreferrer');
+      resetClickMode();
+      return;
+    }
+
+    if (mode === 'inspection') {
+      if (typeof startInspection === 'function') {
+        startInspection(lat, lng);
+      } else {
+        window.open(`https://www.google.com/maps/@${lat},${lng},3a,75y,90t/data=!3m1!1e1`, '_blank', 'noopener,noreferrer');
+      }
+      resetClickMode();
+      return;
+    }
+
+    if (mode === 'lead') {
+      showToast('New lead at ' + lat.toFixed(5) + ', ' + lng.toFixed(5), 4000);
+      resetClickMode();
+      return;
+    }
+
     handleMapClickForLocation(e.latLng);
   });
 }
@@ -7223,6 +7282,7 @@ function rewireMapClickHandler() {
 function bootFeatures() {
   wireDirectionsGlassBtn();
   wireInspectionGlassBtn();
+  wireLeadGlassBtn();
   wireInspectionModal();
   wireJobsPanel();
 
