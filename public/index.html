@@ -2188,9 +2188,7 @@ div.ht-left-panel {
       display: flex;
       gap: 0;
       margin-top: 14px;
-      width: calc(100% + 28px);
-      margin-left: -14px;
-      margin-right: -14px;
+      width: 100%;
     }
 
     #mapsView .glass-nav-item {
@@ -2199,53 +2197,44 @@ div.ht-left-panel {
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      gap: 10px;
+      gap: 6px;
       background: transparent;
       text-align: center;
       cursor: pointer;
       user-select: none;
-      overflow: visible;
+      padding: 10px 8px;
+    }
+
+    #mapsView .glass-nav-item .nav-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.18);
+      border: 2px solid rgba(56, 189, 248, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
 
     #mapsView .glass-nav-item .nav-icon {
-      width: 44px;
-      height: 44px;
+      width: 28px;
+      height: 28px;
       object-fit: contain;
       display: block;
     }
 
     #mapsView .glass-nav-item .nav-button {
       width: 100%;
-      box-sizing: border-box;
       background: transparent;
-      border: 3px solid rgba(200, 200, 200, 0.6);
-      padding: 18px 10px;
-      min-height: 58px;
-      font-size: 14px;
+      border: none;
+      padding: 0;
+      min-height: auto;
+      font-size: 13px;
       color: #fff;
-      line-height: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 12px;
-    }
-
-    #mapsView .glass-nav-item:not(:first-child):not(:last-child) .nav-button {
-      border-radius: 0;
-    }
-
-    #mapsView .glass-nav-item + .glass-nav-item .nav-button {
-      border-left: 0;
-    }
-
-    #mapsView .glass-nav-item:first-child .nav-button {
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
-    }
-
-    #mapsView .glass-nav-item:last-child .nav-button {
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
+      line-height: 1.2;
+      display: block;
+      text-align: center;
     }
 
     #mapsView .ht-map-glass-most-recent {
@@ -2895,17 +2884,23 @@ div.ht-left-panel {
 
           <div class="ht-map-glass-navrow" aria-label="Quick navigation">
             <div id="glassDirectionsBtn" class="glass-nav-item" role="button" tabindex="0" aria-label="Directions">
-              <img class="nav-icon" src="/assets/directions-icon.svg" alt="Directions" style="width:44px;height:44px;object-fit:contain;">
+              <div class="nav-icon-wrap">
+                <img class="nav-icon" src="/assets/directions-icon.svg" alt="Directions">
+              </div>
               <div class="nav-button">Directions</div>
             </div>
 
             <div id="glassInspectionBtn" class="glass-nav-item" role="button" tabindex="0" aria-label="Inspection">
-              <img class="nav-icon" src="/assets/inspection-icon.svg" alt="Inspection" style="width:44px;height:44px;object-fit:contain;">
+              <div class="nav-icon-wrap">
+                <img class="nav-icon" src="/assets/inspection-icon.svg" alt="Inspection">
+              </div>
               <div class="nav-button">Inspection</div>
             </div>
 
             <div id="glassLeadBtn" class="glass-nav-item" role="button" tabindex="0" aria-label="Lead">
-              <img class="nav-icon" src="/assets/lead-icon.svg" alt="Lead" style="width:44px;height:44px;object-fit:contain;">
+              <div class="nav-icon-wrap">
+                <img class="nav-icon" src="/assets/lead-icon.svg" alt="Lead">
+              </div>
               <div class="nav-button">Lead</div>
             </div>
           </div>
