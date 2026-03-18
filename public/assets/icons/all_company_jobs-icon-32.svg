@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 1024 1024">
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="0" fill="none"/>
+  <!-- Main building - center -->
+  <rect x="312" y="200" width="400" height="720" rx="16" fill="#145892"/>
+  <!-- Side building - left -->
+  <rect x="110" y="360" width="220" height="560" rx="16" fill="#1b7ec4"/>
+  <!-- Side building - right -->
+  <rect x="694" y="320" width="220" height="600" rx="16" fill="#1b7ec4"/>
+  <!-- Ground line -->
+  <rect x="60" y="910" width="904" height="32" rx="8" fill="#0c73e1"/>
+  <!-- Center building windows -->
+  <rect x="352" y="260" width="80" height="80" rx="8" fill="#fdfe43"/>
+  <rect x="464" y="260" width="80" height="80" rx="8" fill="#fdfe43"/>
+  <rect x="576" y="260" width="80" height="80" rx="8" fill="#c0eb73"/>
+  <rect x="352" y="380" width="80" height="80" rx="8" fill="#9ad562"/>
+  <rect x="464" y="380" width="80" height="80" rx="8" fill="#c0eb73"/>
+  <rect x="576" y="380" width="80" height="80" rx="8" fill="#fdfe43"/>
+  <rect x="352" y="500" width="80" height="80" rx="8" fill="#c0eb73"/>
+  <rect x="464" y="500" width="80" height="80" rx="8" fill="#fdfe43"/>
+  <rect x="576" y="500" width="80" height="80" rx="8" fill="#9ad562"/>
+  <!-- Center building door -->
+  <rect x="444" y="780" width="136" height="140" rx="12" fill="#0a5fb8"/>
+  <!-- Left building windows -->
+  <rect x="148" y="400" width="66" height="66" rx="8" fill="#fdfe43"/>
+  <rect x="234" y="400" width="66" height="66" rx="8" fill="#c0eb73"/>
+  <rect x="148" y="500" width="66" height="66" rx="8" fill="#c0eb73"/>
+  <rect x="234" y="500" width="66" height="66" rx="8" fill="#fdfe43"/>
+  <rect x="148" y="600" width="66" height="66" rx="8" fill="#fdfe43"/>
+  <rect x="234" y="600" width="66" height="66" rx="8" fill="#9ad562"/>
+  <!-- Right building windows -->
+  <rect x="730" y="360" width="66" height="66" rx="8" fill="#fdfe43"/>
+  <rect x="816" y="360" width="66" height="66" rx="8" fill="#c0eb73"/>
+  <rect x="730" y="460" width="66" height="66" rx="8" fill="#c0eb73"/>
+  <rect x="816" y="460" width="66" height="66" rx="8" fill="#fdfe43"/>
+  <rect x="730" y="560" width="66" height="66" rx="8" fill="#fdfe43"/>
+  <rect x="816" y="560" width="66" height="66" rx="8" fill="#9ad562"/>
+</svg>
