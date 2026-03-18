@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Document background -->
+  <path fill="#0c73e1" d="M128 96 L128 928 L896 928 L896 96 Z"/>
+  <!-- Page body -->
+  <path fill="#fefefe" d="M160 128 L160 896 L864 896 L864 128 Z"/>
+  <!-- Header bar -->
+  <path fill="#0a70de" d="M160 128 L864 128 L864 224 L160 224 Z"/>
+  <!-- Header text lines (white) -->
+  <path fill="#fefefe" d="M200 158 L700 158 L700 174 L200 174 Z"/>
+  <path fill="#fefefe" d="M200 188 L560 188 L560 204 L200 204 Z"/>
+  <!-- Row 1 -->
+  <path fill="#0c73e1" d="M160 256 L864 256 L864 272 L160 272 Z"/>
+  <!-- Row lines alternating -->
+  <path fill="#0a70de" d="M160 256 L864 256 L864 312 L160 312 Z"/>
+  <path fill="#fefefe" d="M176 268 L500 268 L500 300 L176 300 Z"/>
+  <path fill="#0c73e1" d="M520 268 L700 268 L700 284 L520 284 Z"/>
+  <path fill="#0c73e1" d="M520 286 L640 286 L640 300 L520 300 Z"/>
+  <!-- Row 2 -->
+  <path fill="#fefefe" d="M160 312 L864 312 L864 368 L160 368 Z"/>
+  <path fill="#0c73e1" d="M176 324 L460 324 L460 340 L176 340 Z"/>
+  <path fill="#0c73e1" d="M176 342 L380 342 L380 356 L176 356 Z"/>
+  <path fill="#0a70de" d="M520 324 L680 324 L680 340 L520 340 Z"/>
+  <!-- Row 3 -->
+  <path fill="#0a70de" d="M160 368 L864 368 L864 424 L160 424 Z"/>
+  <path fill="#fefefe" d="M176 380 L440 380 L440 396 L176 396 Z"/>
+  <path fill="#fefefe" d="M176 398 L360 398 L360 412 L176 412 Z"/>
+  <path fill="#0c73e1" d="M520 380 L700 380 L700 396 L520 396 Z"/>
+  <!-- Row 4 -->
+  <path fill="#fefefe" d="M160 424 L864 424 L864 480 L160 480 Z"/>
+  <path fill="#0c73e1" d="M176 436 L480 436 L480 452 L176 452 Z"/>
+  <path fill="#0c73e1" d="M176 454 L400 454 L400 468 L176 468 Z"/>
+  <path fill="#0a70de" d="M520 436 L660 436 L660 452 L520 452 Z"/>
+  <!-- Row 5 -->
+  <path fill="#0a70de" d="M160 480 L864 480 L864 536 L160 536 Z"/>
+  <path fill="#fefefe" d="M176 492 L420 492 L420 508 L176 508 Z"/>
+  <path fill="#fefefe" d="M176 510 L340 510 L340 524 L176 524 Z"/>
+  <path fill="#0c73e1" d="M520 492 L720 492 L720 508 L520 508 Z"/>
+  <!-- Row 6 -->
+  <path fill="#fefefe" d="M160 536 L864 536 L864 592 L160 592 Z"/>
+  <path fill="#0c73e1" d="M176 548 L500 548 L500 564 L176 564 Z"/>
+  <path fill="#0c73e1" d="M176 566 L420 566 L420 580 L176 580 Z"/>
+  <path fill="#0a70de" d="M520 548 L680 548 L680 564 L520 564 Z"/>
+  <!-- Row 7 -->
+  <path fill="#0a70de" d="M160 592 L864 592 L864 648 L160 648 Z"/>
+  <path fill="#fefefe" d="M176 604 L460 604 L460 620 L176 620 Z"/>
+  <path fill="#fefefe" d="M176 622 L380 622 L380 636 L176 636 Z"/>
+  <path fill="#0c73e1" d="M520 604 L700 604 L700 620 L520 620 Z"/>
+  <!-- Row 8 -->
+  <path fill="#fefefe" d="M160 648 L864 648 L864 704 L160 704 Z"/>
+  <path fill="#0c73e1" d="M176 660 L440 660 L440 676 L176 676 Z"/>
+  <path fill="#0c73e1" d="M176 678 L360 678 L360 692 L176 692 Z"/>
+  <path fill="#0a70de" d="M520 660 L660 660 L660 676 L520 676 Z"/>
+  <!-- Row 9 -->
+  <path fill="#0a70de" d="M160 704 L864 704 L864 760 L160 760 Z"/>
+  <path fill="#fefefe" d="M176 716 L480 716 L480 732 L176 732 Z"/>
+  <path fill="#fefefe" d="M176 734 L400 734 L400 748 L176 748 Z"/>
+  <path fill="#0c73e1" d="M520 716 L720 716 L720 732 L520 732 Z"/>
+  <!-- Row 10 -->
+  <path fill="#fefefe" d="M160 760 L864 760 L864 816 L160 816 Z"/>
+  <path fill="#0c73e1" d="M176 772 L500 772 L500 788 L176 788 Z"/>
+  <path fill="#0c73e1" d="M176 790 L420 790 L420 804 L176 804 Z"/>
+  <path fill="#0a70de" d="M520 772 L680 772 L680 788 L520 788 Z"/>
+  <!-- Footer / total row -->
+  <path fill="#0c73e1" d="M160 816 L864 816 L864 896 L160 896 Z"/>
+  <path fill="#fefefe" d="M176 832 L460 832 L460 848 L176 848 Z"/>
+  <path fill="#fefefe" d="M520 832 L720 832 L720 860 L520 860 Z"/>
+  <path fill="#fefefe" d="M176 862 L380 862 L380 878 L176 878 Z"/>
+</svg>
