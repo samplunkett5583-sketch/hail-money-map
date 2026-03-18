@@ -592,7 +592,9 @@
     #htIconRail {
       width: 66px;
       min-width: 66px;
-      background: #0b1220;
+      background: rgba(11, 18, 32, 0.65);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-right: 1px solid rgba(148, 163, 184, 0.16);
       padding: 10px 6px;
       display: flex;
@@ -620,6 +622,10 @@
       border-color: rgba(56, 189, 248, 0.75);
       background: rgba(56, 189, 248, 0.18);
       color: #ffffff;
+    }
+
+    #htIconRail .ht-rail-btn-bottom {
+      margin-top: auto;
     }
 
     /* Left panel — hidden; glass panel takes its place */
@@ -1516,10 +1522,10 @@
     }
 
     #mapsView .ht-left-panel {
-      background: rgba(255,255,255,0.35) !important;
-      border: 1px solid rgba(90,90,90,0.75) !important;
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
+      background: rgba(11, 18, 32, 0.55) !important;
+      border: 1px solid rgba(200,200,200,0.18) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
     }
 
 #mapsView .ht-left-panel input,
@@ -1688,8 +1694,8 @@
 }
 
 #mapsView .ht-left-panel {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
 }
 
 /* Let panel translucency show through (kill solid child backgrounds) */
@@ -1732,10 +1738,10 @@
 }
 
 div.ht-left-panel {
-  background: rgba(255, 255, 255, 0.35) !important;
-  background-color: rgba(255, 255, 255, 0.35) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  background: rgba(11, 18, 32, 0.55) !important;
+  background-color: rgba(11, 18, 32, 0.55) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
 }
 
 #mapsView .storm-list-panel,
@@ -1746,10 +1752,10 @@ div.ht-left-panel {
 }
 
 #mapsView .ht-left-panel {
-  background: rgba(255, 255, 255, 0.35) !important;
-  background-color: rgba(255, 255, 255, 0.35) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  background: rgba(11, 18, 32, 0.55) !important;
+  background-color: rgba(11, 18, 32, 0.55) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
 }
 
 #mapsView .map-status,
@@ -1791,8 +1797,8 @@ div.ht-left-panel {
   opacity: 1 !important;
   filter: none !important;
   mix-blend-mode: normal !important;
-  background: rgba(255, 255, 255, 0.35) !important;
-  background-color: rgba(255, 255, 255, 0.35) !important;
+  background: rgba(11, 18, 32, 0.55) !important;
+  background-color: rgba(11, 18, 32, 0.55) !important;
 }
 
     /* =========================
@@ -1805,10 +1811,10 @@ div.ht-left-panel {
     #mapsView .ht-left-panel,
     #mapsView > div > div.ht-left-panel,
     div.ht-left-panel {
-      background: rgba(255,255,255,0.08) !important;
-      border: 1px solid rgba(210,210,210,0.45) !important;
-      backdrop-filter: blur(30px) saturate(160%) !important;
-      -webkit-backdrop-filter: blur(30px) saturate(160%) !important;
+      background: rgba(11, 18, 32, 0.55) !important;
+      border: 1px solid rgba(200,200,200,0.18) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
       box-shadow: none !important;
     }
 
@@ -1901,11 +1907,11 @@ div.ht-left-panel {
     #mapsView .ht-left-panel,
     #mapsView > div > div.ht-left-panel,
     div.ht-left-panel {
-      background: transparent !important;
-      background-color: transparent !important;
-      border: 1px solid rgba(200,200,200,0.45) !important;
-      backdrop-filter: blur(26px) !important;
-      -webkit-backdrop-filter: blur(26px) !important;
+      background: rgba(11, 18, 32, 0.55) !important;
+      background-color: rgba(11, 18, 32, 0.55) !important;
+      border: 1px solid rgba(200,200,200,0.18) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
       box-shadow: none !important;
     }
 
@@ -1962,11 +1968,11 @@ div.ht-left-panel {
 
     /* Left panel itself: true glass */
     #mapsView .ht-left-panel {
-      background: transparent !important;
-      background-color: transparent !important;
-      border: 1px solid rgba(200,200,200,0.45) !important;
-      backdrop-filter: blur(22px) !important;
-      -webkit-backdrop-filter: blur(22px) !important;
+      background: rgba(11, 18, 32, 0.55) !important;
+      background-color: rgba(11, 18, 32, 0.55) !important;
+      border: 1px solid rgba(200,200,200,0.18) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
       box-shadow: none !important;
     }
 
@@ -2060,7 +2066,9 @@ div.ht-left-panel {
       height: 100%;
       flex-shrink: 0;
       pointer-events: auto;
-      background: #0b1220;
+      background: rgba(11, 18, 32, 0.55);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
       border-right: 1px solid rgba(148, 163, 184, 0.16);
     }
 
@@ -2146,7 +2154,8 @@ div.ht-left-panel {
       overflow: visible;
     }
 
-    #mapsView .glass-nav-item .nav-icon {
+    #mapsView .glass-nav-item .nav-icon,
+    #mapsView .glass-nav-item img {
       width: 44px;
       height: 44px;
       display: block;
@@ -2628,9 +2637,6 @@ div.ht-left-panel {
       <button type="button" class="ht-rail-btn" aria-label="Swath Opacity" id="railSwathOpacityBtn">
         <img src="/assets/swath-opacity-icon.png" alt="Swath Opacity" style="width:36px;height:36px;object-fit:contain;">
       </button>
-      <button type="button" class="ht-rail-btn" aria-label="New Lead">
-        <img src="/assets/new-lead-icon.png" alt="New Lead" style="width:36px;height:36px;object-fit:contain;">
-      </button>
       <button type="button" class="ht-rail-btn" aria-label="All Company Jobs">
         <img src="/assets/all-company-jobs-icon.png" alt="All Company Jobs" style="width:36px;height:36px;object-fit:contain;">
       </button>
@@ -2640,13 +2646,16 @@ div.ht-left-panel {
       <button type="button" class="ht-rail-btn" aria-label="Campaign">
         <img src="/assets/campaign-icon.png" alt="Campaign" style="width:36px;height:36px;object-fit:contain;">
       </button>
+      <button type="button" class="ht-rail-btn" aria-label="New Lead">
+        <img src="/assets/new-lead-icon.png" alt="New Lead" style="width:36px;height:36px;object-fit:contain;">
+      </button>
       <button type="button" class="ht-rail-btn" aria-label="Estimates">
         <img src="/assets/estimates-icon.png" alt="Estimates" style="width:36px;height:36px;object-fit:contain;">
       </button>
       <button type="button" class="ht-rail-btn" aria-label="Downloads">
         <img src="/assets/downloads-icon.png" alt="Downloads" style="width:36px;height:36px;object-fit:contain;">
       </button>
-      <button type="button" class="ht-rail-btn" aria-label="Settings">
+      <button type="button" class="ht-rail-btn ht-rail-btn-bottom" aria-label="Settings">
         <img src="/assets/settings-icon.png" alt="Settings" style="width:36px;height:36px;object-fit:contain;">
       </button>
     </div>
@@ -2842,31 +2851,16 @@ div.ht-left-panel {
           <input class="ht-map-glass-search" type="text" placeholder="Search" />
 
           <div class="ht-map-glass-navrow" aria-label="Quick navigation">
-            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Storm Calendar" id="glassNavStormCalendar">
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              <div class="nav-button">Storm Calendar</div>
+            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Get Directions" id="glassNavGetDirections">
+              <img src="/assets/get-directions-icon.png" alt="Get Directions" style="width:44px;height:44px;object-fit:contain;">
             </div>
 
             <div class="glass-nav-item" role="button" tabindex="0" aria-label="Start Inspection" id="glassNavStartInspection">
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-                <rect x="9" y="3" width="6" height="4" rx="1" ry="1"/>
-                <line x1="9" y1="12" x2="15" y2="12"/>
-                <line x1="9" y1="16" x2="11" y2="16"/>
-              </svg>
-              <div class="nav-button">Start Inspection</div>
+              <img src="/assets/start-inspection-icon.png" alt="Start Inspection" style="width:44px;height:44px;object-fit:contain;">
             </div>
 
-            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Get Directions" id="glassNavGetDirections">
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <polygon points="3 11 22 2 13 21 11 13 3 11"/>
-              </svg>
-              <div class="nav-button">Get Directions</div>
+            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Storm Calendar" id="glassNavStormCalendar">
+              <img src="/assets/storm-calendar-icon.png" alt="Storm Calendar" style="width:44px;height:44px;object-fit:contain;">
             </div>
           </div>
 
@@ -4222,12 +4216,48 @@ function hailInToColor(hailIn) {
   return "#00e5ff";
 }
 
+/**
+ * Creates an elongated ellipse-like polygon oriented ~45° (NW-SE storm track).
+ * Returns a GeoJSON Polygon geometry.
+ */
+function makeSwathPolygon(lat, lng, hailSizeIn) {
+  const h = Number(hailSizeIn);
+  // Width scales with hail size: base 0.5 km + 0.4 km per inch; default 1" if unknown
+  const widthKm = 0.5 + (Number.isFinite(h) && h > 0 ? h : 1) * 0.4;
+  // Length is 3× width (typical storm track aspect ratio)
+  const lengthKm = widthKm * 3;
+  const angleRad = Math.PI / 4; // 45° NW-SE orientation (typical storm track)
+  const numPoints = 20; // polygon vertex count: smooth enough, minimal overhead
+  // Approximate geodetic conversion factors
+  const KM_PER_DEG_LAT = 110.574;
+  const kmPerDegLng = 111.320 * Math.cos(lat * Math.PI / 180);
+
+  const coords = [];
+  for (let i = 0; i <= numPoints; i++) {
+    const t = (2 * Math.PI * i) / numPoints;
+    // Ellipse in local coords (x = along-track, y = cross-track)
+    const ex = (lengthKm / 2) * Math.cos(t);
+    const ey = (widthKm / 2) * Math.sin(t);
+    // Rotate by angleRad
+    const rx = ex * Math.cos(angleRad) - ey * Math.sin(angleRad);
+    const ry = ex * Math.sin(angleRad) + ey * Math.cos(angleRad);
+    // Convert km offsets to lat/lng
+    const dLat = ry / KM_PER_DEG_LAT;
+    const dLng = rx / kmPerDegLng;
+    coords.push([lng + dLng, lat + dLat]);
+  }
+  return { type: "Polygon", coordinates: [coords] };
+}
+
 function drawLsrPointsOnMap(points) {
   cleanLsrOverlays();
   const map = App.map;
   if (!map) return;
 
   const bounds = new google.maps.LatLngBounds();
+
+  // Use a single Data layer for all swath polygons so they can be cleaned up together
+  const swathData = new google.maps.Data({ map });
 
   (points || []).forEach(p => {
     const lat = Number(p.lat);
@@ -4236,47 +4266,61 @@ function drawLsrPointsOnMap(points) {
 
     const hailIn = Number(p.hail_in);
     const color = hailInToColor(hailIn);
-    const radius = hailInToRadiusMeters(hailIn);
 
     const center = { lat, lng: lon };
     bounds.extend(center);
-
-    const circle = new google.maps.Circle({
-      map,
-      center,
-      radius,
-      strokeColor: color,
-      strokeOpacity: 0.9,
-      strokeWeight: 2,
-      fillColor: color,
-      fillOpacity: 0.25,
-      clickable: true,
-      zIndex: 999999,
-    });
 
     let when = "";
     try {
       when = p.event_time ? new Date(p.event_time).toLocaleString() : "";
     } catch {}
 
+    const geom = makeSwathPolygon(lat, lon, hailIn);
+    swathData.addGeoJson({
+      type: "Feature",
+      geometry: geom,
+      properties: {
+        color,
+        hailIn: Number.isFinite(hailIn) ? hailIn : null,
+        when,
+        lat,
+        lon,
+      }
+    });
+  });
+
+  swathData.setStyle(feature => {
+    const color = feature.getProperty("color") || "#00e5ff";
+    return {
+      fillColor: color,
+      fillOpacity: 0.55,
+      strokeColor: "#ffffff",
+      strokeOpacity: 0.8,
+      strokeWeight: 1,
+      zIndex: 999999,
+    };
+  });
+
+  swathData.addListener("click", event => {
+    const hailIn = event.feature.getProperty("hailIn");
+    const when = event.feature.getProperty("when");
+    const lat = event.feature.getProperty("lat");
+    const lon = event.feature.getProperty("lon");
     const info = new google.maps.InfoWindow({
       content: `
         <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; font-size: 13px; line-height: 1.35;">
-          <div><b>Hail:</b> ${Number.isFinite(hailIn) ? hailIn : "?"}"</div>
+          <div><b>Hail:</b> ${hailIn != null ? hailIn : "?"}"</div>
           <div><b>Time:</b> ${when}</div>
-          <div><b>Lat/Lon:</b> ${lat.toFixed(3)}, ${lon.toFixed(3)}</div>
+          <div><b>Lat/Lon:</b> ${Number(lat).toFixed(3)}, ${Number(lon).toFixed(3)}</div>
         </div>
       `,
+      position: event.latLng,
     });
-
-    circle.addListener("click", () => {
-      try { info.setPosition(center); } catch {}
-      try { info.open(map); } catch {}
-    });
-
-    window._lsrOverlays = window._lsrOverlays || [];
-    window._lsrOverlays.push(circle);
+    try { info.open(map); } catch {}
   });
+
+  window._lsrOverlays = window._lsrOverlays || [];
+  window._lsrOverlays.push(swathData);
 
   // Only auto-zoom if we actually drew something
   try {
