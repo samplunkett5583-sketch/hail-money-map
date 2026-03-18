@@ -636,7 +636,7 @@
 
     /* Left panel — hidden; glass panel takes its place */
     #mapsView .ht-left-panel.ht-left-panel {
-      display: none;
+      display: none !important;
     }
 
     #mapsView .ht-left-top {
@@ -2062,20 +2062,22 @@ div.ht-left-panel {
       pointer-events: none !important;
     }
 
-    /* LEFT GLASS PANEL: docked left panel (not absolute overlay) */
+    /* LEFT GLASS PANEL: absolute overlay to the right of icon rail */
     #mapsView .ht-map-glass-stack {
-      position: relative;
+      position: absolute;
+      top: 0;
+      left: 66px; /* right of the icon rail */
+      width: 320px;
+      height: 100%;
+      z-index: 10;
       display: flex;
       flex-direction: column;
-      width: 360px;
-      min-width: 360px;
-      height: 100%;
-      flex-shrink: 0;
+      gap: 0;
+      pointer-events: none; /* let map clicks through except on children */
+    }
+
+    #mapsView .ht-map-glass-stack > * {
       pointer-events: auto;
-      background: rgba(11, 18, 32, 0.55);
-      backdrop-filter: blur(24px) saturate(160%);
-      -webkit-backdrop-filter: blur(24px) saturate(160%);
-      border-right: 1px solid rgba(148, 163, 184, 0.16);
     }
 
     #mapsView .ht-map-glass-box {
@@ -2102,13 +2104,20 @@ div.ht-left-panel {
       display: none;
     }
 
-    #mapsView .ht-map-glass-box:last-child {
-      width: 100%;
+    #mapsView .ht-map-glass-box:not(:first-child) {
+      display: flex;
+      flex-direction: column;
+      background: rgba(11, 18, 32, 0.62);
+      backdrop-filter: blur(22px) saturate(160%);
+      -webkit-backdrop-filter: blur(22px) saturate(160%);
+      border: 1px solid rgba(200, 200, 200, 0.18);
+      border-radius: 16px;
+      margin: 10px;
       padding: 14px;
-      overflow-y: auto;
-      overflow-x: hidden;
+      gap: 10px;
+      color: #fff;
+      overflow: hidden;
       flex: 1;
-      min-height: 0;
     }
 
     /* Property panel image */
@@ -2160,12 +2169,12 @@ div.ht-left-panel {
       overflow: visible;
     }
 
+    #mapsView .glass-nav-item svg,
     #mapsView .glass-nav-item .nav-icon,
     #mapsView .glass-nav-item img {
       width: 44px;
       height: 44px;
       display: block;
-      stroke: #fff;
       flex-shrink: 0;
     }
 
