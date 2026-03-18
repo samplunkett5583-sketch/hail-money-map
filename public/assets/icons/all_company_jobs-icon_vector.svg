@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Background -->
+  <path fill="#051c46" d="M0 0 L1024 0 L1024 1024 L0 1024 Z"/>
+  <!-- Building / office block left -->
+  <path fill="#062d75" d="M64 320 L64 960 L280 960 L280 320 Z"/>
+  <!-- Building windows left -->
+  <path fill="#21bbf3" d="M90 350 L130 350 L130 400 L90 400 Z"/>
+  <path fill="#21bbf3" d="M150 350 L190 350 L190 400 L150 400 Z"/>
+  <path fill="#21bbf3" d="M210 350 L250 350 L250 400 L210 400 Z"/>
+  <path fill="#21bbf3" d="M90 420 L130 420 L130 470 L90 470 Z"/>
+  <path fill="#21bbf3" d="M150 420 L190 420 L190 470 L150 470 Z"/>
+  <path fill="#21bbf3" d="M210 420 L250 420 L250 470 L210 470 Z"/>
+  <path fill="#21bbf3" d="M90 490 L130 490 L130 540 L90 540 Z"/>
+  <path fill="#21bbf3" d="M150 490 L190 490 L190 540 L150 540 Z"/>
+  <path fill="#21bbf3" d="M210 490 L250 490 L250 540 L210 540 Z"/>
+  <path fill="#21bbf3" d="M90 560 L130 560 L130 610 L90 610 Z"/>
+  <path fill="#21bbf3" d="M150 560 L190 560 L190 610 L150 610 Z"/>
+  <path fill="#21bbf3" d="M210 560 L250 560 L250 610 L210 610 Z"/>
+  <!-- Building center (taller) -->
+  <path fill="#0746b4" d="M300 160 L300 960 L720 960 L720 160 Z"/>
+  <!-- Center building windows -->
+  <path fill="#21bbf3" d="M330 200 L400 200 L400 270 L330 270 Z"/>
+  <path fill="#21bbf3" d="M420 200 L490 200 L490 270 L420 270 Z"/>
+  <path fill="#21bbf3" d="M510 200 L580 200 L580 270 L510 270 Z"/>
+  <path fill="#21bbf3" d="M600 200 L670 200 L670 270 L600 270 Z"/>
+  <path fill="#21bbf3" d="M330 300 L400 300 L400 370 L330 370 Z"/>
+  <path fill="#21bbf3" d="M420 300 L490 300 L490 370 L420 370 Z"/>
+  <path fill="#21bbf3" d="M510 300 L580 300 L580 370 L510 370 Z"/>
+  <path fill="#21bbf3" d="M600 300 L670 300 L670 370 L600 370 Z"/>
+  <path fill="#21bbf3" d="M330 400 L400 400 L400 470 L330 470 Z"/>
+  <path fill="#21bbf3" d="M420 400 L490 400 L490 470 L420 470 Z"/>
+  <path fill="#21bbf3" d="M510 400 L580 400 L580 470 L510 470 Z"/>
+  <path fill="#21bbf3" d="M600 400 L670 400 L670 470 L600 470 Z"/>
+  <path fill="#21bbf3" d="M330 500 L400 500 L400 570 L330 570 Z"/>
+  <path fill="#21bbf3" d="M420 500 L490 500 L490 570 L420 570 Z"/>
+  <path fill="#21bbf3" d="M510 500 L580 500 L580 570 L510 570 Z"/>
+  <path fill="#21bbf3" d="M600 500 L670 500 L670 570 L600 570 Z"/>
+  <path fill="#21bbf3" d="M330 600 L400 600 L400 670 L330 670 Z"/>
+  <path fill="#21bbf3" d="M420 600 L490 600 L490 670 L420 670 Z"/>
+  <path fill="#21bbf3" d="M510 600 L580 600 L580 670 L510 670 Z"/>
+  <path fill="#21bbf3" d="M600 600 L670 600 L670 670 L600 670 Z"/>
+  <!-- Building right -->
+  <path fill="#062d75" d="M744 400 L744 960 L960 960 L960 400 Z"/>
+  <!-- Right building windows -->
+  <path fill="#21bbf3" d="M770 430 L810 430 L810 480 L770 480 Z"/>
+  <path fill="#21bbf3" d="M830 430 L870 430 L870 480 L830 480 Z"/>
+  <path fill="#21bbf3" d="M890 430 L930 430 L930 480 L890 480 Z"/>
+  <path fill="#21bbf3" d="M770 500 L810 500 L810 550 L770 550 Z"/>
+  <path fill="#21bbf3" d="M830 500 L870 500 L870 550 L830 550 Z"/>
+  <path fill="#21bbf3" d="M890 500 L930 500 L930 550 L890 550 Z"/>
+  <path fill="#21bbf3" d="M770 570 L810 570 L810 620 L770 620 Z"/>
+  <path fill="#21bbf3" d="M830 570 L870 570 L870 620 L830 620 Z"/>
+  <path fill="#21bbf3" d="M890 570 L930 570 L930 620 L890 620 Z"/>
+  <path fill="#21bbf3" d="M770 640 L810 640 L810 690 L770 690 Z"/>
+  <path fill="#21bbf3" d="M830 640 L870 640 L870 690 L830 690 Z"/>
+  <path fill="#21bbf3" d="M890 640 L930 640 L930 690 L890 690 Z"/>
+  <!-- Ground / street -->
+  <path fill="#0b74df" d="M0 960 L1024 960 L1024 1024 L0 1024 Z"/>
+  <!-- People silhouettes -->
+  <path fill="#248bda" d="M200 860 C200 840 210 820 220 810 C230 800 245 795 260 800 C275 795 290 800 300 810 C310 820 320 840 320 860 L320 960 L200 960 Z"/>
+  <path fill="#104ebc" d="M240 780 C240 755 255 740 270 740 C285 740 300 755 300 780 C300 805 285 820 270 820 C255 820 240 805 240 780 Z"/>
+  <path fill="#248bda" d="M440 840 C440 820 452 800 464 790 C476 780 492 775 508 780 C524 775 540 780 552 790 C564 800 576 820 576 840 L576 960 L440 960 Z"/>
+  <path fill="#104ebc" d="M480 760 C480 735 495 720 510 720 C525 720 540 735 540 760 C540 785 525 800 510 800 C495 800 480 785 480 760 Z"/>
+  <path fill="#248bda" d="M680 860 C680 840 692 820 704 810 C716 800 732 795 748 800 C764 795 780 800 792 810 C804 820 816 840 816 860 L816 960 L680 960 Z"/>
+  <path fill="#104ebc" d="M718 780 C718 755 733 740 748 740 C763 740 778 755 778 780 C778 805 763 820 748 820 C733 820 718 805 718 780 Z"/>
+  <!-- Sky gradient bands -->
+  <path fill="#0b74df" d="M0 0 L1024 0 L1024 80 L0 80 Z"/>
+  <path fill="#104ebc" d="M0 80 L1024 80 L1024 160 L0 160 Z"/>
+</svg>
