@@ -6,7 +6,13 @@
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   />
-  <title>Hail Money Map – Full App</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/icon-180.svg">
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/icon-152.svg">
+  <link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/icon-120.svg">
+  <link rel="icon" type="image/svg+xml" sizes="32x32" href="/assets/icons/icon-32.svg">
+  <link rel="icon" type="image/svg+xml" sizes="16x16" href="/assets/icons/icon-16.svg">
+  <meta name="theme-color" content="#020617">
+  <title>Hail Money Map â€“ Full App</title>
 
    <!-- Google Font -->
   <link
@@ -19,6 +25,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
   const firebaseConfig = {
@@ -48,6 +55,18 @@
   };
 
   const LOAD_MORE_VALUE = "__LOAD_MORE__";
+
+  const SUPABASE_URL = "https://ehegjhlkadtpnkborlbz.supabase.co";
+  const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZWdqaGxrYWR0cG5rYm9ybGJ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjcwNTY2NiwiZXhwIjoyMDgyMjgxNjY2fQ.KbEohwp-boV53yY31Ut3epMtN564STGsl9T9KtFeGLQ";
+  // Google Maps API key (same key used for the Maps JS API in the <script> tag below)
+  const GOOGLE_MAPS_API_KEY = "AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I";
+
+  // --- Create Supabase client ---
+  window.sb = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+  window.supabaseClient = window.sb;
 
   // --- Date helpers ---
   function dashToCompact(ymdDash) {
@@ -180,6 +199,9 @@
 
 
 <style>
+        #swathOpacityValue {
+          color: #000 !important;
+        }
     :root {
       --bg-dark: #020617;
       --bg-card: rgba(15, 23, 42, 0.96);
@@ -552,26 +574,362 @@
       height: calc(100vh - 160px);
     }
 
-    .maps-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
+    /* =================== MAPS: HAILTRACE-STYLE (UI/CSS ONLY) =================== */
+    /* Rail + left panel + full-height map; preserves existing JS IDs. */
+    #mapsView.view,
+    #mapsView.view.active {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      max-width: none;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
     }
 
-    .maps-control-group {
+    #mapsView .ht-maps-shell {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* Left icon rail */
+    #htIconRail {
+      width: 66px;
+      min-width: 66px;
+      background: rgba(11, 18, 32, 0.65);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-right: 1px solid rgba(148, 163, 184, 0.16);
+      padding: 10px 6px;
       display: flex;
       flex-direction: column;
-      min-width: 160px;
-      font-size: 0.82rem;
+      gap: 10px;
+      align-items: center;
     }
 
-    .maps-control-group.small {
-      max-width: 200px;
-    }
-
-    .maps-address-row {
+    #htIconRail .ht-rail-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(2, 6, 23, 0.45);
+      color: #e5e7eb;
+      font-weight: 600;
+      cursor: pointer;
       display: flex;
-      gap: 0.5rem;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    #htIconRail .ht-rail-btn.active {
+      border-color: rgba(56, 189, 248, 0.75);
+      background: rgba(56, 189, 248, 0.18);
+      color: #ffffff;
+    }
+
+    #htIconRail .ht-rail-btn-bottom {
+      margin-top: auto;
+    }
+
+    #htIconRail .ht-rail-btn svg,
+    #htIconRail .ht-rail-btn img {
+      width: 32px;
+      height: 32px;
+      display: block;
+    }
+
+    /* Left panel — hidden; glass panel takes its place */
+    #mapsView .ht-left-panel.ht-left-panel {
+      display: none !important;
+    }
+
+    #mapsView .ht-left-top {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    #mapsView #mapsBackBtn {
+      border-radius: 999px;
+      padding: 6px 10px;
+      border: 1px solid rgba(15, 23, 42, 0.14);
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    #mapsView #mapsBackBtn:hover {
+      border-color: rgba(56, 189, 248, 0.85);
+      color: #0369a1;
+    }
+
+    /* Address search row */
+    #mapsView .maps-address-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    #mapsView .ht-address-inputwrap {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+    }
+
+    #mapsView #addressInput {
+      width: 100%;
+      padding: 10px 34px 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: #f1f5f9;
+      color: #0f172a;
+      font-size: 0.85rem;
+    }
+
+    #mapsView #addressInput::placeholder {
+      color: rgba(15, 23, 42, 0.55);
+    }
+
+    #mapsView .ht-input-x {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    #mapsView #searchLocationBtn {
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* Compact controls rows */
+    #mapsView #stormControls,
+    #mapsView #stormDateRow,
+    #mapsView .maps-controls {
+      background: #f8fafc;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    #mapsView #stormControls {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    #mapsView #stormControls label,
+    #mapsView #stormDateRow label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.72rem;
+      color: rgba(15, 23, 42, 0.72);
+    }
+
+    #mapsView #stormControls select,
+    #mapsView #stormDateRow select,
+    #mapsView #stormControls input {
+      padding: 9px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.84rem;
+      min-width: 160px;
+    }
+
+    #mapsView #stormControls button.pill-btn,
+    #mapsView #stormDateRow button.pill-btn {
+      border-radius: 12px;
+      padding: 8px 10px;
+      border: 1px solid rgba(15, 23, 42, 0.14);
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.8rem;
+    }
+
+    /* Recent header */
+    #mapsView .ht-recent {
+      padding: 2px 2px 0;
+    }
+
+    #mapsView .ht-recent-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    #mapsView .ht-recent-sub {
+      margin-top: 2px;
+      font-size: 0.78rem;
+      color: rgba(15, 23, 42, 0.55);
+    }
+
+    #mapsView .ht-left-panel .ht-recent-title {
+      color: #fff !important;
+    }
+
+    #mapsView #recentEventsList {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #mapsView .recent-event-row {
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 10px;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    #mapsView #recentEventsPaging {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+    }
+
+    #mapsView #recentEventsPaging button {
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    #mapsView #recentEventsPaging button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    /* List area scrolls */
+    #mapsView #stormListPanel {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+      flex: 1;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid rgba(60, 60, 60, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 10px;
+    }
+
+    #mapsView .storm-list {
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+    }
+
+    #mapsView .storm-item,
+    #mapsView .stormbait-item {
+      background: #ffffff;
+      color: #0f172a;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    #mapsView .storm-item:hover,
+    #mapsView .stormbait-item:hover {
+      border-color: rgba(56, 189, 248, 0.45);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    /* Map fills the remaining screen */
+    #mapsView .ht-map-wrap {
+      flex: 1;
+      height: 100%;
+      min-width: 0;
+      background: #ffffff;
+    }
+
+    #mapsView #stormMap {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      overflow: hidden;
+      background: #e2e8f0;
+    }
+
+    /* Maps mini tabs (UI only; no routing/handlers yet) */
+    #mapsMiniTabs.maps-mini-tabs {
+      display: flex;
+      width: 100%;
+      gap: 0;
+      margin: 6px 0 10px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+
+    #mapsMiniTabs.maps-mini-tabs button {
+      flex: 1 1 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 8px;
+      background: transparent;
+      border: 0;
+      color: #0f172a;
+      cursor: pointer;
+    }
+
+    #mapsMiniTabs.maps-mini-tabs button + button {
+      border-left: 1px solid rgba(15, 23, 42, 0.10);
+    }
+
+    #mapsMiniTabs.maps-mini-tabs button.active {
+      background: #ffffff;
+    }
+
+    #mapsMiniTabs .tab-ico {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    #mapsMiniTabs .tab-ico img {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+
+    #mapsMiniTabs .tab-txt {
+      font-size: 0.75rem;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      opacity: 0.95;
     }
 
     .maps-address-row .flex-1 {
@@ -593,12 +951,15 @@
       overflow: hidden;
     }
 
-    /* storm dates panel – big box when shown */
+    /* storm dates panel â€“ big box when shown */
     .storm-list-panel {
       display: none; /* hidden until state + storm type picked */
       flex-direction: column;
       gap: 0.4rem;
       min-height: 35vh; /* nice big box for the dates list */
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(120, 120, 120, 0.75);
     }
 
     .map-status {
@@ -610,7 +971,6 @@
       flex: 1;
       overflow-y: auto;
       border-radius: 12px;
-      background: rgba(255, 255, 255, 0.15);
       padding: 6px;
     }
 
@@ -643,6 +1003,46 @@
       border-color: var(--accent-soft);
       background: rgba(15, 23, 42, 1);
     }
+
+    /* --- FORCE left panel glass look (override any earlier whites) --- */
+    #mapsView .storm-list-panel,
+    #mapsView #stormListPanel,
+    #mapsView .ht-left,
+    #mapsView .left-panel,
+    #mapsView .panel {
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+      border: 2px solid rgba(90, 90, 90, 0.75) !important;
+    }
+
+    /* Make the â€œcards/sectionsâ€ inside the panel transparent too */
+    #mapsView .storm-list-panel > *,
+    #mapsView .storm-list-panel .card,
+    #mapsView .storm-list-panel .panel-card,
+    #mapsView .storm-list-panel .section,
+    #mapsView .storm-list-panel .box {
+      border: 1px solid rgba(120, 120, 120, 0.55) !important;
+    }
+
+    /* Tabs/buttons inside: transparent with gray border + black text */
+    #mapsView .storm-list-panel button,
+    #mapsView .storm-list-panel .tab,
+    #mapsView .storm-list-panel .maps-tab {
+      border: 1px solid rgba(120, 120, 120, 0.75) !important;
+      color: #000 !important;
+    }
+
+#mapsView .ht-left-panel * {
+  background-color: transparent !important;
+}
+
+#mapsView .ht-left-panel button,
+#mapsView .ht-left-panel select,
+#mapsView .ht-left-panel input {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(120, 120, 120, 0.6);
+  color: #000 !important;
+}
 
     /* Shared form controls */
     .control-label {
@@ -919,7 +1319,7 @@
       background: rgba(15, 23, 42, 1);
     }
 
-    /* ===== HUB – LEFT FLIP TABS ===== */
+    /* ===== HUB â€“ LEFT FLIP TABS ===== */
     .hub-left-layout {
       display: flex;
       flex-direction: column;
@@ -986,7 +1386,7 @@
       color: var(--text-soft);
     }
 
-    /* ===== HUB – FULL SCREEN LEADS OVERLAY ===== */
+    /* ===== HUB â€“ FULL SCREEN LEADS OVERLAY ===== */
     .leads-overlay {
       position: fixed;
       inset: 0;
@@ -1061,7 +1461,7 @@
       color: var(--text-soft);
     }
 
-    /* Responsive tweaks – bigger text on phones */
+    /* Responsive tweaks â€“ bigger text on phones */
     @media (max-width: 768px) {
       body {
         font-size: 1.02rem;
@@ -1095,6 +1495,867 @@
         max-height: 260px;
       }
     }
+
+    #mapsView .ht-left-panel button,
+    #mapsView .ht-left-panel .ht-tabs button,
+    #mapsView .ht-left-panel [role="button"] {
+      background: transparent !important;
+      border: 1px solid rgba(90, 90, 90, 0.75) !important;
+      color: #111 !important;
+    }
+
+    #mapsView .ht-left-panel input,
+    #mapsView .ht-left-panel select {
+      background: rgba(255, 255, 255, 0.20) !important;
+      border: 1px solid rgba(90, 90, 90, 0.55) !important;
+      color: #111 !important;
+    }
+
+    #mapsView .ht-left-panel .maps-address-row,
+    #mapsView .ht-left-panel #mapsMiniTabs,
+    #mapsView .ht-left-panel #stormControls,
+    #mapsView .ht-left-panel #stormDateRow,
+    #mapsView .ht-left-panel .maps-controls,
+    #mapsView .ht-left-panel .ht-recent,
+    #mapsView .ht-left-panel #stormListPanel {
+      border: 1px solid rgba(90, 90, 90, 0.6) !important;
+      border-radius: 12px;
+      color: #111 !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+    #mapsView .ht-left-panel .maps-mini-tabs button {
+      background: transparent !important;
+      border: 1px solid rgba(90, 90, 90, 0.60) !important;
+      color: #111 !important;
+    }
+
+    #mapsView .ht-left-panel input,
+    #mapsView .ht-left-panel select,
+    #mapsView .ht-left-panel label,
+    #mapsView .ht-left-panel .control-label,
+    #mapsView .ht-left-panel .ht-recent-title,
+    #mapsView .ht-left-panel .ht-recent-sub,
+    #mapsView .ht-left-panel .map-status {
+      color: #111 !important;
+    }
+
+    #mapsView .ht-left-panel {
+      background: rgba(11, 18, 32, 0.55) !important;
+      border: 1px solid rgba(200,200,200,0.18) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+    }
+
+#mapsView .ht-left-panel input,
+#mapsView .ht-left-panel select,
+#mapsView .ht-left-panel textarea,
+#mapsView .ht-left-panel .segmented,
+#mapsView .ht-left-panel .segmented button,
+#mapsView .ht-left-panel .filter-group,
+#mapsView .ht-left-panel .control,
+#mapsView .ht-left-panel .control * {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #000 !important;
+  border: 1px solid rgba(120,120,120,0.75) !important;
+}
+
+#mapsView .ht-left-panel button,
+#mapsView .ht-left-panel .ht-btn,
+#mapsView .ht-left-panel a,
+#mapsView .ht-left-panel .ht-left-panel-btn {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid rgba(120,120,120,0.75) !important;
+  color: #000 !important;
+}
+
+/* Hide upper storm selection blocks */
+#mapsView .ht-left-panel > div:has(select),
+#mapsView .ht-left-panel > div:has(button):has(select),
+#mapsView .ht-left-panel > div:has(label):has(select),
+#mapsView .ht-left-panel > div:has(.storm-dates),
+#mapsView .ht-left-panel > div:has(select[aria-label]),
+#mapsView .ht-left-panel > div:has(option) {
+  display: none !important;
+}
+
+    /* ===== NEW SIDEBAR CATEGORY TABS ===== */
+    .sidebar-tabs {
+      display: flex;
+      width: 100%;
+      gap: 0;
+      margin: 10px 0;
+      border: 1px solid rgba(90, 90, 90, 0.75);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .sidebar-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 8px;
+      background: transparent;
+      border: 0;
+      color: #111;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .sidebar-tab + .sidebar-tab {
+      border-left: 1px solid rgba(90, 90, 90, 0.5);
+    }
+
+    .sidebar-tab:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .sidebar-tab.active {
+      background: rgba(16, 185, 129, 0.25);
+      color: #059669;
+      font-weight: 600;
+    }
+
+    .sidebar-tab .tab-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .sidebar-tab .tab-label {
+      font-size: 0.72rem;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      font-weight: 500;
+    }
+
+/* Anchor for bottom-pinned money box (does NOT reorder other sections) */
+#mapsView .ht-left-panel {
+  position: relative !important;
+  padding-bottom: 170px !important; /* reserve space so content doesn't overlap pinned box */
+}
+
+/* Pin the Min street value / Search storms box to the bottom */
+#mapsView .ht-left-panel > div:has(input[type="number"]):has(input[placeholder="Search storms..."]) {
+  position: absolute !important;
+  bottom: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+}
+
+/* 1) Hide top shortcut tiles (Weather / Person / Property / Lead List) */
+#mapsView .ht-left-panel .shortcut-row,
+#mapsView .ht-left-panel .quick-actions {
+  display: none !important;
+}
+
+/* 2) Hide storm picker + directions blocks entirely */
+#mapsView .ht-left-panel .storm-picker,
+#mapsView .ht-left-panel .directions,
+#mapsView .ht-left-panel .no-dates {
+  display: none !important;
+}
+
+/* 3) Clean up "Most Recent Events" (title only) */
+#mapsView .ht-left-panel .recent-events small,
+#mapsView .ht-left-panel .recent-events .subtitle {
+  display: none !important;
+}
+
+/* 4) Prepare panel for bottom-pinned money box */
+#mapsView .ht-left-panel {
+  position: relative !important;
+  padding-bottom: 140px !important;
+}
+
+/* 5) Pin Min street value box to bottom */
+#mapsView .ht-left-panel > div:has(input[type="number"]) {
+  position: absolute !important;
+  bottom: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+}
+
+/* 6) Remove extra inputs inside money box */
+#mapsView .ht-left-panel input[placeholder="Search storms..."],
+#mapsView .ht-left-panel label:has(+ input[placeholder="Search storms..."]) {
+  display: none !important;
+}
+
+/* Bottom money box: remove search */
+#mapsView .ht-left-panel input[placeholder="Search storms..."] {
+  display: none !important;
+}
+
+#mapsView .ht-left-panel input[placeholder="Search storms..."] ~ * ,
+#mapsView .ht-left-panel label:has(+ input[placeholder="Search storms..."]) {
+  display: none !important;
+}
+
+/* Hide shortcut tiles row (Weather / Person / Property / Lead List) */
+#mapsView .ht-left-panel .shortcut-row,
+#mapsView .ht-left-panel .quick-actions,
+#mapsView .ht-left-panel .icon-tiles,
+#mapsView .ht-left-panel .icon-grid {
+  display: none !important;
+}
+
+/* Clear contents inside Most Recent Events */
+#mapsView .ht-left-panel .recent-events small,
+#mapsView .ht-left-panel .recent-events p,
+#mapsView .ht-left-panel .recent-events button {
+  display: none !important;
+}
+
+#mapsView .ht-left-panel {
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+}
+
+/* Let panel translucency show through (kill solid child backgrounds) */
+#mapsView .ht-left-panel > * {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Make left-panel containers transparent so panel translucency shows */
+#mapsView .ht-left-panel .maps-address-row,
+#mapsView .ht-left-panel .maps-mini-tabs,
+#mapsView .ht-left-panel .ht-recent,
+#mapsView .ht-left-panel .storm-list-panel,
+#mapsView .ht-left-panel .maps-controls {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+#mapsView .ht-left-panel > div,
+#mapsView .ht-left-panel > section,
+#mapsView #stormControls,
+#mapsView #stormDateRow,
+#mapsView .maps-controls,
+#mapsView .ht-recent,
+#mapsView #stormListPanel,
+#mapsView .storm-list,
+#mapsView .storm-list-panel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#mapsView #stormListPanel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#mapsView > div > div.ht-left-panel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+div.ht-left-panel {
+  background: rgba(11, 18, 32, 0.55) !important;
+  background-color: rgba(11, 18, 32, 0.55) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+}
+
+#mapsView .storm-list-panel,
+#mapsView .storm-list,
+#mapsView .storm-list .map-status {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#mapsView .ht-left-panel {
+  background: rgba(11, 18, 32, 0.55) !important;
+  background-color: rgba(11, 18, 32, 0.55) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+}
+
+#mapsView .map-status,
+#mapsView .map-status::before,
+#mapsView .map-status::after {
+  border: 1px solid rgba(100, 100, 100, 0.7) !important;
+  color: #000 !important;
+}
+
+#mapsView #stormListPanel,
+#mapsView #stormListPanel::before,
+#mapsView #stormListPanel::after,
+#mapsView #stormList,
+#mapsView #stormList::before,
+#mapsView #stormList::after,
+#mapsView .storm-list,
+#mapsView .storm-list::before,
+#mapsView .storm-list::after,
+#mapsView .map-status,
+#mapsView .map-status::before,
+#mapsView .map-status::after {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#mapsView,
+#mapsView > div,
+#mapsView > div > div {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+#mapsView .ht-left-panel {
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  background: rgba(11, 18, 32, 0.55) !important;
+  background-color: rgba(11, 18, 32, 0.55) !important;
+}
+
+    /* =========================
+       FINAL OVERRIDES (WINNING)
+       Glass left panel + gray outlines + remove header divider + remove blue glow
+       CSS ONLY
+    ========================== */
+
+    /* Left panel: real translucent "glass" */
+    #mapsView .ht-left-panel,
+    #mapsView > div > div.ht-left-panel,
+    div.ht-left-panel {
+      background: rgba(11, 18, 32, 0.55) !important;
+      border: 1px solid rgba(200,200,200,0.18) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+      box-shadow: none !important;
+    }
+
+    /* Remove the thin divider line under the header area */
+    #mapsView .ht-left-top,
+    #mapsView .maps-header,
+    #mapsView .ht-header,
+    #mapsView .ht-left-panel .ht-left-top {
+      border-bottom: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Buttons ("buns") outlined in gray */
+    #mapsView .ht-left-panel button,
+    #mapsView .ht-left-panel .ht-btn,
+    #mapsView .ht-left-panel .pill-btn,
+    #mapsView .ht-left-panel .primary-btn,
+    #mapsView .ht-left-panel .maps-tab,
+    #mapsView .ht-left-panel .maps-mini-tabs button {
+      background: rgba(255,255,255,0.08) !important;
+      border: 1px solid rgba(210,210,210,0.42) !important;
+      box-shadow: none !important;
+      color: #111 !important;
+    }
+
+    /* NO outlines on non-buttons / section containers */
+    #mapsView .ht-left-panel .maps-address-row,
+    #mapsView .ht-left-panel #mapsMiniTabs,
+    #mapsView .ht-left-panel #stormControls,
+    #mapsView .ht-left-panel #stormDateRow,
+    #mapsView .ht-left-panel .maps-controls,
+    #mapsView .ht-left-panel .ht-recent,
+    #mapsView .ht-left-panel #stormListPanel {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Specifically ensure these are NOT styled like buttons */
+    #mapsView .ht-left-panel .ht-recent-title,
+    #mapsView .ht-left-panel .map-status,
+    #mapsView .ht-left-panel #stormListPanel .map-status {
+      background: transparent !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    #mapsView .ht-left-panel input,
+    #mapsView .ht-left-panel select,
+    #mapsView .ht-left-panel textarea {
+      background: rgba(255,255,255,0.06) !important;
+      border: 1px solid rgba(210,210,210,0.55) !important;
+      color: #111 !important;
+      box-shadow: none !important;
+      outline: none !important;
+    }
+
+    /* Remove the blue Hail Money Maps logo in the top-left */
+    #mapsView .ht-brand,
+    #mapsView .ht-logo,
+    #mapsView .ht-brand-badge,
+    #mapsView .ht-brand img,
+    #mapsView .ht-logo img {
+      display: none !important;
+    }
+
+    /* Remove the blue "helmet" badge background (keep the icon itself) */
+    #mapsView .ht-brand,
+    #mapsView .ht-logo,
+    #mapsView .ht-brand-badge,
+    #mapsView .ht-brand * ,
+    #mapsView .ht-logo * {
+      box-shadow: none !important;
+      filter: none !important;
+      outline: none !important;
+    }
+    #mapsView .ht-brand,
+    #mapsView .ht-logo,
+    #mapsView .ht-brand-badge {
+      background: transparent !important;
+      border: 1px solid rgba(140,140,140,0.70) !important;
+    }
+
+    /* =========================
+       TRUE GLASS LEFT PANEL
+       NO COLOR. MAP SHOWS THROUGH.
+       ========================= */
+
+    #mapsView .ht-left-panel,
+    #mapsView > div > div.ht-left-panel,
+    div.ht-left-panel {
+      background: rgba(11, 18, 32, 0.55) !important;
+      background-color: rgba(11, 18, 32, 0.55) !important;
+      border: 1px solid rgba(200,200,200,0.18) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+      box-shadow: none !important;
+    }
+
+    /* STOP. The dark is coming from a dimmer/scrim on the MAP LAYER (not the panel).
+       Kill common overlays + any brightness/opacity filters. */
+    #mapsView::before,
+    #mapsView::after {
+      content: none !important;
+      display: none !important;
+    }
+
+    #mapsView,
+    #mapsView * {
+      filter: none !important;
+      opacity: 1 !important;
+    }
+
+    #mapsView .overlay,
+    #mapsView .map-overlay,
+    #mapsView .scrim,
+    #mapsView .dim,
+    #mapsView .shade,
+    #mapsView .glass-scrim,
+    #mapsView .ht-scrim {
+      display: none !important;
+    }
+
+    /* Google Maps layers: ensure nothing is being darkened */
+    #mapsView .gm-style,
+    #mapsView .gm-style * {
+      filter: none !important;
+      opacity: 1 !important;
+    }
+
+    /* Inputs only (these need borders, nothing else) */
+    #mapsView .ht-left-panel input,
+    #mapsView .ht-left-panel select,
+    #mapsView .ht-left-panel textarea {
+      background: transparent !important;
+      border: 1px solid rgba(200,200,200,0.55) !important;
+      color: #111 !important;
+    }
+
+    /* =========================
+       REMOVE DARK WRAPPER BEHIND LEFT PANEL
+       LET MAP SHOW THROUGH
+       ========================= */
+
+    /* The container that holds the left panel */
+    #mapsView > div,
+    #mapsView > div > div {
+      background: transparent !important;
+    }
+
+    /* Left panel itself: true glass */
+    #mapsView .ht-left-panel {
+      background: rgba(11, 18, 32, 0.55) !important;
+      background-color: rgba(11, 18, 32, 0.55) !important;
+      border: 1px solid rgba(200,200,200,0.18) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+      box-shadow: none !important;
+    }
+
+    /* Custom Google Maps map type control (LEFT_TOP) */
+    .gm-custom-maptype {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.25);
+      border-radius: 2px;
+      font-family: Roboto, Arial, sans-serif;
+      font-size: 13px;
+      color: #202124;
+      margin: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    .gm-custom-maptype-tabs {
+      display: flex;
+      border-bottom: 1px solid rgba(0,0,0,0.15);
+    }
+
+    .gm-custom-maptype-tabs button {
+      appearance: none;
+      background: transparent;
+      border: 0;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
+    }
+
+    .gm-custom-maptype-tabs button.active {
+      background: rgba(0,0,0,0.06);
+      font-weight: 600;
+    }
+
+    .gm-custom-maptype-options {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px 10px;
+    }
+
+    .gm-custom-maptype-opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .gm-custom-maptype-opt.disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    .gm-custom-maptype-opt input {
+      margin: 0;
+    }
+
+    /* FINAL OVERRIDE: remove the top header bar (brand/email/role/sign out) */
+    #appRoot > header.topbar,
+    header.topbar,
+    .topbar {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: 0 !important;
+    }
+
+    /* HARD-KILL: Google MapType control (Map / Satellite / Terrain / Labels) */
+    #mapsView .gm-style .gm-style-mtc,
+    #mapsView .gm-style .gmnoprint.gm-style-mtc,
+    .gm-style .gm-style-mtc,
+    .gm-style .gmnoprint.gm-style-mtc {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    /* LEFT GLASS PANEL: absolute overlay to the right of icon rail */
+    #mapsView .ht-map-glass-stack {
+      position: absolute;
+      top: 0;
+      left: 66px; /* right of the icon rail */
+      width: 320px;
+      height: 100%;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      pointer-events: none; /* let map clicks through except on children */
+    }
+
+    #mapsView .ht-map-glass-stack > * {
+      pointer-events: auto;
+    }
+
+    #mapsView .ht-map-glass-box {
+      box-sizing: border-box;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      position: relative;
+    }
+
+    #mapsView .ht-map-glass-logo {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      width: 54px;
+      height: 54px;
+      object-fit: contain;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Hide the logo/swath box — the icon rail already shows these */
+    #mapsView .ht-map-glass-box:first-child {
+      display: none;
+    }
+
+    #mapsView .ht-map-glass-box:not(:first-child) {
+      display: flex;
+      flex-direction: column;
+      background: rgba(11, 18, 32, 0.62);
+      backdrop-filter: blur(22px) saturate(160%);
+      -webkit-backdrop-filter: blur(22px) saturate(160%);
+      border: 1px solid rgba(200, 200, 200, 0.18);
+      border-radius: 16px;
+      margin: 10px;
+      padding: 14px;
+      gap: 10px;
+      color: #fff;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    /* Property panel image */
+    #propertyImage {
+      width: 100%;
+      border-radius: 8px;
+      display: block;
+      background: rgba(0,0,0,0.3);
+      min-height: 80px;
+      object-fit: cover;
+    }
+
+    #mapsView .ht-map-glass-search {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: #fff;
+      outline: none;
+    }
+
+    #mapsView .ht-map-glass-search::placeholder {
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    #mapsView .ht-map-glass-navrow {
+      display: flex;
+      gap: 0;
+      margin-top: 14px;
+      width: calc(100% + 28px);
+      margin-left: -14px;
+      margin-right: -14px;
+    }
+
+    #mapsView .glass-nav-item {
+      flex: 1 1 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      background: transparent;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      overflow: visible;
+    }
+
+    #mapsView .glass-nav-item svg,
+    #mapsView .glass-nav-item .nav-icon,
+    #mapsView .glass-nav-item img {
+      width: 44px;
+      height: 44px;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    #mapsView .glass-nav-item .nav-button {
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      padding: 18px 10px;
+      min-height: 58px;
+      font-size: 14px;
+      color: #fff;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+    }
+
+    #mapsView .glass-nav-item:not(:first-child):not(:last-child) .nav-button {
+      border-radius: 0;
+    }
+
+    #mapsView .glass-nav-item + .glass-nav-item .nav-button {
+      border-left: 0;
+    }
+
+    #mapsView .glass-nav-item:first-child .nav-button {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    #mapsView .glass-nav-item:last-child .nav-button {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+
+    #mapsView .ht-map-glass-most-recent {
+      margin-top: 14px;
+      color: #fff;
+    }
+
+    .ht-events-meta { margin-top: 8px; color: #fff; }
+    .ht-total-events { margin: 6px 0 10px; font-weight: 600; font-size: 13px; color: #fff; }
+
+    .ht-events-list { display: flex; flex-direction: column; gap: 8px; }
+    .ht-date-item {
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .ht-date-item:hover { background: rgba(255,255,255,0.12); }
+    .ht-date-item:active { background: rgba(255,255,255,0.16); }
+
+    .ht-event-rowline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      color: #fff;
+      cursor: pointer;
+    }
+    .ht-event-rowline:hover { background: rgba(255,255,255,0.12); }
+    .ht-event-rowline .ht-event-check { width: 18px; height: 18px; }
+    .ht-event-date-text { flex: 1; font-weight: 600; }
+
+    #eventDatesList { display: flex; flex-direction: column; gap: 12px; }
+
+    .ht-event-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .ht-event-toprow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      color: #fff;
+    }
+
+    .ht-event-date { flex: 1; font-weight: 700; color: #fff; }
+
+    .ht-event-actions { display: flex; align-items: center; gap: 10px; opacity: 0.9; }
+    .ht-act-ico { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+    .ht-act-ico svg { width: 18px; height: 18px; }
+
+    .ht-event-divider { height: 1px; background: rgba(255,255,255,0.14); }
+
+    .ht-event-pills { display: flex; gap: 10px; padding: 10px 12px 12px; flex-wrap: wrap; }
+    .ht-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: #fff;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .ht-pill svg { width: 16px; height: 16px; opacity: 0.95; }
+
+    .ht-event-check { display: inline-flex; align-items: center; }
+    .ht-event-check input { position: absolute; opacity: 0; pointer-events: none; }
+    .ht-check-box {
+      width: 18px; height: 18px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.45);
+      background: rgba(0,0,0,0.12);
+      display: inline-block;
+    }
+
+    .ht-events-pager {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      gap: 10px;
+    }
+    .ht-pager-status { color: rgba(255,255,255,0.85); font-size: 12px; white-space: nowrap; }
+    .ht-pager-btn {
+      flex: 1;
+      padding: 10px 12px;
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .ht-pager-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Subtle overall lightening of the map view (CSS-only) */
+    #mapsView #stormMap,
+    #mapsView #stormMap .gm-style {
+      filter: brightness(1.06) saturate(1.05) contrast(1.02) !important;
+    }
+
+    /* LEFT GLASS MENU: force all lettering white (overlay only) */
+    #mapsView .ht-map-glass-stack,
+    #mapsView .ht-map-glass-stack * {
+      color: #fff !important;
+    }
+
+    #mapsView .ht-map-glass-stack input,
+    #mapsView .ht-map-glass-stack textarea,
+    #mapsView .ht-map-glass-stack select {
+      color: #fff !important;
+      -webkit-text-fill-color: #fff;
+    }
+
+    #mapsView .ht-map-glass-stack input::placeholder,
+    #mapsView .ht-map-glass-stack textarea::placeholder {
+      color: rgba(255, 255, 255, 0.75) !important;
+    }
+
   </style>
 </head>
 <body>
@@ -1118,7 +2379,7 @@
         id="authPassword"
         type="password"
         class="field-input"
-        placeholder="••••••••"
+        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
       />
 
       <button
@@ -1155,12 +2416,12 @@
     <div id="wellnessPillBar" class="wellness-pill-bar">
       <div class="wellness-pill">
         <span id="stepsClickable" style="cursor: pointer;">
-          🚶 <span id="stepsValueTop">0</span> /
+          ðŸš¶ <span id="stepsValueTop">0</span> /
           <span id="stepGoalLabel">8000</span> steps
         </span>
 
         <span id="waterClickable" style="cursor: pointer;">
-          💧 <span id="waterValueTop">0</span> /
+          ðŸ’§ <span id="waterValueTop">0</span> /
           <span id="waterGoalLabel">80</span> oz
         </span>
 
@@ -1312,7 +2573,7 @@
               <input
                 id="chatInputHub"
                 class="control-input"
-                placeholder="Type a company-wide message…"
+                placeholder="Type a company-wide messageâ€¦"
               />
               <button
                 id="chatSendBtnHub"
@@ -1343,7 +2604,7 @@
               </div>
 
               <div id="leadsList" class="leads-list">
-                Loading leads…
+                Loading leadsâ€¦
               </div>
             </div>
           </div>
@@ -1397,19 +2658,191 @@
 
 <!-- =================== $MAPS VIEW =================== -->
 <section id="mapsView" class="view">
-  <div class="view-inner maps-layout">
-    <div class="view-header">
-      <div>
-        <h2>$Maps</h2>
-      </div>
-      <button id="mapsBackBtn" class="pill-btn">Back to Menu</button>
+  <div class="ht-maps-shell">
+    <div id="htIconRail" aria-label="Maps rail">
+      <button type="button" class="ht-rail-btn active" aria-label="HMM Globe" onclick="showView('mapsView')">
+        <svg width="36" height="36" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1024" height="1024" rx="180" fill="#15345c"/>
+          <ellipse cx="512" cy="580" rx="430" ry="310" fill="#145892"/>
+          <g stroke="#1b7ec4" stroke-width="18" opacity="0.45">
+            <line x1="82" y1="430" x2="942" y2="430"/>
+            <line x1="82" y1="580" x2="942" y2="580"/>
+            <line x1="82" y1="730" x2="942" y2="730"/>
+            <line x1="250" y1="270" x2="250" y2="890"/>
+            <line x1="440" y1="270" x2="440" y2="890"/>
+            <line x1="620" y1="270" x2="620" y2="890"/>
+            <line x1="800" y1="270" x2="800" y2="890"/>
+          </g>
+          <path d="M512,180 C380,180 270,290 270,430 C270,610 512,860 512,860 C512,860 754,610 754,430 C754,290 644,180 512,180 Z" fill="#1b7ec4"/>
+          <circle cx="512" cy="415" r="155" fill="#145892"/>
+          <circle cx="512" cy="415" r="120" fill="#589866"/>
+          <circle cx="512" cy="415" r="100" fill="#9ad562"/>
+          <rect x="496" y="335" width="36" height="165" rx="18" fill="#15345c"/>
+          <path d="M 456 370 Q 456 338 492 338 L 530 338 Q 562 338 562 370 Q 562 398 530 405 L 490 412 Q 456 419 456 452 Q 456 484 490 484 L 530 484 Q 562 484 562 453" stroke="#15345c" stroke-width="30" fill="none" stroke-linecap="round"/>
+          <ellipse cx="440" cy="310" rx="55" ry="38" fill="#c0eb73" opacity="0.5"/>
+          <circle cx="210" cy="260" r="46" fill="#fdfe43"/>
+          <circle cx="155" cy="410" r="34" fill="#fdfe43"/>
+          <circle cx="185" cy="560" r="40" fill="#fdfe43"/>
+          <circle cx="815" cy="250" r="42" fill="#fdfe43"/>
+          <circle cx="875" cy="400" r="32" fill="#fdfe43"/>
+          <circle cx="845" cy="550" r="38" fill="#fdfe43"/>
+          <circle cx="360" cy="175" r="28" fill="#fdfe43"/>
+          <circle cx="680" cy="160" r="30" fill="#fdfe43"/>
+          <ellipse cx="512" cy="855" rx="55" ry="18" fill="#0d2240" opacity="0.6"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Swath Opacity" id="railSwathOpacityBtn">
+        <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="36" height="36" rx="8" fill="#0b1220"/>
+          <polygon points="18,6 30,12 18,18 6,12" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round"/>
+          <polyline points="6,18 18,24 30,18" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round" opacity="0.7"/>
+          <polyline points="6,24 18,30 30,24" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round" opacity="0.4"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="All Company Jobs">
+        <svg width="36" height="36" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1024" height="1024" rx="228" fill="#0b1220"/>
+          <rect x="312" y="200" width="400" height="720" rx="16" fill="#145892"/>
+          <rect x="110" y="360" width="220" height="560" rx="16" fill="#1b7ec4"/>
+          <rect x="694" y="320" width="220" height="600" rx="16" fill="#1b7ec4"/>
+          <rect x="60" y="910" width="904" height="32" rx="8" fill="#0c73e1"/>
+          <rect x="352" y="260" width="80" height="80" rx="8" fill="#fdfe43"/>
+          <rect x="464" y="260" width="80" height="80" rx="8" fill="#fdfe43"/>
+          <rect x="576" y="260" width="80" height="80" rx="8" fill="#c0eb73"/>
+          <rect x="352" y="380" width="80" height="80" rx="8" fill="#9ad562"/>
+          <rect x="464" y="380" width="80" height="80" rx="8" fill="#c0eb73"/>
+          <rect x="576" y="380" width="80" height="80" rx="8" fill="#fdfe43"/>
+          <rect x="352" y="500" width="80" height="80" rx="8" fill="#c0eb73"/>
+          <rect x="464" y="500" width="80" height="80" rx="8" fill="#fdfe43"/>
+          <rect x="576" y="500" width="80" height="80" rx="8" fill="#9ad562"/>
+          <rect x="444" y="780" width="136" height="140" rx="12" fill="#0a5fb8"/>
+          <rect x="148" y="400" width="66" height="66" rx="8" fill="#fdfe43"/>
+          <rect x="234" y="400" width="66" height="66" rx="8" fill="#c0eb73"/>
+          <rect x="148" y="500" width="66" height="66" rx="8" fill="#c0eb73"/>
+          <rect x="234" y="500" width="66" height="66" rx="8" fill="#fdfe43"/>
+          <rect x="148" y="600" width="66" height="66" rx="8" fill="#fdfe43"/>
+          <rect x="234" y="600" width="66" height="66" rx="8" fill="#9ad562"/>
+          <rect x="730" y="360" width="66" height="66" rx="8" fill="#fdfe43"/>
+          <rect x="816" y="360" width="66" height="66" rx="8" fill="#c0eb73"/>
+          <rect x="730" y="460" width="66" height="66" rx="8" fill="#c0eb73"/>
+          <rect x="816" y="460" width="66" height="66" rx="8" fill="#fdfe43"/>
+          <rect x="730" y="560" width="66" height="66" rx="8" fill="#fdfe43"/>
+          <rect x="816" y="560" width="66" height="66" rx="8" fill="#9ad562"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="My Jobs">
+        <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="36" height="36" rx="8" fill="#0b1220"/>
+          <circle cx="15" cy="12" r="5" fill="none" stroke="#f59e0b" stroke-width="2.2"/>
+          <path d="M5 30c0-5.5 4.5-9 10-9s10 3.5 10 9" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round"/>
+          <polyline points="23,19 26,23 32,16" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Campaign">
+        <svg width="36" height="36" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1024" height="1024" rx="228" fill="#0b1220"/>
+          <circle cx="512" cy="480" r="400" fill="#f61321" opacity="0.2"/>
+          <circle cx="512" cy="480" r="400" fill="none" stroke="#f61321" stroke-width="48"/>
+          <circle cx="512" cy="480" r="300" fill="none" stroke="#f61321" stroke-width="36" opacity="0.7"/>
+          <circle cx="512" cy="480" r="200" fill="#f61321" opacity="0.25"/>
+          <circle cx="512" cy="480" r="200" fill="none" stroke="#f61321" stroke-width="28"/>
+          <circle cx="512" cy="480" r="100" fill="#f61321"/>
+          <path d="M512,200 C420,200 345,278 345,375 C345,510 512,660 512,660 C512,660 679,510 679,375 C679,278 604,200 512,200 Z" fill="#589866"/>
+          <path d="M512,200 C420,200 345,278 345,375 C345,510 512,660 512,660 C512,660 679,510 679,375 C679,278 604,200 512,200 Z" fill="none" stroke="#9ad562" stroke-width="16"/>
+          <circle cx="512" cy="368" r="82" fill="#9ad562"/>
+          <circle cx="512" cy="368" r="46" fill="#15345c"/>
+          <line x1="512" y1="80" x2="512" y2="200" stroke="#f61321" stroke-width="20" stroke-linecap="round"/>
+          <line x1="512" y1="660" x2="512" y2="880" stroke="#f61321" stroke-width="20" stroke-linecap="round"/>
+          <line x1="80" y1="480" x2="345" y2="480" stroke="#f61321" stroke-width="20" stroke-linecap="round"/>
+          <line x1="679" y1="480" x2="944" y2="480" stroke="#f61321" stroke-width="20" stroke-linecap="round"/>
+          <ellipse cx="512" cy="655" rx="60" ry="18" fill="#0d2240" opacity="0.4"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="New Lead">
+        <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-label="New Lead">
+          <rect width="36" height="36" rx="8" fill="#0b1220"/>
+          <circle cx="14" cy="13" r="5" fill="none" stroke="#ff8c00" stroke-width="2.2"/>
+          <path d="M4 32c0-5.5 4.5-9 10-9s10 3.5 10 9" fill="none" stroke="#ff8c00" stroke-width="2.2" stroke-linecap="round"/>
+          <line x1="27" y1="8" x2="27" y2="18" stroke="#ff8c00" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="22" y1="13" x2="32" y2="13" stroke="#ff8c00" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Estimates">
+        <svg width="36" height="36" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1024" height="1024" rx="228" fill="#0b1220"/>
+          <rect x="180" y="180" width="664" height="780" rx="48" fill="#0c73e1"/>
+          <rect x="360" y="140" width="304" height="100" rx="30" fill="#0c73e1"/>
+          <rect x="410" y="155" width="204" height="70" rx="20" fill="#0a5fb8"/>
+          <rect x="220" y="260" width="584" height="660" rx="24" fill="#ffffff" opacity="0.15"/>
+          <rect x="260" y="350" width="380" height="36" rx="18" fill="#ffffff"/>
+          <rect x="260" y="430" width="480" height="30" rx="15" fill="#ffffff" opacity="0.8"/>
+          <rect x="260" y="500" width="440" height="30" rx="15" fill="#ffffff" opacity="0.8"/>
+          <rect x="260" y="570" width="460" height="30" rx="15" fill="#ffffff" opacity="0.8"/>
+          <rect x="260" y="650" width="340" height="36" rx="18" fill="#fdfe43"/>
+          <rect x="640" y="635" width="120" height="66" rx="22" fill="#c0eb73"/>
+          <rect x="668" y="645" width="20" height="46" rx="10" fill="#0c73e1"/>
+          <path d="M654 660 Q654 645 675 645 L 698 645 Q 714 645 714 662 Q 714 675 698 678 L 674 682 Q 658 686 658 700 Q 658 714 676 714 L 700 714 Q 714 714 714 700" stroke="#0c73e1" stroke-width="16" fill="none" stroke-linecap="round"/>
+          <path d="M 260 760 L 320 820 L 450 680" stroke="#9ad562" stroke-width="42" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Downloads">
+        <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-label="Downloads">
+          <rect width="36" height="36" rx="8" fill="#0b1220"/>
+          <line x1="18" y1="6" x2="18" y2="22" stroke="#4fc3f7" stroke-width="2.5" stroke-linecap="round"/>
+          <polyline points="11,16 18,23 25,16" fill="none" stroke="#4fc3f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="7" y="26" width="22" height="4" rx="2" fill="#4fc3f7" opacity="0.85"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn ht-rail-btn-bottom" aria-label="Settings">
+        <svg width="36" height="36" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-label="Settings">
+          <rect width="24" height="24" rx="4" fill="#0b1220"/>
+          <path d="M19.14,12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4,2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24,0-.43.17-.47.41L9.25,5.35c-.59.24-1.13.56-1.62.94L5.24,5.33c-.22-.08-.47,0-.59.22L2.74,8.87c-.12.21-.08.47.12.61l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s.02.64.07.94l-2.03,1.58c-.18.14-.23.41-.12.61l1.92,3.32c.12.22.37.29.59.22l2.39-.96c.5.38,1.03.7,1.62.94l.36,2.54c.05.24.24.41.48.41h3.84c.24,0,.44-.17.47-.41l.36-2.54c.59-.24,1.13-.56,1.62-.94l2.39.96c.22.08.47,0,.59-.22l1.92-3.32c.12-.22.07-.47-.12-.61L19.14,12.94zM12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6,3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" fill="#9e9e9e"/>
+        </svg>
+      </button>
     </div>
 
-    <div id="stormControls" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:8px 0;">
+    <div class="ht-left-panel">
+      <div class="ht-left-top">
+      </div>
+
+      <!-- ADDRESS SEARCH (keeps existing IDs/wiring) -->
+      <div class="maps-address-row">
+        <div class="ht-address-inputwrap">
+          <input
+            id="addressInput"
+            type="text"
+            class="control-input flex-1"
+            placeholder="Search addressâ€¦"
+          />
+          <span class="ht-input-x" aria-hidden="true">Ã—</span>
+        </div>
+        <button id="searchLocationBtn" class="primary-btn" type="button">
+          Go
+        </button>
+      </div>
+
+      <!-- MINI TABS (keeps existing IDs/wiring) -->
+      <div id="mapsMiniTabs" class="maps-mini-tabs">
+        <button id="tabMaps" class="active" type="button">
+          <span class="tab-ico" aria-hidden="true"><img src="/assets/icons/campaign-icon-24.svg" alt="" width="20" height="20"></span>
+          <span class="tab-txt">Maps</span>
+        </button>
+        <button id="tabCampaigns" type="button">
+          <span class="tab-ico" aria-hidden="true"><img src="/assets/icons/all_company_jobs-icon-24.svg" alt="" width="20" height="20"></span>
+          <span class="tab-txt">Campaigns</span>
+        </button>
+        <button id="tabAssets" type="button">
+          <span class="tab-ico" aria-hidden="true"><img src="/assets/icons/estimates-icon-24.svg" alt="" width="20" height="20"></span>
+          <span class="tab-txt">Assets</span>
+        </button>
+      </div>
+
+      <!-- Keep hail-dates controls in DOM, but compact and inside left panel -->
+      <div id="stormControls">
       <label>
         State:
         <select id="stateSelect">
-          <option value="">Select…</option>
+          <option value="">Selectâ€¦</option>
           <option value="AL">Alabama</option>
           <option value="AK">Alaska</option>
           <option value="AZ">Arizona</option>
@@ -1467,7 +2900,7 @@
       <label>
         Scope:
         <select id="scopeSelect">
-          <option value="" selected>Select scope…</option>
+          <option value="" selected>Select scopeâ€¦</option>
           <option value="state">Statewide dates</option>
           <option value="city">City-only dates</option>
         </select>
@@ -1476,7 +2909,7 @@
       <label>
         Storm type:
         <select id="stormTypeTop">
-          <option value="" selected>Select type…</option>
+          <option value="" selected>Select typeâ€¦</option>
           <option value="hail">Hail</option>
           <option value="wind">Wind</option>
           <option value="all">All</option>
@@ -1500,9 +2933,9 @@
       <button id="getDatesBtn" class="pill-btn" disabled>Get Dates</button>
 
       <span id="dateStatus" style="opacity:.8;"></span>
-    </div>
+      </div>
 
-    <div id="stormDateRow" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:6px 0 10px;">
+      <div id="stormDateRow">
       <label>
         Storm dates:
         <select id="dateSelect" disabled>
@@ -1513,86 +2946,10 @@
         <span id="datesLoadedStatus" style="font-size:.85rem; opacity:.8;"></span>
         <button id="loadNextDatesBtn" class="pill-btn" style="padding:4px 8px; display:none;">Load next 3 months</button>
       </div>
-    </div>
-
-    <!-- TOP CONTROLS -->
-    <div class="maps-controls">
-      <!-- STATE -->
-      <div class="maps-control-group" style="display:none;">
-        <label class="control-label">State</label>
-        <select id="stateSelect" class="control-input">
-          <option value="">Select a state…</option>
-          <option value="AL">Alabama</option>
-          <option value="AK">Alaska</option>
-          <option value="AZ">Arizona</option>
-          <option value="AR">Arkansas</option>
-          <option value="CA">California</option>
-          <option value="CO">Colorado</option>
-          <option value="CT">Connecticut</option>
-          <option value="DE">Delaware</option>
-          <option value="FL">Florida</option>
-          <option value="GA">Georgia</option>
-          <option value="HI">Hawaii</option>
-          <option value="ID">Idaho</option>
-          <option value="IL">Illinois</option>
-          <option value="IN">Indiana</option>
-          <option value="IA">Iowa</option>
-          <option value="KS">Kansas</option>
-          <option value="KY">Kentucky</option>
-          <option value="LA">Louisiana</option>
-          <option value="ME">Maine</option>
-          <option value="MD">Maryland</option>
-          <option value="MA">Massachusetts</option>
-          <option value="MI">Michigan</option>
-          <option value="MN">Minnesota</option>
-          <option value="MS">Mississippi</option>
-          <option value="MO">Missouri</option>
-          <option value="MT">Montana</option>
-          <option value="NE">Nebraska</option>
-          <option value="NV">Nevada</option>
-          <option value="NH">New Hampshire</option>
-          <option value="NJ">New Jersey</option>
-          <option value="NM">New Mexico</option>
-          <option value="NY">New York</option>
-          <option value="NC">North Carolina</option>
-          <option value="ND">North Dakota</option>
-          <option value="OH">Ohio</option>
-          <option value="OK">Oklahoma</option>
-          <option value="OR">Oregon</option>
-          <option value="PA">Pennsylvania</option>
-          <option value="RI">Rhode Island</option>
-          <option value="SC">South Carolina</option>
-          <option value="SD">South Dakota</option>
-          <option value="TN">Tennessee</option>
-          <option value="TX">Texas</option>
-          <option value="UT">Utah</option>
-          <option value="VT">Vermont</option>
-          <option value="VA">Virginia</option>
-          <option value="WA">Washington</option>
-          <option value="WV">West Virginia</option>
-          <option value="WI">Wisconsin</option>
-          <option value="WY">Wyoming</option>
-        </select>
-
-        <input
-          id="stateTextInput"
-          type="text"
-          class="control-input"
-          placeholder="Or type state (MO / Missouri)…"
-          style="margin-top: 4px"
-        />
       </div>
 
-      <!-- STORM TYPE -->
-      <div class="maps-control-group" style="display:none;">
-        <label class="control-label">Storm Type</label>
-        <select id="stormSelect" class="control-input">
-          <option value="">Pick storm type…</option>
-          <option value="hail">Hail</option>
-          <option value="wind">Wind</option>
-          <option value="tornado">Tornado</option>
-        </select>
-      </div>
+      <!-- TOP CONTROLS (keep existing IDs like minValueInput/stormSearchInput) -->
+      <div class="maps-controls">
 
       <!-- MIN VALUE -->
       <div class="maps-control-group small">
@@ -1606,43 +2963,92 @@
       </div>
 
       <!-- SEARCH WITHIN LIST -->
-      <div class="maps-control-group small">
-        <label class="control-label">Filter storms by name/date</label>
-        <input
-          id="stormSearchInput"
-          type="text"
-          class="control-input"
-          placeholder="Search storms…"
-        />
       </div>
-    </div>
 
-    <!-- ADDRESS SEARCH -->
-    <div class="maps-address-row">
-      <input
-        id="addressInput"
-        type="text"
-        class="control-input flex-1"
-        placeholder="Type any address and hit Go…"
-      />
-      <button id="searchLocationBtn" class="primary-btn">
-        Go to Address
-      </button>
-    </div>
-
-    <!-- MAP + STORM LIST -->
-    <div class="maps-main-split">
-      <div id="stormMap" class="map-panel"></div>
+      <div class="ht-recent">
+        <div class="ht-recent-title">Most Recent Events</div>
+        <div id="recentEventsList" aria-label="Most Recent Events List"></div>
+        <div id="recentEventsPaging" aria-label="Most Recent Events Paging">
+          <button id="recentEventsPrev" type="button" disabled>Prev</button>
+          <button id="recentEventsNext" type="button">Next</button>
+        </div>
+      </div>
 
       <div id="stormListPanel" class="storm-list-panel">
-        <div id="mapStatus" class="map-status">
-          Pick a state and storm type.
-        </div>
-        <div id="directionsArea" class="directions-area">
-          <button id="directionsBtn" class="pill-btn" disabled>Directions</button>
-        </div>
         <div id="stormList" class="storm-list"></div>
       </div>
+    </div>
+
+    <div class="ht-map-glass-stack">
+        <div class="ht-map-glass-box" style="z-index:10000; overflow:visible;">
+          <img class="ht-map-glass-logo" src="/assets/icons/svg/app_icon_vector_traced.svg" alt="Hail Money Map" id="moneyGlobeLogo" />
+          <svg id="swathOpacityIcon" xmlns="http://www.w3.org/2000/svg" width="54" height="54" viewBox="0 0 36 36" aria-hidden="true" style="display:block; margin:68px auto 0; cursor:pointer; opacity:0.85;">
+            <rect width="36" height="36" rx="8" fill="#0b1220"/>
+            <polygon points="18,6 30,12 18,18 6,12" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round"/>
+            <polyline points="6,18 18,24 30,18" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round" opacity="0.7"/>
+            <polyline points="6,24 18,30 30,24" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round" opacity="0.4"/>
+          </svg>
+          <div id="swathOpacitySliderWrap" style="display:none; position:absolute; left:24px; top:110px; width:320px; z-index:9999; background:rgba(255,255,255,0.95); border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.18); padding:18px 18px 12px 18px;">
+            <div id="swathOpacityValue" style="text-align:center; margin-bottom:8px; font-size:16px; color:#000;">SWATH Opacity: 100%</div>
+            <input id="swathOpacitySlider" type="range" min="0" max="100" value="100" style="width:100%; height:32px;" />
+          </div>
+        </div>
+        <div class="ht-map-glass-box">
+          <input class="ht-map-glass-search" type="text" placeholder="Search" />
+
+          <div class="ht-map-glass-navrow" aria-label="Quick navigation">
+            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Get Directions" id="glassNavGetDirections">
+              <img src="/assets/icons/campaign-icon-48.svg" alt="Get Directions" width="44" height="44">
+            </div>
+
+            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Start Inspection" id="glassNavStartInspection">
+              <img src="/assets/icons/estimates-icon-48.svg" alt="Start Inspection" width="44" height="44">
+            </div>
+
+            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Storm Calendar" id="glassNavStormCalendar">
+              <img src="/assets/icons/all_company_jobs-icon-48.svg" alt="Storm Calendar" width="44" height="44">
+            </div>
+          </div>
+
+          <!-- Property panel: shown when user clicks map -->
+          <div id="propertyPanel" style="display:none; margin-top:10px;">
+            <div style="color:#fff; font-weight:600; font-size:13px; margin-bottom:6px;">Selected Property</div>
+            <img id="propertyImage" src="" alt="Property satellite view"
+              style="width:100%; border-radius:8px; display:block; margin-bottom:8px; background:#222;" />
+            <div id="propertyAddress" style="color:#ccc; font-size:12px; margin-bottom:8px;"></div>
+            <div style="color:#fff; font-weight:600; font-size:12px; margin-bottom:4px;">Recent Storms Near This Property</div>
+            <div id="propertyStormsList" style="display:flex; flex-direction:column; gap:6px;"></div>
+          </div>
+
+          <div class="ht-map-glass-most-recent">Most Recent Events</div>
+
+          <div class="ht-events-meta">
+            <div class="ht-total-events">
+              Total Events: <span id="totalEventsCount">—</span>
+            </div>
+
+            <div id="debugStormDatesBox" style="display:none; margin-top:10px;">
+              <div style="font-weight:700; color:#fff; margin-bottom:6px;">DEBUG</div>
+              <textarea id="debugStormDatesText" readonly
+                style="width:100%; height:160px; resize:vertical; padding:10px; color:#fff;
+                       background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.18);
+                       border-radius:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+                       font-size:12px;"></textarea>
+            </div>
+
+            <div id="eventDatesList" class="ht-events-list" role="list"></div>
+
+            <div class="ht-events-pager">
+              <button type="button" id="prevDatesBtn" class="ht-pager-btn" disabled>Previous</button>
+              <span id="datesStatus" class="ht-pager-status">1–5</span>
+              <button type="button" id="nextDatesBtn" class="ht-pager-btn">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <div class="ht-map-wrap">
+      <div id="stormMap" class="map-panel"></div>
     </div>
   </div>
 </section>
@@ -1699,11 +3105,11 @@
         id="insuranceSearchInput"
         class="control-input"
         style="flex: 1"
-        placeholder="Search by carrier name…"
+        placeholder="Search by carrier nameâ€¦"
       />
     </div>
 
-    <div id="insuranceList" class="ins-list">Loading…</div>
+    <div id="insuranceList" class="ins-list">Loadingâ€¦</div>
   </div>
 </section>
 
@@ -1788,7 +3194,7 @@
         <input
           id="teamChatInput"
           class="control-input"
-          placeholder="Type a message to your team…"
+          placeholder="Type a message to your teamâ€¦"
         />
         <button id="teamChatSendBtn" class="primary-btn">
           Send
@@ -1901,7 +3307,7 @@
           id="payNoteInput"
           class="control-input"
           rows="3"
-          placeholder="Breakdown of what you are owed…"
+          placeholder="Breakdown of what you are owedâ€¦"
         ></textarea>
 
         <button
@@ -2065,7 +3471,7 @@
           id="adminUsersList"
           style="margin-top: 6px; font-size: 0.8rem"
         >
-          Loading…
+          Loadingâ€¦
         </div>
       </div>
     </div>
@@ -2081,14 +3487,14 @@
         <input
           id="stepsSearchInput"
           class="control-input"
-          placeholder="Search by email or name…"
+          placeholder="Search by email or nameâ€¦"
         />
       </div>
       <div
         id="stepsDashList"
         style="margin-top: 6px; font-size: 0.8rem"
       >
-        Loading…
+        Loadingâ€¦
       </div>
     </div>
 
@@ -2133,7 +3539,7 @@
             id="regionDetailTitle"
             style="font-size: 0.9rem; margin-bottom: 6px"
           >
-            Select a region…
+            Select a regionâ€¦
           </h4>
           <div
             style="
@@ -2165,7 +3571,7 @@
         id="adminPayrollList"
         style="margin-top: 6px; font-size: 0.8rem"
       >
-        Loading…
+        Loadingâ€¦
       </div>
     </div>
   </div>
@@ -2178,7 +3584,147 @@
 <script>
 "use strict";
 
-const DEBUG_STORMS = true;
+const DEBUG_STORMS = false;
+(() => {
+  // Attach click handler to money-globe logo to return to main menu view
+  document.addEventListener('DOMContentLoaded', function() {
+    const logo = document.getElementById('moneyGlobeLogo');
+    if (logo) {
+      logo.addEventListener('click', function() {
+        // Use existing navigation logic
+        if (window.App && App.views && App.views.mainMenuView && typeof showOnlyView === 'function') {
+          showOnlyView(App.views.mainMenuView);
+        }
+      });
+    }
+
+    // Swath opacity slider show/hide logic
+    const icon = document.getElementById('swathOpacityIcon');
+    const slider = document.getElementById('swathOpacitySlider');
+    if (icon && slider) {
+      // Hide slider by default
+      const sliderWrap = document.getElementById('swathOpacitySliderWrap');
+      sliderWrap.style.display = 'none';
+      sliderWrap.style.pointerEvents = 'none';
+      icon.addEventListener('click', function() {
+        sliderWrap.style.display = 'block';
+        sliderWrap.style.pointerEvents = 'auto';
+        slider.focus();
+        document.getElementById('swathOpacityValue').textContent = `SWATH Opacity: ${slider.value}%`;
+      });
+      // Also allow the rail swath opacity button to trigger the same slider
+      const railSwathBtn = document.getElementById('railSwathOpacityBtn');
+      if (railSwathBtn) {
+        railSwathBtn.addEventListener('click', () => {
+          sliderWrap.style.display = sliderWrap.style.display === 'none' ? 'block' : 'none';
+          sliderWrap.style.pointerEvents = sliderWrap.style.display === 'none' ? 'none' : 'auto';
+          if (sliderWrap.style.display !== 'none') slider.focus();
+          document.getElementById('swathOpacityValue').textContent = `SWATH Opacity: ${slider.value}%`;
+        });
+      }
+      // Wire Storm Calendar nav button to scroll dates list into view
+      const stormCalBtn = document.getElementById('glassNavStormCalendar');
+      if (stormCalBtn) {
+        stormCalBtn.addEventListener('click', () => {
+          const eventsList = document.getElementById('eventDatesList');
+          if (eventsList) eventsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+      // Hide slider after mouseup, pointerup, change, or blur
+      const hideSlider = () => {
+        slider.blur(); // Remove focus before hiding to fix aria-hidden warning
+        sliderWrap.style.display = 'none';
+        sliderWrap.style.pointerEvents = 'none';
+      };
+      slider.addEventListener('mouseup', hideSlider);
+      slider.addEventListener('pointerup', hideSlider);
+      slider.addEventListener('change', hideSlider);
+      slider.addEventListener('blur', hideSlider);
+
+      // Wire slider input to update swath overlay opacity
+      slider.addEventListener('input', function() {
+        // Temporary debug log for live overlays
+        var overlays = window._lsrOverlays || [];
+        var firstOverlay = overlays.length ? overlays[0] : null;
+        console.log('[SWATH_OPACITY_DEBUG]', {
+          collection: 'window._lsrOverlays',
+          overlayCount: overlays.length,
+          firstOverlayType: firstOverlay && firstOverlay.constructor ? firstOverlay.constructor.name : null,
+          hasSetOptions: !!(firstOverlay && typeof firstOverlay.setOptions === 'function'),
+          sliderValue: slider.value
+        });
+        var percentValue = Number(slider.value);
+        var opacityValue = percentValue / 100;
+        var label = document.getElementById('swathOpacityValue');
+
+        if (label) {
+          label.textContent = `SWATH Opacity: ${percentValue}%`;
+          label.style.color = '#000';
+          label.style.setProperty('color', '#000', 'important');
+        }
+
+        overlays.forEach(function(overlay) {
+          if (!overlay) return;
+          if (typeof overlay.setOptions === 'function') {
+            overlay.setOptions({ fillOpacity: opacityValue, strokeOpacity: opacityValue });
+          } else if (typeof overlay.setStyle === 'function') {
+            overlay.setStyle({ fillOpacity: opacityValue, strokeOpacity: opacityValue });
+          }
+        });
+      });
+
+      // Patch for deduplication: monkey-patch google.maps.Circle creation to skip exact duplicates
+      if (window.google && google.maps && google.maps.Circle) {
+        const origCircle = google.maps.Circle;
+        google.maps.Circle = function(opts) {
+          // Dedupe key: center lat/lng, radius, fillColor
+          const key = opts && opts.center && opts.radius && opts.fillColor
+            ? `${opts.center.lat},${opts.center.lng},${opts.radius},${opts.fillColor}`
+            : null;
+          if (key) {
+            window._swathCircleKeys = window._swathCircleKeys || new Set();
+            if (window._swathCircleKeys.has(key)) {
+              // Skip duplicate
+              return null;
+            }
+            window._swathCircleKeys.add(key);
+          }
+          return new origCircle(opts);
+        };
+      }
+    }
+  });
+  const IDS = ['debugStormDatesBox', 'debugStormDatesText'];
+
+  const nuke = () => {
+    IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+  };
+
+  // run immediately
+  nuke();
+
+  // run after DOM ready
+  document.addEventListener('DOMContentLoaded', nuke);
+
+  // run after ANY future DOM mutation
+  new MutationObserver(nuke).observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+
+  // hard block re-creation
+  IDS.forEach(id => {
+    Object.defineProperty(window, id, {
+      get() { return null; },
+      set() {}
+    });
+  });
+})();
+
+
 
 /* =========================================================
    GLOBAL APP STATE
@@ -2200,6 +3746,14 @@ window.App = {
   selectedDate: null,
   noaaReports: [],
 };
+
+App.recentsPageIndex = App.recentsPageIndex || 0;
+App.recentsPages = App.recentsPages || {}; // idx -> items array
+App.recentsPageLastDoc = App.recentsPageLastDoc || {}; // idx -> last Firestore doc snapshot for that page
+App.recentsHasNext = App.recentsHasNext || {}; // idx -> boolean
+
+App.selectedDates = App.selectedDates || new Set();
+App.swathLayersByDate = App.swathLayersByDate || {};
 
 // Strictly click-gated dates paging state
 let AppDates = {
@@ -2251,8 +3805,17 @@ function showOnlyView(viewEl) {
 
   // Maps view: trigger resize so the map paints correctly
   if (viewEl.id === "mapsView") {
+    loadRecentEventsPage(0);
     setTimeout(() => {
       if (typeof initMap === "function") initMap();
+      debugStormDatesTop();
+      debugStormDatesFields();
+      debugStormDatesFieldsToUI();
+      wireNewPagerOnce();
+      ensureTotalEventsCountLoaded().then((n) => {
+        const el = document.getElementById("totalEventsCount");
+        if (el && n != null) el.textContent = String(n);
+      });
       if (App.map && window.google && google.maps && google.maps.event) {
         google.maps.event.trigger(App.map, "resize");
         const c = App.map.getCenter();
@@ -2260,6 +3823,999 @@ function showOnlyView(viewEl) {
       }
     }, 50);
   }
+}
+
+async function debugStormDatesTop() {
+  if (App._didStormDatesDebug) return;
+  App._didStormDatesDebug = true;
+  if (!window.db) return;
+
+  try {
+    const snap1 = await window.db.collection("stormDates").orderBy("date", "desc").limit(5).get();
+    console.log("[DEBUG stormDates] top by date desc:", snap1.docs.map(d => d.data()?.dateString || d.data()?.dateDash || d.data()?.date || d.id));
+
+    const snap2 = await window.db.collection("stormDates").orderBy("dateString", "desc").limit(5).get();
+    console.log("[DEBUG stormDates] top by dateString desc:", snap2.docs.map(d => d.data()?.dateString || d.data()?.dateDash || d.data()?.date || d.id));
+
+    const jan = await window.db.collection("stormDates")
+      .where("dateString", ">=", "2026-01-01")
+      .where("dateString", "<=", "2026-01-31")
+      .orderBy("dateString", "desc")
+      .limit(5)
+      .get();
+    console.log("[DEBUG stormDates] Jan 2026 by dateString:", jan.docs.map(d => d.data()?.dateString || d.id), "count=", jan.size);
+  } catch (e) {
+    console.error("[DEBUG stormDates] error:", e);
+  }
+}
+
+async function debugStormDatesFields() {
+  if (App._didFieldsDebug) return;
+  App._didFieldsDebug = true;
+  if (!window.db) {
+    console.log("[DEBUG_FIELDS] window.db missing");
+    return;
+  }
+
+  async function run(label, q) {
+    try {
+      const snap = await q.get();
+      console.log(`[DEBUG_FIELDS] ${label} count=`, snap.size);
+      const rows = snap.docs.slice(0, 3).map((doc) => {
+        const d = doc.data() || {};
+        const keys = Object.keys(d).slice(0, 25);
+        return {
+          id: doc.id,
+          keys,
+          date: d.date,
+          dateString: d.dateString,
+          dateDash: d.dateDash,
+          type: d.type,
+          state: d.state,
+          hasPolygon: !!(d.polygon || d.geojson || d.geometry),
+        };
+      });
+      console.log(`[DEBUG_FIELDS] ${label} sample=`, rows);
+    } catch (e) {
+      console.error(`[DEBUG_FIELDS] ${label} ERROR=`, e);
+    }
+  }
+
+  await run("orderBy date desc", window.db.collection("stormDates").orderBy("date", "desc").limit(5));
+  await run("orderBy dateString desc", window.db.collection("stormDates").orderBy("dateString", "desc").limit(5));
+  await run("orderBy dateDash desc", window.db.collection("stormDates").orderBy("dateDash", "desc").limit(5));
+
+  try {
+    const jan1 = await window.db.collection("stormDates")
+      .where("dateString", ">=", "2026-01-01")
+      .where("dateString", "<=", "2026-01-31")
+      .orderBy("dateString", "desc")
+      .limit(3)
+      .get();
+    console.log("[DEBUG_FIELDS] Jan 2026 by dateString count=", jan1.size, jan1.docs.map(d=>d.data()?.dateString || d.id));
+  } catch (e) {
+    console.error("[DEBUG_FIELDS] Jan 2026 by dateString ERROR=", e);
+  }
+
+  try {
+    const jan2 = await window.db.collection("stormDates")
+      .where("dateDash", ">=", "2026-01-01")
+      .where("dateDash", "<=", "2026-01-31")
+      .orderBy("dateDash", "desc")
+      .limit(3)
+      .get();
+    console.log("[DEBUG_FIELDS] Jan 2026 by dateDash count=", jan2.size, jan2.docs.map(d=>d.data()?.dateDash || d.id));
+  } catch (e) {
+    console.error("[DEBUG_FIELDS] Jan 2026 by dateDash ERROR=", e);
+  }
+}
+
+async function debugStormDatesFieldsToUI() {
+  try {
+    const box = document.getElementById("debugStormDatesBox");
+    const ta = document.getElementById("debugStormDatesText");
+    if (!box || !ta) return;
+
+    box.style.display = "block";
+    ta.value = "Running debug...\n";
+
+    if (!window.db) {
+      ta.value += "window.db missing\n";
+      return;
+    }
+
+    async function sample(label, q) {
+      try {
+        const snap = await q.get();
+        const out = {
+          label,
+          count: snap.size,
+          sample: snap.docs.slice(0, 3).map((doc) => {
+            const d = doc.data() || {};
+            return {
+              id: doc.id,
+              keys: Object.keys(d).slice(0, 40),
+              date: d.date ?? null,
+              dateString: d.dateString ?? null,
+              dateDash: d.dateDash ?? null,
+              type: d.type ?? null,
+              state: d.state ?? null,
+              hasPolygon: !!(d.polygon || d.geojson || d.geometry),
+            };
+          }),
+        };
+        ta.value += JSON.stringify(out, null, 2) + "\n\n";
+      } catch (e) {
+        ta.value += JSON.stringify({ label, error: String(e && e.message ? e.message : e) }, null, 2) + "\n\n";
+      }
+    }
+
+    await sample("orderBy date desc", window.db.collection("stormDates").orderBy("date", "desc").limit(5));
+    await sample("orderBy dateString desc", window.db.collection("stormDates").orderBy("dateString", "desc").limit(5));
+    await sample("orderBy dateDash desc", window.db.collection("stormDates").orderBy("dateDash", "desc").limit(5));
+
+    try {
+      const jan1 = await window.db.collection("stormDates")
+        .where("dateString", ">=", "2026-01-01")
+        .where("dateString", "<=", "2026-01-31")
+        .orderBy("dateString", "desc")
+        .limit(3)
+        .get();
+      ta.value += JSON.stringify({ label: "Jan 2026 by dateString", count: jan1.size, values: jan1.docs.map(d => d.data()?.dateString || d.id) }, null, 2) + "\n\n";
+    } catch (e) {
+      ta.value += JSON.stringify({ label: "Jan 2026 by dateString", error: String(e && e.message ? e.message : e) }, null, 2) + "\n\n";
+    }
+
+    try {
+      const jan2 = await window.db.collection("stormDates")
+        .where("dateDash", ">=", "2026-01-01")
+        .where("dateDash", "<=", "2026-01-31")
+        .orderBy("dateDash", "desc")
+        .limit(3)
+        .get();
+      ta.value += JSON.stringify({ label: "Jan 2026 by dateDash", count: jan2.size, values: jan2.docs.map(d => d.data()?.dateDash || d.id) }, null, 2) + "\n\n";
+    } catch (e) {
+      ta.value += JSON.stringify({ label: "Jan 2026 by dateDash", error: String(e && e.message ? e.message : e) }, null, 2) + "\n\n";
+    }
+  } catch {}
+}
+
+async function fetchStormDatesPage(idx, pageSize) {
+  // returns { items, lastDoc, hasNext, mode }
+  try {
+    App.recentsAllDates = App.recentsAllDates || null;
+    if (!Array.isArray(App.recentsAllDates)) {
+      const supabase = App.supabase || App.sb || window.supabaseClient || window.sb;
+      let json = null;
+
+      if (supabase && supabase.functions && typeof supabase.functions.invoke === "function") {
+        const { data, error } = await supabase.functions.invoke("hail-dates", { method: "GET" });
+        if (error) throw error;
+        json = data;
+      } else {
+        const url = `${SUPABASE_URL}/functions/v1/hail-dates`;
+        const resp = await fetch(url, {
+          headers: { apikey: SUPABASE_ANON_KEY }
+        });
+        const raw = await resp.text();
+        if (!resp.ok) throw new Error(`hail-dates HTTP ${resp.status}: ${raw.slice(0, 200)}`);
+        json = JSON.parse(raw);
+      }
+
+      const dates = Array.isArray(json?.dates) ? json.dates : [];
+      App.recentsAllDates = dates.filter((d) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d));
+    }
+
+    const start = Math.max(0, Number(idx) || 0) * (Number(pageSize) || 0);
+    const slice = App.recentsAllDates.slice(start, start + pageSize);
+    const items = slice.map((dateDash) => ({ dateDash }));
+    const hasNext = start + pageSize < App.recentsAllDates.length;
+    return { items, lastDoc: null, hasNext, mode: "supabase" };
+  } catch {
+    return { items: [], lastDoc: null, hasNext: false, mode: "error" };
+  }
+}
+
+async function ensureTotalEventsCountLoaded() {
+  try {
+    if (App.totalEventsCount != null) return App.totalEventsCount;
+    if (!window.db) return null;
+
+    const col = window.db.collection("stormDates");
+    if (col && typeof col.count === "function") {
+      const agg = await col.count().get();
+      const n = agg?.data?.()?.count;
+      if (typeof n === "number") App.totalEventsCount = n;
+    } else {
+      const snap = await col.get();
+      App.totalEventsCount = snap?.size ?? null;
+    }
+    return App.totalEventsCount;
+  } catch {
+    return null;
+  }
+}
+
+function formatDateDisplay(dateStr) {
+  try {
+    const s = String(dateStr || "");
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return s;
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    if (isNaN(d.getTime())) return s;
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+  } catch {
+    return String(dateStr || "");
+  }
+}
+
+function iconSvg(name) {
+  const common = 'viewBox="0 0 24 24" aria-hidden="true" focusable="false"';
+  if (name === "home") return `<svg ${common}><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+  if (name === "heart") return `<svg ${common}><path d="M12 21s-7-4.4-9.2-8.6C1.3 9.1 3.2 6 6.7 6c1.8 0 3.3 1 4.3 2.3C12 7 13.5 6 15.3 6c3.5 0 5.4 3.1 3.9 6.4C19 16.6 12 21 12 21Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+  if (name === "copy") return `<svg ${common}><rect x="9" y="9" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3" y="3" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2" opacity="0.8"/></svg>`;
+  if (name === "chev") return `<svg ${common}><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+  if (name === "wind") return `<svg ${common}><path d="M3 8h10a2 2 0 1 0-2-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 12h14a2 2 0 1 1-2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 16h9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  if (name === "tornado") return `<svg ${common}><path d="M5 5h14M6 9h12M7 13h10M9 17h6M10 21h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  if (name === "hail") return `<svg ${common}><path d="M12 3l8 4v10l-8 4-8-4V7l8-4Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="11" r="1.4" fill="currentColor"/><circle cx="14" cy="13" r="1.4" fill="currentColor"/><circle cx="13" cy="10" r="1.2" fill="currentColor" opacity="0.9"/></svg>`;
+  return "";
+}
+
+function normalizeDateDash(d) {
+  if (!d) return null;
+
+  // Preferred explicit string
+  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    return d;
+  }
+
+  // Firestore Timestamp
+  if (d.toDate && typeof d.toDate === "function") {
+    const dt = d.toDate();
+    if (!isNaN(dt)) {
+      return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
+    }
+  }
+
+  // Loose string fallback
+  if (typeof d === "string") {
+    const m = d.match(/(\d{4})\D?(\d{2})\D?(\d{2})/);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  }
+
+  return null;
+}
+
+function renderNewEventDates(items, pageIndex, pageSize) {
+  const list = document.getElementById("eventDatesList");
+  const prevBtn = document.getElementById("prevDatesBtn");
+  const nextBtn = document.getElementById("nextDatesBtn");
+  const status = document.getElementById("datesStatus");
+
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  (items || []).forEach((item) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ht-date-item";
+    btn.textContent = item.dateDash;
+
+    btn.addEventListener("click", () => {
+      console.log("[EVENT CLICK]", item.dateDash);
+      showHailSwathsForDate(item.dateDash);
+    });
+
+    list.appendChild(btn);
+  });
+
+  const idx = Math.max(0, Number(pageIndex) || 0);
+  if (prevBtn) prevBtn.disabled = idx <= 0;
+  if (nextBtn) nextBtn.disabled = (items || []).length < pageSize;
+
+  if (status) {
+    const start = idx * pageSize + 1;
+    const end = idx * pageSize + (items || []).length;
+    status.textContent = `${start}-${end}`;
+  }
+}
+
+function wireNewPagerOnce() {
+  if (App._newPagerWired) return;
+  App._newPagerWired = true;
+
+  const prev = document.getElementById("prevDatesBtn");
+  const next = document.getElementById("nextDatesBtn");
+
+  if (prev) {
+    prev.addEventListener("click", () => {
+      const idx = Math.max(0, Number(App.recentsPageIndex) || 0);
+      loadRecentEventsPage(Math.max(0, idx - 1));
+    });
+  }
+
+  if (next) {
+    next.addEventListener("click", () => {
+      const idx = Math.max(0, Number(App.recentsPageIndex) || 0);
+      loadRecentEventsPage(idx + 1);
+    });
+  }
+}
+
+function toDateDashFromDoc(d) {
+  if (!d) return "";
+  // prefer explicit date string fields
+  const s = d.dateString || d.dateDash || d.date_yyyymmdd || d.date || "";
+  if (typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  // Firestore Timestamp in d.date
+  if (d.date && typeof d.date.toDate === "function") {
+    const dt = d.date.toDate();
+    if (dt && !isNaN(dt.getTime())) {
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      const day = String(dt.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+  }
+
+  // loose string parse (20260125, 2026/01/25, etc)
+  if (typeof s === "string") {
+    const m = s.match(/(\d{4})\D?(\d{2})\D?(\d{2})/);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  }
+  return "";
+}
+
+function renderNewRecentRows(items, pageIndex, pageSize) {
+  const list = document.getElementById("eventDatesList");
+  const prev2 = document.getElementById("prevDatesBtn");
+  const next2 = document.getElementById("nextDatesBtn");
+  const status = document.getElementById("datesStatus");
+
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  (items || []).forEach((it) => {
+    const row = document.createElement("div");
+    row.className = "ht-event-rowline";
+
+    const check = document.createElement("input");
+    check.type = "checkbox";
+    check.className = "ht-event-check";
+    check.addEventListener("click", (e) => e.stopPropagation());
+    check.checked = !!(App.selectedDates && App.selectedDates.has(it.dateDash));
+
+    check.addEventListener("change", async () => {
+      if (check.checked) {
+        const ok = await addStormDate(it.dateDash);
+        if (!ok) check.checked = false;
+      } else {
+        removeStormDate(it.dateDash);
+      }
+    });
+
+    const label = document.createElement("div");
+    label.className = "ht-event-date-text";
+    label.textContent = it.dateDash;
+
+    row.appendChild(check);
+    row.appendChild(label);
+
+    row.addEventListener("click", () => {
+      console.log("[RECENTS_NEW] click", it.dateDash);
+      showHailSwathsForDate(it.dateDash);
+    });
+
+    list.appendChild(row);
+  });
+
+  const idx = Math.max(0, Number(pageIndex) || 0);
+  if (prev2) prev2.disabled = idx <= 0;
+  const hasNext = App.recentsHasNext && App.recentsHasNext[idx] === true;
+  if (next2) next2.disabled = !hasNext;
+
+  if (status) {
+    const start = idx * pageSize + 1;
+    const end = idx * pageSize + (items || []).length;
+    status.textContent = (items && items.length) ? `${start}–${end}` : "—";
+  }
+}
+
+async function addStormDate(dateDash) {
+  if (!dateDash) return false;
+  if (App.selectedDates.has(dateDash)) return true;
+  if (App.selectedDates.size >= 10) {
+    alert("You can select up to 10 storms at a time.");
+    return false;
+  }
+  App.selectedDates.add(dateDash);
+  await showHailSwathsForDate(dateDash, { additive: true });
+  return true;
+}
+
+function removeStormDate(dateDash) {
+  if (!dateDash) return;
+  App.selectedDates.delete(dateDash);
+  const layer = App.swathLayersByDate[dateDash];
+  if (layer) {
+    layer.setMap(null);
+    delete App.swathLayersByDate[dateDash];
+  }
+}
+
+function renderDatesIntoNewUI(dates, pageIndex, pageSize) {
+  const list2 = document.getElementById("eventDatesList");
+  const prev2 = document.getElementById("prevDatesBtn");
+  const next2 = document.getElementById("nextDatesBtn");
+  const status = document.getElementById("datesStatus");
+
+  // Render dates list (card layout)
+  if (list2) {
+    list2.innerHTML = "";
+    (dates || []).forEach((entry) => {
+      const item = (typeof entry === "string") ? { date: entry } : (entry || {});
+      const date = item.date || item.dateString || item.dateDash || "";
+      const card = document.createElement("div");
+      card.className = "ht-event-card";
+      card.dataset.date = date;
+
+      card.innerHTML = `
+      <div class="ht-event-toprow">
+        <label class="ht-event-check">
+          <input type="checkbox" aria-label="Select event" />
+          <span class="ht-check-box" aria-hidden="true"></span>
+        </label>
+
+        <div class="ht-event-date">${formatDateDisplay(date)}</div>
+
+        <div class="ht-event-actions" aria-hidden="true">
+          <span class="ht-act-ico">${iconSvg("home")}</span>
+          <span class="ht-act-ico">${iconSvg("heart")}</span>
+          <span class="ht-act-ico">${iconSvg("copy")}</span>
+          <span class="ht-act-ico ht-act-chev">${iconSvg("chev")}</span>
+        </div>
+      </div>
+
+      <div class="ht-event-divider"></div>
+
+      <div class="ht-event-pills">
+        ${item.windMph != null ? `<span class="ht-pill">${iconSvg("wind")}<span>${item.windMph} MPH</span></span>` : ""}
+        ${item.tornadoEf != null ? `<span class="ht-pill">${iconSvg("tornado")}<span>EF${item.tornadoEf}</span></span>` : ""}
+        ${item.hailIn != null ? `<span class="ht-pill">${iconSvg("hail")}<span>${item.hailIn}\"</span></span>` : ""}
+      </div>
+    `;
+
+      // click card loads swaths (ignore checkbox clicks)
+      card.addEventListener("click", (e) => {
+        const t = e.target;
+        if (t && (t.tagName === "INPUT" || t.closest(".ht-event-check"))) return;
+        showHailSwathsForDate(date);
+      });
+
+      list2.appendChild(card);
+    });
+  }
+
+  // Pager state
+  const idx = Math.max(0, Number(pageIndex) || 0);
+  if (prev2) prev2.disabled = idx <= 0;
+  if (next2) next2.disabled = (dates || []).length < pageSize;
+
+  // Status like "1–5" or "6–10"
+  if (status) {
+    const start = idx * pageSize + 1;
+    const end = idx * pageSize + (dates || []).length;
+    status.textContent = (dates && dates.length) ? `${start}–${end}` : "—";
+  }
+}
+
+function wireNewPagerButtonsOnce() {
+  if (App._wiredNewDatesPager) return;
+  App._wiredNewDatesPager = true;
+
+  const prev2 = document.getElementById("prevDatesBtn");
+  const next2 = document.getElementById("nextDatesBtn");
+
+  if (prev2) {
+    prev2.addEventListener("click", () => {
+      const idx = Math.max(0, Number(App.recentsPageIndex) || 0);
+      loadRecentEventsPage(Math.max(0, idx - 1));
+    });
+  }
+  if (next2) {
+    next2.addEventListener("click", () => {
+      const idx = Math.max(0, Number(App.recentsPageIndex) || 0);
+      loadRecentEventsPage(idx + 1);
+    });
+  }
+}
+
+function cleanLsrOverlays() {
+  try {
+    (window._lsrOverlays || []).forEach(o => o.setMap && o.setMap(null));
+  } catch {}
+  window._lsrOverlays = [];
+}
+
+function clearLsrOverlays() {
+  cleanLsrOverlays();
+}
+
+function hailInToRadiusMeters(hailIn) {
+  const h = Number(hailIn);
+  if (!Number.isFinite(h) || h <= 0) return 3000; // default
+  // 0.5" ~ 5km, 1" ~ 10km, 2" ~ 20km, 3" ~ 30km (simple, readable scaling)
+  return Math.max(2000, Math.min(40000, h * 10000));
+}
+
+function hailInToColor(hailIn) {
+  const h = Number(hailIn);
+  if (!Number.isFinite(h)) return "#00e5ff";
+  if (h >= 3) return "#ff00ff";
+  if (h >= 2) return "#ff3b30";
+  if (h >= 1.5) return "#ff9500";
+  if (h >= 1) return "#ffd60a";
+  return "#00e5ff";
+}
+
+/**
+ * Creates an elongated ellipse-like polygon oriented ~45° (NW-SE storm track).
+ * Returns a GeoJSON Polygon geometry.
+ */
+function makeSwathPolygon(lat, lng, hailSizeIn) {
+  const h = Number(hailSizeIn);
+  // Width scales with hail size: base 0.5 km + 0.4 km per inch; default 1" if unknown
+  const widthKm = 0.5 + (Number.isFinite(h) && h > 0 ? h : 1) * 0.4;
+  // Length is 3× width (typical storm track aspect ratio)
+  const lengthKm = widthKm * 3;
+  const angleRad = Math.PI / 4; // 45° NW-SE orientation (typical storm track)
+  const numPoints = 20; // polygon vertex count: smooth enough, minimal overhead
+  // Approximate geodetic conversion factors
+  const KM_PER_DEG_LAT = 110.574;
+  const kmPerDegLng = 111.320 * Math.cos(lat * Math.PI / 180);
+
+  const coords = [];
+  for (let i = 0; i <= numPoints; i++) {
+    const t = (2 * Math.PI * i) / numPoints;
+    // Ellipse in local coords (x = along-track, y = cross-track)
+    const ex = (lengthKm / 2) * Math.cos(t);
+    const ey = (widthKm / 2) * Math.sin(t);
+    // Rotate by angleRad
+    const rx = ex * Math.cos(angleRad) - ey * Math.sin(angleRad);
+    const ry = ex * Math.sin(angleRad) + ey * Math.cos(angleRad);
+    // Convert km offsets to lat/lng
+    const dLat = ry / KM_PER_DEG_LAT;
+    const dLng = rx / kmPerDegLng;
+    coords.push([lng + dLng, lat + dLat]);
+  }
+  return { type: "Polygon", coordinates: [coords] };
+}
+
+function drawLsrPointsOnMap(points) {
+  cleanLsrOverlays();
+  const map = App.map;
+  if (!map) return;
+
+  const bounds = new google.maps.LatLngBounds();
+
+  // Use a single Data layer for all swath polygons so they can be cleaned up together
+  const swathData = new google.maps.Data({ map });
+
+  (points || []).forEach(p => {
+    const lat = Number(p.lat);
+    const lon = Number(p.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+
+    const hailIn = Number(p.hail_in);
+    const color = hailInToColor(hailIn);
+
+    const center = { lat, lng: lon };
+    bounds.extend(center);
+
+    let when = "";
+    try {
+      when = p.event_time ? new Date(p.event_time).toLocaleString() : "";
+    } catch {}
+
+    const geom = makeSwathPolygon(lat, lon, hailIn);
+    swathData.addGeoJson({
+      type: "Feature",
+      geometry: geom,
+      properties: {
+        color,
+        hailIn: Number.isFinite(hailIn) ? hailIn : null,
+        when,
+        lat,
+        lon,
+      }
+    });
+  });
+
+  swathData.setStyle(feature => {
+    const color = feature.getProperty("color") || "#00e5ff";
+    return {
+      fillColor: color,
+      fillOpacity: 0.55,
+      strokeColor: "#ffffff",
+      strokeOpacity: 0.8,
+      strokeWeight: 1,
+      zIndex: 999999,
+    };
+  });
+
+  swathData.addListener("click", event => {
+    const hailIn = event.feature.getProperty("hailIn");
+    const when = event.feature.getProperty("when");
+    const lat = event.feature.getProperty("lat");
+    const lon = event.feature.getProperty("lon");
+    const info = new google.maps.InfoWindow({
+      content: `
+        <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; font-size: 13px; line-height: 1.35;">
+          <div><b>Hail:</b> ${hailIn != null ? hailIn : "?"}"</div>
+          <div><b>Time:</b> ${when}</div>
+          <div><b>Lat/Lon:</b> ${Number(lat).toFixed(3)}, ${Number(lon).toFixed(3)}</div>
+        </div>
+      `,
+      position: event.latLng,
+    });
+    try { info.open(map); } catch {}
+  });
+
+  window._lsrOverlays = window._lsrOverlays || [];
+  window._lsrOverlays.push(swathData);
+
+  // Only auto-zoom if we actually drew something
+  try {
+    if (points && points.length) map.fitBounds(bounds, 40);
+  } catch {}
+}
+
+async function fetchLsrPointsByDate(dateDash) {
+  const url = `${SUPABASE_URL}/functions/v1/hail-lsr-by-date?date=${encodeURIComponent(dateDash)}`;
+  const resp = await fetch(url, {
+    headers: { apikey: SUPABASE_ANON_KEY }
+  });
+  const raw = await resp.text();
+  if (!resp.ok) throw new Error(`hail-lsr-by-date HTTP ${resp.status}: ${raw.slice(0, 200)}`);
+  const json = JSON.parse(raw);
+  const points = Array.isArray(json?.points) ? json.points : [];
+  drawLsrPointsOnMap(points);
+  return points;
+}
+
+async function drawLsrPointsFallbackForDate(dateDash) {
+  if (!dateDash) return 0;
+  if (!App.map || !window.google?.maps) return 0;
+
+  let points = [];
+  try {
+    points = await fetchLsrPointsByDate(dateDash);
+  } catch (e) {
+    console.warn("[LSR] fetch failed", e);
+    return 0;
+  }
+
+  try { drawLsrPointsOnMap(points); } catch {}
+  return Array.isArray(window._lsrOverlays) ? window._lsrOverlays.length : 0;
+}
+
+function dateDashToYmd(dateDash) {
+  if (!dateDash) return "";
+  if (/^\d{8}$/.test(dateDash)) return dateDash;
+  const m = String(dateDash).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return "";
+  return `${m[1]}${m[2]}${m[3]}`;
+}
+
+function wktShapeToGeoJson(shape) {
+  if (!shape) return null;
+  const s = String(shape).trim();
+  if (!s) return null;
+
+  const upper = s.toUpperCase();
+  const parseCoordPair = (pair) => {
+    const parts = pair.trim().split(/\s+/);
+    if (parts.length < 2) return null;
+    const lon = Number(parts[0]);
+    const lat = Number(parts[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    return [lon, lat];
+  };
+  const parseRing = (ringStr) => {
+    const pts = ringStr.split(",").map(parseCoordPair).filter(Boolean);
+    return pts.length ? pts : null;
+  };
+
+  // POINT(lon lat)
+  if (upper.startsWith("POINT")) {
+    const m = s.match(/POINT\s*\(\s*([+-]?\d+(?:\.\d+)?)\s+([+-]?\d+(?:\.\d+)?)\s*\)/i);
+    if (!m) return null;
+    const lon = Number(m[1]);
+    const lat = Number(m[2]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    return { type: "Point", coordinates: [lon, lat] };
+  }
+
+  // POLYGON((ring),(hole))
+  if (upper.startsWith("POLYGON")) {
+    const start = s.indexOf("((");
+    const end = s.lastIndexOf("))");
+    if (start < 0 || end < 0 || end <= start + 1) return null;
+    const inner = s.slice(start + 2, end);
+    const ringStrings = inner.split(") , (".replace(/ /g, "")); // unlikely path, keep compatibility
+    const rings = (inner.includes("),(")) ? inner.split("),(" ) : [inner];
+    const outRings = [];
+    for (const r of rings) {
+      const ring = parseRing(r.replace(/^\(|\)$/g, ""));
+      if (ring) outRings.push(ring);
+    }
+    if (!outRings.length) return null;
+    return { type: "Polygon", coordinates: outRings };
+  }
+
+  // MULTIPOLYGON(((...)),((...)))
+  if (upper.startsWith("MULTIPOLYGON")) {
+    const start = s.indexOf("((");
+    const end = s.lastIndexOf("))");
+    if (start < 0 || end < 0 || end <= start + 1) return null;
+    let inner = s.slice(start, end + 2);
+    inner = inner.replace(/^MULTIPOLYGON\s*/i, "").trim();
+    inner = inner.replace(/^\(/, "").replace(/\)$/, "");
+
+    const polygonParts = inner.split(")),((");
+    const polys = [];
+    for (let part of polygonParts) {
+      part = part.replace(/^\(\(/, "").replace(/\)\)$/, "");
+      const rings = (part.includes("),(")) ? part.split("),(" ) : [part];
+      const outRings = [];
+      for (const r of rings) {
+        const ring = parseRing(r.replace(/^\(|\)$/g, ""));
+        if (ring) outRings.push(ring);
+      }
+      if (outRings.length) polys.push(outRings);
+    }
+    if (!polys.length) return null;
+    return { type: "MultiPolygon", coordinates: polys };
+  }
+
+  return null;
+}
+
+async function loadHailReports(dateDash) {
+  return drawLsrPointsFallbackForDate(dateDash);
+}
+
+async function loadRadarSwaths(dateDash, layer) {
+  if (!dateDash) return 0;
+  if (!layer || typeof layer.addGeoJson !== "function") return 0;
+
+  const ymd = dateDashToYmd(dateDash);
+  if (!ymd) {
+    console.warn("[RADAR] invalid dateDash", dateDash);
+    return 0;
+  }
+
+  // Try to get bbox from selected state first, then fall back to map bounds
+  let bbox = null;
+  const st = (typeof getSelectedStateCode === "function") ? getSelectedStateCode() : "";
+  if (st) {
+    try { bbox = await getBboxForSelectedState(st); } catch {}
+  }
+  if (!bbox && App.map) {
+    try {
+      const b = App.map.getBounds();
+      if (b) {
+        const sw = b.getSouthWest();
+        const ne = b.getNorthEast();
+        bbox = `${sw.lng().toFixed(4)},${sw.lat().toFixed(4)},${ne.lng().toFixed(4)},${ne.lat().toFixed(4)}`;
+      }
+    } catch {}
+  }
+  if (!bbox) {
+    // Default to CONUS bounding box if all else fails
+    bbox = "-125.0,24.0,-66.0,50.0";
+  }
+
+  const resp = await fetchNoaaHailReports({ mode: "radar", start: ymd, end: ymd, bbox });
+  const storms = Array.isArray(resp?.storms) ? resp.storms : [];
+  let added = 0;
+
+  for (const s of storms) {
+    const props = s?.props || {};
+    const shape = props.SHAPE || props.shape || null;
+    const geom = wktShapeToGeoJson(shape) || (Number.isFinite(Number(s?.lon)) && Number.isFinite(Number(s?.lat))
+      ? { type: "Point", coordinates: [Number(s.lon), Number(s.lat)] }
+      : null);
+    if (!geom) continue;
+
+    try {
+      layer.addGeoJson({
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            geometry: geom,
+            properties: Object.assign({ dateDash }, props)
+          }
+        ]
+      });
+      added++;
+    } catch (e) {
+      // Ignore bad geometries; keep going
+    }
+  }
+
+  console.log("[RADAR] added features:", added);
+  return added;
+}
+
+async function showHailSwathsForDate(dateDash, opts = {}) {
+  if (!dateDash) return;
+  if (!App.map && typeof initMap === "function") initMap();
+  if (!App.map || !window.google?.maps) return;
+
+  try { clearStormMarkers(); } catch {}
+  if (opts.additive !== true) {
+    try { clearLsrOverlays(); } catch {}
+  }
+
+  if (opts.additive !== true) {
+    try {
+      (App.reportCircles || []).forEach((c) => {
+        try { c.setMap && c.setMap(null); } catch {}
+      });
+    } catch {}
+    App.reportCircles = [];
+  }
+
+  if (opts.additive !== true) {
+    try {
+      if (App.recentsSwathLayer) {
+        App.recentsSwathLayer.setMap(null);
+        App.recentsSwathLayer = null;
+      }
+    } catch {}
+
+    try {
+      if (App.swathLayersByDate) {
+        Object.keys(App.swathLayersByDate).forEach((k) => {
+          try { App.swathLayersByDate[k]?.setMap(null); } catch {}
+          delete App.swathLayersByDate[k];
+        });
+      }
+    } catch {}
+
+    try {
+      if (App.selectedDates && typeof App.selectedDates.clear === "function") {
+        App.selectedDates.clear();
+      }
+    } catch {}
+  }
+
+  const layer = new google.maps.Data({ map: App.map });
+  layer.setStyle({
+    fillColor: "#00c2ff",
+    fillOpacity: 0.22,
+    strokeColor: "#ffffff",
+    strokeOpacity: 0.9,
+    strokeWeight: 2,
+  });
+  if (opts.additive === true) {
+    App.swathLayersByDate[dateDash] = layer;
+  } else {
+    App.recentsSwathLayer = layer;
+  }
+
+  console.log("[SWATH_CLICK] dateDash=", dateDash);
+
+  // Load both: (1) hail reports (LSR points) and (2) radar swaths via NOAA proxy
+  await Promise.all([
+    (async () => {
+      try {
+        await loadHailReports(dateDash);
+      } catch (e) {
+        console.error("[SWATH] LSR draw failed", e);
+      }
+    })(),
+    (async () => {
+      try {
+        await loadRadarSwaths(dateDash, layer);
+      } catch (e) {
+        console.error("[SWATH] Radar swath load failed", e);
+      }
+    })(),
+  ]);
+
+  if (opts.additive !== true) {
+    let hasAny = Array.isArray(App.reportCircles) && App.reportCircles.length > 0;
+    if (!hasAny) {
+      try { layer.forEach(() => { hasAny = true; }); } catch {}
+    }
+    if (!hasAny) {
+      try { await loadHailReports(dateDash); } catch {}
+    }
+  }
+
+  try {
+    const bounds = new google.maps.LatLngBounds();
+    layer.forEach((feature) => {
+      const g = feature.getGeometry();
+      if (g && typeof g.forEachLatLng === "function") {
+        g.forEachLatLng((latLng) => bounds.extend(latLng));
+      }
+    });
+    if (!bounds.isEmpty()) App.map.fitBounds(bounds);
+  } catch {}
+}
+
+async function loadRecentEventsPage(pageIndex) {
+  const pageSize = 5;
+  const idx = Math.max(0, Number(pageIndex) || 0);
+  App.recentsPageIndex = idx;
+
+  App.recentsPages = App.recentsPages || {};
+  App.recentsPageLastDoc = App.recentsPageLastDoc || {};
+  App.recentsHasNext = App.recentsHasNext || {};
+
+  const listEl = document.getElementById("recentEventsList");
+  const prevBtn = document.getElementById("recentEventsPrev");
+  const nextBtn = document.getElementById("recentEventsNext");
+
+  if (prevBtn) prevBtn.disabled = idx <= 0;
+  if (nextBtn) nextBtn.disabled = true;
+
+  if (App.recentsPages[idx]) {
+    const items = App.recentsPages[idx];
+    renderNewRecentRows(items, idx, pageSize);
+    if (listEl) {
+      listEl.innerHTML = "";
+      items.forEach((it) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "recent-event-row";
+        btn.textContent = it.dateDash;
+        btn.addEventListener("click", () => {
+          console.log('[RECENTS] Click date', it.dateDash);
+          showHailSwathsForDate(it.dateDash);
+        });
+        listEl.appendChild(btn);
+      });
+    }
+    if (nextBtn) nextBtn.disabled = !(App.recentsHasNext && App.recentsHasNext[idx] === true);
+    return;
+  }
+
+  const res = await fetchStormDatesPage(idx, pageSize);
+  const items = res.items || [];
+
+  App.recentsPages[idx] = items;
+  App.recentsHasNext[idx] = (res.hasNext === true);
+
+  console.log('[RECENTS] Loaded', items.length, 'events for page', idx);
+
+  if (listEl) {
+    listEl.innerHTML = "";
+    items.forEach((it) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "recent-event-row";
+      btn.textContent = it.dateDash;
+      btn.addEventListener("click", () => {
+        console.log('[RECENTS] Click date', it.dateDash);
+        showHailSwathsForDate(it.dateDash);
+      });
+      listEl.appendChild(btn);
+    });
+  }
+
+  if (prevBtn) prevBtn.disabled = idx <= 0;
+  if (nextBtn) nextBtn.disabled = !(App.recentsHasNext && App.recentsHasNext[idx] === true);
+
+  renderNewRecentRows(items, idx, pageSize);
 }
 
 /* =========================================================
@@ -2271,49 +4827,206 @@ window.initMap = function initMap() {
   if (!mapEl) return;
   if (App.map) return;
 
+  const brightHybridStyles = [
+    {
+      elementType: "geometry",
+      stylers: [{ lightness: 35 }, { contrast: -25 }, { saturation: 20 }],
+    },
+    {
+      elementType: "labels.text.fill",
+      stylers: [{ lightness: 25 }],
+    },
+    {
+      elementType: "labels.text.stroke",
+      stylers: [{ lightness: -15 }],
+    },
+    {
+      featureType: "water",
+      elementType: "geometry",
+      stylers: [{ color: "#6bb6ff" }, { lightness: 35 }, { saturation: 25 }],
+    },
+  ];
+
   App.map = new google.maps.Map(mapEl, {
     center: { lat: 39.5, lng: -98.35 },
     zoom: 4,
-    mapTypeId: "roadmap",
+    mapTypeId: google.maps.MapTypeId.HYBRID,
+    styles: brightHybridStyles,
+    zoomControl: false,
     streetViewControl: false,
-    fullscreenControl: true,
+    mapTypeControl: false,
+    fullscreenControl: false,
   });
+
+  App.map.setOptions({ mapTypeControl: false });
+
+  const map = App.map;
+  const killMapTypeUI = () => {
+    try {
+      const pos = google.maps.ControlPosition;
+      // Clear common stacks where MapType UI gets injected
+      map.controls[pos.TOP_LEFT]?.clear?.();
+      map.controls[pos.LEFT_TOP]?.clear?.();
+      map.controls[pos.TOP_RIGHT]?.clear?.();
+      // Fallback: remove any injected DOM node if it still exists
+      document.querySelectorAll('.gm-style-mtc').forEach(n => n.remove());
+    } catch {}
+  };
+
+  killMapTypeUI();
+  google.maps.event.addListenerOnce(map, 'idle', killMapTypeUI);
+  google.maps.event.addListenerOnce(map, 'tilesloaded', killMapTypeUI);
+
+  // Re-apply bright HYBRID styles on first idle so they stick.
+  google.maps.event.addListenerOnce(map, 'idle', () => {
+    try {
+      map.setOptions({
+        mapTypeId: google.maps.MapTypeId.HYBRID,
+        styles: brightHybridStyles,
+      });
+    } catch {}
+  });
+
+  // HARD-KILL: built-in Google MapType control (keeps reappearing)
+  (function hardKillMapTypeControl(container) {
+    if (!container) return;
+
+    const kill = () => {
+      container.querySelectorAll('.gm-style-mtc, .gm-style .gm-style-mtc').forEach((el) => el.remove());
+    };
+
+    kill();
+    const observer = new MutationObserver(() => kill());
+    observer.observe(container, { childList: true, subtree: true });
+  })(mapEl);
+
+  App.map.setZoom(5);
+
+  // Custom Map/Satellite control (LEFT_TOP)
+  (function addCustomMapTypeControl(map) {
+    const controlDiv = document.createElement("div");
+    controlDiv.className = "gm-custom-maptype";
+
+    const tabs = document.createElement("div");
+    tabs.className = "gm-custom-maptype-tabs";
+
+    const btnMap = document.createElement("button");
+    btnMap.type = "button";
+    btnMap.textContent = "Map";
+
+    const btnSat = document.createElement("button");
+    btnSat.type = "button";
+    btnSat.textContent = "Satellite";
+
+    tabs.appendChild(btnMap);
+    tabs.appendChild(btnSat);
+
+    const options = document.createElement("div");
+    options.className = "gm-custom-maptype-options";
+
+    const mkRow = (labelText) => {
+      const row = document.createElement("label");
+      row.className = "gm-custom-maptype-opt";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      const span = document.createElement("span");
+      span.textContent = labelText;
+      row.appendChild(cb);
+      row.appendChild(span);
+      return { row, cb };
+    };
+
+    const terrainRow = mkRow("Terrain");
+    const labelsRow = mkRow("Labels");
+    options.appendChild(terrainRow.row);
+    options.appendChild(labelsRow.row);
+
+    controlDiv.appendChild(tabs);
+    controlDiv.appendChild(options);
+
+    map.controls[google.maps.ControlPosition.LEFT_TOP].push(controlDiv);
+
+    const state = {
+      tab: "map",
+      terrain: false,
+      labels: false,
+    };
+
+    const syncUI = () => {
+      btnMap.classList.toggle("active", state.tab === "map");
+      btnSat.classList.toggle("active", state.tab === "satellite");
+      terrainRow.cb.checked = !!state.terrain;
+      labelsRow.cb.checked = !!state.labels;
+      labelsRow.cb.disabled = (state.tab !== "satellite");
+      labelsRow.row.classList.toggle("disabled", labelsRow.cb.disabled);
+    };
+
+    const applyMapType = () => {
+      if (state.terrain) {
+        map.setMapTypeId("terrain");
+        return;
+      }
+
+      if (state.tab === "map") {
+        map.setMapTypeId("roadmap");
+        return;
+      }
+
+      // Satellite tab
+      map.setMapTypeId(state.labels ? "hybrid" : "satellite");
+    };
+
+    btnMap.addEventListener("click", () => {
+      state.tab = "map";
+      syncUI();
+      applyMapType();
+    });
+
+    btnSat.addEventListener("click", () => {
+      state.tab = "satellite";
+      syncUI();
+      applyMapType();
+    });
+
+    terrainRow.cb.addEventListener("change", () => {
+      state.terrain = !!terrainRow.cb.checked;
+      syncUI();
+      applyMapType();
+    });
+
+    labelsRow.cb.addEventListener("change", () => {
+      state.labels = !!labelsRow.cb.checked;
+      syncUI();
+      applyMapType();
+    });
+
+    // Initialize state from current map type
+    const initial = String(map.getMapTypeId() || "roadmap").toLowerCase();
+    if (initial === "terrain") {
+      state.terrain = true;
+      state.tab = "map";
+    } else if (initial === "satellite") {
+      state.tab = "satellite";
+      state.labels = false;
+    } else if (initial === "hybrid") {
+      state.tab = "satellite";
+      state.labels = true;
+    } else {
+      state.tab = "map";
+    }
+
+    syncUI();
+  })(App.map);
 
   App.geocoder = new google.maps.Geocoder();
 
   App.infoWindow = new google.maps.InfoWindow();
 
-  // Add click listener for house inspection
+  // Add click listener: show property image and nearby storms in the glass panel
   App.map.addListener('click', (e) => {
-    if (App.map.getZoom() >= 17) {
-      const lat = e.latLng.lat();
-      const lng = e.latLng.lng();
-
-      let infoText = '';
-      if (App.activeStorm) {
-        const stormDate = App.activeStorm.dateKey ? new Date(App.activeStorm.dateKey + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : formatStormDate(App.activeStorm);
-        const hailText = App.activeStorm.maxHail || 'N/A';
-        const windText = App.activeStorm.maxWind || 'N/A';
-        infoText = `
-          <div>Storm date: ${stormDate}</div>
-          <div>Hail size: ${hailText}</div>
-          <div>Wind speed: ${windText}</div>
-        `;
-      } else {
-        infoText = '<div>No storm selected.</div>';
-      }
-
-      const content = `
-        <div style="font-family: Poppins, sans-serif; padding: 10px;">
-          ${infoText}
-          <button onclick="getDirectionsToHouse(${lat}, ${lng})" style="display: block; margin-bottom: 5px; padding: 8px 12px; background: #38bdf8; color: white; border: none; border-radius: 4px; cursor: pointer;">Get directions</button>
-          <button onclick="startInspection(${lat}, ${lng})" style="display: block; padding: 8px 12px; background: #0ea5e9; color: white; border: none; border-radius: 4px; cursor: pointer;">Start inspection</button>
-        </div>
-      `;
-      App.infoWindow.setContent(content);
-      App.infoWindow.setPosition(e.latLng);
-      App.infoWindow.open(App.map);
-    }
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+    showPropertyPanel(lat, lng);
   });
 }
 
@@ -2323,9 +5036,110 @@ function getDirectionsToHouse(lat, lng) {
 }
 
 function startInspection(lat, lng) {
-  // Placeholder function for starting inspection
-  console.log('Starting inspection at', lat, lng);
-  // TODO: Implement inspection logic
+  const inspLat = lat != null ? lat : App._lastClickedLat;
+  const inspLng = lng != null ? lng : App._lastClickedLng;
+  if (inspLat != null && inspLng != null) {
+    console.log('Starting inspection at', inspLat, inspLng);
+    // Show a non-blocking status message in the property address area
+    const addrEl = document.getElementById('propertyAddress');
+    if (addrEl) {
+      const prev = addrEl.textContent;
+      addrEl.textContent = `Inspection started at ${inspLat.toFixed(5)}, ${inspLng.toFixed(5)}`;
+      setTimeout(() => { if (addrEl.textContent.startsWith('Inspection started')) addrEl.textContent = prev; }, 3000);
+    }
+  }
+}
+
+async function showPropertyPanel(lat, lng) {
+  // Store for Get Directions / Start Inspection buttons
+  App._lastClickedLat = lat;
+  App._lastClickedLng = lng;
+
+  const panel = document.getElementById('propertyPanel');
+  const imgEl = document.getElementById('propertyImage');
+  const addrEl = document.getElementById('propertyAddress');
+  const stormsList = document.getElementById('propertyStormsList');
+
+  if (!panel) return;
+
+  // Show the panel immediately
+  panel.style.display = 'block';
+  if (addrEl) addrEl.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  if (stormsList) stormsList.innerHTML = '<div style="color:#aaa;font-size:12px;">Loading nearby storms…</div>';
+
+  // Use Google Maps Static API for a satellite image of the property
+  const zoom = Math.min(18, Math.max(14, App.map ? App.map.getZoom() : 17));
+  const staticUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=320x180&maptype=satellite&markers=color:red%7C${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`;
+  if (imgEl) {
+    imgEl.src = staticUrl;
+    imgEl.style.display = 'block';
+  }
+
+  // Reverse geocode to get the address
+  try {
+    if (App.geocoder) {
+      App.geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === 'OK' && results && results[0] && addrEl) {
+          addrEl.textContent = results[0].formatted_address;
+        }
+      });
+    }
+  } catch {}
+
+  // Wire up Get Directions and Start Inspection buttons in the navrow
+  const getDirBtn = document.getElementById('glassNavGetDirections');
+  const startInspBtn = document.getElementById('glassNavStartInspection');
+  if (getDirBtn) {
+    getDirBtn.onclick = () => getDirectionsToHouse(lat, lng);
+  }
+  if (startInspBtn) {
+    startInspBtn.onclick = () => startInspection(lat, lng);
+  }
+
+  // Fetch recent storms near this point via Supabase hail-near-point
+  try {
+    const url = `${SUPABASE_URL}/functions/v1/hail-near-point?lat=${lat}&lng=${lng}`;
+    const resp = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY } });
+    const data = resp.ok ? await resp.json() : null;
+    const dates = (data?.dates || []).slice(0, 8);
+
+    if (stormsList) {
+      stormsList.innerHTML = '';
+      if (dates.length === 0) {
+        // Fall back to showing dates from the current recents list
+        const recentItems = App.recentsPages ? Object.values(App.recentsPages).flat() : [];
+        const fallbackDates = recentItems.slice(0, 5).map(it => it.dateDash).filter(Boolean);
+        if (fallbackDates.length) {
+          fallbackDates.forEach(d => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'ht-date-item';
+            row.textContent = d;
+            row.style.fontSize = '12px';
+            row.style.padding = '6px 10px';
+            row.addEventListener('click', () => showHailSwathsForDate(d));
+            stormsList.appendChild(row);
+          });
+        } else {
+          stormsList.innerHTML = '<div style="color:#aaa;font-size:12px;">No storm data available near this location.</div>';
+        }
+      } else {
+        dates.forEach(d => {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'ht-date-item';
+          row.textContent = d;
+          row.style.fontSize = '12px';
+          row.style.padding = '6px 10px';
+          row.addEventListener('click', () => showHailSwathsForDate(d));
+          stormsList.appendChild(row);
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('[PROPERTY] hail-near-point failed', err);
+    if (stormsList) stormsList.innerHTML = '<div style="color:#aaa;font-size:12px;">Could not load nearby storm data.</div>';
+  }
 }
 
 function formatStormDate(storm) {
@@ -2374,8 +5188,8 @@ async function fetchNoaaHailReports(overrides = {}) {
   const overrideBbox = overrides.bbox || "";
 
   // Compute mode
-  const mode = overrides.mode === "reports" ? "reports"
-             : (urlParams.get("mode") === "reports" ? "reports" : "radar");
+  const modeRaw = String(overrideMode || urlParams.get("mode") || "radar").trim().toLowerCase();
+  const mode = (modeRaw === "reports") ? "reports" : "radar";
 
   // Added logging after mode is computed
   console.log("[FETCH NOAA] mode =", mode, "overrideMode =", overrides.mode, "urlParamMode =", urlParams.get("mode"));
@@ -2610,7 +5424,7 @@ function setStormDateOptions(datesDash, append = false) {
   if (!append) {
     const opt0 = document.createElement("option");
     opt0.value = "";
-    opt0.textContent = "Select a date…";
+    opt0.textContent = "Select a dateâ€¦";
     dateSelect.appendChild(opt0);
   }
 
@@ -2916,7 +5730,7 @@ async function onStateChanged() {
       setDateStatus("Enter a city to filter dates.");
       if (dateSelect) {
         dateSelect.disabled = true;
-        dateSelect.innerHTML = '<option value="">Enter a city first…</option>';
+        dateSelect.innerHTML = '<option value="">Enter a city firstâ€¦</option>';
       }
       return;
     }
@@ -3258,10 +6072,10 @@ function renderStormList() {
       div.className = "stormbait-item";
       div.textContent =
         (s.dateString || "") +
-        " • " +
+        " â€¢ " +
         (s.name || "Storm") +
-        (s.city ? " – " + s.city : "") +
-        (typeof s.avgValue === "number" ? " • $" + s.avgValue.toLocaleString() : "");
+        (s.city ? " â€“ " + s.city : "") +
+        (typeof s.avgValue === "number" ? " â€¢ $" + s.avgValue.toLocaleString() : "");
 
       div.dataset.stormId = s.id;
 
@@ -3315,7 +6129,7 @@ async function loadStormsForSelection() {
   }
 
   if (App.els.stormListPanel) App.els.stormListPanel.style.display = "flex";
-  if (App.els.mapStatus) App.els.mapStatus.textContent = `Loading storms for ${state} (${type})…`;
+  if (App.els.mapStatus) App.els.mapStatus.textContent = `Loading storms for ${state} (${type})â€¦`;
   if (App.els.stormList) App.els.stormList.innerHTML = "";
 
   if (!window.db) {
@@ -3332,7 +6146,7 @@ async function loadStormsForSelection() {
 
   try {
     if (state === 'TX' && type === 'hail') {
-      if (App.els.mapStatus) App.els.mapStatus.textContent = "Loading storm dates…";
+      if (App.els.mapStatus) App.els.mapStatus.textContent = "Loading storm datesâ€¦";
       const hailReports = await fetchNoaaHailReports();
       App.noaaReports = hailReports;
       const dateKeys = [...new Set(hailReports.map(r => r.VALID_TIME.split('T')[0]))];
@@ -3623,7 +6437,7 @@ function wireAuth() {
       return;
     }
 
-    setAuthStatus("Signing in…", false);
+    setAuthStatus("Signing inâ€¦", false);
     if (loginBtn) loginBtn.disabled = true;
 
     window.auth.signInWithEmailAndPassword(email, pass)
@@ -3734,7 +6548,7 @@ function wireMapControls() {
           storm.lat = lat;
           storm.lng = lng;
         } else {
-          if (App.els.mapStatus) App.els.mapStatus.textContent = "No coordinates for this storm — can’t zoom.";
+          if (App.els.mapStatus) App.els.mapStatus.textContent = "No coordinates for this storm â€” canâ€™t zoom.";
           return;
         }
       }
@@ -3789,6 +6603,14 @@ function wireMapControls() {
 
   document.getElementById("range12")?.addEventListener("click", () => {
     console.log("[DATE RANGE] load next 6 months clicked");
+  });
+
+  document.getElementById("recentEventsPrev")?.addEventListener("click", () => {
+    loadRecentEventsPage((App.recentsPageIndex || 0) - 1);
+  });
+
+  document.getElementById("recentEventsNext")?.addEventListener("click", () => {
+    loadRecentEventsPage((App.recentsPageIndex || 0) + 1);
   });
 
   document.getElementById("radiusSelect")?.addEventListener("change", () => {
@@ -3906,6 +6728,22 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (document.getElementById("stormListPanel")) {
    document.getElementById("stormListPanel").style.display = "block";
   }
+
+
+  // Wire up sidebar category tabs
+  document.querySelectorAll('.sidebar-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      // Remove active class from all tabs
+      document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+      // Add active class to clicked tab
+      this.classList.add('active');
+      
+      const tabType = this.dataset.tab;
+      console.log('Switched to tab:', tabType);
+      
+      // TODO: Show/hide content panels when ready
+    });
+  });
 
   // No NOAA/proxy preloads allowed before Get Dates click
 });

@@ -3,6 +3,7 @@
     "source": "functions"
   },
   "hosting": {
+    "site": "hailmoneymap",
     "public": "public",
     "ignore": [
       "firebase.json",
@@ -24,5 +25,3 @@
     }
   }
 }
-
-

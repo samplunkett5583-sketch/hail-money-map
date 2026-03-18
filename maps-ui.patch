@@ -1,0 +1,283 @@
+﻿diff --git a/public/index.html b/public/index.html
+index 960fb5c..5e79941 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -228,10 +228,12 @@
+       justify-content: space-between;
+       padding: 10px 16px;
+       border-bottom: 1px solid var(--border-subtle);
+-      background: rgba(15, 23, 42, 0.98);
++      background: rgba(15, 23, 42, 0.55);
++      backdrop-filter: blur(12px);
++      -webkit-backdrop-filter: blur(12px);
+       position: sticky;
+       top: 0;
+-      z-index: 20;
++      z-index: 30;
+     }
+ 
+     .brand {
+@@ -241,6 +243,12 @@
+       display: flex;
+       align-items: center;
+       gap: 8px;
++      padding: 6px 12px;
++      border-radius: 999px;
++      background: rgba(2, 6, 23, 0.35);
++      border: 1px solid rgba(148, 163, 184, 0.35);
++      backdrop-filter: blur(10px);
++      -webkit-backdrop-filter: blur(10px);
+     }
+ 
+     .brand span:last-child {
+@@ -251,11 +259,37 @@
+       display: inline-flex;
+       align-items: center;
+       gap: 8px;
+-      background: var(--pill-bg);
++      background: rgba(2, 6, 23, 0.35);
+       border-radius: 999px;
+       padding: 4px 10px;
+       border: 1px solid var(--border-subtle);
+       font-size: 0.78rem;
++      backdrop-filter: blur(10px);
++      -webkit-backdrop-filter: blur(10px);
++    }
++
++    .topbar .pill-btn {
++      background: rgba(2, 6, 23, 0.28);
++      backdrop-filter: blur(10px);
++      -webkit-backdrop-filter: blur(10px);
++    }
++
++    /* keep Steps/Water pill aligned with header actions */
++    .topbar #wellnessPillBar.wellness-pill-bar {
++      padding: 0;
++      background: transparent;
++      flex: 1;
++      display: flex;
++      justify-content: center;
++      align-items: center;
++    }
++
++    .topbar .wellness-pill {
++      background: rgba(15, 23, 42, 0.45);
++      border: 1px solid rgba(148, 163, 184, 0.35);
++      box-shadow: 0 12px 22px rgba(15, 23, 42, 0.55);
++      backdrop-filter: blur(10px);
++      -webkit-backdrop-filter: blur(10px);
+     }
+ 
+     .role-tag {
+@@ -552,6 +586,100 @@
+       height: calc(100vh - 160px);
+     }
+ 
++    /* Maps – HailTrace-style full screen */
++    #mapsView.view {
++      max-width: none;
++      margin: 0;
++    }
++
++    #mapsView.view.active {
++      position: fixed;
++      inset: 0;
++      z-index: 5;
++    }
++
++    #mapsView .view-inner.maps-layout {
++      background: transparent;
++      border: none;
++      border-radius: 0;
++      box-shadow: none;
++      padding: 0;
++      min-height: 0;
++    }
++
++    #mapsView .maps-layout {
++      position: relative;
++      height: 100vh;
++      width: 100vw;
++      padding: 0;
++      gap: 0;
++      overflow: hidden;
++    }
++
++    #mapsView #stormMap.map-panel {
++      position: absolute;
++      inset: 0;
++      height: 100vh;
++      width: 100vw;
++      min-height: 0;
++      border-radius: 0;
++    }
++
++    #mapsView .maps-overlay-panel {
++      position: absolute;
++      top: 12px;
++      left: 12px;
++      height: calc(100vh - 24px);
++      width: 320px;
++      z-index: 25;
++      background: rgba(15, 23, 42, 0.62);
++      border: 1px solid rgba(148, 163, 184, 0.28);
++      border-radius: 16px;
++      box-shadow: 0 18px 40px rgba(2, 6, 23, 0.6);
++      backdrop-filter: blur(10px);
++      -webkit-backdrop-filter: blur(10px);
++      transform: translateX(0);
++      transition: transform 180ms ease;
++    }
++
++    #mapsView .maps-overlay-panel.collapsed {
++      transform: translateX(calc(-100% + 28px));
++    }
++
++    #mapsView .maps-overlay-inner {
++      height: 100%;
++      padding: 12px 12px 14px;
++      overflow-y: auto;
++    }
++
++    #mapsView .maps-overlay-handle {
++      position: absolute;
++      top: 50%;
++      right: -14px;
++      transform: translateY(-50%);
++      width: 28px;
++      height: 64px;
++      border-radius: 0 12px 12px 0;
++      border: 1px solid rgba(148, 163, 184, 0.35);
++      background: rgba(2, 6, 23, 0.62);
++      color: var(--text-main);
++      cursor: pointer;
++      display: grid;
++      place-items: center;
++      z-index: 30;
++    }
++
++    #mapsView .maps-overlay-handle:hover {
++      border-color: rgba(56, 189, 248, 0.55);
++      color: var(--accent);
++    }
++
++    @media (max-width: 768px) {
++      #mapsView .maps-overlay-panel {
++        width: min(92vw, 360px);
++      }
++    }
++
+     .maps-controls {
+       display: flex;
+       flex-wrap: wrap;
+@@ -1140,6 +1268,25 @@
+         <span>HAIL MONEY MAP</span>
+       </div>
+ 
++      <!-- Steps + Water pill (top of every page) -->
++      <div id="wellnessPillBar" class="wellness-pill-bar">
++        <div class="wellness-pill">
++          <span id="stepsClickable" style="cursor: pointer;">
++            🚶 <span id="stepsValueTop">0</span> /
++            <span id="stepGoalLabel">8000</span> steps
++          </span>
++
++          <span id="waterClickable" style="cursor: pointer;">
++            💧 <span id="waterValueTop">0</span> /
++            <span id="waterGoalLabel">80</span> oz
++          </span>
++
++          <button id="setGoalsBtn" class="pill-btn small-pill-btn">
++            Goals
++          </button>
++        </div>
++      </div>
++
+       <div class="top-actions">
+         <div class="user-pill">
+           <span id="userEmailLabel">user@company.com</span>
+@@ -1151,25 +1298,6 @@
+       </div>
+     </header>
+ 
+-    <!-- Steps + Water pill (top of every page) -->
+-    <div id="wellnessPillBar" class="wellness-pill-bar">
+-      <div class="wellness-pill">
+-        <span id="stepsClickable" style="cursor: pointer;">
+-          🚶 <span id="stepsValueTop">0</span> /
+-          <span id="stepGoalLabel">8000</span> steps
+-        </span>
+-
+-        <span id="waterClickable" style="cursor: pointer;">
+-          💧 <span id="waterValueTop">0</span> /
+-          <span id="waterGoalLabel">80</span> oz
+-        </span>
+-
+-        <button id="setGoalsBtn" class="pill-btn small-pill-btn">
+-          Goals
+-        </button>
+-      </div>
+-    </div>
+-
+     <main>
+ 
+  <!-- =================== HUB / DASHBOARD =================== -->
+@@ -1398,6 +1526,10 @@
+ <!-- =================== $MAPS VIEW =================== -->
+ <section id="mapsView" class="view">
+   <div class="view-inner maps-layout">
++    <div id="stormMap" class="map-panel"></div>
++    <div id="mapsLeftPanel" class="maps-overlay-panel">
++      <button id="mapsPanelToggle" class="maps-overlay-handle" type="button" aria-label="Collapse panel" aria-expanded="true">‹</button>
++      <div class="maps-overlay-inner">
+     <div class="view-header">
+       <div>
+         <h2>$Maps</h2>
+@@ -1630,18 +1762,15 @@
+       </button>
+     </div>
+ 
+-    <!-- MAP + STORM LIST -->
+-    <div class="maps-main-split">
+-      <div id="stormMap" class="map-panel"></div>
+-
+-      <div id="stormListPanel" class="storm-list-panel">
+-        <div id="mapStatus" class="map-status">
+-          Pick a state and storm type.
+-        </div>
+-        <div id="directionsArea" class="directions-area">
+-          <button id="directionsBtn" class="pill-btn" disabled>Directions</button>
+-        </div>
+-        <div id="stormList" class="storm-list"></div>
++    <div id="stormListPanel" class="storm-list-panel">
++      <div id="mapStatus" class="map-status">
++        Pick a state and storm type.
++      </div>
++      <div id="directionsArea" class="directions-area">
++        <button id="directionsBtn" class="pill-btn" disabled>Directions</button>
++      </div>
++      <div id="stormList" class="storm-list"></div>
++    </div>
+       </div>
+     </div>
+   </div>
+@@ -3902,6 +4031,19 @@ window.addEventListener("DOMContentLoaded", async () => {
+   wireAuth();
+   updateCityUiVisibility();
+ 
++  const panel = document.getElementById("mapsLeftPanel");
++  const toggle = document.getElementById("mapsPanelToggle");
++  if (panel && toggle && !toggle.dataset.bound) {
++    toggle.dataset.bound = "1";
++    toggle.addEventListener("click", () => {
++      panel.classList.toggle("collapsed");
++      const collapsed = panel.classList.contains("collapsed");
++      toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
++      toggle.setAttribute("aria-label", collapsed ? "Expand panel" : "Collapse panel");
++      toggle.textContent = collapsed ? "›" : "‹";
++    });
++  }
++
+   // Default: storm list panel hidden
+   if (document.getElementById("stormListPanel")) {
+    document.getElementById("stormListPanel").style.display = "block";

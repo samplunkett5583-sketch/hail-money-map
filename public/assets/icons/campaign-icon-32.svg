@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 1024 1024">
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="0" fill="none"/>
+  <!-- Outer circle - red ring -->
+  <circle cx="512" cy="480" r="400" fill="#f61321" opacity="0.2"/>
+  <circle cx="512" cy="480" r="400" fill="none" stroke="#f61321" stroke-width="48"/>
+  <!-- Second ring -->
+  <circle cx="512" cy="480" r="300" fill="none" stroke="#f61321" stroke-width="36" opacity="0.7"/>
+  <!-- Third ring -->
+  <circle cx="512" cy="480" r="200" fill="#f61321" opacity="0.25"/>
+  <circle cx="512" cy="480" r="200" fill="none" stroke="#f61321" stroke-width="28"/>
+  <!-- Inner circle - solid red -->
+  <circle cx="512" cy="480" r="100" fill="#f61321"/>
+  <!-- Map pin / location marker (green) -->
+  <path d="M512,200 C420,200 345,278 345,375 C345,510 512,660 512,660 C512,660 679,510 679,375 C679,278 604,200 512,200 Z" fill="#589866"/>
+  <path d="M512,200 C420,200 345,278 345,375 C345,510 512,660 512,660 C512,660 679,510 679,375 C679,278 604,200 512,200 Z" fill="none" stroke="#9ad562" stroke-width="16"/>
+  <circle cx="512" cy="368" r="82" fill="#9ad562"/>
+  <circle cx="512" cy="368" r="46" fill="#15345c"/>
+  <!-- Cross-hairs -->
+  <line x1="512" y1="80" x2="512" y2="200" stroke="#f61321" stroke-width="20" stroke-linecap="round"/>
+  <line x1="512" y1="660" x2="512" y2="880" stroke="#f61321" stroke-width="20" stroke-linecap="round"/>
+  <line x1="80" y1="480" x2="345" y2="480" stroke="#f61321" stroke-width="20" stroke-linecap="round"/>
+  <line x1="679" y1="480" x2="944" y2="480" stroke="#f61321" stroke-width="20" stroke-linecap="round"/>
+  <!-- Shadow under pin -->
+  <ellipse cx="512" cy="655" rx="60" ry="18" fill="#0d2240" opacity="0.4"/>
+</svg>
