@@ -71,18 +71,18 @@ public/assets/icons/
 
 ### In HTML (head section)
 ```html
-<link rel="apple-touch-icon" sizes="180x180" href="/public/assets/icons/icon-180.svg">
-<link rel="apple-touch-icon" sizes="152x152" href="/public/assets/icons/icon-152.svg">
-<link rel="apple-touch-icon" sizes="120x120" href="/public/assets/icons/icon-120.svg">
-<link rel="icon" type="image/svg+xml" sizes="32x32" href="/public/assets/icons/icon-32.svg">
-<link rel="icon" type="image/svg+xml" sizes="16x16" href="/public/assets/icons/icon-16.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/icon-180.svg">
+<link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/icon-152.svg">
+<link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/icon-120.svg">
+<link rel="icon" type="image/svg+xml" sizes="32x32" href="/assets/icons/icon-32.svg">
+<link rel="icon" type="image/svg+xml" sizes="16x16" href="/assets/icons/icon-16.svg">
 ```
 
 ### In CSS (for UI icons)
 ```css
-.estimates-icon { content: url('/public/assets/icons/estimates-icon-24.svg'); }
-.jobs-icon      { content: url('/public/assets/icons/all_company_jobs-icon-24.svg'); }
-.campaign-icon  { content: url('/public/assets/icons/campaign-icon-24.svg'); }
+.estimates-icon { content: url('/assets/icons/estimates-icon-24.svg'); }
+.jobs-icon      { content: url('/assets/icons/all_company_jobs-icon-24.svg'); }
+.campaign-icon  { content: url('/assets/icons/campaign-icon-24.svg'); }
 ```
 
 ## Notes
