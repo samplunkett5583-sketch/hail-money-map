@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 1024 1024">
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="0" fill="none"/>
+  <!-- Clipboard board -->
+  <rect x="180" y="180" width="664" height="780" rx="48" fill="#0c73e1"/>
+  <!-- Clipboard top tab -->
+  <rect x="360" y="140" width="304" height="100" rx="30" fill="#0c73e1"/>
+  <rect x="410" y="155" width="204" height="70" rx="20" fill="#0a5fb8"/>
+  <!-- Clipboard inner background -->
+  <rect x="220" y="260" width="584" height="660" rx="24" fill="#ffffff" opacity="0.15"/>
+  <!-- Document lines -->
+  <rect x="260" y="350" width="380" height="36" rx="18" fill="#ffffff"/>
+  <rect x="260" y="430" width="480" height="30" rx="15" fill="#ffffff" opacity="0.8"/>
+  <rect x="260" y="500" width="440" height="30" rx="15" fill="#ffffff" opacity="0.8"/>
+  <rect x="260" y="570" width="460" height="30" rx="15" fill="#ffffff" opacity="0.8"/>
+  <!-- Dollar amount line -->
+  <rect x="260" y="650" width="340" height="36" rx="18" fill="#fdfe43"/>
+  <!-- Dollar sign indicator -->
+  <rect x="640" y="635" width="120" height="66" rx="22" fill="#c0eb73"/>
+  <rect x="668" y="645" width="20" height="46" rx="10" fill="#0c73e1"/>
+  <path d="M654 660 Q654 645 675 645 L 698 645 Q 714 645 714 662 Q 714 675 698 678 L 674 682 Q 658 686 658 700 Q 658 714 676 714 L 700 714 Q 714 714 714 700" stroke="#0c73e1" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <!-- Check mark -->
+  <path d="M 260 760 L 320 820 L 450 680" stroke="#9ad562" stroke-width="42" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

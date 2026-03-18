@@ -6,6 +6,12 @@
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/icon-180.svg">
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/icon-152.svg">
+  <link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/icon-120.svg">
+  <link rel="icon" type="image/svg+xml" sizes="32x32" href="/assets/icons/icon-32.svg">
+  <link rel="icon" type="image/svg+xml" sizes="16x16" href="/assets/icons/icon-16.svg">
+  <meta name="theme-color" content="#020617">
   <title>Hail Money Map â€“ Full App</title>
 
    <!-- Google Font -->
@@ -52,6 +58,8 @@
 
   const SUPABASE_URL = "https://ehegjhlkadtpnkborlbz.supabase.co";
   const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZWdqaGxrYWR0cG5rYm9ybGJ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjcwNTY2NiwiZXhwIjoyMDgyMjgxNjY2fQ.KbEohwp-boV53yY31Ut3epMtN564STGsl9T9KtFeGLQ";
+  // Google Maps API key (same key used for the Maps JS API in the <script> tag below)
+  const GOOGLE_MAPS_API_KEY = "AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I";
 
   // --- Create Supabase client ---
   window.sb = window.supabase.createClient(
@@ -588,9 +596,11 @@
 
     /* Left icon rail */
     #htIconRail {
-      width: 56px;
-      min-width: 56px;
-      background: #0b1220;
+      width: 66px;
+      min-width: 66px;
+      background: rgba(11, 18, 32, 0.65);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-right: 1px solid rgba(148, 163, 184, 0.16);
       padding: 10px 6px;
       display: flex;
@@ -600,14 +610,18 @@
     }
 
     #htIconRail .ht-rail-btn {
-      width: 42px;
-      height: 42px;
+      width: 50px;
+      height: 50px;
       border-radius: 12px;
       border: 1px solid rgba(148, 163, 184, 0.22);
       background: rgba(2, 6, 23, 0.45);
       color: #e5e7eb;
       font-weight: 600;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
     }
 
     #htIconRail .ht-rail-btn.active {
@@ -616,17 +630,20 @@
       color: #ffffff;
     }
 
-    /* Left panel */
+    #htIconRail .ht-rail-btn-bottom {
+      margin-top: auto;
+    }
+
+    #htIconRail .ht-rail-btn svg,
+    #htIconRail .ht-rail-btn img {
+      width: 32px;
+      height: 32px;
+      display: block;
+    }
+
+    /* Left panel — hidden; glass panel takes its place */
     #mapsView .ht-left-panel.ht-left-panel {
-      width: 380px;
-      min-width: 380px;
-      height: 100%;
-      border-right: 1px solid rgba(15, 23, 42, 0.12);
-      display: flex;
-      flex-direction: column;
-      padding: 12px;
-      gap: 10px;
-      overflow: hidden;
+      display: none !important;
     }
 
     #mapsView .ht-left-top {
@@ -895,10 +912,17 @@
     }
 
     #mapsMiniTabs .tab-ico {
-      width: 18px;
-      height: 18px;
-      border-radius: 6px;
-      background: rgba(15, 23, 42, 0.16);
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    #mapsMiniTabs .tab-ico img {
+      width: 20px;
+      height: 20px;
+      display: block;
     }
 
     #mapsMiniTabs .tab-txt {
@@ -1518,10 +1542,10 @@
     }
 
     #mapsView .ht-left-panel {
-      background: rgba(255,255,255,0.35) !important;
-      border: 1px solid rgba(90,90,90,0.75) !important;
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
+      background: rgba(11, 18, 32, 0.55) !important;
+      border: 1px solid rgba(200,200,200,0.18) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
     }
 
 #mapsView .ht-left-panel input,
@@ -1690,8 +1714,8 @@
 }
 
 #mapsView .ht-left-panel {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
 }
 
 /* Let panel translucency show through (kill solid child backgrounds) */
@@ -1734,10 +1758,10 @@
 }
 
 div.ht-left-panel {
-  background: rgba(255, 255, 255, 0.35) !important;
-  background-color: rgba(255, 255, 255, 0.35) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  background: rgba(11, 18, 32, 0.55) !important;
+  background-color: rgba(11, 18, 32, 0.55) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
 }
 
 #mapsView .storm-list-panel,
@@ -1748,10 +1772,10 @@ div.ht-left-panel {
 }
 
 #mapsView .ht-left-panel {
-  background: rgba(255, 255, 255, 0.35) !important;
-  background-color: rgba(255, 255, 255, 0.35) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  background: rgba(11, 18, 32, 0.55) !important;
+  background-color: rgba(11, 18, 32, 0.55) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
 }
 
 #mapsView .map-status,
@@ -1793,8 +1817,8 @@ div.ht-left-panel {
   opacity: 1 !important;
   filter: none !important;
   mix-blend-mode: normal !important;
-  background: rgba(255, 255, 255, 0.35) !important;
-  background-color: rgba(255, 255, 255, 0.35) !important;
+  background: rgba(11, 18, 32, 0.55) !important;
+  background-color: rgba(11, 18, 32, 0.55) !important;
 }
 
     /* =========================
@@ -1807,10 +1831,10 @@ div.ht-left-panel {
     #mapsView .ht-left-panel,
     #mapsView > div > div.ht-left-panel,
     div.ht-left-panel {
-      background: rgba(255,255,255,0.08) !important;
-      border: 1px solid rgba(210,210,210,0.45) !important;
-      backdrop-filter: blur(30px) saturate(160%) !important;
-      -webkit-backdrop-filter: blur(30px) saturate(160%) !important;
+      background: rgba(11, 18, 32, 0.55) !important;
+      border: 1px solid rgba(200,200,200,0.18) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
       box-shadow: none !important;
     }
 
@@ -1903,11 +1927,11 @@ div.ht-left-panel {
     #mapsView .ht-left-panel,
     #mapsView > div > div.ht-left-panel,
     div.ht-left-panel {
-      background: transparent !important;
-      background-color: transparent !important;
-      border: 1px solid rgba(200,200,200,0.45) !important;
-      backdrop-filter: blur(26px) !important;
-      -webkit-backdrop-filter: blur(26px) !important;
+      background: rgba(11, 18, 32, 0.55) !important;
+      background-color: rgba(11, 18, 32, 0.55) !important;
+      border: 1px solid rgba(200,200,200,0.18) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
       box-shadow: none !important;
     }
 
@@ -1964,52 +1988,12 @@ div.ht-left-panel {
 
     /* Left panel itself: true glass */
     #mapsView .ht-left-panel {
-      background: transparent !important;
-      background-color: transparent !important;
-      border: 1px solid rgba(200,200,200,0.45) !important;
-      backdrop-filter: blur(22px) !important;
-      -webkit-backdrop-filter: blur(22px) !important;
+      background: rgba(11, 18, 32, 0.55) !important;
+      background-color: rgba(11, 18, 32, 0.55) !important;
+      border: 1px solid rgba(200,200,200,0.18) !important;
+      backdrop-filter: blur(24px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
       box-shadow: none !important;
-    }
-
-    /* =========================
-       MAP ONLY MODE — clean layout
-       ========================= */
-
-    /* Restore the maps shell as a proper flex container */
-    #mapsView > .ht-maps-shell,
-    #mapsView > div.ht-maps-shell {
-      display: flex !important;
-      visibility: visible !important;
-      height: 100vh !important;
-      width: 100vw !important;
-    }
-
-    /* Hide the left panel; keep the icon rail */
-    #mapsView .ht-left-panel,
-    #mapsView > div > div.ht-left-panel,
-    #mapsView #stormListPanel,
-    #mapsView .ht-left-rail,
-    #mapsView .left-rail,
-    #mapsView #mapsLeftRail {
-      display: none !important;
-    }
-
-    /* Map wrap fills all remaining flex space */
-    #mapsView .ht-map-wrap {
-      flex: 1 !important;
-      height: 100% !important;
-      min-width: 0 !important;
-      position: relative !important;
-    }
-
-    /* Storm map canvas fills its container */
-    #mapsView #stormMap {
-      width: 100% !important;
-      height: 100% !important;
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
     }
 
     /* Custom Google Maps map type control (LEFT_TOP) */
@@ -2082,19 +2066,6 @@ div.ht-left-panel {
       border: 0 !important;
     }
 
-    /* Show the left vertical rail with icon buttons */
-    #mapsView #htIconRail,
-    #htIconRail {
-      display: flex !important;
-      visibility: visible !important;
-    }
-
-    #htIconRail .ht-rail-btn {
-      display: flex !important;
-      align-items: center;
-      justify-content: center;
-    }
-
     /* HARD-KILL: Google MapType control (Map / Satellite / Terrain / Labels) */
     #mapsView .gm-style .gm-style-mtc,
     #mapsView .gm-style .gmnoprint.gm-style-mtc,
@@ -2105,33 +2076,29 @@ div.ht-left-panel {
       pointer-events: none !important;
     }
 
-    /* LEFT MAP OVERLAY: two empty translucent "glass" boxes */
-    #mapsView .ht-map-wrap {
-      position: relative;
-    }
-
+    /* LEFT GLASS PANEL: absolute overlay to the right of icon rail */
     #mapsView .ht-map-glass-stack {
       position: absolute;
-      left: 18px;
       top: 0;
-      z-index: 5;
+      left: 66px; /* right of the icon rail */
+      width: 320px;
+      height: 100%;
+      z-index: 10;
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       gap: 0;
-      width: 360px;
-      height: 100vh;
-      pointer-events: none;
+      pointer-events: none; /* let map clicks through except on children */
+    }
+
+    #mapsView .ht-map-glass-stack > * {
+      pointer-events: auto;
     }
 
     #mapsView .ht-map-glass-box {
-      height: 100%;
       box-sizing: border-box;
       background: transparent;
-      border: 3px solid rgba(200, 200, 200, 0.6);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border-radius: 12px;
-      flex: 0 0 auto;
+      border: none;
+      border-radius: 0;
       position: relative;
     }
 
@@ -2146,33 +2113,43 @@ div.ht-left-panel {
       user-select: none;
     }
 
+    /* Hide the logo/swath box — the icon rail already shows these */
     #mapsView .ht-map-glass-box:first-child {
-      width: 25%;
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
+      display: none;
     }
 
-    #mapsView .ht-map-glass-box:last-child {
-      width: 75%;
-      border-left: 0;
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
-    }
-
-    #mapsView .ht-map-glass-stack {
-      pointer-events: auto;
-    }
-
-    #mapsView .ht-map-glass-box:last-child {
+    #mapsView .ht-map-glass-box:not(:first-child) {
+      display: flex;
+      flex-direction: column;
+      background: rgba(11, 18, 32, 0.62);
+      backdrop-filter: blur(22px) saturate(160%);
+      -webkit-backdrop-filter: blur(22px) saturate(160%);
+      border: 1px solid rgba(200, 200, 200, 0.18);
+      border-radius: 16px;
+      margin: 10px;
       padding: 14px;
+      gap: 10px;
+      color: #fff;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    /* Property panel image */
+    #propertyImage {
+      width: 100%;
+      border-radius: 8px;
+      display: block;
+      background: rgba(0,0,0,0.3);
+      min-height: 80px;
+      object-fit: cover;
     }
 
     #mapsView .ht-map-glass-search {
       display: block;
       width: 100%;
       box-sizing: border-box;
-      background: transparent;
-      border: 3px solid rgba(200, 200, 200, 0.6);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(148, 163, 184, 0.3);
       border-radius: 12px;
       padding: 10px 12px;
       color: #fff;
@@ -2180,7 +2157,7 @@ div.ht-left-panel {
     }
 
     #mapsView .ht-map-glass-search::placeholder {
-      color: rgba(255, 255, 255, 0.75);
+      color: rgba(255, 255, 255, 0.55);
     }
 
     #mapsView .ht-map-glass-navrow {
@@ -2206,18 +2183,20 @@ div.ht-left-panel {
       overflow: visible;
     }
 
-    #mapsView .glass-nav-item .nav-icon {
+    #mapsView .glass-nav-item svg,
+    #mapsView .glass-nav-item .nav-icon,
+    #mapsView .glass-nav-item img {
       width: 44px;
       height: 44px;
-      object-fit: contain;
       display: block;
+      flex-shrink: 0;
     }
 
     #mapsView .glass-nav-item .nav-button {
       width: 100%;
       box-sizing: border-box;
-      background: transparent;
-      border: 3px solid rgba(200, 200, 200, 0.6);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(148, 163, 184, 0.25);
       padding: 18px 10px;
       min-height: 58px;
       font-size: 14px;
@@ -2689,14 +2668,145 @@ div.ht-left-panel {
 <section id="mapsView" class="view">
   <div class="ht-maps-shell">
     <div id="htIconRail" aria-label="Maps rail">
-      <button type="button" class="ht-rail-btn active" aria-label="Swath"><img src="/assets/swath-icon.png" alt="Swath" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="Company Jobs"><img src="/assets/company-jobs-icon.png" alt="Company Jobs" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="My Jobs"><img src="/assets/my-jobs-icon.png" alt="My Jobs" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="Campaign"><img src="/assets/campaign-icon.png" alt="Campaign" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="Drone"><img src="/assets/drone-icon.png" alt="Drone" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="Calendar"><img src="/assets/calendar-icon.png" alt="Calendar" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="Downloads"><img src="/assets/downloads-icon.png" alt="Downloads" style="width:28px;height:28px;object-fit:contain;"></button>
-      <button type="button" class="ht-rail-btn" aria-label="Settings"><img src="/assets/settings-icon.png" alt="Settings" style="width:28px;height:28px;object-fit:contain;"></button>
+      <button type="button" class="ht-rail-btn active" aria-label="HMM Globe" onclick="showView('mapsView')">
+        <svg width="36" height="36" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1024" height="1024" rx="180" fill="#15345c"/>
+          <ellipse cx="512" cy="580" rx="430" ry="310" fill="#145892"/>
+          <g stroke="#1b7ec4" stroke-width="18" opacity="0.45">
+            <line x1="82" y1="430" x2="942" y2="430"/>
+            <line x1="82" y1="580" x2="942" y2="580"/>
+            <line x1="82" y1="730" x2="942" y2="730"/>
+            <line x1="250" y1="270" x2="250" y2="890"/>
+            <line x1="440" y1="270" x2="440" y2="890"/>
+            <line x1="620" y1="270" x2="620" y2="890"/>
+            <line x1="800" y1="270" x2="800" y2="890"/>
+          </g>
+          <path d="M512,180 C380,180 270,290 270,430 C270,610 512,860 512,860 C512,860 754,610 754,430 C754,290 644,180 512,180 Z" fill="#1b7ec4"/>
+          <circle cx="512" cy="415" r="155" fill="#145892"/>
+          <circle cx="512" cy="415" r="120" fill="#589866"/>
+          <circle cx="512" cy="415" r="100" fill="#9ad562"/>
+          <rect x="496" y="335" width="36" height="165" rx="18" fill="#15345c"/>
+          <path d="M 456 370 Q 456 338 492 338 L 530 338 Q 562 338 562 370 Q 562 398 530 405 L 490 412 Q 456 419 456 452 Q 456 484 490 484 L 530 484 Q 562 484 562 453" stroke="#15345c" stroke-width="30" fill="none" stroke-linecap="round"/>
+          <ellipse cx="440" cy="310" rx="55" ry="38" fill="#c0eb73" opacity="0.5"/>
+          <circle cx="210" cy="260" r="46" fill="#fdfe43"/>
+          <circle cx="155" cy="410" r="34" fill="#fdfe43"/>
+          <circle cx="185" cy="560" r="40" fill="#fdfe43"/>
+          <circle cx="815" cy="250" r="42" fill="#fdfe43"/>
+          <circle cx="875" cy="400" r="32" fill="#fdfe43"/>
+          <circle cx="845" cy="550" r="38" fill="#fdfe43"/>
+          <circle cx="360" cy="175" r="28" fill="#fdfe43"/>
+          <circle cx="680" cy="160" r="30" fill="#fdfe43"/>
+          <ellipse cx="512" cy="855" rx="55" ry="18" fill="#0d2240" opacity="0.6"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Swath Opacity" id="railSwathOpacityBtn">
+        <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="36" height="36" rx="8" fill="#0b1220"/>
+          <polygon points="18,6 30,12 18,18 6,12" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round"/>
+          <polyline points="6,18 18,24 30,18" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round" opacity="0.7"/>
+          <polyline points="6,24 18,30 30,24" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round" opacity="0.4"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="All Company Jobs">
+        <svg width="36" height="36" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1024" height="1024" rx="228" fill="#0b1220"/>
+          <rect x="312" y="200" width="400" height="720" rx="16" fill="#145892"/>
+          <rect x="110" y="360" width="220" height="560" rx="16" fill="#1b7ec4"/>
+          <rect x="694" y="320" width="220" height="600" rx="16" fill="#1b7ec4"/>
+          <rect x="60" y="910" width="904" height="32" rx="8" fill="#0c73e1"/>
+          <rect x="352" y="260" width="80" height="80" rx="8" fill="#fdfe43"/>
+          <rect x="464" y="260" width="80" height="80" rx="8" fill="#fdfe43"/>
+          <rect x="576" y="260" width="80" height="80" rx="8" fill="#c0eb73"/>
+          <rect x="352" y="380" width="80" height="80" rx="8" fill="#9ad562"/>
+          <rect x="464" y="380" width="80" height="80" rx="8" fill="#c0eb73"/>
+          <rect x="576" y="380" width="80" height="80" rx="8" fill="#fdfe43"/>
+          <rect x="352" y="500" width="80" height="80" rx="8" fill="#c0eb73"/>
+          <rect x="464" y="500" width="80" height="80" rx="8" fill="#fdfe43"/>
+          <rect x="576" y="500" width="80" height="80" rx="8" fill="#9ad562"/>
+          <rect x="444" y="780" width="136" height="140" rx="12" fill="#0a5fb8"/>
+          <rect x="148" y="400" width="66" height="66" rx="8" fill="#fdfe43"/>
+          <rect x="234" y="400" width="66" height="66" rx="8" fill="#c0eb73"/>
+          <rect x="148" y="500" width="66" height="66" rx="8" fill="#c0eb73"/>
+          <rect x="234" y="500" width="66" height="66" rx="8" fill="#fdfe43"/>
+          <rect x="148" y="600" width="66" height="66" rx="8" fill="#fdfe43"/>
+          <rect x="234" y="600" width="66" height="66" rx="8" fill="#9ad562"/>
+          <rect x="730" y="360" width="66" height="66" rx="8" fill="#fdfe43"/>
+          <rect x="816" y="360" width="66" height="66" rx="8" fill="#c0eb73"/>
+          <rect x="730" y="460" width="66" height="66" rx="8" fill="#c0eb73"/>
+          <rect x="816" y="460" width="66" height="66" rx="8" fill="#fdfe43"/>
+          <rect x="730" y="560" width="66" height="66" rx="8" fill="#fdfe43"/>
+          <rect x="816" y="560" width="66" height="66" rx="8" fill="#9ad562"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="My Jobs">
+        <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="36" height="36" rx="8" fill="#0b1220"/>
+          <circle cx="15" cy="12" r="5" fill="none" stroke="#f59e0b" stroke-width="2.2"/>
+          <path d="M5 30c0-5.5 4.5-9 10-9s10 3.5 10 9" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round"/>
+          <polyline points="23,19 26,23 32,16" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Campaign">
+        <svg width="36" height="36" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1024" height="1024" rx="228" fill="#0b1220"/>
+          <circle cx="512" cy="480" r="400" fill="#f61321" opacity="0.2"/>
+          <circle cx="512" cy="480" r="400" fill="none" stroke="#f61321" stroke-width="48"/>
+          <circle cx="512" cy="480" r="300" fill="none" stroke="#f61321" stroke-width="36" opacity="0.7"/>
+          <circle cx="512" cy="480" r="200" fill="#f61321" opacity="0.25"/>
+          <circle cx="512" cy="480" r="200" fill="none" stroke="#f61321" stroke-width="28"/>
+          <circle cx="512" cy="480" r="100" fill="#f61321"/>
+          <path d="M512,200 C420,200 345,278 345,375 C345,510 512,660 512,660 C512,660 679,510 679,375 C679,278 604,200 512,200 Z" fill="#589866"/>
+          <path d="M512,200 C420,200 345,278 345,375 C345,510 512,660 512,660 C512,660 679,510 679,375 C679,278 604,200 512,200 Z" fill="none" stroke="#9ad562" stroke-width="16"/>
+          <circle cx="512" cy="368" r="82" fill="#9ad562"/>
+          <circle cx="512" cy="368" r="46" fill="#15345c"/>
+          <line x1="512" y1="80" x2="512" y2="200" stroke="#f61321" stroke-width="20" stroke-linecap="round"/>
+          <line x1="512" y1="660" x2="512" y2="880" stroke="#f61321" stroke-width="20" stroke-linecap="round"/>
+          <line x1="80" y1="480" x2="345" y2="480" stroke="#f61321" stroke-width="20" stroke-linecap="round"/>
+          <line x1="679" y1="480" x2="944" y2="480" stroke="#f61321" stroke-width="20" stroke-linecap="round"/>
+          <ellipse cx="512" cy="655" rx="60" ry="18" fill="#0d2240" opacity="0.4"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="New Lead">
+        <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-label="New Lead">
+          <rect width="36" height="36" rx="8" fill="#0b1220"/>
+          <circle cx="14" cy="13" r="5" fill="none" stroke="#ff8c00" stroke-width="2.2"/>
+          <path d="M4 32c0-5.5 4.5-9 10-9s10 3.5 10 9" fill="none" stroke="#ff8c00" stroke-width="2.2" stroke-linecap="round"/>
+          <line x1="27" y1="8" x2="27" y2="18" stroke="#ff8c00" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="22" y1="13" x2="32" y2="13" stroke="#ff8c00" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Estimates">
+        <svg width="36" height="36" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1024" height="1024" rx="228" fill="#0b1220"/>
+          <rect x="180" y="180" width="664" height="780" rx="48" fill="#0c73e1"/>
+          <rect x="360" y="140" width="304" height="100" rx="30" fill="#0c73e1"/>
+          <rect x="410" y="155" width="204" height="70" rx="20" fill="#0a5fb8"/>
+          <rect x="220" y="260" width="584" height="660" rx="24" fill="#ffffff" opacity="0.15"/>
+          <rect x="260" y="350" width="380" height="36" rx="18" fill="#ffffff"/>
+          <rect x="260" y="430" width="480" height="30" rx="15" fill="#ffffff" opacity="0.8"/>
+          <rect x="260" y="500" width="440" height="30" rx="15" fill="#ffffff" opacity="0.8"/>
+          <rect x="260" y="570" width="460" height="30" rx="15" fill="#ffffff" opacity="0.8"/>
+          <rect x="260" y="650" width="340" height="36" rx="18" fill="#fdfe43"/>
+          <rect x="640" y="635" width="120" height="66" rx="22" fill="#c0eb73"/>
+          <rect x="668" y="645" width="20" height="46" rx="10" fill="#0c73e1"/>
+          <path d="M654 660 Q654 645 675 645 L 698 645 Q 714 645 714 662 Q 714 675 698 678 L 674 682 Q 658 686 658 700 Q 658 714 676 714 L 700 714 Q 714 714 714 700" stroke="#0c73e1" stroke-width="16" fill="none" stroke-linecap="round"/>
+          <path d="M 260 760 L 320 820 L 450 680" stroke="#9ad562" stroke-width="42" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Downloads">
+        <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-label="Downloads">
+          <rect width="36" height="36" rx="8" fill="#0b1220"/>
+          <line x1="18" y1="6" x2="18" y2="22" stroke="#4fc3f7" stroke-width="2.5" stroke-linecap="round"/>
+          <polyline points="11,16 18,23 25,16" fill="none" stroke="#4fc3f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="7" y="26" width="22" height="4" rx="2" fill="#4fc3f7" opacity="0.85"/>
+        </svg>
+      </button>
+      <button type="button" class="ht-rail-btn ht-rail-btn-bottom" aria-label="Settings">
+        <svg width="36" height="36" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-label="Settings">
+          <rect width="24" height="24" rx="4" fill="#0b1220"/>
+          <path d="M19.14,12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4,2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24,0-.43.17-.47.41L9.25,5.35c-.59.24-1.13.56-1.62.94L5.24,5.33c-.22-.08-.47,0-.59.22L2.74,8.87c-.12.21-.08.47.12.61l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s.02.64.07.94l-2.03,1.58c-.18.14-.23.41-.12.61l1.92,3.32c.12.22.37.29.59.22l2.39-.96c.5.38,1.03.7,1.62.94l.36,2.54c.05.24.24.41.48.41h3.84c.24,0,.44-.17.47-.41l.36-2.54c.59-.24,1.13-.56,1.62-.94l2.39.96c.22.08.47,0,.59-.22l1.92-3.32c.12-.22.07-.47-.12-.61L19.14,12.94zM12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6,3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" fill="#9e9e9e"/>
+        </svg>
+      </button>
     </div>
 
     <div class="ht-left-panel">
@@ -2722,15 +2832,15 @@ div.ht-left-panel {
       <!-- MINI TABS (keeps existing IDs/wiring) -->
       <div id="mapsMiniTabs" class="maps-mini-tabs">
         <button id="tabMaps" class="active" type="button">
-          <span class="tab-ico" aria-hidden="true"></span>
+          <span class="tab-ico" aria-hidden="true"><img src="/assets/icons/campaign-icon-24.svg" alt="" width="20" height="20"></span>
           <span class="tab-txt">Maps</span>
         </button>
         <button id="tabCampaigns" type="button">
-          <span class="tab-ico" aria-hidden="true"></span>
+          <span class="tab-ico" aria-hidden="true"><img src="/assets/icons/all_company_jobs-icon-24.svg" alt="" width="20" height="20"></span>
           <span class="tab-txt">Campaigns</span>
         </button>
         <button id="tabAssets" type="button">
-          <span class="tab-ico" aria-hidden="true"></span>
+          <span class="tab-ico" aria-hidden="true"><img src="/assets/icons/estimates-icon-24.svg" alt="" width="20" height="20"></span>
           <span class="tab-txt">Assets</span>
         </button>
       </div>
@@ -2877,15 +2987,17 @@ div.ht-left-panel {
       </div>
     </div>
 
-    <div class="ht-map-wrap">
-      <div id="stormMap" class="map-panel"></div>
-      <div class="ht-map-glass-stack" aria-hidden="true">
+    <div class="ht-map-glass-stack">
         <div class="ht-map-glass-box" style="z-index:10000; overflow:visible;">
-          <img class="ht-map-glass-logo" src="/assets/hmm-globe.png" alt="Hail Money Map" id="moneyGlobeLogo" />
-          <img src="/assets/swath opacity-icon.png" alt="Swath Opacity Icon" id="swathOpacityIcon" style="display:block; margin:68px auto 0; width:54px; height:54px; cursor:pointer;" />
+          <img class="ht-map-glass-logo" src="/assets/icons/svg/app_icon_vector_traced.svg" alt="Hail Money Map" id="moneyGlobeLogo" />
+          <svg id="swathOpacityIcon" xmlns="http://www.w3.org/2000/svg" width="54" height="54" viewBox="0 0 36 36" aria-hidden="true" style="display:block; margin:68px auto 0; cursor:pointer; opacity:0.85;">
+            <rect width="36" height="36" rx="8" fill="#0b1220"/>
+            <polygon points="18,6 30,12 18,18 6,12" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round"/>
+            <polyline points="6,18 18,24 30,18" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round" opacity="0.7"/>
+            <polyline points="6,24 18,30 30,24" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round" opacity="0.4"/>
+          </svg>
           <div id="swathOpacitySliderWrap" style="display:none; position:absolute; left:24px; top:110px; width:320px; z-index:9999; background:rgba(255,255,255,0.95); border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.18); padding:18px 18px 12px 18px;">
             <div id="swathOpacityValue" style="text-align:center; margin-bottom:8px; font-size:16px; color:#000;">SWATH Opacity: 100%</div>
-            <div id="swathOpacityValue" style="text-align:center; margin-bottom:8px; font-size:16px; color:#000 !important;"></div>
             <input id="swathOpacitySlider" type="range" min="0" max="100" value="100" style="width:100%; height:32px;" />
           </div>
         </div>
@@ -2893,20 +3005,27 @@ div.ht-left-panel {
           <input class="ht-map-glass-search" type="text" placeholder="Search" />
 
           <div class="ht-map-glass-navrow" aria-label="Quick navigation">
-            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Directions">
-              <img class="nav-icon" src="/assets/directions-icon.png" alt="Directions" style="width:44px;height:44px;object-fit:contain;">
-              <div class="nav-button">Directions</div>
+            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Get Directions" id="glassNavGetDirections">
+              <img src="/assets/icons/campaign-icon-48.svg" alt="Get Directions" width="44" height="44">
             </div>
 
-            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Inspection">
-              <img class="nav-icon" src="/assets/inspection-icon.png" alt="Inspection" style="width:44px;height:44px;object-fit:contain;">
-              <div class="nav-button">Inspection</div>
+            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Start Inspection" id="glassNavStartInspection">
+              <img src="/assets/icons/estimates-icon-48.svg" alt="Start Inspection" width="44" height="44">
             </div>
 
-            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Lead">
-              <img class="nav-icon" src="/assets/lead-icon.png" alt="Lead" style="width:44px;height:44px;object-fit:contain;">
-              <div class="nav-button">Lead</div>
+            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Storm Calendar" id="glassNavStormCalendar">
+              <img src="/assets/icons/all_company_jobs-icon-48.svg" alt="Storm Calendar" width="44" height="44">
             </div>
+          </div>
+
+          <!-- Property panel: shown when user clicks map -->
+          <div id="propertyPanel" style="display:none; margin-top:10px;">
+            <div style="color:#fff; font-weight:600; font-size:13px; margin-bottom:6px;">Selected Property</div>
+            <img id="propertyImage" src="" alt="Property satellite view"
+              style="width:100%; border-radius:8px; display:block; margin-bottom:8px; background:#222;" />
+            <div id="propertyAddress" style="color:#ccc; font-size:12px; margin-bottom:8px;"></div>
+            <div style="color:#fff; font-weight:600; font-size:12px; margin-bottom:4px;">Recent Storms Near This Property</div>
+            <div id="propertyStormsList" style="display:flex; flex-direction:column; gap:6px;"></div>
           </div>
 
           <div class="ht-map-glass-most-recent">Most Recent Events</div>
@@ -2935,6 +3054,9 @@ div.ht-left-panel {
           </div>
         </div>
       </div>
+
+    <div class="ht-map-wrap">
+      <div id="stormMap" class="map-panel"></div>
     </div>
   </div>
 </section>
@@ -3498,6 +3620,24 @@ const DEBUG_STORMS = false;
         slider.focus();
         document.getElementById('swathOpacityValue').textContent = `SWATH Opacity: ${slider.value}%`;
       });
+      // Also allow the rail swath opacity button to trigger the same slider
+      const railSwathBtn = document.getElementById('railSwathOpacityBtn');
+      if (railSwathBtn) {
+        railSwathBtn.addEventListener('click', () => {
+          sliderWrap.style.display = sliderWrap.style.display === 'none' ? 'block' : 'none';
+          sliderWrap.style.pointerEvents = sliderWrap.style.display === 'none' ? 'none' : 'auto';
+          if (sliderWrap.style.display !== 'none') slider.focus();
+          document.getElementById('swathOpacityValue').textContent = `SWATH Opacity: ${slider.value}%`;
+        });
+      }
+      // Wire Storm Calendar nav button to scroll dates list into view
+      const stormCalBtn = document.getElementById('glassNavStormCalendar');
+      if (stormCalBtn) {
+        stormCalBtn.addEventListener('click', () => {
+          const eventsList = document.getElementById('eventDatesList');
+          if (eventsList) eventsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
       // Hide slider after mouseup, pointerup, change, or blur
       const hideSlider = () => {
         slider.blur(); // Remove focus before hiding to fix aria-hidden warning
@@ -4230,12 +4370,48 @@ function hailInToColor(hailIn) {
   return "#00e5ff";
 }
 
+/**
+ * Creates an elongated ellipse-like polygon oriented ~45° (NW-SE storm track).
+ * Returns a GeoJSON Polygon geometry.
+ */
+function makeSwathPolygon(lat, lng, hailSizeIn) {
+  const h = Number(hailSizeIn);
+  // Width scales with hail size: base 0.5 km + 0.4 km per inch; default 1" if unknown
+  const widthKm = 0.5 + (Number.isFinite(h) && h > 0 ? h : 1) * 0.4;
+  // Length is 3× width (typical storm track aspect ratio)
+  const lengthKm = widthKm * 3;
+  const angleRad = Math.PI / 4; // 45° NW-SE orientation (typical storm track)
+  const numPoints = 20; // polygon vertex count: smooth enough, minimal overhead
+  // Approximate geodetic conversion factors
+  const KM_PER_DEG_LAT = 110.574;
+  const kmPerDegLng = 111.320 * Math.cos(lat * Math.PI / 180);
+
+  const coords = [];
+  for (let i = 0; i <= numPoints; i++) {
+    const t = (2 * Math.PI * i) / numPoints;
+    // Ellipse in local coords (x = along-track, y = cross-track)
+    const ex = (lengthKm / 2) * Math.cos(t);
+    const ey = (widthKm / 2) * Math.sin(t);
+    // Rotate by angleRad
+    const rx = ex * Math.cos(angleRad) - ey * Math.sin(angleRad);
+    const ry = ex * Math.sin(angleRad) + ey * Math.cos(angleRad);
+    // Convert km offsets to lat/lng
+    const dLat = ry / KM_PER_DEG_LAT;
+    const dLng = rx / kmPerDegLng;
+    coords.push([lng + dLng, lat + dLat]);
+  }
+  return { type: "Polygon", coordinates: [coords] };
+}
+
 function drawLsrPointsOnMap(points) {
   cleanLsrOverlays();
   const map = App.map;
   if (!map) return;
 
   const bounds = new google.maps.LatLngBounds();
+
+  // Use a single Data layer for all swath polygons so they can be cleaned up together
+  const swathData = new google.maps.Data({ map });
 
   (points || []).forEach(p => {
     const lat = Number(p.lat);
@@ -4244,47 +4420,61 @@ function drawLsrPointsOnMap(points) {
 
     const hailIn = Number(p.hail_in);
     const color = hailInToColor(hailIn);
-    const radius = hailInToRadiusMeters(hailIn);
 
     const center = { lat, lng: lon };
     bounds.extend(center);
-
-    const circle = new google.maps.Circle({
-      map,
-      center,
-      radius,
-      strokeColor: color,
-      strokeOpacity: 0.9,
-      strokeWeight: 2,
-      fillColor: color,
-      fillOpacity: 0.25,
-      clickable: true,
-      zIndex: 999999,
-    });
 
     let when = "";
     try {
       when = p.event_time ? new Date(p.event_time).toLocaleString() : "";
     } catch {}
 
+    const geom = makeSwathPolygon(lat, lon, hailIn);
+    swathData.addGeoJson({
+      type: "Feature",
+      geometry: geom,
+      properties: {
+        color,
+        hailIn: Number.isFinite(hailIn) ? hailIn : null,
+        when,
+        lat,
+        lon,
+      }
+    });
+  });
+
+  swathData.setStyle(feature => {
+    const color = feature.getProperty("color") || "#00e5ff";
+    return {
+      fillColor: color,
+      fillOpacity: 0.55,
+      strokeColor: "#ffffff",
+      strokeOpacity: 0.8,
+      strokeWeight: 1,
+      zIndex: 999999,
+    };
+  });
+
+  swathData.addListener("click", event => {
+    const hailIn = event.feature.getProperty("hailIn");
+    const when = event.feature.getProperty("when");
+    const lat = event.feature.getProperty("lat");
+    const lon = event.feature.getProperty("lon");
     const info = new google.maps.InfoWindow({
       content: `
         <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; font-size: 13px; line-height: 1.35;">
-          <div><b>Hail:</b> ${Number.isFinite(hailIn) ? hailIn : "?"}"</div>
+          <div><b>Hail:</b> ${hailIn != null ? hailIn : "?"}"</div>
           <div><b>Time:</b> ${when}</div>
-          <div><b>Lat/Lon:</b> ${lat.toFixed(3)}, ${lon.toFixed(3)}</div>
+          <div><b>Lat/Lon:</b> ${Number(lat).toFixed(3)}, ${Number(lon).toFixed(3)}</div>
         </div>
       `,
+      position: event.latLng,
     });
-
-    circle.addListener("click", () => {
-      try { info.setPosition(center); } catch {}
-      try { info.open(map); } catch {}
-    });
-
-    window._lsrOverlays = window._lsrOverlays || [];
-    window._lsrOverlays.push(circle);
+    try { info.open(map); } catch {}
   });
+
+  window._lsrOverlays = window._lsrOverlays || [];
+  window._lsrOverlays.push(swathData);
 
   // Only auto-zoom if we actually drew something
   try {
@@ -4411,17 +4601,31 @@ async function loadRadarSwaths(dateDash, layer) {
   if (!dateDash) return 0;
   if (!layer || typeof layer.addGeoJson !== "function") return 0;
 
-  const st = (typeof getSelectedStateCode === "function") ? getSelectedStateCode() : "";
-  const bbox = st ? await getBboxForSelectedState(st) : null;
-  if (!bbox) {
-    console.warn("[RADAR] missing bbox/state; skipping radar swaths");
-    return 0;
-  }
-
   const ymd = dateDashToYmd(dateDash);
   if (!ymd) {
     console.warn("[RADAR] invalid dateDash", dateDash);
     return 0;
+  }
+
+  // Try to get bbox from selected state first, then fall back to map bounds
+  let bbox = null;
+  const st = (typeof getSelectedStateCode === "function") ? getSelectedStateCode() : "";
+  if (st) {
+    try { bbox = await getBboxForSelectedState(st); } catch {}
+  }
+  if (!bbox && App.map) {
+    try {
+      const b = App.map.getBounds();
+      if (b) {
+        const sw = b.getSouthWest();
+        const ne = b.getNorthEast();
+        bbox = `${sw.lng().toFixed(4)},${sw.lat().toFixed(4)},${ne.lng().toFixed(4)},${ne.lat().toFixed(4)}`;
+      }
+    } catch {}
+  }
+  if (!bbox) {
+    // Default to CONUS bounding box if all else fails
+    bbox = "-125.0,24.0,-66.0,50.0";
   }
 
   const resp = await fetchNoaaHailReports({ mode: "radar", start: ymd, end: ymd, bbox });
@@ -4826,37 +5030,11 @@ window.initMap = function initMap() {
 
   App.infoWindow = new google.maps.InfoWindow();
 
-  // Add click listener for house inspection
+  // Add click listener: show property image and nearby storms in the glass panel
   App.map.addListener('click', (e) => {
-    if (App.map.getZoom() >= 17) {
-      const lat = e.latLng.lat();
-      const lng = e.latLng.lng();
-
-      let infoText = '';
-      if (App.activeStorm) {
-        const stormDate = App.activeStorm.dateKey ? new Date(App.activeStorm.dateKey + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : formatStormDate(App.activeStorm);
-        const hailText = App.activeStorm.maxHail || 'N/A';
-        const windText = App.activeStorm.maxWind || 'N/A';
-        infoText = `
-          <div>Storm date: ${stormDate}</div>
-          <div>Hail size: ${hailText}</div>
-          <div>Wind speed: ${windText}</div>
-        `;
-      } else {
-        infoText = '<div>No storm selected.</div>';
-      }
-
-      const content = `
-        <div style="font-family: Poppins, sans-serif; padding: 10px;">
-          ${infoText}
-          <button onclick="getDirectionsToHouse(${lat}, ${lng})" style="display: block; margin-bottom: 5px; padding: 8px 12px; background: #38bdf8; color: white; border: none; border-radius: 4px; cursor: pointer;">Get directions</button>
-          <button onclick="startInspection(${lat}, ${lng})" style="display: block; padding: 8px 12px; background: #0ea5e9; color: white; border: none; border-radius: 4px; cursor: pointer;">Start inspection</button>
-        </div>
-      `;
-      App.infoWindow.setContent(content);
-      App.infoWindow.setPosition(e.latLng);
-      App.infoWindow.open(App.map);
-    }
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+    showPropertyPanel(lat, lng);
   });
 }
 
@@ -4866,9 +5044,110 @@ function getDirectionsToHouse(lat, lng) {
 }
 
 function startInspection(lat, lng) {
-  // Placeholder function for starting inspection
-  console.log('Starting inspection at', lat, lng);
-  // TODO: Implement inspection logic
+  const inspLat = lat != null ? lat : App._lastClickedLat;
+  const inspLng = lng != null ? lng : App._lastClickedLng;
+  if (inspLat != null && inspLng != null) {
+    console.log('Starting inspection at', inspLat, inspLng);
+    // Show a non-blocking status message in the property address area
+    const addrEl = document.getElementById('propertyAddress');
+    if (addrEl) {
+      const prev = addrEl.textContent;
+      addrEl.textContent = `Inspection started at ${inspLat.toFixed(5)}, ${inspLng.toFixed(5)}`;
+      setTimeout(() => { if (addrEl.textContent.startsWith('Inspection started')) addrEl.textContent = prev; }, 3000);
+    }
+  }
+}
+
+async function showPropertyPanel(lat, lng) {
+  // Store for Get Directions / Start Inspection buttons
+  App._lastClickedLat = lat;
+  App._lastClickedLng = lng;
+
+  const panel = document.getElementById('propertyPanel');
+  const imgEl = document.getElementById('propertyImage');
+  const addrEl = document.getElementById('propertyAddress');
+  const stormsList = document.getElementById('propertyStormsList');
+
+  if (!panel) return;
+
+  // Show the panel immediately
+  panel.style.display = 'block';
+  if (addrEl) addrEl.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  if (stormsList) stormsList.innerHTML = '<div style="color:#aaa;font-size:12px;">Loading nearby storms…</div>';
+
+  // Use Google Maps Static API for a satellite image of the property
+  const zoom = Math.min(18, Math.max(14, App.map ? App.map.getZoom() : 17));
+  const staticUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=320x180&maptype=satellite&markers=color:red%7C${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`;
+  if (imgEl) {
+    imgEl.src = staticUrl;
+    imgEl.style.display = 'block';
+  }
+
+  // Reverse geocode to get the address
+  try {
+    if (App.geocoder) {
+      App.geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === 'OK' && results && results[0] && addrEl) {
+          addrEl.textContent = results[0].formatted_address;
+        }
+      });
+    }
+  } catch {}
+
+  // Wire up Get Directions and Start Inspection buttons in the navrow
+  const getDirBtn = document.getElementById('glassNavGetDirections');
+  const startInspBtn = document.getElementById('glassNavStartInspection');
+  if (getDirBtn) {
+    getDirBtn.onclick = () => getDirectionsToHouse(lat, lng);
+  }
+  if (startInspBtn) {
+    startInspBtn.onclick = () => startInspection(lat, lng);
+  }
+
+  // Fetch recent storms near this point via Supabase hail-near-point
+  try {
+    const url = `${SUPABASE_URL}/functions/v1/hail-near-point?lat=${lat}&lng=${lng}`;
+    const resp = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY } });
+    const data = resp.ok ? await resp.json() : null;
+    const dates = (data?.dates || []).slice(0, 8);
+
+    if (stormsList) {
+      stormsList.innerHTML = '';
+      if (dates.length === 0) {
+        // Fall back to showing dates from the current recents list
+        const recentItems = App.recentsPages ? Object.values(App.recentsPages).flat() : [];
+        const fallbackDates = recentItems.slice(0, 5).map(it => it.dateDash).filter(Boolean);
+        if (fallbackDates.length) {
+          fallbackDates.forEach(d => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'ht-date-item';
+            row.textContent = d;
+            row.style.fontSize = '12px';
+            row.style.padding = '6px 10px';
+            row.addEventListener('click', () => showHailSwathsForDate(d));
+            stormsList.appendChild(row);
+          });
+        } else {
+          stormsList.innerHTML = '<div style="color:#aaa;font-size:12px;">No storm data available near this location.</div>';
+        }
+      } else {
+        dates.forEach(d => {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'ht-date-item';
+          row.textContent = d;
+          row.style.fontSize = '12px';
+          row.style.padding = '6px 10px';
+          row.addEventListener('click', () => showHailSwathsForDate(d));
+          stormsList.appendChild(row);
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('[PROPERTY] hail-near-point failed', err);
+    if (stormsList) stormsList.innerHTML = '<div style="color:#aaa;font-size:12px;">Could not load nearby storm data.</div>';
+  }
 }
 
 function formatStormDate(storm) {
