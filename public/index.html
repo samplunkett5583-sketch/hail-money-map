@@ -588,8 +588,8 @@
 
     /* Left icon rail */
     #htIconRail {
-      width: 56px;
-      min-width: 56px;
+      width: 66px;
+      min-width: 66px;
       background: #0b1220;
       border-right: 1px solid rgba(148, 163, 184, 0.16);
       padding: 10px 6px;
@@ -600,14 +600,18 @@
     }
 
     #htIconRail .ht-rail-btn {
-      width: 42px;
-      height: 42px;
+      width: 50px;
+      height: 50px;
       border-radius: 12px;
       border: 1px solid rgba(148, 163, 184, 0.22);
       background: rgba(2, 6, 23, 0.45);
       color: #e5e7eb;
       font-weight: 600;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
     }
 
     #htIconRail .ht-rail-btn.active {
@@ -1972,73 +1976,6 @@ div.ht-left-panel {
       box-shadow: none !important;
     }
 
-    /* =========================
-       MAP ONLY MODE — HARD RESET
-       Hide EVERYTHING except the map
-       ========================= */
-
-    /* Hide all direct children of mapsView */
-    #mapsView > * {
-      display: none !important;
-    }
-
-    /* Re-enable the map (Google Maps / canvas variants) */
-    #mapsView #map,
-    #mapsView .map,
-    #mapsView .map-container,
-    #mapsView .maps-canvas,
-    #mapsView .gm-style,
-    #mapsView .gm-style * {
-      display: block !important;
-      visibility: visible !important;
-    }
-
-    /* Ensure the map fills the viewport */
-    #mapsView,
-    #mapsView #map,
-    #mapsView .map,
-    #mapsView .map-container,
-    #mapsView .gm-style {
-      width: 100% !important;
-      height: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      left: 0 !important;
-      top: 0 !important;
-    }
-
-    /* =========================
-       FIX: MAP ONLY MODE (restore map wrapper, then hide left UI)
-       ========================= */
-
-    /* Undo the previous hard-hide that blanked everything */
-    #mapsView > div {
-      display: block !important;
-      visibility: visible !important;
-    }
-
-    /* Hide ALL left-side UI */
-    #mapsView .ht-left-panel,
-    #mapsView > div > div.ht-left-panel,
-    #mapsView #stormListPanel,
-    #mapsView .ht-left-rail,
-    #mapsView .left-rail,
-    #mapsView #mapsLeftRail {
-      display: none !important;
-    }
-
-    /* Make the map fill the view */
-    #mapsView #map,
-    #mapsView .gm-style,
-    #mapsView .ht-map,
-    #mapsView .map,
-    #mapsView .map-container {
-      width: 100% !important;
-      height: 100% !important;
-      margin-left: 0 !important;
-      left: 0 !important;
-    }
-
     /* Custom Google Maps map type control (LEFT_TOP) */
     .gm-custom-maptype {
       background: #fff;
@@ -2107,23 +2044,6 @@ div.ht-left-panel {
       padding: 0 !important;
       margin: 0 !important;
       border: 0 !important;
-    }
-
-    /* FINAL OVERRIDE: remove the left vertical rail (M/C/A) */
-    #mapsView #htIconRail,
-    #htIconRail {
-      display: none !important;
-      visibility: hidden !important;
-      width: 0 !important;
-      min-width: 0 !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      border: 0 !important;
-    }
-
-    #mapsView #htIconRail .ht-rail-btn,
-    #htIconRail .ht-rail-btn {
-      display: none !important;
     }
 
     /* HARD-KILL: Google MapType control (Map / Satellite / Terrain / Labels) */
@@ -2712,9 +2632,33 @@ div.ht-left-panel {
 <section id="mapsView" class="view">
   <div class="ht-maps-shell">
     <div id="htIconRail" aria-label="Maps rail">
-      <button type="button" class="ht-rail-btn active" aria-label="Maps">M</button>
-      <button type="button" class="ht-rail-btn" aria-label="Campaigns">C</button>
-      <button type="button" class="ht-rail-btn" aria-label="Assets">A</button>
+      <button type="button" class="ht-rail-btn active" aria-label="HMM Globe" onclick="showView('mapsView')">
+        <img src="/assets/hmm-globe.png" alt="HMM Globe" style="width:36px;height:36px;object-fit:contain;">
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Swath Opacity">
+        <img src="/assets/swath-opacity-icon.png" alt="Swath Opacity" style="width:36px;height:36px;object-fit:contain;">
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Lead">
+        <img src="/assets/lead-icon.png" alt="Lead" style="width:36px;height:36px;object-fit:contain;">
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="All Company Jobs">
+        <img src="/assets/all-company-jobs-icon.png" alt="All Company Jobs" style="width:36px;height:36px;object-fit:contain;">
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="My Jobs">
+        <img src="/assets/my-jobs-icon.png" alt="My Jobs" style="width:36px;height:36px;object-fit:contain;">
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Campaign">
+        <img src="/assets/campaign-icon.png" alt="Campaign" style="width:36px;height:36px;object-fit:contain;">
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Downloads">
+        <img src="/assets/downloads-icon.png" alt="Downloads" style="width:36px;height:36px;object-fit:contain;">
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Estimate">
+        <img src="/assets/estimate-icon.png" alt="Estimate" style="width:36px;height:36px;object-fit:contain;">
+      </button>
+      <button type="button" class="ht-rail-btn" aria-label="Settings">
+        <img src="/assets/settings-icon.png" alt="Settings" style="width:36px;height:36px;object-fit:contain;">
+      </button>
     </div>
 
     <div class="ht-left-panel">
@@ -2900,7 +2844,7 @@ div.ht-left-panel {
       <div class="ht-map-glass-stack" aria-hidden="true">
         <div class="ht-map-glass-box" style="z-index:10000; overflow:visible;">
           <img class="ht-map-glass-logo" src="/assets/hmm-globe.png" alt="Hail Money Map" id="moneyGlobeLogo" />
-          <img src="/assets/swath opacity-icon.png" alt="Swath Opacity Icon" id="swathOpacityIcon" style="display:block; margin:68px auto 0; width:54px; height:54px; cursor:pointer;" />
+          <img src="/assets/swath-opacity-icon.png" alt="Swath Opacity Icon" id="swathOpacityIcon" style="display:block; margin:68px auto 0; width:54px; height:54px; cursor:pointer;" />
           <div id="swathOpacitySliderWrap" style="display:none; position:absolute; left:24px; top:110px; width:320px; z-index:9999; background:rgba(255,255,255,0.95); border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.18); padding:18px 18px 12px 18px;">
             <div id="swathOpacityValue" style="text-align:center; margin-bottom:8px; font-size:16px; color:#000;">SWATH Opacity: 100%</div>
             <div id="swathOpacityValue" style="text-align:center; margin-bottom:8px; font-size:16px; color:#000 !important;"></div>
