@@ -2643,7 +2643,10 @@ body { font-family: system-ui, -apple-system, sans-serif; height: 100vh; overflo
                 <span class="map-nav-label">Home</span>
               </button>
             </div>
-            <div class="map-view-title"><span id="jobDetailName">Job Detail</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+              <div class="map-view-title"><span id="jobDetailName">Job Detail</span></div>
+              <div id="jobDetailAddr" style="font-size:0.65rem;color:rgba(20,40,20,0.55);font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+            </div>
             <!-- 3-dot menu -->
             <button class="three-dot-btn" id="jobDetailMenuBtn" aria-label="Job menu">···</button>
           </div>
@@ -4121,9 +4124,11 @@ function renderJobsTable() {
 
 function openJobDetail(job) {
   App._currentJob = job;
-  // Set title
+  // Set title and address
   const nameEl = document.getElementById('jobDetailName');
   if (nameEl) nameEl.textContent = job.name;
+  const addrEl = document.getElementById('jobDetailAddr');
+  if (addrEl) addrEl.textContent = job.addr || '';
   // Render progress steps
   const progressEl = document.getElementById('jobDetailProgress');
   if (progressEl) {
