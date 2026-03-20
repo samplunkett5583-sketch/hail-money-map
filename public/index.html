@@ -208,18 +208,14 @@
       --danger: #ef4444;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    /* ── Reset ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont,
-        sans-serif;
-      background: radial-gradient(circle at top, #0f172a 0, #020617 52%);
-      color: var(--text-main);
-      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #90b870;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
     }
 
     button,
@@ -287,19 +283,20 @@
     }
 
     .pill-btn {
-      border-radius: 999px;
-      padding: 4px 10px;
-      border: 1px solid var(--border-subtle);
-      background: transparent;
-      color: var(--text-main);
+      padding: 7px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(212,149,46,0.35);
+      background: rgba(212,149,46,0.10);
+      color: #D4952E;
       font-size: 0.78rem;
+      font-weight: 700;
       cursor: pointer;
+      transition: background 0.14s;
+      white-space: nowrap;
     }
 
-    .pill-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
+    .pill-btn:hover { background: rgba(212,149,46,0.20); }
+    .pill-btn:disabled { opacity: 0.35; cursor: default; }
 
     .danger-btn {
       border-color: rgba(248, 113, 113, 0.6);
@@ -566,145 +563,422 @@
       height: calc(100vh - 160px);
     }
 
-    /* =================== MAPS: HAILTRACE-STYLE (UI/CSS ONLY) =================== */
-    /* Rail + left panel + full-height map; preserves existing JS IDs. */
-    #mapsView.view,
-    #mapsView.view.active {
+    /* ============================================================
+       MAPS SHELL — map fills everything, panels float on top
+       ============================================================ */
+    #mapsView {
       position: fixed;
       inset: 0;
       z-index: 100;
-      max-width: none;
-      margin: 0;
-      padding: 0;
-      background: #ffffff;
+      display: flex;
+      overflow: hidden;
     }
 
     #mapsView .ht-maps-shell {
+      position: fixed;
+      inset: 0;
       display: flex;
-      height: 100vh;
       width: 100vw;
+      height: 100vh;
       overflow: hidden;
     }
 
-    /* Left icon rail */
+    /* ============================================================
+       ICON RAIL
+       ============================================================ */
     #htIconRail {
-      width: 56px;
-      min-width: 56px;
-      background: #0b1220;
-      border-right: 1px solid rgba(148, 163, 184, 0.16);
-      padding: 10px 6px;
+      position: relative;
+      width: 80px;
+      min-width: 80px;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border-right: 1px solid rgba(255,255,255,0.40);
+      padding: 0 0 12px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
       align-items: center;
+      gap: 2px;
+      z-index: 20;
+      box-shadow: none;
+      transition: width 0.28s cubic-bezier(.4,0,.2,1),
+                  min-width 0.28s cubic-bezier(.4,0,.2,1);
+      overflow: hidden;
+      flex-shrink: 0;
     }
 
-    #htIconRail .ht-rail-btn {
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
-      border: 1px solid rgba(148, 163, 184, 0.22);
-      background: rgba(2, 6, 23, 0.45);
-      color: #e5e7eb;
-      font-weight: 600;
+    #htIconRail.collapsed {
+      width: 60px;
+      min-width: 60px;
+    }
+
+    /* Back button / logo — NO background, just the globe floating */
+    .rail-back-btn {
+      width: 100%;
+      height: 72px;
+      min-height: 72px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
       cursor: pointer;
-    }
-
-    #htIconRail .ht-rail-btn.active {
-      border-color: rgba(56, 189, 248, 0.75);
-      background: rgba(56, 189, 248, 0.18);
-      color: #ffffff;
-    }
-
-    /* Left panel */
-    #mapsView .ht-left-panel.ht-left-panel {
-      width: 380px;
-      min-width: 380px;
-      height: 100%;
-      border-right: 1px solid rgba(15, 23, 42, 0.12);
       display: flex;
       flex-direction: column;
-      padding: 12px;
-      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 0;
+      margin-bottom: 6px;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.18s;
+    }
+
+    .rail-back-btn:hover { background: rgba(255,255,255,0.20); }
+
+    .rail-back-label {
+      font-size: 0.57rem;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: rgba(20,80,20,0.70);
+      white-space: nowrap;
+      transition: opacity 0.18s;
+    }
+
+    #htIconRail.collapsed .rail-back-label { opacity: 0; }
+
+    /* Collapse toggle */
+    .rail-collapse-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      border: 1px solid rgba(148,163,184,0.12);
+      background: rgba(148,163,184,0.05);
+      color: rgba(20,60,20,0.45);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin: 2px 0 4px;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .rail-collapse-btn:hover {
+      background: rgba(212,149,46,0.12);
+      border-color: rgba(212,149,46,0.35);
+      color: #D4952E;
+    }
+
+    .rail-collapse-btn svg {
+      width: 12px; height: 12px;
+      transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+    }
+
+    #htIconRail.collapsed .rail-collapse-btn svg { transform: rotate(180deg); }
+
+    /* Section labels */
+    .rail-section {
+      width: 100%;
+      padding: 6px 8px 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .rail-section-line {
+      flex: 1;
+      height: 1px;
+      background: rgba(0,0,0,0.10);
+    }
+
+    .rail-section-label {
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: rgba(20,60,20,0.40);
+      white-space: nowrap;
+      overflow: hidden;
+      transition: opacity 0.18s, max-width 0.28s;
+      max-width: 60px;
+    }
+
+    #htIconRail.collapsed .rail-section-label { opacity: 0; max-width: 0; }
+
+    /* Rail buttons */
+    .ht-rail-btn {
+      position: relative;
+      width: calc(100% - 12px);
+      min-height: 54px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: rgba(10,30,10,0.70);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 4px 6px;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
       overflow: hidden;
     }
 
-    #mapsView .ht-left-top {
+    .ht-rail-btn svg { width: 22px; height: 22px; flex-shrink: 0; transition: transform 0.15s; }
+    .ht-rail-btn:hover svg { transform: translateY(-1px); }
+
+    .btn-label {
+      font-size: 0.59rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: inherit;
+      line-height: 1;
+      text-align: center;
+      white-space: nowrap;
+      transition: opacity 0.18s;
+    }
+
+    #htIconRail.collapsed .btn-label { opacity: 0; }
+
+    .ht-rail-btn:hover {
+      background: rgba(212,149,46,0.09);
+      border-color: rgba(212,149,46,0.22);
+      color: #D4952E;
+    }
+
+    .ht-rail-btn.active {
+      background: rgba(212,149,46,0.16);
+      border-color: rgba(212,149,46,0.45);
+      color: #F0B050;
+    }
+
+    .ht-rail-btn.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 22%; height: 56%; width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: #D4952E;
+      box-shadow: 0 0 8px rgba(212,149,46,0.6);
+    }
+
+    /* Tooltip when collapsed */
+    .rail-tooltip {
+      position: absolute;
+      left: calc(100% + 10px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: #1b2a3e;
+      color: #e5e7eb;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 8px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      border: 1px solid rgba(212,149,46,0.22);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      z-index: 999;
+      transition: opacity 0.12s;
+    }
+
+    #htIconRail.collapsed .ht-rail-btn:hover .rail-tooltip { opacity: 1; }
+
+    .rail-spacer { flex: 1; }
+
+    /* ============================================================
+       LEFT PANEL — floats over map, collapsible
+       ============================================================ */
+    .ht-left-panel {
+      position: relative;
+      width: 340px;
+      min-width: 340px;
+      height: 100%;
       display: flex;
-      justify-content: flex-end;
+      flex-direction: column;
+      gap: 0;
+      flex-shrink: 0;
+      transition: width 0.30s cubic-bezier(.4,0,.2,1),
+                  min-width 0.30s cubic-bezier(.4,0,.2,1),
+                  opacity 0.25s;
+    }
+
+    .ht-left-panel.panel-collapsed {
+      width: 0;
+      min-width: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Inner panel card — zero background, map shows straight through */
+    .ht-panel-card {
+      margin: 10px 0 10px 10px;
+      border-radius: 16px;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border: 1px solid rgba(255,255,255,0.50);
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* Panel header */
+    .panel-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      display: flex;
       align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
     }
 
-    #mapsView #mapsBackBtn {
-      border-radius: 999px;
-      padding: 6px 10px;
-      border: 1px solid rgba(15, 23, 42, 0.14);
-      background: #ffffff;
-      color: #0f172a;
-      font-size: 0.78rem;
+    .panel-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #111;
+      letter-spacing: 0.01em;
+    }
+
+    .panel-sub {
+      font-size: 0.70rem;
+      color: rgba(20,40,20,0.60);
+      margin-top: 1px;
+    }
+
+    /* Panel collapse handle — tab on right edge */
+    .panel-collapse-tab {
+      position: absolute;
+      right: -14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 48px;
+      background: rgba(255,255,255,0.30);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.55);
+      border-left: none;
+      border-radius: 0 8px 8px 0;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(20,60,20,0.55);
+      transition: background 0.15s, color 0.15s;
+      z-index: 5;
     }
 
-    #mapsView #mapsBackBtn:hover {
-      border-color: rgba(56, 189, 248, 0.85);
-      color: #0369a1;
+    .panel-collapse-tab:hover {
+      background: rgba(212,149,46,0.18);
+      color: #D4952E;
     }
+
+    .panel-collapse-tab svg {
+      width: 10px; height: 10px;
+      transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+    }
+
+    .ht-left-panel.panel-collapsed + .panel-reopen-btn { opacity: 1; pointer-events: auto; }
+
+    /* Reopen button — floats on map when panel closed */
+    .panel-reopen-btn {
+      position: absolute;
+      left: 80px; /* rail width */
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 56px;
+      background: rgba(255,255,255,0.30);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.55);
+      border-left: none;
+      border-radius: 0 10px 10px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(20,60,20,0.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, background 0.15s, color 0.15s;
+      z-index: 15;
+    }
+
+    .panel-reopen-btn:hover {
+      background: rgba(212,149,46,0.18);
+      color: #D4952E;
+    }
+
+    .panel-reopen-btn svg { width: 10px; height: 10px; }
 
     /* Address search row */
-    #mapsView .maps-address-row {
+    .maps-address-row {
+      padding: 12px 12px 8px;
       display: flex;
       gap: 8px;
       align-items: center;
+      flex-shrink: 0;
     }
 
-    #mapsView .ht-address-inputwrap {
+    .ht-address-inputwrap {
       position: relative;
       flex: 1;
       min-width: 0;
     }
 
-    #mapsView #addressInput {
+    #addressInput {
       width: 100%;
-      padding: 10px 34px 10px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(15, 23, 42, 0.12);
-      background: #f1f5f9;
-      color: #0f172a;
-      font-size: 0.85rem;
+      padding: 9px 32px 9px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.15);
+      background: rgba(255,255,255,0.50);
+      color: #111;
+      font-size: 0.83rem;
+      outline: none;
+      transition: border-color 0.15s;
     }
 
-    #mapsView #addressInput::placeholder {
-      color: rgba(15, 23, 42, 0.55);
-    }
+    #addressInput::placeholder { color: rgba(148,163,184,0.38); }
+    #addressInput:focus { border-color: rgba(212,149,46,0.45); }
 
-    #mapsView .ht-input-x {
+    .ht-input-x {
       position: absolute;
-      top: 50%;
-      right: 10px;
+      top: 50%; right: 9px;
       transform: translateY(-50%);
-      width: 18px;
-      height: 18px;
-      border-radius: 999px;
-      background: #e2e8f0;
-      color: #64748b;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      line-height: 1;
-      pointer-events: none;
+      width: 17px; height: 17px;
+      border-radius: 50%;
+      background: rgba(148,163,184,0.14);
+      color: rgba(148,163,184,0.55);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
     }
 
-    #mapsView #searchLocationBtn {
-      border-radius: 14px;
-      padding: 10px 12px;
-      font-size: 0.82rem;
-      font-weight: 600;
+    .primary-btn {
+      padding: 9px 14px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #D4952E, #8B4A0A);
+      color: white;
+      font-size: 0.80rem;
+      font-weight: 700;
+      cursor: pointer;
       white-space: nowrap;
+      box-shadow: 0 2px 10px rgba(212,149,46,0.30);
+      transition: opacity 0.15s;
     }
+
+    .primary-btn:hover { opacity: 0.88; }
 
     /* Compact controls rows */
-    #mapsView #stormControls,
     #mapsView #stormDateRow,
     #mapsView .maps-controls {
       background: #f8fafc;
@@ -713,35 +987,46 @@
       padding: 10px;
     }
 
-    #mapsView #stormControls {
+    /* Storm controls */
+    #stormControls {
+      padding: 10px 12px;
+      border-top: 1px solid rgba(255,255,255,0.08);
       display: flex;
-      gap: 10px;
+      gap: 8px;
       align-items: flex-end;
       flex-wrap: wrap;
+      flex-shrink: 0;
     }
 
-    #mapsView #stormControls label,
-    #mapsView #stormDateRow label {
+    #stormControls label {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      font-size: 0.72rem;
-      color: rgba(15, 23, 42, 0.72);
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: rgba(148,163,184,0.50);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
 
-    #mapsView #stormControls select,
-    #mapsView #stormDateRow select,
-    #mapsView #stormControls input {
-      padding: 9px 10px;
-      border-radius: 12px;
-      border: 1px solid rgba(15, 23, 42, 0.12);
-      background: #ffffff;
-      color: #0f172a;
-      font-size: 0.84rem;
-      min-width: 160px;
+    #stormControls select,
+    #stormControls input {
+      padding: 7px 9px;
+      border-radius: 8px;
+      border: 1px solid rgba(0,0,0,0.15);
+      background: rgba(255,255,255,0.50);
+      color: #111;
+      font-size: 0.80rem;
+      min-width: 130px;
+      outline: none;
+      transition: border-color 0.15s;
     }
 
-    #mapsView #stormControls button.pill-btn,
+    #stormControls select:focus,
+    #stormControls input:focus { border-color: rgba(212,149,46,0.4); }
+
+    #stormControls select option { background: #0d1a2a; color: #e5e7eb; }
+
     #mapsView #stormDateRow button.pill-btn {
       border-radius: 12px;
       padding: 8px 10px;
@@ -811,101 +1096,219 @@
       cursor: default;
     }
 
-    /* List area scrolls */
-    #mapsView #stormListPanel {
+    /* Storm date list panel */
+    #stormListPanel {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 8px;
       min-height: 0;
-      flex: 1;
       overflow: hidden;
-      border-radius: 14px;
-      border: 1px solid rgba(60, 60, 60, 0.6);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      padding: 10px;
+      border-top: 1px solid rgba(0,0,0,0.08);
     }
 
-    #mapsView .storm-list {
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      border-radius: 12px;
-    }
-
-    #mapsView .storm-item,
-    #mapsView .stormbait-item {
-      background: #ffffff;
-      color: #0f172a;
-      border: 1px solid rgba(15, 23, 42, 0.08);
-    }
-
-    #mapsView .storm-item:hover,
-    #mapsView .stormbait-item:hover {
-      border-color: rgba(56, 189, 248, 0.45);
-      background: rgba(56, 189, 248, 0.08);
-    }
-
-    /* Map fills the remaining screen */
-    #mapsView .ht-map-wrap {
-      flex: 1;
-      height: 100%;
-      min-width: 0;
-      background: #ffffff;
-    }
-
-    #mapsView #stormMap {
-      width: 100%;
-      height: 100%;
-      border-radius: 0;
-      overflow: hidden;
-      background: #e2e8f0;
-    }
-
-    /* Maps mini tabs (UI only; no routing/handlers yet) */
-    #mapsMiniTabs.maps-mini-tabs {
+    .storm-list-header {
+      padding: 10px 14px 6px;
       display: flex;
-      width: 100%;
-      gap: 0;
-      margin: 6px 0 10px;
-      border: 1px solid rgba(15, 23, 42, 0.12);
-      border-radius: 12px;
-      overflow: hidden;
-      background: #f8fafc;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-shrink: 0;
     }
 
-    #mapsMiniTabs.maps-mini-tabs button {
-      flex: 1 1 0;
+    .storm-list-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .storm-list-count {
+      font-size: 0.68rem;
+      color: rgba(20,60,20,0.55);
+    }
+
+    .storm-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 10px 10px;
       display: flex;
       flex-direction: column;
+      gap: 5px;
+    }
+
+    .storm-list::-webkit-scrollbar { width: 4px; }
+    .storm-list::-webkit-scrollbar-track { background: transparent; }
+    .storm-list::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.18); border-radius: 4px; }
+
+    .storm-item {
+      display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 10px 8px;
-      background: transparent;
-      border: 0;
-      color: #0f172a;
+      gap: 10px;
+      padding: 9px 11px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.40);
+      color: #111;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: background 0.14s, border-color 0.14s;
+    }
+
+    .storm-item:hover {
+      background: rgba(212,149,46,0.20);
+      border-color: rgba(212,149,46,0.45);
+      color: #7a3d00;
+    }
+
+    .storm-item input[type="checkbox"] {
+      accent-color: #D4952E;
+      width: 15px; height: 15px;
+      flex-shrink: 0;
       cursor: pointer;
     }
 
-    #mapsMiniTabs.maps-mini-tabs button + button {
-      border-left: 1px solid rgba(15, 23, 42, 0.10);
+    .storm-item-date { flex: 1; font-weight: 600; letter-spacing: 0.02em; color: #111; }
+
+    .storm-item-badge {
+      font-size: 0.63rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      letter-spacing: 0.04em;
     }
 
-    #mapsMiniTabs.maps-mini-tabs button.active {
-      background: #ffffff;
+    .badge-hail {
+      background: rgba(37,99,235,0.12);
+      color: #1d4ed8;
+      border: 1px solid rgba(37,99,235,0.28);
     }
 
-    #mapsMiniTabs .tab-ico {
+    .badge-wind {
+      background: rgba(5,150,105,0.12);
+      color: #065f46;
+      border: 1px solid rgba(5,150,105,0.28);
+    }
+
+    /* Paging row */
+    .storm-paging {
+      padding: 8px 12px 10px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      flex-shrink: 0;
+    }
+
+    .paging-btn {
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(0,0,0,0.15);
+      background: rgba(255,255,255,0.40);
+      color: #222;
+      font-size: 0.74rem;
+      cursor: pointer;
+      transition: background 0.14s, color 0.14s;
+    }
+
+    .paging-btn:hover {
+      background: rgba(212,149,46,0.10);
+      color: #7a3d00;
+      border-color: rgba(212,149,46,0.45);
+    }
+
+    .paging-btn:disabled { opacity: 0.3; cursor: default; }
+
+    .paging-info {
+      font-size: 0.70rem;
+      color: rgba(20,60,20,0.55);
+      flex: 1;
+      text-align: center;
+    }
+
+    /* ── Map wrap — Google Maps fills this, no background needed ── */
+    #mapsView .ht-map-wrap {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #mapsView #stormMap {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Make sure Google Maps canvas and overlays are never clipped */
+    .ht-map-wrap .gm-style,
+    .ht-map-wrap .gm-style > * {
+      opacity: 1 !important;
+    }
+
+    /* ── Floating UI layer ──────────────────────────────────── */
+    #mapsView .ht-ui-layer {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      pointer-events: none; /* let clicks fall through to map by default */
+    }
+
+    .ht-ui-layer > * {
+      pointer-events: auto; /* re-enable for actual UI elements */
+    }
+
+    #mapsView #htIconRail {
+      display: flex;
+    }
+
+    #mapsView .ht-left-panel {
+      display: flex;
+    }
+
+    /* Mini tabs */
+    .maps-mini-tabs {
+      display: flex;
+      margin: 0 12px 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.05);
+      flex-shrink: 0;
+    }
+
+    .maps-mini-tabs button {
+      flex: 1;
+      padding: 8px 4px;
+      background: transparent;
+      border: none;
+      color: rgba(148,163,184,0.50);
+      font-size: 0.65rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.14s, color 0.14s;
+    }
+
+    .maps-mini-tabs button svg {
       width: 18px;
       height: 18px;
-      border-radius: 6px;
-      background: rgba(15, 23, 42, 0.16);
+      flex-shrink: 0;
     }
 
-    #mapsMiniTabs .tab-txt {
-      font-size: 0.75rem;
+    .maps-mini-tabs .tab-txt {
+      font-size: 0.62rem;
+      font-weight: 600;
       line-height: 1;
-      letter-spacing: 0.02em;
-      opacity: 0.95;
+      letter-spacing: 0.01em;
+    }
+
+    .maps-mini-tabs button + button { border-left: 1px solid rgba(148,163,184,0.09); }
+
+    .maps-mini-tabs button.active {
+      background: rgba(212,149,46,0.14);
+      color: #F0B050;
     }
 
     .maps-address-row .flex-1 {
@@ -941,28 +1344,6 @@
     .map-status {
       font-size: 0.8rem;
       color: var(--text-soft);
-    }
-
-    .storm-list {
-      flex: 1;
-      overflow-y: auto;
-      border-radius: 12px;
-      padding: 6px;
-    }
-
-    .storm-item {
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid transparent;
-      font-size: 0.86rem;
-      cursor: pointer;
-      margin-bottom: 4px;
-      background: rgba(15, 23, 42, 0.95);
-    }
-
-    .storm-item:hover {
-      border-color: var(--accent-soft);
-      background: rgba(15, 23, 42, 1);
     }
 
     .stormbait-item {
@@ -1919,8 +2300,7 @@ div.ht-left-panel {
       display: none !important;
     }
 
-    #mapsView,
-    #mapsView * {
+    #mapsView {
       filter: none !important;
       opacity: 1 !important;
     }
@@ -1938,7 +2318,6 @@ div.ht-left-panel {
     /* Google Maps layers: ensure nothing is being darkened */
     #mapsView .gm-style,
     #mapsView .gm-style * {
-      filter: none !important;
       opacity: 1 !important;
     }
 
@@ -2015,16 +2394,6 @@ div.ht-left-panel {
     #mapsView > div {
       display: block !important;
       visibility: visible !important;
-    }
-
-    /* Hide ALL left-side UI */
-    #mapsView .ht-left-panel,
-    #mapsView > div > div.ht-left-panel,
-    #mapsView #stormListPanel,
-    #mapsView .ht-left-rail,
-    #mapsView .left-rail,
-    #mapsView #mapsLeftRail {
-      display: none !important;
     }
 
     /* Make the map fill the view */
@@ -2109,23 +2478,6 @@ div.ht-left-panel {
       border: 0 !important;
     }
 
-    /* FINAL OVERRIDE: remove the left vertical rail (M/C/A) */
-    #mapsView #htIconRail,
-    #htIconRail {
-      display: none !important;
-      visibility: hidden !important;
-      width: 0 !important;
-      min-width: 0 !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      border: 0 !important;
-    }
-
-    #mapsView #htIconRail .ht-rail-btn,
-    #htIconRail .ht-rail-btn {
-      display: none !important;
-    }
-
     /* HARD-KILL: Google MapType control (Map / Satellite / Terrain / Labels) */
     #mapsView .gm-style .gm-style-mtc,
     #mapsView .gm-style .gmnoprint.gm-style-mtc,
@@ -2137,10 +2489,6 @@ div.ht-left-panel {
     }
 
     /* LEFT MAP OVERLAY: two empty translucent "glass" boxes */
-    #mapsView .ht-map-wrap {
-      position: relative;
-    }
-
     #mapsView .ht-map-glass-stack {
       position: absolute;
       left: 18px;
@@ -2384,12 +2732,6 @@ div.ht-left-panel {
     }
     .ht-pager-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    /* Subtle overall lightening of the map view (CSS-only) */
-    #mapsView #stormMap,
-    #mapsView #stormMap .gm-style {
-      filter: brightness(1.06) saturate(1.05) contrast(1.02) !important;
-    }
-
     /* LEFT GLASS MENU: force all lettering white (overlay only) */
     #mapsView .ht-map-glass-stack,
     #mapsView .ht-map-glass-stack * {
@@ -2407,6 +2749,154 @@ div.ht-left-panel {
     #mapsView .ht-map-glass-stack textarea::placeholder {
       color: rgba(255, 255, 255, 0.75) !important;
     }
+
+    /* ============================================================
+       MAP STATUS CHIP — floats top center
+       ============================================================ */
+    .map-status-chip {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 15;
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0,0,0,0.10);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: rgba(10,40,10,0.80);
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    /* ── Field action buttons — NO background, just icon + label ── */
+    .panel-field-actions {
+      display: flex;
+      gap: 0;
+      padding: 8px 12px 10px;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .field-action-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 10px 4px 8px;
+      border-radius: 0;
+      border: none;
+      background: transparent;
+      color: #111;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .field-action-btn svg {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+      transition: transform 0.15s;
+    }
+
+    .field-action-btn:hover { opacity: 0.7; }
+    .field-action-btn:hover svg { transform: translateY(-1px); }
+
+    /* ── Transparent everything so map shows through ── */
+    #mapsView,
+    #mapsView > *,
+    .ht-maps-shell,
+    .ht-ui-layer,
+    .ht-left-panel,
+    .ht-panel-card,
+    .panel-header,
+    #stormListPanel,
+    .storm-list-header,
+    .storm-list,
+    .storm-paging,
+    .maps-address-row,
+    #htIconRail,
+    .rail-section,
+    .rail-back-btn,
+    .rail-collapse-btn,
+    .ht-rail-btn,
+    .panel-field-actions,
+    .field-action-btn {
+      background: transparent !important;
+      background-color: transparent !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Storm items keep a slight white tint so dates are readable */
+    .storm-item {
+      background: rgba(255,255,255,0.45) !important;
+    }
+
+    .storm-item:hover {
+      background: rgba(212,149,46,0.25) !important;
+    }
+
+    /* Address input readable */
+    #addressInput {
+      background: rgba(255,255,255,0.45) !important;
+    }
+
+    /* Paging buttons readable */
+    .paging-btn {
+      background: rgba(255,255,255,0.45) !important;
+    }
+
+    /* Primary Go button keep its color */
+    .primary-btn {
+      background: linear-gradient(135deg, #D4952E, #8B4A0A) !important;
+    }
+
+    /* ── Swath opacity float control ── */
+    .swath-control {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      z-index: 50;
+      background: rgba(255,255,255,0.72) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      border: 1px solid rgba(255,255,255,0.80) !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.18) !important;
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 220px;
+      pointer-events: auto;
+    }
+
+    .swath-control.visible { display: flex; }
+
+    /* ── UI layer must not block map canvas pointer events ── */
+    .ht-ui-layer {
+      pointer-events: none;
+    }
+    .ht-ui-layer > * {
+      pointer-events: auto;
+    }
+
+    /* ── Make sure Google Maps canvas sits at z-index 0, panels above ── */
+    .ht-map-wrap { z-index: 0 !important; }
+    .ht-ui-layer { z-index: 10 !important; }
+    #htIconRail { z-index: 20 !important; }
+    .swath-control { z-index: 50 !important; }
 
   </style>
 </head>
@@ -2711,261 +3201,311 @@ div.ht-left-panel {
 <!-- =================== $MAPS VIEW =================== -->
 <section id="mapsView" class="view">
   <div class="ht-maps-shell">
-    <div id="htIconRail" aria-label="Maps rail">
-      <button type="button" class="ht-rail-btn active" aria-label="Maps">M</button>
-      <button type="button" class="ht-rail-btn" aria-label="Campaigns">C</button>
-      <button type="button" class="ht-rail-btn" aria-label="Assets">A</button>
-    </div>
 
-    <div class="ht-left-panel">
-      <div class="ht-left-top">
-      </div>
-
-      <!-- ADDRESS SEARCH (keeps existing IDs/wiring) -->
-      <div class="maps-address-row">
-        <div class="ht-address-inputwrap">
-          <input
-            id="addressInput"
-            type="text"
-            class="control-input flex-1"
-            placeholder="Search addressâ€¦"
-          />
-          <span class="ht-input-x" aria-hidden="true">Ã—</span>
-        </div>
-        <button id="searchLocationBtn" class="primary-btn" type="button">
-          Go
-        </button>
-      </div>
-
-      <!-- MINI TABS (keeps existing IDs/wiring) -->
-      <div id="mapsMiniTabs" class="maps-mini-tabs">
-        <button id="tabMaps" class="active" type="button">
-          <span class="tab-ico" aria-hidden="true"></span>
-          <span class="tab-txt">Maps</span>
-        </button>
-        <button id="tabCampaigns" type="button">
-          <span class="tab-ico" aria-hidden="true"></span>
-          <span class="tab-txt">Campaigns</span>
-        </button>
-        <button id="tabAssets" type="button">
-          <span class="tab-ico" aria-hidden="true"></span>
-          <span class="tab-txt">Assets</span>
-        </button>
-      </div>
-
-      <!-- Keep hail-dates controls in DOM, but compact and inside left panel -->
-      <div id="stormControls">
-      <label>
-        State:
-        <select id="stateSelect">
-          <option value="">Selectâ€¦</option>
-          <option value="AL">Alabama</option>
-          <option value="AK">Alaska</option>
-          <option value="AZ">Arizona</option>
-          <option value="AR">Arkansas</option>
-          <option value="CA">California</option>
-          <option value="CO">Colorado</option>
-          <option value="CT">Connecticut</option>
-          <option value="DE">Delaware</option>
-          <option value="DC">District of Columbia</option>
-          <option value="FL">Florida</option>
-          <option value="GA">Georgia</option>
-          <option value="HI">Hawaii</option>
-          <option value="ID">Idaho</option>
-          <option value="IL">Illinois</option>
-          <option value="IN">Indiana</option>
-          <option value="IA">Iowa</option>
-          <option value="KS">Kansas</option>
-          <option value="KY">Kentucky</option>
-          <option value="LA">Louisiana</option>
-          <option value="ME">Maine</option>
-          <option value="MD">Maryland</option>
-          <option value="MA">Massachusetts</option>
-          <option value="MI">Michigan</option>
-          <option value="MN">Minnesota</option>
-          <option value="MS">Mississippi</option>
-          <option value="MO">Missouri</option>
-          <option value="MT">Montana</option>
-          <option value="NE">Nebraska</option>
-          <option value="NV">Nevada</option>
-          <option value="NH">New Hampshire</option>
-          <option value="NJ">New Jersey</option>
-          <option value="NM">New Mexico</option>
-          <option value="NY">New York</option>
-          <option value="NC">North Carolina</option>
-          <option value="ND">North Dakota</option>
-          <option value="OH">Ohio</option>
-          <option value="OK">Oklahoma</option>
-          <option value="OR">Oregon</option>
-          <option value="PA">Pennsylvania</option>
-          <option value="RI">Rhode Island</option>
-          <option value="SC">South Carolina</option>
-          <option value="SD">South Dakota</option>
-          <option value="TN">Tennessee</option>
-          <option value="TX">Texas</option>
-          <option value="UT">Utah</option>
-          <option value="VT">Vermont</option>
-          <option value="VA">Virginia</option>
-          <option value="WA">Washington</option>
-          <option value="WV">West Virginia</option>
-          <option value="WI">Wisconsin</option>
-          <option value="WY">Wyoming</option>
-        </select>
-      </label>
-
-      <label>
-        Scope:
-        <select id="scopeSelect">
-          <option value="" selected>Select scopeâ€¦</option>
-          <option value="state">Statewide dates</option>
-          <option value="city">City-only dates</option>
-        </select>
-      </label>
-
-      <label>
-        Storm type:
-        <select id="stormTypeTop">
-          <option value="" selected>Select typeâ€¦</option>
-          <option value="hail">Hail</option>
-          <option value="wind">Wind</option>
-          <option value="all">All</option>
-        </select>
-      </label>
-
-      <label id="cityLabel" style="display:none;">
-        City:
-        <input id="cityInput" type="text" placeholder="e.g. Clayton, MO" style="width:180px;" />
-      </label>
-
-      <label id="radiusLabel" style="display:none;">
-        Radius:
-        <select id="radiusSelect">
-          <option value="5">5 mi</option>
-          <option value="10" selected>10 mi</option>
-          <option value="25">25 mi</option>
-        </select>
-      </label>
-
-      <button id="getDatesBtn" class="pill-btn" disabled>Get Dates</button>
-
-      <span id="dateStatus" style="opacity:.8;"></span>
-      </div>
-
-      <div id="stormDateRow">
-      <label>
-        Storm dates:
-        <select id="dateSelect" disabled>
-          <option value="">Pick State + Scope + Storm type, then click Get Dates.</option>
-        </select>
-      </label>
-      <div id="datePagingControls" style="display:flex; gap:8px; align-items:center;">
-        <span id="datesLoadedStatus" style="font-size:.85rem; opacity:.8;"></span>
-        <button id="loadNextDatesBtn" class="pill-btn" style="padding:4px 8px; display:none;">Load next 3 months</button>
-      </div>
-      </div>
-
-      <!-- TOP CONTROLS (keep existing IDs like minValueInput/stormSearchInput) -->
-      <div class="maps-controls">
-
-      <!-- MIN VALUE -->
-      <div class="maps-control-group small">
-        <label class="control-label">Min street value ($)</label>
-        <input
-          id="minValueInput"
-          type="number"
-          class="control-input"
-          placeholder="0"
-        />
-      </div>
-
-      <!-- SEARCH WITHIN LIST -->
-      </div>
-
-      <div class="ht-recent">
-        <div class="ht-recent-title">Most Recent Events</div>
-        <div id="recentEventsList" aria-label="Most Recent Events List"></div>
-        <div id="recentEventsPaging" aria-label="Most Recent Events Paging">
-          <button id="recentEventsPrev" type="button" disabled>Prev</button>
-          <button id="recentEventsNext" type="button">Next</button>
-        </div>
-      </div>
-
-      <div id="stormListPanel" class="storm-list-panel">
-        <div id="stormList" class="storm-list"></div>
-      </div>
-    </div>
-
+  <!-- ── Real Google Maps fills entire background ── -->
     <div class="ht-map-wrap">
-      <div id="stormMap" class="map-panel"></div>
-      <div class="ht-map-glass-stack" aria-hidden="true">
-        <div class="ht-map-glass-box" style="z-index:10000; overflow:visible;">
-          <img class="ht-map-glass-logo" src="/assets/hmm-globe.png" alt="Hail Money Map" id="moneyGlobeLogo" />
-          <img src="/assets/swath opacity-icon.png" alt="Swath Opacity Icon" id="swathOpacityIcon" style="display:block; margin:68px auto 0; width:54px; height:54px; cursor:pointer;" />
-          <div id="swathOpacitySliderWrap" style="display:none; position:absolute; left:24px; top:110px; width:320px; z-index:9999; background:rgba(255,255,255,0.95); border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.18); padding:18px 18px 12px 18px;">
-            <div id="swathOpacityValue" style="text-align:center; margin-bottom:8px; font-size:16px; color:#000;">SWATH Opacity: 100%</div>
-            <div id="swathOpacityValue" style="text-align:center; margin-bottom:8px; font-size:16px; color:#000 !important;"></div>
-            <input id="swathOpacitySlider" type="range" min="0" max="100" value="100" style="width:100%; height:32px;" />
+      <div id="stormMap" style="width:100%;height:100%;position:absolute;inset:0;"></div>
+    </div>
+
+  <!-- ── Status chip ── -->
+    <div class="map-status-chip" id="mapStatusChip">No storm layer loaded</div>
+
+  <!-- ── Floating UI layer ── -->
+    <div class="ht-ui-layer">
+
+    <!-- ════════════════════════════════
+         ICON RAIL
+    ════════════════════════════════ -->
+      <div id="htIconRail">
+      <!-- Logo = Back Button -->
+      <button class="rail-back-btn" id="railBackBtn" type="button" aria-label="Back">
+        <div class="rail-back-icon">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="18" cy="18" r="16" fill="#1a3a0e" stroke="#4a8a1a" stroke-width="1.2"/>
+            <ellipse cx="18" cy="18" rx="16" ry="7" fill="none" stroke="#4a8a1a" stroke-width="0.8" opacity="0.6"/>
+            <line x1="2" y1="18" x2="34" y2="18" stroke="#4a8a1a" stroke-width="0.8" opacity="0.6"/>
+            <ellipse cx="18" cy="18" rx="6" ry="16" fill="none" stroke="#4a8a1a" stroke-width="0.8" opacity="0.5"/>
+            <ellipse cx="18" cy="18" rx="13" ry="16" fill="none" stroke="#4a8a1a" stroke-width="0.6" opacity="0.3"/>
+            <circle cx="18" cy="18" r="16" fill="none" stroke="#7abf3a" stroke-width="1.5"/>
+            <circle cx="18" cy="18" r="10" fill="#c8a000" stroke="#f0c820" stroke-width="1.2"/>
+            <circle cx="18" cy="18" r="10" fill="url(#coinGrad)"/>
+            <text x="18" y="23" font-family="system-ui,sans-serif" font-size="13" font-weight="900" fill="#7a5500" text-anchor="middle">$</text>
+            <ellipse cx="14" cy="14" rx="3" ry="2" fill="white" opacity="0.18" transform="rotate(-30 14 14)"/>
+            <defs>
+              <radialGradient id="coinGrad" cx="40%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#f5d020"/>
+                <stop offset="100%" stop-color="#b8860b"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+        <span class="rail-back-label">← Back</span>
+      </button>
+
+      <button class="rail-collapse-btn" id="railCollapseBtn" type="button" aria-label="Collapse rail">
+        <svg viewBox="0 0 12 12" fill="none">
+          <polyline points="8,2 4,6 8,10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="rail-section">
+        <div class="rail-section-line"></div>
+        <span class="rail-section-label">Views</span>
+        <div class="rail-section-line"></div>
+      </div>
+
+      <button type="button" class="ht-rail-btn active" data-view="swath" id="swathBtn" aria-label="Swath Opacity">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polygon points="12,2 22,8 22,22 2,22 2,8" stroke="currentColor" stroke-width="1.6" fill="none"/>
+          <rect x="2" y="7" width="20" height="4.5" fill="currentColor" opacity="0.60"/>
+          <rect x="2" y="12" width="20" height="4.5" fill="currentColor" opacity="0.33"/>
+          <rect x="2" y="17" width="20" height="5" fill="currentColor" opacity="0.13"/>
+          <polyline points="17,5 22,8 17,11" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" opacity="0.7"/>
+        </svg>
+        <span class="btn-label">Swath</span>
+        <span class="rail-tooltip">Swath Opacity</span>
+      </button>
+
+      <button type="button" class="ht-rail-btn" data-view="newlead" aria-label="New Lead">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="10" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M2,20 Q2,14 10,14 Q14.5,14 16.5,16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="19" cy="19" r="4" fill="currentColor" fill-opacity="0.15" stroke="currentColor" stroke-width="1.6"/>
+          <line x1="19" y1="16.5" x2="19" y2="21.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="16.5" y1="19" x2="21.5" y2="19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span class="btn-label">New Lead</span>
+        <span class="rail-tooltip">New Lead</span>
+      </button>
+
+      <button type="button" class="ht-rail-btn" data-view="campaign" aria-label="Campaign">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="3,13 12,5 21,13" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          <line x1="8" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+          <rect x="6" y="13" width="12" height="5" rx="1.5" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="8.5" y1="15" x2="15.5" y2="15" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          <line x1="9.5" y1="17" x2="14.5" y2="17" stroke="currentColor" stroke-width="0.9" stroke-linecap="round" opacity="0.5"/>
+          <line x1="9" y1="18" x2="9" y2="22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <line x1="15" y1="18" x2="15" y2="22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <span class="btn-label">Campaign</span>
+        <span class="rail-tooltip">Campaign</span>
+      </button>
+
+      <button type="button" class="ht-rail-btn" data-view="download" aria-label="Download Storm Data">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M6,12 Q4,5 9,4 Q10,0 15,3 Q19,1 20,6 Q24,7 22,11 Q21,14 18,13 L8,13 Q5,14 6,12Z" stroke="currentColor" stroke-width="1.6" fill="currentColor" fill-opacity="0.18"/>
+          <polygon points="12,7 9.5,12 11,12 8.5,18 15.5,12 13,12" fill="currentColor" stroke="currentColor" stroke-width="0.4" stroke-linejoin="round"/>
+          <line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="12" y1="17.5" x2="12" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="btn-label">Downloads</span>
+        <span class="rail-tooltip">Download Storm Data</span>
+      </button>
+
+      <button type="button" class="ht-rail-btn" data-view="alljobs" aria-label="All Company Jobs">
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect x="5" y="3" width="12" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/>
+          <rect x="9" y="1.5" width="6" height="3" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <polyline points="8,10 12,6.5 16,10" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <line x1="8" y1="14" x2="14" y2="14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="8" y1="17" x2="12" y2="17" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.5"/>
+          <circle cx="18.5" cy="5" r="3" fill="currentColor" opacity="0.85"/>
+          <circle cx="21" cy="8" r="2.2" fill="currentColor" opacity="0.5"/>
+        </svg>
+        <span class="btn-label">All Jobs</span>
+        <span class="rail-tooltip">All Company Jobs</span>
+      </button>
+
+      <button type="button" class="ht-rail-btn" data-view="myjobs" aria-label="My Jobs">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M4,15 Q4,7 12,5 Q20,7 20,15Z" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="1.7"/>
+          <path d="M3,15 L3,17 Q3,18 4.5,18 L19.5,18 Q21,18 21,17 L21,15Z" fill="currentColor" fill-opacity="0.28" stroke="currentColor" stroke-width="1.4"/>
+          <line x1="10" y1="10" x2="10.5" y2="7.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.4"/>
+          <line x1="14" y1="10" x2="13.5" y2="7.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.4"/>
+          <circle cx="9.5" cy="12" r="2.5" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="9.5" cy="12" r="1" fill="currentColor"/>
+          <line x1="11.5" y1="13.8" x2="14.5" y2="17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="19" cy="6" r="3.8" fill="currentColor" fill-opacity="0.9" stroke="currentColor" stroke-width="0.5"/>
+          <text x="19" y="8.2" font-family="system-ui" font-size="4.2" font-weight="800" fill="#1a3a1a" text-anchor="middle">ME</text>
+        </svg>
+        <span class="btn-label">My Jobs</span>
+        <span class="rail-tooltip">My Jobs</span>
+      </button>
+
+      <button type="button" class="ht-rail-btn" data-view="estimates" aria-label="Estimates">
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect x="4" y="3" width="11" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/>
+          <text x="9.5" y="16.5" font-family="system-ui" font-size="9.5" font-weight="700" fill="currentColor" text-anchor="middle">$</text>
+          <rect x="14" y="8" width="6" height="11" rx="2" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity="0.14"/>
+          <circle cx="17" cy="14" r="2" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="14" y1="10.5" x2="16" y2="10.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+        </svg>
+        <span class="btn-label">Estimates</span>
+        <span class="rail-tooltip">Estimates</span>
+      </button>
+
+      <button type="button" class="ht-rail-btn" data-view="insurance" aria-label="Insurance Companies">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12,2 L20,5 L20,11 Q20,17 12,22 Q4,17 4,11 L4,5 Z" stroke="currentColor" stroke-width="1.8" fill="currentColor" fill-opacity="0.12" stroke-linejoin="round"/>
+          <text x="12" y="15.5" font-family="system-ui" font-size="9" font-weight="800" fill="currentColor" text-anchor="middle">$</text>
+        </svg>
+        <span class="btn-label">Insurance</span>
+        <span class="rail-tooltip">Insurance Companies</span>
+      </button>
+
+      <div class="rail-spacer"></div>
+
+      <div class="rail-section">
+        <div class="rail-section-line"></div>
+        <span class="rail-section-label">App</span>
+        <div class="rail-section-line"></div>
+      </div>
+
+      <button type="button" class="ht-rail-btn" data-view="settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6" fill="currentColor" fill-opacity="0.08"/>
+          <rect x="10.8" y="2" width="2.4" height="3.2" rx="0.8" fill="currentColor"/>
+          <rect x="10.8" y="18.8" width="2.4" height="3.2" rx="0.8" fill="currentColor"/>
+          <rect x="2" y="10.8" width="3.2" height="2.4" rx="0.8" fill="currentColor"/>
+          <rect x="18.8" y="10.8" width="3.2" height="2.4" rx="0.8" fill="currentColor"/>
+          <rect x="4.5" y="4.5" width="2.4" height="2.4" rx="0.6" fill="currentColor" transform="rotate(45 5.7 5.7)"/>
+          <rect x="17.1" y="4.5" width="2.4" height="2.4" rx="0.6" fill="currentColor" transform="rotate(45 18.3 5.7)"/>
+          <rect x="4.5" y="17.1" width="2.4" height="2.4" rx="0.6" fill="currentColor" transform="rotate(45 5.7 18.3)"/>
+          <rect x="17.1" y="17.1" width="2.4" height="2.4" rx="0.6" fill="currentColor" transform="rotate(45 18.3 18.3)"/>
+          <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="12" cy="12" r="1.3" fill="currentColor"/>
+        </svg>
+        <span class="btn-label">Settings</span>
+        <span class="rail-tooltip">Settings</span>
+      </button>
+    </div><!-- /htIconRail -->
+
+    <!-- ════════════════════════════════
+         LEFT PANEL (floats over map)
+    ════════════════════════════════ -->
+    <div class="ht-left-panel" id="htLeftPanel">
+
+      <!-- Collapse tab on right edge -->
+      <button class="panel-collapse-tab" id="panelCollapseTab" aria-label="Collapse panel">
+        <svg viewBox="0 0 10 10" fill="none">
+          <polyline points="7,1 3,5 7,9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="ht-panel-card">
+
+        <!-- Header -->
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Storm Events</div>
+            <div class="panel-sub">Select a date to load hail / wind layer</div>
           </div>
         </div>
-        <div class="ht-map-glass-box">
-          <input class="ht-map-glass-search" type="text" placeholder="Search" />
 
-          <div class="ht-map-glass-navrow" aria-label="Quick navigation">
-            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Maps">
-              <svg class="nav-icon" viewBox="0 0 64 64" role="img" aria-label="Maps" focusable="false">
-                <path d="M32 58c10-14 18-25 18-34 0-10-8-18-18-18S14 14 14 24c0 9 8 20 18 34z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round" />
-                <circle cx="32" cy="24" r="6" fill="none" stroke="currentColor" stroke-width="6" />
-              </svg>
-              <div class="nav-button">Maps</div>
-            </div>
+        <!-- Address search -->
+        <div class="maps-address-row">
+          <div class="ht-address-inputwrap">
+            <input id="addressInput" type="text" placeholder="Search address…"/>
+            <span class="ht-input-x" aria-hidden="true">×</span>
+          </div>
+          <button id="searchLocationBtn" class="primary-btn" type="button">Go</button>
+        </div>
 
-            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Jobs">
-              <svg class="nav-icon" viewBox="0 0 64 64" role="img" aria-label="Jobs" focusable="false">
-                <path d="M8 30L32 12l24 18" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M16 28v26h32V28" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M26 54V40h12v14" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              <div class="nav-button">Jobs</div>
-            </div>
+        <!-- Directions / Inspection / Calendar — TOP, no background, icon + label only -->
+        <div class="panel-field-actions">
 
-            <div class="glass-nav-item" role="button" tabindex="0" aria-label="Assets">
-              <svg class="nav-icon" viewBox="0 0 64 64" role="img" aria-label="Assets" focusable="false">
-                <rect x="14" y="20" width="30" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="6" />
-                <rect x="22" y="12" width="30" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="6" opacity="0.9" />
-              </svg>
-              <div class="nav-button">Assets</div>
-            </div>
+          <button class="field-action-btn" id="directionsActionBtn" aria-label="Get Directions">
+            <svg viewBox="0 0 24 24" fill="none">
+              <polyline points="8,10 12,4 16,10" stroke="#1a3a1a" stroke-width="2.2" stroke-linejoin="round"/>
+              <rect x="9" y="10" width="6" height="5" rx="0.8" stroke="#1a3a1a" stroke-width="2"/>
+              <rect x="11" y="12" width="2" height="3" rx="0.5" stroke="#1a3a1a" stroke-width="1.4"/>
+              <line x1="12" y1="15" x2="12" y2="19" stroke="#D4952E" stroke-width="2" stroke-dasharray="2,1.5" stroke-linecap="round"/>
+              <polygon points="12,21 9.5,18.5 14.5,18.5" fill="#D4952E"/>
+            </svg>
+            <span>Directions</span>
+          </button>
+
+          <button class="field-action-btn" id="inspectionActionBtn" aria-label="Start Inspection">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="5" y="3" width="14" height="18" rx="2" stroke="#1a3a1a" stroke-width="2"/>
+              <rect x="9" y="1.5" width="6" height="3.5" rx="1" stroke="#1a3a1a" stroke-width="1.6"/>
+              <polyline points="8,9 12,5.5 16,9" stroke="#D4952E" stroke-width="1.8" stroke-linejoin="round"/>
+              <rect x="7" y="12" width="3.5" height="3.5" rx="0.8" stroke="#1a3a1a" stroke-width="1.5"/>
+              <polyline points="7.5,13.8 9,15 11,12.5" stroke="#2a7a2a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="12.5" y1="13.5" x2="17" y2="13.5" stroke="#1a3a1a" stroke-width="1.3" stroke-linecap="round"/>
+              <line x1="7" y1="17.5" x2="17" y2="17.5" stroke="#1a3a1a" stroke-width="1.1" stroke-linecap="round" opacity="0.5"/>
+            </svg>
+            <span>Inspection</span>
+          </button>
+
+          <button class="field-action-btn" id="calendarActionBtn" aria-label="Calendar">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="5" width="18" height="16" rx="2.5" stroke="#1a3a1a" stroke-width="2"/>
+              <line x1="3" y1="10" x2="21" y2="10" stroke="#1a3a1a" stroke-width="1.6"/>
+              <line x1="8" y1="3" x2="8" y2="7" stroke="#D4952E" stroke-width="2.2" stroke-linecap="round"/>
+              <line x1="16" y1="3" x2="16" y2="7" stroke="#D4952E" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="8" cy="14" r="1.5" fill="#1a3a1a"/>
+              <circle cx="12" cy="14" r="1.5" fill="#1a3a1a"/>
+              <circle cx="16" cy="14" r="1.5" fill="#1a3a1a" opacity="0.4"/>
+              <circle cx="8" cy="18" r="1.5" fill="#1a3a1a" opacity="0.4"/>
+              <circle cx="12" cy="18" r="1.5" fill="#1a3a1a"/>
+              <polygon points="16.5,16 15,18.5 16.2,18.5 14.5,22 18,18 16.8,18" fill="#D4952E"/>
+            </svg>
+            <span>Calendar</span>
+          </button>
+
+        </div>
+
+        <!-- Date list — BELOW the action buttons -->
+        <div id="stormListPanel">
+          <div class="storm-list-header">
+            <span class="storm-list-title">Most Recent Events</span>
+            <span class="storm-list-count" id="eventCount"></span>
           </div>
 
-          <div class="ht-map-glass-most-recent">Most Recent Events</div>
+          <div class="storm-list" id="recentEventsList"></div>
 
-          <div class="ht-events-meta">
-            <div class="ht-total-events">
-              Total Events: <span id="totalEventsCount">—</span>
-            </div>
+          <div class="storm-paging">
+            <button class="paging-btn" id="recentEventsPrev" type="button" disabled>← Prev</button>
+            <span class="paging-info" id="datesStatus"></span>
+            <button class="paging-btn" id="recentEventsNext" type="button">Next →</button>
+          </div>
 
-            <div id="debugStormDatesBox" style="display:none; margin-top:10px;">
-              <div style="font-weight:700; color:#fff; margin-bottom:6px;">DEBUG</div>
-              <textarea id="debugStormDatesText" readonly
-                style="width:100%; height:160px; resize:vertical; padding:10px; color:#fff;
-                       background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.18);
-                       border-radius:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
-                       font-size:12px;"></textarea>
-            </div>
+          <div id="stormList" class="storm-list"></div>
 
-            <div id="eventDatesList" class="ht-events-list" role="list"></div>
-
-            <div class="ht-events-pager">
-              <button type="button" id="prevDatesBtn" class="ht-pager-btn" disabled>Previous</button>
-              <span id="datesStatus" class="ht-pager-status">1–5</span>
-              <button type="button" id="nextDatesBtn" class="ht-pager-btn">Next</button>
-            </div>
+          <div id="directionsArea" class="directions-area">
+            <button id="directionsBtn" class="pill-btn" disabled>Directions</button>
           </div>
         </div>
+
+      </div><!-- /ht-panel-card -->
+    </div><!-- /ht-left-panel -->
+
+    <!-- Reopen button (visible when panel collapsed) -->
+    <button class="panel-reopen-btn" id="panelReopenBtn" aria-label="Open panel">
+      <svg viewBox="0 0 10 10" fill="none">
+        <polyline points="3,1 7,5 3,9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <!-- Swath opacity float control (shown when Swath active) -->
+    <div class="swath-control" id="swathControl">
+      <span class="swath-label">Swath Opacity</span>
+      <div class="swath-slider-row">
+        <input type="range" min="0" max="100" value="70" id="swathSlider"/>
+        <span class="swath-val" id="swathVal">70%</span>
+      </div>
+      <span class="swath-label" style="margin-top:2px;">Hail Size Filter</span>
+      <div class="swath-slider-row">
+        <input type="range" min="0" max="100" value="40" id="hailSlider"/>
+        <span class="swath-val" id="hailVal">1.0″</span>
       </div>
     </div>
-  </div>
-</section>
+
+  </div><!-- /ht-ui-layer -->
+  </div><!-- /ht-maps-shell -->
+</section><!-- /mapsView -->
 
 <!-- =================== DIRECTORY VIEW =================== -->
 <section id="directoryView" class="view">
@@ -4662,20 +5202,30 @@ window.initMap = function initMap() {
   const brightHybridStyles = [
     {
       elementType: "geometry",
-      stylers: [{ lightness: 35 }, { contrast: -25 }, { saturation: 20 }],
+      stylers: [{ lightness: 55 }, { contrast: -15 }, { saturation: 30 }],
     },
     {
       elementType: "labels.text.fill",
-      stylers: [{ lightness: 25 }],
+      stylers: [{ lightness: 40 }],
     },
     {
       elementType: "labels.text.stroke",
-      stylers: [{ lightness: -15 }],
+      stylers: [{ lightness: -5 }],
     },
     {
       featureType: "water",
       elementType: "geometry",
-      stylers: [{ color: "#6bb6ff" }, { lightness: 35 }, { saturation: 25 }],
+      stylers: [{ color: "#89ccff" }, { lightness: 50 }, { saturation: 35 }],
+    },
+    {
+      featureType: "road",
+      elementType: "geometry",
+      stylers: [{ lightness: 45 }, { saturation: 15 }],
+    },
+    {
+      featureType: "landscape",
+      elementType: "geometry",
+      stylers: [{ lightness: 50 }, { saturation: 25 }],
     },
   ];
 
@@ -4689,6 +5239,31 @@ window.initMap = function initMap() {
     mapTypeControl: false,
     fullscreenControl: false,
   });
+
+  function applyMapBrightness() {
+    try {
+      const root =
+        document.getElementById("stormMap") ||
+        document.getElementById("map") ||
+        document.getElementById("mapEl");
+
+      if (!root) return;
+
+      const tileLayer = root.querySelector(".gm-style > div > div");
+
+      if (!tileLayer) return;
+
+      tileLayer.style.filter = "brightness(1.4) contrast(0.9) saturate(1.1)";
+    } catch (_) {}
+  }
+
+  setTimeout(applyMapBrightness, 400);
+  setTimeout(applyMapBrightness, 1200);
+
+  google.maps.event.addListenerOnce(App.map, "idle", applyMapBrightness);
+  google.maps.event.addListener(App.map, "tilesloaded", applyMapBrightness);
+  google.maps.event.addListener(App.map, "maptypeid_changed", applyMapBrightness);
+  google.maps.event.addListener(App.map, "zoom_changed", () => setTimeout(applyMapBrightness, 150));
 
   App.map.setOptions({ mapTypeControl: false });
 

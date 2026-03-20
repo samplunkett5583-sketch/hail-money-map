@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "hailmoneymap"
-  }
+  },
+  "targets": {
+    "hailmoneymap": {
+      "hosting": {
+        "main": [
+          "hailmoneymap"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

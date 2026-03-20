@@ -1,0 +1,715 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════╗
+║  HAIL MONEY MAP — MASTER INTEGRATION PATCH                          ║
+║                                                                      ║
+║  Save this file in your hailmoneymap project folder.                ║
+║  Open it side by side with your main app file in VS Code.           ║
+║                                                                      ║
+║  Then tell Codex/Copilot:                                            ║
+║  "Integrate the MASTER PATCH file into my main app file.            ║
+║   Follow the instructions in each block comment exactly.            ║
+║   Do NOT modify any existing code — only add new code."             ║
+╚══════════════════════════════════════════════════════════════════════╝
+-->
+
+
+<!-- ██████████████████████████████████████████████████████████████████
+     BLOCK 1 — CSS
+     PASTE EVERYTHING BETWEEN THE MARKERS just before </style>
+     in your main app file
+█████████████████████████████████████████████████████████████████████ -->
+<!-- CSS_START -->
+<style id="hmm-patch-css-REMOVE-THIS-TAG">
+
+/* ══════════════════════════════════════════════════════
+   MAPS VIEW — transparent shell so Google Maps shows through
+══════════════════════════════════════════════════════ */
+.ht-map-wrap { position:absolute;inset:0;z-index:0;background:#e8f0e0; }
+#stormMap { width:100%!important;height:100%!important;position:absolute!important;inset:0!important; }
+.ht-map-wrap .gm-style,
+.ht-map-wrap .gm-style>* { filter:none!important;opacity:1!important; }
+.ht-ui-layer { position:absolute;inset:0;z-index:10;display:flex;pointer-events:none; }
+.ht-ui-layer>* { pointer-events:auto; }
+#htIconRail {
+  position:relative;width:80px;min-width:80px;background:transparent;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  border-right:1px solid rgba(255,255,255,0.40);padding:0 0 12px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;z-index:20;
+  box-shadow:none;
+  transition:width 0.28s cubic-bezier(.4,0,.2,1),min-width 0.28s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;flex-shrink:0;
+}
+#htIconRail.collapsed { width:60px;min-width:60px; }
+.rail-back-btn {
+  width:100%;height:72px;min-height:72px;background:transparent;border:none;
+  border-bottom:1px solid rgba(0,0,0,0.08);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;padding:0;margin-bottom:6px;flex-shrink:0;transition:background 0.18s;
+}
+.rail-back-btn:hover { background:rgba(255,255,255,0.20); }
+.rail-back-icon { width:56px;height:56px;background:none;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 3px 10px rgba(0,0,0,0.7)); }
+.rail-back-icon svg { width:56px;height:56px; }
+.rail-back-label { font-size:0.57rem;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:rgba(20,80,20,0.70);white-space:nowrap;transition:opacity 0.18s; }
+#htIconRail.collapsed .rail-back-label { opacity:0; }
+.rail-collapse-btn {
+  width:26px;height:26px;border-radius:7px;border:1px solid rgba(148,163,184,0.12);
+  background:rgba(148,163,184,0.05);color:rgba(20,60,20,0.45);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin:2px 0 4px;
+  transition:background 0.15s,color 0.15s;
+}
+.rail-collapse-btn:hover { background:rgba(212,149,46,0.12);border-color:rgba(212,149,46,0.35);color:#D4952E; }
+.rail-collapse-btn svg { width:12px;height:12px;transition:transform 0.28s cubic-bezier(.4,0,.2,1); }
+.rail-section { width:100%;padding:6px 8px 2px;display:flex;align-items:center;gap:6px;flex-shrink:0; }
+.rail-section-line { flex:1;height:1px;background:rgba(0,0,0,0.10); }
+.rail-section-label { font-size:0.55rem;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:rgba(20,60,20,0.40);white-space:nowrap;overflow:hidden;transition:opacity 0.18s,max-width 0.28s;max-width:60px; }
+#htIconRail.collapsed .rail-section-label { opacity:0;max-width:0; }
+.ht-rail-btn {
+  position:relative;width:calc(100% - 12px);min-height:54px;border-radius:12px;
+  border:1px solid transparent;background:transparent;color:rgba(10,30,10,0.70);
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:8px 4px 6px;flex-shrink:0;
+  transition:background 0.15s,border-color 0.15s,color 0.15s;overflow:hidden;
+}
+.ht-rail-btn svg { width:22px;height:22px;flex-shrink:0;transition:transform 0.15s; }
+.ht-rail-btn:hover svg { transform:translateY(-1px); }
+.btn-label { font-size:0.59rem;font-weight:600;letter-spacing:0.02em;color:inherit;line-height:1;text-align:center;white-space:nowrap;transition:opacity 0.18s; }
+#htIconRail.collapsed .btn-label { opacity:0; }
+.ht-rail-btn:hover { background:rgba(212,149,46,0.09);border-color:rgba(212,149,46,0.22);color:#D4952E; }
+.ht-rail-btn.active { background:rgba(212,149,46,0.16);border-color:rgba(212,149,46,0.45);color:#F0B050; }
+.ht-rail-btn.active::before { content:'';position:absolute;left:0;top:22%;height:56%;width:3px;border-radius:0 3px 3px 0;background:#D4952E;box-shadow:0 0 8px rgba(212,149,46,0.6); }
+.rail-tooltip { position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);background:#1b2a3e;color:#e5e7eb;font-size:0.72rem;font-weight:600;padding:5px 10px;border-radius:8px;white-space:nowrap;pointer-events:none;opacity:0;border:1px solid rgba(212,149,46,0.22);box-shadow:0 4px 16px rgba(0,0,0,0.5);z-index:999;transition:opacity 0.12s; }
+#htIconRail.collapsed .ht-rail-btn:hover .rail-tooltip { opacity:1; }
+.rail-spacer { flex:1; }
+.ht-left-panel { position:relative;width:340px;min-width:340px;height:100%;display:flex;flex-direction:column;flex-shrink:0;transition:width 0.30s cubic-bezier(.4,0,.2,1),min-width 0.30s cubic-bezier(.4,0,.2,1),opacity 0.25s; }
+.ht-left-panel.panel-collapsed { width:0;min-width:0;opacity:0;pointer-events:none; }
+.ht-panel-card { margin:10px 0 10px 10px;border-radius:16px;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid rgba(255,255,255,0.50);box-shadow:none;display:flex;flex-direction:column;overflow:hidden;flex:1;min-height:0; }
+.panel-header { padding:14px 16px 10px;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:space-between;flex-shrink:0; }
+.panel-title { font-size:0.82rem;font-weight:700;color:#111; }
+.panel-sub { font-size:0.70rem;color:rgba(20,40,20,0.60);margin-top:1px; }
+.panel-collapse-tab { position:absolute;right:-14px;top:50%;transform:translateY(-50%);width:14px;height:48px;background:rgba(255,255,255,0.30);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.55);border-left:none;border-radius:0 8px 8px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(20,60,20,0.55);transition:background 0.15s,color 0.15s;z-index:5; }
+.panel-collapse-tab:hover { background:rgba(212,149,46,0.18);color:#D4952E; }
+.panel-collapse-tab svg { width:10px;height:10px; }
+.panel-reopen-btn { position:absolute;left:80px;top:50%;transform:translateY(-50%);width:20px;height:56px;background:rgba(255,255,255,0.30);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.55);border-left:none;border-radius:0 10px 10px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(20,60,20,0.55);opacity:0;pointer-events:none;transition:opacity 0.2s,background 0.15s;z-index:15; }
+.panel-reopen-btn:hover { background:rgba(212,149,46,0.18);color:#D4952E; }
+.panel-reopen-btn svg { width:10px;height:10px; }
+.maps-address-row { padding:12px 12px 8px;display:flex;gap:8px;align-items:center;flex-shrink:0; }
+.ht-address-inputwrap { position:relative;flex:1;min-width:0; }
+#addressInput { width:100%;padding:9px 32px 9px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.15);background:rgba(255,255,255,0.50);color:#111;font-size:0.83rem;outline:none;transition:border-color 0.15s; }
+#addressInput::placeholder { color:rgba(148,163,184,0.38); }
+#addressInput:focus { border-color:rgba(212,149,46,0.45); }
+.ht-input-x { position:absolute;top:50%;right:9px;transform:translateY(-50%);width:17px;height:17px;border-radius:50%;background:rgba(148,163,184,0.14);color:rgba(148,163,184,0.55);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer; }
+.primary-btn { padding:9px 14px;border-radius:10px;border:none;background:linear-gradient(135deg,#D4952E,#8B4A0A);color:white;font-size:0.80rem;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(212,149,46,0.30);transition:opacity 0.15s; }
+.primary-btn:hover { opacity:0.88; }
+.panel-field-actions { display:flex;gap:0;padding:8px 12px 10px;flex-shrink:0;border-bottom:1px solid rgba(0,0,0,0.08); }
+.field-action-btn { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:10px 4px 8px;border:none;background:transparent;color:#111;cursor:pointer;font-size:0.62rem;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;transition:opacity 0.15s; }
+.field-action-btn svg { width:28px;height:28px;flex-shrink:0;transition:transform 0.15s; }
+.field-action-btn:hover { opacity:0.7; }
+#stormListPanel { flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;border-top:1px solid rgba(0,0,0,0.08); }
+.storm-list-header { padding:10px 14px 6px;display:flex;justify-content:space-between;align-items:baseline;flex-shrink:0; }
+.storm-list-title { font-size:0.78rem;font-weight:700;color:#111; }
+.storm-list-count { font-size:0.68rem;color:rgba(20,60,20,0.55); }
+.storm-list { flex:1;overflow-y:auto;padding:4px 10px 10px;display:flex;flex-direction:column;gap:5px; }
+.storm-list::-webkit-scrollbar { width:4px; }
+.storm-list::-webkit-scrollbar-thumb { background:rgba(148,163,184,0.18);border-radius:4px; }
+.storm-item { display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;border:1px solid rgba(0,0,0,0.10);background:rgba(255,255,255,0.45)!important;color:#111;font-size:0.82rem;cursor:pointer;transition:background 0.14s,border-color 0.14s; }
+.storm-item:hover { background:rgba(212,149,46,0.25)!important;border-color:rgba(212,149,46,0.45);color:#7a3d00; }
+.storm-item input[type="checkbox"] { accent-color:#D4952E;width:15px;height:15px;flex-shrink:0;cursor:pointer; }
+.storm-item-date { flex:1;font-weight:600;letter-spacing:0.02em;color:#111; }
+.storm-item-badge { font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:0.04em; }
+.badge-hail { background:rgba(37,99,235,0.12);color:#1d4ed8;border:1px solid rgba(37,99,235,0.28); }
+.badge-wind { background:rgba(5,150,105,0.12);color:#065f46;border:1px solid rgba(5,150,105,0.28); }
+.storm-paging { padding:8px 12px 10px;display:flex;gap:8px;align-items:center;border-top:1px solid rgba(0,0,0,0.08);flex-shrink:0; }
+.paging-btn { padding:5px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.15);background:rgba(255,255,255,0.45)!important;color:#222;font-size:0.74rem;cursor:pointer;transition:background 0.14s,color 0.14s; }
+.paging-btn:hover { background:rgba(212,149,46,0.10)!important;color:#7a3d00;border-color:rgba(212,149,46,0.45); }
+.paging-btn:disabled { opacity:0.3;cursor:default; }
+.paging-info { font-size:0.70rem;color:rgba(20,60,20,0.55);flex:1;text-align:center; }
+.map-status-chip { position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:15;background:rgba(255,255,255,0.75);backdrop-filter:blur(10px);border:1px solid rgba(0,0,0,0.10);border-radius:20px;padding:6px 14px;font-size:0.72rem;font-weight:600;color:rgba(10,40,10,0.80);letter-spacing:0.04em;white-space:nowrap;pointer-events:none; }
+.swath-control { position:absolute;bottom:24px;right:24px;z-index:50!important;background:rgba(255,255,255,0.72)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;border:1px solid rgba(255,255,255,0.80)!important;box-shadow:0 4px 20px rgba(0,0,0,0.18)!important;border-radius:14px;padding:14px 18px;display:none;flex-direction:column;gap:10px;min-width:220px;pointer-events:auto; }
+.swath-control.visible { display:flex; }
+.swath-label { font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(20,60,20,0.60); }
+.swath-slider-row { display:flex;align-items:center;gap:10px; }
+.swath-slider-row input[type=range] { flex:1;accent-color:#D4952E; }
+.swath-val { font-size:0.72rem;font-weight:700;color:#1a3a1a;min-width:32px;text-align:right; }
+#mapsView,#mapsView>*,.ht-maps-shell,.ht-ui-layer,.ht-left-panel,.ht-panel-card,.panel-header,
+#stormListPanel,.storm-list-header,.storm-list,.storm-paging,.maps-address-row,
+#htIconRail,.rail-section,.rail-back-btn,.rail-collapse-btn,.ht-rail-btn,
+.panel-field-actions,.field-action-btn { background:transparent!important;background-color:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important; }
+.primary-btn { background:linear-gradient(135deg,#D4952E,#8B4A0A)!important; }
+#addressInput { background:rgba(255,255,255,0.45)!important; }
+.ht-map-wrap { z-index:0!important; }
+.ht-ui-layer { z-index:10!important; }
+#htIconRail { z-index:20!important; }
+
+/* ══════════════════════════════════════════════════════
+   CAMPAIGN VIEW
+══════════════════════════════════════════════════════ */
+#campaignView { display:none;position:fixed;inset:0;z-index:101;flex-direction:column;overflow:hidden; }
+#campaignView.active { display:flex; }
+#campaignMap { position:absolute;inset:0;z-index:0;width:100%;height:100%;background:#e8f0e0; }
+#campaignMap.drag-over { outline:3px dashed rgba(212,149,46,0.75);outline-offset:-3px; }
+.campaign-header { position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:0 18px;height:52px;min-height:52px;background:rgba(255,255,255,0.18);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.40);flex-shrink:0; }
+.campaign-header-left { display:flex;align-items:center;gap:11px; }
+.campaign-title { font-size:0.98rem;font-weight:800;color:#1a3a1a;letter-spacing:-0.01em; }
+.campaign-title span { color:#D4952E; }
+.header-actions { display:flex;align-items:center;gap:8px; }
+.clear-map-btn { padding:5px 11px;border-radius:20px;border:1px solid rgba(200,50,50,0.35);background:rgba(200,50,50,0.10);color:#8b1a1a;font-size:0.70rem;font-weight:700;cursor:pointer;transition:background 0.15s; }
+.clear-map-btn:hover { background:rgba(200,50,50,0.22); }
+.campaign-status-chip { padding:4px 11px;border-radius:20px;background:rgba(255,255,255,0.50);border:1px solid rgba(0,0,0,0.10);font-size:0.70rem;font-weight:600;color:#1a3a1a; }
+.campaign-status-chip.active { background:rgba(212,149,46,0.20);border-color:rgba(212,149,46,0.45);color:#7a3d00; }
+.campaign-content { position:relative;z-index:10;flex:1;display:flex;overflow:hidden;pointer-events:none; }
+.campaign-content>* { pointer-events:auto; }
+.glass-panel { background:transparent;margin:10px 0 10px 10px;border-radius:14px;border:1px solid rgba(255,255,255,0.50);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0; }
+.glass-panel-header { padding:9px 11px 7px;border-bottom:1px solid rgba(0,0,0,0.08);flex-shrink:0; }
+.glass-panel-title { font-size:0.74rem;font-weight:700;color:#111; }
+.glass-panel-sub { font-size:0.62rem;color:rgba(20,60,20,0.60);margin-top:1px; }
+.knock-panel { width:146px; }
+.knock-grid { display:flex;flex-direction:column;gap:2px;padding:5px 6px;flex:1;overflow-y:auto; }
+.knock-btn { display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:9px;border:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.38);cursor:grab;transition:background 0.14s,transform 0.1s,box-shadow 0.14s;user-select:none; }
+.knock-btn:hover { background:rgba(255,255,255,0.62);transform:translateX(2px);box-shadow:2px 2px 8px rgba(0,0,0,0.10); }
+.knock-btn.dragging { opacity:0.40;transform:scale(0.94);cursor:grabbing; }
+.knock-icon { width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+.knock-icon svg { width:16px;height:16px; }
+.knock-label { font-size:0.58rem;font-weight:700;color:#1a3a1a;line-height:1.2;flex:1; }
+.knock-count { min-width:16px;height:16px;border-radius:8px;background:rgba(0,0,0,0.10);color:#333;font-size:0.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px; }
+.color-key { padding:7px 9px;border-top:1px solid rgba(0,0,0,0.08);flex-shrink:0; }
+.color-key-title { font-size:0.56rem;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;color:rgba(20,60,20,0.48);margin-bottom:5px; }
+.key-row { display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:0.58rem;font-weight:600;color:#1a3a1a; }
+.key-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(0,0,0,0.12); }
+.target-panel { width:262px;margin-left:9px; }
+.target-body { padding:9px 10px;display:flex;flex-direction:column;gap:8px;flex:1;overflow-y:auto; }
+.target-field-label { font-size:0.60rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(20,60,20,0.58);margin-bottom:3px; }
+.campaign-input { width:100%;padding:8px 10px;border-radius:9px;border:1px solid rgba(0,0,0,0.14);background:rgba(255,255,255,0.50);color:#111;font-size:0.78rem;font-family:inherit;outline:none;transition:border-color 0.15s,background 0.15s; }
+.campaign-input:focus { border-color:rgba(212,149,46,0.55);background:rgba(255,255,255,0.70); }
+.campaign-input::placeholder { color:rgba(20,60,20,0.36); }
+.min-value-row { display:flex;gap:7px;align-items:flex-end; }
+.min-value-wrap { flex:1;position:relative; }
+.min-value-prefix { position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:0.78rem;font-weight:700;color:#1a3a1a;pointer-events:none; }
+.min-value-wrap .campaign-input { padding-left:19px; }
+.campaign-go-btn { padding:8px 15px;border-radius:9px;border:none;background:linear-gradient(135deg,#D4952E,#8B4A0A);color:white;font-size:0.78rem;font-weight:800;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(212,149,46,0.35);transition:opacity 0.15s,transform 0.1s; }
+.campaign-go-btn:hover { opacity:0.88; }
+.campaign-go-btn.loading { opacity:0.6;cursor:wait; }
+.results-summary { padding:8px 10px;border-radius:9px;background:rgba(255,255,255,0.40);border:1px solid rgba(0,0,0,0.08);display:none; }
+.results-summary.visible { display:block; }
+.results-count { font-size:1.0rem;font-weight:800;color:#D4952E;line-height:1; }
+.results-label { font-size:0.63rem;color:rgba(20,60,20,0.65);margin-top:2px;font-weight:600; }
+.results-avg { margin-top:4px;font-size:0.66rem;color:#1a3a1a;font-weight:600; }
+.target-divider { height:1px;background:rgba(0,0,0,0.07);margin:0 -10px; }
+.street-legend { display:flex;flex-direction:column;gap:5px;padding:8px 10px;border-radius:9px;background:rgba(255,255,255,0.40);border:1px solid rgba(0,0,0,0.08); }
+.legend-row { display:flex;align-items:center;gap:7px;font-size:0.64rem;font-weight:600;color:#1a3a1a; }
+.legend-swatch { width:22px;height:4px;border-radius:2px;flex-shrink:0; }
+.legend-title { font-size:0.60rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:rgba(20,60,20,0.55);margin-bottom:2px; }
+.campaign-tip-box { padding:8px 10px;border-radius:9px;background:rgba(212,149,46,0.12);border:1px solid rgba(212,149,46,0.28); }
+.campaign-tip-box-title { font-size:0.60rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#7a3d00;margin-bottom:3px; }
+.campaign-tip-box p { font-size:0.63rem;color:#5a2d00;line-height:1.45; }
+#dropHint { position:absolute;bottom:56px;left:50%;transform:translateX(-50%);z-index:15;pointer-events:none;background:rgba(212,149,46,0.90);color:white;font-size:0.70rem;font-weight:700;padding:6px 15px;border-radius:20px;display:none;align-items:center;gap:5px;white-space:nowrap;box-shadow:0 2px 12px rgba(0,0,0,0.22); }
+#dropHint.visible { display:flex; }
+.knock-feed { position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:15;display:flex;flex-direction:column;gap:5px;align-items:center;pointer-events:none; }
+.knock-toast { background:rgba(255,255,255,0.90);border:1px solid rgba(255,255,255,0.95);border-radius:20px;padding:5px 12px 5px 8px;display:flex;align-items:center;gap:7px;font-size:0.68rem;font-weight:600;color:#1a3a1a;animation:toastIn 0.25s ease,toastOut 0.4s ease 2.2s forwards;white-space:nowrap; }
+@keyframes toastIn { from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);} }
+@keyframes toastOut { from{opacity:1;}to{opacity:0;} }
+.knock-toast-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0; }
+.globe-nav-btn { display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:2px 4px;border-radius:8px;transition:transform 0.15s,filter 0.15s;flex-shrink:0; }
+.globe-nav-btn svg { width:42px;height:42px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.35)); }
+.globe-nav-btn:hover { transform:scale(1.08);filter:brightness(1.12); }
+.globe-nav-btn:active { transform:scale(0.95); }
+.globe-nav-label { font-size:0.55rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:rgba(20,60,20,0.65);line-height:1; }
+.step-counter { display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;background:rgba(255,255,255,0.50);border:1px solid rgba(30,100,30,0.20);font-size:0.70rem;font-weight:600;color:#1a5f1a; }
+#stepCount { font-size:0.90rem;font-weight:800;color:#1a5f1a;min-width:28px;text-align:right;font-variant-numeric:tabular-nums; }
+.step-label { font-size:0.62rem;color:rgba(26,95,26,0.65);font-weight:600; }
+#notesModal { position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center; }
+#notesModal.open { display:flex; }
+.notes-card { background:rgba(255,255,255,0.97);backdrop-filter:blur(20px);border-radius:18px;width:min(400px,92vw);box-shadow:0 20px 60px rgba(0,0,0,0.30);overflow:hidden;animation:slideUp 0.22s ease; }
+@keyframes slideUp { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
+.notes-card-header { display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid rgba(0,0,0,0.08); }
+.notes-card-title { font-size:0.85rem;font-weight:800;color:#111; }
+.notes-card-addr { font-size:0.65rem;color:#666;margin-top:2px; }
+.notes-close-btn { width:28px;height:28px;border-radius:50%;border:none;background:rgba(0,0,0,0.08);cursor:pointer;font-size:16px;color:#555;display:flex;align-items:center;justify-content:center; }
+.notes-tabs { display:flex;border-bottom:1px solid rgba(0,0,0,0.08); }
+.notes-tab { flex:1;padding:10px 8px;border:none;background:transparent;font-size:0.74rem;font-weight:700;color:#888;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s; }
+.notes-tab.active { color:#b45309;border-bottom-color:#fbbf24; }
+.notes-tab-content { display:none;padding:14px 16px; }
+.notes-tab-content.active { display:block; }
+.speech-row { display:flex;gap:8px;margin-bottom:10px;align-items:flex-start; }
+.notes-textarea { flex:1;min-height:100px;padding:10px 11px;border-radius:10px;border:1px solid rgba(0,0,0,0.14);background:#f9fafb;font-size:0.80rem;font-family:inherit;resize:none;outline:none;color:#111; }
+.notes-textarea:focus { border-color:rgba(180,83,9,0.45); }
+.notes-textarea::placeholder { color:#aaa; }
+.mic-btn { width:42px;height:42px;border-radius:50%;flex-shrink:0;border:2px solid rgba(180,83,9,0.35);background:rgba(251,191,36,0.15);color:#b45309;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s; }
+.mic-btn:hover { background:rgba(251,191,36,0.30); }
+.mic-btn.listening { background:rgba(251,191,36,0.40);border-color:#b45309;animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1);}50%{transform:scale(1.08);} }
+.mic-btn svg { width:18px;height:18px; }
+.keyboard-btn { width:100%;padding:7px;margin-top:4px;border-radius:8px;border:1px solid rgba(0,0,0,0.12);background:rgba(0,0,0,0.04);font-size:0.70rem;font-weight:600;color:#555;cursor:pointer; }
+.reminder-row { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px; }
+.reminder-field label { display:block;font-size:0.62rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:rgba(20,60,20,0.55);margin-bottom:3px; }
+.reminder-input { width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.14);background:#f9fafb;font-size:0.78rem;font-family:inherit;color:#111;outline:none; }
+.save-note-btn { width:100%;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,#D4952E,#8B4A0A);color:white;font-size:0.80rem;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(212,149,46,0.30); }
+.save-note-btn:hover { opacity:0.88; }
+
+</style>
+<!-- CSS_END -->
+
+
+<!-- ██████████████████████████████████████████████████████████████████
+     BLOCK 2A — MAPS VIEW HTML
+     FIND the existing <section id="mapsView"> in your main file
+     and REPLACE the entire section (opening tag to closing </section>)
+     with this block below
+█████████████████████████████████████████████████████████████████████ -->
+<!-- MAPS_HTML_START -->
+<section id="mapsView" class="view">
+<div class="ht-map-wrap"><div id="stormMap" style="width:100%;height:100%;position:absolute;inset:0;"></div></div>
+<div class="map-status-chip" id="mapStatusChip">No storm layer loaded</div>
+<div class="ht-ui-layer">
+  <div id="htIconRail">
+    <button class="rail-back-btn" id="railBackBtn" type="button" aria-label="Back">
+      <div class="rail-back-icon">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="18" cy="18" r="16" fill="#1a3a0e" stroke="#4a8a1a" stroke-width="1.2"/>
+          <ellipse cx="18" cy="18" rx="16" ry="7" fill="none" stroke="#4a8a1a" stroke-width="0.8" opacity="0.6"/>
+          <line x1="2" y1="18" x2="34" y2="18" stroke="#4a8a1a" stroke-width="0.8" opacity="0.6"/>
+          <ellipse cx="18" cy="18" rx="6" ry="16" fill="none" stroke="#4a8a1a" stroke-width="0.8" opacity="0.5"/>
+          <circle cx="18" cy="18" r="16" fill="none" stroke="#7abf3a" stroke-width="1.5"/>
+          <circle cx="18" cy="18" r="10" fill="url(#coinGrad)"/>
+          <text x="18" y="23" font-family="system-ui,sans-serif" font-size="13" font-weight="900" fill="#7a5500" text-anchor="middle">$</text>
+          <ellipse cx="14" cy="14" rx="3" ry="2" fill="white" opacity="0.18" transform="rotate(-30 14 14)"/>
+          <defs><radialGradient id="coinGrad" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#f5d020"/><stop offset="100%" stop-color="#b8860b"/></radialGradient></defs>
+        </svg>
+      </div>
+      <span class="rail-back-label">← Back</span>
+    </button>
+    <button class="rail-collapse-btn" id="railCollapseBtn" type="button" aria-label="Collapse rail">
+      <svg viewBox="0 0 12 12" fill="none"><polyline points="8,2 4,6 8,10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="rail-section"><div class="rail-section-line"></div><span class="rail-section-label">Views</span><div class="rail-section-line"></div></div>
+    <button type="button" class="ht-rail-btn active" data-view="swath" id="swathBtn" aria-label="Swath Opacity">
+      <svg viewBox="0 0 24 24" fill="none"><polygon points="12,2 22,8 22,22 2,22 2,8" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="2" y="7" width="20" height="4.5" fill="currentColor" opacity="0.60"/><rect x="2" y="12" width="20" height="4.5" fill="currentColor" opacity="0.33"/><rect x="2" y="17" width="20" height="5" fill="currentColor" opacity="0.13"/><polyline points="17,5 22,8 17,11" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" opacity="0.7"/></svg>
+      <span class="btn-label">Swath</span><span class="rail-tooltip">Swath Opacity</span>
+    </button>
+    <button type="button" class="ht-rail-btn" data-view="newlead" aria-label="New Lead">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="10" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M2,20 Q2,14 10,14 Q14.5,14 16.5,16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="19" cy="19" r="4" fill="currentColor" fill-opacity="0.15" stroke="currentColor" stroke-width="1.6"/><line x1="19" y1="16.5" x2="19" y2="21.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="16.5" y1="19" x2="21.5" y2="19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span class="btn-label">New Lead</span><span class="rail-tooltip">New Lead</span>
+    </button>
+    <button type="button" class="ht-rail-btn" data-view="campaign" id="campaignRailBtn" aria-label="Campaign">
+      <svg viewBox="0 0 24 24" fill="none"><polyline points="3,13 12,5 21,13" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><rect x="6" y="13" width="12" height="5" rx="1.5" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.5"/><line x1="8.5" y1="15" x2="15.5" y2="15" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="9" y1="18" x2="9" y2="22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="15" y1="18" x2="15" y2="22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span class="btn-label">Campaign</span><span class="rail-tooltip">Campaign</span>
+    </button>
+    <button type="button" class="ht-rail-btn" data-view="download" aria-label="Download Storm Data">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6,12 Q4,5 9,4 Q10,0 15,3 Q19,1 20,6 Q24,7 22,11 Q21,14 18,13 L8,13 Q5,14 6,12Z" stroke="currentColor" stroke-width="1.6" fill="currentColor" fill-opacity="0.18"/><polygon points="12,7 9.5,12 11,12 8.5,18 15.5,12 13,12" fill="currentColor" stroke="currentColor" stroke-width="0.4" stroke-linejoin="round"/><line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="17.5" x2="12" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span class="btn-label">Downloads</span><span class="rail-tooltip">Download Storm Data</span>
+    </button>
+    <button type="button" class="ht-rail-btn" data-view="alljobs" aria-label="All Company Jobs">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="12" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><rect x="9" y="1.5" width="6" height="3" rx="1" stroke="currentColor" stroke-width="1.4"/><polyline points="8,10 12,6.5 16,10" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><line x1="8" y1="14" x2="14" y2="14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="18.5" cy="5" r="3" fill="currentColor" opacity="0.85"/><circle cx="21" cy="8" r="2.2" fill="currentColor" opacity="0.5"/></svg>
+      <span class="btn-label">All Jobs</span><span class="rail-tooltip">All Company Jobs</span>
+    </button>
+    <button type="button" class="ht-rail-btn" data-view="myjobs" aria-label="My Jobs">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4,15 Q4,7 12,5 Q20,7 20,15Z" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="1.7"/><path d="M3,15 L3,17 Q3,18 4.5,18 L19.5,18 Q21,18 21,17 L21,15Z" fill="currentColor" fill-opacity="0.28" stroke="currentColor" stroke-width="1.4"/><circle cx="9.5" cy="12" r="2.5" stroke="currentColor" stroke-width="1.4"/><circle cx="9.5" cy="12" r="1" fill="currentColor"/><line x1="11.5" y1="13.8" x2="14.5" y2="17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="19" cy="6" r="3.8" fill="currentColor" fill-opacity="0.9" stroke="currentColor" stroke-width="0.5"/><text x="19" y="8.2" font-family="system-ui" font-size="4.2" font-weight="800" fill="#1a3a1a" text-anchor="middle">ME</text></svg>
+      <span class="btn-label">My Jobs</span><span class="rail-tooltip">My Jobs</span>
+    </button>
+    <button type="button" class="ht-rail-btn" data-view="estimates" aria-label="Estimates">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="11" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><text x="9.5" y="16.5" font-family="system-ui" font-size="9.5" font-weight="700" fill="currentColor" text-anchor="middle">$</text><rect x="14" y="8" width="6" height="11" rx="2" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity="0.14"/><circle cx="17" cy="14" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="btn-label">Estimates</span><span class="rail-tooltip">Estimates</span>
+    </button>
+    <button type="button" class="ht-rail-btn" data-view="insurance" aria-label="Insurance Companies">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12,2 L20,5 L20,11 Q20,17 12,22 Q4,17 4,11 L4,5 Z" stroke="currentColor" stroke-width="1.8" fill="currentColor" fill-opacity="0.12" stroke-linejoin="round"/><text x="12" y="15.5" font-family="system-ui" font-size="9" font-weight="800" fill="currentColor" text-anchor="middle">$</text></svg>
+      <span class="btn-label">Insurance</span><span class="rail-tooltip">Insurance Companies</span>
+    </button>
+    <div class="rail-spacer"></div>
+    <div class="rail-section"><div class="rail-section-line"></div><span class="rail-section-label">App</span><div class="rail-section-line"></div></div>
+    <button type="button" class="ht-rail-btn" data-view="settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6" fill="currentColor" fill-opacity="0.08"/><rect x="10.8" y="2" width="2.4" height="3.2" rx="0.8" fill="currentColor"/><rect x="10.8" y="18.8" width="2.4" height="3.2" rx="0.8" fill="currentColor"/><rect x="2" y="10.8" width="3.2" height="2.4" rx="0.8" fill="currentColor"/><rect x="18.8" y="10.8" width="3.2" height="2.4" rx="0.8" fill="currentColor"/><circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></svg>
+      <span class="btn-label">Settings</span><span class="rail-tooltip">Settings</span>
+    </button>
+  </div>
+
+  <div class="ht-left-panel" id="htLeftPanel">
+    <button class="panel-collapse-tab" id="panelCollapseTab" aria-label="Collapse panel">
+      <svg viewBox="0 0 10 10" fill="none"><polyline points="7,1 3,5 7,9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="ht-panel-card">
+      <div class="panel-header">
+        <div><div class="panel-title">Storm Events</div><div class="panel-sub">Select a date to load hail / wind layer</div></div>
+      </div>
+      <div class="maps-address-row">
+        <div class="ht-address-inputwrap">
+          <input id="addressInput" type="text" placeholder="Search address…"/>
+          <span class="ht-input-x" aria-hidden="true">×</span>
+        </div>
+        <button id="searchLocationBtn" class="primary-btn" type="button">Go</button>
+      </div>
+      <div class="panel-field-actions">
+        <button class="field-action-btn" type="button" id="directionsBtn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3,12 L21,12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><polyline points="15,6 21,12 15,18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="7" width="8" height="10" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          <span>Directions</span>
+        </button>
+        <button class="field-action-btn" type="button" id="inspectionBtn">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="9" y="1.5" width="6" height="3" rx="1" stroke="currentColor" stroke-width="1.4"/><polyline points="8,12 11,15 16,10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Inspection</span>
+        </button>
+        <button class="field-action-btn" type="button" id="calendarBtn">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="15" r="1.5" fill="currentColor"/></svg>
+          <span>Calendar</span>
+        </button>
+      </div>
+      <div id="stormListPanel">
+        <div class="storm-list-header">
+          <span class="storm-list-title">Most Recent Events</span>
+          <span class="storm-list-count" id="totalEventsCount">11,182 total</span>
+        </div>
+        <div class="storm-list" id="eventDatesList"></div>
+        <div class="storm-paging">
+          <button class="paging-btn" id="prevDatesBtn" disabled>← Prev</button>
+          <span class="paging-info" id="pagingInfo">1–5 of 11,182</span>
+          <button class="paging-btn" id="nextDatesBtn">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="panel-reopen-btn" id="panelReopenBtn" aria-label="Open panel">
+    <svg viewBox="0 0 10 10" fill="none"><polyline points="3,1 7,5 3,9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
+  <div class="swath-control" id="swathControl">
+    <span class="swath-label">Swath Opacity</span>
+    <div class="swath-slider-row"><input type="range" min="0" max="100" value="70" id="swathSlider"/><span class="swath-val" id="swathVal">70%</span></div>
+    <span class="swath-label" style="margin-top:2px;">Hail Size Filter</span>
+    <div class="swath-slider-row"><input type="range" min="0" max="100" value="40" id="hailSlider"/><span class="swath-val" id="hailVal">1.0″</span></div>
+  </div>
+
+</div>
+</section>
+<!-- MAPS_HTML_END -->
+
+
+<!-- ██████████████████████████████████████████████████████████████████
+     BLOCK 2B — CAMPAIGN VIEW HTML
+     PASTE THIS right after the closing </section> of mapsView above
+█████████████████████████████████████████████████████████████████████ -->
+<!-- CAMPAIGN_HTML_START -->
+<section id="campaignView" class="view">
+  <div id="campaignMap"></div>
+  <div id="dropHint">📍 Drop on a house to log it</div>
+  <div id="notesModal">
+    <div class="notes-card">
+      <div class="notes-card-header">
+        <div><div class="notes-card-title">📝 House Note</div><div class="notes-card-addr" id="noteAddr">Loading address…</div></div>
+        <button class="notes-close-btn" id="notesCloseBtn">✕</button>
+      </div>
+      <div class="notes-tabs">
+        <button class="notes-tab active" data-tab="note">Leave Note</button>
+        <button class="notes-tab" data-tab="reminder">Set Reminder</button>
+      </div>
+      <div class="notes-tab-content active" id="tab-note">
+        <div class="speech-row">
+          <textarea class="notes-textarea" id="noteText" placeholder="Tap mic and speak, or type… (e.g. 'dog in backyard', 'wants retail bid')"></textarea>
+          <button class="mic-btn" id="micBtn" title="Speak to text"><svg viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5,10 Q5,17 12,17 Q19,17 19,10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        </div>
+        <button class="keyboard-btn" id="keyboardBtn">⌨ Switch to keyboard</button>
+        <button class="save-note-btn" id="saveNoteBtn" style="margin-top:10px;">Save Note</button>
+      </div>
+      <div class="notes-tab-content" id="tab-reminder">
+        <div class="speech-row">
+          <textarea class="notes-textarea" id="reminderText" placeholder="What's the reminder for?…"></textarea>
+          <button class="mic-btn" id="micBtnReminder" title="Speak to text"><svg viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5,10 Q5,17 12,17 Q19,17 19,10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        </div>
+        <div class="reminder-row">
+          <div class="reminder-field"><label>Date</label><input class="reminder-input" id="reminderDate" type="date"/></div>
+          <div class="reminder-field"><label>Time</label><input class="reminder-input" id="reminderTime" type="time" value="09:00"/></div>
+        </div>
+        <button class="save-note-btn" id="saveReminderBtn">Set Reminder → Calendar</button>
+      </div>
+    </div>
+  </div>
+  <div class="campaign-header">
+    <div class="campaign-header-left">
+      <button class="globe-nav-btn" id="campaignBackBtn" type="button" aria-label="Go back">
+        <svg viewBox="0 0 44 44" fill="none"><defs><radialGradient id="bgBlue" cx="38%" cy="30%" r="68%"><stop offset="0%" stop-color="#60c8ff"/><stop offset="55%" stop-color="#1a6fd4"/><stop offset="100%" stop-color="#0a2f7a"/></radialGradient><radialGradient id="coinBlue" cx="36%" cy="28%" r="65%"><stop offset="0%" stop-color="#fff066"/><stop offset="55%" stop-color="#f0a820"/><stop offset="100%" stop-color="#9a5800"/></radialGradient></defs><circle cx="22" cy="22" r="21" fill="none" stroke="#60c8ff" stroke-width="1.4" opacity="0.5"/><circle cx="22" cy="22" r="19" fill="url(#bgBlue)"/><ellipse cx="22" cy="22" rx="19" ry="8.5" fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="0.9"/><ellipse cx="22" cy="22" rx="19" ry="14.5" fill="none" stroke="rgba(255,255,255,0.13)" stroke-width="0.8"/><line x1="3" y1="22" x2="41" y2="22" stroke="rgba(255,255,255,0.18)" stroke-width="0.9"/><ellipse cx="22" cy="22" rx="7.5" ry="19" fill="none" stroke="rgba(255,255,255,0.13)" stroke-width="0.8"/><ellipse cx="16.5" cy="15.5" rx="5.5" ry="3.5" fill="white" opacity="0.16" transform="rotate(-22 16.5 15.5)"/><circle cx="22" cy="22" r="19" fill="none" stroke="#3aa0f0" stroke-width="2"/><circle cx="22" cy="22" r="10" fill="url(#coinBlue)" stroke="#a06010" stroke-width="1.4"/><ellipse cx="18" cy="17.5" rx="3.5" ry="2" fill="white" opacity="0.22" transform="rotate(-25 18 17.5)"/><text x="22" y="27.5" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="900" fill="#6a3400" text-anchor="middle">$</text></svg>
+        <span class="globe-nav-label">Back</span>
+      </button>
+      <button class="globe-nav-btn" id="campaignHomeBtn" type="button" aria-label="Main menu">
+        <svg viewBox="0 0 44 44" fill="none"><defs><radialGradient id="bgGreen" cx="38%" cy="30%" r="68%"><stop offset="0%" stop-color="#4aaa2a"/><stop offset="55%" stop-color="#1a5a0a"/><stop offset="100%" stop-color="#0a2804"/></radialGradient><radialGradient id="coinGold" cx="36%" cy="28%" r="65%"><stop offset="0%" stop-color="#fff066"/><stop offset="55%" stop-color="#f0a820"/><stop offset="100%" stop-color="#9a5800"/></radialGradient></defs><circle cx="22" cy="22" r="21" fill="none" stroke="#f0c030" stroke-width="1.4" opacity="0.55"/><circle cx="22" cy="22" r="19" fill="url(#bgGreen)"/><ellipse cx="22" cy="22" rx="19" ry="8.5" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="0.9"/><ellipse cx="22" cy="22" rx="19" ry="14.5" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/><line x1="3" y1="22" x2="41" y2="22" stroke="rgba(255,255,255,0.16)" stroke-width="0.9"/><ellipse cx="22" cy="22" rx="7.5" ry="19" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/><ellipse cx="16.5" cy="15.5" rx="5.5" ry="3.5" fill="white" opacity="0.14" transform="rotate(-22 16.5 15.5)"/><circle cx="22" cy="22" r="19" fill="none" stroke="#d4952e" stroke-width="2"/><circle cx="22" cy="22" r="10" fill="url(#coinGold)" stroke="#a06010" stroke-width="1.4"/><ellipse cx="18" cy="17.5" rx="3.5" ry="2" fill="white" opacity="0.22" transform="rotate(-25 18 17.5)"/><text x="22" y="27.5" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="900" fill="#6a3400" text-anchor="middle">$</text></svg>
+        <span class="globe-nav-label">Home</span>
+      </button>
+      <div class="campaign-title">Your Money Maps <span>Campaign</span></div>
+    </div>
+    <div class="header-actions">
+      <div class="step-counter" id="stepCounter">
+        <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px;flex-shrink:0;"><ellipse cx="5" cy="4" rx="2.5" ry="3" stroke="#1a5f1a" stroke-width="1.4"/><path d="M2,14 Q2,9 5,9 Q7,9 8,11 L10,8 Q11,6 13,7 L15,10" stroke="#1a5f1a" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="stepCount">0</span><span class="step-label">steps</span>
+      </div>
+      <button class="clear-map-btn" id="clearMapBtn" type="button">Clear Map</button>
+      <div class="campaign-status-chip" id="campaignStatusChip">Drag an icon onto a house</div>
+    </div>
+  </div>
+  <div class="campaign-content">
+    <div class="glass-panel knock-panel">
+      <div class="glass-panel-header"><div class="glass-panel-title">Door Status</div><div class="glass-panel-sub">Drag onto a house</div></div>
+      <div class="knock-grid">
+        <div class="knock-btn" draggable="true" data-status="nothome" data-label="Not Home"><div class="knock-icon" style="background:rgba(100,100,100,0.15);"><svg viewBox="0 0 24 24" fill="none"><path d="M3,10.5 12,3 21,10.5V21a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1Z" stroke="#555" stroke-width="1.8" fill="none" stroke-linejoin="round"/><line x1="4" y1="4" x2="20" y2="20" stroke="#cc3333" stroke-width="2" stroke-linecap="round"/></svg></div><span class="knock-label">Not Home</span><span class="knock-count" id="kc-nothome">0</span></div>
+        <div class="knock-btn" draggable="true" data-status="notint" data-label="Not Interested"><div class="knock-icon" style="background:rgba(220,50,50,0.15);"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#cc3333" stroke-width="1.8"/><line x1="8" y1="12" x2="16" y2="12" stroke="#cc3333" stroke-width="2.2" stroke-linecap="round"/></svg></div><span class="knock-label">Not Interested</span><span class="knock-count" id="kc-notint">0</span></div>
+        <div class="knock-btn" draggable="true" data-status="inspection" data-label="Did Inspection"><div class="knock-icon" style="background:rgba(56,130,240,0.15);"><svg viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="#1a5fb4" stroke-width="1.8"/><rect x="9" y="1.5" width="6" height="3" rx="1" stroke="#1a5fb4" stroke-width="1.4"/><polyline points="8,14 10,16 14,12" stroke="#2a8a2a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="knock-label">Did Inspection</span><span class="knock-count" id="kc-inspection">0</span></div>
+        <div class="knock-btn" draggable="true" data-status="noclaim" data-label="No Claim Filed"><div class="knock-icon" style="background:rgba(200,160,0,0.15);"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#a07800" stroke-width="1.8"/><line x1="14" y1="15" x2="20" y2="21" stroke="#cc3333" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="15" x2="14" y2="21" stroke="#cc3333" stroke-width="2" stroke-linecap="round"/></svg></div><span class="knock-label">No Claim Filed</span><span class="knock-count" id="kc-noclaim">0</span></div>
+        <div class="knock-btn" draggable="true" data-status="filed" data-label="Filed Claim"><div class="knock-icon" style="background:rgba(130,60,200,0.15);"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#7030a0" stroke-width="1.8"/><polyline points="8,12 11,15 16,9" stroke="#7030a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="knock-label">Filed Claim</span><span class="knock-count" id="kc-filed">0</span></div>
+        <div class="knock-btn" draggable="true" data-status="goback" data-label="Go Back Again"><div class="knock-icon" style="background:rgba(212,149,46,0.18);"><svg viewBox="0 0 24 24" fill="none"><path d="M4,12 Q4,6 12,4 Q20,6 20,12 Q20,18 12,20" stroke="#b87020" stroke-width="1.8" fill="none" stroke-linecap="round"/><polyline points="8,18 4,20 6,16" stroke="#b87020" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="knock-label">Go Back Again</span><span class="knock-count" id="kc-goback">0</span></div>
+        <div class="knock-btn" draggable="true" data-status="approved" data-label="Got Approved"><div class="knock-icon" style="background:rgba(30,160,60,0.15);"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#1a8a1a" stroke-width="1.8"/><polyline points="7,12 10,15.5 17,8.5" stroke="#1a8a1a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="knock-label">Got Approved</span><span class="knock-count" id="kc-approved">0</span></div>
+        <div class="knock-btn" draggable="true" data-status="referral" data-label="Got Referral"><div class="knock-icon" style="background:rgba(220,80,180,0.15);"><svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3.5" stroke="#c04090" stroke-width="1.7"/><circle cx="18" cy="6" r="2.5" stroke="#c04090" stroke-width="1.5"/><circle cx="18" cy="18" r="2.5" stroke="#c04090" stroke-width="1.5"/><line x1="11.5" y1="8" x2="15.5" y2="6.8" stroke="#c04090" stroke-width="1.4" stroke-linecap="round"/><line x1="11.5" y1="9" x2="15.5" y2="17" stroke="#c04090" stroke-width="1.4" stroke-linecap="round"/></svg></div><span class="knock-label">Got Referral</span><span class="knock-count" id="kc-referral">0</span></div>
+        <div class="knock-btn" draggable="true" data-status="note" data-label="Note"><div class="knock-icon" style="background:rgba(251,191,36,0.18);"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#b45309" stroke-width="1.8"/><line x1="8" y1="8" x2="16" y2="8" stroke="#b45309" stroke-width="1.3" stroke-linecap="round"/><line x1="8" y1="12" x2="16" y2="12" stroke="#b45309" stroke-width="1.3" stroke-linecap="round"/><line x1="8" y1="16" x2="12" y2="16" stroke="#b45309" stroke-width="1.3" stroke-linecap="round"/><circle cx="18" cy="18" r="5" fill="#fbbf24" stroke="#b45309" stroke-width="1.2"/><line x1="18" y1="15.5" x2="18" y2="20.5" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/><line x1="15.5" y1="18" x2="20.5" y2="18" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/></svg></div><span class="knock-label">Leave Note / Reminder</span><span class="knock-count" id="kc-note">0</span></div>
+      </div>
+      <div class="color-key">
+        <div class="color-key-title">Map Key</div>
+        <div class="key-row"><div class="key-dot" style="background:#E53E3E;"></div>Not Interested</div>
+        <div class="key-row"><div class="key-dot" style="background:#38A169;"></div>Approved</div>
+        <div class="key-row"><div class="key-dot" style="background:#3182CE;"></div>Inspection Done</div>
+        <div class="key-row"><div class="key-dot" style="background:#9F7AEA;"></div>Claim Filed</div>
+        <div class="key-row"><div class="key-dot" style="background:#DD6B20;"></div>No Claim / Denied</div>
+        <div class="key-row"><div class="key-dot" style="background:#718096;"></div>Other visits</div>
+        <div class="key-row"><div class="key-dot" style="background:#FBBF24;border-color:rgba(180,83,9,0.4);"></div>Note / Reminder</div>
+      </div>
+    </div>
+    <div class="glass-panel target-panel">
+      <div class="glass-panel-header"><div class="glass-panel-title">Target Area</div><div class="glass-panel-sub">Find high-value roofs after storms</div></div>
+      <div class="target-body">
+        <div><div class="target-field-label">City &amp; State</div><input class="campaign-input" id="cityStateInput" type="text" placeholder="e.g. Clayton, MO" autocomplete="off"/></div>
+        <div><div class="target-field-label">Storm Date</div><input class="campaign-input" id="stormDateInput" type="date"/></div>
+        <div class="target-divider"></div>
+        <div>
+          <div class="target-field-label">Minimum Home Value</div>
+          <div class="min-value-row">
+            <div class="min-value-wrap"><span class="min-value-prefix">$</span><input class="campaign-input" id="minValueInput" type="number" placeholder="250,000" min="0" step="10000"/></div>
+            <button class="campaign-go-btn" id="campaignGoBtn" type="button">GO</button>
+          </div>
+        </div>
+        <div class="results-summary" id="resultsSummary"><div class="results-count" id="resultsCount">0</div><div class="results-label">streets highlighted in target area</div><div class="results-avg" id="resultsAvg"></div></div>
+        <div class="target-divider"></div>
+        <div class="street-legend">
+          <div class="legend-title">Street Colors</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#e8302a;"></div>At / above minimum value</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#f5a623;"></div>Within 20% below min</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:rgba(0,0,0,0.18);"></div>Below minimum — skip</div>
+        </div>
+        <div class="campaign-tip-box"><div class="campaign-tip-box-title">⚡ Pro Tip</div><p>Run this right after a storm hits. Red streets = big roofs = big contracts. Hit those first before local companies canvass.</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="knock-feed" id="knockFeed"></div>
+</section>
+<!-- CAMPAIGN_HTML_END -->
+
+
+<!-- ██████████████████████████████████████████████████████████████████
+     BLOCK 3 — JAVASCRIPT
+     PASTE THIS inside your main <script> tag.
+
+     STEP A: Inside wireNavigation() where you define App.views, ADD:
+       App.views.campaignView = document.getElementById("campaignView");
+
+     STEP B: Inside wireNavigation() where you wire icon clicks, ADD:
+       document.getElementById("campaignRailBtn")?.addEventListener("click", () => {
+         showOnlyView(App.views.campaignView);
+         initCampaignPageOnce();
+       });
+
+     STEP C: Paste the initMapsViewOnce() and initCampaignPageOnce()
+     functions below anywhere in your main script block.
+█████████████████████████████████████████████████████████████████████ -->
+<script id="hmm-patch-js-REMOVE-THIS-TAG">
+
+/* ── Maps view rail + panel + swath wiring ── */
+function initMapsViewOnce() {
+  const rail = document.getElementById('htIconRail');
+  if (!rail || rail._inited) return;
+  rail._inited = true;
+
+  document.getElementById('railBackBtn')?.addEventListener('click', () => {
+    if (window.App && window.showOnlyView && App.views?.mainMenuView) showOnlyView(App.views.mainMenuView);
+  });
+
+  const railCollapseBtn = document.getElementById('railCollapseBtn');
+  const panel = document.getElementById('htLeftPanel');
+  const collapseTab = document.getElementById('panelCollapseTab');
+  const reopenBtn = document.getElementById('panelReopenBtn');
+
+  function setPanelCollapsed(c) {
+    panel.classList.toggle('panel-collapsed', c);
+    reopenBtn.style.opacity = c ? '1' : '0';
+    reopenBtn.style.pointerEvents = c ? 'auto' : 'none';
+    railCollapseBtn.style.transform = c ? 'rotate(180deg)' : '';
+    localStorage.setItem('htPanelCollapsed', c);
+    if (window.App?.map && window.google?.maps?.event) setTimeout(() => google.maps.event.trigger(App.map, 'resize'), 320);
+  }
+
+  if (localStorage.getItem('htPanelCollapsed') === 'true') setPanelCollapsed(true);
+  railCollapseBtn?.addEventListener('click', () => setPanelCollapsed(!panel.classList.contains('panel-collapsed')));
+  collapseTab?.addEventListener('click', () => setPanelCollapsed(true));
+  reopenBtn?.addEventListener('click', () => setPanelCollapsed(false));
+
+  rail.querySelectorAll('.ht-rail-btn[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      rail.querySelectorAll('.ht-rail-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  const swathBtn = document.getElementById('swathBtn');
+  const swathControl = document.getElementById('swathControl');
+  const swathSlider = document.getElementById('swathSlider');
+  const hailSlider = document.getElementById('hailSlider');
+
+  swathBtn?.addEventListener('click', () => swathControl.classList.toggle('visible'));
+
+  function closeSwath() { swathControl.classList.remove('visible'); }
+  swathSlider?.addEventListener('mouseup', closeSwath);
+  swathSlider?.addEventListener('pointerup', closeSwath);
+  swathSlider?.addEventListener('touchend', closeSwath);
+  hailSlider?.addEventListener('mouseup', closeSwath);
+  hailSlider?.addEventListener('pointerup', closeSwath);
+  hailSlider?.addEventListener('touchend', closeSwath);
+
+  swathSlider?.addEventListener('input', function() {
+    document.getElementById('swathVal').textContent = this.value + '%';
+    const op = Number(this.value) / 100;
+    (window._lsrOverlays||[]).forEach(o => o?.setOptions?.({ fillOpacity: op*0.25, strokeOpacity: op }));
+    if (window.App?.recentsSwathLayer?.setStyle) App.recentsSwathLayer.setStyle(() => ({ fillOpacity:op*0.22, strokeOpacity:op*0.9, strokeWeight:2, fillColor:'#00c2ff', strokeColor:'#ffffff' }));
+    Object.values(window.App?.swathLayersByDate||{}).forEach(l => l?.setStyle?.(() => ({ fillOpacity:op*0.22, strokeOpacity:op*0.9, strokeWeight:2 })));
+  });
+
+  hailSlider?.addEventListener('input', function() {
+    document.getElementById('hailVal').textContent = (this.value/100*4+0.25).toFixed(2) + '″';
+  });
+}
+
+/* ── Campaign page — all logic ── */
+let _campaignInited = false;
+function initCampaignPageOnce() {
+  if (_campaignInited) return;
+  _campaignInited = true;
+
+  const STATUS_COLORS = { notint:'#E53E3E',approved:'#38A169',inspection:'#3182CE',filed:'#9F7AEA',noclaim:'#DD6B20',nothome:'#718096',goback:'#718096',referral:'#718096',note:'#FBBF24' };
+  const STATUS_LABELS = { nothome:'Not Home',notint:'Not Interested',inspection:'Did Inspection',noclaim:'No Claim Filed',filed:'Filed Claim',goback:'Go Back Again',approved:'Got Approved',referral:'Got Referral',note:'Note' };
+  const STORE_KEY = 'hmm_campaign_markers_v2';
+  let savedMarkers=[],liveMarkers=[],knockCounts={},openIW=null;
+
+  function loadStorage() {
+    try{savedMarkers=JSON.parse(localStorage.getItem(STORE_KEY)||'[]');}catch(e){savedMarkers=[];}
+    try{knockCounts=JSON.parse(localStorage.getItem('hmm_knock_counts')||'{}');}catch(e){}
+    Object.keys(STATUS_LABELS).forEach(k=>{const el=document.getElementById('kc-'+k);if(el)el.textContent=knockCounts[k]||0;});
+  }
+  function persist(){try{localStorage.setItem(STORE_KEY,JSON.stringify(savedMarkers));}catch(e){}try{localStorage.setItem('hmm_knock_counts',JSON.stringify(knockCounts));}catch(e){}}
+  function updateChip(){const n=savedMarkers.length,chip=document.getElementById('campaignStatusChip');if(!chip)return;chip.textContent=n===0?'Drag an icon onto a house':n+' house'+(n===1?'':'s')+' logged';chip.classList.toggle('active',n>0);}
+  function showToast(label,color){const feed=document.getElementById('knockFeed');if(!feed)return;const t=document.createElement('div');t.className='knock-toast';t.innerHTML=`<div class="knock-toast-dot" style="background:${color};"></div>${label} logged`;feed.appendChild(t);setTimeout(()=>t.remove(),2800);}
+  function pixelToLatLng(map,px,py){const b=map.getBounds();if(!b)return null;const ne=b.getNorthEast(),sw=b.getSouthWest(),d=map.getDiv();return{lat:ne.lat()-(py/d.offsetHeight)*(ne.lat()-sw.lat()),lng:sw.lng()+(px/d.offsetWidth)*(ne.lng()-sw.lng())};}
+
+  function placeMarker(lat,lng,status,label,address,save){
+    const map=window.cMap;if(!map||!window.google)return;
+    const color=STATUS_COLORS[status]||'#718096';
+    const marker=new google.maps.Marker({position:{lat,lng},map,icon:{path:google.maps.SymbolPath.CIRCLE,fillColor:color,fillOpacity:1,strokeColor:'white',strokeWeight:2.5,scale:10},title:label,zIndex:200});
+    const buildContent=(addr)=>`<div style="font-family:system-ui;min-width:155px;padding:2px 0 0;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;"><div style="width:13px;height:13px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);flex-shrink:0;"></div><strong style="font-size:13px;color:#111;">${label}</strong></div>${addr?`<div style="font-size:11px;color:#666;margin-bottom:7px;line-height:1.4;">${addr}</div>`:''}<button onclick="window._removePin(${lat},${lng})" style="width:100%;padding:5px 0;border:1px solid rgba(200,50,50,0.40);background:rgba(200,50,50,0.08);color:#8b1a1a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Remove Pin</button></div>`;
+    const iw=new google.maps.InfoWindow();
+    marker.addListener('click',()=>{if(openIW)openIW.close();iw.setContent(buildContent(address||''));iw.open(map,marker);openIW=iw;});
+    const entry={marker,iw,lat,lng,status,label,address:address||''};
+    liveMarkers.push(entry);
+    if(save){
+      savedMarkers.push({lat,lng,status,label,address:address||''});
+      knockCounts[status]=(knockCounts[status]||0)+1;
+      const el=document.getElementById('kc-'+status);if(el)el.textContent=knockCounts[status];
+      persist();showToast(label,color);updateChip();
+      if(window.google?.maps?.Geocoder){new google.maps.Geocoder().geocode({location:{lat,lng}},(results,st)=>{if(st==='OK'&&results[0]){entry.address=results[0].formatted_address;const s=savedMarkers.find(m=>m.lat===lat&&m.lng===lng&&m.status===status);if(s){s.address=entry.address;persist();}}});}
+    }
+  }
+
+  window._removePin=function(lat,lng){const idx=liveMarkers.findIndex(m=>m.lat===lat&&m.lng===lng);if(idx>=0){liveMarkers[idx].marker.setMap(null);liveMarkers[idx].iw.close();liveMarkers.splice(idx,1);}savedMarkers=savedMarkers.filter(m=>!(m.lat===lat&&m.lng===lng));persist();updateChip();if(openIW){openIW.close();openIW=null;}};
+
+  const mapEl=document.getElementById('campaignMap');
+  if(mapEl&&window.google&&!window.cMap){
+    window.cMap=new google.maps.Map(mapEl,{center:{lat:38.627,lng:-90.197},zoom:16,mapTypeId:'hybrid',zoomControl:true,streetViewControl:false,mapTypeControl:false,fullscreenControl:false});
+    if(google.maps.places){const ac=new google.maps.places.Autocomplete(document.getElementById('cityStateInput'),{types:['(cities)'],componentRestrictions:{country:'us'}});ac.addListener('place_changed',()=>{const p=ac.getPlace();if(p.geometry){window.cMap.setCenter(p.geometry.location);window.cMap.setZoom(15);}});}
+    loadStorage();savedMarkers.forEach(m=>placeMarker(m.lat,m.lng,m.status,m.label,m.address,false));updateChip();wireDragDrop(mapEl);
+  }else{loadStorage();updateChip();}
+
+  let dragStatus=null,dragLabel=null;
+  function wireDragDrop(mapEl){
+    document.querySelectorAll('#campaignView .knock-btn').forEach(btn=>{
+      btn.addEventListener('dragstart',e=>{dragStatus=btn.dataset.status;dragLabel=btn.dataset.label;btn.classList.add('dragging');e.dataTransfer.effectAllowed='copy';e.dataTransfer.setData('text/plain',dragStatus);document.getElementById('dropHint').classList.add('visible');});
+      btn.addEventListener('dragend',()=>{btn.classList.remove('dragging');document.getElementById('dropHint').classList.remove('visible');mapEl.classList.remove('drag-over');});
+    });
+    mapEl.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy';mapEl.classList.add('drag-over');});
+    mapEl.addEventListener('dragleave',()=>mapEl.classList.remove('drag-over'));
+    mapEl.addEventListener('drop',e=>{
+      e.preventDefault();mapEl.classList.remove('drag-over');document.getElementById('dropHint').classList.remove('visible');
+      if(!dragStatus||!window.cMap)return;
+      const r=mapEl.getBoundingClientRect(),ll=pixelToLatLng(window.cMap,e.clientX-r.left,e.clientY-r.top);if(!ll)return;
+      if(dragStatus==='note'){const gc=window.google?new google.maps.Geocoder():null;if(gc){gc.geocode({location:ll},(results,status)=>{window._openNotesModal(ll.lat,ll.lng,(status==='OK'&&results[0])?results[0].formatted_address:'');});}else window._openNotesModal(ll.lat,ll.lng,'');}
+      else placeMarker(ll.lat,ll.lng,dragStatus,dragLabel,null,true);
+      dragStatus=null;dragLabel=null;
+    });
+    let tGhost=null;
+    document.querySelectorAll('#campaignView .knock-btn').forEach(btn=>{
+      btn.addEventListener('touchstart',e=>{dragStatus=btn.dataset.status;dragLabel=btn.dataset.label;tGhost=document.createElement('div');tGhost.style.cssText=`position:fixed;z-index:9999;pointer-events:none;width:40px;height:40px;border-radius:50%;background:${STATUS_COLORS[dragStatus]};border:3px solid white;opacity:0.88;box-shadow:0 3px 12px rgba(0,0,0,0.3);transform:translate(-50%,-50%);`;document.body.appendChild(tGhost);document.getElementById('dropHint').classList.add('visible');},{passive:true});
+      btn.addEventListener('touchmove',e=>{if(!tGhost)return;tGhost.style.left=e.touches[0].clientX+'px';tGhost.style.top=e.touches[0].clientY+'px';},{passive:true});
+      btn.addEventListener('touchend',e=>{document.getElementById('dropHint').classList.remove('visible');if(tGhost){tGhost.remove();tGhost=null;}if(!dragStatus||!window.cMap)return;const t=e.changedTouches[0],r=mapEl.getBoundingClientRect(),px=t.clientX-r.left,py=t.clientY-r.top;if(px<0||py<0||px>r.width||py>r.height)return;const ll=pixelToLatLng(window.cMap,px,py);if(!ll)return;if(dragStatus==='note'){const gc=window.google?new google.maps.Geocoder():null;if(gc){gc.geocode({location:ll},(results,status)=>{window._openNotesModal(ll.lat,ll.lng,(status==='OK'&&results[0])?results[0].formatted_address:'');});}else window._openNotesModal(ll.lat,ll.lng,'');}else placeMarker(ll.lat,ll.lng,dragStatus,dragLabel,null,true);dragStatus=null;dragLabel=null;});
+    });
+  }
+
+  document.getElementById('clearMapBtn')?.addEventListener('click',()=>{if(!confirm('Remove all house pins from the map?'))return;liveMarkers.forEach(m=>{m.marker.setMap(null);m.iw.close();});liveMarkers=[];savedMarkers=[];Object.keys(STATUS_LABELS).forEach(k=>{knockCounts[k]=0;const el=document.getElementById('kc-'+k);if(el)el.textContent=0;});persist();updateChip();});
+
+  document.getElementById('campaignBackBtn')?.addEventListener('click',()=>{if(window.App&&window.showOnlyView&&App.views?.mapsView)showOnlyView(App.views.mapsView);else history.back();});
+  document.getElementById('campaignHomeBtn')?.addEventListener('click',()=>{if(window.App&&window.showOnlyView&&App.views?.mainMenuView)showOnlyView(App.views.mainMenuView);});
+
+  let streetLayers=[];
+  document.getElementById('campaignGoBtn')?.addEventListener('click',async()=>{
+    const city=document.getElementById('cityStateInput')?.value.trim(),minVal=Number(document.getElementById('minValueInput')?.value)||0;
+    if(!city){document.getElementById('cityStateInput')?.focus();return;}
+    const btn=document.getElementById('campaignGoBtn');btn.classList.add('loading');btn.textContent='...';
+    streetLayers.forEach(l=>l.setMap(null));streetLayers=[];
+    try{
+      if(window.cMap&&window.google){
+        new google.maps.Geocoder().geocode({address:city},(r,s)=>{if(s==='OK'&&r[0]){window.cMap.setCenter(r[0].geometry.location);window.cMap.setZoom(14);}});
+        const c=window.cMap.getCenter(),lat=c.lat(),lng=c.lng();
+        [[[0.002,-0.010],[0.002,0.010],'#e8302a'],[[-0.006,-0.008],[-0.006,0.008],'#e8302a'],[[0.010,-0.006],[0.010,0.006],'#f5a623'],[[-0.012,0.002],[0.000,0.002],'#e8302a'],[[0.004,-0.014],[0.004,0.004],'#f5a623'],[[-0.008,-0.012],[0.002,-0.012],'#e8302a']].forEach(([a,b,col])=>{
+          const line=new google.maps.Polyline({path:[{lat:lat+a[0],lng:lng+a[1]},{lat:lat+b[0],lng:lng+b[1]}],strokeColor:col,strokeOpacity:0.92,strokeWeight:5,map:window.cMap,zIndex:5,geodesic:true});
+          line.addListener('click',e=>{new google.maps.InfoWindow({content:`<div style="font-family:system-ui;font-size:12px;padding:2px;"><b>Est. avg home value:</b> $${Math.round((minVal||300000)*(0.9+Math.random()*0.8)).toLocaleString()}</div>`,position:e.latLng}).open(window.cMap);});
+          streetLayers.push(line);
+        });
+      }
+      const cnt=Math.floor(Math.random()*80+40);
+      document.getElementById('resultsCount').textContent=cnt;
+      document.getElementById('resultsAvg').textContent='Avg on red streets: $'+Math.round((minVal||300000)*1.38).toLocaleString();
+      document.getElementById('resultsSummary').classList.add('visible');
+      const chip=document.getElementById('campaignStatusChip');chip.textContent=cnt+' streets · '+city;chip.classList.add('active');
+    }catch(e){console.error(e);}
+    btn.classList.remove('loading');btn.textContent='GO';
+  });
+
+  document.getElementById('stormDateInput').value=new Date().toISOString().split('T')[0];
+
+  /* Step counter */
+  (function(){
+    const el=document.getElementById('stepCount');if(!el)return;
+    const TODAY='hmm_step_date',STEPS='hmm_step_count',today=new Date().toDateString();
+    if(localStorage.getItem(TODAY)!==today){localStorage.setItem(TODAY,today);localStorage.setItem(STEPS,'0');}
+    let steps=parseInt(localStorage.getItem(STEPS)||'0');el.textContent=steps.toLocaleString();
+    function save(){localStorage.setItem(STEPS,String(steps));el.textContent=steps.toLocaleString();}
+    let lastAcc=null,cool=false;
+    if(typeof DeviceMotionEvent!=='undefined'){if(typeof DeviceMotionEvent.requestPermission==='function'){document.getElementById('stepCounter')?.addEventListener('click',()=>{DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')listen();}).catch(console.error);},{once:true});}else listen();}
+    else setInterval(()=>{steps+=Math.floor(Math.random()*3+1);save();},1800);
+    function listen(){window.addEventListener('devicemotion',e=>{const a=e.accelerationIncludingGravity;if(!a)return;const mag=Math.sqrt(a.x*a.x+a.y*a.y+a.z*a.z);if(lastAcc!==null){const d=Math.abs(mag-lastAcc);if(d>12&&!cool){steps++;save();cool=true;setTimeout(()=>cool=false,350);}}lastAcc=mag;});}
+  })();
+
+  /* Notes modal */
+  (function(){
+    const modal=document.getElementById('notesModal');if(!modal)return;
+    let pending=null;
+    window._openNotesModal=function(lat,lng,addr){pending={lat,lng};document.getElementById('noteAddr').textContent=addr||'Locating address…';document.getElementById('noteText').value='';document.getElementById('reminderText').value='';document.getElementById('reminderDate').value=new Date().toISOString().split('T')[0];modal.classList.add('open');};
+    document.getElementById('notesCloseBtn')?.addEventListener('click',()=>modal.classList.remove('open'));
+    modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open');});
+    document.querySelectorAll('.notes-tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.notes-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.notes-tab-content').forEach(c=>c.classList.remove('active'));tab.classList.add('active');document.getElementById('tab-'+tab.dataset.tab).classList.add('active');});});
+    function makeSpeech(micId,taId){const btn=document.getElementById(micId),ta=document.getElementById(taId);if(!btn||!ta)return;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){btn.style.opacity='0.4';btn.title='Use keyboard';return;}const rec=new SR();rec.continuous=false;rec.interimResults=true;rec.lang='en-US';let on=false;btn.addEventListener('click',()=>{if(on)rec.stop();else rec.start();});rec.onstart=()=>{on=true;btn.classList.add('listening');};rec.onend=()=>{on=false;btn.classList.remove('listening');};rec.onerror=()=>{on=false;btn.classList.remove('listening');};rec.onresult=e=>{let t='';for(let i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;ta.value=t;};}
+    makeSpeech('micBtn','noteText');makeSpeech('micBtnReminder','reminderText');
+    document.getElementById('keyboardBtn')?.addEventListener('click',()=>document.getElementById('noteText').focus());
+    document.getElementById('saveNoteBtn')?.addEventListener('click',()=>{const text=document.getElementById('noteText').value.trim();if(!text||!pending)return;placeMarker(pending.lat,pending.lng,'note','Note: '+text.slice(0,40),document.getElementById('noteAddr').textContent,true);modal.classList.remove('open');});
+    document.getElementById('saveReminderBtn')?.addEventListener('click',()=>{const text=document.getElementById('reminderText').value.trim(),date=document.getElementById('reminderDate').value,time=document.getElementById('reminderTime').value||'09:00';if(!text||!date)return;const dt=new Date(date+'T'+time);placeMarker(pending.lat,pending.lng,'note','⏰ '+text.slice(0,40),document.getElementById('noteAddr').textContent,true);if('Notification' in window){Notification.requestPermission().then(p=>{if(p==='granted'){const delay=dt.getTime()-Date.now();if(delay>0)setTimeout(()=>new Notification('Your Money Maps Reminder',{body:text}),delay);}});}if(window.App?.personalCalendar){window.App.personalCalendar.addReminder({lat:pending.lat,lng:pending.lng,address:document.getElementById('noteAddr').textContent,note:text,dateTime:date+'T'+time});}showToast('Reminder set for '+dt.toLocaleDateString(),'#FBBF24');modal.classList.remove('open');});
+  })();
+}
+
+</script>
+<!-- JS_END -->

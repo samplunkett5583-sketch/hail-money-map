@@ -1,0 +1,90 @@
+warning: in the working copy of 'public/index.html', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/public/index.html b/public/index.html[m
+[1mindex ec96adf..258f68a 100644[m
+[1m--- a/public/index.html[m
+[1m+++ b/public/index.html[m
+[36m@@ -2408,6 +2408,221 @@[m [mdiv.ht-left-panel {[m
+       color: rgba(255, 255, 255, 0.75) !important;[m
+     }[m
+ [m
+[32m+[m[32m/*[m[41m [m
+[32m+[m[32m  ─────────────────────────────────────────────────────────────────────────────[m
+[32m+[m[32m  HMM CSS PATCH — paste everything below just before your[m
+[32m+[m[32m  closing </style> tag in the main app file[m
+[32m+[m[32m  ─────────────────────────────────────────────────────────────────────────────[m
+[32m+[m[32m*/[m
+[32m+[m
+[32m+[m[32m/* ── MAPS VIEW: new rail + transparent panels ── */[m
+[32m+[m[32m.ht-map-wrap { position:absolute;inset:0;z-index:0;background:#e8f0e0; }[m
+[32m+[m[32m#stormMap { width:100%!important;height:100%!important;position:absolute!important;inset:0!important; }[m
+[32m+[m[32m.ht-ui-layer { position:absolute;inset:0;z-index:10;display:flex;pointer-events:none; }[m
+[32m+[m[32m.ht-ui-layer>* { pointer-events:auto; }[m
+[32m+[m[32m#htIconRail {[m
+[32m+[m[32m  position:relative!important;width:80px!important;min-width:80px!important;[m
+[32m+[m[32m  background:transparent!important;backdrop-filter:none!important;[m
+[32m+[m[32m  -webkit-backdrop-filter:none!important;[m
+[32m+[m[32m  border-right:1px solid rgba(255,255,255,0.40)!important;padding:0 0 12px!important;[m
+[32m+[m[32m  display:flex!important;flex-direction:column!important;align-items:center!important;[m
+[32m+[m[32m  gap:2px!important;z-index:20!important;box-shadow:none!important;[m
+[32m+[m[32m  transition:width 0.28s cubic-bezier(.4,0,.2,1),min-width 0.28s cubic-bezier(.4,0,.2,1);[m
+[32m+[m[32m  overflow:hidden!important;flex-shrink:0!important;[m
+[32m+[m[32m}[m
+[32m+[m[32m#htIconRail.collapsed { width:60px!important;min-width:60px!important; }[m
+[32m+[m[32m.rail-back-btn {[m
+[32m+[m[32m  width:100%;height:72px;min-height:72px;background:transparent!important;border:none!important;[m
+[32m+[m[32m  border-bottom:1px solid rgba(0,0,0,0.08);cursor:pointer;[m
+[32m+[m[32m  display:flex;flex-direction:column;align-items:center;justify-content:center;[m
+[32m+[m[32m  gap:5px;padding:0;margin-bottom:6px;flex-shrink:0;transition:background 0.18s;[m
+[32m+[m[32m}[m
+[32m+[m[32m.rail-back-btn:hover { background:rgba(255,255,255,0.20)!important; }[m
+[32m+[m[32m.rail-back-icon { width:56px;height:56px;background:none;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 3px 10px rgba(0,0,0,0.7)); }[m
+[32m+[m[32m.rail-back-icon svg { width:56px;height:56px; }[m
+[32m+[m[32m.rail-back-label { font-size:0.57rem;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:rgba(20,80,20,0.70);white-space:nowrap;transition:opacity 0.18s; }[m
+[32m+[m[32m#htIconRail.collapsed .rail-back-label { opacity:0; }[m
+[32m+[m[32m.rail-collapse-btn {[m
+[32m+[m[32m  width:26px;height:26px;border-radius:7px;border:1px solid rgba(148,163,184,0.12)!important;[m
+[32m+[m[32m  background:rgba(148,163,184,0.05)!important;color:rgba(20,60,20,0.45);cursor:pointer;[m
+[32m+[m[32m  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin:2px 0 4px;[m
+[32m+[m[32m  transition:background 0.15s,color 0.15s;[m
+[32m+[m[32m}[m
+[32m+[m[32m.rail-collapse-btn:hover { background:rgba(212,149,46,0.12)!important;border-color:rgba(212,149,46,0.35)!important;color:#D4952E; }[m
+[32m+[m[32m.rail-collapse-btn svg { width:12px;height:12px;transition:transform 0.28s; }[m
+[32m+[m[32m.rail-section { width:100%;padding:6px 8px 2px;display:flex;align-items:center;gap:6px;flex-shrink:0;background:transparent!important; }[m
+[32m+[m[32m.rail-section-line { flex:1;height:1px;background:rgba(0,0,0,0.10); }[m
+[32m+[m[32m.rail-section-label { font-size:0.55rem;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:rgba(20,60,20,0.40);white-space:nowrap;overflow:hidden;transition:opacity 0.18s,max-width 0.28s;max-width:60px; }[m
+[32m+[m[32m#htIconRail.collapsed .rail-section-label { opacity:0;max-width:0; }[m
+[32m+[m[32m.ht-rail-btn {[m
+[32m+[m[32m  position:relative!important;width:calc(100% - 12px)!important;min-height:54px!important;[m
+[32m+[m[32m  border-radius:12px!important;border:1px solid transparent!important;[m
+[32m+[m[32m  background:transparent!important;color:rgba(10,30,10,0.70)!important;[m
+[32m+[m[32m  cursor:pointer;display:flex!important;flex-direction:column!important;[m
+[32m+[m[32m  align-items:center!important;justify-content:center!important;[m
+[32m+[m[32m  gap:4px!important;padding:8px 4px 6px!important;flex-shrink:0;[m
+[32m+[m[32m  transition:background 0.15s,border-color 0.15s,color 0.15s;overflow:hidden;[m
+[32m+[m[32m}[m
+[32m+[m[32m.ht-rail-btn svg { width:22px;height:22px;flex-shrink:0;transition:transform 0.15s; }[m
+[32m+[m[32m.ht-rail-btn:hover svg { transform:translateY(-1px); }[m
+[32m+[m[32m.btn-label { font-size:0.59rem;font-weight:600;letter-spacing:0.02em;color:inherit;line-height:1;text-align:center;white-space:nowrap;transition:opacity 0.18s; }[m
+[32m+[m[32m#htIconRail.collapsed .btn-label { opacity:0; }[m
+[32m+[m[32m.ht-rail-btn:hover { background:rgba(212,149,46,0.09)!important;border-color:rgba(212,149,46,0.22)!important;color:#D4952E!important; }[m
+[32m+[m[32m.ht-rail-btn.active { background:rgba(212,149,46,0.16)!important;border-color:rgba(212,149,46,0.45)!important;color:#F0B050!important; }[m
+[32m+[m[32m.ht-rail-btn.active::before { content:'';position:absolute;left:0;top:22%;height:56%;width:3px;border-radius:0 3px 3px 0;background:#D4952E;box-shadow:0 0 8px rgba(212,149,46,0.6); }[m
+[32m+[m[32m.rail-tooltip { position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);background:#1b2a3e;color:#e5e7eb;font-size:0.72rem;font-weight:600;padding:5px 10px;border-radius:8px;white-space:nowrap;pointer-events:none;opacity:0;border:1px solid rgba(212,149,46,0.22);box-shadow:0 4px 16px rgba(0,0,0,0.5);z-index:999;transition:opacity 0.12s; }[m
+[32m+[m[32m#htIconRail.collapsed .ht-rail-btn:hover .rail-tooltip { opacity:1; }[m
+[32m+[m[32m.rail-spacer { flex:1; }[m
+[32m+[m[32m.ht-left-panel {[m
+[32m+[m[32m  position:relative;width:340px;min-width:340px;height:100%;[m
+[32m+[m[32m  display:flex;flex-direction:column;flex-shrink:0;[m
+[32m+[m[32m  transition:width 0.30s cubic-bezier(.4,0,.2,1),min-width 0.30s cubic-bezier(.4,0,.2,1),opacity 0.25s;[m
+[32m+[m[32m}[m
+[32m+[m[32m.ht-left-panel.panel-collapsed { width:0;min-width:0;opacity:0;pointer-events:none; }[m
+[32m+[m[32m.ht-panel-card {[m
+[32m+[m[32m  margin:10px 0 10px 10px;border-radius:16px;[m
+[32m+[m[32m  background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;[m
+[32m+[m[32m  border:1px solid rgba(255,255,255,0.50);box-shadow:none!important;[m
+[32m+[m[32m  display:flex;flex-direction:column;overflow:hidden;flex:1;min-height:0;[m
+[32m+[m[32m}[m
+[32m+[m[32m.panel-header { padding:14px 16px 10px;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:space-between;flex-shrink:0; }[m
+[32m+[m[32m.panel-title { font-size:0.82rem;font-weight:700;color:#111; }[m
+[32m+[m[32m.panel-sub { font-size:0.70rem;color:rgba(20,40,20,0.60);margin-top:1px; }[m
+[32m+[m[32m.panel-collapse-tab { position:absolute;right:-14px;top:50%;transform:translateY(-50%);width:14px;height:48px;background:rgba(255,255,255,0.30);backdrop-filter:blur(16px);border:1px solid rgba(255,255,2

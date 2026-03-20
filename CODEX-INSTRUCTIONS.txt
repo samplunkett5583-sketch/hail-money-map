@@ -1,0 +1,149 @@
+================================================================================
+  HAIL MONEY MAP — CODEX INTEGRATION INSTRUCTIONS
+  Give this file AND all the patch files to Codex/Copilot
+  Tell it: "Follow the instructions in CODEX-INSTRUCTIONS.txt"
+================================================================================
+
+YOU HAVE THESE FILES IN THIS FOLDER:
+  1. Your main app file (the 7000-line HTML file)
+  2. campaign-integration-patch.html  — campaign page to add
+  3. maps-view-v3.html                — updated maps view with new icon rail
+
+================================================================================
+TASK 1 — Integrate maps-view-v3.html into the main app file
+================================================================================
+
+The main app file has a section that starts with:
+  <!-- =================== $MAPS VIEW =================== -->
+and a <section id="mapsView" class="view"> tag.
+
+REPLACE the entire mapsView section (from the opening
+  <!-- =================== $MAPS VIEW =================== -->
+all the way to its closing </section> tag)
+WITH the contents of maps-view-v3.html.
+
+BUT — maps-view-v3.html is a standalone file. You only need the parts
+INSIDE the body. Specifically:
+
+  A) Take all CSS from maps-view-v3.html that starts after the
+     existing maps CSS comments and ADD IT to the main file's
+     <style> block, replacing the existing #mapsView CSS rules.
+     The existing mapsView CSS rules in the main file start at:
+       #mapsView.view,
+       #mapsView.view.active {
+     Replace everything from that point down to the end of the
+     mapsView CSS block with the CSS from maps-view-v3.html.
+
+  B) Take the HTML <div id="mapsView"> block from maps-view-v3.html
+     and replace the existing <section id="mapsView"> block in the
+     main file with it. Wrap it in:
+       <!-- =================== $MAPS VIEW =================== -->
+       <section id="mapsView" class="view">
+         [content from maps-view-v3.html body here]
+       </section>
+
+  C) Take the <script> block from maps-view-v3.html and ADD the
+     JS functions to the main file's script section. The key
+     functions to add/replace are:
+       - initMap() — replace existing initMap with the one from v3
+       - The rail collapse, panel collapse, swath slider JS
+       - loadRecentEventsPage() wiring stays UNTOUCHED
+
+  CRITICAL: Do NOT touch these existing functions in the main file:
+       - loadRecentEventsPage()
+       - fetchStormDatesPage()
+       - showHailSwathsForDate()
+       - fetchLsrPointsByDate()
+       - renderNewRecentRows()
+       - wireNewPagerOnce()
+       - ensureTotalEventsCountLoaded()
+       - fetchNoaaHailReports()
+       - Any Supabase or Firebase calls
+
+
+================================================================================
+TASK 2 — Integrate campaign-integration-patch.html into the main app file
+================================================================================
+
+The patch file has three clearly labeled blocks. Do each one:
+
+  BLOCK 1 — CSS
+  Find the closing </style> tag in the main file.
+  Paste all CSS from BLOCK 1 of the patch file just BEFORE </style>.
+
+  BLOCK 2 — HTML
+  Find the closing </section> tag of the mapsView section
+  (the one you just updated in Task 1).
+  Paste the entire HTML from BLOCK 2 right AFTER that </section>.
+
+  BLOCK 3 — JS
+  Inside the wireNavigation() function in the main file,
+  find where App.views are defined (lines like):
+    App.views.hubView = document.getElementById("hubView");
+    App.views.mapsView = document.getElementById("mapsView");
+  Add this line with them:
+    App.views.campaignView = document.getElementById("campaignView");
+
+  Then in the same wireNavigation() function, find where the
+  menu card click handlers are wired (lines like):
+    if (menuMaps) menuMaps.addEventListener("click", ...)
+  Add this after the menuMaps handler:
+    const campaignIconBtn = document.querySelector('.ht-rail-btn[data-view="campaign"]');
+    if (campaignIconBtn) {
+      campaignIconBtn.addEventListener('click', () => {
+        showOnlyView(App.views.campaignView);
+        initCampaignPageOnce();
+      });
+    }
+
+  Then paste the entire initCampaignPageOnce() function from
+  BLOCK 3 anywhere in the main <script> block, outside of
+  other functions.
+
+
+================================================================================
+WHAT NOT TO TOUCH — CRITICAL
+================================================================================
+
+These things must remain 100% unchanged:
+  - Firebase config and initialization
+  - Supabase config and initialization  
+  - window.auth, window.db, window.storage, window.sb
+  - All storm dates / recent events JS logic
+  - loadRecentEventsPage() and all related functions
+  - wireAuth() function
+  - wireNavigation() function structure (only ADD to it, never replace)
+  - The Google Maps API script tag at the bottom
+  - All Firestore queries
+  - The existing initMap() Google Maps initialization
+    (merge the new map options with the existing one, don't delete it)
+
+
+================================================================================
+GOOGLE MAPS NOTE
+================================================================================
+
+The main file already has:
+  window.initMap = function initMap() { ... }
+
+The maps-view-v3.html has an updated version. When merging:
+  - Keep the existing map initialization logic
+  - ADD the new bright hybrid styles from v3
+  - ADD the mapTypeControl: false option
+  - ADD the killMapTypeUI() call
+  - Do NOT remove any existing map click handlers or overlay logic
+
+
+================================================================================
+WHEN DONE
+================================================================================
+
+The result should be ONE single HTML file that:
+  1. Has the existing app fully working (auth, hub, maps, storm dates)
+  2. Has the new maps view with the updated icon rail (8 icons)
+  3. Has the campaign page accessible by clicking the Campaign icon
+  4. Has both globe nav buttons (blue=back, gold=home) on campaign page
+  5. Has the door knock drag-drop system on campaign page
+  6. Has the step counter on campaign page
+  7. Has the notes modal with speech-to-text on campaign page
+================================================================================

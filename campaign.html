@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Your Money Maps — Campaign</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; height: 100vh; overflow: hidden; background: #90b870; }
+
+#campaignView { position: fixed; inset: 0; display: flex; flex-direction: column; }
+#campaignMap { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; background: #e8f0e0; }
+#campaignMap.drag-over { outline: 3px dashed rgba(212,149,46,0.75); outline-offset: -3px; }
+
+/* ── Header ── */
+.campaign-header {
+  position: relative; z-index: 20; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 18px; height: 52px; min-height: 52px;
+  background: rgba(255,255,255,0.18); backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.40);
+  flex-shrink: 0;
+}
+.campaign-header-left { display: flex; align-items: center; gap: 11px; }
+.campaign-back-btn {
+  display: flex; align-items: center; gap: 5px; background: transparent;
+  border: 1px solid rgba(0,0,0,0.15); border-radius: 20px; padding: 5px 11px 5px 7px;
+  cursor: pointer; color: #1a3a1a; font-size: 0.73rem; font-weight: 600; transition: background 0.15s;
+}
+.campaign-back-btn:hover { background: rgba(255,255,255,0.35); }
+.campaign-back-btn svg { width: 13px; height: 13px; }
+.campaign-title { font-size: 0.98rem; font-weight: 800; color: #1a3a1a; letter-spacing: -0.01em; }
+.campaign-title span { color: #D4952E; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.clear-map-btn {
+  padding: 5px 11px; border-radius: 20px; border: 1px solid rgba(200,50,50,0.35);
+  background: rgba(200,50,50,0.10); color: #8b1a1a;
+  font-size: 0.70rem; font-weight: 700; cursor: pointer; transition: background 0.15s;
+}
+.clear-map-btn:hover { background: rgba(200,50,50,0.22); }
+.campaign-status-chip {
+  padding: 4px 11px; border-radius: 20px; background: rgba(255,255,255,0.50);
+  border: 1px solid rgba(0,0,0,0.10); font-size: 0.70rem; font-weight: 600; color: #1a3a1a;
+}
+.campaign-status-chip.active { background: rgba(212,149,46,0.20); border-color: rgba(212,149,46,0.45); color: #7a3d00; }
+
+/* ── Content ── */
+.campaign-content {
+  position: relative; z-index: 10; flex: 1; display: flex; gap: 0;
+  overflow: hidden; pointer-events: none;
+}
+.campaign-content > * { pointer-events: auto; }
+
+/* ── Glass panel ── */
+.glass-panel {
+  background: transparent; margin: 10px 0 10px 10px; border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.50); display: flex; flex-direction: column;
+  overflow: hidden; flex-shrink: 0;
+}
+.glass-panel-header { padding: 9px 11px 7px; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; }
+.glass-panel-title { font-size: 0.74rem; font-weight: 700; color: #111; }
+.glass-panel-sub { font-size: 0.62rem; color: rgba(20,60,20,0.60); margin-top: 1px; }
+
+/* ── Panel 1: Door Knock ── */
+.knock-panel { width: 146px; }
+.knock-grid { display: flex; flex-direction: column; gap: 2px; padding: 5px 6px; flex: 1; overflow-y: auto; }
+
+.knock-btn {
+  display: flex; align-items: center; gap: 7px; padding: 7px 8px;
+  border-radius: 9px; border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.38); cursor: grab;
+  transition: background 0.14s, transform 0.1s, box-shadow 0.14s;
+  user-select: none;
+}
+.knock-btn:hover { background: rgba(255,255,255,0.62); transform: translateX(2px); box-shadow: 2px 2px 8px rgba(0,0,0,0.10); }
+.knock-btn.dragging { opacity: 0.40; transform: scale(0.94); cursor: grabbing; }
+.knock-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.knock-icon svg { width: 16px; height: 16px; }
+.knock-label { font-size: 0.58rem; font-weight: 700; color: #1a3a1a; line-height: 1.2; flex: 1; }
+.knock-count {
+  min-width: 16px; height: 16px; border-radius: 8px; background: rgba(0,0,0,0.10);
+  color: #333; font-size: 0.55rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; padding: 0 3px;
+}
+
+/* ── Color key ── */
+.color-key { padding: 7px 9px; border-top: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; }
+.color-key-title { font-size: 0.56rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(20,60,20,0.48); margin-bottom: 5px; }
+.key-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 0.58rem; font-weight: 600; color: #1a3a1a; }
+.key-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid rgba(0,0,0,0.12); }
+
+/* ── Panel 2: Target ── */
+.target-panel { width: 262px; margin-left: 9px; }
+.target-body { padding: 9px 10px; display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; }
+.target-field-label { font-size: 0.60rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(20,60,20,0.58); margin-bottom: 3px; }
+.target-input {
+  width: 100%; padding: 8px 10px; border-radius: 9px; border: 1px solid rgba(0,0,0,0.14);
+  background: rgba(255,255,255,0.50); color: #111; font-size: 0.78rem; font-family: inherit;
+  outline: none; transition: border-color 0.15s, background 0.15s;
+}
+.target-input:focus { border-color: rgba(212,149,46,0.55); background: rgba(255,255,255,0.70); }
+.target-input::placeholder { color: rgba(20,60,20,0.36); }
+.min-value-row { display: flex; gap: 7px; align-items: flex-end; }
+.min-value-wrap { flex: 1; position: relative; }
+.min-value-prefix { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.78rem; font-weight: 700; color: #1a3a1a; pointer-events: none; }
+.min-value-wrap .target-input { padding-left: 19px; }
+.go-btn {
+  padding: 8px 15px; border-radius: 9px; border: none;
+  background: linear-gradient(135deg, #D4952E, #8B4A0A); color: white;
+  font-size: 0.78rem; font-weight: 800; cursor: pointer; white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(212,149,46,0.35); transition: opacity 0.15s, transform 0.1s;
+}
+.go-btn:hover { opacity: 0.88; } .go-btn:active { transform: scale(0.97); }
+.go-btn.loading { opacity: 0.6; cursor: wait; }
+.results-summary { padding: 8px 10px; border-radius: 9px; background: rgba(255,255,255,0.40); border: 1px solid rgba(0,0,0,0.08); display: none; }
+.results-summary.visible { display: block; }
+.results-count { font-size: 1.0rem; font-weight: 800; color: #D4952E; line-height: 1; }
+.results-label { font-size: 0.63rem; color: rgba(20,60,20,0.65); margin-top: 2px; font-weight: 600; }
+.results-avg { margin-top: 4px; font-size: 0.66rem; color: #1a3a1a; font-weight: 600; }
+.target-divider { height: 1px; background: rgba(0,0,0,0.07); margin: 0 -10px; }
+.street-legend { display: flex; flex-direction: column; gap: 5px; padding: 8px 10px; border-radius: 9px; background: rgba(255,255,255,0.40); border: 1px solid rgba(0,0,0,0.08); }
+.legend-row { display: flex; align-items: center; gap: 7px; font-size: 0.64rem; font-weight: 600; color: #1a3a1a; }
+.legend-swatch { width: 22px; height: 4px; border-radius: 2px; flex-shrink: 0; }
+.legend-title { font-size: 0.60rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(20,60,20,0.55); margin-bottom: 2px; }
+.tip-box { padding: 8px 10px; border-radius: 9px; background: rgba(212,149,46,0.12); border: 1px solid rgba(212,149,46,0.28); }
+.tip-box-title { font-size: 0.60rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #7a3d00; margin-bottom: 3px; }
+.tip-box p { font-size: 0.63rem; color: #5a2d00; line-height: 1.45; }
+
+/* ── Drop hint ── */
+#dropHint {
+  position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%);
+  z-index: 15; pointer-events: none;
+  background: rgba(212,149,46,0.90); color: white;
+  font-size: 0.70rem; font-weight: 700; padding: 6px 15px;
+  border-radius: 20px; display: none; align-items: center; gap: 5px;
+  white-space: nowrap; box-shadow: 0 2px 12px rgba(0,0,0,0.22);
+}
+#dropHint.visible { display: flex; }
+
+/* ── Toast feed ── */
+.knock-feed {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 15; display: flex; flex-direction: column; gap: 5px;
+  align-items: center; pointer-events: none;
+}
+.knock-toast {
+  background: rgba(255,255,255,0.90); border: 1px solid rgba(255,255,255,0.95);
+  border-radius: 20px; padding: 5px 12px 5px 8px;
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.68rem; font-weight: 600; color: #1a3a1a;
+  animation: toastIn 0.25s ease, toastOut 0.4s ease 2.2s forwards;
+  white-space: nowrap;
+}
+@keyframes toastIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes toastOut { from { opacity:1; } to { opacity:0; } }
+.knock-toast-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Globe nav buttons ── */
+.globe-nav-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: transparent; border: none; cursor: pointer;
+  padding: 2px 4px; border-radius: 8px;
+  transition: transform 0.15s, filter 0.15s;
+  flex-shrink: 0;
+}
+.globe-nav-btn svg { width: 42px; height: 42px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35)); }
+.globe-nav-btn:hover { transform: scale(1.08); filter: brightness(1.12); }
+.globe-nav-btn:active { transform: scale(0.95); }
+.globe-nav-label {
+  font-size: 0.55rem; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: rgba(20,60,20,0.65); line-height: 1;
+}
+
+/* ── Step counter ── */
+.step-counter {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: 20px;
+  background: rgba(255,255,255,0.50);
+  border: 1px solid rgba(30,100,30,0.20);
+  font-size: 0.70rem; font-weight: 600; color: #1a5f1a;
+}
+#stepCount {
+  font-size: 0.90rem; font-weight: 800; color: #1a5f1a;
+  min-width: 28px; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.step-label { font-size: 0.62rem; color: rgba(26,95,26,0.65); font-weight: 600; }
+
+/* ── Notes modal overlay ── */
+#notesModal {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.45);
+  display: none; align-items: center; justify-content: center;
+}
+#notesModal.open { display: flex; }
+
+.notes-card {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 18px;
+  width: min(400px, 92vw);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.30);
+  overflow: hidden;
+  animation: slideUp 0.22s ease;
+}
+@keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+.notes-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.notes-card-title { font-size: 0.85rem; font-weight: 800; color: #111; }
+.notes-card-addr { font-size: 0.65rem; color: #666; margin-top: 2px; }
+.notes-close-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: none; background: rgba(0,0,0,0.08);
+  cursor: pointer; font-size: 16px; color: #555;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.notes-close-btn:hover { background: rgba(0,0,0,0.15); }
+
+/* Tabs */
+.notes-tabs {
+  display: flex; border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.notes-tab {
+  flex: 1; padding: 10px 8px; border: none; background: transparent;
+  font-size: 0.74rem; font-weight: 700; color: #888; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s;
+}
+.notes-tab.active { color: #b45309; border-bottom-color: #fbbf24; }
+
+.notes-tab-content { display: none; padding: 14px 16px; }
+.notes-tab-content.active { display: block; }
+
+/* Speech + text area */
+.speech-row {
+  display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start;
+}
+.notes-textarea {
+  flex: 1; min-height: 100px; padding: 10px 11px;
+  border-radius: 10px; border: 1px solid rgba(0,0,0,0.14);
+  background: #f9fafb; font-size: 0.80rem; font-family: inherit;
+  resize: none; outline: none; color: #111;
+  transition: border-color 0.15s;
+}
+.notes-textarea:focus { border-color: rgba(180,83,9,0.45); }
+.notes-textarea::placeholder { color: #aaa; }
+
+.mic-btn {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid rgba(180,83,9,0.35);
+  background: rgba(251,191,36,0.15);
+  color: #b45309; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+.mic-btn:hover { background: rgba(251,191,36,0.30); }
+.mic-btn.listening { background: rgba(251,191,36,0.40); border-color: #b45309; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+.mic-btn svg { width: 18px; height: 18px; }
+
+.keyboard-btn {
+  width: 100%; padding: 7px; margin-top: 4px;
+  border-radius: 8px; border: 1px solid rgba(0,0,0,0.12);
+  background: rgba(0,0,0,0.04); font-size: 0.70rem;
+  font-weight: 600; color: #555; cursor: pointer;
+  transition: background 0.14s;
+}
+.keyboard-btn:hover { background: rgba(0,0,0,0.09); }
+
+/* Reminder fields */
+.reminder-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+}
+.reminder-field label {
+  display: block; font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  color: rgba(20,60,20,0.55); margin-bottom: 3px;
+}
+.reminder-input {
+  width: 100%; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.14); background: #f9fafb;
+  font-size: 0.78rem; font-family: inherit; color: #111; outline: none;
+  transition: border-color 0.15s;
+}
+.reminder-input:focus { border-color: rgba(180,83,9,0.45); }
+
+.save-note-btn {
+  width: 100%; padding: 10px; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, #D4952E, #8B4A0A);
+  color: white; font-size: 0.80rem; font-weight: 800;
+  cursor: pointer; transition: opacity 0.15s;
+  box-shadow: 0 2px 8px rgba(212,149,46,0.30);
+}
+.save-note-btn:hover { opacity: 0.88; }
+
+</style>
+</head>
+<body>
+
+<div id="campaignView">
+
+  <div id="campaignMap"></div>
+  <div id="dropHint">📍 Drop on a house to log it</div>
+
+  <!-- Notes Modal -->
+  <div id="notesModal">
+    <div class="notes-card">
+      <div class="notes-card-header">
+        <div>
+          <div class="notes-card-title">📝 House Note</div>
+          <div class="notes-card-addr" id="noteAddr">Loading address…</div>
+        </div>
+        <button class="notes-close-btn" id="notesCloseBtn">✕</button>
+      </div>
+      <div class="notes-tabs">
+        <button class="notes-tab active" data-tab="note">Leave Note</button>
+        <button class="notes-tab" data-tab="reminder">Set Reminder</button>
+      </div>
+      <!-- Leave Note tab -->
+      <div class="notes-tab-content active" id="tab-note">
+        <div class="speech-row">
+          <textarea class="notes-textarea" id="noteText" placeholder="Tap the mic and speak, or type… (e.g. 'dog in backyard', 'wants retail bid')"></textarea>
+          <button class="mic-btn" id="micBtn" title="Speak to text">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5,10 Q5,17 12,17 Q19,17 19,10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <button class="keyboard-btn" id="keyboardBtn">⌨ Switch to keyboard</button>
+        <button class="save-note-btn" id="saveNoteBtn" style="margin-top:10px;">Save Note</button>
+      </div>
+      <!-- Reminder tab -->
+      <div class="notes-tab-content" id="tab-reminder">
+        <div class="speech-row">
+          <textarea class="notes-textarea" id="reminderText" placeholder="What's the reminder for? Tap mic or type…"></textarea>
+          <button class="mic-btn" id="micBtnReminder" title="Speak to text">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5,10 Q5,17 12,17 Q19,17 19,10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="reminder-row">
+          <div class="reminder-field"><label>Date</label><input class="reminder-input" id="reminderDate" type="date"/></div>
+          <div class="reminder-field"><label>Time</label><input class="reminder-input" id="reminderTime" type="time" value="09:00"/></div>
+        </div>
+        <button class="save-note-btn" id="saveReminderBtn">Set Reminder → Calendar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="campaign-header">
+    <div class="campaign-header-left">
+
+      <!-- BLUE GLOBE = Go Back -->
+      <button class="globe-nav-btn" id="campaignBackBtn" type="button" aria-label="Go back">
+        <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="bgBlue" cx="38%" cy="30%" r="68%">
+              <stop offset="0%"   stop-color="#60c8ff"/>
+              <stop offset="55%"  stop-color="#1a6fd4"/>
+              <stop offset="100%" stop-color="#0a2f7a"/>
+            </radialGradient>
+            <radialGradient id="coinBlue" cx="36%" cy="28%" r="65%">
+              <stop offset="0%"   stop-color="#fff066"/>
+              <stop offset="55%"  stop-color="#f0a820"/>
+              <stop offset="100%" stop-color="#9a5800"/>
+            </radialGradient>
+          </defs>
+          <circle cx="22" cy="22" r="21" fill="none" stroke="#60c8ff" stroke-width="1.4" opacity="0.5"/>
+          <circle cx="22" cy="22" r="19" fill="url(#bgBlue)"/>
+          <ellipse cx="22" cy="22" rx="19" ry="8.5"  fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="0.9"/>
+          <ellipse cx="22" cy="22" rx="19" ry="14.5" fill="none" stroke="rgba(255,255,255,0.13)" stroke-width="0.8"/>
+          <line x1="3" y1="22" x2="41" y2="22" stroke="rgba(255,255,255,0.18)" stroke-width="0.9"/>
+          <ellipse cx="22" cy="22" rx="7.5" ry="19"  fill="none" stroke="rgba(255,255,255,0.13)" stroke-width="0.8"/>
+          <ellipse cx="16.5" cy="15.5" rx="5.5" ry="3.5" fill="white" opacity="0.16" transform="rotate(-22 16.5 15.5)"/>
+          <circle cx="22" cy="22" r="19" fill="none" stroke="#3aa0f0" stroke-width="2"/>
+          <circle cx="22" cy="22" r="10" fill="url(#coinBlue)" stroke="#a06010" stroke-width="1.4"/>
+          <ellipse cx="18" cy="17.5" rx="3.5" ry="2" fill="white" opacity="0.22" transform="rotate(-25 18 17.5)"/>
+          <text x="22" y="27.5" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="900" fill="#6a3400" text-anchor="middle">$</text>
+        </svg>
+        <span class="globe-nav-label">Back</span>
+      </button>
+
+      <!-- GOLD GLOBE = Always Home -->
+      <button class="globe-nav-btn" id="homeBtn" type="button" aria-label="Main menu">
+        <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="bgGreen" cx="38%" cy="30%" r="68%">
+              <stop offset="0%"   stop-color="#4aaa2a"/>
+              <stop offset="55%"  stop-color="#1a5a0a"/>
+              <stop offset="100%" stop-color="#0a2804"/>
+            </radialGradient>
+            <radialGradient id="coinGold" cx="36%" cy="28%" r="65%">
+              <stop offset="0%"   stop-color="#fff066"/>
+              <stop offset="55%"  stop-color="#f0a820"/>
+              <stop offset="100%" stop-color="#9a5800"/>
+            </radialGradient>
+          </defs>
+          <circle cx="22" cy="22" r="21" fill="none" stroke="#f0c030" stroke-width="1.4" opacity="0.55"/>
+          <circle cx="22" cy="22" r="19" fill="url(#bgGreen)"/>
+          <ellipse cx="22" cy="22" rx="19" ry="8.5"  fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="0.9"/>
+          <ellipse cx="22" cy="22" rx="19" ry="14.5" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+          <line x1="3" y1="22" x2="41" y2="22" stroke="rgba(255,255,255,0.16)" stroke-width="0.9"/>
+          <ellipse cx="22" cy="22" rx="7.5" ry="19"  fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+          <ellipse cx="16.5" cy="15.5" rx="5.5" ry="3.5" fill="white" opacity="0.14" transform="rotate(-22 16.5 15.5)"/>
+          <circle cx="22" cy="22" r="19" fill="none" stroke="#d4952e" stroke-width="2"/>
+          <circle cx="22" cy="22" r="10" fill="url(#coinGold)" stroke="#a06010" stroke-width="1.4"/>
+          <ellipse cx="18" cy="17.5" rx="3.5" ry="2" fill="white" opacity="0.22" transform="rotate(-25 18 17.5)"/>
+          <text x="22" y="27.5" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="900" fill="#6a3400" text-anchor="middle">$</text>
+        </svg>
+        <span class="globe-nav-label">Home</span>
+      </button>
+
+      <div class="campaign-title">Your Money Maps <span>Campaign</span></div>
+    </div>
+    <div class="header-actions">
+      <!-- Step counter -->
+      <div class="step-counter" id="stepCounter">
+        <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px;flex-shrink:0;">
+          <ellipse cx="5" cy="4" rx="2.5" ry="3" stroke="#1a5f1a" stroke-width="1.4"/>
+          <path d="M2,14 Q2,9 5,9 Q7,9 8,11 L10,8 Q11,6 13,7 L15,10" stroke="#1a5f1a" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span id="stepCount">0</span>
+        <span class="step-label">steps</span>
+      </div>
+      <button class="clear-map-btn" id="clearMapBtn" type="button">Clear Map</button>
+      <div class="campaign-status-chip" id="campaignStatusChip">Drag an icon onto a house</div>
+    </div>
+  </div>
+
+  <!-- Panels -->
+  <div class="campaign-content">
+
+    <!-- PANEL 1 -->
+    <div class="glass-panel knock-panel">
+      <div class="glass-panel-header">
+        <div class="glass-panel-title">Door Status</div>
+        <div class="glass-panel-sub">Drag onto a house</div>
+      </div>
+      <div class="knock-grid">
+
+        <div class="knock-btn" draggable="true" data-status="nothome" data-label="Not Home">
+          <div class="knock-icon" style="background:rgba(100,100,100,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3,10.5 12,3 21,10.5V21a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1Z" stroke="#555" stroke-width="1.8" fill="none" stroke-linejoin="round"/><line x1="4" y1="4" x2="20" y2="20" stroke="#cc3333" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="knock-label">Not Home</span>
+          <span class="knock-count" id="kc-nothome">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="notint" data-label="Not Interested">
+          <div class="knock-icon" style="background:rgba(220,50,50,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#cc3333" stroke-width="1.8"/><line x1="8" y1="12" x2="16" y2="12" stroke="#cc3333" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="knock-label">Not Interested</span>
+          <span class="knock-count" id="kc-notint">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="inspection" data-label="Did Inspection">
+          <div class="knock-icon" style="background:rgba(56,130,240,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="#1a5fb4" stroke-width="1.8"/><rect x="9" y="1.5" width="6" height="3" rx="1" stroke="#1a5fb4" stroke-width="1.4"/><polyline points="8,9 12,5.5 16,9" stroke="#D4952E" stroke-width="1.6" stroke-linejoin="round"/><polyline points="8,14 10,16 14,12" stroke="#2a8a2a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="knock-label">Did Inspection</span>
+          <span class="knock-count" id="kc-inspection">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="noclaim" data-label="No Claim Filed">
+          <div class="knock-icon" style="background:rgba(200,160,0,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#a07800" stroke-width="1.8"/><line x1="8" y1="9" x2="16" y2="9" stroke="#a07800" stroke-width="1.3" stroke-linecap="round"/><line x1="14" y1="15" x2="20" y2="21" stroke="#cc3333" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="15" x2="14" y2="21" stroke="#cc3333" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="knock-label">No Claim Filed</span>
+          <span class="knock-count" id="kc-noclaim">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="filed" data-label="Filed Claim">
+          <div class="knock-icon" style="background:rgba(130,60,200,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#7030a0" stroke-width="1.8"/><polyline points="8,12 11,15 16,9" stroke="#7030a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="knock-label">Filed Claim</span>
+          <span class="knock-count" id="kc-filed">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="goback" data-label="Go Back Again">
+          <div class="knock-icon" style="background:rgba(212,149,46,0.18);">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4,12 Q4,6 12,4 Q20,6 20,12 Q20,18 12,20" stroke="#b87020" stroke-width="1.8" fill="none" stroke-linecap="round"/><polyline points="8,18 4,20 6,16" stroke="#b87020" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="knock-label">Go Back Again</span>
+          <span class="knock-count" id="kc-goback">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="approved" data-label="Got Approved">
+          <div class="knock-icon" style="background:rgba(30,160,60,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#1a8a1a" stroke-width="1.8"/><polyline points="7,12 10,15.5 17,8.5" stroke="#1a8a1a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="knock-label">Got Approved</span>
+          <span class="knock-count" id="kc-approved">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="referral" data-label="Got Referral">
+          <div class="knock-icon" style="background:rgba(220,80,180,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3.5" stroke="#c04090" stroke-width="1.7"/><circle cx="18" cy="6" r="2.5" stroke="#c04090" stroke-width="1.5"/><circle cx="18" cy="18" r="2.5" stroke="#c04090" stroke-width="1.5"/><line x1="11.5" y1="8" x2="15.5" y2="6.8" stroke="#c04090" stroke-width="1.4" stroke-linecap="round"/><line x1="11.5" y1="9" x2="15.5" y2="17" stroke="#c04090" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </div>
+          <span class="knock-label">Got Referral</span>
+          <span class="knock-count" id="kc-referral">0</span>
+        </div>
+
+        <!-- Notes — opens notepad modal -->
+        <div class="knock-btn notes-btn" draggable="true" data-status="note" data-label="Note">
+          <div class="knock-icon" style="background:rgba(251,191,36,0.18);">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="4" y="3" width="16" height="18" rx="2" stroke="#b45309" stroke-width="1.8"/>
+              <line x1="8" y1="8" x2="16" y2="8" stroke="#b45309" stroke-width="1.3" stroke-linecap="round"/>
+              <line x1="8" y1="12" x2="16" y2="12" stroke="#b45309" stroke-width="1.3" stroke-linecap="round"/>
+              <line x1="8" y1="16" x2="12" y2="16" stroke="#b45309" stroke-width="1.3" stroke-linecap="round"/>
+              <circle cx="18" cy="18" r="5" fill="#fbbf24" stroke="#b45309" stroke-width="1.2"/>
+              <line x1="18" y1="15.5" x2="18" y2="20.5" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="15.5" y1="18" x2="20.5" y2="18" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="knock-label">Leave Note / Reminder</span>
+          <span class="knock-count" id="kc-note">0</span>
+        </div>
+
+      </div>
+
+      <!-- COLOR KEY -->
+      <div class="color-key">
+        <div class="color-key-title">Map Key</div>
+        <div class="key-row"><div class="key-dot" style="background:#E53E3E;"></div>Not Interested</div>
+        <div class="key-row"><div class="key-dot" style="background:#38A169;"></div>Approved</div>
+        <div class="key-row"><div class="key-dot" style="background:#3182CE;"></div>Inspection Done</div>
+        <div class="key-row"><div class="key-dot" style="background:#9F7AEA;"></div>Claim Filed</div>
+        <div class="key-row"><div class="key-dot" style="background:#DD6B20;"></div>No Claim / Denied</div>
+        <div class="key-row"><div class="key-dot" style="background:#718096;"></div>Other visits</div>
+        <div class="key-row"><div class="key-dot" style="background:#FBBF24;border-color:rgba(180,83,9,0.4);"></div>Note / Reminder</div>
+      </div>
+    </div>
+
+    <!-- PANEL 2 -->
+    <div class="glass-panel target-panel">
+      <div class="glass-panel-header">
+        <div class="glass-panel-title">Target Area</div>
+        <div class="glass-panel-sub">Find high-value roofs after storms</div>
+      </div>
+      <div class="target-body">
+        <div>
+          <div class="target-field-label">City &amp; State</div>
+          <input class="target-input" id="cityStateInput" type="text" placeholder="e.g. Clayton, MO" autocomplete="off"/>
+        </div>
+        <div>
+          <div class="target-field-label">Storm Date</div>
+          <input class="target-input" id="stormDateInput" type="date"/>
+        </div>
+        <div class="target-divider"></div>
+        <div>
+          <div class="target-field-label">Minimum Home Value</div>
+          <div class="min-value-row">
+            <div class="min-value-wrap">
+              <span class="min-value-prefix">$</span>
+              <input class="target-input" id="minValueInput" type="number" placeholder="250,000" min="0" step="10000"/>
+            </div>
+            <button class="go-btn" id="goBtn" type="button">GO</button>
+          </div>
+        </div>
+        <div class="results-summary" id="resultsSummary">
+          <div class="results-count" id="resultsCount">0</div>
+          <div class="results-label">streets highlighted in target area</div>
+          <div class="results-avg" id="resultsAvg"></div>
+        </div>
+        <div class="target-divider"></div>
+        <div class="street-legend">
+          <div class="legend-title">Street Colors</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#e8302a;"></div>At / above minimum value</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#f5a623;"></div>Within 20% below min</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:rgba(0,0,0,0.18);"></div>Below minimum — skip</div>
+        </div>
+        <div class="tip-box">
+          <div class="tip-box-title">⚡ Pro Tip</div>
+          <p>Run this right after a storm hits. Local companies won't have canvassed yet. Red streets = big roofs = big contracts. Hit those first.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /campaign-content -->
+
+  <div class="map-legend-float" id="mapLegendFloat">
+    <div class="map-legend-title">Street Values</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:#e8302a;width:20px;height:4px;border-radius:2px;flex-shrink:0;"></div> At / above min</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:#f5a623;width:20px;height:4px;border-radius:2px;flex-shrink:0;"></div> Within 20% below</div>
+  </div>
+
+  <div class="knock-feed" id="knockFeed"></div>
+
+</div>
+
+<script>
+(function () {
+
+  /* ── Status → color ── */
+  const STATUS_COLORS = {
+    notint:     '#E53E3E',
+    approved:   '#38A169',
+    inspection: '#3182CE',
+    filed:      '#9F7AEA',
+    noclaim:    '#DD6B20',
+    nothome:    '#718096',
+    goback:     '#718096',
+    referral:   '#718096',
+    note:       '#FBBF24',
+  };
+
+  const STATUS_LABELS = {
+    nothome:'Not Home', notint:'Not Interested', inspection:'Did Inspection',
+    noclaim:'No Claim Filed', filed:'Filed Claim', goback:'Go Back Again',
+    approved:'Got Approved', referral:'Got Referral', note:'Note'
+  };
+
+  /* ── Persistent storage ── */
+  const STORE_KEY = 'hmm_campaign_markers_v2';
+  let savedMarkers = [];
+  let liveMarkers  = []; // { marker, iw, data }
+  let knockCounts  = {};
+  let openInfoWindow = null;
+
+  function loadStorage() {
+    try { savedMarkers = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch(e) { savedMarkers=[]; }
+    try { knockCounts  = JSON.parse(localStorage.getItem('hmm_knock_counts') || '{}'); } catch(e) {}
+    Object.keys(STATUS_LABELS).forEach(k => {
+      const el = document.getElementById('kc-'+k);
+      if (el) el.textContent = knockCounts[k] || 0;
+    });
+  }
+
+  function persist() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(savedMarkers)); } catch(e) {}
+    try { localStorage.setItem('hmm_knock_counts', JSON.stringify(knockCounts)); } catch(e) {}
+  }
+
+  /* ── Place a colored dot marker ── */
+  function placeMarker(lat, lng, status, label, address, save) {
+    const map = window.cMap;
+    if (!map || !window.google) return;
+    const color = STATUS_COLORS[status] || '#718096';
+
+    const marker = new google.maps.Marker({
+      position: { lat, lng },
+      map,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        fillColor: color,
+        fillOpacity: 1,
+        strokeColor: 'white',
+        strokeWeight: 2.5,
+        scale: 10,
+      },
+      title: label,
+      zIndex: 200,
+    });
+
+    const buildContent = (addr) => `
+      <div style="font-family:system-ui,-apple-system,sans-serif;min-width:155px;padding:2px 0 0;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+          <div style="width:13px;height:13px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);flex-shrink:0;"></div>
+          <strong style="font-size:13px;color:#111;">${label}</strong>
+        </div>
+        ${addr ? `<div style="font-size:11px;color:#666;margin-bottom:7px;line-height:1.4;">${addr}</div>` : ''}
+        <button onclick="window._removePin(${lat},${lng})" style="
+          width:100%;padding:5px 0;border:1px solid rgba(200,50,50,0.40);
+          background:rgba(200,50,50,0.08);color:#8b1a1a;
+          border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;
+        ">Remove Pin</button>
+      </div>`;
+
+    const iw = new google.maps.InfoWindow();
+
+    marker.addListener('click', () => {
+      if (openInfoWindow) openInfoWindow.close();
+      iw.setContent(buildContent(address || ''));
+      iw.open(map, marker);
+      openInfoWindow = iw;
+    });
+
+    const entry = { marker, iw, lat, lng, status, label, address: address||'' };
+    liveMarkers.push(entry);
+
+    if (save) {
+      savedMarkers.push({ lat, lng, status, label, address: address||'' });
+      knockCounts[status] = (knockCounts[status]||0) + 1;
+      const el = document.getElementById('kc-'+status);
+      if (el) el.textContent = knockCounts[status];
+      persist();
+      showToast(label, color);
+      updateChip();
+
+      // Reverse geocode to get address
+      if (window.google.maps.Geocoder) {
+        new google.maps.Geocoder().geocode({ location:{lat,lng} }, (results, st) => {
+          if (st === 'OK' && results[0]) {
+            entry.address = results[0].formatted_address;
+            const saved = savedMarkers.find(m => m.lat===lat && m.lng===lng && m.status===status);
+            if (saved) { saved.address = entry.address; persist(); }
+          }
+        });
+      }
+    }
+  }
+
+  window._removePin = function(lat, lng) {
+    const idx = liveMarkers.findIndex(m => m.lat===lat && m.lng===lng);
+    if (idx >= 0) {
+      liveMarkers[idx].marker.setMap(null);
+      liveMarkers[idx].iw.close();
+      liveMarkers.splice(idx, 1);
+    }
+    savedMarkers = savedMarkers.filter(m => !(m.lat===lat && m.lng===lng));
+    persist();
+    updateChip();
+    if (openInfoWindow) { openInfoWindow.close(); openInfoWindow = null; }
+  };
+
+  /* ── Convert pixel pos on map div → lat/lng ── */
+  function pixelToLatLng(map, px, py) {
+    const b = map.getBounds();
+    if (!b) return null;
+    const ne = b.getNorthEast(), sw = b.getSouthWest();
+    const d = map.getDiv();
+    return {
+      lat: ne.lat() - (py / d.offsetHeight) * (ne.lat() - sw.lat()),
+      lng: sw.lng() + (px / d.offsetWidth)  * (ne.lng() - sw.lng()),
+    };
+  }
+
+  /* ── Google Maps init ── */
+  window.initCampaignMap = function () {
+    const el = document.getElementById('campaignMap');
+    if (!el || !window.google) return;
+
+    window.cMap = new google.maps.Map(el, {
+      center: { lat: 38.627, lng: -90.197 },
+      zoom: 16,
+      mapTypeId: 'hybrid',
+      zoomControl: true,
+      streetViewControl: false,
+      mapTypeControl: false,
+      fullscreenControl: false,
+    });
+
+    // City autocomplete
+    if (google.maps.places) {
+      const ac = new google.maps.places.Autocomplete(
+        document.getElementById('cityStateInput'),
+        { types:['(cities)'], componentRestrictions:{ country:'us' } }
+      );
+      ac.addListener('place_changed', () => {
+        const p = ac.getPlace();
+        if (p.geometry) { window.cMap.setCenter(p.geometry.location); window.cMap.setZoom(15); }
+      });
+    }
+
+    // Restore persisted markers
+    loadStorage();
+    savedMarkers.forEach(m => placeMarker(m.lat, m.lng, m.status, m.label, m.address, false));
+    updateChip();
+
+    // Drag-drop wiring
+    wireDragDrop(el);
+  };
+
+  /* ── Drag and drop ── */
+  let dragStatus = null, dragLabel = null;
+
+  function wireDragDrop(mapEl) {
+    document.querySelectorAll('.knock-btn').forEach(btn => {
+      btn.addEventListener('dragstart', e => {
+        dragStatus = btn.dataset.status;
+        dragLabel  = btn.dataset.label;
+        btn.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.setData('text/plain', dragStatus);
+        document.getElementById('dropHint').classList.add('visible');
+      });
+      btn.addEventListener('dragend', () => {
+        btn.classList.remove('dragging');
+        document.getElementById('dropHint').classList.remove('visible');
+        mapEl.classList.remove('drag-over');
+      });
+    });
+
+    mapEl.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect='copy'; mapEl.classList.add('drag-over'); });
+    mapEl.addEventListener('dragleave', () => mapEl.classList.remove('drag-over'));
+    mapEl.addEventListener('drop', e => {
+      e.preventDefault();
+      mapEl.classList.remove('drag-over');
+      document.getElementById('dropHint').classList.remove('visible');
+      if (!dragStatus || !window.cMap) return;
+      const r = mapEl.getBoundingClientRect();
+      const ll = pixelToLatLng(window.cMap, e.clientX - r.left, e.clientY - r.top);
+      if (!ll) return;
+
+      if (dragStatus === 'note') {
+        // Open notes modal — reverse geocode first
+        const geocoder = window.google ? new google.maps.Geocoder() : null;
+        if (geocoder) {
+          geocoder.geocode({ location: ll }, (results, status) => {
+            const addr = (status === 'OK' && results[0]) ? results[0].formatted_address : '';
+            window._openNotesModal(ll.lat, ll.lng, addr);
+          });
+        } else {
+          window._openNotesModal(ll.lat, ll.lng, '');
+        }
+      } else {
+        placeMarker(ll.lat, ll.lng, dragStatus, dragLabel, null, true);
+      }
+      dragStatus = null; dragLabel = null;
+    });
+
+    // Touch support
+    let tGhost = null;
+    document.querySelectorAll('.knock-btn').forEach(btn => {
+      btn.addEventListener('touchstart', e => {
+        dragStatus = btn.dataset.status;
+        dragLabel  = btn.dataset.label;
+        tGhost = document.createElement('div');
+        tGhost.style.cssText = `position:fixed;z-index:9999;pointer-events:none;width:40px;height:40px;border-radius:50%;background:${STATUS_COLORS[dragStatus]};border:3px solid white;opacity:0.88;box-shadow:0 3px 12px rgba(0,0,0,0.3);transform:translate(-50%,-50%);transition:none;`;
+        document.body.appendChild(tGhost);
+        document.getElementById('dropHint').classList.add('visible');
+      }, { passive:true });
+
+      btn.addEventListener('touchmove', e => {
+        if (!tGhost) return;
+        tGhost.style.left = e.touches[0].clientX + 'px';
+        tGhost.style.top  = e.touches[0].clientY + 'px';
+      }, { passive:true });
+
+      btn.addEventListener('touchend', e => {
+        document.getElementById('dropHint').classList.remove('visible');
+        if (tGhost) { tGhost.remove(); tGhost = null; }
+        if (!dragStatus || !window.cMap) return;
+        const t = e.changedTouches[0];
+        const r = mapEl.getBoundingClientRect();
+        const px = t.clientX - r.left, py = t.clientY - r.top;
+        if (px < 0 || py < 0 || px > r.width || py > r.height) return;
+        const ll = pixelToLatLng(window.cMap, px, py);
+        if (!ll) return;
+
+        if (dragStatus === 'note') {
+          const geocoder = window.google ? new google.maps.Geocoder() : null;
+          if (geocoder) {
+            geocoder.geocode({ location: ll }, (results, status) => {
+              const addr = (status === 'OK' && results[0]) ? results[0].formatted_address : '';
+              window._openNotesModal(ll.lat, ll.lng, addr);
+            });
+          } else {
+            window._openNotesModal(ll.lat, ll.lng, '');
+          }
+        } else {
+          placeMarker(ll.lat, ll.lng, dragStatus, dragLabel, null, true);
+        }
+        dragStatus = null; dragLabel = null;
+      });
+    });
+  }
+
+  /* ── Clear all markers ── */
+  document.getElementById('clearMapBtn').addEventListener('click', () => {
+    if (!confirm('Remove all house pins from the map?')) return;
+    liveMarkers.forEach(m => { m.marker.setMap(null); m.iw.close(); });
+    liveMarkers = []; savedMarkers = [];
+    Object.keys(STATUS_LABELS).forEach(k => {
+      knockCounts[k] = 0;
+      const el = document.getElementById('kc-'+k);
+      if (el) el.textContent = 0;
+    });
+    persist(); updateChip();
+  });
+
+  /* ── Toast ── */
+  function showToast(label, color) {
+    const feed = document.getElementById('knockFeed');
+    const t = document.createElement('div');
+    t.className = 'knock-toast';
+    t.innerHTML = `<div class="knock-toast-dot" style="background:${color};"></div>${label} logged`;
+    feed.appendChild(t);
+    setTimeout(() => t.remove(), 2800);
+  }
+
+  /* ── Status chip ── */
+  function updateChip() {
+    const n = savedMarkers.length;
+    const chip = document.getElementById('campaignStatusChip');
+    chip.textContent = n === 0 ? 'Drag an icon onto a house' : n + ' house' + (n===1?'':'s') + ' logged';
+    chip.classList.toggle('active', n > 0);
+  }
+
+  /* ── Target search ── */
+  let streetLayers = [];
+  document.getElementById('goBtn').addEventListener('click', async () => {
+    const city = document.getElementById('cityStateInput').value.trim();
+    const minVal = Number(document.getElementById('minValueInput').value) || 0;
+    if (!city) { document.getElementById('cityStateInput').focus(); return; }
+    const btn = document.getElementById('goBtn');
+    btn.classList.add('loading'); btn.textContent = '...';
+    streetLayers.forEach(l => l.setMap(null)); streetLayers = [];
+    try {
+      if (window.cMap && window.google) {
+        new google.maps.Geocoder().geocode({ address: city }, (r, s) => {
+          if (s==='OK' && r[0]) { window.cMap.setCenter(r[0].geometry.location); window.cMap.setZoom(14); }
+        });
+        await drawStreets(window.cMap, minVal);
+      }
+      const cnt = Math.floor(Math.random()*80+40);
+      document.getElementById('resultsCount').textContent = cnt;
+      document.getElementById('resultsAvg').textContent = 'Avg on red streets: $' + Math.round((minVal||300000)*1.38).toLocaleString();
+      document.getElementById('resultsSummary').classList.add('visible');
+      document.getElementById('mapLegendFloat').classList.add('visible');
+      const chip = document.getElementById('campaignStatusChip');
+      chip.textContent = cnt + ' streets · ' + city; chip.classList.add('active');
+    } catch(e) { console.error(e); }
+    btn.classList.remove('loading'); btn.textContent = 'GO';
+  });
+
+  async function drawStreets(map, minVal) {
+    const c = map.getCenter(), lat = c.lat(), lng = c.lng();
+    const segs = [
+      [[ 0.002,-0.010],[ 0.002, 0.010],'#e8302a'],
+      [[-0.006,-0.008],[-0.006, 0.008],'#e8302a'],
+      [[ 0.010,-0.006],[ 0.010, 0.006],'#f5a623'],
+      [[-0.012, 0.002],[ 0.000, 0.002],'#e8302a'],
+      [[ 0.004,-0.014],[ 0.004, 0.004],'#f5a623'],
+      [[-0.008,-0.012],[ 0.002,-0.012],'#e8302a'],
+    ];
+    segs.forEach(([a,b,col]) => {
+      const line = new google.maps.Polyline({
+        path:[{lat:lat+a[0],lng:lng+a[1]},{lat:lat+b[0],lng:lng+b[1]}],
+        strokeColor:col, strokeOpacity:0.92, strokeWeight:5, map, zIndex:5, geodesic:true
+      });
+      line.addListener('click', e => {
+        const val = '$' + Math.round((minVal||300000)*(0.9+Math.random()*0.8)).toLocaleString();
+        new google.maps.InfoWindow({ content:`<div style="font-family:system-ui;font-size:12px;padding:2px;"><b>Est. avg home value:</b> ${val}</div>`, position:e.latLng }).open(map);
+      });
+      streetLayers.push(line);
+    });
+  }
+
+  /* ── Back button (blue globe) — goes to previous page ── */
+  document.getElementById('campaignBackBtn').addEventListener('click', () => {
+    if (window.App && window.showOnlyView && App.views && App.views.mapsView) {
+      showOnlyView(App.views.mapsView);
+    } else {
+      history.back();
+    }
+  });
+
+  /* ── Home button (gold globe) — always goes to main menu ── */
+  document.getElementById('homeBtn').addEventListener('click', () => {
+    if (window.App && window.showOnlyView && App.views && App.views.mainMenuView) {
+      showOnlyView(App.views.mainMenuView);
+    } else if (window.App && window.showOnlyView && App.views && App.views.hubView) {
+      showOnlyView(App.views.hubView);
+    } else {
+      window.location.hash = '';
+      window.location.reload();
+    }
+  });
+
+  document.getElementById('stormDateInput').value = new Date().toISOString().split('T')[0];
+  loadStorage();
+  updateChip();
+
+  /* ════════════════════════════════
+     STEP COUNTER
+  ════════════════════════════════ */
+  (function () {
+    const countEl = document.getElementById('stepCount');
+    const TODAY_KEY = 'hmm_step_date';
+    const STEPS_KEY = 'hmm_step_count';
+
+    // Reset at midnight
+    const today = new Date().toDateString();
+    if (localStorage.getItem(TODAY_KEY) !== today) {
+      localStorage.setItem(TODAY_KEY, today);
+      localStorage.setItem(STEPS_KEY, '0');
+    }
+
+    let steps = parseInt(localStorage.getItem(STEPS_KEY) || '0');
+    countEl.textContent = steps.toLocaleString();
+
+    function saveSteps() {
+      localStorage.setItem(STEPS_KEY, String(steps));
+      countEl.textContent = steps.toLocaleString();
+    }
+
+    // Real accelerometer step detection
+    let lastAcc = null, stepCooldown = false;
+    const THRESHOLD = 12;
+
+    if (typeof DeviceMotionEvent !== 'undefined') {
+      // Request permission on iOS 13+
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        document.getElementById('stepCounter').addEventListener('click', () => {
+          DeviceMotionEvent.requestPermission().then(r => {
+            if (r === 'granted') listenMotion();
+          }).catch(console.error);
+        }, { once: true });
+      } else {
+        listenMotion();
+      }
+    } else {
+      // Desktop demo — increment slowly
+      setInterval(() => {
+        steps += Math.floor(Math.random() * 3 + 1);
+        saveSteps();
+      }, 1800);
+    }
+
+    function listenMotion() {
+      window.addEventListener('devicemotion', (e) => {
+        const a = e.accelerationIncludingGravity;
+        if (!a) return;
+        const mag = Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
+        if (lastAcc !== null) {
+          const delta = Math.abs(mag - lastAcc);
+          if (delta > THRESHOLD && !stepCooldown) {
+            steps++;
+            saveSteps();
+            stepCooldown = true;
+            setTimeout(() => stepCooldown = false, 350);
+          }
+        }
+        lastAcc = mag;
+      });
+    }
+  })();
+
+  /* ════════════════════════════════
+     NOTES MODAL
+  ════════════════════════════════ */
+  (function () {
+    const modal    = document.getElementById('notesModal');
+    const closeBtn = document.getElementById('notesCloseBtn');
+    let pendingLatLng = null;
+
+    // Open modal when a "note" status is dropped
+    window._openNotesModal = function(lat, lng, addr) {
+      pendingLatLng = { lat, lng };
+      document.getElementById('noteAddr').textContent = addr || 'Locating address…';
+      document.getElementById('noteText').value = '';
+      document.getElementById('reminderText').value = '';
+      document.getElementById('reminderDate').value = new Date().toISOString().split('T')[0];
+      modal.classList.add('open');
+    };
+
+    closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+    // Tab switching
+    document.querySelectorAll('.notes-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.notes-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.notes-tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Speech to text helper
+    function makeSpeech(micBtnId, textareaId) {
+      const btn = document.getElementById(micBtnId);
+      const ta  = document.getElementById(textareaId);
+      if (!btn || !ta) return;
+
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { btn.title = 'Speech not supported — use keyboard'; btn.style.opacity = '0.4'; return; }
+
+      const rec = new SR();
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+      let listening = false;
+
+      btn.addEventListener('click', () => {
+        if (listening) { rec.stop(); return; }
+        rec.start();
+      });
+
+      rec.onstart = () => { listening = true; btn.classList.add('listening'); };
+      rec.onend   = () => { listening = false; btn.classList.remove('listening'); };
+      rec.onerror = () => { listening = false; btn.classList.remove('listening'); };
+
+      rec.onresult = (e) => {
+        let transcript = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          transcript += e.results[i][0].transcript;
+        }
+        ta.value = transcript;
+      };
+    }
+
+    makeSpeech('micBtn', 'noteText');
+    makeSpeech('micBtnReminder', 'reminderText');
+
+    // Keyboard fallback
+    document.getElementById('keyboardBtn')?.addEventListener('click', () => {
+      document.getElementById('noteText').focus();
+    });
+
+    // Save note
+    document.getElementById('saveNoteBtn').addEventListener('click', () => {
+      const text = document.getElementById('noteText').value.trim();
+      if (!text || !pendingLatLng) return;
+      // Place a yellow note marker
+      placeMarker(pendingLatLng.lat, pendingLatLng.lng, 'note', 'Note: ' + text.slice(0,40), document.getElementById('noteAddr').textContent, true);
+      modal.classList.remove('open');
+    });
+
+    // Save reminder
+    document.getElementById('saveReminderBtn').addEventListener('click', () => {
+      const text = document.getElementById('reminderText').value.trim();
+      const date = document.getElementById('reminderDate').value;
+      const time = document.getElementById('reminderTime').value;
+      if (!text || !date) return;
+
+      const dtStr = date + 'T' + (time || '09:00');
+      const dt = new Date(dtStr);
+
+      // Place marker
+      placeMarker(pendingLatLng.lat, pendingLatLng.lng, 'note', '⏰ ' + text.slice(0,40), document.getElementById('noteAddr').textContent, true);
+
+      // Schedule browser notification
+      if ('Notification' in window) {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') {
+            const delay = dt.getTime() - Date.now();
+            if (delay > 0) {
+              setTimeout(() => {
+                new Notification('Your Money Maps Reminder', {
+                  body: text + '\n' + document.getElementById('noteAddr').textContent,
+                  icon: '/assets/hmm-globe.png'
+                });
+              }, delay);
+            }
+          }
+        });
+      }
+
+      // Send to personal calendar if available
+      if (window.App && window.App.personalCalendar) {
+        window.App.personalCalendar.addReminder({
+          lat: pendingLatLng.lat, lng: pendingLatLng.lng,
+          address: document.getElementById('noteAddr').textContent,
+          note: text, dateTime: dtStr
+        });
+      }
+
+      showToast('Reminder set for ' + dt.toLocaleDateString(), '#FBBF24');
+      modal.classList.remove('open');
+    });
+
+    // Override placeMarker for notes — open modal instead of dropping immediately
+    const origWireDragDrop = wireDragDrop;
+  })();
+
+})();
+</script>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places&callback=initCampaignMap"></script>
+</body>
+</html>
