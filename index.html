@@ -122,6 +122,12 @@
   --border-subtle: rgba(148,163,184,0.2); --accent: #38bdf8; --accent-soft: rgba(56,189,248,0.16);
   --accent-strong: #0ea5e9; --text-main: #e5e7eb; --text-soft: #9ca3af;
   --pill-bg: #020617; --danger: #ef4444;
+  /* Yellow accent theme */
+  --accent-yellow: #D4952E;
+  --accent-yellow-bright: #F0B050;
+  --accent-yellow-bg: rgba(212,149,46,0.10);
+  --accent-yellow-bg-strong: rgba(212,149,46,0.20);
+  --accent-yellow-border: rgba(212,149,46,0.35);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background: radial-gradient(circle at top,#0f172a 0,#020617 52%); color: var(--text-main); min-height: 100vh; }
@@ -1425,6 +1431,200 @@ body { font-family: system-ui, -apple-system, sans-serif; height: 100vh; overflo
 }
 .save-note-btn:hover { opacity: 0.88; }
 
+/* ============================================================
+   YELLOW THEME — menu cards, button titles, view headers
+   ============================================================ */
+.menu-title { color: var(--accent-yellow-bright); }
+.menu-card {
+  background: radial-gradient(circle at top left, var(--accent-yellow-bg), rgba(15,23,42,0.95));
+  border-color: var(--accent-yellow-border);
+}
+.menu-card:hover {
+  border-color: var(--accent-yellow) !important;
+  box-shadow: 0 14px 30px rgba(212,149,46,0.15) !important;
+}
+.view-header h2 { color: var(--accent-yellow-bright); }
+#loginBtn { background: linear-gradient(135deg, #D4952E, #8B4A0A); color: #fff; }
+
+/* ============================================================
+   MAP-BACKGROUND VIEW BASE STYLES
+   ============================================================ */
+#mainMenuView, #jobsView, #jobDetailView, #paymentsView {
+  max-width: none !important; margin: 0 !important; padding: 0 !important;
+}
+.map-full-view {
+  position: fixed; inset: 0; display: flex;
+  flex-direction: column; overflow: hidden; z-index: 0;
+}
+.map-canvas { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; background: #2a3a2a; }
+.map-ui-overlay {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column; width: 100%; height: 100%; pointer-events: none;
+}
+.map-ui-overlay > * { pointer-events: auto; }
+
+/* ── Shared header for map-bg views ── */
+.map-view-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; background: rgba(240,242,245,0.82);
+  backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid rgba(220,224,230,0.70); flex-shrink: 0; min-height: 52px;
+}
+.map-view-title { font-size: 0.96rem; font-weight: 800; color: #1a3a1a; letter-spacing: -0.01em; }
+.map-view-title span { color: var(--accent-yellow); }
+.map-nav-btns { display: flex; align-items: center; gap: 6px; }
+.map-nav-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: transparent; border: none; cursor: pointer;
+  padding: 2px 4px; border-radius: 8px; transition: transform 0.15s, filter 0.15s; flex-shrink: 0;
+}
+.map-nav-btn svg { width: 36px; height: 36px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35)); }
+.map-nav-btn:hover { transform: scale(1.08); filter: brightness(1.12); }
+.map-nav-btn:active { transform: scale(0.95); }
+.map-nav-label {
+  font-size: 0.50rem; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: rgba(20,60,20,0.65); line-height: 1;
+}
+
+/* ── Main menu glass panel ── */
+.main-menu-glass {
+  padding: 16px 14px;
+  background: rgba(240,242,245,0.82); backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(220,224,230,0.70); border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+}
+.main-menu-glass h2 { font-size: 1.0rem; font-weight: 700; color: var(--accent-yellow-bright); margin-bottom: 14px; }
+
+/* ── Jobs Quick Look table ── */
+.jobs-glass-panel {
+  margin: 12px; padding: 14px;
+  background: rgba(240,242,245,0.84); backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(220,224,230,0.70); border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12); overflow-x: auto;
+  flex: 1; max-height: calc(100vh - 80px); overflow-y: auto;
+}
+.jobs-glass-panel h3 { font-size: 0.90rem; font-weight: 700; color: var(--accent-yellow-bright); margin-bottom: 10px; }
+.ql-table { width: 100%; border-collapse: collapse; font-size: 0.80rem; }
+.ql-table th {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgba(20,60,20,0.60); padding: 6px 10px; border-bottom: 2px solid rgba(212,149,46,0.25);
+  text-align: center; white-space: nowrap; background: rgba(255,255,255,0.30);
+}
+.ql-table th:first-child { text-align: left; }
+.ql-table td { padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,0.06); color: #1a3a1a; vertical-align: middle; text-align: center; }
+.ql-table td:first-child { text-align: left; }
+.ql-table tbody tr:hover { background: rgba(212,149,46,0.07); cursor: pointer; }
+.ql-customer-name { font-weight: 600; color: var(--accent-yellow); cursor: pointer; text-decoration: underline; }
+.ql-customer-name:hover { color: var(--accent-yellow-bright); }
+.ql-stage {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; font-size: 0.70rem; font-weight: 700;
+}
+.ql-stage.done  { background: rgba(30,120,30,0.14); border: 1.5px solid rgba(30,120,30,0.40); color: #1a6a1a; }
+.ql-stage.done::after { content: '✓'; }
+.ql-stage.pending { background: rgba(148,163,184,0.12); border: 1.5px solid rgba(148,163,184,0.28); color: rgba(20,40,20,0.28); }
+.ql-stage.pending::after { content: '—'; }
+
+/* ── Job Detail view ── */
+.job-detail-body { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.job-detail-glass {
+  background: rgba(240,242,245,0.84); backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(220,224,230,0.70); border-radius: 16px; padding: 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+}
+.jd-section-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(20,60,20,0.52); margin-bottom: 8px; }
+.job-progress-bar { display: flex; align-items: center; gap: 0; }
+.job-step { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; min-width: 50px; position: relative; }
+.job-step:not(:last-child)::after {
+  content: ''; position: absolute; top: 10px; left: 50%; width: 100%; height: 2px; background: rgba(0,0,0,0.10); z-index: 0;
+}
+.job-step-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.62rem; font-weight: 800; position: relative; z-index: 1;
+}
+.job-step-dot.done    { background: var(--accent-yellow); color: white; border: 2px solid #f0a820; }
+.job-step-dot.pending { background: rgba(148,163,184,0.18); color: rgba(20,40,20,0.35); border: 2px solid rgba(148,163,184,0.28); }
+.job-step-label { font-size: 0.56rem; font-weight: 600; color: rgba(20,40,20,0.55); text-align: center; white-space: nowrap; }
+.doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+.doc-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px;
+  border-radius: 10px; background: rgba(255,255,255,0.50); border: 1px solid rgba(0,0,0,0.08);
+  cursor: pointer; transition: background 0.14s; font-size: 0.62rem; font-weight: 600; color: #1a3a1a; text-align: center;
+}
+.doc-item:hover { background: rgba(212,149,46,0.12); border-color: rgba(212,149,46,0.30); }
+.doc-icon { font-size: 1.3rem; line-height: 1; }
+.prod-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.78rem; }
+.prod-row:last-child { border-bottom: none; }
+.prod-label { font-weight: 600; color: rgba(20,40,20,0.65); font-size: 0.72rem; }
+.prod-badge { padding: 2px 8px; border-radius: 12px; font-size: 0.64rem; font-weight: 700; }
+.prod-badge.scheduled { background: rgba(212,149,46,0.14); color: #7a3d00; border: 1px solid rgba(212,149,46,0.28); }
+.prod-badge.complete  { background: rgba(30,120,30,0.12); color: #1a6a1a; border: 1px solid rgba(30,120,30,0.24); }
+.prod-badge.pending   { background: rgba(148,163,184,0.12); color: rgba(20,40,20,0.50); border: 1px solid rgba(148,163,184,0.25); }
+
+/* ── 3-dot menu button ── */
+.three-dot-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1.5px solid var(--accent-yellow-border); background: var(--accent-yellow-bg);
+  color: var(--accent-yellow); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1.1rem; font-weight: 700; letter-spacing: -1px;
+  transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
+}
+.three-dot-btn:hover { background: var(--accent-yellow-bg-strong); border-color: var(--accent-yellow); }
+
+/* ── Left drawer overlay ── */
+.left-drawer-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.38); display: none; align-items: stretch; }
+.left-drawer-overlay.open { display: flex; }
+.left-drawer {
+  width: 260px; max-width: 82vw;
+  background: rgba(240,242,245,0.97); backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%); border-right: 1px solid rgba(220,224,230,0.80);
+  display: flex; flex-direction: column; animation: drawerSlideIn 0.22s ease;
+}
+@keyframes drawerSlideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+.left-drawer-header { padding: 18px 16px 12px; border-bottom: 1px solid rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: space-between; }
+.left-drawer-title { font-size: 0.88rem; font-weight: 800; color: #1a3a1a; }
+.drawer-close-btn {
+  width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(0,0,0,0.08);
+  cursor: pointer; font-size: 14px; color: #555; display: flex; align-items: center; justify-content: center; transition: background 0.15s;
+}
+.drawer-close-btn:hover { background: rgba(0,0,0,0.15); }
+.left-drawer-menu { display: flex; flex-direction: column; padding: 10px 8px; gap: 3px; flex: 1; overflow-y: auto; }
+.drawer-menu-item {
+  display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px;
+  border: none; background: transparent; color: #1a3a1a; font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; text-align: left; transition: background 0.14s, color 0.14s; width: 100%;
+}
+.drawer-menu-item:hover { background: rgba(212,149,46,0.14); color: #7a3d00; }
+.drawer-menu-item svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--accent-yellow); }
+
+/* ── Payments / Profitability table ── */
+.payments-glass-panel {
+  margin: 12px; padding: 14px;
+  background: rgba(240,242,245,0.84); backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(220,224,230,0.70); border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12); overflow-x: auto;
+  flex: 1; max-height: calc(100vh - 80px); overflow-y: auto;
+}
+.payments-glass-panel h3 { font-size: 0.90rem; font-weight: 700; color: var(--accent-yellow-bright); margin-bottom: 12px; }
+.pay-table { width: 100%; border-collapse: collapse; font-size: 0.80rem; }
+.pay-table th {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgba(20,60,20,0.60); padding: 6px 10px; border-bottom: 2px solid rgba(212,149,46,0.25);
+  text-align: left; background: rgba(255,255,255,0.30); white-space: nowrap;
+}
+.pay-table td { padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,0.06); color: #1a3a1a; }
+.pay-table tbody tr:hover { background: rgba(212,149,46,0.06); }
+.pay-table tfoot td { font-weight: 700; color: var(--accent-yellow); border-top: 2px solid rgba(212,149,46,0.25); border-bottom: none; }
+.pay-num { font-variant-numeric: tabular-nums; text-align: right; }
+.pay-badge { padding: 2px 8px; border-radius: 12px; font-size: 0.64rem; font-weight: 700; display: inline-block; }
+.pay-badge.paid    { background: rgba(30,120,30,0.12); color: #1a6a1a; border: 1px solid rgba(30,120,30,0.24); }
+.pay-badge.pending { background: rgba(212,149,46,0.12); color: #7a3d00; border: 1px solid rgba(212,149,46,0.28); }
+.pay-badge.balance { background: rgba(37,99,235,0.10); color: #1d4ed8; border: 1px solid rgba(37,99,235,0.24); }
 
 </style></head>
 <body>
@@ -1508,17 +1708,35 @@ body { font-family: system-ui, -apple-system, sans-serif; height: 100vh; overflo
       </div>
     </section>
 
-    <!-- =================== MAIN MENU =================== -->
+    <!-- =================== MAIN MENU (map background) =================== -->
     <section id="mainMenuView" class="view">
-      <div class="view-inner">
-        <div class="view-header"><div><h2>Main Menu</h2></div></div>
-        <div class="menu-grid">
-          <div id="menuMaps" class="menu-card"><div class="menu-title">$Maps</div><div class="menu-sub">Storm swaths, high-value streets, directions.</div></div>
-          <div id="menuDirectory" class="menu-card"><div class="menu-title">Company Directory</div><div class="menu-sub">Leadership, regionals, managers, reps.</div></div>
-          <div id="menuInsurance" class="menu-card"><div class="menu-title">Insurance Contacts</div><div class="menu-sub">Carrier phone numbers and notes.</div></div>
-          <div id="menuMe" class="menu-card"><div class="menu-title">My Stats</div><div class="menu-sub">Your personal production snapshot.</div></div>
-          <div id="menuMyTeam" class="menu-card"><div class="menu-title">My Team</div><div class="menu-sub">Team chat, jobs, Zoom, payroll.</div></div>
-          <div id="menuAdmin" class="menu-card" style="display:none;"><div class="menu-title">Admin</div><div class="menu-sub">Users, steps, teams, payroll.</div></div>
+      <div class="map-full-view">
+        <!-- Google Map fills entire background -->
+        <div id="mainMenuMap" class="map-canvas"></div>
+
+        <!-- Floating UI layer -->
+        <div class="map-ui-overlay">
+          <!-- Header -->
+          <div class="map-view-header">
+            <div class="map-view-title">Hail Money <span>Map</span></div>
+            <div id="mainMenuUserBadge" style="font-size:0.76rem;color:rgba(20,40,20,0.65);font-weight:600;"></div>
+          </div>
+
+          <!-- Scrollable content -->
+          <div style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:14px;">
+            <div class="main-menu-glass">
+              <h2>Main Menu</h2>
+              <div class="menu-grid">
+                <div id="menuMaps" class="menu-card"><div class="menu-title">$Maps</div><div class="menu-sub">Storm swaths, high-value streets, directions.</div></div>
+                <div id="menuMyJobs" class="menu-card"><div class="menu-title">My Jobs</div><div class="menu-sub">View your job pipeline and status stages.</div></div>
+                <div id="menuDirectory" class="menu-card"><div class="menu-title">Company Directory</div><div class="menu-sub">Leadership, regionals, managers, reps.</div></div>
+                <div id="menuInsurance" class="menu-card"><div class="menu-title">Insurance Contacts</div><div class="menu-sub">Carrier phone numbers and notes.</div></div>
+                <div id="menuMe" class="menu-card"><div class="menu-title">My Stats</div><div class="menu-sub">Your personal production snapshot.</div></div>
+                <div id="menuMyTeam" class="menu-card"><div class="menu-title">My Team</div><div class="menu-sub">Team chat, Zoom, payroll.</div></div>
+                <div id="menuAdmin" class="menu-card" style="display:none;"><div class="menu-title">Admin</div><div class="menu-sub">Users, steps, teams, payroll.</div></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -2325,6 +2543,238 @@ body { font-family: system-ui, -apple-system, sans-serif; height: 100vh; overflo
       </div>
     </section>
 
+    <!-- =================== JOBS VIEW (map background) =================== -->
+    <section id="jobsView" class="view">
+      <div class="map-full-view">
+        <div id="jobsMap" class="map-canvas"></div>
+        <div class="map-ui-overlay">
+          <!-- Header -->
+          <div class="map-view-header">
+            <div class="map-nav-btns">
+              <!-- Back globe -->
+              <button class="map-nav-btn" id="jobsBackBtn" aria-label="Back to menu">
+                <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <radialGradient id="jvBgBlue" cx="38%" cy="30%" r="68%"><stop offset="0%" stop-color="#60c8ff"/><stop offset="55%" stop-color="#1a6fd4"/><stop offset="100%" stop-color="#0a2f7a"/></radialGradient>
+                    <radialGradient id="jvCoinBlue" cx="36%" cy="28%" r="65%"><stop offset="0%" stop-color="#fff066"/><stop offset="55%" stop-color="#f0a820"/><stop offset="100%" stop-color="#9a5800"/></radialGradient>
+                  </defs>
+                  <circle cx="22" cy="22" r="19" fill="url(#jvBgBlue)"/>
+                  <circle cx="22" cy="22" r="19" fill="none" stroke="#3aa0f0" stroke-width="2"/>
+                  <circle cx="22" cy="22" r="10" fill="url(#jvCoinBlue)" stroke="#a06010" stroke-width="1.4"/>
+                  <text x="22" y="27.5" font-family="system-ui" font-size="14" font-weight="900" fill="#6a3400" text-anchor="middle">$</text>
+                </svg>
+                <span class="map-nav-label">Back</span>
+              </button>
+              <!-- Home globe -->
+              <button class="map-nav-btn" id="jobsHomeBtn" aria-label="Main menu">
+                <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <radialGradient id="jvBgGreen" cx="38%" cy="30%" r="68%"><stop offset="0%" stop-color="#4aaa2a"/><stop offset="55%" stop-color="#1a5a0a"/><stop offset="100%" stop-color="#0a2804"/></radialGradient>
+                    <radialGradient id="jvCoinGold" cx="36%" cy="28%" r="65%"><stop offset="0%" stop-color="#fff066"/><stop offset="55%" stop-color="#f0a820"/><stop offset="100%" stop-color="#9a5800"/></radialGradient>
+                  </defs>
+                  <circle cx="22" cy="22" r="19" fill="url(#jvBgGreen)"/>
+                  <circle cx="22" cy="22" r="19" fill="none" stroke="#d4952e" stroke-width="2"/>
+                  <circle cx="22" cy="22" r="10" fill="url(#jvCoinGold)" stroke="#a06010" stroke-width="1.4"/>
+                  <text x="22" y="27.5" font-family="system-ui" font-size="14" font-weight="900" fill="#6a3400" text-anchor="middle">$</text>
+                </svg>
+                <span class="map-nav-label">Home</span>
+              </button>
+            </div>
+            <div class="map-view-title">My <span>Jobs</span></div>
+            <div style="width:80px;"></div>
+          </div>
+          <!-- Job Quick Look table panel -->
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+            <div class="jobs-glass-panel">
+              <h3>Job Quick Look</h3>
+              <table class="ql-table">
+                <thead>
+                  <tr>
+                    <th>Customer / Job</th>
+                    <th>Claim Filed</th>
+                    <th>Approved</th>
+                    <th>Built</th>
+                    <th>Invoice</th>
+                    <th>Complete</th>
+                  </tr>
+                </thead>
+                <tbody id="jobsTableBody">
+                  <!-- populated by JS demo data -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== JOB DETAIL VIEW (map background) =================== -->
+    <section id="jobDetailView" class="view">
+      <div class="map-full-view">
+        <div id="jobDetailMap" class="map-canvas"></div>
+        <div class="map-ui-overlay">
+          <!-- Header -->
+          <div class="map-view-header">
+            <div class="map-nav-btns">
+              <button class="map-nav-btn" id="jobDetailBackBtn" aria-label="Back to jobs">
+                <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <radialGradient id="jdBgBlue" cx="38%" cy="30%" r="68%"><stop offset="0%" stop-color="#60c8ff"/><stop offset="55%" stop-color="#1a6fd4"/><stop offset="100%" stop-color="#0a2f7a"/></radialGradient>
+                    <radialGradient id="jdCoinBlue" cx="36%" cy="28%" r="65%"><stop offset="0%" stop-color="#fff066"/><stop offset="55%" stop-color="#f0a820"/><stop offset="100%" stop-color="#9a5800"/></radialGradient>
+                  </defs>
+                  <circle cx="22" cy="22" r="19" fill="url(#jdBgBlue)"/>
+                  <circle cx="22" cy="22" r="19" fill="none" stroke="#3aa0f0" stroke-width="2"/>
+                  <circle cx="22" cy="22" r="10" fill="url(#jdCoinBlue)" stroke="#a06010" stroke-width="1.4"/>
+                  <text x="22" y="27.5" font-family="system-ui" font-size="14" font-weight="900" fill="#6a3400" text-anchor="middle">$</text>
+                </svg>
+                <span class="map-nav-label">Back</span>
+              </button>
+              <button class="map-nav-btn" id="jobDetailHomeBtn" aria-label="Main menu">
+                <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <radialGradient id="jdBgGreen" cx="38%" cy="30%" r="68%"><stop offset="0%" stop-color="#4aaa2a"/><stop offset="55%" stop-color="#1a5a0a"/><stop offset="100%" stop-color="#0a2804"/></radialGradient>
+                    <radialGradient id="jdCoinGold" cx="36%" cy="28%" r="65%"><stop offset="0%" stop-color="#fff066"/><stop offset="55%" stop-color="#f0a820"/><stop offset="100%" stop-color="#9a5800"/></radialGradient>
+                  </defs>
+                  <circle cx="22" cy="22" r="19" fill="url(#jdBgGreen)"/>
+                  <circle cx="22" cy="22" r="19" fill="none" stroke="#d4952e" stroke-width="2"/>
+                  <circle cx="22" cy="22" r="10" fill="url(#jdCoinGold)" stroke="#a06010" stroke-width="1.4"/>
+                  <text x="22" y="27.5" font-family="system-ui" font-size="14" font-weight="900" fill="#6a3400" text-anchor="middle">$</text>
+                </svg>
+                <span class="map-nav-label">Home</span>
+              </button>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+              <div class="map-view-title"><span id="jobDetailName">Job Detail</span></div>
+              <div id="jobDetailAddr" style="font-size:0.65rem;color:rgba(20,40,20,0.55);font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+            </div>
+            <!-- 3-dot menu -->
+            <button class="three-dot-btn" id="jobDetailMenuBtn" aria-label="Job menu">···</button>
+          </div>
+          <!-- Job detail content -->
+          <div class="job-detail-body">
+            <!-- Progress section -->
+            <div class="job-detail-glass">
+              <div class="jd-section-title">Job Progress</div>
+              <div class="job-progress-bar" id="jobDetailProgress"></div>
+            </div>
+            <!-- Documents & Photos -->
+            <div class="job-detail-glass">
+              <div class="jd-section-title">Documents &amp; Photos</div>
+              <div class="doc-grid">
+                <div class="doc-item"><span class="doc-icon">📄</span>Claim Form</div>
+                <div class="doc-item"><span class="doc-icon">📸</span>Roof Photos</div>
+                <div class="doc-item"><span class="doc-icon">📋</span>Estimate</div>
+                <div class="doc-item"><span class="doc-icon">🔏</span>Contract</div>
+                <div class="doc-item"><span class="doc-icon">🧾</span>Invoice</div>
+                <div class="doc-item"><span class="doc-icon">✅</span>COC</div>
+              </div>
+            </div>
+            <!-- Production Schedule -->
+            <div class="job-detail-glass">
+              <div class="jd-section-title">Production Schedule</div>
+              <div id="jobDetailSchedule"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Left drawer overlay -->
+      <div class="left-drawer-overlay" id="jobDetailDrawer">
+        <div class="left-drawer">
+          <div class="left-drawer-header">
+            <span class="left-drawer-title">Job Options</span>
+            <button class="drawer-close-btn" id="jobDetailDrawerClose">✕</button>
+          </div>
+          <div class="left-drawer-menu">
+            <button class="drawer-menu-item" id="drawerPaymentsBtn">
+              <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><line x1="2" y1="10" x2="22" y2="10" stroke="currentColor" stroke-width="1.6"/><line x1="6" y1="15" x2="10" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Payments and Profitability
+            </button>
+            <button class="drawer-menu-item">
+              <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
+              Job Notes
+            </button>
+            <button class="drawer-menu-item">
+              <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Schedule Production
+            </button>
+            <button class="drawer-menu-item">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L20 7V17L12 22L4 17V7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><polyline points="12,7 12,12 15,12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              Upload Documents
+            </button>
+          </div>
+        </div>
+        <!-- Click outside to close -->
+        <div style="flex:1;" id="jobDetailDrawerBg"></div>
+      </div>
+    </section>
+
+    <!-- =================== PAYMENTS VIEW (map background) =================== -->
+    <section id="paymentsView" class="view">
+      <div class="map-full-view">
+        <div id="paymentsMap" class="map-canvas"></div>
+        <div class="map-ui-overlay">
+          <!-- Header -->
+          <div class="map-view-header">
+            <div class="map-nav-btns">
+              <button class="map-nav-btn" id="paymentsBackBtn" aria-label="Back to job detail">
+                <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <radialGradient id="pvBgBlue" cx="38%" cy="30%" r="68%"><stop offset="0%" stop-color="#60c8ff"/><stop offset="55%" stop-color="#1a6fd4"/><stop offset="100%" stop-color="#0a2f7a"/></radialGradient>
+                    <radialGradient id="pvCoinBlue" cx="36%" cy="28%" r="65%"><stop offset="0%" stop-color="#fff066"/><stop offset="55%" stop-color="#f0a820"/><stop offset="100%" stop-color="#9a5800"/></radialGradient>
+                  </defs>
+                  <circle cx="22" cy="22" r="19" fill="url(#pvBgBlue)"/>
+                  <circle cx="22" cy="22" r="19" fill="none" stroke="#3aa0f0" stroke-width="2"/>
+                  <circle cx="22" cy="22" r="10" fill="url(#pvCoinBlue)" stroke="#a06010" stroke-width="1.4"/>
+                  <text x="22" y="27.5" font-family="system-ui" font-size="14" font-weight="900" fill="#6a3400" text-anchor="middle">$</text>
+                </svg>
+                <span class="map-nav-label">Back</span>
+              </button>
+              <button class="map-nav-btn" id="paymentsHomeBtn" aria-label="Main menu">
+                <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <radialGradient id="pvBgGreen" cx="38%" cy="30%" r="68%"><stop offset="0%" stop-color="#4aaa2a"/><stop offset="55%" stop-color="#1a5a0a"/><stop offset="100%" stop-color="#0a2804"/></radialGradient>
+                    <radialGradient id="pvCoinGold" cx="36%" cy="28%" r="65%"><stop offset="0%" stop-color="#fff066"/><stop offset="55%" stop-color="#f0a820"/><stop offset="100%" stop-color="#9a5800"/></radialGradient>
+                  </defs>
+                  <circle cx="22" cy="22" r="19" fill="url(#pvBgGreen)"/>
+                  <circle cx="22" cy="22" r="19" fill="none" stroke="#d4952e" stroke-width="2"/>
+                  <circle cx="22" cy="22" r="10" fill="url(#pvCoinGold)" stroke="#a06010" stroke-width="1.4"/>
+                  <text x="22" y="27.5" font-family="system-ui" font-size="14" font-weight="900" fill="#6a3400" text-anchor="middle">$</text>
+                </svg>
+                <span class="map-nav-label">Home</span>
+              </button>
+            </div>
+            <div class="map-view-title">Payments &amp; <span>Profitability</span></div>
+            <div style="width:80px;"></div>
+          </div>
+          <!-- Payments table -->
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+            <div class="payments-glass-panel">
+              <h3 id="paymentsJobTitle">Payments &amp; Profitability</h3>
+              <table class="pay-table">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th style="text-align:right;">Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentsTableBody"></tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="2" style="font-size:0.78rem;">Net Profitability</td>
+                    <td class="pay-num" id="paymentsNetTotal">$0</td>
+                    <td><span class="pay-badge balance">Balance</span></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -2395,6 +2845,19 @@ function showOnlyView(viewEl) {
   }
   if (viewEl.id === "campaignView") {
     initCampaignPageOnce();
+  }
+  if (viewEl.id === "mainMenuView") {
+    initMainMenuMapOnce();
+  }
+  if (viewEl.id === "jobsView") {
+    initJobsMapOnce();
+    renderJobsTable();
+  }
+  if (viewEl.id === "jobDetailView") {
+    initJobDetailMapOnce();
+  }
+  if (viewEl.id === "paymentsView") {
+    initPaymentsMapOnce();
   }
 }
 
@@ -3584,6 +4047,151 @@ function renderStormList() {
 function focusStormOnMap(stormId,rawLat,rawLng){ const lat=Number(rawLat),lng=Number(rawLng); if(!Number.isFinite(lat)||!Number.isFinite(lng))return; if(!App.map)return; App.map.panTo({lat,lng});App.map.setZoom(18); let marker=App.markers.find(m=>m.stormId===stormId); if(!marker){marker=new google.maps.Marker({map:App.map,position:{lat,lng},title:"Storm"});marker.stormId=stormId;App.markers.push(marker);} marker.setAnimation(google.maps.Animation.BOUNCE);setTimeout(()=>marker.setAnimation(null),2000); }
 
 /* =========================================================
+   MAP-BG VIEW INIT FUNCTIONS (lazy, one-shot)
+   ========================================================= */
+
+/* ── Shared helper to create a background map ── */
+function _initBgMap(elId, storeKey) {
+  const el = document.getElementById(elId);
+  if (!el || !window.google || !window.google.maps) return;
+  if (window[storeKey]) return;
+  window[storeKey] = new google.maps.Map(el, {
+    center: { lat: 39.5, lng: -98.35 }, zoom: 4,
+    mapTypeId: google.maps.MapTypeId.HYBRID,
+    zoomControl: false, streetViewControl: false,
+    mapTypeControl: false, fullscreenControl: false,
+    gestureHandling: 'none', disableDefaultUI: true,
+  });
+}
+
+let _mainMenuMapInited = false;
+function initMainMenuMapOnce() {
+  if (_mainMenuMapInited) return;
+  _mainMenuMapInited = true;
+  setTimeout(() => _initBgMap('mainMenuMap', 'mmMap'), 50);
+}
+
+let _jobsMapInited = false;
+function initJobsMapOnce() {
+  if (_jobsMapInited) return;
+  _jobsMapInited = true;
+  setTimeout(() => _initBgMap('jobsMap', 'jbMap'), 50);
+}
+
+let _jobDetailMapInited = false;
+function initJobDetailMapOnce() {
+  if (_jobDetailMapInited) return;
+  _jobDetailMapInited = true;
+  setTimeout(() => _initBgMap('jobDetailMap', 'jdMap'), 50);
+}
+
+let _paymentsMapInited = false;
+function initPaymentsMapOnce() {
+  if (_paymentsMapInited) return;
+  _paymentsMapInited = true;
+  setTimeout(() => _initBgMap('paymentsMap', 'pvMap'), 50);
+}
+
+/* =========================================================
+   DEMO JOBS DATA
+   ========================================================= */
+const DEMO_JOBS = [
+  { id: 1, name: 'Smith, John',    addr: '1234 Oak Ave, Clayton, MO',    stages: [1,1,1,0,0] },
+  { id: 2, name: 'Johnson, Mary',  addr: '567 Maple Dr, Chesterfield, MO', stages: [1,1,0,0,0] },
+  { id: 3, name: 'Williams, Bob',  addr: '890 Pine St, St. Louis, MO',  stages: [1,0,0,0,0] },
+  { id: 4, name: 'Brown, Sarah',   addr: '321 Elm Blvd, Kirkwood, MO',  stages: [1,1,1,1,1] },
+  { id: 5, name: 'Davis, Mike',    addr: '654 Cedar Ln, Ballwin, MO',   stages: [1,0,0,0,0] },
+  { id: 6, name: 'Martinez, Ana',  addr: '987 Birch Ct, Frontenac, MO', stages: [1,1,1,1,0] },
+  { id: 7, name: 'Wilson, Tom',    addr: '246 Walnut Way, Ladue, MO',   stages: [1,1,0,0,0] },
+];
+
+const STAGE_LABELS = ['Claim Filed','Approved','Built','Invoice','Complete'];
+
+function renderJobsTable() {
+  const tbody = document.getElementById('jobsTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  DEMO_JOBS.forEach(job => {
+    const tr = document.createElement('tr');
+    const stageHtml = job.stages.map(s =>
+      `<td><span class="ql-stage ${s ? 'done' : 'pending'}"></span></td>`
+    ).join('');
+    tr.innerHTML = `<td><span class="ql-customer-name" data-job-id="${job.id}">${job.name}</span></td>${stageHtml}`;
+    tr.querySelector('.ql-customer-name').addEventListener('click', () => openJobDetail(job));
+    tbody.appendChild(tr);
+  });
+}
+
+function openJobDetail(job) {
+  App._currentJob = job;
+  // Set title and address
+  const nameEl = document.getElementById('jobDetailName');
+  if (nameEl) nameEl.textContent = job.name;
+  const addrEl = document.getElementById('jobDetailAddr');
+  if (addrEl) addrEl.textContent = job.addr || '';
+  // Render progress steps
+  const progressEl = document.getElementById('jobDetailProgress');
+  if (progressEl) {
+    progressEl.innerHTML = STAGE_LABELS.map((label, i) => `
+      <div class="job-step">
+        <div class="job-step-dot ${job.stages[i] ? 'done' : 'pending'}">${job.stages[i] ? '✓' : (i+1)}</div>
+        <div class="job-step-label">${label}</div>
+      </div>
+    `).join('');
+  }
+  // Render production schedule
+  const schedEl = document.getElementById('jobDetailSchedule');
+  if (schedEl) {
+    const schedule = [
+      { label: 'Insurance Inspection', date: '2025-04-10', status: 'complete' },
+      { label: 'Material Delivery',    date: '2025-04-18', status: job.stages[2] ? 'complete' : 'scheduled' },
+      { label: 'Crew Scheduled',       date: '2025-04-22', status: job.stages[2] ? 'complete' : (job.stages[1] ? 'scheduled' : 'pending') },
+      { label: 'Build Day',            date: '2025-04-23', status: job.stages[2] ? 'complete' : 'pending' },
+      { label: 'Final Inspection',     date: '2025-05-01', status: job.stages[3] ? 'complete' : 'pending' },
+    ];
+    schedEl.innerHTML = schedule.map(s => `
+      <div class="prod-row">
+        <span class="prod-label">${s.label}</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:0.72rem;color:rgba(20,40,20,0.55);">${s.date}</span>
+          <span class="prod-badge ${s.status}">${s.status.charAt(0).toUpperCase()+s.status.slice(1)}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+  // Set payments title
+  const payTitle = document.getElementById('paymentsJobTitle');
+  if (payTitle) payTitle.textContent = 'Payments & Profitability — ' + job.name;
+  // Populate payments table
+  renderPaymentsTable(job);
+  showOnlyView(App.views.jobDetailView);
+}
+
+function renderPaymentsTable(job) {
+  const tbody = document.getElementById('paymentsTableBody');
+  const netEl = document.getElementById('paymentsNetTotal');
+  if (!tbody) return;
+  const rows = [
+    { cat: 'Revenue',     desc: 'Insurance Payout (RCV)',  amt: 14200, status: 'paid'    },
+    { cat: 'Revenue',     desc: 'Supplement #1',            amt: 1800,  status: job.stages[1] ? 'paid' : 'pending' },
+    { cat: 'Material',    desc: 'Roofing Materials',        amt: -4100, status: 'paid'    },
+    { cat: 'Labor',       desc: 'Crew Labor',               amt: -3200, status: job.stages[2] ? 'paid' : 'pending' },
+    { cat: 'Overhead',    desc: 'Permit &amp; Disposal',    amt: -620,  status: 'paid'    },
+    { cat: 'Commission',  desc: 'Sales Rep Commission (10%)', amt: -1300, status: job.stages[4] ? 'paid' : 'pending' },
+  ];
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.cat}</td>
+      <td>${r.desc}</td>
+      <td class="pay-num">${r.amt < 0 ? '-$'+Math.abs(r.amt).toLocaleString() : '$'+r.amt.toLocaleString()}</td>
+      <td><span class="pay-badge ${r.status}">${r.status.charAt(0).toUpperCase()+r.status.slice(1)}</span></td>
+    </tr>
+  `).join('');
+  const net = rows.reduce((s, r) => s + r.amt, 0);
+  if (netEl) netEl.textContent = (net >= 0 ? '$' : '-$') + Math.abs(net).toLocaleString();
+}
+
+/* =========================================================
    NAV WIRING
    ========================================================= */
 function wireNavigation() {
@@ -3596,9 +4204,13 @@ function wireNavigation() {
   App.views.myTeamView     = document.getElementById("myTeamView");
   App.views.adminView      = document.getElementById("adminView");
   App.views.campaignView   = document.getElementById("campaignView");
+  App.views.jobsView       = document.getElementById("jobsView");
+  App.views.jobDetailView  = document.getElementById("jobDetailView");
+  App.views.paymentsView   = document.getElementById("paymentsView");
 
   document.getElementById("hubToMenuBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
   document.getElementById("menuMaps")?.addEventListener("click",()=>showOnlyView(App.views.mapsView));
+  document.getElementById("menuMyJobs")?.addEventListener("click",()=>showOnlyView(App.views.jobsView));
   document.getElementById("menuDirectory")?.addEventListener("click",()=>showOnlyView(App.views.directoryView));
   document.getElementById("menuInsurance")?.addEventListener("click",()=>showOnlyView(App.views.insuranceView));
   document.getElementById("menuMe")?.addEventListener("click",()=>showOnlyView(App.views.meView));
@@ -3609,6 +4221,35 @@ function wireNavigation() {
   document.getElementById("meBackBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
   document.getElementById("myTeamBackBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
   document.getElementById("adminBackBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
+
+  // Jobs view navigation
+  document.getElementById("jobsBackBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
+  document.getElementById("jobsHomeBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
+
+  // Job Detail navigation
+  document.getElementById("jobDetailBackBtn")?.addEventListener("click",()=>showOnlyView(App.views.jobsView));
+  document.getElementById("jobDetailHomeBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
+
+  // 3-dot menu opens left drawer
+  document.getElementById("jobDetailMenuBtn")?.addEventListener("click",()=>{
+    document.getElementById("jobDetailDrawer")?.classList.add("open");
+  });
+  document.getElementById("jobDetailDrawerClose")?.addEventListener("click",()=>{
+    document.getElementById("jobDetailDrawer")?.classList.remove("open");
+  });
+  document.getElementById("jobDetailDrawerBg")?.addEventListener("click",()=>{
+    document.getElementById("jobDetailDrawer")?.classList.remove("open");
+  });
+
+  // Payments and Profitability drawer item
+  document.getElementById("drawerPaymentsBtn")?.addEventListener("click",()=>{
+    document.getElementById("jobDetailDrawer")?.classList.remove("open");
+    showOnlyView(App.views.paymentsView);
+  });
+
+  // Payments view navigation
+  document.getElementById("paymentsBackBtn")?.addEventListener("click",()=>showOnlyView(App.views.jobDetailView));
+  document.getElementById("paymentsHomeBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
 
   // Campaign rail button (inside maps view)
   document.addEventListener("click", e => {
@@ -3624,6 +4265,9 @@ function safeCall(fn){ try{if(typeof fn==="function")fn();}catch(e){console.erro
 
 function setupProfileAndSubs(user) {
   if (!user||!window.db) return;
+  // Update main menu user badge
+  const badge = document.getElementById("mainMenuUserBadge");
+  if (badge) badge.textContent = user.email || "";
   window.db.collection("users").doc(user.uid).get().then(doc => {
     const roleTag=document.getElementById("userRoleTag"),adminCard=document.getElementById("menuAdmin");
     if (doc.exists) {
@@ -3631,6 +4275,7 @@ function setupProfileAndSubs(user) {
       const role=(App.currentUserProfile.role||"rep").toLowerCase();
       if(roleTag)roleTag.textContent=role.toUpperCase();
       if(adminCard)adminCard.style.display=(role==="admin"||role==="owner")?"flex":"none";
+      if(badge)badge.textContent=(user.email||"")+" · "+role.toUpperCase();
       if(App.currentUserProfile.teamId&&typeof window.subscribeTeamChat==="function")window.subscribeTeamChat(App.currentUserProfile.teamId);
     } else {
       App.currentUserProfile=null;
