@@ -7788,3 +7788,21 @@ document.addEventListener("DOMContentLoaded", ensureStormListClickHandler);
 <!-- NOAA importer (dev tool) -->
 <script src="noaa_import.js"></script>
 
+<!-- SERVICE WORKER — auto-reload on new deployment -->
+<script>
+if ('serviceWorker' in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) {
+      refreshing = true;
+      // A new version was deployed — reload to pick up the latest files
+      window.location.reload();
+    }
+  });
+
+  navigator.serviceWorker.register('/service-worker.js').catch(err => {
+    console.warn('Service worker registration failed:', err);
+  });
+}
+</script>
+
