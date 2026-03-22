@@ -4136,6 +4136,27 @@ div.ht-left-panel {
       opacity: 1 !important;
     }
 
+    /* Higher-specificity gold overrides — override the .ht-left-panel button { color:#111 } rule */
+    #mapsView .ht-left-panel .recent-event-row,
+    #mapsView .ht-left-panel .recent-event-row:hover,
+    #mapsView .ht-left-panel .storm-item,
+    #mapsView .ht-left-panel .storm-item:hover,
+    #mapsView .ht-left-panel .paging-btn,
+    #mapsView .ht-left-panel .paging-btn:hover,
+    #mapsView .ht-left-panel .ht-date-item,
+    #mapsView .ht-left-panel .ht-date-item:hover,
+    #mapsView .ht-left-panel .ht-pager-btn,
+    #mapsView .ht-left-panel .ht-pager-btn:hover {
+      color: #d4af37 !important;
+      border-color: rgba(212, 175, 55, 0.65) !important;
+    }
+    #mapsView .ht-left-panel .storm-list-title,
+    #mapsView .ht-left-panel .storm-list-count,
+    #mapsView .ht-left-panel .paging-info,
+    #mapsView .ht-left-panel .storm-item-date {
+      color: #d4af37 !important;
+    }
+
     #mapsView .rail-collapse-btn svg,
     #mapsView .rail-collapse-btn svg *,
     #mapsView .ht-rail-btn svg,
@@ -4953,7 +4974,7 @@ div.ht-left-panel {
 
           <div id="stormList" class="storm-list"></div>
 
-          <div id="directionsArea" class="directions-area">
+          <div id="directionsArea" class="directions-area" style="display:none !important">
             <button id="directionsBtn" class="pill-btn" disabled>Directions</button>
           </div>
         </div>
@@ -6161,38 +6182,48 @@ window.initCampaignMap = function (campaign) {
     const goBtn = document.getElementById('goBtn');
     if (goBtn) {
       goBtn.addEventListener('click', async function () {
+        console.log('GO: clicked');
         const rawInput = (document.getElementById('cityStateInput')?.value || '').trim();
         const minVal   = parseFloat(document.getElementById('minValueInput')?.value || '0') || 0;
-        if (!rawInput) { console.warn('[GO] No city/state entered'); return; }
+        if (!rawInput) { console.warn('[GO] No city/state entered — aborting'); return; }
+        if (!window.cMap) { console.error('GO ERROR: window.cMap is null — map not initialised yet'); return; }
 
         const parts = rawInput.split(',');
         const city  = parts[0]?.trim() || rawInput;
         const state = (parts[1]?.trim() || '').toUpperCase();
         console.log(`[GO] ── NEW RUN ───────────────────────────────────`);
         console.log(`[GO] City: "${city}"  State: "${state}"  MinVal: $${minVal.toLocaleString()}`);
+        console.log('GO: inputs', { city, state, minValue: minVal });
 
         window._goInProgress = true; // suppress idle-save during async pipeline
         goBtn.disabled = true;
         goBtn.classList.add('loading');
         goBtn.textContent = '…';
         try {
+          console.log(`[GO] Campaign loaded — starting pipeline. minVal=$${minVal.toLocaleString()}`);
           // ── 1. Geocode ──────────────────────────────────────────────────────
           console.log(`[GO] Geocoding "${rawInput}"…`);
-          const location = await new Promise((resolve, reject) => {
-            const geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ address: rawInput + ', USA' }, (results, status) => {
-              if (status !== 'OK' || !results[0]) {
-                console.warn('[GO] Geocode FAILED:', status, 'for', rawInput);
-                reject(new Error('Geocode failed: ' + status));
-              } else {
-                resolve(results[0]);
-              }
-            });
-          });
+          const location = await Promise.race([
+            new Promise((resolve, reject) => {
+              const geocoder = new google.maps.Geocoder();
+              geocoder.geocode({ address: rawInput + ', USA' }, (results, status) => {
+                if (status !== 'OK' || !results[0]) {
+                  console.warn('[GO] Geocode FAILED:', status, 'for', rawInput);
+                  reject(new Error('Geocode failed: ' + status));
+                } else {
+                  resolve(results[0]);
+                }
+              });
+            }),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('[GO] Geocode timed out after 15s')), 15000)
+            ),
+          ]);
 
+          console.log('GO: geocode result', location);
           const loc = location.geometry.location;
           const centerLat = loc.lat(), centerLng = loc.lng();
-          console.log(`[GO] Geocode OK → lat=${centerLat.toFixed(5)} lng=${centerLng.toFixed(5)}`);
+          console.log(`[GO] Geocode complete → lat=${centerLat.toFixed(5)} lng=${centerLng.toFixed(5)}`);
 
           // ── 2. Center + zoom — NO fitBounds (fitBounds zooms out to whole city) ──
           console.log('[GO] fitBounds: NOT called. Using setCenter + setZoom(14).');
@@ -6214,59 +6245,103 @@ window.initCampaignMap = function (campaign) {
             });
           }
 
-          // ── 5. Load road segments directly from Overpass (bypass Census for debug) ──
-          console.log('[GO] Fetching road segments from Overpass…');
-          let streets = [];
+          // ── 5. Fetch Overpass street geometries ────────────────────────────────
+          console.log('GO: loading campaign data');
+          console.log('[GO] Streets/property data load started — fetching road segments from Overpass…');
+          let rawStreets = [];
           try {
-            streets = await fetchOverpassStreets(bbSouth, bbWest, bbNorth, bbEast);
+            rawStreets = await fetchOverpassStreets(bbSouth, bbWest, bbNorth, bbEast);
           } catch (ovErr) {
             console.error('[GO] fetchOverpassStreets threw:', ovErr);
           }
-          console.log(`[GO] Road rows loaded: ${streets.length}`);
+          console.log(`[GO] Road rows loaded: ${rawStreets.length}`);
+          console.log('GO: road rows', rawStreets.length);
 
-          if (!streets.length) {
-            console.warn('[GO] ⚠ Zero road rows returned. Overpass may be rate-limited or bbox contains no named residential/tertiary roads. NOT clearing overlays.');
-          } else {
-            // ── 6. Clear only now that we have data ────────────────────────────
-            clearCampaignStreetOverlays();
-
-            // ── 7. DEBUG: draw every road in lime green — no value filter ──────
-            //    Once confirmed visible, restore value-tier coloring here.
-            let drawn = 0;
-            for (const s of streets) {
-              if (!s.path?.length) continue;
-              window._campaignStreetPolys.push(new google.maps.Polyline({
-                path: s.path,
-                map: window.cMap,
-                strokeColor: '#39ff14',   // neon green — impossible to miss
-                strokeOpacity: 0.9,
-                strokeWeight: 4,
-                zIndex: 12,
-              }));
-              drawn++;
-            }
-            console.log(`[GO] Matched streets: ${streets.length}  |  Rendered overlays: ${drawn}`);
-            if (!drawn) console.warn('[GO] ⚠ Loop finished with 0 polylines drawn — check path data.');
-
-            const countEl = document.getElementById('resultsCount');
-            const summary = document.getElementById('resultsSummary');
-            const legend  = document.getElementById('mapLegendFloat');
-            if (countEl) countEl.textContent = drawn;
-            if (summary) summary.classList.add('visible');
-            if (legend)  legend.classList.add('visible');
-
-            // ── 8. Switch layout only after roads are confirmed drawn ──────────
-            console.log('[GO] Switching to working layout.');
+          if (!rawStreets.length) {
+            console.warn('[GO] ⚠ Zero road rows returned. Overpass may be rate-limited or bbox contains no named residential/tertiary roads.');
+            console.warn('GO: road rows empty — switching to campaign-working mode with no overlays');
             document.getElementById('campaignView')?.classList.add('campaign-working');
+          } else {
+            // ── 6. Score each street with per-street Census values (via proxy) ─────
+            console.log(`[GO] Campaign minimum: $${minVal.toLocaleString()}  Fetching per-street Census values via proxy…`);
+            let scored = null;
+            try {
+              scored = await fetchPerStreetCensusValues(rawStreets);
+            } catch (censusErr) {
+              if (censusErr.code === 'CENSUS_UNAVAILABLE') {
+                console.error('[GO] ⚠ Census value proxy unavailable — streets cannot be evaluated by home value');
+                console.error('GO ERROR: Census proxy unavailable:', censusErr.message);
+                const warnEl = document.getElementById('resultsSummary');
+                if (warnEl) {
+                  warnEl.textContent = '⚠ Home value data unavailable. Streets cannot be targeted by value.';
+                  warnEl.classList.add('visible');
+                }
+                document.getElementById('campaignView')?.classList.add('campaign-working');
+              } else {
+                throw censusErr;
+              }
+            }
+
+            if (scored !== null) {
+              const withData = scored.filter(s => s.streetValue > 0).length;
+              console.log(`[GO] Streets/property data load finished — ${withData}/${scored.length} streets matched Census values`);
+              console.log('GO: property rows', withData);
+              console.log('GO: matched streets', withData);
+
+              // ── 7. Color by value tier; skip streets with no data ──────────────
+              console.log('[GO] Rendering overlays…');
+              console.log('GO: rendering streets');
+              clearCampaignStreetOverlays();
+              let drawn = 0, cntRed = 0, cntOrange = 0, cntBlue = 0, cntSkip = 0;
+              for (const s of scored) {
+                const v = s.streetValue;
+                if (!v || v <= 0) { cntSkip++; continue; }  // no Census data
+                let color;
+                if      (v >= minVal)          { color = '#e8302a'; cntRed++; }
+                else if (v >= minVal * 0.80)   { color = '#f5a623'; cntOrange++; }
+                else if (v >= minVal * 0.50)   { color = '#3182CE'; cntBlue++; }
+                else { cntSkip++; continue; }  // below 50% of minimum
+                if (!s.path?.length) continue;
+                window._campaignStreetPolys.push(new google.maps.Polyline({
+                  path: s.path,
+                  map: window.cMap,
+                  strokeColor:   color,
+                  strokeOpacity: 0.88,
+                  strokeWeight:  5,
+                  zIndex:        12,
+                }));
+                drawn++;
+                console.debug(`[Street] "${normalizeStreetName(s.name)}" | val=$${v.toLocaleString()} | tier=${color === '#e8302a' ? 'red' : color === '#f5a623' ? 'orange' : 'blue'}`);
+              }
+              console.log(`[GO] Render complete: ${drawn} overlays drawn | red:${cntRed} orange:${cntOrange} blue:${cntBlue} skip:${cntSkip}`);
+              console.log('GO: render complete', { drawn, cntRed, cntOrange, cntBlue, cntSkip });
+
+              const countEl = document.getElementById('resultsCount');
+              const summary = document.getElementById('resultsSummary');
+              const legend  = document.getElementById('mapLegendFloat');
+              if (drawn > 0) {
+                if (countEl) countEl.textContent = drawn;
+                if (summary) summary.classList.add('visible');
+                if (legend)  legend.classList.add('visible');
+              } else {
+                if (countEl) countEl.textContent = 0;
+                console.warn('[GO] ⚠ No streets met value threshold (minVal=$' + minVal.toLocaleString() + '). Switching to campaign-working mode anyway — try a lower minimum.');
+              }
+              // ── 8. Always switch layout after pipeline completes ────────────────
+              console.log('[GO] Applying campaign-working mode');
+              document.getElementById('campaignView')?.classList.add('campaign-working');
+            }
           }
 
         } catch (err) {
-          console.error('[GO] Error:', err);
+          console.error('GO ERROR:', err);
+          console.error('[GO] Pipeline error:', err);
         } finally {
           window._goInProgress = false;
           goBtn.disabled = false;
           goBtn.classList.remove('loading');
           goBtn.textContent = 'GO';
+          console.log('[GO] Loading cleared');
         }
       });
     }
@@ -6753,7 +6828,10 @@ async function fetchCensusValueGrid(south, west, north, east) {
       const url =
         `https://api.census.gov/data/2022/acs/acs5` +
         `?get=B25077_001E&for=tract:*&in=state:${st}+county:${co}`;
-      const arr = await (await fetch(url)).json();
+      const _acsCtrl = new AbortController();
+      const _acsTimer = setTimeout(() => _acsCtrl.abort(), 10000);
+      const arr = await (await fetch(url, { signal: _acsCtrl.signal })).json();
+      clearTimeout(_acsTimer);
       let loaded = 0;
       for (let i = 1; i < arr.length; i++) {
         const [val, s, c2, tr] = arr[i];
@@ -6793,13 +6871,20 @@ async function fetchOverpassStreets(south, west, north, east) {
     `(way["highway"~"^(residential|tertiary|secondary|living_street|unclassified)$"]["name"]` +
     `(${south.toFixed(6)},${west.toFixed(6)},${north.toFixed(6)},${east.toFixed(6)}););\n` +
     `out body geom;`;
-  const resp = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'data=' + encodeURIComponent(q),
-  });
-  if (!resp.ok) throw new Error('Overpass HTTP ' + resp.status);
-  const data = await resp.json();
+  const _overpassCtrl = new AbortController();
+  const _overpassTimer = setTimeout(() => _overpassCtrl.abort(), 30000);
+  let data;
+  try {
+    const resp = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'data=' + encodeURIComponent(q),
+      signal: _overpassCtrl.signal,
+    });
+    clearTimeout(_overpassTimer);
+    if (!resp.ok) throw new Error('Overpass HTTP ' + resp.status);
+    data = await resp.json();
+  } catch (e) { clearTimeout(_overpassTimer); throw e; }
 
   // Group all way segments by street name; keep the longest segment as path
   const byName = {};
@@ -6864,6 +6949,83 @@ function renderCampaignOverlay(map, streets, minVal) {
   if (countEl) countEl.textContent = drawn;
   if (summary) summary.classList.add('visible');
   if (legend)  legend.classList.add('visible');
+}
+
+/**
+ * Fetches per-street Census tract median home values via the Supabase Edge Function proxy.
+ *
+ * Calls the census-lookup Supabase Edge Function which geocodes street midpoints
+ * to Census tracts server-side (no CORS), then fetches ACS 5-yr B25077_001E
+ * (median home value) and returns a streetName→maxValue map.
+ *
+ * @param {Array<{name:string, path:Array<{lat,lng}>, midLat:number, midLng:number}>} streets
+ * @returns {Promise<Array>} streets annotated with `streetValue` (0 if no Census match)
+ * @throws {Error} with .code === 'CENSUS_UNAVAILABLE' if the proxy request fails
+ */
+async function fetchPerStreetCensusValues(streets) {
+  if (!streets.length) return [];
+
+  const CENSUS_PROXY = SUPABASE_URL + '/functions/v1/census-lookup';
+
+  const points = streets
+    .filter(s => s.midLat != null && s.midLng != null)
+    .map(s => ({ streetName: s.name, lat: s.midLat, lng: s.midLng }));
+
+  if (!points.length) {
+    console.warn('[Census] ⚠ No streets have midpoint coordinates — cannot request values');
+    const err = Object.assign(new Error('No street midpoints available'), { code: 'CENSUS_UNAVAILABLE' });
+    throw err;
+  }
+
+  console.log(`[Census] Requesting values for ${points.length} sample points via proxy…`);
+
+  let result;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 90000); // 90 s covers parallel geocoding
+    const resp = await fetch(CENSUS_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ points }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!resp.ok) throw new Error(`Census proxy HTTP ${resp.status}`);
+    result = await resp.json();
+  } catch (fetchErr) {
+    console.error('[Census] ⚠ Census proxy request failed:', fetchErr.message);
+    console.warn('[Census] ⚠ Value targeting unavailable — streets will not be evaluated by home value');
+    throw Object.assign(
+      new Error('Census proxy unavailable: ' + fetchErr.message),
+      { code: 'CENSUS_UNAVAILABLE' }
+    );
+  }
+
+  // Log raw proxy response before any transformation
+  const valueCount = Object.keys(result.values || {}).length;
+  const sampleValues = Object.entries(result.values || {}).slice(0, 5);
+  console.log('[Census] raw proxy response:', {
+    resolved: result.resolved,
+    total: result.total,
+    valueCount,
+    sampleValues,
+  });
+  if (valueCount === 0) {
+    console.warn('[Census] ⚠ Proxy returned 0 values — check Supabase Edge Function logs for tract/ACS failures');
+  }
+
+  const { values = {}, resolved = 0, total = points.length } = result;
+  console.log(`[Census] ${resolved}/${total} sample points resolved to tracts`);
+  const matched = Object.keys(values).length;
+  console.log(`[Census] ${matched} unique streets have a Census value (out of ${streets.length} streets total)`);
+
+  // Log a few street→value lookups to verify field names match
+  const sampleStreets = streets.slice(0, 3);
+  for (const s of sampleStreets) {
+    console.log(`[Census] street lookup: "${s.name}" → values["${s.name}"] = ${values[s.name] ?? '(no match)'}`);
+  }
+
+  return streets.map(s => ({ ...s, streetValue: values[s.name] || 0 }));
 }
 
 // Drag and drop system for Campaign view
@@ -8071,6 +8233,8 @@ window.initMap = function initMap() {
     streetViewControl: false,
     mapTypeControl: false,
     fullscreenControl: false,
+    rotateControl: false,
+    clickableIcons: false,
   });
 
   function applyMapBrightness() {

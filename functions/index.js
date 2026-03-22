@@ -743,3 +743,7 @@ exports.noaaPlsrProxy = functions.https.onRequest(
       .json({ storms: [], availableDates: [], summary: { error: e && e.message ? e.message : String(e) } });
   }
 });
+
+// censusStreetValues removed — Census lookup is now handled by the
+// Supabase Edge Function at supabase/functions/census-lookup/index.ts
+// which avoids browser CORS without requiring a Firebase Function.
