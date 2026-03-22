@@ -214,6 +214,15 @@ function parseCsvPlsrDatesOnly(csvText) {
   return { dateChunk, rawCount: rowCount };
 }
 
+function normalizeEventType(typeText, typeCode) {
+  const t = (typeText || '').trim().toLowerCase();
+  const c = (typeCode || '').trim().toUpperCase();
+  if (t === 'hail' || c === 'H') return 'hail';
+  if (t === 'tornado' || c === 'T') return 'tornado';
+  if (t.includes('wind') || c === 'W' || c === 'G' || c === 'D') return 'wind';
+  return null;
+}
+
 function parseCsvPlsrStorms(csvText) {
   const lines = csvText.trim().split('\n');
   if (lines.length < 2) return { stormChunk: [], dateChunk: new Set(), rawCount: 0 };
@@ -243,11 +252,10 @@ function parseCsvPlsrStorms(csvText) {
 
     const values = line.split(',').map(v => v.trim());
     
-    // Filter to hail only
-    const typeText = typeTextIdx >= 0 ? values[typeTextIdx] : null;
-    const typeCode = typeCodeIdx >= 0 ? values[typeCodeIdx] : null;
-    
-    if (typeText !== 'Hail' && typeCode !== 'H') continue;
+    const typeText = typeTextIdx >= 0 ? (values[typeTextIdx] || '').trim() : '';
+    const typeCode = typeCodeIdx >= 0 ? (values[typeCodeIdx] || '').trim() : '';
+    const eventTypeNorm = normalizeEventType(typeText, typeCode);
+    if (!eventTypeNorm) continue;
 
     let lon = null;
     let lat = null;
@@ -297,6 +305,7 @@ function parseCsvPlsrStorms(csvText) {
       lon,
       date: dateStr,
       ztime,
+      eventType: eventTypeNorm,
       hailSize: Number.isFinite(hailSize) ? hailSize : null,
       props: Object.fromEntries(headers.map((h, idx) => [h, values[idx] || '']))
     });

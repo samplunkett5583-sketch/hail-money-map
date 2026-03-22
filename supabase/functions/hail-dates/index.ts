@@ -63,6 +63,7 @@ serve(async (req: Request) => {
 
     const pageSize = 1000;
     const dateSet = new Set<string>();
+    const dateEventTypesMap: Record<string, Set<string>> = {};
 
     const useUnionTables = !state && !eventTypeNormalized;
     const tables = useUnionTables ? ["hail_reports", "hail_lsr_raw"] : ["hail_reports"];
@@ -72,7 +73,7 @@ serve(async (req: Request) => {
       for (;;) {
         let q = supabase
           .from(table)
-          .select("event_date")
+          .select("event_date, event_type")
           .order("event_date", { ascending: false })
           .range(offset, offset + pageSize - 1);
 
@@ -87,9 +88,15 @@ serve(async (req: Request) => {
 
         if (!data || data.length === 0) break;
 
-        for (const row of data as Array<{ event_date: unknown }>) {
+        for (const row of data as Array<{ event_date: unknown; event_type?: unknown }>) {
           const v = row.event_date;
-          if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) dateSet.add(v);
+          if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+            dateSet.add(v);
+            const etRaw = typeof row.event_type === "string" ? row.event_type.toLowerCase().trim() : "hail";
+            const et = etRaw.includes("tornado") ? "tornado" : etRaw.includes("wind") ? "wind" : "hail";
+            if (!dateEventTypesMap[v]) dateEventTypesMap[v] = new Set<string>();
+            dateEventTypesMap[v].add(et);
+          }
         }
 
         if (data.length < pageSize) break;
@@ -98,7 +105,11 @@ serve(async (req: Request) => {
     }
 
     const dates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
-    return json({ dates });
+    const dateEventTypes: Record<string, string[]> = {};
+    for (const [date, types] of Object.entries(dateEventTypesMap)) {
+      dateEventTypes[date] = Array.from(types);
+    }
+    return json({ dates, dateEventTypes });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }
