@@ -3574,6 +3574,9 @@ div.ht-left-panel {
             <div class="panel-title">Storm Events</div>
             <div class="panel-sub">Select a date to load hail / wind layer</div>
           </div>
+          <button type="button" class="ht-rail-btn" aria-label="Campaigns">
+            <img src="/assets/campaign-icon_vector.svg" alt="" style="width:28px;height:28px;object-fit:contain;">
+          </button>
         </div>
 
         <!-- Address search -->
@@ -5204,7 +5207,7 @@ function renderNewEventDates(items, pageIndex, pageSize) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "ht-date-item";
-    btn.textContent = item.dateDash;
+    btn.textContent = formatDateDisplay(item.dateDash);
 
     btn.addEventListener("click", () => {
       console.log("[EVENT CLICK]", item.dateDash);
@@ -5303,7 +5306,7 @@ function renderNewRecentRows(items, pageIndex, pageSize) {
 
     const label = document.createElement("div");
     label.className = "ht-event-date-text";
-    label.textContent = it.dateDash;
+    label.textContent = formatDateDisplay(it.dateDash);
 
     row.appendChild(check);
     row.appendChild(label);
@@ -5816,7 +5819,7 @@ async function loadRecentEventsPage(pageIndex) {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "recent-event-row";
-        btn.textContent = it.dateDash;
+        btn.textContent = formatDateDisplay(it.dateDash);
         btn.addEventListener("click", () => {
           console.log('[RECENTS] Click date', it.dateDash);
           showHailSwathsForDate(it.dateDash);
@@ -5842,7 +5845,7 @@ async function loadRecentEventsPage(pageIndex) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "recent-event-row";
-      btn.textContent = it.dateDash;
+      btn.textContent = formatDateDisplay(it.dateDash);
       btn.addEventListener("click", () => {
         console.log('[RECENTS] Click date', it.dateDash);
         showHailSwathsForDate(it.dateDash);
