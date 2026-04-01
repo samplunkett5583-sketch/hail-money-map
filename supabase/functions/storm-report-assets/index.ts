@@ -31,7 +31,7 @@ serve(async (req: Request) => {
     const supabaseKey = serviceRoleKey ?? supabaseAnonKey;
 
     if (!supabaseUrl || !supabaseKey) {
-      return json({ error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" }, 500);
+      return json({ error: "Missing SUPABASE_URL or key" }, 500);
     }
 
     const url = new URL(req.url);
@@ -39,6 +39,10 @@ serve(async (req: Request) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return json({ error: "Invalid date. Use date=YYYY-MM-DD" }, 400);
     }
+
+    // Optional filters
+    const source = url.searchParams.get("source")?.trim() ?? "";
+    const assetType = url.searchParams.get("asset_type")?.trim() ?? "";
 
     const globalHeaders: Record<string, string> = {};
     const authHeader = req.headers.get("Authorization");
@@ -49,35 +53,24 @@ serve(async (req: Request) => {
       global: { headers: globalHeaders },
     });
 
-    // Try detail table first (LSR data, recent 7-day window)
-    const { data: lsrData, error: lsrError } = await supabase
-      .from("hail_lsr_raw")
-      .select("lat, lon, hail_in, event_time")
+    let query = supabase
+      .from("storm_report_assets")
+      .select(
+        "id, event_date, source, asset_type, title, description, " +
+        "file_url, file_name, file_size_bytes, mime_type, source_metadata, created_at"
+      )
       .eq("event_date", date)
-      .order("event_time", { ascending: true });
+      .order("source", { ascending: true });
 
-    if (lsrError) return json({ error: lsrError.message }, 500);
+    if (source) query = query.eq("source", source);
+    if (assetType) query = query.eq("asset_type", assetType);
 
-    if (Array.isArray(lsrData) && lsrData.length > 0) {
-      return json({ points: lsrData });
-    }
+    const { data, error } = await query;
+    if (error) return json({ error: error.message }, 500);
 
-    // Fallback to summary table (Storm Events, persists indefinitely)
-    const { data: srData, error: srError } = await supabase
-      .from("hail_reports")
-      .select("lat, lon, hail_size, ztime")
-      .eq("event_date", date)
-      .order("ztime", { ascending: true });
+    const assets = Array.isArray(data) ? data : [];
 
-    if (srError) return json({ error: srError.message }, 500);
-
-    const points = (Array.isArray(srData) ? srData : []).map((r: any) => ({
-      lat: r.lat,
-      lon: r.lon,
-      hail_in: r.hail_size,
-      event_time: r.ztime,
-    }));
-    return json({ points });
+    return json({ assets });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }

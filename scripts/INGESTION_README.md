@@ -1,6 +1,50 @@
-# NOAA Hail Monthly Ingestion
+# NOAA Hail Ingestion Pipeline
 
-Automated job that fetches NOAA hail reports and caches them in Supabase for fast lookups.
+Automated jobs that fetch NOAA hail data and ingest it into Supabase.
+
+## Ingestion Scripts
+
+| Script | Source | Target Table | Priority | Purpose |
+|--------|--------|-------------|----------|---------|
+| `ingest_mrms_swaths.mjs` | MRMS MESH grids (Iowa State archive) | `storm_polygons` | 1 (primary) | Downloads MRMS hail raster, thresholds, polygonizes → canonical swath geometry |
+| `ingest_swdi_swaths.mjs` | NOAA SWDI radar geometry (via proxy) | `storm_polygons` | 2 (secondary) | Fetches SWDI GIS geometry, normalizes → fallback swath when MRMS unavailable |
+| `ingest_lsr_hail.mjs` | IEM Local Storm Reports | `hail_lsr_raw` | reports only | Recent 7-day detailed hail point reports (evidence layer, not swath source) |
+| `ingest_stormevents_hail.mjs` | NOAA NCEI Storm Events | `stormevents_raw` → `hail_reports` | reports only | Historical hail point reports (evidence layer, not swath source) |
+| `ingest-monthly-hail.mjs` | (wrapper) | (calls stormevents) | — | Monthly scheduled backfill |
+
+### Source Priority for Swaths
+
+1. **MRMS** (source_priority=1): Best quality. MESH grid → threshold → polygonize → dissolve.
+2. **SWDI** (source_priority=2): Fallback. SWDI radar geometry normalized to GeoJSON.
+3. **Reports** (no swath): `hail_reports` / `hail_lsr_raw` are point evidence only. No hull/polygon generation.
+
+### Running MRMS Swath Ingestion
+
+Requires GDAL CLI tools installed (`gdal_translate`, `gdal_calc.py`, `gdal_polygonize.py`).
+
+```bash
+# Ingest swaths for a specific date
+node scripts/ingest_mrms_swaths.mjs --date=2026-03-30
+
+# Custom threshold (default: 1.0 inch)
+node scripts/ingest_mrms_swaths.mjs --date=2026-03-30 --threshold=0.75
+
+# Dry run (no database write)
+node scripts/ingest_mrms_swaths.mjs --date=2026-03-30 --dry-run
+```
+
+### Running SWDI Swath Ingestion
+
+```bash
+# Ingest SWDI fallback for a date (skips if MRMS already exists)
+node scripts/ingest_swdi_swaths.mjs --date=2026-03-30
+
+# Force overwrite even if MRMS exists
+node scripts/ingest_swdi_swaths.mjs --date=2026-03-30 --force
+
+# Dry run
+node scripts/ingest_swdi_swaths.mjs --date=2026-03-30 --dry-run
+```
 
 ## Setup Instructions
 

@@ -31,7 +31,7 @@ serve(async (req: Request) => {
     const supabaseKey = serviceRoleKey ?? supabaseAnonKey;
 
     if (!supabaseUrl || !supabaseKey) {
-      return json({ error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" }, 500);
+      return json({ error: "Missing SUPABASE_URL or key" }, 500);
     }
 
     const url = new URL(req.url);
@@ -49,35 +49,22 @@ serve(async (req: Request) => {
       global: { headers: globalHeaders },
     });
 
-    // Try detail table first (LSR data, recent 7-day window)
-    const { data: lsrData, error: lsrError } = await supabase
-      .from("hail_lsr_raw")
-      .select("lat, lon, hail_in, event_time")
+    // Fetch canonical polygons for this date, ordered by source priority
+    const { data, error } = await supabase
+      .from("storm_polygons")
+      .select(
+        "id, event_date, source, source_product, source_priority, " +
+        "polygon_geojson, centroid_lat, centroid_lon, area_sq_mi, " +
+        "threshold_value, event_start_utc, event_end_utc, metadata_json"
+      )
       .eq("event_date", date)
-      .order("event_time", { ascending: true });
+      .order("source_priority", { ascending: true });
 
-    if (lsrError) return json({ error: lsrError.message }, 500);
+    if (error) return json({ error: error.message }, 500);
 
-    if (Array.isArray(lsrData) && lsrData.length > 0) {
-      return json({ points: lsrData });
-    }
+    const polygons = Array.isArray(data) ? data : [];
 
-    // Fallback to summary table (Storm Events, persists indefinitely)
-    const { data: srData, error: srError } = await supabase
-      .from("hail_reports")
-      .select("lat, lon, hail_size, ztime")
-      .eq("event_date", date)
-      .order("ztime", { ascending: true });
-
-    if (srError) return json({ error: srError.message }, 500);
-
-    const points = (Array.isArray(srData) ? srData : []).map((r: any) => ({
-      lat: r.lat,
-      lon: r.lon,
-      hail_in: r.hail_size,
-      event_time: r.ztime,
-    }));
-    return json({ points });
+    return json({ polygons });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }

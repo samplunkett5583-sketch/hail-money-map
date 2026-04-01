@@ -4,7 +4,7 @@ const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 const fetch = require("node-fetch");
 const qs = require("querystring");
-const turf = require("@turf/turf");
+// turf removed — hull-building no longer used. Swaths come from storm_polygons.
 
 
 admin.initializeApp();
@@ -71,13 +71,14 @@ async function fetchNoaaEvents(stateCode, eventType, startDate, endDate) {
   return json.results || [];
 }
 
-// Enough points for concave hull?
-function ptCountForConcave(n) {
-  return n >= 4;
-}
+// ── Hull-building REMOVED ──
+// Primary swaths are now ingested from MRMS / SWDI into public.storm_polygons.
+// Point-hull / concave-hull / convex-hull polygon generation is no longer used.
+// The functions below are kept as stubs for backward compatibility only.
 
-// Group events by date and build a polygon per day
 function groupAndBuildPolygons(events) {
+  // DEPRECATED: No longer builds synthetic polygons from point hulls.
+  // Returns event groups with bounding boxes and sample points only.
   const groups = {};
 
   events.forEach(ev => {
@@ -105,33 +106,6 @@ function groupAndBuildPolygons(events) {
     const pts = groups[dateKey];
     if (!pts.length) return;
 
-    const fc = turf.featureCollection(
-      pts.map(p => turf.point([p.lon, p.lat], p.raw))
-    );
-
-    let hull = null;
-
-    try {
-      if (ptCountForConcave(pts.length)) {
-        hull = turf.concave(fc, { maxEdge: 5, units: "kilometers" });
-      }
-    } catch (e) {
-      hull = null;
-    }
-
-    if (!hull) {
-      hull = turf.convex(fc);
-    }
-
-    if (!hull) {
-      // last resort – small circle around centroid
-      const centroid = turf.centroid(fc);
-      hull = turf.buffer(centroid, 1, { units: "kilometers" });
-    } else {
-      // widen the swath a bit
-      hull = turf.buffer(hull, 1.0, { units: "kilometers" });
-    }
-
     let minLat = 90,
       minLon = 180,
       maxLat = -90,
@@ -151,7 +125,7 @@ function groupAndBuildPolygons(events) {
       endLatitude: maxLat,
       endLongitude: maxLon,
       count: pts.length,
-      geojson: hull ? hull.geometry : null,
+      geojson: null, // No synthetic polygon — swaths come from storm_polygons table
       samplePoints: pts.slice(0, 10).map(p => ({ lat: p.lat, lon: p.lon }))
     });
   });
