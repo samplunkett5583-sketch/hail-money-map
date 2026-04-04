@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hail Money Map Clean</title>
+  <title>Hail Money</title>
   <style>
     :root {
       --bg: #16181c;
@@ -1385,13 +1385,13 @@
     .maps-paging-btn:hover:not(:disabled) { background:var(--accent-2); }
     .maps-paging-btn:disabled { opacity:.35; cursor:not-allowed; }
     .maps-storm-row {
-      display:flex; align-items:center; gap:8px; padding:7px 8px;
+      display:flex; align-items:center; gap:6px; padding:7px 8px;
       border-radius:8px; cursor:pointer; font-size:13px; color:var(--text);
+      transition:background .15s;
     }
     .maps-storm-row:hover { background:var(--panel-2); }
-    .maps-storm-row input[type="checkbox"] {
-      accent-color:var(--accent); width:16px; height:16px; cursor:pointer;
-    }
+    .maps-storm-row.is-preview { background:rgba(202,168,92,.12); }
+    .maps-storm-row.is-pinned .storm-label { font-weight:600; }
     .maps-storm-row .storm-color-dot {
       width:10px; height:10px; border-radius:50%; flex-shrink:0;
     }
@@ -1399,6 +1399,30 @@
     .maps-storm-row .storm-size {
       font-size:11px; color:var(--muted); white-space:nowrap;
     }
+    .maps-pin-btn {
+      background:none; border:1px solid var(--border); border-radius:6px;
+      color:var(--muted); font-size:15px; width:26px; height:26px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; flex-shrink:0; padding:0; transition:all .15s;
+    }
+    .maps-pin-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .maps-pin-btn.pinned {
+      background:var(--accent-2); border-color:var(--accent-2); color:var(--text);
+    }
+    /* Saved Maps panel section */
+    .maps-saved-list {
+      list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px;
+    }
+    .maps-saved-row {
+      display:flex; align-items:center; gap:8px; padding:5px 8px;
+      border-radius:8px; font-size:13px; color:var(--text);
+    }
+    .maps-saved-row .saved-label { flex:1; }
+    .maps-saved-row .saved-unpin {
+      background:none; border:none; color:var(--muted); cursor:pointer;
+      font-size:14px; padding:2px 4px;
+    }
+    .maps-saved-row .saved-unpin:hover { color:var(--error); }
     .maps-date-input {
       width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px;
       background:var(--input); color:var(--text); font-size:13px;
@@ -1512,12 +1536,120 @@
       .maps-map-area { flex:1; min-height:0; height:auto; }
       .maps-prop-card { bottom:10px; right:10px; left:10px; width:auto; }
     }
+
+    /* ═══ Campaign Page (scoped) ═══ */
+    #page-campaigns { padding:0; overflow:hidden; }
+    #page-campaigns .cmp-wrap { position:relative; width:100%; height:100%; display:flex; flex-direction:column; background:#90b870; }
+    #page-campaigns #campaignMap { position:absolute; inset:0; z-index:0; width:100%; height:100%; background:#e8f0e0; }
+    #page-campaigns #campaignMap.drag-over { outline:3px dashed rgba(212,149,46,0.75); outline-offset:-3px; }
+    #page-campaigns .campaign-header { position:relative; z-index:20; display:flex; align-items:center; justify-content:space-between; padding:0 18px; height:52px; min-height:52px; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:1px solid rgba(255,255,255,0.50); flex-shrink:0; }
+    #page-campaigns .campaign-header-left { display:flex; align-items:center; gap:11px; }
+    #page-campaigns .campaign-back-btn { display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.72); border:1px solid rgba(0,0,0,0.25); border-radius:20px; padding:5px 11px 5px 7px; cursor:pointer; color:#1a3a1a; font-size:0.73rem; font-weight:600; transition:background 0.15s; }
+    #page-campaigns .campaign-back-btn:hover { background:rgba(255,255,255,0.88); }
+    #page-campaigns .campaign-back-btn svg { width:13px; height:13px; }
+    #page-campaigns .campaign-title { font-size:0.98rem; font-weight:800; color:#1a3a1a; letter-spacing:-0.01em; }
+    #page-campaigns .campaign-title span { color:#D4952E; }
+    #page-campaigns .header-actions { display:flex; align-items:center; gap:8px; }
+    #page-campaigns .clear-map-btn { padding:5px 11px; border-radius:20px; border:1px solid rgba(200,50,50,0.50); background:rgba(200,50,50,0.22); color:#6e0f0f; font-size:0.70rem; font-weight:700; cursor:pointer; transition:background 0.15s; }
+    #page-campaigns .clear-map-btn:hover { background:rgba(200,50,50,0.35); }
+    #page-campaigns .campaign-status-chip { padding:4px 11px; border-radius:20px; background:rgba(255,255,255,0.75); border:1px solid rgba(0,0,0,0.18); font-size:0.70rem; font-weight:600; color:#1a3a1a; }
+    #page-campaigns .campaign-status-chip.active { background:rgba(212,149,46,0.20); border-color:rgba(212,149,46,0.45); color:#7a3d00; }
+    #page-campaigns .campaign-content { position:relative; z-index:10; flex:1; display:flex; gap:0; overflow:hidden; pointer-events:none; }
+    #page-campaigns .campaign-content > * { pointer-events:auto; }
+    #page-campaigns .glass-panel { background:rgba(255,255,255,0.82); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); margin:10px 0 10px 10px; border-radius:14px; border:1px solid rgba(0,0,0,0.13); display:flex; flex-direction:column; overflow:hidden; flex-shrink:0; box-shadow:0 2px 12px rgba(0,0,0,0.10); transition:width 0.2s ease, opacity 0.2s ease; }
+    #page-campaigns .glass-panel.collapsed { width:36px !important; min-width:36px; overflow:hidden; cursor:pointer; }
+    #page-campaigns .glass-panel.collapsed > :not(.cmp-collapse-btn) { display:none; }
+    #page-campaigns .cmp-collapse-btn { display:flex; align-items:center; justify-content:center; width:100%; height:32px; border:none; background:transparent; cursor:pointer; color:#555; font-size:16px; flex-shrink:0; transition:background 0.15s; }
+    #page-campaigns .cmp-collapse-btn:hover { background:rgba(0,0,0,0.06); }
+    #page-campaigns .glass-panel.collapsed .cmp-collapse-btn { height:100%; writing-mode:vertical-lr; font-size:11px; font-weight:700; letter-spacing:0.04em; color:#1a3a1a; gap:4px; padding:10px 0; }
+    #page-campaigns .glass-panel-header { padding:9px 11px 7px; border-bottom:1px solid rgba(0,0,0,0.12); flex-shrink:0; }
+    #page-campaigns .glass-panel-title { font-size:0.74rem; font-weight:700; color:#111; }
+    #page-campaigns .glass-panel-sub { font-size:0.62rem; color:rgba(20,60,20,0.60); margin-top:1px; }
+    #page-campaigns .knock-panel { width:146px; }
+    #page-campaigns .knock-grid { display:flex; flex-direction:column; gap:2px; padding:5px 6px; flex:1; overflow-y:auto; }
+    #page-campaigns .knock-btn { display:flex; align-items:center; gap:7px; padding:7px 8px; border-radius:9px; border:1px solid rgba(0,0,0,0.18); background:rgba(255,255,255,0.72); cursor:grab; transition:background 0.14s,transform 0.1s,box-shadow 0.14s; user-select:none; }
+    #page-campaigns .knock-btn:hover { background:rgba(255,255,255,0.90); transform:translateX(2px); box-shadow:2px 2px 8px rgba(0,0,0,0.14); }
+    #page-campaigns .knock-btn.dragging { opacity:0.40; transform:scale(0.94); cursor:grabbing; }
+    #page-campaigns .knock-icon { width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    #page-campaigns .knock-icon svg { width:16px; height:16px; }
+    #page-campaigns .knock-label { font-size:0.58rem; font-weight:700; color:#1a3a1a; line-height:1.2; flex:1; }
+    #page-campaigns .knock-count { min-width:16px; height:16px; border-radius:8px; background:rgba(0,0,0,0.10); color:#333; font-size:0.55rem; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 3px; }
+    #page-campaigns .color-key { padding:7px 9px; border-top:1px solid rgba(0,0,0,0.12); flex-shrink:0; background:rgba(245,245,245,0.60); }
+    #page-campaigns .color-key-title { font-size:0.56rem; font-weight:800; letter-spacing:0.07em; text-transform:uppercase; color:rgba(20,60,20,0.48); margin-bottom:5px; }
+    #page-campaigns .key-row { display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:0.58rem; font-weight:600; color:#1a3a1a; }
+    #page-campaigns .key-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; border:1.5px solid rgba(0,0,0,0.12); }
+    #page-campaigns .target-panel { width:262px; margin-left:9px; }
+    #page-campaigns .target-body { padding:9px 10px; display:flex; flex-direction:column; gap:8px; flex:1; overflow-y:auto; }
+    #page-campaigns .target-field-label { font-size:0.60rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:rgba(20,60,20,0.58); margin-bottom:3px; }
+    #page-campaigns .target-input { width:100%; padding:8px 10px; border-radius:9px; border:1px solid rgba(0,0,0,0.18); background:rgba(255,255,255,0.80); color:#111; font-size:0.78rem; font-family:inherit; outline:none; transition:border-color 0.15s,background 0.15s; }
+    #page-campaigns .target-input:focus { border-color:rgba(212,149,46,0.55); background:rgba(255,255,255,0.92); }
+    #page-campaigns .target-input::placeholder { color:rgba(20,60,20,0.36); }
+    #page-campaigns .min-value-row { display:flex; gap:7px; align-items:flex-end; }
+    #page-campaigns .min-value-wrap { flex:1; position:relative; }
+    #page-campaigns .min-value-prefix { position:absolute; left:9px; top:50%; transform:translateY(-50%); font-size:0.78rem; font-weight:700; color:#1a3a1a; pointer-events:none; }
+    #page-campaigns .min-value-wrap .target-input { padding-left:19px; }
+    #page-campaigns .go-btn { padding:8px 15px; border-radius:9px; border:none; background:linear-gradient(135deg,#D4952E,#8B4A0A); color:white; font-size:0.78rem; font-weight:800; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(212,149,46,0.35); transition:opacity 0.15s,transform 0.1s; }
+    #page-campaigns .go-btn:hover { opacity:0.88; }
+    #page-campaigns .go-btn:active { transform:scale(0.97); }
+    #page-campaigns .go-btn.loading { opacity:0.6; cursor:wait; }
+    #page-campaigns .results-summary { padding:8px 10px; border-radius:9px; background:rgba(255,255,255,0.65); border:1px solid rgba(0,0,0,0.12); display:none; }
+    #page-campaigns .results-summary.visible { display:block; }
+    #page-campaigns .results-count { font-size:1.0rem; font-weight:800; color:#D4952E; line-height:1; }
+    #page-campaigns .results-label { font-size:0.63rem; color:rgba(20,60,20,0.65); margin-top:2px; font-weight:600; }
+    #page-campaigns .results-avg { margin-top:4px; font-size:0.66rem; color:#1a3a1a; font-weight:600; }
+    #page-campaigns .target-divider { height:1px; background:rgba(0,0,0,0.07); margin:0 -10px; }
+    #page-campaigns .street-legend { display:flex; flex-direction:column; gap:5px; padding:8px 10px; border-radius:9px; background:rgba(255,255,255,0.65); border:1px solid rgba(0,0,0,0.12); }
+    #page-campaigns .legend-row { display:flex; align-items:center; gap:7px; font-size:0.64rem; font-weight:600; color:#1a3a1a; }
+    #page-campaigns .legend-swatch { width:22px; height:4px; border-radius:2px; flex-shrink:0; }
+    #page-campaigns .legend-title { font-size:0.60rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:rgba(20,60,20,0.55); margin-bottom:2px; }
+    #page-campaigns .tip-box { padding:8px 10px; border-radius:9px; background:rgba(212,149,46,0.22); border:1px solid rgba(212,149,46,0.40); }
+    #page-campaigns .tip-box-title { font-size:0.60rem; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; color:#7a3d00; margin-bottom:3px; }
+    #page-campaigns .tip-box p { font-size:0.63rem; color:#5a2d00; line-height:1.45; }
+    #page-campaigns #cmpDropHint { position:absolute; bottom:56px; left:50%; transform:translateX(-50%); z-index:15; pointer-events:none; background:rgba(212,149,46,0.90); color:white; font-size:0.70rem; font-weight:700; padding:6px 15px; border-radius:20px; display:none; align-items:center; gap:5px; white-space:nowrap; box-shadow:0 2px 12px rgba(0,0,0,0.22); }
+    #page-campaigns #cmpDropHint.visible { display:flex; }
+    #page-campaigns .knock-feed { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); z-index:15; display:flex; flex-direction:column; gap:5px; align-items:center; pointer-events:none; }
+    #page-campaigns .knock-toast { background:rgba(255,255,255,0.90); border:1px solid rgba(255,255,255,0.95); border-radius:20px; padding:5px 12px 5px 8px; display:flex; align-items:center; gap:7px; font-size:0.68rem; font-weight:600; color:#1a3a1a; animation:cmpToastIn 0.25s ease,cmpToastOut 0.4s ease 2.2s forwards; white-space:nowrap; }
+    @keyframes cmpToastIn { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes cmpToastOut { from{opacity:1;} to{opacity:0;} }
+    #page-campaigns .knock-toast-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    #page-campaigns #cmpNotesModal { position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; }
+    #page-campaigns #cmpNotesModal.open { display:flex; }
+    #page-campaigns .notes-card { background:rgba(255,255,255,0.95); backdrop-filter:blur(20px); border-radius:18px; width:min(400px,92vw); box-shadow:0 20px 60px rgba(0,0,0,0.30); overflow:hidden; animation:cmpSlideUp 0.22s ease; }
+    @keyframes cmpSlideUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+    #page-campaigns .notes-card-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px; border-bottom:1px solid rgba(0,0,0,0.08); }
+    #page-campaigns .notes-card-title { font-size:0.85rem; font-weight:800; color:#111; }
+    #page-campaigns .notes-card-addr { font-size:0.65rem; color:#666; margin-top:2px; }
+    #page-campaigns .notes-close-btn { width:28px; height:28px; border-radius:50%; border:none; background:rgba(0,0,0,0.14); cursor:pointer; font-size:16px; color:#333; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
+    #page-campaigns .notes-close-btn:hover { background:rgba(0,0,0,0.22); }
+    #page-campaigns .notes-tabs { display:flex; border-bottom:1px solid rgba(0,0,0,0.08); }
+    #page-campaigns .notes-tab { flex:1; padding:10px 8px; border:none; background:transparent; font-size:0.74rem; font-weight:700; color:#888; cursor:pointer; border-bottom:2px solid transparent; transition:color 0.15s,border-color 0.15s; }
+    #page-campaigns .notes-tab.active { color:#b45309; border-bottom-color:#fbbf24; }
+    #page-campaigns .notes-tab-content { display:none; padding:14px 16px; }
+    #page-campaigns .notes-tab-content.active { display:block; }
+    #page-campaigns .speech-row { display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; }
+    #page-campaigns .notes-textarea { flex:1; min-height:100px; padding:10px 11px; border-radius:10px; border:1px solid rgba(0,0,0,0.14); background:#f9fafb; font-size:0.80rem; font-family:inherit; resize:none; outline:none; color:#111; transition:border-color 0.15s; }
+    #page-campaigns .notes-textarea:focus { border-color:rgba(180,83,9,0.45); }
+    #page-campaigns .notes-textarea::placeholder { color:#aaa; }
+    #page-campaigns .mic-btn { width:42px; height:42px; border-radius:50%; flex-shrink:0; border:2px solid rgba(180,83,9,0.55); background:rgba(251,191,36,0.35); color:#92400e; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s,border-color 0.15s; }
+    #page-campaigns .mic-btn:hover { background:rgba(251,191,36,0.50); }
+    #page-campaigns .mic-btn.listening { background:rgba(251,191,36,0.60); border-color:#b45309; animation:pulse 1s infinite; }
+    @keyframes cmpPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+    #page-campaigns .mic-btn svg { width:18px; height:18px; }
+    #page-campaigns .keyboard-btn { width:100%; padding:7px; margin-top:4px; border-radius:8px; border:1px solid rgba(0,0,0,0.22); background:rgba(255,255,255,0.70); font-size:0.70rem; font-weight:600; color:#333; cursor:pointer; transition:background 0.14s; }
+    #page-campaigns .keyboard-btn:hover { background:rgba(255,255,255,0.88); }
+    #page-campaigns .reminder-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+    #page-campaigns .reminder-field label { display:block; font-size:0.62rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:rgba(20,60,20,0.55); margin-bottom:3px; }
+    #page-campaigns .reminder-input { width:100%; padding:8px 10px; border-radius:8px; border:1px solid rgba(0,0,0,0.14); background:#f9fafb; font-size:0.78rem; font-family:inherit; color:#111; outline:none; transition:border-color 0.15s; }
+    #page-campaigns .reminder-input:focus { border-color:rgba(180,83,9,0.45); }
+    #page-campaigns .save-note-btn { width:100%; padding:10px; border-radius:10px; border:none; background:linear-gradient(135deg,#D4952E,#8B4A0A); color:white; font-size:0.80rem; font-weight:800; cursor:pointer; transition:opacity 0.15s; box-shadow:0 2px 8px rgba(212,149,46,0.30); }
+    #page-campaigns .save-note-btn:hover { opacity:0.88; }
+    #page-campaigns .cmp-swath-chip { position:absolute; top:60px; right:12px; z-index:15; padding:4px 10px; border-radius:14px; background:rgba(255,255,255,0.80); border:1px solid rgba(0,0,0,0.12); font-size:0.65rem; font-weight:600; color:#1a3a1a; pointer-events:none; }
   </style>
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <div class="brand">Hail Money Map</div>
+      <div class="brand">Hail Money</div>
       <div class="topbar-right">
         <div class="topbar-pill">Rep</div>
       </div>
@@ -1873,13 +2005,17 @@
               <div id="maps-date-status" class="maps-status-msg"></div>
             </div>
 
-            <!-- Download -->
+            <!-- My Saved Maps -->
             <div class="maps-panel-section">
-              <button type="button" id="maps-download-btn" class="maps-download-btn" disabled>Download Selected</button>
+              <div class="maps-panel-section-title">My Saved Maps</div>
+              <ul id="maps-saved-list" class="maps-saved-list"></ul>
+              <div id="maps-saved-empty" style="font-size:12px;color:var(--muted);padding:4px 0;">Click a date to preview, then pin &#x1F4CC; to save (up to 10).</div>
+              <button type="button" id="maps-download-btn" class="maps-download-btn" disabled style="margin-top:8px;">Download Saved</button>
             </div>
 
             <div class="maps-back-row">
               <button class="btn back-to-menu" type="button">Back to Main Menu</button>
+              <button class="btn" type="button" id="maps-open-campaign" style="margin-top:6px;background:var(--accent-2);color:var(--text);">Open Campaign</button>
             </div>
           </div>
 
@@ -1949,14 +2085,166 @@
       </section>
 
       <section id="page-campaigns" class="page">
-        <div class="placeholder-wrap">
-          <h1 class="page-title">Campaigns</h1>
-          <p class="page-subtitle">Work target areas and canvassing flow.</p>
-          <div class="page-actions">
-            <button class="btn back-to-menu" type="button">Back to Main Menu</button>
+        <div class="cmp-wrap">
+          <div id="campaignMap"></div>
+          <div id="cmpDropHint">📍 Drop on a house to log it</div>
+          <div class="cmp-swath-chip" id="cmpSwathChip"></div>
+
+          <!-- Notes Modal -->
+          <div id="cmpNotesModal">
+            <div class="notes-card">
+              <div class="notes-card-header">
+                <div>
+                  <div class="notes-card-title">📝 House Note</div>
+                  <div class="notes-card-addr" id="cmpNoteAddr">Loading address…</div>
+                </div>
+                <button class="notes-close-btn" id="cmpNotesCloseBtn">✕</button>
+              </div>
+              <div class="notes-tabs">
+                <button class="notes-tab active" data-cmptab="note">Leave Note</button>
+                <button class="notes-tab" data-cmptab="reminder">Set Reminder</button>
+              </div>
+              <div class="notes-tab-content active" id="cmpTabNote">
+                <div class="speech-row">
+                  <textarea class="notes-textarea" id="cmpNoteText" placeholder="Tap the mic and speak, or type…"></textarea>
+                  <button class="mic-btn" id="cmpMicBtn" title="Speak to text">
+                    <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5,10 Q5,17 12,17 Q19,17 19,10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <button class="keyboard-btn" id="cmpKeyboardBtn">⌨ Switch to keyboard</button>
+                <button class="save-note-btn" id="cmpSaveNoteBtn" style="margin-top:10px;">Save Note</button>
+              </div>
+              <div class="notes-tab-content" id="cmpTabReminder">
+                <div class="speech-row">
+                  <textarea class="notes-textarea" id="cmpReminderText" placeholder="What's the reminder for?"></textarea>
+                  <button class="mic-btn" id="cmpMicBtnReminder" title="Speak to text">
+                    <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5,10 Q5,17 12,17 Q19,17 19,10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <div class="reminder-row">
+                  <div class="reminder-field"><label>Date</label><input class="reminder-input" id="cmpReminderDate" type="date"/></div>
+                  <div class="reminder-field"><label>Time</label><input class="reminder-input" id="cmpReminderTime" type="time" value="09:00"/></div>
+                </div>
+                <button class="save-note-btn" id="cmpSaveReminderBtn">Set Reminder → Calendar</button>
+              </div>
+            </div>
           </div>
-          <div class="placeholder-card">Clean shell placeholder for Campaigns.</div>
-        </div>
+
+          <!-- Header -->
+          <div class="campaign-header">
+            <div class="campaign-header-left">
+              <button class="campaign-back-btn" id="campaignBackBtn" type="button">
+                <svg viewBox="0 0 13 13" fill="none"><polyline points="8,1 3,6.5 8,12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Back
+              </button>
+              <div class="campaign-title">Your Hail Money <span>Campaign</span></div>
+            </div>
+            <div class="header-actions">
+              <button class="clear-map-btn" id="cmpClearMapBtn" type="button">Clear Pins</button>
+              <div class="campaign-status-chip" id="cmpStatusChip">Drag an icon onto a house</div>
+            </div>
+          </div>
+
+          <!-- Panels -->
+          <div class="campaign-content">
+            <!-- PANEL 1: Door Knock -->
+            <div class="glass-panel knock-panel" id="cmpKnockPanel">
+              <button type="button" class="cmp-collapse-btn" id="cmpKnockCollapse" title="Collapse">◀ <span>Door Status</span></button>
+              <div class="glass-panel-header">
+                <div class="glass-panel-title">Door Status</div>
+                <div class="glass-panel-sub">Drag onto a house</div>
+              </div>
+              <div class="knock-grid">
+                <div class="knock-btn" draggable="true" data-status="nothome" data-label="Not Home">
+                  <div class="knock-icon" style="background:rgba(100,100,100,0.15);"><svg viewBox="0 0 24 24" fill="none"><path d="M3,10.5 12,3 21,10.5V21a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1Z" stroke="#555" stroke-width="1.8" fill="none" stroke-linejoin="round"/><line x1="4" y1="4" x2="20" y2="20" stroke="#cc3333" stroke-width="2" stroke-linecap="round"/></svg></div>
+                  <span class="knock-label">Not Home</span><span class="knock-count" id="cmp-kc-nothome">0</span>
+                </div>
+                <div class="knock-btn" draggable="true" data-status="notint" data-label="Not Interested">
+                  <div class="knock-icon" style="background:rgba(220,50,50,0.15);"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#cc3333" stroke-width="1.8"/><line x1="8" y1="12" x2="16" y2="12" stroke="#cc3333" stroke-width="2.2" stroke-linecap="round"/></svg></div>
+                  <span class="knock-label">Not Interested</span><span class="knock-count" id="cmp-kc-notint">0</span>
+                </div>
+                <div class="knock-btn" draggable="true" data-status="inspection" data-label="Did Inspection">
+                  <div class="knock-icon" style="background:rgba(56,130,240,0.15);"><svg viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="#1a5fb4" stroke-width="1.8"/><polyline points="8,14 10,16 14,12" stroke="#2a8a2a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  <span class="knock-label">Did Inspection</span><span class="knock-count" id="cmp-kc-inspection">0</span>
+                </div>
+                <div class="knock-btn" draggable="true" data-status="noclaim" data-label="No Claim Filed">
+                  <div class="knock-icon" style="background:rgba(200,160,0,0.15);"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#a07800" stroke-width="1.8"/><line x1="14" y1="15" x2="20" y2="21" stroke="#cc3333" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="15" x2="14" y2="21" stroke="#cc3333" stroke-width="2" stroke-linecap="round"/></svg></div>
+                  <span class="knock-label">No Claim Filed</span><span class="knock-count" id="cmp-kc-noclaim">0</span>
+                </div>
+                <div class="knock-btn" draggable="true" data-status="filed" data-label="Filed Claim">
+                  <div class="knock-icon" style="background:rgba(130,60,200,0.15);"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#7030a0" stroke-width="1.8"/><polyline points="8,12 11,15 16,9" stroke="#7030a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  <span class="knock-label">Filed Claim</span><span class="knock-count" id="cmp-kc-filed">0</span>
+                </div>
+                <div class="knock-btn" draggable="true" data-status="goback" data-label="Go Back Again">
+                  <div class="knock-icon" style="background:rgba(212,149,46,0.18);"><svg viewBox="0 0 24 24" fill="none"><path d="M4,12 Q4,6 12,4 Q20,6 20,12 Q20,18 12,20" stroke="#b87020" stroke-width="1.8" fill="none" stroke-linecap="round"/><polyline points="8,18 4,20 6,16" stroke="#b87020" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  <span class="knock-label">Go Back Again</span><span class="knock-count" id="cmp-kc-goback">0</span>
+                </div>
+                <div class="knock-btn" draggable="true" data-status="approved" data-label="Got Approved">
+                  <div class="knock-icon" style="background:rgba(30,160,60,0.15);"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#1a8a1a" stroke-width="1.8"/><polyline points="7,12 10,15.5 17,8.5" stroke="#1a8a1a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  <span class="knock-label">Got Approved</span><span class="knock-count" id="cmp-kc-approved">0</span>
+                </div>
+                <div class="knock-btn" draggable="true" data-status="referral" data-label="Got Referral">
+                  <div class="knock-icon" style="background:rgba(220,80,180,0.15);"><svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3.5" stroke="#c04090" stroke-width="1.7"/><circle cx="18" cy="6" r="2.5" stroke="#c04090" stroke-width="1.5"/><line x1="11.5" y1="8" x2="15.5" y2="6.8" stroke="#c04090" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+                  <span class="knock-label">Got Referral</span><span class="knock-count" id="cmp-kc-referral">0</span>
+                </div>
+                <div class="knock-btn" draggable="true" data-status="note" data-label="Note">
+                  <div class="knock-icon" style="background:rgba(251,191,36,0.18);"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#b45309" stroke-width="1.8"/><line x1="8" y1="8" x2="16" y2="8" stroke="#b45309" stroke-width="1.3" stroke-linecap="round"/><line x1="8" y1="12" x2="16" y2="12" stroke="#b45309" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+                  <span class="knock-label">Leave Note</span><span class="knock-count" id="cmp-kc-note">0</span>
+                </div>
+              </div>
+              <div class="color-key">
+                <div class="color-key-title">Map Key</div>
+                <div class="key-row"><div class="key-dot" style="background:#E53E3E;"></div>Not Interested</div>
+                <div class="key-row"><div class="key-dot" style="background:#38A169;"></div>Approved</div>
+                <div class="key-row"><div class="key-dot" style="background:#3182CE;"></div>Inspection Done</div>
+                <div class="key-row"><div class="key-dot" style="background:#9F7AEA;"></div>Claim Filed</div>
+                <div class="key-row"><div class="key-dot" style="background:#DD6B20;"></div>No Claim / Denied</div>
+                <div class="key-row"><div class="key-dot" style="background:#718096;"></div>Other visits</div>
+                <div class="key-row"><div class="key-dot" style="background:#FBBF24;border-color:rgba(180,83,9,0.4);"></div>Note / Reminder</div>
+              </div>
+            </div>
+
+            <!-- PANEL 2: Target Area -->
+            <div class="glass-panel target-panel" id="cmpTargetPanel">
+              <button type="button" class="cmp-collapse-btn" id="cmpTargetCollapse" title="Collapse">◀ <span>Target</span></button>
+              <div class="glass-panel-header">
+                <div class="glass-panel-title">Target Area</div>
+                <div class="glass-panel-sub">Find high-value roofs after storms</div>
+              </div>
+              <div class="target-body">
+                <div>
+                  <div class="target-field-label">Search Address / City</div>
+                  <input class="target-input" id="cmpCityInput" type="text" placeholder="e.g. Clayton, MO" autocomplete="off"/>
+                </div>
+                <div class="target-divider"></div>
+                <div>
+                  <div class="target-field-label">Minimum Home Value</div>
+                  <div class="min-value-row">
+                    <div class="min-value-wrap">
+                      <span class="min-value-prefix">$</span>
+                      <input class="target-input" id="cmpMinValueInput" type="number" placeholder="250,000" min="0" step="10000"/>
+                    </div>
+                    <button class="go-btn" id="cmpGoBtn" type="button">GO</button>
+                  </div>
+                </div>
+                <div class="results-summary" id="cmpResultsSummary">
+                  <div class="results-count" id="cmpResultsCount">0</div>
+                  <div class="results-label">streets highlighted in target area</div>
+                  <div class="results-avg" id="cmpResultsAvg"></div>
+                </div>
+                <div class="target-divider"></div>
+                <div class="street-legend">
+                  <div class="legend-title">Street Colors</div>
+                  <div class="legend-row"><div class="legend-swatch" style="background:#e8302a;"></div>At / above minimum value</div>
+                  <div class="legend-row"><div class="legend-swatch" style="background:#f5a623;"></div>Within 20% below minimum</div>
+                  <div class="legend-row"><div class="legend-swatch" style="background:#3182CE;"></div>50% lower than minimum set</div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /campaign-content -->
+
+          <div class="knock-feed" id="cmpKnockFeed"></div>
+        </div><!-- /cmp-wrap -->
       </section>
 
       <section id="page-assigned-leads" class="page">
@@ -4104,11 +4392,17 @@
     var NOAA_PROXY_BASE = 'https://noaaplsrproxy-jzyejnppqa-uc.a.run.app';
     var NOAA_CONUS_BBOX = '-130,20,-60,55';
 
+    // ── Shared viewport between Maps & Campaign ──
+    var sharedViewport = { lat: null, lng: null, zoom: null };
+    var _svSetting = false; // guard against idle→set→idle loops
+
     // ── Maps State & Engine ──
     var mapsState = {
       stormDates: [],            // array of date strings from backend, newest-first
       dateEventTypes: {},        // dateStr -> ['hail','tornado',...]
-      selectedDates: [],         // array of date strings currently checked
+      selectedDates: [],         // computed union of previewDate + pinnedDates (kept for compat)
+      previewDate: null,         // single temp preview date (replaced on each click)
+      pinnedDates: [],           // up to MAPS_MAX_SELECT persistent saved dates
       lsrPointsByDate: {},       // dateStr -> array of LSR/report point data
       swathPolygons: {},         // dateStr -> google.maps.Polygon[] (real saved/radar geometry)
       pointOverlaysByDate: {},   // dateStr -> google.maps.Circle[] (per-date point circles)
@@ -4123,6 +4417,15 @@
     var MAPS_MAX_SELECT = 10;
     var MAPS_PAGE_SIZE = 7;
 
+    // Rebuild selectedDates = union of previewDate + pinnedDates (deduped)
+    function mapsSyncSelectedDates() {
+      var all = mapsState.pinnedDates.slice();
+      if (mapsState.previewDate && all.indexOf(mapsState.previewDate) === -1) {
+        all.push(mapsState.previewDate);
+      }
+      mapsState.selectedDates = all;
+    }
+
     function mapsInit() {
       if (!mapsState.ready) {
         mapsInitMap();
@@ -4136,6 +4439,13 @@
         mapsFetchRecentDates();
       } else {
         if (mapsState.map) google.maps.event.trigger(mapsState.map, 'resize');
+      }
+      // Apply shared viewport from Campaign (or previous Maps session)
+      if (mapsState.map && sharedViewport.lat != null) {
+        _svSetting = true;
+        mapsState.map.setCenter({ lat: sharedViewport.lat, lng: sharedViewport.lng });
+        mapsState.map.setZoom(sharedViewport.zoom);
+        setTimeout(function() { _svSetting = false; }, 300);
       }
     }
 
@@ -4207,6 +4517,15 @@
       });
 
       var map = mapsState.map;
+
+      // Track viewport changes → shared state
+      map.addListener('idle', function() {
+        if (_svSetting) return;
+        var c = map.getCenter();
+        sharedViewport.lat = c.lat();
+        sharedViewport.lng = c.lng();
+        sharedViewport.zoom = map.getZoom();
+      });
 
       // ── Brightness filter (exact old logic) ──
       function applyMapBrightness() {
@@ -4546,7 +4865,7 @@
         SUPABASE_URL +
         '/rest/v1/storm_polygons?event_date=eq.' +
         encodeURIComponent(dateStr) +
-        '&order=source_priority.asc' +
+        '&order=source_priority.asc,created_at.desc' +
         '&select=id,event_date,source,source_product,source_priority,polygon_geojson,centroid_lat,centroid_lon,area_sq_mi,threshold_value,event_start_utc,event_end_utc';
 
       console.log('[fetchStormPolygons] ' + dateStr + ' url:', url);
@@ -4581,6 +4900,9 @@
     }
 
     // ── Draw saved storm polygons from Supabase ──
+    // Only valid primary swath sources are drawn. Legacy point-built rows are excluded.
+    var VALID_SWATH_SOURCES = ['mrms', 'swdi', 'manual'];
+
     function mapsDrawSavedStormPolygonForDate(dateStr, rows) {
       if (mapsState.swathPolygons[dateStr]) return true;
       if (!rows || !rows.length) {
@@ -4588,9 +4910,21 @@
         return false;
       }
 
+      // Filter to valid primary swath sources, sort by source_priority ascending
+      var validRows = rows.filter(function (r) {
+        return r && VALID_SWATH_SOURCES.indexOf((r.source || '').toLowerCase()) !== -1;
+      }).sort(function (a, b) {
+        return (a.source_priority || 99) - (b.source_priority || 99);
+      });
+
+      if (!validRows.length) {
+        console.log('[drawSavedPoly] ' + dateStr + ': no valid primary swath rows (filtered ' + rows.length + ' legacy rows)');
+        return false;
+      }
+
       var polys = [];
 
-      rows.forEach(function (row, ri) {
+      validRows.forEach(function (row, ri) {
         var gj = row && row.polygon_geojson;
         // Parse if still a string
         if (gj && typeof gj === 'string') {
@@ -4637,7 +4971,7 @@
         });
       });
 
-      console.log('[drawSavedPoly] ' + dateStr + ': built ' + polys.length + ' polygon(s) from ' + rows.length + ' row(s)');
+      console.log('[drawSavedPoly] ' + dateStr + ': built ' + polys.length + ' polygon(s) from ' + validRows.length + ' valid row(s) (of ' + rows.length + ' total)');
 
       if (!polys.length) return false;
       mapsState.swathPolygons[dateStr] = polys;
@@ -4689,22 +5023,26 @@
       ul.innerHTML = '';
       pageDates.forEach(function (dateStr) {
         var li = document.createElement('li');
-        li.className = 'maps-storm-row';
-        var checked = mapsState.selectedDates.indexOf(dateStr) !== -1;
+        var isPinned = mapsState.pinnedDates.indexOf(dateStr) !== -1;
+        var isPreview = mapsState.previewDate === dateStr;
+        li.className = 'maps-storm-row' + (isPreview ? ' is-preview' : '') + (isPinned ? ' is-pinned' : '');
         var typeLabel = mapsEventTypeLabel(dateStr);
+        var dotColor = isPinned ? '#caa85c' : (isPreview ? '#00c2ff' : '#6b7080');
         li.innerHTML =
-          '<input type="checkbox" data-storm-date="' + dateStr + '"' + (checked ? ' checked' : '') + ' />' +
-          '<span class="storm-color-dot" style="background:' + (checked ? '#caa85c' : '#6b7080') + ';"></span>' +
+          '<button type="button" class="maps-pin-btn' + (isPinned ? ' pinned' : '') +
+          '" data-pin-date="' + dateStr + '" title="' + (isPinned ? 'Unpin' : 'Pin to saved') + '">&#x1F4CC;</button>' +
+          '<span class="storm-color-dot" style="background:' + dotColor + ';"></span>' +
           '<span class="storm-label">' + dateStr + '</span>' +
           '<span class="storm-size">' + typeLabel + '</span>';
-        li.querySelector('input').addEventListener('change', function () {
-          mapsToggleStorm(dateStr, this.checked);
-        });
+        // Click row → preview this date
         li.addEventListener('click', function (e) {
-          if (e.target.tagName === 'INPUT') return;
-          var cb = li.querySelector('input');
-          cb.checked = !cb.checked;
-          mapsToggleStorm(dateStr, cb.checked);
+          if (e.target.closest('.maps-pin-btn')) return;
+          mapsPreviewDate(dateStr);
+        });
+        // Click pin button → toggle pin
+        li.querySelector('.maps-pin-btn').addEventListener('click', function (e) {
+          e.stopPropagation();
+          mapsTogglePin(dateStr);
         });
         ul.appendChild(li);
       });
@@ -4738,28 +5076,90 @@
       });
     }
 
-    function mapsToggleStorm(dateStr, isOn) {
+    // ── Preview a date (temporary, one at a time) ──
+    function mapsPreviewDate(dateStr) {
       dateStr = mapsNormalizeDate(dateStr);
       var statusEl = document.getElementById('maps-storm-status');
       statusEl.className = 'maps-status-msg';
       statusEl.textContent = '';
-      if (isOn) {
-        if (mapsState.selectedDates.indexOf(dateStr) === -1) {
-          if (mapsState.selectedDates.length >= MAPS_MAX_SELECT) {
-            statusEl.className = 'maps-status-msg error';
-            statusEl.textContent = 'Max ' + MAPS_MAX_SELECT + ' storms selected.';
-            var cb = document.querySelector('#maps-storm-list input[data-storm-date="' + dateStr + '"]');
-            if (cb) cb.checked = false;
-            return;
-          }
-          mapsState.selectedDates.push(dateStr);
-          mapsDrawDate(dateStr);
+
+      // If already previewing this date, do nothing
+      if (mapsState.previewDate === dateStr) return;
+
+      // Clear old preview (unless it's pinned — pinned dates stay)
+      if (mapsState.previewDate && mapsState.pinnedDates.indexOf(mapsState.previewDate) === -1) {
+        removeStormDate(mapsState.previewDate);
+      }
+
+      mapsState.previewDate = dateStr;
+      mapsSyncSelectedDates();
+
+      // Draw if not already on map
+      if (!mapsState.swathPolygons[dateStr] && !mapsState.pointOverlaysByDate[dateStr]) {
+        mapsDrawDate(dateStr);
+      } else {
+        fitMapToStormDate(dateStr);
+      }
+
+      mapsRenderStormList();
+      mapsRenderSavedList();
+    }
+
+    // ── Toggle pin/save for a date ──
+    function mapsTogglePin(dateStr) {
+      dateStr = mapsNormalizeDate(dateStr);
+      var statusEl = document.getElementById('maps-storm-status');
+      statusEl.className = 'maps-status-msg';
+      statusEl.textContent = '';
+      var idx = mapsState.pinnedDates.indexOf(dateStr);
+
+      if (idx !== -1) {
+        // Unpin — remove from pinned, remove from map (unless it's the current preview)
+        mapsState.pinnedDates.splice(idx, 1);
+        if (mapsState.previewDate !== dateStr) {
+          removeStormDate(dateStr);
         }
       } else {
-        removeStormDate(dateStr);
+        // Pin — add to pinned (max 10)
+        if (mapsState.pinnedDates.length >= MAPS_MAX_SELECT) {
+          statusEl.className = 'maps-status-msg error';
+          statusEl.textContent = 'Max ' + MAPS_MAX_SELECT + ' saved dates.';
+          return;
+        }
+        mapsState.pinnedDates.push(dateStr);
+        // Draw if not already on map
+        if (!mapsState.swathPolygons[dateStr] && !mapsState.pointOverlaysByDate[dateStr]) {
+          mapsDrawDate(dateStr);
+        }
       }
+
+      mapsSyncSelectedDates();
       mapsRenderStormList();
+      mapsRenderSavedList();
       mapsUpdateDownloadBtn();
+    }
+
+    // ── Legacy compat wrapper — still called from date-picker flows ──
+    function mapsToggleStorm(dateStr, isOn) {
+      dateStr = mapsNormalizeDate(dateStr);
+      if (isOn) {
+        mapsPreviewDate(dateStr);
+        // Auto-pin when added via date picker
+        if (mapsState.pinnedDates.indexOf(dateStr) === -1) {
+          mapsTogglePin(dateStr);
+        }
+      } else {
+        // Unpin if pinned
+        var idx = mapsState.pinnedDates.indexOf(dateStr);
+        if (idx !== -1) mapsState.pinnedDates.splice(idx, 1);
+        // Clear preview if it's the preview
+        if (mapsState.previewDate === dateStr) mapsState.previewDate = null;
+        removeStormDate(dateStr);
+        mapsSyncSelectedDates();
+        mapsRenderStormList();
+        mapsRenderSavedList();
+        mapsUpdateDownloadBtn();
+      }
     }
 
     // Normalize date string to YYYY-MM-DD (backend requires this exact format)
@@ -4847,9 +5247,6 @@
     function removeStormDate(dateStr) {
       dateStr = mapsNormalizeDate(dateStr);
       console.log('[removeStormDate] ' + dateStr);
-      // Remove from selected list
-      var idx = mapsState.selectedDates.indexOf(dateStr);
-      if (idx !== -1) mapsState.selectedDates.splice(idx, 1);
       // Remove swath polygons for this date
       var polys = mapsState.swathPolygons[dateStr];
       if (polys) {
@@ -4969,8 +5366,10 @@
           result.drewSaved = true; // already cached
         }
 
-        // Points are evidence-only layers — never build swaths from them
-        mapsDrawPointsForDate(dateStr, points);
+        // Only draw LSR point circles when no canonical swath geometry exists
+        if (!result.drewSaved) {
+          mapsDrawPointsForDate(dateStr, points);
+        }
 
         result.hasAnyData = result.drewSaved || points.length > 0;
 
@@ -5008,46 +5407,33 @@
         if (!val) return;
         var exists = mapsState.stormDates.indexOf(val) !== -1;
         if (exists) {
-          if (mapsState.selectedDates.indexOf(val) === -1) {
-            if (mapsState.selectedDates.length >= MAPS_MAX_SELECT) {
-              statusEl.className = 'maps-status-msg error';
-              statusEl.textContent = 'Max ' + MAPS_MAX_SELECT + ' storms selected.';
-              return;
-            }
-            mapsState.selectedDates.push(val);
-            mapsDrawDate(val);
-            mapsRenderStormList();
-            mapsUpdateDownloadBtn();
-          }
-          statusEl.textContent = 'Date selected.';
+          mapsToggleStorm(val, true);
+          statusEl.textContent = 'Date added & pinned.';
         } else {
           // Date not in backend list — try fetching LSR directly
-          if (mapsState.selectedDates.indexOf(val) === -1) {
-            if (mapsState.selectedDates.length >= MAPS_MAX_SELECT) {
-              statusEl.className = 'maps-status-msg error';
-              statusEl.textContent = 'Max ' + MAPS_MAX_SELECT + ' storms selected.';
-              return;
-            }
-            statusEl.textContent = 'Checking ' + val + '...';
-            fetchLsrPointsByDate(val)
-              .then(function (points) {
-                if (points.length) {
-                  mapsState.lsrPointsByDate[val] = points;
-                  if (mapsState.stormDates.indexOf(val) === -1) mapsState.stormDates.push(val);
-                  mapsState.stormDates.sort(function (a, b) { return b.localeCompare(a); });
-                  mapsState.selectedDates.push(val);
-                  mapsRenderStormList();
-                  mapsUpdateDownloadBtn();
-                  statusEl.textContent = points.length + ' points for ' + val + '.';
-                } else {
-                  statusEl.textContent = 'No hail data for ' + val + '.';
-                }
-              })
-              .catch(function () {
-                statusEl.className = 'maps-status-msg error';
-                statusEl.textContent = 'Failed to fetch ' + val + '.';
-              });
+          if (mapsState.pinnedDates.length >= MAPS_MAX_SELECT) {
+            statusEl.className = 'maps-status-msg error';
+            statusEl.textContent = 'Max ' + MAPS_MAX_SELECT + ' saved dates.';
+            picker.value = '';
+            return;
           }
+          statusEl.textContent = 'Checking ' + val + '...';
+          fetchLsrPointsByDate(val)
+            .then(function (points) {
+              if (points.length) {
+                mapsState.lsrPointsByDate[val] = points;
+                if (mapsState.stormDates.indexOf(val) === -1) mapsState.stormDates.push(val);
+                mapsState.stormDates.sort(function (a, b) { return b.localeCompare(a); });
+                mapsToggleStorm(val, true);
+                statusEl.textContent = points.length + ' points for ' + val + '.';
+              } else {
+                statusEl.textContent = 'No hail data for ' + val + '.';
+              }
+            })
+            .catch(function () {
+              statusEl.className = 'maps-status-msg error';
+              statusEl.textContent = 'Failed to fetch ' + val + '.';
+            });
         }
         picker.value = '';
       });
@@ -5055,14 +5441,43 @@
 
     function mapsUpdateDownloadBtn() {
       var btn = document.getElementById('maps-download-btn');
-      var n = mapsState.selectedDates.length;
+      var n = mapsState.pinnedDates.length;
       btn.disabled = n === 0;
-      btn.textContent = n ? 'Download Selected (' + n + ')' : 'Download Selected';
+      btn.textContent = n ? 'Download Saved (' + n + ')' : 'Download Saved';
       // Sync mobile download buttons
       var mobDl1 = document.getElementById('maps-download-btn-mob');
       var mobDl2 = document.getElementById('maps-download-btn-mob2');
       if (mobDl1) { mobDl1.disabled = btn.disabled; mobDl1.textContent = btn.textContent; }
       if (mobDl2) { mobDl2.disabled = btn.disabled; mobDl2.textContent = btn.textContent; }
+    }
+
+    // ── Render the "My Saved Maps" pinned-dates list ──
+    function mapsRenderSavedList() {
+      var ul = document.getElementById('maps-saved-list');
+      var empty = document.getElementById('maps-saved-empty');
+      if (!ul) return;
+      ul.innerHTML = '';
+      if (!mapsState.pinnedDates.length) {
+        if (empty) empty.style.display = '';
+        return;
+      }
+      if (empty) empty.style.display = 'none';
+      mapsState.pinnedDates.forEach(function (dateStr) {
+        var li = document.createElement('li');
+        li.className = 'maps-saved-row';
+        li.innerHTML =
+          '<span class="storm-color-dot" style="background:#caa85c;"></span>' +
+          '<span class="saved-label">' + dateStr + '</span>' +
+          '<button type="button" class="saved-unpin" title="Remove">&times;</button>';
+        li.querySelector('.saved-unpin').addEventListener('click', function () {
+          mapsTogglePin(dateStr);
+        });
+        li.addEventListener('click', function (e) {
+          if (e.target.closest('.saved-unpin')) return;
+          mapsPreviewDate(dateStr);
+        });
+        ul.appendChild(li);
+      });
     }
 
     // ── Swath Opacity Control ──
@@ -5246,18 +5661,16 @@
         if (!val) return;
         var exists = mapsState.stormDates.indexOf(val) !== -1;
         if (exists) {
-          if (mapsState.selectedDates.indexOf(val) === -1) {
-            if (mapsState.selectedDates.length >= MAPS_MAX_SELECT) {
-              mobStatus.className = 'maps-status-msg error';
-              mobStatus.textContent = 'Max ' + MAPS_MAX_SELECT + ' dates selected.';
-              return;
-            }
-            mapsState.selectedDates.push(val);
-            mapsDrawDate(val);
-          }
+          mapsToggleStorm(val, true);
           mapsRenderStormList();
           mapsMobSyncStorms();
           mapsUpdateDownloadBtn();
+          mobStatus.textContent = 'Date added & pinned.';
+          return;
+        }
+        if (mapsState.pinnedDates.length >= MAPS_MAX_SELECT) {
+          mobStatus.className = 'maps-status-msg error';
+          mobStatus.textContent = 'Max ' + MAPS_MAX_SELECT + ' saved dates.';
           return;
         }
         mobStatus.textContent = 'Checking date…';
@@ -5267,9 +5680,8 @@
           .then(function (json) {
             if (json.points && json.points.length) {
               mapsState.stormDates.unshift(val);
-              mapsState.selectedDates.push(val);
               mapsState.lsrPointsByDate[val] = json.points;
-              mapsDrawDate(val);
+              mapsToggleStorm(val, true);
               mapsRenderStormList();
               mapsMobSyncStorms();
               mapsUpdateDownloadBtn();
@@ -5298,21 +5710,26 @@
       var mobList = document.getElementById('maps-storm-list-mob');
       if (!desktopList || !mobList) return;
       mobList.innerHTML = desktopList.innerHTML;
-      // Re-wire checkbox clicks on the mobile copy
+      // Re-wire click handlers on the mobile copy
       var rows = mobList.querySelectorAll('.maps-storm-row');
       for (var i = 0; i < rows.length; i++) {
         (function (row) {
-          var cb = row.querySelector('input[data-storm-date]');
-          var dt = cb ? cb.getAttribute('data-storm-date') : '';
+          var pinBtn = row.querySelector('.maps-pin-btn');
+          var dt = pinBtn ? pinBtn.getAttribute('data-pin-date') : '';
+          // Row click → preview
           row.addEventListener('click', function (e) {
             if (!dt) return;
-            if (e.target.tagName === 'INPUT') {
-              mapsToggleStorm(dt, e.target.checked);
-            } else {
-              var isOn = mapsState.selectedDates.indexOf(dt) === -1;
-              mapsToggleStorm(dt, isOn);
-            }
+            if (e.target.closest('.maps-pin-btn')) return;
+            mapsPreviewDate(dt);
           });
+          // Pin button click → toggle pin
+          if (pinBtn) {
+            pinBtn.addEventListener('click', function (e) {
+              e.stopPropagation();
+              if (!dt) return;
+              mapsTogglePin(dt);
+            });
+          }
         })(rows[i]);
       }
       // Sync paging info
@@ -5340,14 +5757,14 @@
 
     function mapsWireDownload() {
       document.getElementById('maps-download-btn').addEventListener('click', function () {
-        if (!mapsState.selectedDates.length) return;
-        var exportData = { dates: mapsState.selectedDates.slice(), lsrPoints: {} };
-        mapsState.selectedDates.forEach(function (d) {
+        if (!mapsState.pinnedDates.length) return;
+        var exportData = { dates: mapsState.pinnedDates.slice(), lsrPoints: {} };
+        mapsState.pinnedDates.forEach(function (d) {
           if (mapsState.lsrPointsByDate[d]) exportData.lsrPoints[d] = mapsState.lsrPointsByDate[d];
         });
-        // Also include any demo swath data for selected dates
+        // Also include any demo swath data for pinned dates
         var swaths = mapsGetSwaths();
-        var matchedSwaths = swaths.filter(function (s) { return mapsState.selectedDates.indexOf(s.date) !== -1; });
+        var matchedSwaths = swaths.filter(function (s) { return mapsState.pinnedDates.indexOf(s.date) !== -1; });
         if (matchedSwaths.length) exportData.demoSwaths = matchedSwaths;
         var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         var url = URL.createObjectURL(blob);
@@ -7259,6 +7676,12 @@
 
     document.getElementById('open-campaigns').addEventListener('click', function () {
       showPage('page-campaigns');
+      campaignInit();
+    });
+
+    document.getElementById('maps-open-campaign').addEventListener('click', function () {
+      showPage('page-campaigns');
+      campaignInit();
     });
 
     document.getElementById('open-start-inspection-menu').addEventListener('click', function () {
@@ -8162,6 +8585,9 @@
       document.getElementById('docusign-forms-header').style.display = 'none';
       document.getElementById('docusign-forms-list').style.display = 'none';
 
+      // Show shell so previewEl has layout dimensions for rendering
+      document.getElementById('docusign-form-shell').style.display = '';
+
       // --- Document preview with fields rendered directly on the form ---
       var previewEl = document.getElementById('docusign-form-preview');
       previewEl.innerHTML = '';
@@ -8233,11 +8659,14 @@
           var pg = pages[pgIdx] || pages[0];
           if (!pg) return;
           var left, top, width, height;
+          // Use actual CSS display dims, not canvas pixel dims
+          var domW = pg.wrapper.offsetWidth || pg.width;
+          var domH = pg.wrapper.offsetHeight || pg.height;
           if (f.xPct != null && f.yPct != null && f.wPct != null && f.hPct != null) {
-            left = f.xPct * pg.width;
-            top = f.yPct * pg.height;
-            width = f.wPct * pg.width;
-            height = f.hPct * pg.height;
+            left = f.xPct * domW;
+            top = f.yPct * domH;
+            width = f.wPct * domW;
+            height = f.hPct * domH;
           } else {
             left = f.x; top = f.y; width = f.width; height = f.height;
           }
@@ -8292,7 +8721,7 @@
                       (inst.fileDataUrl.indexOf('data:image/') === 0);
         if (isPdf && typeof pdfjsLib !== 'undefined') {
           // Render PDF to app-controlled canvases — fields go into per-page wrappers
-          var containerW = previewEl.offsetWidth || previewEl.clientWidth || 600;
+          var containerW = previewEl.clientWidth || previewEl.offsetWidth || 600;
           renderPdfPages(inst.fileDataUrl, containerW).then(function (result) {
             previewEl.insertBefore(result.container, previewEl.firstChild);
             renderFieldOverlaysOnPages(result.pages);
@@ -8383,7 +8812,6 @@
         });
       }
 
-      document.getElementById('docusign-form-shell').style.display = '';
     }
 
     // --- Signature Pad ---
@@ -8487,6 +8915,9 @@
       if (!doc) return;
       var dateStr = doc.signedAt ? new Date(doc.signedAt).toLocaleDateString() : (doc.completedAt ? new Date(doc.completedAt).toLocaleDateString() : '');
       document.getElementById('saved-doc-title').textContent = doc.templateName + ' — Signed ' + dateStr;
+      // Show viewer so previewEl has layout dimensions for rendering
+      document.getElementById('saved-doc-viewer').style.display = '';
+
       var previewEl = document.getElementById('saved-doc-preview');
       previewEl.innerHTML = '';
 
@@ -8523,9 +8954,12 @@
           var pg = pages[pgIdx] || pages[0];
           if (!pg) return;
           var left, top, width, height;
+          // Use actual CSS display dims, not canvas pixel dims
+          var domW = pg.wrapper.offsetWidth || pg.width;
+          var domH = pg.wrapper.offsetHeight || pg.height;
           if (f.xPct != null && f.yPct != null && f.wPct != null && f.hPct != null) {
-            left = f.xPct * pg.width; top = f.yPct * pg.height;
-            width = f.wPct * pg.width; height = f.hPct * pg.height;
+            left = f.xPct * domW; top = f.yPct * domH;
+            width = f.wPct * domW; height = f.hPct * domH;
           } else {
             left = f.x; top = f.y; width = f.width; height = f.height;
           }
@@ -8565,7 +8999,7 @@
         var isPdf = (doc.fileType === 'application/pdf') || (doc.fileDataUrl.indexOf('data:application/pdf') === 0);
         var isImage = doc.fileType ? doc.fileType.indexOf('image/') === 0 : (doc.fileDataUrl.indexOf('data:image/') === 0);
         if (isPdf && typeof pdfjsLib !== 'undefined') {
-          var containerW = previewEl.offsetWidth || previewEl.clientWidth || 600;
+          var containerW = previewEl.clientWidth || previewEl.offsetWidth || 600;
           renderPdfPages(doc.fileDataUrl, containerW).then(function (result) {
             previewEl.insertBefore(result.container, previewEl.firstChild);
             renderSavedOverlaysOnPages(result.pages);
@@ -8593,7 +9027,6 @@
       } else {
         previewEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted,#888);">No preview available.</div>';
       }
-      document.getElementById('saved-doc-viewer').style.display = '';
     }
 
     document.getElementById('back-from-saved-docs').addEventListener('click', function () {
@@ -8724,7 +9157,7 @@
 
         if (isPdf && typeof pdfjsLib !== 'undefined') {
           // Render PDF pages to canvas via pdf.js
-          var areaWidth = area.offsetWidth || area.clientWidth || 600;
+          var areaWidth = area.clientWidth || area.offsetWidth || 600;
           console.log('[TPL-PREVIEW] rendering PDF via pdf.js, areaWidth:', areaWidth);
           renderPdfPages(currentTplFileDataUrl, areaWidth).then(function (result) {
             if (renderKey !== _tplPreviewRenderKey) { console.log('[TPL-PREVIEW] stale render, skipping'); return; }
@@ -8807,11 +9240,13 @@
           parentEl = pg.wrapper;
           // Ensure the wrapper can receive pointer events even though the pdf container has pointer-events:none
           pg.wrapper.style.pointerEvents = 'auto';
-          // Use percentage coords relative to this page
-          var left = (f.xPct != null) ? (f.xPct * pg.width) : f.x;
-          var top = (f.yPct != null) ? (f.yPct * pg.height) : f.y;
-          var w = (f.wPct != null) ? (f.wPct * pg.width) : f.width;
-          var h = (f.hPct != null) ? (f.hPct * pg.height) : f.height;
+          // Use percentage coords relative to wrapper's actual CSS dimensions
+          var domW = pg.wrapper.offsetWidth || pg.width;
+          var domH = pg.wrapper.offsetHeight || pg.height;
+          var left = (f.xPct != null) ? (f.xPct * domW) : f.x;
+          var top = (f.yPct != null) ? (f.yPct * domH) : f.y;
+          var w = (f.wPct != null) ? (f.wPct * domW) : f.width;
+          var h = (f.hPct != null) ? (f.hPct * domH) : f.height;
           box.style.left = left + 'px';
           box.style.top = top + 'px';
           box.style.width = w + 'px';
@@ -8920,8 +9355,10 @@
         f.x = nl; f.y = nt;
         if (f.pageIndex != null && tplRenderedPages[f.pageIndex]) {
           var pg = tplRenderedPages[f.pageIndex];
-          f.xPct = nl / pg.width;
-          f.yPct = nt / pg.height;
+          var domW = pg.wrapper.offsetWidth || pg.width;
+          var domH = pg.wrapper.offsetHeight || pg.height;
+          f.xPct = nl / domW;
+          f.yPct = nt / domH;
         }
       });
     }
@@ -8946,8 +9383,10 @@
         var f = currentTplFields[idx];
         if (f.pageIndex != null && tplRenderedPages[f.pageIndex]) {
           var pg = tplRenderedPages[f.pageIndex];
-          f.wPct = f.width / pg.width;
-          f.hPct = f.height / pg.height;
+          var domW = pg.wrapper.offsetWidth || pg.width;
+          var domH = pg.wrapper.offsetHeight || pg.height;
+          f.wPct = f.width / domW;
+          f.hPct = f.height / domH;
         }
       }
       handle.addEventListener('mousedown', function (e) {
@@ -8993,8 +9432,8 @@
       if (!f || f.confirmed) return;
       var step = e.shiftKey ? 5 : 1; // px
       var pg = (f.pageIndex != null && tplRenderedPages[f.pageIndex]) ? tplRenderedPages[f.pageIndex] : null;
-      var pgW = pg ? pg.width : 1;
-      var pgH = pg ? pg.height : 1;
+      var pgW = pg ? (pg.wrapper.offsetWidth || pg.width) : 1;
+      var pgH = pg ? (pg.wrapper.offsetHeight || pg.height) : 1;
       if (key === 'ArrowLeft')  { f.x = Math.max(0, (f.x || 0) - step); }
       if (key === 'ArrowRight') { f.x = (f.x || 0) + step; }
       if (key === 'ArrowUp')    { f.y = Math.max(0, (f.y || 0) - step); }
@@ -9035,12 +9474,15 @@
         if (!tplRenderedPages || tplRenderedPages.length === 0) return null;
         for (var i = 0; i < tplRenderedPages.length; i++) {
           var pg = tplRenderedPages[i];
-          if (areaY >= pg.offsetTop && areaY < pg.offsetTop + pg.height) {
-            return { pageIndex: i, localX: areaX, localY: areaY - pg.offsetTop, pageW: pg.width, pageH: pg.height, wrapper: pg.wrapper };
+          var domTop = pg.wrapper.offsetTop;
+          var domH = pg.wrapper.offsetHeight;
+          if (areaY >= domTop && areaY < domTop + domH) {
+            return { pageIndex: i, localX: areaX, localY: areaY - domTop, pageW: pg.wrapper.offsetWidth, pageH: domH, wrapper: pg.wrapper };
           }
         }
         var last = tplRenderedPages[tplRenderedPages.length - 1];
-        return { pageIndex: tplRenderedPages.length - 1, localX: areaX, localY: areaY - last.offsetTop, pageW: last.width, pageH: last.height, wrapper: last.wrapper };
+        var lastTop = last.wrapper.offsetTop;
+        return { pageIndex: tplRenderedPages.length - 1, localX: areaX, localY: areaY - lastTop, pageW: last.wrapper.offsetWidth, pageH: last.wrapper.offsetHeight, wrapper: last.wrapper };
       }
 
       area.addEventListener('pointerdown', function (e) {
@@ -9122,16 +9564,9 @@
         var fieldDef = TEMPLATE_FIELD_PALETTE.find(function (p) { return p.key === key; });
         if (!fieldDef) return;
 
-        // Compute page-relative percentage coords
-        var pgW, pgH;
-        if (drawPageWrapper !== area && tplRenderedPages[drawPageIdx]) {
-          var pg = tplRenderedPages[drawPageIdx];
-          pgW = pg.width;
-          pgH = pg.height;
-        } else {
-          pgW = drawPageWrapper.scrollWidth || drawPageWrapper.offsetWidth || 1;
-          pgH = drawPageWrapper.scrollHeight || drawPageWrapper.offsetHeight || 1;
-        }
+        // Compute page-relative percentage coords using actual CSS dimensions
+        var pgW = drawPageWrapper.offsetWidth || drawPageWrapper.scrollWidth || 1;
+        var pgH = drawPageWrapper.offsetHeight || drawPageWrapper.scrollHeight || 1;
 
         currentTplFields.push({
           key: key, label: fieldDef.label,
@@ -9720,6 +10155,430 @@
       renderPayrollList('my-payroll-content', myItems);
       renderPayrollList('company-payroll-content', allItems);
     }
+
+    // ══════════════════════════════════════════════════════════════
+    // CAMPAIGN PAGE — door-knocking, address search, shared swaths
+    // ══════════════════════════════════════════════════════════════
+    (function () {
+      var CMP_STATUS_COLORS = {
+        notint:'#E53E3E', approved:'#38A169', inspection:'#3182CE',
+        filed:'#9F7AEA', noclaim:'#DD6B20', nothome:'#718096',
+        goback:'#718096', referral:'#718096', note:'#FBBF24'
+      };
+      var CMP_STATUS_LABELS = {
+        nothome:'Not Home', notint:'Not Interested', inspection:'Did Inspection',
+        noclaim:'No Claim Filed', filed:'Filed Claim', goback:'Go Back Again',
+        approved:'Got Approved', referral:'Got Referral', note:'Note'
+      };
+
+      var CMP_STORE_KEY = 'hmm_campaign_markers_v2';
+      var cmpSavedMarkers = [];
+      var cmpLiveMarkers = [];
+      var cmpKnockCounts = {};
+      var cmpOpenIW = null;
+      var cmpInited = false;
+      var cmpSwathOverlays = []; // google.maps.Polygon[] cloned from Maps page
+
+      function cmpLoadStorage() {
+        try { cmpSavedMarkers = JSON.parse(localStorage.getItem(CMP_STORE_KEY) || '[]'); } catch(e) { cmpSavedMarkers=[]; }
+        try { cmpKnockCounts = JSON.parse(localStorage.getItem('hmm_knock_counts') || '{}'); } catch(e) {}
+        Object.keys(CMP_STATUS_LABELS).forEach(function(k) {
+          var el = document.getElementById('cmp-kc-'+k);
+          if (el) el.textContent = cmpKnockCounts[k] || 0;
+        });
+      }
+
+      function cmpPersist() {
+        try { localStorage.setItem(CMP_STORE_KEY, JSON.stringify(cmpSavedMarkers)); } catch(e) {}
+        try { localStorage.setItem('hmm_knock_counts', JSON.stringify(cmpKnockCounts)); } catch(e) {}
+      }
+
+      function cmpPlaceMarker(lat, lng, status, label, address, save) {
+        var map = window.cMap;
+        if (!map || !window.google) return;
+        var color = CMP_STATUS_COLORS[status] || '#718096';
+        var marker = new google.maps.Marker({
+          position: { lat: lat, lng: lng }, map: map,
+          icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: color, fillOpacity: 1, strokeColor: 'white', strokeWeight: 2.5, scale: 10 },
+          title: label, zIndex: 200
+        });
+        var iw = new google.maps.InfoWindow();
+        marker.addListener('click', function() {
+          if (cmpOpenIW) cmpOpenIW.close();
+          iw.setContent(
+            '<div style="font-family:system-ui;min-width:155px;padding:2px 0 0;">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;"><div style="width:13px;height:13px;border-radius:50%;background:'+color+';border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);flex-shrink:0;"></div><strong style="font-size:13px;">'+label+'</strong></div>' +
+            (address ? '<div style="font-size:11px;color:#666;margin-bottom:7px;">'+address+'</div>' : '') +
+            '<button onclick="window._cmpRemovePin('+lat+','+lng+')" style="width:100%;padding:5px 0;border:1px solid rgba(200,50,50,0.40);background:rgba(200,50,50,0.08);color:#8b1a1a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Remove Pin</button></div>'
+          );
+          iw.open(map, marker);
+          cmpOpenIW = iw;
+        });
+        var entry = { marker: marker, iw: iw, lat: lat, lng: lng, status: status, label: label, address: address||'' };
+        cmpLiveMarkers.push(entry);
+        if (save) {
+          cmpSavedMarkers.push({ lat: lat, lng: lng, status: status, label: label, address: address||'' });
+          cmpKnockCounts[status] = (cmpKnockCounts[status]||0) + 1;
+          var el = document.getElementById('cmp-kc-'+status);
+          if (el) el.textContent = cmpKnockCounts[status];
+          cmpPersist();
+          cmpShowToast(label, color);
+          cmpUpdateChip();
+          if (window.google && google.maps.Geocoder) {
+            new google.maps.Geocoder().geocode({ location:{lat:lat,lng:lng} }, function(results, st) {
+              if (st === 'OK' && results[0]) {
+                entry.address = results[0].formatted_address;
+                var saved = cmpSavedMarkers.find(function(m) { return m.lat===lat && m.lng===lng && m.status===status; });
+                if (saved) { saved.address = entry.address; cmpPersist(); }
+              }
+            });
+          }
+        }
+      }
+
+      window._cmpRemovePin = function(lat, lng) {
+        var idx = cmpLiveMarkers.findIndex(function(m) { return m.lat===lat && m.lng===lng; });
+        if (idx >= 0) { cmpLiveMarkers[idx].marker.setMap(null); cmpLiveMarkers[idx].iw.close(); cmpLiveMarkers.splice(idx, 1); }
+        cmpSavedMarkers = cmpSavedMarkers.filter(function(m) { return !(m.lat===lat && m.lng===lng); });
+        cmpPersist(); cmpUpdateChip();
+        if (cmpOpenIW) { cmpOpenIW.close(); cmpOpenIW = null; }
+      };
+
+      function cmpPixelToLatLng(map, px, py) {
+        var b = map.getBounds();
+        if (!b) return null;
+        var ne = b.getNorthEast(), sw = b.getSouthWest();
+        var d = map.getDiv();
+        return { lat: ne.lat() - (py / d.offsetHeight) * (ne.lat() - sw.lat()), lng: sw.lng() + (px / d.offsetWidth) * (ne.lng() - sw.lng()) };
+      }
+
+      function cmpShowToast(label, color) {
+        var feed = document.getElementById('cmpKnockFeed');
+        if (!feed) return;
+        var t = document.createElement('div');
+        t.className = 'knock-toast';
+        t.innerHTML = '<div class="knock-toast-dot" style="background:'+color+';"></div>'+label+' logged';
+        feed.appendChild(t);
+        setTimeout(function() { t.remove(); }, 2800);
+      }
+
+      function cmpUpdateChip() {
+        var n = cmpSavedMarkers.length;
+        var chip = document.getElementById('cmpStatusChip');
+        if (chip) chip.textContent = n === 0 ? 'Drag an icon onto a house' : n + ' house' + (n===1?'':'s') + ' logged';
+        if (chip) chip.classList.toggle('active', n > 0);
+      }
+
+      /* ── Sync swaths from Maps page onto campaign map ── */
+      function cmpSyncSwaths() {
+        // Remove old campaign swath overlays
+        cmpSwathOverlays.forEach(function(p) { try { p.setMap(null); } catch(_){} });
+        cmpSwathOverlays = [];
+        var map = window.cMap;
+        if (!map || !mapsState || !mapsState.swathPolygons) return;
+        var count = 0;
+        var bounds = new google.maps.LatLngBounds();
+        var hasBounds = false;
+        // mapsState.swathPolygons is dateStr -> google.maps.Polygon[]
+        // We read the raw GeoJSON stored in each polygon's _geojson property or reconstruct from paths
+        Object.keys(mapsState.swathPolygons).forEach(function(dateStr) {
+          var polys = mapsState.swathPolygons[dateStr];
+          if (!Array.isArray(polys)) return;
+          polys.forEach(function(srcPoly) {
+            // Clone paths from the source polygon
+            var srcPaths = srcPoly.getPaths();
+            var paths = [];
+            srcPaths.forEach(function(srcPath) {
+              var ring = [];
+              srcPath.forEach(function(ll) {
+                ring.push({ lat: ll.lat(), lng: ll.lng() });
+                bounds.extend(ll);
+                hasBounds = true;
+              });
+              paths.push(ring);
+            });
+            var clone = new google.maps.Polygon({
+              paths: paths, map: map,
+              strokeColor: '#00e5ff', strokeOpacity: 0.8, strokeWeight: 2,
+              fillColor: '#00e5ff', fillOpacity: 0.18, clickable: false, zIndex: 5
+            });
+            cmpSwathOverlays.push(clone);
+            count++;
+          });
+        });
+        var chip = document.getElementById('cmpSwathChip');
+        if (chip) {
+          chip.textContent = count > 0 ? count + ' swath' + (count===1?'':'s') + ' from Maps' : '';
+          chip.style.display = count > 0 ? 'block' : 'none';
+        }
+        // Fit campaign map to swath bounds if we have them and map is at default zoom
+        if (hasBounds && map.getZoom() <= 6) {
+          map.fitBounds(bounds, 40);
+        }
+      }
+
+      /* ── Street value drawing (same demo logic as old Campaign) ── */
+      var cmpStreetLayers = [];
+      function cmpDrawStreets(map, minVal) {
+        var c = map.getCenter(), lat = c.lat(), lng = c.lng();
+        var segs = [
+          [[0.002,-0.010],[0.002,0.010],'#e8302a'],
+          [[-0.006,-0.008],[-0.006,0.008],'#e8302a'],
+          [[0.010,-0.006],[0.010,0.006],'#f5a623'],
+          [[-0.012,0.002],[0.000,0.002],'#e8302a'],
+          [[0.004,-0.014],[0.004,0.004],'#f5a623'],
+          [[-0.008,-0.012],[0.002,-0.012],'#e8302a']
+        ];
+        segs.forEach(function(s) {
+          var line = new google.maps.Polyline({
+            path: [{lat:lat+s[0][0],lng:lng+s[0][1]},{lat:lat+s[1][0],lng:lng+s[1][1]}],
+            strokeColor:s[2], strokeOpacity:0.92, strokeWeight:5, map:map, zIndex:5, geodesic:true
+          });
+          line.addListener('click', function(e) {
+            var val = '$' + Math.round((minVal||300000)*(0.9+Math.random()*0.8)).toLocaleString();
+            new google.maps.InfoWindow({ content:'<div style="font-family:system-ui;font-size:12px;padding:2px;"><b>Est. avg home value:</b> '+val+'</div>', position:e.latLng }).open(map);
+          });
+          cmpStreetLayers.push(line);
+        });
+      }
+
+      /* ── Notes modal wiring ── */
+      var cmpPendingLL = null;
+
+      window._cmpOpenNotesModal = function(lat, lng, addr) {
+        cmpPendingLL = { lat: lat, lng: lng };
+        document.getElementById('cmpNoteAddr').textContent = addr || 'Locating address…';
+        document.getElementById('cmpNoteText').value = '';
+        document.getElementById('cmpReminderText').value = '';
+        document.getElementById('cmpReminderDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('cmpNotesModal').classList.add('open');
+      };
+
+      function cmpWireNotesModal() {
+        document.getElementById('cmpNotesCloseBtn').addEventListener('click', function() {
+          document.getElementById('cmpNotesModal').classList.remove('open');
+        });
+        document.getElementById('cmpNotesModal').addEventListener('click', function(e) {
+          if (e.target === document.getElementById('cmpNotesModal')) document.getElementById('cmpNotesModal').classList.remove('open');
+        });
+        document.querySelectorAll('#page-campaigns [data-cmptab]').forEach(function(tab) {
+          tab.addEventListener('click', function() {
+            document.querySelectorAll('#page-campaigns .notes-tab').forEach(function(t) { t.classList.remove('active'); });
+            document.querySelectorAll('#page-campaigns .notes-tab-content').forEach(function(c) { c.classList.remove('active'); });
+            tab.classList.add('active');
+            document.getElementById('cmpTab' + tab.dataset.cmptab.charAt(0).toUpperCase() + tab.dataset.cmptab.slice(1)).classList.add('active');
+          });
+        });
+        document.getElementById('cmpKeyboardBtn').addEventListener('click', function() {
+          document.getElementById('cmpNoteText').focus();
+        });
+        document.getElementById('cmpSaveNoteBtn').addEventListener('click', function() {
+          var text = document.getElementById('cmpNoteText').value.trim();
+          if (!text || !cmpPendingLL) return;
+          cmpPlaceMarker(cmpPendingLL.lat, cmpPendingLL.lng, 'note', 'Note: '+text.slice(0,40), document.getElementById('cmpNoteAddr').textContent, true);
+          document.getElementById('cmpNotesModal').classList.remove('open');
+        });
+        document.getElementById('cmpSaveReminderBtn').addEventListener('click', function() {
+          var text = document.getElementById('cmpReminderText').value.trim();
+          var date = document.getElementById('cmpReminderDate').value;
+          if (!text || !date || !cmpPendingLL) return;
+          cmpPlaceMarker(cmpPendingLL.lat, cmpPendingLL.lng, 'note', '\u23f0 '+text.slice(0,40), document.getElementById('cmpNoteAddr').textContent, true);
+          cmpShowToast('Reminder set', '#FBBF24');
+          document.getElementById('cmpNotesModal').classList.remove('open');
+        });
+        // Speech-to-text
+        function makeCmpSpeech(btnId, taId) {
+          var btn = document.getElementById(btnId), ta = document.getElementById(taId);
+          if (!btn || !ta) return;
+          var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+          if (!SR) { btn.style.opacity='0.4'; return; }
+          var rec = new SR(); rec.continuous=false; rec.interimResults=true; rec.lang='en-US';
+          var listening = false;
+          btn.addEventListener('click', function() { if (listening) rec.stop(); else rec.start(); });
+          rec.onstart = function() { listening=true; btn.classList.add('listening'); };
+          rec.onend = function() { listening=false; btn.classList.remove('listening'); };
+          rec.onerror = function() { listening=false; btn.classList.remove('listening'); };
+          rec.onresult = function(e) { var t=''; for(var i=e.resultIndex;i<e.results.length;i++) t+=e.results[i][0].transcript; ta.value=t; };
+        }
+        makeCmpSpeech('cmpMicBtn','cmpNoteText');
+        makeCmpSpeech('cmpMicBtnReminder','cmpReminderText');
+      }
+
+      /* ── Drag & drop wiring ── */
+      function cmpWireDragDrop(mapEl) {
+        var dragStatus = null, dragLabel = null;
+        document.querySelectorAll('#page-campaigns .knock-btn').forEach(function(btn) {
+          btn.addEventListener('dragstart', function(e) {
+            dragStatus = btn.dataset.status; dragLabel = btn.dataset.label;
+            btn.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('text/plain', dragStatus);
+            document.getElementById('cmpDropHint').classList.add('visible');
+          });
+          btn.addEventListener('dragend', function() {
+            btn.classList.remove('dragging');
+            document.getElementById('cmpDropHint').classList.remove('visible');
+            mapEl.classList.remove('drag-over');
+          });
+        });
+        mapEl.addEventListener('dragover', function(e) { e.preventDefault(); e.dataTransfer.dropEffect='copy'; mapEl.classList.add('drag-over'); });
+        mapEl.addEventListener('dragleave', function() { mapEl.classList.remove('drag-over'); });
+        mapEl.addEventListener('drop', function(e) {
+          e.preventDefault(); mapEl.classList.remove('drag-over');
+          document.getElementById('cmpDropHint').classList.remove('visible');
+          if (!dragStatus || !window.cMap) return;
+          var r = mapEl.getBoundingClientRect();
+          var ll = cmpPixelToLatLng(window.cMap, e.clientX - r.left, e.clientY - r.top);
+          if (!ll) return;
+          if (dragStatus === 'note') {
+            var geocoder = window.google ? new google.maps.Geocoder() : null;
+            if (geocoder) { geocoder.geocode({ location: ll }, function(results, st) { var addr = (st==='OK'&&results[0])?results[0].formatted_address:''; window._cmpOpenNotesModal(ll.lat,ll.lng,addr); }); }
+            else { window._cmpOpenNotesModal(ll.lat,ll.lng,''); }
+          } else { cmpPlaceMarker(ll.lat, ll.lng, dragStatus, dragLabel, null, true); }
+          dragStatus = null; dragLabel = null;
+        });
+        // Touch support
+        var tGhost = null;
+        document.querySelectorAll('#page-campaigns .knock-btn').forEach(function(btn) {
+          btn.addEventListener('touchstart', function(e) {
+            dragStatus = btn.dataset.status; dragLabel = btn.dataset.label;
+            tGhost = document.createElement('div');
+            tGhost.style.cssText = 'position:fixed;z-index:9999;pointer-events:none;width:40px;height:40px;border-radius:50%;background:'+(CMP_STATUS_COLORS[dragStatus]||'#718096')+';border:3px solid white;opacity:0.88;box-shadow:0 3px 12px rgba(0,0,0,0.3);transform:translate(-50%,-50%);';
+            document.body.appendChild(tGhost);
+            document.getElementById('cmpDropHint').classList.add('visible');
+          }, { passive:true });
+          btn.addEventListener('touchmove', function(e) { if (tGhost) { tGhost.style.left=e.touches[0].clientX+'px'; tGhost.style.top=e.touches[0].clientY+'px'; } }, { passive:true });
+          btn.addEventListener('touchend', function(e) {
+            document.getElementById('cmpDropHint').classList.remove('visible');
+            if (tGhost) { tGhost.remove(); tGhost=null; }
+            if (!dragStatus || !window.cMap) return;
+            var t = e.changedTouches[0]; var r = mapEl.getBoundingClientRect();
+            var px = t.clientX-r.left, py = t.clientY-r.top;
+            if (px<0||py<0||px>r.width||py>r.height) return;
+            var ll = cmpPixelToLatLng(window.cMap, px, py);
+            if (!ll) return;
+            if (dragStatus==='note') {
+              var geocoder = window.google ? new google.maps.Geocoder() : null;
+              if (geocoder) { geocoder.geocode({location:ll},function(results,st){var addr=(st==='OK'&&results[0])?results[0].formatted_address:'';window._cmpOpenNotesModal(ll.lat,ll.lng,addr);}); }
+              else { window._cmpOpenNotesModal(ll.lat,ll.lng,''); }
+            } else { cmpPlaceMarker(ll.lat,ll.lng,dragStatus,dragLabel,null,true); }
+            dragStatus=null; dragLabel=null;
+          });
+        });
+      }
+
+      /* ── Campaign init (called when page is shown) ── */
+      window.campaignInit = function() {
+        if (!window.google || !google.maps) { console.warn('[Campaign] Google Maps not loaded yet'); return; }
+
+        if (!cmpInited) {
+          var el = document.getElementById('campaignMap');
+          if (!el) return;
+          var cmpCenter = (sharedViewport.lat != null)
+            ? { lat: sharedViewport.lat, lng: sharedViewport.lng } : { lat: 38.627, lng: -90.197 };
+          var cmpZoom = (sharedViewport.zoom != null) ? sharedViewport.zoom : 16;
+          window.cMap = new google.maps.Map(el, {
+            center: cmpCenter, zoom: cmpZoom,
+            mapTypeId: 'hybrid', zoomControl: true, streetViewControl: false,
+            mapTypeControl: false, fullscreenControl: false
+          });
+
+          // Track Campaign viewport changes → shared state
+          window.cMap.addListener('idle', function() {
+            if (_svSetting) return;
+            var c = window.cMap.getCenter();
+            sharedViewport.lat = c.lat();
+            sharedViewport.lng = c.lng();
+            sharedViewport.zoom = window.cMap.getZoom();
+          });
+
+          // Address autocomplete
+          if (google.maps.places) {
+            var ac = new google.maps.places.Autocomplete(
+              document.getElementById('cmpCityInput'),
+              { types: ['geocode'], componentRestrictions: { country: 'us' } }
+            );
+            ac.addListener('place_changed', function() {
+              var p = ac.getPlace();
+              if (p.geometry) { window.cMap.setCenter(p.geometry.location); window.cMap.setZoom(15); }
+            });
+          }
+
+          // Restore persisted markers
+          cmpLoadStorage();
+          cmpSavedMarkers.forEach(function(m) { cmpPlaceMarker(m.lat, m.lng, m.status, m.label, m.address, false); });
+          cmpUpdateChip();
+
+          // Wire drag-drop, notes, clear, GO button
+          cmpWireDragDrop(el);
+          cmpWireNotesModal();
+
+          document.getElementById('cmpClearMapBtn').addEventListener('click', function() {
+            if (!confirm('Remove all house pins from the campaign map?')) return;
+            cmpLiveMarkers.forEach(function(m) { m.marker.setMap(null); m.iw.close(); });
+            cmpLiveMarkers = []; cmpSavedMarkers = [];
+            Object.keys(CMP_STATUS_LABELS).forEach(function(k) {
+              cmpKnockCounts[k] = 0;
+              var el2 = document.getElementById('cmp-kc-'+k);
+              if (el2) el2.textContent = 0;
+            });
+            cmpPersist(); cmpUpdateChip();
+          });
+
+          document.getElementById('cmpGoBtn').addEventListener('click', function() {
+            var city = document.getElementById('cmpCityInput').value.trim();
+            var minVal = Number(document.getElementById('cmpMinValueInput').value) || 0;
+            if (!city) { document.getElementById('cmpCityInput').focus(); return; }
+            var btn = document.getElementById('cmpGoBtn');
+            btn.classList.add('loading'); btn.textContent = '...';
+            cmpStreetLayers.forEach(function(l) { l.setMap(null); }); cmpStreetLayers = [];
+            if (window.cMap) {
+              new google.maps.Geocoder().geocode({ address: city }, function(r, s) {
+                if (s==='OK' && r[0]) { window.cMap.setCenter(r[0].geometry.location); window.cMap.setZoom(14); }
+              });
+              cmpDrawStreets(window.cMap, minVal);
+            }
+            var cnt = Math.floor(Math.random()*80+40);
+            document.getElementById('cmpResultsCount').textContent = cnt;
+            document.getElementById('cmpResultsAvg').textContent = 'Avg on red streets: $' + Math.round((minVal||300000)*1.38).toLocaleString();
+            document.getElementById('cmpResultsSummary').classList.add('visible');
+            btn.classList.remove('loading'); btn.textContent = 'GO';
+          });
+
+          document.getElementById('campaignBackBtn').addEventListener('click', function() {
+            showPage('page-map');
+          });
+
+          // Wire collapse/expand toggles for panels
+          ['cmpKnockCollapse', 'cmpTargetCollapse'].forEach(function(btnId) {
+            var btn = document.getElementById(btnId);
+            if (!btn) return;
+            btn.addEventListener('click', function() {
+              var panel = btn.parentElement;
+              var wasCollapsed = panel.classList.toggle('collapsed');
+              var arrow = btn.childNodes[0];
+              if (arrow) arrow.textContent = wasCollapsed ? '\u25B6 ' : '\u25C0 ';
+            });
+          });
+
+          cmpInited = true;
+        } else {
+          // Already inited — just resize & sync viewport
+          if (window.cMap) {
+            google.maps.event.trigger(window.cMap, 'resize');
+            if (sharedViewport.lat != null) {
+              _svSetting = true;
+              window.cMap.setCenter({ lat: sharedViewport.lat, lng: sharedViewport.lng });
+              window.cMap.setZoom(sharedViewport.zoom);
+              setTimeout(function() { _svSetting = false; }, 300);
+            }
+          }
+        }
+
+        // Always sync swaths from Maps page
+        cmpSyncSwaths();
+      };
+    })();
 
     // Startup: load from Supabase once, render pipeline + counts from that single fetch
     loadJobsFromSupabase().then(function (jobs) {

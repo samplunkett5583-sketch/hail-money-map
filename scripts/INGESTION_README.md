@@ -8,6 +8,7 @@ Automated jobs that fetch NOAA hail data and ingest it into Supabase.
 |--------|--------|-------------|----------|---------|
 | `ingest_mrms_swaths.mjs` | MRMS MESH grids (Iowa State archive) | `storm_polygons` | 1 (primary) | Downloads MRMS hail raster, thresholds, polygonizes → canonical swath geometry |
 | `ingest_swdi_swaths.mjs` | NOAA SWDI radar geometry (via proxy) | `storm_polygons` | 2 (secondary) | Fetches SWDI GIS geometry, normalizes → fallback swath when MRMS unavailable |
+| `generate_ai_swaths.mjs` | MRMS evidence in `storm_polygons` | `storm_polygons` | 99 (stub) / 1 (production) | AI meteorologist swath from MRMS/MESH evidence. **Currently stub (priority 99, not rendered). Wire real model → set priority 1.** |
 | `ingest_lsr_hail.mjs` | IEM Local Storm Reports | `hail_lsr_raw` | reports only | Recent 7-day detailed hail point reports (evidence layer, not swath source) |
 | `ingest_stormevents_hail.mjs` | NOAA NCEI Storm Events | `stormevents_raw` → `hail_reports` | reports only | Historical hail point reports (evidence layer, not swath source) |
 | `ingest-monthly-hail.mjs` | (wrapper) | (calls stormevents) | — | Monthly scheduled backfill |
@@ -16,7 +17,8 @@ Automated jobs that fetch NOAA hail data and ingest it into Supabase.
 
 1. **MRMS** (source_priority=1): Best quality. MESH grid → threshold → polygonize → dissolve.
 2. **SWDI** (source_priority=2): Fallback. SWDI radar geometry normalized to GeoJSON.
-3. **Reports** (no swath): `hail_reports` / `hail_lsr_raw` are point evidence only. No hull/polygon generation.
+3. **AI Meteorologist** (source_priority=99 while stub, 1 when production): AI-generated swath from MRMS evidence. **Not rendered in frontend until real model is wired.** To promote: change `AI_PRIORITY_STUB` → `AI_PRIORITY_PRODUCTION` and add `'ai_meteorologist_mesh'` to `VALID_SWATH_SOURCES`.
+4. **Reports** (no swath): `hail_reports` / `hail_lsr_raw` are point evidence only. No hull/polygon generation.
 
 ### Running MRMS Swath Ingestion
 
@@ -32,6 +34,27 @@ node scripts/ingest_mrms_swaths.mjs --date=2026-03-30 --threshold=0.75
 # Dry run (no database write)
 node scripts/ingest_mrms_swaths.mjs --date=2026-03-30 --dry-run
 ```
+
+### Running AI Swath Generation
+
+Requires MRMS evidence to already exist in `storm_polygons` for the target date.
+
+```bash
+# Generate AI swath for a single date (backfill)
+node scripts/generate_ai_swaths.mjs --date=2025-05-19
+
+# Rolling: generate for all recent dates with MRMS evidence but no AI row
+node scripts/generate_ai_swaths.mjs --rolling
+
+# Force rebuild even if AI row already exists
+node scripts/generate_ai_swaths.mjs --date=2025-05-19 --force
+
+# Dry run
+node scripts/generate_ai_swaths.mjs --date=2025-05-19 --dry-run
+```
+
+> **Note:** The AI generator is currently a **stub** (pass-through of MRMS geometry).
+> The real model call goes in `generateAiSwath()` in `scripts/generate_ai_swaths.mjs`.
 
 ### Running SWDI Swath Ingestion
 

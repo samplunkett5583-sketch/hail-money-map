@@ -399,6 +399,7 @@ async function main() {
     source: "swdi",
     source_product: "SWDI_hail_radar",
     source_priority: 2,
+    swath_index: 0,
     polygon_geojson: dissolved,
     centroid_lat: centroid.lat,
     centroid_lon: centroid.lon,
@@ -416,7 +417,7 @@ async function main() {
 
   const { error } = await supabase
     .from("storm_polygons")
-    .upsert(row, { onConflict: "event_date,source,source_product" });
+    .upsert(row, { onConflict: "event_date,source,source_product,swath_index" });
 
   if (error) {
     console.error("[SWDI] Supabase upsert error:", error.message);
