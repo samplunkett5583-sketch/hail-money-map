@@ -1,0 +1,2 @@
+serve_locally = true
+verify_jwt = false

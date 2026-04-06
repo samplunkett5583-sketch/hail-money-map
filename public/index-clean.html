@@ -1385,7 +1385,7 @@
     .maps-paging-btn:hover:not(:disabled) { background:var(--accent-2); }
     .maps-paging-btn:disabled { opacity:.35; cursor:not-allowed; }
     .maps-storm-row {
-      display:flex; align-items:center; gap:6px; padding:7px 8px;
+      display:flex; align-items:flex-start; gap:6px; padding:7px 8px;
       border-radius:8px; cursor:pointer; font-size:13px; color:var(--text);
       transition:background .15s;
     }
@@ -1393,11 +1393,12 @@
     .maps-storm-row.is-preview { background:rgba(202,168,92,.12); }
     .maps-storm-row.is-pinned .storm-label { font-weight:600; }
     .maps-storm-row .storm-color-dot {
-      width:10px; height:10px; border-radius:50%; flex-shrink:0;
+      width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-top:4px;
     }
-    .maps-storm-row .storm-label { flex:1; }
+    .maps-storm-row .storm-label-group { flex:1; min-width:0; }
+    .maps-storm-row .storm-label { display:block; }
     .maps-storm-row .storm-size {
-      font-size:11px; color:var(--muted); white-space:nowrap;
+      font-size:11px; color:var(--muted); line-height:1.4;
     }
     .maps-pin-btn {
       background:none; border:1px solid var(--border); border-radius:6px;
@@ -1446,10 +1447,51 @@
       flex:1; position:relative; background:#111;
     }
     .maps-map-container {
-      width:100%; height:100%;
+      width:100%; height:100%; position:relative;
+    }
+    /* ── Reference Swath Panel ── */
+    .ref-swath-panel {
+      position:absolute; bottom:12px; right:12px; z-index:99997;
+      background:var(--panel); border:1px solid var(--border); border-radius:10px;
+      box-shadow:0 4px 16px rgba(0,0,0,.5); overflow:hidden;
+      max-width:380px; max-height:60vh;
+    }
+    .ref-swath-panel .ref-swath-label {
+      padding:6px 12px; font-size:12px; font-weight:600;
+      color:var(--accent); background:var(--panel-2);
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .ref-swath-panel .ref-swath-close {
+      background:none; border:none; color:var(--muted); font-size:16px;
+      cursor:pointer; padding:0 2px; line-height:1;
+    }
+    .ref-swath-panel .ref-swath-close:hover { color:var(--text); }
+    .ref-swath-panel img {
+      display:block; width:100%; height:auto;
     }
     .maps-back-row {
       padding:12px 16px;
+    }
+    /* ── Hail Size Band Legend ── */
+    .hail-band-legend {
+      position:absolute; bottom:28px; left:12px; z-index:99998;
+      background:var(--panel); border:1px solid var(--border); border-radius:10px;
+      padding:8px 12px; box-shadow:0 2px 10px rgba(0,0,0,.4);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    }
+    .hail-band-legend-title {
+      font-size:0.62rem; font-weight:700; letter-spacing:0.06em;
+      text-transform:uppercase; color:var(--text-2); margin-bottom:5px;
+    }
+    .hail-band-legend-row {
+      display:flex; align-items:center; gap:7px;
+      font-size:0.72rem; font-weight:600; color:var(--text);
+      line-height:1.6;
+    }
+    .hail-band-swatch {
+      display:inline-block; width:18px; height:12px; border-radius:3px;
+      border:1.5px solid; flex-shrink:0;
     }
     /* ── Swath Opacity Control ── */
     .maps-opacity-ctrl {
@@ -1475,6 +1517,45 @@
     .maps-opacity-val {
       font-size:11px; color:var(--muted); min-width:28px; text-align:center;
     }
+    /* ── Street Color Overlay Control (Maps page) ── */
+    .maps-street-ctrl {
+      position:absolute; top:12px; right:12px; z-index:99998;
+      display:flex; align-items:center; gap:6px;
+    }
+    .maps-street-toggle-btn {
+      width:36px; height:36px; border:none; border-radius:8px;
+      background:var(--panel); color:var(--text); font-size:15px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      box-shadow:0 2px 8px rgba(0,0,0,.4); border:1px solid var(--border);
+    }
+    .maps-street-toggle-btn:hover { background:var(--panel-2); }
+    .maps-street-panel {
+      display:none; align-items:center; gap:6px;
+      background:var(--panel); border:1px solid var(--border); border-radius:8px;
+      padding:6px 10px; box-shadow:0 2px 8px rgba(0,0,0,.4);
+    }
+    .maps-street-panel.open { display:flex; }
+    .maps-street-input {
+      width:120px; padding:4px 8px; border:1px solid var(--border); border-radius:6px;
+      background:var(--panel-2); color:var(--text); font-size:12px; outline:none;
+    }
+    .maps-street-input:focus { border-color:var(--accent); }
+    .maps-street-min {
+      width:70px; padding:4px 8px; border:1px solid var(--border); border-radius:6px;
+      background:var(--panel-2); color:var(--text); font-size:12px; outline:none;
+    }
+    .maps-street-go {
+      padding:4px 10px; border:none; border-radius:6px;
+      background:var(--accent-2); color:var(--text); font-size:12px; font-weight:600;
+      cursor:pointer;
+    }
+    .maps-street-go:hover { background:var(--accent); }
+    .maps-street-clear {
+      padding:4px 8px; border:none; border-radius:6px;
+      background:var(--panel-2); color:var(--muted); font-size:12px;
+      cursor:pointer; border:1px solid var(--border);
+    }
+    .maps-street-clear:hover { color:var(--text); }
     /* ── Property Action Card ── */
     .maps-prop-card {
       display:none; position:absolute; bottom:16px; right:16px; z-index:99999;
@@ -2058,6 +2139,15 @@
           <!-- Map Area -->
           <div class="maps-map-area">
             <div id="stormMap" class="maps-map-container"></div>
+            <!-- Hail Size Band Legend -->
+            <div id="hail-band-legend" class="hail-band-legend" style="display:none;">
+              <div class="hail-band-legend-title">Hail Size</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#FFD700;border-color:#B8960F;"></span>&frac12;&ndash; 1&Prime;</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#FF8C00;border-color:#CC7000;"></span>1&ndash; 1&frac12;&Prime;</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#FF3B30;border-color:#CC2F26;"></span>1&frac12;&ndash; 2&Prime;</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#E040FB;border-color:#AB30BC;"></span>2&ndash; 2&frac12;&Prime;</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#7B1FA2;border-color:#4A0072;"></span>2&frac12;&Prime; +</div>
+            </div>
             <!-- Swath Opacity Control -->
             <div class="maps-opacity-ctrl">
               <button type="button" id="maps-opacity-btn" class="maps-opacity-btn" title="Swath Opacity">&#9681;</button>
@@ -2066,12 +2156,23 @@
                 <span id="maps-opacity-val" class="maps-opacity-val">30%</span>
               </div>
             </div>
+            <!-- Street Color Overlay Control -->
+            <div class="maps-street-ctrl">
+              <button type="button" id="maps-street-btn" class="maps-street-toggle-btn" title="Street Value Colors">&#127968;</button>
+              <div id="maps-street-panel" class="maps-street-panel">
+                <input type="text" id="maps-street-city" class="maps-street-input" placeholder="City, State" />
+                <input type="number" id="maps-street-min" class="maps-street-min" placeholder="Min $" value="300000" />
+                <button type="button" id="maps-street-go" class="maps-street-go">GO</button>
+                <button type="button" id="maps-street-clear" class="maps-street-clear">Clear</button>
+              </div>
+            </div>
             <!-- Property Action Card -->
             <div id="maps-prop-card" class="maps-prop-card">
               <div class="maps-prop-card-header">
                 <div>
                   <div id="maps-prop-title" class="maps-prop-card-title">Selected Property</div>
                   <div id="maps-prop-sub" class="maps-prop-card-sub"></div>
+                  <div id="maps-prop-hail" style="display:none;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;color:var(--text);margin-top:4px;"></div>
                 </div>
                 <button type="button" id="maps-prop-close" class="maps-prop-card-close">&times;</button>
               </div>
@@ -4408,6 +4509,16 @@
       pointOverlaysByDate: {},   // dateStr -> google.maps.Circle[] (per-date point circles)
       pointInfoWindowsByDate: {},// dateStr -> google.maps.InfoWindow[] (per-date point IWs)
       aiSwathOverlays: {},       // dateStr -> SwathCanvasOverlay instance (AI-generated)
+      hailFieldOverlays: {},     // dateStr -> HailFieldOverlay instance (raster intensity field)
+      hailBandPolygons: {},      // dateStr -> google.maps.Polygon[] (hail-size band hulls)
+      windBandPolygons: {},       // dateStr -> google.maps.Polygon[] (wind-speed band hulls)
+      tornadoBandPolygons: {},    // dateStr -> google.maps.Polygon[] (tornado EF band hulls)
+      windPointsByDate: {},       // dateStr -> [{lat,lon,magnitude,...}]
+      tornadoPointsByDate: {},    // dateStr -> [{lat,lon,magnitude,...}]
+      dateSummaries: {},          // dateStr -> { hail:{min,max}, wind:{min,max}, tornado:{min,max} }
+      refSwathOverlays: {},        // dateStr -> RefSwathMapOverlay instance (on-map reference image)
+      refSwathDates: {},           // dateStr -> true when ref swath overlay is active
+      hailTraceCache: {},          // dateStr -> { imageUrl, hailtraceUrl, available } from edge fn
       swathOpacity: 0.3,         // current fill opacity for swath polygons
       stormPage: 0,              // current page index
       selectedProperty: null,    // { lat, lng, address, title }
@@ -4436,8 +4547,15 @@
         mapsWirePropCard();
         mapsWireMobileDrawers();
         mapsWireOpacityCtrl();
+        mapsWireStreetColorCtrl();
         mapsState.ready = true;
         mapsFetchRecentDates();
+        // Auto-refresh storm dates every 5 min to pick up newly ingested dates.
+        // mapsFetchRecentDates → mapsRenderStormList → mapsPrefetchAllHailTraceSwaths
+        // so new dates automatically get their HailTrace swaths fetched too.
+        setInterval(function () {
+          if (mapsState.ready && !mapsState.fetching) mapsFetchRecentDates();
+        }, 5 * 60 * 1000);
       } else {
         if (mapsState.map) google.maps.event.trigger(mapsState.map, 'resize');
       }
@@ -4467,10 +4585,13 @@
         .then(function (json) {
           mapsState.stormDates = Array.isArray(json.dates) ? json.dates : [];
           mapsState.dateEventTypes = json.dateEventTypes || {};
+          mapsState.dateSummaries = json.dateSummaries || {};
           mapsState.stormPage = 0;
           mapsState.fetching = false;
           statusEl.textContent = mapsState.stormDates.length + ' storm dates loaded.';
           mapsRenderStormList();
+          // Kick off sequential HailTrace swath prefetch for ALL dates
+          mapsPrefetchAllHailTraceSwaths();
         })
         .catch(function (err) {
           mapsState.fetching = false;
@@ -4486,6 +4607,7 @@
           mapsState.stormDates = fallbackDates;
           mapsState.stormPage = 0;
           mapsRenderStormList();
+          mapsPrefetchAllHailTraceSwaths();
         });
     }
 
@@ -4604,9 +4726,32 @@
           var sub = p.address
             ? p.lat.toFixed(5) + ', ' + p.lng.toFixed(5)
             : 'Lat: ' + p.lat.toFixed(5) + '&nbsp;&nbsp;Lng: ' + p.lng.toFixed(5);
+          var stormHtml = '';
+          var hits = stormHitTest(p.lat, p.lng);
+          var hailHit = hits.hail;
+          var windHit = hits.wind;
+          var tornadoHit = hits.tornado;
+          if (hailHit && hailHit.hailIn > 0) {
+            var rgba = swathSeverityColor(hailHit.hailIn);
+            stormHtml += '<div style="background:rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',0.15);border-left:3px solid rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',0.9);padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">' +
+              '&#x1F9CA; ' + swathSeverityLabel(hailHit.hailIn) + ' (' + hailHit.dateStr + ')' +
+            '</div>';
+          }
+          if (windHit) {
+            stormHtml += '<div style="background:rgba(30,136,229,0.12);border-left:3px solid rgba(30,136,229,0.9);padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">' +
+              '&#x1F4A8; Approx. ' + windHit.mph + ' mph wind here (' + windHit.dateStr + ')' +
+            '</div>';
+          }
+          if (tornadoHit) {
+            stormHtml += '<div style="background:rgba(142,36,170,0.12);border-left:3px solid rgba(142,36,170,0.9);padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">' +
+              '&#x1F32A;&#xFE0F; Approx. ' + tornadoHit.label + ' tornado zone here (' + tornadoHit.dateStr + ')' +
+            '</div>';
+          }
+          if (stormHtml) stormHtml += '<div style="margin-bottom:4px;"></div>';
           return '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:13px;line-height:1.4;color:#1a1a1a;min-width:200px;">' +
             '<div style="font-weight:700;font-size:14px;margin-bottom:2px;">' + title + '</div>' +
             '<div style="color:#555;font-size:12px;margin-bottom:8px;">' + sub + '</div>' +
+            stormHtml +
             '<div style="display:flex;flex-direction:column;gap:6px;">' +
               '<button onclick="window._mapsPopupGetDirections()" style="width:100%;padding:8px 10px;border:1px solid #bbb;border-radius:8px;background:#f0f0f0;color:#222;font-size:13px;font-weight:600;cursor:pointer;text-align:center;">Get Directions</button>' +
               '<button onclick="window._mapsPopupStartInspection()" style="width:100%;padding:8px 10px;border:none;border-radius:8px;background:#8a6a2c;color:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;">Start Inspection</button>' +
@@ -4685,12 +4830,12 @@
 
     function hailInToColor(hailIn) {
       var h = Number(hailIn);
-      if (!isFinite(h)) return '#00e5ff';
+      if (!isFinite(h)) return '#66d966';
       if (h >= 3)   return '#ff00ff';
       if (h >= 2)   return '#ff3b30';
       if (h >= 1.5) return '#ff9500';
       if (h >= 1)   return '#ffd60a';
-      return '#00e5ff';
+      return '#66d966';
     }
 
     function drawLsrPointsOnMap(points) {
@@ -4754,7 +4899,7 @@
       dateDash = mapsNormalizeDate(dateDash);
       console.log('[Maps] Fetching LSR for date:', dateDash);
       var url = SUPABASE_URL + '/functions/v1/hail-lsr-by-date?date=' + encodeURIComponent(dateDash);
-      return fetch(url, { headers: { apikey: SUPABASE_ANON_KEY } })
+      return fetch(url, { headers: { Authorization: 'Bearer ' + SUPABASE_ANON_KEY, apikey: SUPABASE_ANON_KEY } })
         .then(function (resp) {
           return resp.text().then(function (raw) {
             if (!resp.ok) {
@@ -4912,20 +5057,613 @@
     //  AI SWATH RENDERER — Phase A fetch + Phase B canvas painter
     // ══════════════════════════════════════════════════════════════
 
-    // ── Severity → color (NWS-style) ──
+    // ── Severity → color (hail-only, no blue/grey/cyan) ──
     function swathSeverityColor(hailIn) {
-      if (hailIn >= 3)   return [255,   0, 255, 0.55]; // magenta
-      if (hailIn >= 2)   return [255,  59,  48, 0.50]; // red
-      if (hailIn >= 1.5) return [255, 149,   0, 0.45]; // orange
-      if (hailIn >= 1)   return [255, 214,  10, 0.40]; // yellow
-      return                    [  0, 229, 255, 0.35]; // cyan
+      if (hailIn >= 3)    return [140,  55, 160, 0.45]; // purple    (>3")
+      if (hailIn >= 2.5)  return [195,  45,  40, 0.42]; // red       (2.50–3")
+      if (hailIn >= 1.75) return [210, 130,  30, 0.38]; // orange    (1.75–2.50")
+      if (hailIn >= 1.25) return [200, 170,  20, 0.35]; // dark yellow (1.25–1.75")
+      return                     [220, 200,  50, 0.32]; // yellow    (≤1.25")
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  HAIL FIELD OVERLAY — Raster-style intensity field renderer
+    //  Replaces flat polygon / connected-point rendering with a
+    //  meteorologist-painted continuous hail field with color bands,
+    //  feathered edges, and variable corridor width.
+    // ══════════════════════════════════════════════════════════════
+
+    // Hail size → color band (RGB).  Used by HailFieldOverlay.
+    // Bands: yellow < 1.25 < dark-yellow < 1.75 < orange < 2.50 < red < 3.0 < purple
+    var HAIL_FIELD_BANDS = [
+      { min: 0.00, max: 1.25, r: 220, g: 200, b:  50 }, // yellow
+      { min: 1.25, max: 1.75, r: 200, g: 170, b:  20 }, // dark yellow
+      { min: 1.75, max: 2.50, r: 210, g: 130, b:  30 }, // orange
+      { min: 2.50, max: 3.00, r: 195, g:  45, b:  40 }, // red
+      { min: 3.00, max: 99,   r: 140, g:  55, b: 160 }  // purple
+    ];
+
+    function _hailFieldColor(hailIn) {
+      for (var i = HAIL_FIELD_BANDS.length - 1; i >= 0; i--) {
+        if (hailIn >= HAIL_FIELD_BANDS[i].min) return HAIL_FIELD_BANDS[i];
+      }
+      return HAIL_FIELD_BANDS[0];
+    }
+
+    // Interpolate between two color bands based on fractional position
+    function _hailFieldColorLerp(hailIn) {
+      var bands = HAIL_FIELD_BANDS;
+      // Clamp
+      if (hailIn <= bands[0].min) return { r: bands[0].r, g: bands[0].g, b: bands[0].b };
+      if (hailIn >= bands[bands.length - 1].min + 1) {
+        var last = bands[bands.length - 1];
+        return { r: last.r, g: last.g, b: last.b };
+      }
+      // Find surrounding bands
+      for (var i = 0; i < bands.length - 1; i++) {
+        if (hailIn >= bands[i].min && hailIn < bands[i + 1].min) {
+          var t = (hailIn - bands[i].min) / (bands[i + 1].min - bands[i].min);
+          return {
+            r: Math.round(bands[i].r + (bands[i + 1].r - bands[i].r) * t),
+            g: Math.round(bands[i].g + (bands[i + 1].g - bands[i].g) * t),
+            b: Math.round(bands[i].b + (bands[i + 1].b - bands[i].b) * t)
+          };
+        }
+      }
+      var top = bands[bands.length - 1];
+      return { r: top.r, g: top.g, b: top.b };
+    }
+
+    // ── HailFieldOverlay — google.maps.OverlayView subclass ──
+    // Renders a continuous IDW-interpolated hail intensity field as a raster
+    // canvas overlay.  Each pixel is colored by interpolated hail size with
+    // feathered (Gaussian-falloff) edges.
+    //
+    // Constructor args:
+    //   map      — google.maps.Map instance
+    //   points   — array of { lat, lon, hail_in [, confidence] }
+    //   options  — { influenceKm: number, resolution: number }
+    //
+    // The overlay re-renders on every viewport change (zoom / pan).
+    function HailFieldOverlay(map, points, options) {
+      this.points_ = points || [];
+      this.options_ = options || {};
+      this.canvas_ = null;
+      if (typeof this.setMap === 'function') this.setMap(map);
+    }
+
+    var _hailFieldOverlayReady = false;
+    function ensureHailFieldOverlayProto() {
+      if (_hailFieldOverlayReady) return;
+      if (!window.google || !google.maps || !google.maps.OverlayView) return;
+      HailFieldOverlay.prototype = new google.maps.OverlayView();
+      HailFieldOverlay.prototype.constructor = HailFieldOverlay;
+
+      HailFieldOverlay.prototype.onAdd = function () {
+        var canvas = document.createElement('canvas');
+        canvas.style.position = 'absolute';
+        canvas.style.pointerEvents = 'none';
+        this.canvas_ = canvas;
+        var panes = this.getPanes();
+        if (panes && panes.overlayLayer) panes.overlayLayer.appendChild(canvas);
+      };
+
+      HailFieldOverlay.prototype.onRemove = function () {
+        if (this.canvas_ && this.canvas_.parentNode) {
+          this.canvas_.parentNode.removeChild(this.canvas_);
+        }
+        this.canvas_ = null;
+      };
+
+      HailFieldOverlay.prototype.draw = function () {
+        if (!this.canvas_ || !this.points_.length) return;
+        var proj = this.getProjection();
+        if (!proj) return;
+        var map = this.getMap();
+        if (!map) return;
+        var bounds = map.getBounds();
+        if (!bounds) return;
+
+        var sw = proj.fromLatLngToDivPixel(bounds.getSouthWest());
+        var ne = proj.fromLatLngToDivPixel(bounds.getNorthEast());
+        var vpLeft = Math.floor(Math.min(sw.x, ne.x));
+        var vpTop  = Math.floor(Math.min(sw.y, ne.y));
+        var cW = Math.ceil(Math.abs(ne.x - sw.x)) + 1;
+        var cH = Math.ceil(Math.abs(sw.y - ne.y)) + 1;
+        if (cW < 1 || cH < 1) return;
+
+        // Down-sample for performance — render at reduced resolution then scale up
+        var RES = this.options_.resolution || 4; // pixels per sample cell
+        var fieldW = Math.ceil(cW / RES);
+        var fieldH = Math.ceil(cH / RES);
+        if (fieldW < 2 || fieldH < 2) return;
+
+        var canvas = this.canvas_;
+        canvas.width  = cW;
+        canvas.height = cH;
+        canvas.style.left   = vpLeft + 'px';
+        canvas.style.top    = vpTop  + 'px';
+        canvas.style.width  = cW + 'px';
+        canvas.style.height = cH + 'px';
+
+        var offX = -vpLeft;
+        var offY = -vpTop;
+
+        // Convert hail points to pixel coords
+        var influenceKm = this.options_.influenceKm || 35;
+        var pts = [];
+        for (var i = 0; i < this.points_.length; i++) {
+          var p = this.points_[i];
+          var lat = Number(p.lat), lon = Number(p.lon);
+          if (!isFinite(lat) || !isFinite(lon)) continue;
+          var hail = Number(p.hail_in) || 1.0;
+          var conf = Number(p.confidence) || 1.0;
+          var ll = new google.maps.LatLng(lat, lon);
+          var px = proj.fromLatLngToDivPixel(ll);
+          pts.push({ x: px.x + offX, y: px.y + offY, hail: hail, conf: conf, lat: lat });
+        }
+        if (!pts.length) return;
+
+        // Compute pixel-space influence radius from km
+        // Use the first point's latitude to get approximate pxPerKm
+        var refA = proj.fromLatLngToDivPixel(new google.maps.LatLng(pts[0].lat, 0));
+        var refB = proj.fromLatLngToDivPixel(new google.maps.LatLng(pts[0].lat + 0.01, 0));
+        var pxPerDeg = Math.abs(refB.y - refA.y) || 1;
+        var pxPerKm = pxPerDeg / 1.111;
+        var influencePx = influenceKm * pxPerKm;
+        var influenceCells = influencePx / RES;
+        var influenceCells2 = influenceCells * influenceCells;
+
+        // ── Build IDW intensity field ──
+        // For each cell in the low-res grid, compute weighted-average hail size
+        // using inverse-distance weighting with Gaussian falloff.
+        var field = new Float32Array(fieldW * fieldH);
+        var weights = new Float32Array(fieldW * fieldH);
+
+        for (var pi = 0; pi < pts.length; pi++) {
+          var pt = pts[pi];
+          var cx = pt.x / RES;
+          var cy = pt.y / RES;
+          var r = Math.ceil(influenceCells);
+          var x0 = Math.max(0, Math.floor(cx - r));
+          var x1 = Math.min(fieldW - 1, Math.ceil(cx + r));
+          var y0 = Math.max(0, Math.floor(cy - r));
+          var y1 = Math.min(fieldH - 1, Math.ceil(cy + r));
+
+          for (var fy = y0; fy <= y1; fy++) {
+            for (var fx = x0; fx <= x1; fx++) {
+              var dx = fx - cx, dy = fy - cy;
+              var d2 = dx * dx + dy * dy;
+              if (d2 > influenceCells2) continue;
+              // Gaussian kernel: w = exp(-3 * d²/R²)  → drops to ~5% at edge
+              var w = Math.exp(-3.0 * d2 / influenceCells2) * pt.conf;
+              var idx = fy * fieldW + fx;
+              field[idx] += pt.hail * w;
+              weights[idx] += w;
+            }
+          }
+        }
+
+        // Normalize field
+        for (var k = 0; k < field.length; k++) {
+          if (weights[k] > 0.001) {
+            field[k] /= weights[k];
+          } else {
+            field[k] = 0;
+          }
+        }
+
+        // ── Render to canvas with color bands + feathered alpha ──
+        // Use offscreen small canvas, then scale up with imageSmoothingEnabled
+        var offCanvas = document.createElement('canvas');
+        offCanvas.width = fieldW;
+        offCanvas.height = fieldH;
+        var offCtx = offCanvas.getContext('2d');
+        var imgData = offCtx.createImageData(fieldW, fieldH);
+        var px8 = imgData.data;
+
+        var opacityVal = typeof mapsState !== 'undefined' ? (mapsState.swathOpacity != null ? mapsState.swathOpacity : 0.3) : 0.3;
+        // Map slider 0–1 → peak alpha 0–220
+        var peakAlpha = Math.round(Math.min(220, opacityVal * 2.5 * 255));
+
+        for (var fy = 0; fy < fieldH; fy++) {
+          for (var fx = 0; fx < fieldW; fx++) {
+            var idx = fy * fieldW + fx;
+            var hVal = field[idx];
+            if (hVal < 0.5) continue; // below minimum displayable hail size
+
+            // Weight = confidence that this cell has hail (from IDW weights sum)
+            var wSum = weights[idx];
+            // Feathered alpha: stronger near data points, fades at edges
+            // wSum near 0 = field edge → low alpha; wSum high = near point → full alpha
+            var edgeFade = Math.min(1.0, wSum * 4.0);
+            // Cubic ease for soft feathering
+            edgeFade = edgeFade * edgeFade * (3 - 2 * edgeFade);
+
+            var col = _hailFieldColorLerp(hVal);
+            var off = idx * 4;
+            px8[off]     = col.r;
+            px8[off + 1] = col.g;
+            px8[off + 2] = col.b;
+            px8[off + 3] = Math.round(peakAlpha * edgeFade);
+          }
+        }
+
+        offCtx.putImageData(imgData, 0, 0);
+
+        // Scale up to full canvas size with smoothing for feathered look
+        var mainCtx = canvas.getContext('2d');
+        mainCtx.imageSmoothingEnabled = true;
+        mainCtx.imageSmoothingQuality = 'high';
+        mainCtx.clearRect(0, 0, cW, cH);
+        mainCtx.drawImage(offCanvas, 0, 0, fieldW, fieldH, 0, 0, cW, cH);
+      };
+
+      HailFieldOverlay.prototype.hide = function () {
+        if (this.canvas_) this.canvas_.style.display = 'none';
+      };
+      HailFieldOverlay.prototype.show = function () {
+        if (this.canvas_) this.canvas_.style.display = '';
+      };
+      HailFieldOverlay.prototype.destroy = function () {
+        if (typeof this.setMap === 'function') this.setMap(null);
+      };
+
+      _hailFieldOverlayReady = true;
+    }
+
+    // ── Draw hail field overlay for a date using point data ──
+    function mapsDrawHailFieldForDate(dateStr, points) {
+      if (!points || points.length < 2) return false;
+      ensureHailFieldOverlayProto();
+      if (!_hailFieldOverlayReady || !mapsState.map) return false;
+
+      // Remove any existing field overlay
+      mapsRemoveHailFieldForDate(dateStr);
+
+      // Determine influence radius based on point spread
+      var latMin = 90, latMax = -90, lonMin = 180, lonMax = -180;
+      for (var i = 0; i < points.length; i++) {
+        var la = Number(points[i].lat), lo = Number(points[i].lon);
+        if (!isFinite(la) || !isFinite(lo)) continue;
+        if (la < latMin) latMin = la;
+        if (la > latMax) latMax = la;
+        if (lo < lonMin) lonMin = lo;
+        if (lo > lonMax) lonMax = lo;
+      }
+      var spanKm = Math.sqrt(
+        Math.pow((latMax - latMin) * 111.1, 2) +
+        Math.pow((lonMax - lonMin) * 111.1 * Math.cos((latMin + latMax) / 2 * Math.PI / 180), 2)
+      );
+      // Influence: ~15% of total span, min 15km, max 80km
+      var influenceKm = Math.max(15, Math.min(80, spanKm * 0.15));
+
+      var overlay = new HailFieldOverlay(mapsState.map, points, {
+        influenceKm: influenceKm,
+        resolution: 4
+      });
+      mapsState.hailFieldOverlays[dateStr] = overlay;
+      console.log('[mapsDrawHailFieldForDate] ' + dateStr + ': ' + points.length + ' points, influenceKm=' + influenceKm.toFixed(1));
+      return true;
+    }
+
+    // ── Remove hail field overlay for a date ──
+    function mapsRemoveHailFieldForDate(dateStr) {
+      var existing = mapsState.hailFieldOverlays[dateStr];
+      if (existing) {
+        try { existing.destroy(); } catch (e) {}
+        delete mapsState.hailFieldOverlays[dateStr];
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  HAIL SIZE BAND POLYGONS — nested convex-hull zones per band
+    // ══════════════════════════════════════════════════════════════
+
+    var HAIL_SIZE_BANDS = [
+      { threshold: 0.50, label: '\u00BD\u2013 1\u2033',    fill: '#FFD700', stroke: '#B8960F' },
+      { threshold: 1.00, label: '1\u2013 1\u00BD\u2033',   fill: '#FF8C00', stroke: '#CC7000' },
+      { threshold: 1.50, label: '1\u00BD\u2013 2\u2033',   fill: '#FF3B30', stroke: '#CC2F26' },
+      { threshold: 2.00, label: '2\u2013 2\u00BD\u2033',   fill: '#E040FB', stroke: '#AB30BC' },
+      { threshold: 2.50, label: '2\u00BD\u2033 +',          fill: '#7B1FA2', stroke: '#4A0072' }
+    ];
+
+    // ── Wind speed bands (blue palette) ──
+    var WIND_SPEED_BANDS = [
+      { threshold: 58,  label: '58\u201372 mph',  fill: '#64B5F6', stroke: '#1E88E5' },
+      { threshold: 73,  label: '73\u201389 mph',  fill: '#42A5F5', stroke: '#1565C0' },
+      { threshold: 90,  label: '90\u2013109 mph', fill: '#1E88E5', stroke: '#0D47A1' },
+      { threshold: 110, label: '110+ mph',          fill: '#0D47A1', stroke: '#002171' }
+    ];
+
+    // ── Tornado EF-scale bands (purple palette) ──
+    var TORNADO_EF_BANDS = [
+      { threshold: 0, label: 'EF0',  fill: '#CE93D8', stroke: '#AB47BC' },
+      { threshold: 1, label: 'EF1',  fill: '#AB47BC', stroke: '#8E24AA' },
+      { threshold: 2, label: 'EF2',  fill: '#8E24AA', stroke: '#6A1B9A' },
+      { threshold: 3, label: 'EF3',  fill: '#6A1B9A', stroke: '#4A148C' },
+      { threshold: 4, label: 'EF4\u2013EF5', fill: '#4A148C', stroke: '#2A0054' }
+    ];
+
+    // Andrew's monotone-chain convex hull — returns [{lat,lon}]
+    function _hullCross(o, a, b) {
+      return (a.lon - o.lon) * (b.lat - o.lat) - (a.lat - o.lat) * (b.lon - o.lon);
+    }
+    function _convexHull(pts) {
+      if (pts.length < 3) return pts.slice();
+      var s = pts.slice().sort(function (a, b) { return a.lon !== b.lon ? a.lon - b.lon : a.lat - b.lat; });
+      var lo = [], hi = [];
+      for (var i = 0; i < s.length; i++) {
+        while (lo.length >= 2 && _hullCross(lo[lo.length - 2], lo[lo.length - 1], s[i]) <= 0) lo.pop();
+        lo.push(s[i]);
+      }
+      for (var i = s.length - 1; i >= 0; i--) {
+        while (hi.length >= 2 && _hullCross(hi[hi.length - 2], hi[hi.length - 1], s[i]) <= 0) hi.pop();
+        hi.push(s[i]);
+      }
+      lo.pop(); hi.pop();
+      return lo.concat(hi);
+    }
+    // Expand hull outward from centroid
+    function _bufferHull(hull, bufDeg) {
+      if (!hull.length) return hull;
+      var cx = 0, cy = 0;
+      for (var i = 0; i < hull.length; i++) { cx += hull[i].lon; cy += hull[i].lat; }
+      cx /= hull.length; cy /= hull.length;
+      return hull.map(function (p) {
+        var dx = p.lon - cx, dy = p.lat - cy;
+        var d = Math.sqrt(dx * dx + dy * dy) || 0.001;
+        return { lat: p.lat + (dy / d) * bufDeg, lon: p.lon + (dx / d) * bufDeg };
+      });
+    }
+
+    // ── Draw nested hail-size band polygons for a date ──
+    function mapsDrawHailBandsForDate(dateStr, points) {
+      mapsRemoveHailBandsForDate(dateStr);
+      if (!points || points.length < 3 || !mapsState.map) return false;
+
+      var allPts = [];
+      for (var i = 0; i < points.length; i++) {
+        var la = Number(points[i].lat), lo = Number(points[i].lon), h = Number(points[i].hail_in);
+        if (isFinite(la) && isFinite(lo) && isFinite(h) && h >= 0.5)
+          allPts.push({ lat: la, lon: lo, hail: h });
+      }
+      if (allPts.length < 3) return false;
+
+      var opacity = mapsState.swathOpacity || 0.3;
+      var bufDeg = 0.08; // ~9 km buffer around tight convex hull
+      var polys = [];
+
+      // Draw bands lowest-threshold first (bottom) → highest last (top)
+      for (var bi = 0; bi < HAIL_SIZE_BANDS.length; bi++) {
+        var band = HAIL_SIZE_BANDS[bi];
+        // Nested: each band includes all points >= threshold
+        var bPts = allPts.filter(function (p) { return p.hail >= band.threshold; });
+        if (bPts.length < 3) continue;
+
+        var hull = _convexHull(bPts);
+        if (hull.length < 3) continue;
+        hull = _bufferHull(hull, bufDeg);
+
+        var path = hull.map(function (p) { return { lat: p.lat, lng: p.lon }; });
+        var poly = new google.maps.Polygon({
+          paths: path,
+          strokeColor: band.stroke,
+          strokeOpacity: 0.95,
+          strokeWeight: 2.5,
+          fillColor: band.fill,
+          fillOpacity: 0.28 + bi * 0.03,
+          map: mapsState.map,
+          zIndex: 1000 + bi,
+          clickable: true
+        });
+
+        // Band info on click
+        (function (poly, band, cnt) {
+          var iw = new google.maps.InfoWindow({
+            content: '<div style="font:600 14px system-ui;color:#1a1a1a;">' +
+              '<span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:' + band.fill + ';border:1px solid ' + band.stroke + ';vertical-align:middle;margin-right:6px;"></span>' +
+              band.label + ' hail zone' +
+              '<div style="font-weight:400;font-size:12px;color:#555;margin-top:4px;">' + cnt + ' report' + (cnt === 1 ? '' : 's') + ' in this zone</div>' +
+              '</div>'
+          });
+          poly.addListener('click', function (e) {
+            iw.setPosition(e.latLng);
+            iw.open(mapsState.map);
+          });
+        })(poly, band, bPts.length);
+
+        polys.push(poly);
+      }
+
+      if (!polys.length) return false;
+      mapsState.hailBandPolygons[dateStr] = polys;
+      console.log('[mapsDrawHailBands] ' + dateStr + ': ' + polys.length + ' band polygon(s) from ' + allPts.length + ' points');
+      mapsShowHailLegend();
+      return true;
+    }
+
+    function mapsRemoveHailBandsForDate(dateStr) {
+      var polys = mapsState.hailBandPolygons[dateStr];
+      if (polys) {
+        polys.forEach(function (p) { try { p.setMap(null); } catch (_) {} });
+        delete mapsState.hailBandPolygons[dateStr];
+      }
+      // Hide legend if no band polygons remain
+      var anyBands = Object.keys(mapsState.hailBandPolygons).length > 0;
+      if (!anyBands) mapsHideHailLegend();
+    }
+
+    // ── Hail band legend show/hide ──
+    function mapsShowHailLegend() {
+      var el = document.getElementById('hail-band-legend');
+      if (el) el.style.display = '';
+    }
+    function mapsHideHailLegend() {
+      var el = document.getElementById('hail-band-legend');
+      if (el) el.style.display = 'none';
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  WIND BAND POLYGONS — nested convex-hull zones by wind speed
+    // ══════════════════════════════════════════════════════════════
+    function mapsDrawWindBandsForDate(dateStr, points) {
+      mapsRemoveWindBandsForDate(dateStr);
+      if (!points || points.length < 3 || !mapsState.map) return false;
+
+      var allPts = [];
+      for (var i = 0; i < points.length; i++) {
+        var la = Number(points[i].lat), lo = Number(points[i].lon), m = Number(points[i].magnitude);
+        if (isFinite(la) && isFinite(lo) && isFinite(m) && m >= 58)
+          allPts.push({ lat: la, lon: lo, mag: m });
+      }
+      if (allPts.length < 3) return false;
+
+      var opacity = mapsState.swathOpacity || 0.3;
+      var bufDeg = 0.08;
+      var polys = [];
+
+      for (var bi = 0; bi < WIND_SPEED_BANDS.length; bi++) {
+        var band = WIND_SPEED_BANDS[bi];
+        var bPts = allPts.filter(function (p) { return p.mag >= band.threshold; });
+        if (bPts.length < 3) continue;
+        var hull = _convexHull(bPts);
+        if (hull.length < 3) continue;
+        hull = _bufferHull(hull, bufDeg);
+
+        var path = hull.map(function (p) { return { lat: p.lat, lng: p.lon }; });
+        var poly = new google.maps.Polygon({
+          paths: path,
+          strokeColor: band.stroke,
+          strokeOpacity: 0.95,
+          strokeWeight: 2.5,
+          fillColor: band.fill,
+          fillOpacity: 0.28 + bi * 0.03,
+          map: mapsState.map,
+          zIndex: 2000 + bi,
+          clickable: true
+        });
+
+        (function (poly, band, cnt) {
+          var iw = new google.maps.InfoWindow({
+            content: '<div style="font:600 14px system-ui;color:#1a1a1a;">' +
+              '<span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:' + band.fill + ';border:1px solid ' + band.stroke + ';vertical-align:middle;margin-right:6px;"></span>' +
+              band.label + ' wind zone' +
+              '<div style="font-weight:400;font-size:12px;color:#555;margin-top:4px;">' + cnt + ' report' + (cnt === 1 ? '' : 's') + ' in this zone</div>' +
+              '</div>'
+          });
+          poly.addListener('click', function (e) { iw.setPosition(e.latLng); iw.open(mapsState.map); });
+        })(poly, band, bPts.length);
+
+        polys.push(poly);
+      }
+
+      if (!polys.length) return false;
+      mapsState.windBandPolygons[dateStr] = polys;
+      console.log('[mapsDrawWindBands] ' + dateStr + ': ' + polys.length + ' band polygon(s) from ' + allPts.length + ' wind points');
+      return true;
+    }
+
+    function mapsRemoveWindBandsForDate(dateStr) {
+      var polys = mapsState.windBandPolygons[dateStr];
+      if (polys) {
+        polys.forEach(function (p) { try { p.setMap(null); } catch (_) {} });
+        delete mapsState.windBandPolygons[dateStr];
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  TORNADO BAND POLYGONS — nested convex-hull zones by EF scale
+    // ══════════════════════════════════════════════════════════════
+    function mapsDrawTornadoBandsForDate(dateStr, points) {
+      mapsRemoveTornadoBandsForDate(dateStr);
+      if (!points || points.length < 3 || !mapsState.map) return false;
+
+      var allPts = [];
+      for (var i = 0; i < points.length; i++) {
+        var la = Number(points[i].lat), lo = Number(points[i].lon), m = Number(points[i].magnitude);
+        if (isFinite(la) && isFinite(lo) && isFinite(m) && m >= 0)
+          allPts.push({ lat: la, lon: lo, mag: m });
+      }
+      if (allPts.length < 3) return false;
+
+      var opacity = mapsState.swathOpacity || 0.3;
+      var bufDeg = 0.06;
+      var polys = [];
+
+      for (var bi = 0; bi < TORNADO_EF_BANDS.length; bi++) {
+        var band = TORNADO_EF_BANDS[bi];
+        var bPts = allPts.filter(function (p) { return p.mag >= band.threshold; });
+        if (bPts.length < 3) continue;
+        var hull = _convexHull(bPts);
+        if (hull.length < 3) continue;
+        hull = _bufferHull(hull, bufDeg);
+
+        var path = hull.map(function (p) { return { lat: p.lat, lng: p.lon }; });
+        var poly = new google.maps.Polygon({
+          paths: path,
+          strokeColor: band.stroke,
+          strokeOpacity: 0.95,
+          strokeWeight: 2.5,
+          fillColor: band.fill,
+          fillOpacity: 0.28 + bi * 0.03,
+          map: mapsState.map,
+          zIndex: 3000 + bi,
+          clickable: true
+        });
+
+        (function (poly, band, cnt) {
+          var iw = new google.maps.InfoWindow({
+            content: '<div style="font:600 14px system-ui;color:#1a1a1a;">' +
+              '<span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:' + band.fill + ';border:1px solid ' + band.stroke + ';vertical-align:middle;margin-right:6px;"></span>' +
+              band.label + ' tornado zone' +
+              '<div style="font-weight:400;font-size:12px;color:#555;margin-top:4px;">' + cnt + ' report' + (cnt === 1 ? '' : 's') + ' in this zone</div>' +
+              '</div>'
+          });
+          poly.addListener('click', function (e) { iw.setPosition(e.latLng); iw.open(mapsState.map); });
+        })(poly, band, bPts.length);
+
+        polys.push(poly);
+      }
+
+      if (!polys.length) return false;
+      mapsState.tornadoBandPolygons[dateStr] = polys;
+      console.log('[mapsDrawTornadoBands] ' + dateStr + ': ' + polys.length + ' band polygon(s) from ' + allPts.length + ' tornado points');
+      return true;
+    }
+
+    function mapsRemoveTornadoBandsForDate(dateStr) {
+      var polys = mapsState.tornadoBandPolygons[dateStr];
+      if (polys) {
+        polys.forEach(function (p) { try { p.setMap(null); } catch (_) {} });
+        delete mapsState.tornadoBandPolygons[dateStr];
+      }
+    }
+
+    // ── Fetch wind/tornado points for a date ──
+    function fetchStormLsrByDate(dateStr, stormType) {
+      dateStr = mapsNormalizeDate(dateStr);
+      console.log('[Maps] Fetching ' + stormType + ' LSR for date:', dateStr);
+      var url = SUPABASE_URL + '/functions/v1/storm-lsr-by-date?date=' + encodeURIComponent(dateStr) + '&type=' + encodeURIComponent(stormType);
+      return fetch(url, { headers: { Authorization: 'Bearer ' + SUPABASE_ANON_KEY, apikey: SUPABASE_ANON_KEY } })
+        .then(function (resp) {
+          return resp.text().then(function (raw) {
+            if (!resp.ok) throw new Error('storm-lsr-by-date HTTP ' + resp.status);
+            var json = JSON.parse(raw);
+            return Array.isArray(json && json.points) ? json.points : [];
+          });
+        })
+        .catch(function (err) {
+          console.warn('[Maps] storm-lsr-by-date ' + stormType + ' fetch failed:', err && err.message || err);
+          return [];
+        });
     }
 
     // ── Fetch swath descriptor from edge function ──
     function fetchSwathDescriptor(dateStr) {
       var url = SUPABASE_URL + '/functions/v1/swath-render?date=' + encodeURIComponent(dateStr);
       console.log('[fetchSwathDescriptor] ' + dateStr + ' url:', url);
-      return fetch(url, { headers: { apikey: SUPABASE_ANON_KEY } })
+      return fetch(url, { headers: { Authorization: 'Bearer ' + SUPABASE_ANON_KEY, apikey: SUPABASE_ANON_KEY } })
         .then(function (resp) {
           if (!resp.ok) throw new Error('swath-render HTTP ' + resp.status);
           return resp.json();
@@ -4947,7 +5685,7 @@
     function SwathCanvasOverlay(map, descriptor) {
       this.descriptor_ = descriptor;
       this.canvas_ = null;
-      this.setMap(map);
+      if (typeof this.setMap === 'function') this.setMap(map);
     }
     // Inherit from OverlayView once google.maps is loaded (deferred setup)
     var _swathOverlayReady = false;
@@ -4977,131 +5715,265 @@
         if (!this.canvas_ || !this.descriptor_) return;
         var proj = this.getProjection();
         if (!proj) return;
+        var map = this.getMap();
+        if (!map) return;
         var corridors = this.descriptor_.corridors || [];
         if (!corridors.length) return;
 
-        // Compute pixel bounds across all corridors
-        var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        var maxWidthPx = 0;
-        var corridorPixels = [];
-
-        for (var ci = 0; ci < corridors.length; ci++) {
-          var c = corridors[ci];
-          var pts = [];
-          for (var pi = 0; pi < c.centerline.length; pi++) {
-            var ll = new google.maps.LatLng(c.centerline[pi][1], c.centerline[pi][0]);
-            var px = proj.fromLatLngToDivPixel(ll);
-            pts.push(px);
-            if (px.x < minX) minX = px.x;
-            if (px.y < minY) minY = px.y;
-            if (px.x > maxX) maxX = px.x;
-            if (px.y > maxY) maxY = px.y;
-          }
-          // Convert widthProfile km → pixels (approximate)
-          var widthPx = [];
-          for (var wi = 0; wi < c.widthProfile.length; wi++) {
-            // use two points 0.01° apart near first centerline point to get scale
-            var refA = proj.fromLatLngToDivPixel(new google.maps.LatLng(c.centerline[0][1], c.centerline[0][0]));
-            var refB = proj.fromLatLngToDivPixel(new google.maps.LatLng(c.centerline[0][1] + 0.01, c.centerline[0][0]));
-            var pxPerDeg = Math.abs(refB.y - refA.y) || 1;
-            var pxPerKm = pxPerDeg / 1.111; // 1° lat ≈ 111.1 km
-            var w = c.widthProfile[wi] * pxPerKm;
-            w = Math.max(4, Math.min(w, 600)); // clamp
-            widthPx.push(w);
-            if (w > maxWidthPx) maxWidthPx = w;
-          }
-          corridorPixels.push({ pts: pts, widthPx: widthPx, severity: c.severityProfile || [] });
-        }
-
-        var pad = maxWidthPx + 20;
-        var cW = Math.ceil(maxX - minX + pad * 2);
-        var cH = Math.ceil(maxY - minY + pad * 2);
-        if (cW < 1 || cH < 1 || cW > 8000 || cH > 8000) return;
+        // ── Anchor canvas to the current map viewport ──
+        var bounds = map.getBounds();
+        if (!bounds) return;
+        var sw = proj.fromLatLngToDivPixel(bounds.getSouthWest());
+        var ne = proj.fromLatLngToDivPixel(bounds.getNorthEast());
+        var vpLeft = Math.floor(Math.min(sw.x, ne.x));
+        var vpTop  = Math.floor(Math.min(sw.y, ne.y));
+        var cW = Math.ceil(Math.abs(ne.x - sw.x)) + 1;
+        var cH = Math.ceil(Math.abs(sw.y - ne.y)) + 1;
+        if (cW < 1 || cH < 1) return;
 
         var canvas = this.canvas_;
-        canvas.width = cW;
+        canvas.width  = cW;
         canvas.height = cH;
-        canvas.style.left = Math.floor(minX - pad) + 'px';
-        canvas.style.top  = Math.floor(minY - pad) + 'px';
+        canvas.style.left   = vpLeft + 'px';
+        canvas.style.top    = vpTop  + 'px';
         canvas.style.width  = cW + 'px';
         canvas.style.height = cH + 'px';
 
-        var ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, cW, cH);
+        // Offset: convert div-pixel coords → canvas-local coords
+        var offX = -vpLeft;
+        var offY = -vpTop;
 
-        var offX = -(minX - pad);
-        var offY = -(minY - pad);
+        // Width scales naturally via pxPerKm (projection handles zoom).
+        // No artificial zoom multiplier — keeps same geographic footprint at every zoom.
 
-        // Draw each corridor as a smooth tapered stroke
-        for (var di = 0; di < corridorPixels.length; di++) {
-          var cd = corridorPixels[di];
-          if (cd.pts.length < 2) continue;
+        // Minimum pixel half-width: just enough to see a thin line at far zoom
+        var minHalfWidthPx = 2;
 
-          // Draw filled corridor as series of trapezoids between consecutive points
-          for (var si = 0; si < cd.pts.length - 1; si++) {
-            var ax = cd.pts[si].x + offX;
-            var ay = cd.pts[si].y + offY;
-            var bx = cd.pts[si + 1].x + offX;
-            var by = cd.pts[si + 1].y + offY;
-
-            var wA = (cd.widthPx[si] || 4) / 2;
-            var wB = (cd.widthPx[Math.min(si + 1, cd.widthPx.length - 1)] || 4) / 2;
-
-            // Severity color (use midpoint)
-            var sevA = cd.severity[si] || 0;
-            var sevB = cd.severity[Math.min(si + 1, cd.severity.length - 1)] || 0;
-            var sev = (sevA + sevB) / 2;
-            var rgba = swathSeverityColor(sev);
-
-            // Perpendicular direction
-            var dx = bx - ax;
-            var dy = by - ay;
-            var len = Math.sqrt(dx * dx + dy * dy) || 1;
-            var nx = -dy / len;
-            var ny = dx / len;
-
-            ctx.beginPath();
-            ctx.moveTo(ax + nx * wA, ay + ny * wA);
-            ctx.lineTo(bx + nx * wB, by + ny * wB);
-            ctx.lineTo(bx - nx * wB, by - ny * wB);
-            ctx.lineTo(ax - nx * wA, ay - ny * wA);
-            ctx.closePath();
-            ctx.fillStyle = 'rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',' + rgba[3] + ')';
-            ctx.fill();
+        // Chaikin corner-cutting smoother (3 passes for rounded corridors)
+        function chaikinSmooth(pts, passes) {
+          if (!passes || pts.length < 3) return pts;
+          var out = pts;
+          for (var p = 0; p < passes; p++) {
+            var next = [out[0]];
+            for (var i = 0; i < out.length - 1; i++) {
+              next.push({ x: out[i].x * 0.75 + out[i+1].x * 0.25,
+                          y: out[i].y * 0.75 + out[i+1].y * 0.25 });
+              next.push({ x: out[i].x * 0.25 + out[i+1].x * 0.75,
+                          y: out[i].y * 0.25 + out[i+1].y * 0.75 });
+            }
+            next.push(out[out.length - 1]);
+            out = next;
           }
-
-          // Second pass: soft edge glow along centerline
-          ctx.save();
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.lineJoin = 'round';
-          ctx.lineCap = 'round';
-
-          for (var si2 = 0; si2 < cd.pts.length - 1; si2++) {
-            var sev2 = (cd.severity[si2] || 0 + cd.severity[Math.min(si2 + 1, cd.severity.length - 1)] || 0) / 2;
-            var rgba2 = swathSeverityColor(sev2);
-            var lw = (cd.widthPx[si2] || 4) * 0.6;
-
-            ctx.beginPath();
-            ctx.moveTo(cd.pts[si2].x + offX, cd.pts[si2].y + offY);
-            ctx.lineTo(cd.pts[si2 + 1].x + offX, cd.pts[si2 + 1].y + offY);
-            ctx.strokeStyle = 'rgba(' + rgba2[0] + ',' + rgba2[1] + ',' + rgba2[2] + ',' + (rgba2[3] * 0.3) + ')';
-            ctx.lineWidth = lw;
-            ctx.stroke();
-          }
-          ctx.restore();
+          return out;
         }
 
-        // Apply blur for natural soft-edge look
-        try {
-          if (typeof ctx.filter !== 'undefined') {
-            var imgData = ctx.getImageData(0, 0, cW, cH);
-            ctx.clearRect(0, 0, cW, cH);
-            ctx.filter = 'blur(2px)';
-            ctx.putImageData(imgData, 0, 0);
-            // Re-draw on top of blurred to maintain core intensity
-            ctx.filter = 'none';
+        // Moving-average smoother for width/severity profiles
+        function smoothProfile(arr, radius) {
+          if (arr.length < 3 || radius < 1) return arr;
+          var out = [];
+          for (var i = 0; i < arr.length; i++) {
+            var sum = 0, cnt = 0;
+            for (var j = Math.max(0, i - radius); j <= Math.min(arr.length - 1, i + radius); j++) {
+              sum += arr[j]; cnt++;
+            }
+            out.push(sum / cnt);
           }
-        } catch (e) { /* filter not supported — skip blur */ }
+          return out;
+        }
+
+        // Apply end taper to a profile array (first/last taperFrac of length)
+        // Uses cubic ease for a smooth meteorological taper that narrows to near-zero
+        function taperEnds(arr, taperFrac) {
+          var taperLen = Math.max(3, Math.floor(arr.length * taperFrac));
+          var out = arr.slice();
+          for (var i = 0; i < taperLen; i++) {
+            var f = (i + 1) / (taperLen + 1);
+            // Cubic ease — steeper approach to zero at the very tip
+            f = f * f * f;
+            out[i] *= f;
+            out[out.length - 1 - i] *= f;
+          }
+          return out;
+        }
+
+        // Interpolate array values to match new smoothed length
+        function interpProfile(arr, newLen) {
+          if (!arr.length || newLen < 1) return [];
+          if (arr.length === 1) { var a = []; for (var k = 0; k < newLen; k++) a.push(arr[0]); return a; }
+          var out = [];
+          for (var i = 0; i < newLen; i++) {
+            var t = i / (newLen - 1) * (arr.length - 1);
+            var lo = Math.floor(t);
+            var hi = Math.min(lo + 1, arr.length - 1);
+            var frac = t - lo;
+            out.push(arr[lo] * (1 - frac) + arr[hi] * frac);
+          }
+          return out;
+        }
+
+        // ── Render each corridor to an offscreen canvas with opaque colors,
+        //    then composite onto main canvas at swathOpacity.
+        //    This eliminates visible color layering/stacking from
+        //    overlapping transparent fills. ──
+        var offCanvas = document.createElement('canvas');
+        offCanvas.width = cW;
+        offCanvas.height = cH;
+        var offCtx = offCanvas.getContext('2d');
+
+        for (var ci = 0; ci < corridors.length; ci++) {
+          var c = corridors[ci];
+          if (!c.centerline || c.centerline.length < 2) continue;
+
+          var rawPts = [];
+          for (var pi = 0; pi < c.centerline.length; pi++) {
+            var ll = new google.maps.LatLng(c.centerline[pi][1], c.centerline[pi][0]);
+            var px = proj.fromLatLngToDivPixel(ll);
+            rawPts.push({ x: px.x + offX, y: px.y + offY });
+          }
+
+          // Smooth centerline with Chaikin (4 passes for rounded, non-rectangular corridors)
+          var pts = chaikinSmooth(rawPts, 4);
+
+          // km → pixel scale (compute once per corridor)
+          var refA = proj.fromLatLngToDivPixel(new google.maps.LatLng(c.centerline[0][1], c.centerline[0][0]));
+          var refB = proj.fromLatLngToDivPixel(new google.maps.LatLng(c.centerline[0][1] + 0.01, c.centerline[0][0]));
+          var pxPerDeg = Math.abs(refB.y - refA.y) || 1;
+          var pxPerKm = pxPerDeg / 1.111;
+
+          // Interpolate width and severity profiles to smoothed point count
+          var rawWidth = [];
+          for (var wi = 0; wi < c.widthProfile.length; wi++) {
+            var w = c.widthProfile[wi] * pxPerKm;
+            rawWidth.push(w);
+          }
+          var widthInterp = interpProfile(rawWidth, pts.length);
+          // Smooth width to remove erratic spikes (moving avg radius 3)
+          var widthSmoothed = smoothProfile(widthInterp, 3);
+          // Light client-side taper (15% each end, quadratic) — server already tapers 25%
+          var widthPx = taperEnds(widthSmoothed, 0.15);
+          var sevInterp = interpProfile(c.severityProfile || [], pts.length);
+          var severity = smoothProfile(sevInterp, 2);
+          // Light severity taper at ends (10%) — server already does most tapering
+          severity = taperEnds(severity, 0.10);
+
+          // Clear offscreen for this corridor
+          offCtx.clearRect(0, 0, cW, cH);
+
+          // ── Three-band corridor rendering: envelope → mid → core ──
+          // Outer band: full width, severity scaled to 0.50 → lightest hail color
+          // Mid band: 55% width, severity scaled to 0.78 → mid hail color
+          // Core band: 25% width, severity at 1.00 → peak hail color
+          // Inner bands overwrite outer on opaque offscreen → clean gradient look
+          var BANDS = [
+            { wScale: 1.0,  sevMul: 0.50 },  // outer envelope
+            { wScale: 0.55, sevMul: 0.78 },  // mid band
+            { wScale: 0.25, sevMul: 1.00 }   // embedded core
+          ];
+
+          var totalPts = pts.length;
+          var taperZone = Math.floor(totalPts * 0.20);
+
+          for (var band = 0; band < BANDS.length; band++) {
+            var lw = BANDS[band].wScale;
+            var lsm = BANDS[band].sevMul;
+
+            for (var si = 0; si < pts.length - 1; si++) {
+              var ax = pts[si].x, ay = pts[si].y;
+              var bx = pts[si + 1].x, by = pts[si + 1].y;
+
+              var sevA = severity[si] || 0;
+              var sevB = severity[Math.min(si + 1, severity.length - 1)] || 0;
+              var sev = (sevA + sevB) / 2;
+
+              var layerSev = Math.max(0.5, sev * lsm);
+              var rgba = swathSeverityColor(layerSev);
+
+              // Adaptive min half-width in taper zones
+              var minHwA = minHalfWidthPx * lw;
+              var minHwB = minHalfWidthPx * lw;
+              if (si < taperZone) minHwA *= (si / taperZone);
+              if (si + 1 < taperZone) minHwB *= ((si + 1) / taperZone);
+              var fromEndA = totalPts - 1 - si;
+              var fromEndB = totalPts - 1 - (si + 1);
+              if (fromEndA < taperZone) minHwA *= (fromEndA / taperZone);
+              if (fromEndB < taperZone) minHwB *= (fromEndB / taperZone);
+
+              var wA = Math.max((widthPx[si] || 0) / 2 * lw, minHwA);
+              var wB = Math.max((widthPx[Math.min(si + 1, widthPx.length - 1)] || 0) / 2 * lw, minHwB);
+
+              if (wA < 1 && wB < 1) continue;
+
+              var dx = bx - ax, dy = by - ay;
+              var len = Math.sqrt(dx * dx + dy * dy) || 1;
+              var nx = -dy / len, ny = dx / len;
+
+              offCtx.beginPath();
+              offCtx.moveTo(ax + nx * wA, ay + ny * wA);
+              offCtx.lineTo(bx + nx * wB, by + ny * wB);
+              offCtx.lineTo(bx - nx * wB, by - ny * wB);
+              offCtx.lineTo(ax - nx * wA, ay - ny * wA);
+              offCtx.closePath();
+              offCtx.fillStyle = 'rgb(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ')';
+              offCtx.fill();
+            }
+
+            // Tapered end caps
+            if (pts.length >= 2) {
+              var hw0 = (widthPx[0] || 0) / 2 * lw;
+              if (hw0 > 3) {
+                var sev0 = severity[0] || 0;
+                var bs0 = Math.max(0.5, sev0 * lsm);
+                var rgba0 = swathSeverityColor(bs0);
+                var d0x = pts[1].x - pts[0].x, d0y = pts[1].y - pts[0].y;
+                var a0 = Math.atan2(d0y, d0x);
+                offCtx.beginPath();
+                offCtx.arc(pts[0].x, pts[0].y, hw0, a0 + Math.PI / 2, a0 - Math.PI / 2);
+                offCtx.closePath();
+                offCtx.fillStyle = 'rgb(' + rgba0[0] + ',' + rgba0[1] + ',' + rgba0[2] + ')';
+                offCtx.fill();
+              }
+
+              var li = pts.length - 1;
+              var hwL = (widthPx[li] || 0) / 2 * lw;
+              if (hwL > 3) {
+                var sevL = severity[li] || 0;
+                var bsL = Math.max(0.5, sevL * lsm);
+                var rgbaL = swathSeverityColor(bsL);
+                var dLx = pts[li].x - pts[li - 1].x, dLy = pts[li].y - pts[li - 1].y;
+                var aL = Math.atan2(dLy, dLx);
+                offCtx.beginPath();
+                offCtx.arc(pts[li].x, pts[li].y, hwL, aL - Math.PI / 2, aL + Math.PI / 2);
+                offCtx.closePath();
+                offCtx.fillStyle = 'rgb(' + rgbaL[0] + ',' + rgbaL[1] + ',' + rgbaL[2] + ')';
+                offCtx.fill();
+              }
+            }
+          }
+
+          // Apply blur on offscreen — scale with corridor width for consistent soft edges
+          try {
+            if (typeof offCtx.filter !== 'undefined') {
+              // Use median corridor width to scale blur proportionally
+              var medW = widthPx.slice().sort(function(a,b){return a-b;})[Math.floor(widthPx.length/2)] || 20;
+              var blurPx = Math.max(1, Math.min(12, medW * 0.04));
+              var imgD = offCtx.getImageData(0, 0, cW, cH);
+              offCtx.clearRect(0, 0, cW, cH);
+              offCtx.filter = 'blur(' + blurPx.toFixed(1) + 'px)';
+              offCtx.putImageData(imgD, 0, 0);
+              offCtx.filter = 'none';
+            }
+          } catch (e) {}
+
+          // ── Composite offscreen onto main canvas at swathOpacity ──
+          // Single alpha for the entire corridor — no layered stacking
+          var mainCtx = canvas.getContext('2d');
+          var opacityVal = typeof mapsState !== 'undefined' ? (mapsState.swathOpacity != null ? mapsState.swathOpacity : 0.3) : 0.3;
+          // Scale: swathOpacity 0.3 = default look (use severity base alpha ~0.4)
+          // Map slider 0–1 → canvas globalAlpha 0–0.85
+          mainCtx.globalAlpha = Math.min(0.85, opacityVal * 2.5);
+          mainCtx.drawImage(offCanvas, 0, 0);
+          mainCtx.globalAlpha = 1.0;
+        }
       };
 
       SwathCanvasOverlay.prototype.hide = function () {
@@ -5113,10 +5985,337 @@
       };
 
       SwathCanvasOverlay.prototype.destroy = function () {
-        this.setMap(null);
+        if (typeof this.setMap === 'function') this.setMap(null);
       };
 
       _swathOverlayReady = true;
+    }
+
+    // ── Swath hit-test: check if lat/lng falls inside any active AI swath corridor ──
+    // Returns { hailIn: <number>, dateStr: <string> } or null if not inside any swath
+    function swathHitTest(lat, lng) {
+      var best = null;
+      var bestDist = Infinity;
+
+      // 1) Check reference swath overlay dates FIRST (HailTrace or local ref images).
+      //    Sample pixel color from stored raw image data.
+      //    Only mark refHitDates when pixel sampling succeeds — cross-origin HailTrace
+      //    images may lack rawImageData_, so we let those dates fall through to LSR
+      //    point proximity in step 3.
+      var refHitDates = {};
+      Object.keys(mapsState.refSwathDates).forEach(function (d) {
+        var refOv = mapsState.refSwathOverlays[d];
+        if (!refOv || !refOv.bounds_) return;
+        var clickLL = new google.maps.LatLng(lat, lng);
+        if (!refOv.bounds_.contains(clickLL)) return;
+        var pixelHail = _sampleRefSwathPixel(refOv, lat, lng);
+        if (pixelHail !== null) {
+          refHitDates[d] = true; // pixel data available — suppress AI/polygon for this date
+          bestDist = 0;
+          best = { hailIn: pixelHail, dateStr: d };
+        }
+        // If no rawImageData_ (cross-origin), do NOT mark refHitDates —
+        // allow LSR point / AI fallback for hail-size lookup
+      });
+      // If a reference swath pixel was sampled, return immediately
+      if (best && bestDist === 0) return best;
+
+      // 2) Check AI swath overlays (corridor geometry with severity profiles)
+      //    Skip dates that have a reference swath overlay (avoid stale AI values)
+      var dates = Object.keys(mapsState.aiSwathOverlays);
+      for (var di = 0; di < dates.length; di++) {
+        var dateStr = dates[di];
+        if (refHitDates[dateStr]) continue; // skip — ref swath is authoritative for this date
+        var overlay = mapsState.aiSwathOverlays[dateStr];
+        if (!overlay || !overlay.descriptor_) continue;
+        var corridors = overlay.descriptor_.corridors || [];
+        for (var ci = 0; ci < corridors.length; ci++) {
+          var c = corridors[ci];
+          if (!c.centerline || c.centerline.length < 2) continue;
+          for (var si = 0; si < c.centerline.length - 1; si++) {
+            var ax = c.centerline[si][0], ay = c.centerline[si][1];
+            var bx = c.centerline[si + 1][0], by = c.centerline[si + 1][1];
+            var dx = bx - ax, dy = by - ay;
+            var segLen2 = dx * dx + dy * dy;
+            if (segLen2 === 0) continue;
+            var t = ((lng - ax) * dx + (lat - ay) * dy) / segLen2;
+            t = Math.max(0, Math.min(1, t));
+            var projLon = ax + t * dx;
+            var projLat = ay + t * dy;
+            var dLat = (lat - projLat) * 111.1;
+            var dLon = (lng - projLon) * 111.1 * Math.cos(lat * Math.PI / 180);
+            var distKm = Math.sqrt(dLat * dLat + dLon * dLon);
+            var wp = c.widthProfile || [];
+            var wA = wp[si] || 0;
+            var wB = wp[Math.min(si + 1, wp.length - 1)] || 0;
+            var localWidth = wA + t * (wB - wA);
+            var halfWidth = localWidth / 2;
+            if (distKm <= halfWidth && distKm < bestDist) {
+              var sp = c.severityProfile || [];
+              var sevA = sp[si] || 0;
+              var sevB = sp[Math.min(si + 1, sp.length - 1)] || 0;
+              var localSev = sevA + t * (sevB - sevA);
+              var edgeFrac = halfWidth > 0 ? (distKm / halfWidth) : 0;
+              var sevScale = edgeFrac <= 0.25 ? 1.0 : (edgeFrac <= 0.55 ? 0.78 : 0.50);
+              var reportedSev = localSev * sevScale;
+              bestDist = distKm;
+              best = { hailIn: Math.round(reportedSev * 100) / 100, dateStr: dateStr };
+            }
+          }
+        }
+      }
+
+      // 3) Check saved storm polygons — find nearest cached LSR point inside the polygon
+      //    Skip dates that have a reference swath overlay
+      Object.keys(mapsState.swathPolygons).forEach(function (d) {
+        if (refHitDates[d]) return;
+        var polys = mapsState.swathPolygons[d];
+        if (!polys) return;
+        var inside = false;
+        for (var pi = 0; pi < polys.length; pi++) {
+          try { if (google.maps.geometry && google.maps.geometry.poly.containsLocation(
+            new google.maps.LatLng(lat, lng), polys[pi])) { inside = true; break; } } catch (_) {}
+        }
+        if (!inside) return;
+        var pts = mapsState.lsrPointsByDate[d] || [];
+        var nearHail = _nearestPointHail(lat, lng, pts, 50);
+        if (nearHail && nearHail.distKm < bestDist) {
+          bestDist = nearHail.distKm;
+          best = { hailIn: nearHail.hailIn, dateStr: d };
+        }
+      });
+
+      // 4) Check hail field overlays — IDW lookup at click location
+      Object.keys(mapsState.hailFieldOverlays).forEach(function (d) {
+        if (refHitDates[d]) return;
+        var fov = mapsState.hailFieldOverlays[d];
+        if (!fov || !fov.points_) return;
+        var pts = fov.points_;
+        var influenceKm = (fov.options_ && fov.options_.influenceKm) || 35;
+        var wSum = 0, vSum = 0;
+        for (var i = 0; i < pts.length; i++) {
+          var pLat = Number(pts[i].lat), pLon = Number(pts[i].lon);
+          if (!isFinite(pLat) || !isFinite(pLon)) continue;
+          var dLat = (lat - pLat) * 111.1;
+          var dLon = (lng - pLon) * 111.1 * Math.cos(lat * Math.PI / 180);
+          var dKm = Math.sqrt(dLat * dLat + dLon * dLon);
+          if (dKm > influenceKm) continue;
+          var w = Math.exp(-3.0 * (dKm * dKm) / (influenceKm * influenceKm));
+          wSum += w;
+          vSum += (Number(pts[i].hail_in) || 1.0) * w;
+        }
+        if (wSum > 0.01) {
+          var hVal = vSum / wSum;
+          if (hVal >= 0.5 && wSum < bestDist + 1) {
+            bestDist = 0;
+            best = { hailIn: Math.round(hVal * 100) / 100, dateStr: d };
+          }
+        }
+      });
+
+      // 5) Check hail band polygons — containsLocation or edge proximity
+      var clickLL = new google.maps.LatLng(lat, lng);
+      var hasPoly = window.google && google.maps.geometry && google.maps.geometry.poly;
+      Object.keys(mapsState.hailBandPolygons).forEach(function (d) {
+        if (refHitDates[d]) return;
+        var bandPolys = mapsState.hailBandPolygons[d];
+        if (!bandPolys || !bandPolys.length) return;
+        var bestBandIdx = -1;
+        // Check from highest band (last) to lowest — first hit = highest hail
+        for (var bi = bandPolys.length - 1; bi >= 0; bi--) {
+          try {
+            if (hasPoly && google.maps.geometry.poly.containsLocation(clickLL, bandPolys[bi])) {
+              bestBandIdx = bi; break;
+            }
+          } catch (_) {}
+        }
+        // Edge tolerance: if no exact hit, check if click is near any band edge (~10km)
+        if (bestBandIdx === -1) {
+          var toleranceDeg = 0.09; // ~10km
+          for (var bi = bandPolys.length - 1; bi >= 0; bi--) {
+            try {
+              var path = bandPolys[bi].getPath();
+              if (!path) continue;
+              var nearEdge = false;
+              path.forEach(function (v) {
+                if (nearEdge) return;
+                var dLa = Math.abs(lat - v.lat());
+                var dLo = Math.abs(lng - v.lng());
+                if (dLa < toleranceDeg && dLo < toleranceDeg) nearEdge = true;
+              });
+              if (nearEdge) { bestBandIdx = bi; break; }
+            } catch (_) {}
+          }
+        }
+        if (bestBandIdx >= 0 && bestBandIdx < HAIL_SIZE_BANDS.length) {
+          var band = HAIL_SIZE_BANDS[bestBandIdx];
+          var nextBand = HAIL_SIZE_BANDS[bestBandIdx + 1];
+          var midHail = nextBand ? (band.threshold + nextBand.threshold) / 2 : band.threshold + 0.25;
+          bestDist = 0;
+          best = { hailIn: Math.round(midHail * 100) / 100, dateStr: d, bandLabel: band.label };
+        }
+      });
+
+      return best;
+    }
+
+    // ── Multi-type storm hit-test: hail + wind + tornado at a location ──
+    // Returns { hail: {hailIn, dateStr} | null, wind: {mph, dateStr, label} | null, tornado: {ef, dateStr, label} | null }
+    function stormHitTest(lat, lng) {
+      var result = { hail: swathHitTest(lat, lng), wind: null, tornado: null };
+      var clickLL = new google.maps.LatLng(lat, lng);
+      var hasPoly = window.google && google.maps.geometry && google.maps.geometry.poly;
+
+      // Check wind band polygons
+      Object.keys(mapsState.windBandPolygons).forEach(function (d) {
+        var bandPolys = mapsState.windBandPolygons[d];
+        if (!bandPolys || !bandPolys.length) return;
+        var bestIdx = -1;
+        for (var bi = bandPolys.length - 1; bi >= 0; bi--) {
+          try {
+            if (hasPoly && google.maps.geometry.poly.containsLocation(clickLL, bandPolys[bi])) {
+              bestIdx = bi; break;
+            }
+          } catch (_) {}
+        }
+        // Edge tolerance
+        if (bestIdx === -1) {
+          var tol = 0.09;
+          for (var bi = bandPolys.length - 1; bi >= 0; bi--) {
+            try {
+              var path = bandPolys[bi].getPath();
+              if (!path) continue;
+              var near = false;
+              path.forEach(function (v) {
+                if (near) return;
+                if (Math.abs(lat - v.lat()) < tol && Math.abs(lng - v.lng()) < tol) near = true;
+              });
+              if (near) { bestIdx = bi; break; }
+            } catch (_) {}
+          }
+        }
+        if (bestIdx >= 0 && bestIdx < WIND_SPEED_BANDS.length) {
+          var band = WIND_SPEED_BANDS[bestIdx];
+          var nextBand = WIND_SPEED_BANDS[bestIdx + 1];
+          var midMph = nextBand ? Math.round((band.threshold + nextBand.threshold) / 2) : band.threshold + 10;
+          result.wind = { mph: midMph, dateStr: d, label: band.label };
+        }
+      });
+
+      // Check tornado band polygons
+      Object.keys(mapsState.tornadoBandPolygons).forEach(function (d) {
+        var bandPolys = mapsState.tornadoBandPolygons[d];
+        if (!bandPolys || !bandPolys.length) return;
+        var bestIdx = -1;
+        for (var bi = bandPolys.length - 1; bi >= 0; bi--) {
+          try {
+            if (hasPoly && google.maps.geometry.poly.containsLocation(clickLL, bandPolys[bi])) {
+              bestIdx = bi; break;
+            }
+          } catch (_) {}
+        }
+        if (bestIdx === -1) {
+          var tol = 0.07;
+          for (var bi = bandPolys.length - 1; bi >= 0; bi--) {
+            try {
+              var path = bandPolys[bi].getPath();
+              if (!path) continue;
+              var near = false;
+              path.forEach(function (v) {
+                if (near) return;
+                if (Math.abs(lat - v.lat()) < tol && Math.abs(lng - v.lng()) < tol) near = true;
+              });
+              if (near) { bestIdx = bi; break; }
+            } catch (_) {}
+          }
+        }
+        if (bestIdx >= 0 && bestIdx < TORNADO_EF_BANDS.length) {
+          var band = TORNADO_EF_BANDS[bestIdx];
+          result.tornado = { ef: band.threshold, dateStr: d, label: band.label };
+        }
+      });
+
+      return result;
+    }
+
+    // Sample the pixel color from a RefSwathMapOverlay's stored raw image data
+    // at (lat,lng) and reverse-map to hail inches using the visible color scale.
+    function _sampleRefSwathPixel(refOv, lat, lng) {
+      var raw = refOv.rawImageData_;
+      if (!raw || !raw.width || !raw.height) return null;
+      var bounds = refOv.bounds_;
+      var sw = bounds.getSouthWest();
+      var ne = bounds.getNorthEast();
+      var bW = ne.lng() - sw.lng();
+      var bH = ne.lat() - sw.lat();
+      if (bW <= 0 || bH <= 0) return null;
+      var px = Math.round((lng - sw.lng()) / bW * (raw.width - 1));
+      var py = Math.round((ne.lat() - lat) / bH * (raw.height - 1));
+      if (px < 0 || px >= raw.width || py < 0 || py >= raw.height) return null;
+      var idx = (py * raw.width + px) * 4;
+      return _refPixelToHailIn(raw.data[idx], raw.data[idx + 1], raw.data[idx + 2], raw.data[idx + 3]);
+    }
+
+    // Reverse-map a pixel RGBA from a reference swath image to hail size.
+    // Uses the user-specified color scale:
+    //   yellow = 1.00"   dark yellow = 1.25"
+    //   orange = 1.75-2.50"   red = 2.50-3.00"   purple = >3.00"
+    // Blue/green/gray/transparent → null (not a hail color)
+    function _refPixelToHailIn(r, g, b, a) {
+      if (a < 30) return null; // transparent
+      var cMax = Math.max(r, g, b);
+      var cMin = Math.min(r, g, b);
+      var delta = cMax - cMin;
+      if (delta < 25) return null; // too gray / desaturated
+      // Compute hue (0-360)
+      var hue;
+      if (cMax === r) hue = 60 * (((g - b) / delta) % 6);
+      else if (cMax === g) hue = 60 * ((b - r) / delta + 2);
+      else hue = 60 * ((r - g) / delta + 4);
+      if (hue < 0) hue += 360;
+      // Lightness
+      var L = (cMax + cMin) / (2 * 255);
+      // Purple zone (hue 260-340): >3"
+      if (hue >= 260 && hue <= 340) return 3.50;
+      // Red zone (hue 340-360 or 0-15): 2.50-3.00"
+      if (hue > 340 || hue < 15) return 2.75;
+      // Orange zone (hue 15-42): 1.75-2.50"
+      if (hue >= 15 && hue < 42) return 2.00;
+      // Yellow family (hue 42-70): distinguish dark-yellow vs yellow by lightness
+      if (hue >= 42 && hue < 70) return L < 0.45 ? 1.25 : 1.00;
+      // Green (70-150) or blue/cyan (150-260) → not hail
+      return null;
+    }
+
+    // Find nearest cached LSR point to (lat,lng) within maxKm, return hail size
+    function _nearestPointHail(lat, lng, points, maxKm) {
+      if (!points || !points.length) return null;
+      var best = null;
+      var bestDist = maxKm;
+      for (var i = 0; i < points.length; i++) {
+        var pLat = Number(points[i].lat);
+        var pLon = Number(points[i].lon);
+        if (!isFinite(pLat) || !isFinite(pLon)) continue;
+        var dLat = (lat - pLat) * 111.1;
+        var dLon = (lng - pLon) * 111.1 * Math.cos(lat * Math.PI / 180);
+        var dKm = Math.sqrt(dLat * dLat + dLon * dLon);
+        if (dKm < bestDist) {
+          bestDist = dKm;
+          best = { hailIn: Number(points[i].hail_in) || 1.0, distKm: dKm };
+        }
+      }
+      return best;
+    }
+
+    // ── Convert hail severity (inches) to user-facing label ──
+    function swathSeverityLabel(hailIn) {
+      if (hailIn >= 3)    return 'Over 3\u2033 hail here \u2014 purple zone';
+      if (hailIn >= 2.5)  return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 red zone';
+      if (hailIn >= 1.75) return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 orange zone';
+      if (hailIn >= 1.25) return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 dark yellow zone';
+      if (hailIn >= 1)    return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 yellow zone';
+      if (hailIn > 0)     return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here';
+      return '';
     }
 
     // ── Draw AI swath overlay for a date ──
@@ -5149,7 +6348,705 @@
 
     // ── Draw saved storm polygons from Supabase ──
     // Only valid primary swath sources are drawn. Legacy point-built rows are excluded.
-    var VALID_SWATH_SOURCES = ['mrms', 'swdi', 'manual'];
+    var VALID_SWATH_SOURCES = ['hailtrace', 'mrms', 'swdi', 'manual'];
+
+    // ── March 2026 saved reference swath images (date → filename) ──
+    // These are the truth-set swath images. When present for a date,
+    // they are shown as the primary swath source, skipping AI generation.
+    var REFERENCE_SWATH_IMAGES = {
+      '2026-03-01': 'swath-mar-01-2026.png',
+      '2026-03-03': 'swath-mar-03-2026.png',
+      '2026-03-04': 'swath-mar-04-2026.png',
+      '2026-03-05': 'swath-mar-05-2026.png',
+      '2026-03-06': 'swath-mar-06-2026.png',
+      '2026-03-07': 'swath-mar-07-2026.png',
+      '2026-03-08': 'swath-mar-08-2026.png',
+      '2026-03-09': 'swath-mar-09-2026.png',
+      '2026-03-10': 'swath-mar-10-2026.png',
+      '2026-03-11': 'swath-mar-11-2026.png',
+      '2026-03-12': 'swath-mar-12-2026.png',
+      '2026-03-14': 'swath-mar-14-2026.png',
+      '2026-03-15': 'swath-mar-15-2026.png',
+      '2026-03-16': 'swath-mar-16-2026.png',
+      '2026-03-21': 'swath-mar-21-2026.png',
+      '2026-03-22': 'swath-mar-22-2026.png',
+      '2026-03-24': 'swath-mar-24-2026.png',
+      '2026-03-25': 'swath-mar-25-2026.png',
+      '2026-03-26': 'swath-mar-26-2026.png',
+      '2026-03-29': 'swath-mar-29-2026..png',
+      '2026-04-02': 'swath-april-2-2026.png'
+    };
+
+    // ── Geographic bounds for each reference swath image ──
+    // { s: south lat, w: west lng, n: north lat, e: east lng }
+    // mapRatio: fraction of image height that is map (clips card/label at bottom)
+    var REFERENCE_SWATH_BOUNDS = {
+      '2026-03-01': { s: 32.0, w: -101.0, n: 39.5, e: -94.0, mapRatio: 0.58 },
+      '2026-03-03': { s: 31.5, w: -108.0, n: 37.5, e: -95.5 },
+      '2026-03-04': { s: 29.0, w: -103.0, n: 36.5, e: -92.5 },
+      '2026-03-05': { s: 33.5, w: -102.0, n: 40.0, e: -92.5 },
+      '2026-03-06': { s: 37.0, w: -102.5, n: 43.5, e: -91.5 },
+      '2026-03-07': { s: 23.5, w: -106.0, n: 30.5, e: -96.0 },
+      '2026-03-08': { s: 25.5, w: -104.0, n: 31.5, e: -93.0 },
+      '2026-03-09': { s: 30.5, w: -93.0, n: 36.5, e: -82.5 },
+      '2026-03-10': { s: 39.0, w: -92.5, n: 44.0, e: -82.5 },
+      '2026-03-11': { s: 33.0, w: -91.5, n: 39.5, e: -82.5 },
+      '2026-03-12': { s: 27.0, w: -88.5, n: 35.5, e: -79.0 },
+      '2026-03-14': { s: 22.5, w: -84.0, n: 30.0, e: -76.5 },
+      '2026-03-15': { s: 33.0, w: -93.5, n: 39.5, e: -82.5 },
+      '2026-03-16': { s: 24.5, w: -86.0, n: 31.5, e: -78.5 },
+      '2026-03-21': { s: 33.5, w: -88.0, n: 40.0, e: -79.0 },
+      '2026-03-22': { s: 38.0, w: -88.0, n: 43.5, e: -79.0 },
+      '2026-03-24': { s: 24.5, w: -86.0, n: 32.5, e: -79.0 },
+      '2026-03-25': { s: 24.5, w: -88.0, n: 31.5, e: -79.0 },
+      '2026-03-26': { s: 38.0, w: -90.5, n: 44.5, e: -80.5 },
+      '2026-03-29': { s: 28.5, w: -116.5, n: 36.5, e: -105.0 },
+      '2026-04-02': { s: 38.5, w: -94.5, n: 44.0, e: -84.0 }
+    };
+
+    // ── RefSwathMapOverlay — google.maps.OverlayView subclass ──
+    // Renders a saved reference swath image directly on the map at geographic bounds.
+    // Uses mix-blend-mode: screen so the dark source background becomes transparent.
+    var _refOverlayReady = false;
+    function ensureRefSwathOverlayProto() {
+      if (_refOverlayReady) return;
+      if (!google || !google.maps || !google.maps.OverlayView) return;
+
+      RefSwathMapOverlay.prototype = new google.maps.OverlayView();
+      RefSwathMapOverlay.prototype.constructor = RefSwathMapOverlay;
+
+      RefSwathMapOverlay.prototype.onAdd = function () {
+        var self = this;
+        var div = document.createElement('div');
+        div.style.position = 'absolute';
+        div.style.overflow = 'hidden';
+        div.style.pointerEvents = 'none';
+
+        var canvas = document.createElement('canvas');
+        canvas.style.position = 'absolute';
+        canvas.style.left = '0';
+        canvas.style.top = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.display = 'block';
+        canvas.style.opacity = String(self.opts_.opacity || 0.85);
+
+        div.appendChild(canvas);
+        this.div_ = div;
+        this.canvas_ = canvas;
+        this.getPanes().overlayLayer.appendChild(div);
+
+        // Load image, chroma-key out dark background + desaturated labels
+        var tmpImg = new Image();
+        tmpImg.crossOrigin = 'anonymous';
+        tmpImg.onload = function () {
+          var mapRatio = self.opts_.mapRatio || 1;
+          var srcW = tmpImg.naturalWidth;
+          var srcH = Math.round(tmpImg.naturalHeight * mapRatio);
+          canvas.width = srcW;
+          canvas.height = srcH;
+          var ctx = canvas.getContext('2d');
+          // Draw only the top portion (mapRatio crops bottom card/attribution)
+          ctx.drawImage(tmpImg, 0, 0, srcW, srcH, 0, 0, srcW, srcH);
+
+          try {
+            var imageData = ctx.getImageData(0, 0, srcW, srcH);
+            // Save raw pixel data BEFORE chroma-keying for click hit-testing
+            self.rawImageData_ = { width: srcW, height: srcH, data: new Uint8ClampedArray(imageData.data) };
+            var px = imageData.data;
+            for (var i = 0; i < px.length; i += 4) {
+              var r = px[i], g = px[i + 1], b = px[i + 2];
+              var cMax = Math.max(r, g, b);
+              var cMin = Math.min(r, g, b);
+              var delta = cMax - cMin;
+              // HSL saturation 0–1
+              var sat = 0;
+              if (delta > 0) {
+                var sum = cMax + cMin;
+                sat = sum > 255 ? delta / (510 - sum) : delta / sum;
+              }
+              if (cMax < 75) {
+                // Very dark pixel (background, dark water) → transparent
+                px[i + 3] = 0;
+              } else if (sat < 0.18) {
+                // Desaturated (gray labels, roads, white attribution) → transparent
+                px[i + 3] = 0;
+              } else {
+                // Saturated pixel (swath color) → keep with soft edge alpha
+                px[i + 3] = Math.min(255, Math.round(Math.min(1, (sat - 0.10) / 0.25) * 255));
+              }
+            }
+            ctx.putImageData(imageData, 0, 0);
+          } catch (e) {
+            // Canvas tainted (file:// or cross-origin) → blend-mode fallback
+            console.warn('[RefSwathMapOverlay] pixel filter failed, blend fallback', e.message);
+            canvas.style.display = 'none';
+            var fbImg = document.createElement('img');
+            fbImg.src = self.imageUrl_;
+            fbImg.style.position = 'absolute';
+            fbImg.style.left = '0';
+            fbImg.style.top = '0';
+            fbImg.style.width = '100%';
+            fbImg.style.height = '100%';
+            fbImg.style.display = 'block';
+            fbImg.style.mixBlendMode = 'screen';
+            fbImg.style.opacity = '0.85';
+            self.img_ = fbImg;
+            self.div_.appendChild(fbImg);
+            // Try loading image without crossOrigin to get raw pixel data for hit-testing
+            var rawImg = new Image();
+            rawImg.onload = function () {
+              try {
+                var offC = document.createElement('canvas');
+                offC.width = srcW; offC.height = srcH;
+                var offCtx = offC.getContext('2d');
+                offCtx.drawImage(rawImg, 0, 0, srcW, srcH, 0, 0, srcW, srcH);
+                var rawData = offCtx.getImageData(0, 0, srcW, srcH);
+                self.rawImageData_ = { width: srcW, height: srcH, data: new Uint8ClampedArray(rawData.data) };
+                console.log('[RefSwathMapOverlay] raw pixel data captured via non-CORS reload');
+              } catch (_) { /* truly unreachable from same origin */ }
+            };
+            rawImg.src = self.imageUrl_;
+          }
+          self.draw();
+        };
+        tmpImg.onerror = function () {
+          console.warn('[RefSwathMapOverlay] CORS load failed, retrying without crossOrigin: ' + self.imageUrl_);
+          // Retry without crossOrigin — image displays via blend-mode (no pixel access)
+          var retryImg = new Image();
+          retryImg.onload = function () {
+            canvas.style.display = 'none';
+            var fbImg = document.createElement('img');
+            fbImg.src = self.imageUrl_;
+            fbImg.style.position = 'absolute';
+            fbImg.style.left = '0';
+            fbImg.style.top = '0';
+            fbImg.style.width = '100%';
+            fbImg.style.height = '100%';
+            fbImg.style.display = 'block';
+            fbImg.style.mixBlendMode = 'screen';
+            fbImg.style.opacity = String(self.opts_.opacity || 0.85);
+            self.img_ = fbImg;
+            self.div_.appendChild(fbImg);
+            self.draw();
+            console.log('[RefSwathMapOverlay] blend-mode fallback displayed for ' + self.imageUrl_);
+          };
+          retryImg.onerror = function () {
+            console.warn('[RefSwathMapOverlay] image load failed completely: ' + self.imageUrl_);
+          };
+          retryImg.src = self.imageUrl_;
+        };
+        tmpImg.src = this.imageUrl_;
+      };
+
+      RefSwathMapOverlay.prototype.draw = function () {
+        var projection = this.getProjection();
+        if (!projection || !this.div_) return;
+        var sw = projection.fromLatLngToDivPixel(this.bounds_.getSouthWest());
+        var ne = projection.fromLatLngToDivPixel(this.bounds_.getNorthEast());
+        this.div_.style.left = sw.x + 'px';
+        this.div_.style.top = ne.y + 'px';
+        this.div_.style.width = (ne.x - sw.x) + 'px';
+        this.div_.style.height = (sw.y - ne.y) + 'px';
+      };
+
+      RefSwathMapOverlay.prototype.onRemove = function () {
+        if (this.div_ && this.div_.parentNode) {
+          this.div_.parentNode.removeChild(this.div_);
+          this.div_ = null;
+          this.canvas_ = null;
+          this.img_ = null;
+        }
+      };
+
+      RefSwathMapOverlay.prototype.hide = function () {
+        if (this.div_) this.div_.style.display = 'none';
+      };
+
+      RefSwathMapOverlay.prototype.show = function () {
+        if (this.div_) this.div_.style.display = '';
+      };
+
+      RefSwathMapOverlay.prototype.setOpacity = function (opacity) {
+        if (this.canvas_) this.canvas_.style.opacity = String(opacity);
+        if (this.img_) this.img_.style.opacity = String(opacity);
+      };
+
+      RefSwathMapOverlay.prototype.destroy = function () {
+        if (typeof this.setMap === 'function') this.setMap(null);
+      };
+
+      _refOverlayReady = true;
+    }
+
+    function RefSwathMapOverlay(map, imageUrl, bounds, opts) {
+      this.imageUrl_ = imageUrl;
+      this.bounds_ = bounds;
+      this.opts_ = opts || {};
+      this.div_ = null;
+      this.canvas_ = null;
+      this.img_ = null;
+      ensureRefSwathOverlayProto();
+      if (typeof this.setMap === 'function') this.setMap(map);
+    }
+
+    // ── Draw reference swath image directly on the map ──
+    // ── HailTrace date-matched swath fetch ──
+    function dateToHailTraceUrl(dateStr) {
+      var parts = dateStr.split('-');
+      return 'https://hailtrace.com/hail-maps/' + parts[1] + '-' + parts[2] + '-' + parts[0];
+    }
+
+    function fetchHailTraceSwath(dateStr, forceRefresh) {
+      if (!forceRefresh && mapsState.hailTraceCache[dateStr]) return Promise.resolve(mapsState.hailTraceCache[dateStr]);
+      var url = SUPABASE_URL + '/functions/v1/hailtrace-swath?date=' + encodeURIComponent(dateStr);
+      if (forceRefresh) url += '&force=1';
+      return fetch(url, { headers: { Authorization: 'Bearer ' + SUPABASE_ANON_KEY, apikey: SUPABASE_ANON_KEY } })
+        .then(function (resp) { return resp.ok ? resp.json() : { available: false }; })
+        .then(function (data) {
+          mapsState.hailTraceCache[dateStr] = data;
+          console.log('[fetchHailTraceSwath] ' + dateStr + ': available=' + data.available + ' imageUrl=' + (data.imageUrl || 'none') + (forceRefresh ? ' (force)' : ''));
+          return data;
+        })
+        .catch(function (err) {
+          console.warn('[fetchHailTraceSwath] ' + dateStr + ' error:', err);
+          return { available: false };
+        });
+    }
+
+    // ── Image → polygon geometry extraction (offscreen canvas) ──
+    // Reuses the exact same chroma-key filter as RefSwathMapOverlay.
+    // Loads the HailTrace image, chroma-keys out background, samples a grid
+    // of the remaining hail-colored pixels, finds connected components,
+    // builds scanline polygon outlines, returns GeoJSON Polygon arrays.
+    function _traceImageToPolygons(imageUrl, bounds, callback) {
+      var GRID_W = 80, GRID_H = 60;
+      var img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function () {
+        var mapRatio = bounds.mapRatio || 1;
+        var srcW = img.naturalWidth;
+        var srcH = Math.round(img.naturalHeight * mapRatio);
+        var c = document.createElement('canvas');
+        c.width = srcW; c.height = srcH;
+        var ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, srcW, srcH, 0, 0, srcW, srcH);
+        var imageData;
+        try {
+          imageData = ctx.getImageData(0, 0, srcW, srcH);
+        } catch (e) {
+          console.warn('[_traceImageToPolygons] getImageData failed (CORS):', e.message);
+          callback(null); return;
+        }
+        var px = imageData.data;
+
+        // Apply chroma-key: same logic as RefSwathMapOverlay
+        for (var i = 0; i < px.length; i += 4) {
+          var r = px[i], g = px[i + 1], b = px[i + 2];
+          var cMax = Math.max(r, g, b), cMin = Math.min(r, g, b);
+          var delta = cMax - cMin;
+          var sat = 0;
+          if (delta > 0) {
+            var sum = cMax + cMin;
+            sat = sum > 255 ? delta / (510 - sum) : delta / sum;
+          }
+          if (cMax < 75) { px[i + 3] = 0; }
+          else if (sat < 0.18) { px[i + 3] = 0; }
+          else { px[i + 3] = Math.min(255, Math.round(Math.min(1, (sat - 0.10) / 0.25) * 255)); }
+        }
+
+        // Build binary grid by sampling the chroma-keyed alpha
+        var cellW = srcW / GRID_W, cellH = srcH / GRID_H;
+        var grid = [];
+        for (var gy = 0; gy < GRID_H; gy++) {
+          grid[gy] = [];
+          for (var gx = 0; gx < GRID_W; gx++) {
+            var pxX = Math.floor(gx * cellW + cellW / 2);
+            var pxY = Math.floor(gy * cellH + cellH / 2);
+            var idx = (pxY * srcW + pxX) * 4;
+            grid[gy][gx] = px[idx + 3] > 50 ? 1 : 0;
+          }
+        }
+
+        // Flood-fill connected components
+        var visited = [];
+        for (var y = 0; y < GRID_H; y++) visited[y] = new Array(GRID_W).fill(false);
+        var components = [];
+        for (var y = 0; y < GRID_H; y++) {
+          for (var x = 0; x < GRID_W; x++) {
+            if (grid[y][x] && !visited[y][x]) {
+              var comp = [];
+              var stack = [[x, y]];
+              while (stack.length) {
+                var cell = stack.pop();
+                var cx = cell[0], cy = cell[1];
+                if (cx < 0 || cx >= GRID_W || cy < 0 || cy >= GRID_H) continue;
+                if (visited[cy][cx] || !grid[cy][cx]) continue;
+                visited[cy][cx] = true;
+                comp.push([cx, cy]);
+                stack.push([cx - 1, cy], [cx + 1, cy], [cx, cy - 1], [cx, cy + 1]);
+              }
+              if (comp.length >= 3) components.push(comp);
+            }
+          }
+        }
+
+        if (!components.length) { callback([]); return; }
+
+        // Convert grid coords to lat/lng
+        function gridToLngLat(gx, gy) {
+          var lng = bounds.w + (gx / GRID_W) * (bounds.e - bounds.w);
+          var lat = bounds.n - (gy / GRID_H) * (bounds.n - bounds.s);
+          return [lng, lat];
+        }
+
+        // Build scanline polygon per component
+        var polygons = [];
+        for (var ci = 0; ci < components.length; ci++) {
+          var cells = components[ci];
+          // Per-row min/max x
+          var rowBounds = {};
+          for (var j = 0; j < cells.length; j++) {
+            var cx = cells[j][0], cy = cells[j][1];
+            if (!rowBounds[cy]) rowBounds[cy] = { min: cx, max: cx };
+            if (cx < rowBounds[cy].min) rowBounds[cy].min = cx;
+            if (cx > rowBounds[cy].max) rowBounds[cy].max = cx;
+          }
+          var rows = Object.keys(rowBounds).map(Number).sort(function (a, b) { return a - b; });
+          if (rows.length < 2) continue;
+
+          // Left edge top→bottom, right edge bottom→top
+          var ring = [];
+          for (var ri = 0; ri < rows.length; ri++) {
+            ring.push(gridToLngLat(rowBounds[rows[ri]].min, rows[ri]));
+          }
+          for (var ri = rows.length - 1; ri >= 0; ri--) {
+            ring.push(gridToLngLat(rowBounds[rows[ri]].max + 1, rows[ri]));
+          }
+          ring.push(ring[0]); // close ring
+
+          polygons.push({
+            type: 'Polygon',
+            coordinates: [ring]
+          });
+        }
+
+        console.log('[_traceImageToPolygons] extracted ' + polygons.length + ' polygon(s) from ' + components.length + ' component(s)');
+        callback(polygons);
+      };
+      img.onerror = function () {
+        console.warn('[_traceImageToPolygons] image load failed: ' + imageUrl);
+        callback(null);
+      };
+      img.src = imageUrl;
+    }
+
+    // ── Save traced HailTrace polygons to storm_polygons table ──
+    function _saveHailTracePolygons(dateStr, polygons) {
+      if (!polygons || !polygons.length) return Promise.resolve(false);
+      var rows = polygons.map(function (geojson, idx) {
+        // Compute centroid from first ring
+        var ring = geojson.coordinates[0];
+        var cLat = 0, cLon = 0;
+        for (var i = 0; i < ring.length - 1; i++) { cLon += ring[i][0]; cLat += ring[i][1]; }
+        cLon /= (ring.length - 1); cLat /= (ring.length - 1);
+        return {
+          event_date: dateStr,
+          source: 'hailtrace',
+          source_product: 'og-image',
+          source_priority: 0,
+          swath_index: idx,
+          polygon_geojson: geojson,
+          centroid_lat: cLat,
+          centroid_lon: cLon
+        };
+      });
+      console.log('[_saveHailTracePolygons] ' + dateStr + ': saving ' + rows.length + ' polygon(s)');
+      var url = SUPABASE_URL + '/rest/v1/storm_polygons';
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+          Prefer: 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(rows)
+      }).then(function (resp) {
+        if (!resp.ok) {
+          return resp.text().then(function (t) {
+            console.warn('[_saveHailTracePolygons] ' + dateStr + ' HTTP ' + resp.status + ': ' + t.slice(0, 300));
+            return false;
+          });
+        }
+        console.log('[_saveHailTracePolygons] ' + dateStr + ': saved OK');
+        return true;
+      }).catch(function (err) {
+        console.warn('[_saveHailTracePolygons] ' + dateStr + ' error:', err);
+        return false;
+      });
+    }
+
+    // ── Full trace-and-save pipeline for one date ──
+    // Fetches points (for geographic bounds), loads HailTrace image,
+    // traces hail-colored pixels → polygon geometry, saves to storm_polygons.
+    function _processHailTraceDateFull(dateStr, imageUrl, callback) {
+      var mmddyyyy = dateStr.split('-').slice(1).concat(dateStr.split('-')[0]).join('-');
+      console.log('[HailTrace-process] ' + dateStr + ' (' + mmddyyyy + ') START | url=' + imageUrl);
+
+      // 1) Fetch LSR points to compute geographic bounds
+      var ptsProm = mapsState.lsrPointsByDate[dateStr]
+        ? Promise.resolve(mapsState.lsrPointsByDate[dateStr])
+        : fetchLsrPointsByDate(dateStr).catch(function () { return []; });
+
+      ptsProm.then(function (points) {
+        mapsState.lsrPointsByDate[dateStr] = points;
+        var boundsSource = 'lsr-points';
+        var b = _boundsFromPoints(points);
+        if (!b) { b = REFERENCE_SWATH_BOUNDS[dateStr] || null; boundsSource = 'reference'; }
+        if (!b) {
+          // CONUS fallback for tracing — low-res but ensures geometry is saved
+          console.log('[HailTrace-process] ' + dateStr + ' no LSR/ref bounds, using CONUS fallback');
+          b = { s: 25.0, n: 50.0, w: -125.0, e: -66.0 };
+          boundsSource = 'CONUS-fallback';
+        }
+        // Set mapRatio for HailTrace CDN images (sales-header has chrome at bottom)
+        if (!b.mapRatio && imageUrl.indexOf('cdn.hailtrace.com') !== -1) {
+          b.mapRatio = 0.58;
+        }
+
+        console.log('[HailTrace-process] ' + dateStr + ' bounds=' + JSON.stringify(b) + ' (source=' + boundsSource + ') | points=' + points.length);
+
+        // 2) Trace image → polygons
+        _traceImageToPolygons(imageUrl, b, function (polygons) {
+          if (!polygons || !polygons.length) {
+            console.log('[HailTrace-process] ' + dateStr + ' DONE: no polygons extracted (image may lack hail colors or CORS blocked)');
+            callback(false); return;
+          }
+
+          console.log('[HailTrace-process] ' + dateStr + ' traced ' + polygons.length + ' polygon(s) | source=hailtrace_exact');
+
+          // 3) Save to storm_polygons
+          _saveHailTracePolygons(dateStr, polygons).then(function (saved) {
+            console.log('[HailTrace-process] ' + dateStr + ' DONE: saved=' + saved + ' | swath_source=hailtrace_exact');
+            callback(saved);
+          });
+        });
+      });
+    }
+
+    // ── Sequential date-by-date HailTrace swath ingestion for ALL Recent Storms dates ──
+    // Runs automatically after storm dates load. Processes every date in the
+    // Recent Storms list, newest-first, one after the next, until no dates remain.
+    // For each date:
+    //   1. Probe hailtrace-swath edge fn → get imageUrl + availability
+    //   2. If available: fetch LSR points → compute bounds → load image →
+    //      chroma-key → extract polygon geometry → save to storm_polygons
+    //   3. Continue to the next date
+    // Newly ingested dates are also processed: the ingest script triggers
+    // hailtrace-swath per-date, and the periodic date refresh (every 5 min)
+    // picks up new dates and prefetches them too.
+    function mapsPrefetchAllHailTraceSwaths() {
+      var dates = mapsState.stormDates.slice(); // newest-first
+      if (!dates.length) return;
+
+      var idx = 0;
+      var done = 0;
+      var available = 0;
+      var traced = 0;
+      var total = dates.length;
+      var statusEl = document.getElementById('maps-storm-status');
+
+      console.log('[HailTrace-ingest] ═══ Starting sequential date-by-date scan of ' + total + ' storm dates ═══');
+
+      function _isoToMmDdYyyy(iso) {
+        var p = iso.split('-');
+        return p[1] + '-' + p[2] + '-' + p[0]; // MM-DD-YYYY (zero-padded)
+      }
+
+      function next() {
+        if (idx >= total) { finish(); return; }
+        var dateStr = dates[idx++];
+        var mmddyyyy = _isoToMmDdYyyy(dateStr);
+        var htUrl = 'https://hailtrace.com/hail-maps/' + mmddyyyy;
+
+        console.log('[HailTrace-ingest] ── Date ' + idx + '/' + total + ' ──');
+        console.log('[HailTrace-ingest]   event_date:    ' + dateStr);
+        console.log('[HailTrace-ingest]   MM-DD-YYYY:    ' + mmddyyyy);
+        console.log('[HailTrace-ingest]   HailTrace URL: ' + htUrl);
+
+        // Step 1: probe HailTrace (force-refresh bypasses all caches)
+        var probeProm = fetchHailTraceSwath(dateStr, true);
+
+        probeProm.then(function (r) {
+          done++;
+
+          // Log fetch status
+          var fetchStatus = r && r.cached ? 'cached' : (r && r.available ? 'live-ok' : 'unavailable');
+          console.log('[HailTrace-ingest]   fetch status:  ' + fetchStatus);
+
+          if (!r || !r.available || !r.imageUrl) {
+            console.log('[HailTrace-ingest]   result:        NOT AVAILABLE (no swath data for this date)');
+            console.log('[HailTrace-ingest]   image source:  none');
+            console.log('[HailTrace-ingest]   geometry:      skipped');
+            console.log('[HailTrace-ingest]   save:          skipped');
+            next();
+            return;
+          }
+
+          available++;
+          console.log('[HailTrace-ingest]   image source:  ' + r.imageUrl);
+          console.log('[HailTrace-ingest]   hailtrace URL: ' + (r.hailtraceUrl || htUrl));
+
+          // Step 2: full trace + save pipeline
+          _processHailTraceDateFull(dateStr, r.imageUrl, function (saved) {
+            if (saved) traced++;
+            console.log('[HailTrace-ingest]   geometry:      ' + (saved ? 'SUCCESS' : 'FAILED (no polygons extracted or CORS blocked)'));
+            console.log('[HailTrace-ingest]   save:          ' + (saved ? 'SUCCESS' : 'FAILED'));
+            console.log('[HailTrace-ingest]   progress:      ' + done + '/' + total + ' (' + available + ' available, ' + traced + ' traced)');
+            next();
+          });
+        }).catch(function (err) {
+          done++;
+          console.log('[HailTrace-ingest]   fetch status:  ERROR (' + (err && err.message || err) + ')');
+          console.log('[HailTrace-ingest]   geometry:      skipped');
+          console.log('[HailTrace-ingest]   save:          skipped');
+          next();
+        });
+      }
+
+      function finish() {
+        console.log('[HailTrace-ingest] ═══ Complete: ' + total + ' dates scanned, ' + available + ' available, ' + traced + ' traced & saved ═══');
+      }
+
+      // Process one at a time (sequential) to avoid overwhelming browser + HailTrace
+      next();
+    }
+
+    // Draw HailTrace image overlay using LSR-point-derived bounds
+    function mapsDrawHailTraceSwath(dateStr, imageUrl, points) {
+      mapsRemoveRefSwathForDate(dateStr);
+      if (!mapsState.map || !imageUrl) return false;
+
+      // Compute geographic bounds from LSR points for this date
+      var b = _boundsFromPoints(points);
+      if (!b) {
+        // No points → check if REFERENCE_SWATH_BOUNDS has an entry
+        b = REFERENCE_SWATH_BOUNDS[dateStr];
+      }
+      if (!b) {
+        // CONUS fallback — image will be stretched but chroma-key removes non-swath pixels
+        console.log('[mapsDrawHailTraceSwath] ' + dateStr + ': no LSR/ref bounds, using CONUS fallback');
+        b = { s: 25.0, n: 50.0, w: -125.0, e: -66.0 };
+      }
+
+      // HailTrace CDN sales-header images have title/chrome at top+bottom;
+      // mapRatio 0.58 crops the bottom 42% (stats, buttons, attribution)
+      var isHtCdn = imageUrl.indexOf('cdn.hailtrace.com') !== -1;
+      var mapRatio = b.mapRatio || (isHtCdn ? 0.58 : 1);
+
+      var sw = new google.maps.LatLng(b.s, b.w);
+      var ne = new google.maps.LatLng(b.n, b.e);
+      var gmBounds = new google.maps.LatLngBounds(sw, ne);
+      ensureRefSwathOverlayProto();
+      var overlay = new RefSwathMapOverlay(mapsState.map, imageUrl, gmBounds, {
+        mapRatio: mapRatio,
+        opacity: 0.85
+      });
+      mapsState.refSwathOverlays[dateStr] = overlay;
+      mapsState.refSwathDates[dateStr] = true;
+      console.log('[mapsDrawHailTraceSwath] ' + dateStr + ' placed at bounds ' + JSON.stringify(b) + ' mapRatio=' + mapRatio);
+      return true;
+    }
+
+    // Compute {s,n,w,e} bounding box from LSR point array with padding
+    function _boundsFromPoints(points) {
+      if (!points || !points.length) return null;
+      var s = 90, n = -90, w = 180, e = -180;
+      var count = 0;
+      for (var i = 0; i < points.length; i++) {
+        var lat = Number(points[i].lat), lon = Number(points[i].lon);
+        if (!isFinite(lat) || !isFinite(lon)) continue;
+        if (lat < s) s = lat;
+        if (lat > n) n = lat;
+        if (lon < w) w = lon;
+        if (lon > e) e = lon;
+        count++;
+      }
+      if (count === 0) return null;
+      var latPad = Math.max((n - s) * 0.5, 1.0);
+      var lonPad = Math.max((e - w) * 0.5, 1.0);
+      return { s: s - latPad, n: n + latPad, w: w - lonPad, e: e + lonPad };
+    }
+
+    function mapsDrawRefSwathOnMap(dateStr, imageFile) {
+      mapsRemoveRefSwathForDate(dateStr);
+      var b = REFERENCE_SWATH_BOUNDS[dateStr];
+      if (!b || !mapsState.map) {
+        console.warn('[mapsDrawRefSwathOnMap] ' + dateStr + ': no bounds defined, skipping');
+        return false;
+      }
+      var sw = new google.maps.LatLng(b.s, b.w);
+      var ne = new google.maps.LatLng(b.n, b.e);
+      var gmBounds = new google.maps.LatLngBounds(sw, ne);
+      ensureRefSwathOverlayProto();
+      var overlay = new RefSwathMapOverlay(mapsState.map, imageFile, gmBounds, {
+        mapRatio: b.mapRatio || 1,
+        opacity: 0.85
+      });
+      mapsState.refSwathOverlays[dateStr] = overlay;
+      mapsState.refSwathDates[dateStr] = true;
+      console.log('[mapsDrawRefSwathOnMap] ' + dateStr + ' placed on map at bounds ' + JSON.stringify(b));
+      return true;
+    }
+
+    // ── Remove reference swath map overlay for a date ──
+    function mapsRemoveRefSwathForDate(dateStr) {
+      var existing = mapsState.refSwathOverlays[dateStr];
+      if (existing) {
+        try { existing.destroy(); } catch (e) {}
+        delete mapsState.refSwathOverlays[dateStr];
+      }
+      delete mapsState.refSwathDates[dateStr];
+      mapsHideRefSwathPanel(dateStr);
+    }
+
+    function mapsShowRefSwathPanel(dateStr, imageFile) {
+      mapsHideRefSwathPanel(dateStr);
+      var mapDiv = document.getElementById('stormMap');
+      if (!mapDiv) return;
+      var panel = document.createElement('div');
+      panel.id = 'ref-swath-panel-' + dateStr;
+      panel.className = 'ref-swath-panel';
+      panel.setAttribute('data-date', dateStr);
+      panel.innerHTML =
+        '<div class="ref-swath-label">' +
+          '<span>\uD83D\uDDFA\uFE0F ' + dateStr + ' — Reference Swath</span>' +
+          '<button class="ref-swath-close" title="Close">&times;</button>' +
+        '</div>' +
+        '<img src="' + encodeURI(imageFile) + '" alt="Reference swath for ' + dateStr + '">';
+      panel.querySelector('.ref-swath-close').addEventListener('click', function () {
+        mapsHideRefSwathPanel(dateStr);
+      });
+      mapDiv.appendChild(panel);
+      mapsState.refSwathDates[dateStr] = true;
+    }
+
+    function mapsHideRefSwathPanel(dateStr) {
+      if (dateStr) {
+        var el = document.getElementById('ref-swath-panel-' + dateStr);
+        if (el) el.parentNode.removeChild(el);
+        delete mapsState.refSwathDates[dateStr];
+      } else {
+        // hide all
+        var all = document.querySelectorAll('.ref-swath-panel');
+        for (var i = 0; i < all.length; i++) {
+          var d = all[i].getAttribute('data-date');
+          if (d) delete mapsState.refSwathDates[d];
+          all[i].parentNode.removeChild(all[i]);
+        }
+      }
+    }
 
     function mapsDrawSavedStormPolygonForDate(dateStr, rows) {
       if (mapsState.swathPolygons[dateStr]) return true;
@@ -5219,10 +7116,20 @@
         });
       });
 
-      console.log('[drawSavedPoly] ' + dateStr + ': built ' + polys.length + ' polygon(s) from ' + validRows.length + ' valid row(s) (of ' + rows.length + ' total)');
+      // Classify source for logging
+      var sourceMap = {};
+      validRows.forEach(function (r) {
+        var src = (r.source || 'unknown').toLowerCase();
+        var cls = src === 'hailtrace' ? 'hailtrace_exact' : (src === 'mrms' || src === 'swdi') ? 'radar_swath' : src;
+        sourceMap[cls] = (sourceMap[cls] || 0) + 1;
+      });
+      var sourceStr = Object.keys(sourceMap).map(function (k) { return k + ':' + sourceMap[k]; }).join(', ');
+      console.log('[drawSavedPoly] ' + dateStr + ': built ' + polys.length + ' polygon(s) from ' + validRows.length + ' valid row(s) (of ' + rows.length + ' total) | sources=[' + sourceStr + ']');
 
       if (!polys.length) return false;
       mapsState.swathPolygons[dateStr] = polys;
+      // Store the primary source classification for display logic
+      mapsState.swathPolygons[dateStr]._sourceClass = Object.keys(sourceMap)[0] || 'unknown';
       return true;
     }
 
@@ -5253,6 +7160,42 @@
       return types.join(', ');
     }
 
+    // Build multi-line summary HTML for a date's storm types
+    function mapsStormSummaryHtml(dateStr) {
+      var summary = mapsState.dateSummaries[dateStr];
+      var types = mapsState.dateEventTypes[dateStr] || ['hail'];
+      var lines = [];
+      for (var i = 0; i < types.length; i++) {
+        var t = types[i];
+        if (t === 'hail') {
+          var hs = summary && summary.hail;
+          if (hs && hs.min != null && hs.max != null) {
+            var hMin = Number(hs.min).toFixed(2), hMax = Number(hs.max).toFixed(2);
+            lines.push('<span style="color:#FFD700;">&#x1F9CA;</span> ' + (hMin === hMax ? hMin + '\u2033 hail' : hMin + '\u2033\u2013' + hMax + '\u2033 hail'));
+          } else {
+            lines.push('<span style="color:#FFD700;">&#x1F9CA;</span> hail');
+          }
+        } else if (t === 'wind') {
+          var ws = summary && summary.wind;
+          if (ws && ws.min != null && ws.max != null) {
+            var wMin = Math.round(Number(ws.min)), wMax = Math.round(Number(ws.max));
+            lines.push('<span style="color:#42A5F5;">&#x1F4A8;</span> Wind: ' + (wMin === wMax ? wMin + ' mph' : wMin + '\u2013' + wMax + ' mph'));
+          } else {
+            lines.push('<span style="color:#42A5F5;">&#x1F4A8;</span> Wind');
+          }
+        } else if (t === 'tornado') {
+          var ts = summary && summary.tornado;
+          if (ts && ts.min != null && ts.max != null) {
+            var tMin = Math.round(Number(ts.min)), tMax = Math.round(Number(ts.max));
+            lines.push('<span style="color:#AB47BC;">&#x1F32A;</span> Tornado: ' + (tMin === tMax ? 'EF' + tMin : 'EF' + tMin + '\u2013EF' + tMax));
+          } else {
+            lines.push('<span style="color:#AB47BC;">&#x1F32A;</span> Tornado');
+          }
+        }
+      }
+      return lines.join('<br>');
+    }
+
     function mapsRenderStormList() {
       var ul = document.getElementById('maps-storm-list');
       var dates = mapsState.stormDates;
@@ -5274,14 +7217,16 @@
         var isPinned = mapsState.pinnedDates.indexOf(dateStr) !== -1;
         var isPreview = mapsState.previewDate === dateStr;
         li.className = 'maps-storm-row' + (isPreview ? ' is-preview' : '') + (isPinned ? ' is-pinned' : '');
-        var typeLabel = mapsEventTypeLabel(dateStr);
+        var summaryHtml = mapsStormSummaryHtml(dateStr);
         var dotColor = isPinned ? '#caa85c' : (isPreview ? '#00c2ff' : '#6b7080');
         li.innerHTML =
           '<button type="button" class="maps-pin-btn' + (isPinned ? ' pinned' : '') +
           '" data-pin-date="' + dateStr + '" title="' + (isPinned ? 'Unpin' : 'Pin to saved') + '">&#x1F4CC;</button>' +
           '<span class="storm-color-dot" style="background:' + dotColor + ';"></span>' +
-          '<span class="storm-label">' + dateStr + '</span>' +
-          '<span class="storm-size">' + typeLabel + '</span>';
+          '<div class="storm-label-group">' +
+            '<span class="storm-label">' + dateStr + '</span>' +
+            '<span class="storm-size">' + summaryHtml + '</span>' +
+          '</div>';
         // Click row → preview this date
         li.addEventListener('click', function (e) {
           if (e.target.closest('.maps-pin-btn')) return;
@@ -5343,7 +7288,7 @@
       mapsSyncSelectedDates();
 
       // Draw if not already on map
-      if (!mapsState.swathPolygons[dateStr] && !mapsState.pointOverlaysByDate[dateStr]) {
+      if (!mapsState.swathPolygons[dateStr] && !mapsState.pointOverlaysByDate[dateStr] && !mapsState.refSwathOverlays[dateStr]) {
         mapsDrawDate(dateStr);
       } else {
         fitMapToStormDate(dateStr);
@@ -5376,7 +7321,7 @@
         }
         mapsState.pinnedDates.push(dateStr);
         // Draw if not already on map
-        if (!mapsState.swathPolygons[dateStr] && !mapsState.pointOverlaysByDate[dateStr]) {
+        if (!mapsState.swathPolygons[dateStr] && !mapsState.pointOverlaysByDate[dateStr] && !mapsState.refSwathOverlays[dateStr]) {
           mapsDrawDate(dateStr);
         }
       }
@@ -5495,6 +7440,8 @@
     function removeStormDate(dateStr) {
       dateStr = mapsNormalizeDate(dateStr);
       console.log('[removeStormDate] ' + dateStr);
+      // Remove reference swath map overlay for this date
+      mapsRemoveRefSwathForDate(dateStr);
       // Remove swath polygons for this date
       var polys = mapsState.swathPolygons[dateStr];
       if (polys) {
@@ -5503,16 +7450,31 @@
       }
       // Remove AI swath overlay for this date
       mapsRemoveAiSwathForDate(dateStr);
+      // Remove hail field overlay for this date
+      mapsRemoveHailFieldForDate(dateStr);
+      // Remove hail band polygons for this date
+      mapsRemoveHailBandsForDate(dateStr);
+      // Remove wind band polygons for this date
+      mapsRemoveWindBandsForDate(dateStr);
+      // Remove tornado band polygons for this date
+      mapsRemoveTornadoBandsForDate(dateStr);
       // Remove point overlays for this date
       mapsRemovePointsForDate(dateStr);
       // Clear cached point data
       delete mapsState.lsrPointsByDate[dateStr];
+      delete mapsState.windPointsByDate[dateStr];
+      delete mapsState.tornadoPointsByDate[dateStr];
     }
 
     // ── Rebuild all visible overlays from stored per-date data ──
     function rebuildVisibleStormOverlays() {
       var map = mapsState.map;
       if (!map) return;
+      // Hide/show reference swath map overlays
+      Object.keys(mapsState.refSwathOverlays).forEach(function (d) {
+        var show = mapsState.selectedDates.indexOf(d) !== -1;
+        try { mapsState.refSwathOverlays[d][show ? 'show' : 'hide'](); } catch (_) {}
+      });
       // Hide all swath polygons, then show only selected dates
       Object.keys(mapsState.swathPolygons).forEach(function (d) {
         var show = mapsState.selectedDates.indexOf(d) !== -1;
@@ -5541,6 +7503,13 @@
       var bounds = new google.maps.LatLngBounds();
       var hasAny = false;
 
+      // Include reference swath overlay bounds
+      var refOverlay = mapsState.refSwathOverlays[dateStr];
+      if (refOverlay && refOverlay.bounds_) {
+        bounds.union(refOverlay.bounds_);
+        hasAny = true;
+      }
+
       // Include swath polygon bounds
       var polys = mapsState.swathPolygons[dateStr];
       if (polys && polys.length) {
@@ -5562,6 +7531,45 @@
             hasAny = true;
           }
         }
+      }
+
+      // Include hail field overlay bounds (from its point set)
+      var fieldOverlay = mapsState.hailFieldOverlays[dateStr];
+      if (fieldOverlay && fieldOverlay.points_) {
+        for (var fi = 0; fi < fieldOverlay.points_.length; fi++) {
+          var fp = fieldOverlay.points_[fi];
+          var fLat = Number(fp.lat), fLon = Number(fp.lon);
+          if (isFinite(fLat) && isFinite(fLon)) {
+            bounds.extend(new google.maps.LatLng(fLat, fLon));
+            hasAny = true;
+          }
+        }
+      }
+
+      // Include hail band polygon bounds
+      var bandPolys = mapsState.hailBandPolygons[dateStr];
+      if (bandPolys && bandPolys.length) {
+        bandPolys.forEach(function (p) {
+          try {
+            p.getPath().forEach(function (ll) { bounds.extend(ll); hasAny = true; });
+          } catch (_) {}
+        });
+      }
+
+      // Include wind band polygon bounds
+      var windPolys = mapsState.windBandPolygons[dateStr];
+      if (windPolys && windPolys.length) {
+        windPolys.forEach(function (p) {
+          try { p.getPath().forEach(function (ll) { bounds.extend(ll); hasAny = true; }); } catch (_) {}
+        });
+      }
+
+      // Include tornado band polygon bounds
+      var tPolys = mapsState.tornadoBandPolygons[dateStr];
+      if (tPolys && tPolys.length) {
+        tPolys.forEach(function (p) {
+          try { p.getPath().forEach(function (ll) { bounds.extend(ll); hasAny = true; }); } catch (_) {}
+        });
       }
 
       // Include point overlay bounds
@@ -5614,48 +7622,105 @@
             })
         : Promise.resolve(cachedPts || []);
 
-      // 3) Resolve all, draw in priority order — per-date only
-      Promise.all([savedPolyProm, pointsProm]).then(function (res) {
+      // 3) HailTrace swath probe (parallel with polygon/point fetches)
+      //    Probe HailTrace for EVERY date — it is the primary swath source.
+      //    If unavailable, mapsDrawDate falls through to local reference images.
+      var htProm = fetchHailTraceSwath(dateStr);
+
+      // 4) Wind/tornado point fetches (parallel, only if date has those types)
+      var dateTypes = mapsState.dateEventTypes[dateStr] || [];
+      var hasWind = dateTypes.indexOf('wind') !== -1;
+      var hasTornado = dateTypes.indexOf('tornado') !== -1;
+      var windProm = hasWind && !mapsState.windPointsByDate[dateStr]
+        ? fetchStormLsrByDate(dateStr, 'wind') : Promise.resolve(mapsState.windPointsByDate[dateStr] || []);
+      var tornadoProm = hasTornado && !mapsState.tornadoPointsByDate[dateStr]
+        ? fetchStormLsrByDate(dateStr, 'tornado') : Promise.resolve(mapsState.tornadoPointsByDate[dateStr] || []);
+
+      // 5) Resolve all, draw in priority order — per-date only
+      Promise.all([savedPolyProm, pointsProm, htProm, windProm, tornadoProm]).then(function (res) {
         var savedPolys  = res[0] || [];
         var points      = res[1] || [];
+        var htResult    = res[2] || {};
+        var windPts     = res[3] || [];
+        var tornadoPts  = res[4] || [];
+
+        // Cache wind/tornado points
+        if (windPts.length) mapsState.windPointsByDate[dateStr] = windPts;
+        if (tornadoPts.length) mapsState.tornadoPointsByDate[dateStr] = tornadoPts;
 
         console.log('[mapsDrawDate] ' + dateStr + ' fetch done — saved:' + savedPolys.length +
-          ' points:' + points.length);
+          ' points:' + points.length + ' hailtrace:' + (htResult.available ? 'yes' : 'no'));
 
         // Cache point data for this date
         mapsState.lsrPointsByDate[dateStr] = points;
 
-        var result = { date: dateStr, drewSaved: false, drewAi: false, pointCount: points.length, hasAnyData: false, statusText: '' };
+        var result = { date: dateStr, drewSaved: false, drewAi: false, drewField: false, drewBands: false, drewRef: false, drewHailTrace: false, pointCount: points.length, hasAnyData: false, statusText: '', swathSource: 'none' };
 
-        // Priority 1: saved storm polygon geometry (from storm_polygons table)
+        // Priority 0: HailTrace date-matched swath (best external source — exact geometry)
+        if (htResult.available && htResult.imageUrl) {
+          var drewHt = mapsDrawHailTraceSwath(dateStr, htResult.imageUrl, points);
+          if (drewHt) {
+            result.drewHailTrace = true;
+            result.drewRef = true; // treat as reference for finishDraw logic
+            result.swathSource = 'hailtrace_exact';
+            console.log('[mapsDrawDate] ' + dateStr + ' → swath_source=hailtrace_exact | ' + htResult.hailtraceUrl);
+            finishDraw(result, dateStr, points, statusEl, windPts, tornadoPts);
+            return;
+          }
+        }
+
+        // Priority 1: saved reference swath image (pre-verified truth set)
+        // Draws the image directly on the map as a geographic overlay.
+        // Circles/polygons are NOT drawn — the reference image IS the swath.
+        var refImage = REFERENCE_SWATH_IMAGES[dateStr];
+        if (refImage) {
+          var drewOnMap = mapsDrawRefSwathOnMap(dateStr, refImage);
+          result.drewRef = drewOnMap;
+          result.swathSource = 'radar_swath';
+          console.log('[mapsDrawDate] ' + dateStr + ' → swath_source=radar_swath (reference image) | ' + refImage);
+          // Do NOT draw circles — the reference image replaces all generated visuals
+          finishDraw(result, dateStr, points, statusEl, windPts, tornadoPts);
+          return;
+        }
+
+        // Priority 2: saved storm polygon geometry (from storm_polygons table)
         if (needSwath && savedPolys.length) {
           result.drewSaved = mapsDrawSavedStormPolygonForDate(dateStr, savedPolys);
-          console.log('[mapsDrawDate] ' + dateStr + ' saved polygon draw: ' + result.drewSaved);
+          if (result.drewSaved) {
+            var sc = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || 'unknown';
+            result.swathSource = sc;
+            console.log('[mapsDrawDate] ' + dateStr + ' saved polygon draw: true | swath_source=' + sc);
+          } else {
+            console.log('[mapsDrawDate] ' + dateStr + ' saved polygon draw: false');
+          }
         } else if (!needSwath) {
           result.drewSaved = true; // already cached
+          result.swathSource = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || 'unknown';
         }
 
-        // Priority 2: AI-generated swath from hail points (canvas overlay)
+        // Priority 3: Hail intensity field from report points (raster canvas overlay)
+        // NOTE: This is a point-derived approximation — NOT an exact swath.
+        // Rendered as a continuous painted intensity field with color bands.
+        // Marked as noaa_points_fallback per swath-source rules.
         if (!result.drewSaved && points.length >= 2) {
-          statusEl.textContent = dateStr + ': generating swath…';
-          fetchSwathDescriptor(dateStr).then(function (desc) {
-            if (desc && desc.corridors && desc.corridors.length) {
-              result.drewAi = mapsDrawAiSwathForDate(dateStr, desc);
-              console.log('[mapsDrawDate] ' + dateStr + ' AI swath draw: ' + result.drewAi);
-            }
-            finishDraw(result, dateStr, points, statusEl);
-          }).catch(function () {
-            finishDraw(result, dateStr, points, statusEl);
-          });
-          return; // finishDraw will handle status + fitBounds
+          statusEl.textContent = dateStr + ': rendering hail field…';
+          result.swathSource = 'noaa_points_fallback';
+          console.log('[mapsDrawDate] ' + dateStr + ' rendering hail intensity field from ' + points.length + ' points | swath_source=noaa_points_fallback');
+          result.drewField = mapsDrawHailFieldForDate(dateStr, points);
+          if (result.drewField) {
+            result.drewAi = true; // treat as AI-level for finishDraw logic
+            console.log('[mapsDrawDate] ' + dateStr + ' hail field draw: ' + result.drewField + ' | swath_source=noaa_points_fallback (painted raster)');
+          }
+          finishDraw(result, dateStr, points, statusEl, windPts, tornadoPts);
+          return;
         }
 
-        // If we already have AI overlay cached, mark it
-        if (!result.drewSaved && mapsState.aiSwathOverlays[dateStr]) {
+        // If we already have field or AI overlay cached, mark it
+        if (!result.drewSaved && (mapsState.hailFieldOverlays[dateStr] || mapsState.aiSwathOverlays[dateStr])) {
           result.drewAi = true;
         }
 
-        finishDraw(result, dateStr, points, statusEl);
+        finishDraw(result, dateStr, points, statusEl, windPts, tornadoPts);
       }).catch(function (err) {
         console.warn('[mapsDrawDate] ' + dateStr + ' pipeline error:', err);
         statusEl.className = 'maps-status-msg error';
@@ -5663,31 +7728,81 @@
       });
     }
 
-    // ── Final draw step: fallback to points, set status, fitBounds ──
-    function finishDraw(result, dateStr, points, statusEl) {
-      // Priority 3: raw point circles as last visual fallback
-      if (!result.drewSaved && !result.drewAi && points.length) {
+    // ── Final draw step: fallback to hail field, set status, fitBounds ──
+    function finishDraw(result, dateStr, points, statusEl, windPts, tornadoPts) {
+      windPts = windPts || [];
+      tornadoPts = tornadoPts || [];
+      // Last resort: render hail intensity field + band polygons from points
+      if (!result.drewRef && !result.drewHailTrace && !result.drewSaved && !result.drewAi && !result.drewField && points.length >= 2) {
+        result.swathSource = 'noaa_points_fallback';
+        console.log('[mapsDrawDate] ' + dateStr + ' fallback: rendering hail field+bands from ' + points.length + ' points | swath_source=noaa_points_fallback');
+        result.drewField = mapsDrawHailFieldForDate(dateStr, points);
+        if (points.length >= 3) {
+          var drewBands = mapsDrawHailBandsForDate(dateStr, points);
+          if (drewBands) result.drewBands = true;
+        }
+      }
+      // Absolute last resort: single report — draw as circle (can't build a field from 1 point)
+      if (!result.drewRef && !result.drewHailTrace && !result.drewSaved && !result.drewAi && !result.drewField && !result.drewBands && points.length) {
+        result.swathSource = 'noaa_points_fallback';
+        console.log('[mapsDrawDate] ' + dateStr + ' single-point fallback: drawing circle | swath_source=noaa_points_fallback');
         mapsDrawPointsForDate(dateStr, points);
       }
 
-      result.hasAnyData = result.drewSaved || result.drewAi || points.length > 0;
+      // Draw hail-size band polygons on top of saved swaths when point data is available
+      if (result.drewSaved && !result.drewBands && points.length >= 3) {
+        var drewBands = mapsDrawHailBandsForDate(dateStr, points);
+        if (drewBands) result.drewBands = true;
+      }
 
-      // Status message
+      // ── Draw wind band polygons (blue palette) ──
+      var drewWind = false;
+      if (windPts.length >= 3) {
+        drewWind = mapsDrawWindBandsForDate(dateStr, windPts);
+        if (drewWind) console.log('[finishDraw] ' + dateStr + ': drew wind bands from ' + windPts.length + ' points');
+      }
+
+      // ── Draw tornado band polygons (purple palette) ──
+      var drewTornado = false;
+      if (tornadoPts.length >= 3) {
+        drewTornado = mapsDrawTornadoBandsForDate(dateStr, tornadoPts);
+        if (drewTornado) console.log('[finishDraw] ' + dateStr + ': drew tornado bands from ' + tornadoPts.length + ' points');
+      }
+
+      result.hasAnyData = result.drewHailTrace || result.drewRef || result.drewSaved || result.drewAi || result.drewField || result.drewBands || points.length > 0 || drewWind || drewTornado;
+
+      // Status message — clearly distinguish exact swath vs fallback
       var swathN = mapsState.swathPolygons[dateStr] ? mapsState.swathPolygons[dateStr].length : 0;
+      var extraTypes = [];
+      if (drewWind) extraTypes.push(windPts.length + ' wind reports');
+      if (drewTornado) extraTypes.push(tornadoPts.length + ' tornado reports');
+      var extraText = extraTypes.length ? ' + ' + extraTypes.join(' + ') : '';
       statusEl.className = 'maps-status-msg';
 
-      if (result.drewSaved) {
-        result.statusText = dateStr + ': ' + swathN + ' swath polygon' + (swathN === 1 ? '' : 's') + ' + ' + points.length + ' reports.';
+      if (result.drewHailTrace) {
+        result.statusText = dateStr + ': HailTrace exact swath + ' + points.length + ' reports.' + extraText;
+      } else if (result.drewRef) {
+        result.statusText = dateStr + ': Reference swath + ' + points.length + ' reports.' + extraText;
+      } else if (result.drewSaved) {
+        var srcLabel = result.swathSource === 'hailtrace_exact' ? 'HailTrace' : result.swathSource === 'radar_swath' ? 'radar' : result.swathSource;
+        result.statusText = dateStr + ': ' + swathN + ' ' + srcLabel + ' swath polygon' + (swathN === 1 ? '' : 's') + ' + ' + points.length + ' reports.' + extraText;
+      } else if (result.drewField || result.drewBands) {
+        var bandCount = mapsState.hailBandPolygons[dateStr] ? mapsState.hailBandPolygons[dateStr].length : 0;
+        result.statusText = dateStr + ': ' + (bandCount ? bandCount + ' hail-size band' + (bandCount === 1 ? '' : 's') + ' + ' : '') + 'intensity field from ' + points.length + ' reports.' + extraText + ' [raster fallback]';
       } else if (result.drewAi) {
-        result.statusText = dateStr + ': AI swath rendered from ' + points.length + ' hail reports.';
-      } else if (points.length) {
-        result.statusText = dateStr + ': ' + points.length + ' hail reports drawn.';
+        result.statusText = dateStr + ': Approximate swath from ' + points.length + ' hail reports.' + extraText + ' [fallback]';
+      } else if (points.length || drewWind || drewTornado) {
+        var parts = [];
+        if (points.length) parts.push(points.length + ' hail report' + (points.length === 1 ? '' : 's'));
+        if (drewWind) parts.push(windPts.length + ' wind report' + (windPts.length === 1 ? '' : 's'));
+        if (drewTornado) parts.push(tornadoPts.length + ' tornado report' + (tornadoPts.length === 1 ? '' : 's'));
+        result.statusText = dateStr + ': ' + parts.join(' + ') + '.';
       } else {
         result.statusText = 'No storm data for ' + dateStr + '.';
       }
 
       statusEl.textContent = result.statusText;
-      console.log('[mapsDrawDate] ' + dateStr + ' → ' + result.statusText);
+      console.log('[mapsDrawDate] ' + dateStr + ' → ' + result.statusText + ' | swath_source=' + result.swathSource);
 
       // Focus map on this date's overlays
       fitMapToStormDate(dateStr);
@@ -5795,7 +7910,7 @@
         var opacity = Number(slider.value) / 100;
         mapsState.swathOpacity = opacity;
         valEl.textContent = slider.value + '%';
-        // Live-update all visible swath polygons
+        // Live-update all visible saved swath polygons
         Object.keys(mapsState.swathPolygons).forEach(function (dateStr) {
           var polys = mapsState.swathPolygons[dateStr];
           if (!polys) return;
@@ -5803,7 +7918,133 @@
             try { p.setOptions({ fillOpacity: opacity, strokeOpacity: Math.min(1, opacity + 0.4) }); } catch (_) {}
           });
         });
+        // Live-update all visible AI swath canvas overlays
+        Object.keys(mapsState.aiSwathOverlays).forEach(function (dateStr) {
+          var overlay = mapsState.aiSwathOverlays[dateStr];
+          if (overlay && overlay.canvas_) {
+            try { overlay.draw(); } catch (_) {}
+          }
+        });
+        // Live-update all reference swath map overlays
+        Object.keys(mapsState.refSwathOverlays).forEach(function (dateStr) {
+          var overlay = mapsState.refSwathOverlays[dateStr];
+          if (overlay) {
+            try { overlay.setOpacity(Math.min(1, opacity + 0.3)); } catch (_) {}
+          }
+        });
+        // Live-update all hail field overlays
+        Object.keys(mapsState.hailFieldOverlays).forEach(function (dateStr) {
+          var overlay = mapsState.hailFieldOverlays[dateStr];
+          if (overlay && overlay.canvas_) {
+            try { overlay.draw(); } catch (_) {}
+          }
+        });
+        // Live-update all hail band polygons
+        Object.keys(mapsState.hailBandPolygons).forEach(function (dateStr) {
+          var polys = mapsState.hailBandPolygons[dateStr];
+          if (!polys) return;
+          polys.forEach(function (p, bi) {
+            try { p.setOptions({ fillOpacity: opacity * (0.28 + bi * 0.03) }); } catch (_) {}
+          });
+        });
+        // Live-update all wind band polygons
+        Object.keys(mapsState.windBandPolygons).forEach(function (dateStr) {
+          var polys = mapsState.windBandPolygons[dateStr];
+          if (!polys) return;
+          polys.forEach(function (p, bi) {
+            try { p.setOptions({ fillOpacity: opacity * (0.28 + bi * 0.03) }); } catch (_) {}
+          });
+        });
+        // Live-update all tornado band polygons
+        Object.keys(mapsState.tornadoBandPolygons).forEach(function (dateStr) {
+          var polys = mapsState.tornadoBandPolygons[dateStr];
+          if (!polys) return;
+          polys.forEach(function (p, bi) {
+            try { p.setOptions({ fillOpacity: opacity * (0.28 + bi * 0.03) }); } catch (_) {}
+          });
+        });
       });
+    }
+
+    // ── Street Color Overlay Control (Maps page) ──
+    var mapsStreetLayers = [];
+    function mapsWireStreetColorCtrl() {
+      var btn = document.getElementById('maps-street-btn');
+      var panel = document.getElementById('maps-street-panel');
+      var cityInput = document.getElementById('maps-street-city');
+      var minInput = document.getElementById('maps-street-min');
+      var goBtn = document.getElementById('maps-street-go');
+      var clearBtn = document.getElementById('maps-street-clear');
+      if (!btn || !goBtn) return;
+
+      btn.addEventListener('click', function () {
+        panel.classList.toggle('open');
+      });
+
+      goBtn.addEventListener('click', function () {
+        var city = (cityInput.value || '').trim();
+        if (!city) { cityInput.focus(); return; }
+        var minVal = Number(minInput.value) || 300000;
+        // Geocode city, then draw street-color polylines on the Maps map
+        new google.maps.Geocoder().geocode({ address: city }, function (results, status) {
+          if (status !== 'OK' || !results[0]) {
+            alert('Could not geocode "' + city + '"');
+            return;
+          }
+          var loc = results[0].geometry.location;
+          mapsState.map.panTo(loc);
+          if (mapsState.map.getZoom() < 14) mapsState.map.setZoom(14);
+          mapsDrawStreetColors(loc.lat(), loc.lng(), minVal);
+        });
+      });
+
+      clearBtn.addEventListener('click', function () {
+        mapsClearStreetColors();
+      });
+    }
+
+    function mapsDrawStreetColors(lat, lng, minVal) {
+      mapsClearStreetColors();
+      // Generate demo street-color polylines around the geocoded center
+      // These draw alongside (not replacing) the swath overlays
+      var colors = ['#e8302a', '#f5a623', '#4caf50', '#2196f3', '#e8302a', '#f5a623', '#4caf50', '#e8302a'];
+      var segs = [
+        [[ 0.002,-0.012],[ 0.002, 0.012]],
+        [[-0.006,-0.010],[-0.006, 0.010]],
+        [[ 0.010,-0.008],[ 0.010, 0.008]],
+        [[-0.014, 0.000],[ 0.000, 0.000]],
+        [[ 0.005,-0.015],[ 0.005, 0.005]],
+        [[-0.009,-0.014],[ 0.003,-0.014]],
+        [[ 0.000, 0.006],[ 0.012, 0.006]],
+        [[-0.012,-0.004],[-0.002, 0.008]]
+      ];
+      segs.forEach(function (s, i) {
+        var line = new google.maps.Polyline({
+          path: [
+            { lat: lat + s[0][0], lng: lng + s[0][1] },
+            { lat: lat + s[1][0], lng: lng + s[1][1] }
+          ],
+          strokeColor: colors[i % colors.length],
+          strokeOpacity: 0.92,
+          strokeWeight: 5,
+          map: mapsState.map,
+          zIndex: 3,
+          geodesic: true
+        });
+        line.addListener('click', function (e) {
+          var val = '$' + Math.round(minVal * (0.9 + Math.random() * 0.8)).toLocaleString();
+          new google.maps.InfoWindow({
+            content: '<div style="font-family:system-ui;font-size:12px;padding:2px;"><b>Est. avg home value:</b> ' + val + '</div>',
+            position: e.latLng
+          }).open(mapsState.map);
+        });
+        mapsStreetLayers.push(line);
+      });
+    }
+
+    function mapsClearStreetColors() {
+      mapsStreetLayers.forEach(function (l) { try { l.setMap(null); } catch (_) {} });
+      mapsStreetLayers = [];
     }
 
     // ── Property Action Card Logic ──
@@ -5816,6 +8057,34 @@
       subEl.textContent = prop.address
         ? prop.lat.toFixed(5) + ', ' + prop.lng.toFixed(5)
         : 'Lat: ' + prop.lat.toFixed(5) + '  Lng: ' + prop.lng.toFixed(5);
+      // Show local storm info if inside any band
+      var hailEl = document.getElementById('maps-prop-hail');
+      if (hailEl) {
+        var hits = stormHitTest(prop.lat, prop.lng);
+        var hailHit = hits.hail;
+        var windHit = hits.wind;
+        var tornadoHit = hits.tornado;
+        var lines = [];
+        if (hailHit && hailHit.hailIn > 0) {
+          lines.push('\u{1F9CA} ' + swathSeverityLabel(hailHit.hailIn) + ' (' + hailHit.dateStr + ')');
+        }
+        if (windHit) {
+          lines.push('\u{1F4A8} Approx. ' + windHit.mph + ' mph wind (' + windHit.dateStr + ')');
+        }
+        if (tornadoHit) {
+          lines.push('\u{1F32A}\uFE0F ' + tornadoHit.label + ' tornado zone (' + tornadoHit.dateStr + ')');
+        }
+        if (lines.length) {
+          var rgba = hailHit && hailHit.hailIn > 0 ? swathSeverityColor(hailHit.hailIn) : [30, 136, 229, 0.35];
+          hailEl.style.display = '';
+          hailEl.style.background = 'rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',0.15)';
+          hailEl.style.borderLeft = '3px solid rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',0.9)';
+          hailEl.textContent = lines.join(' \u2022 ');
+        } else {
+          hailEl.style.display = 'none';
+          hailEl.textContent = '';
+        }
+      }
       document.getElementById('maps-prop-card').classList.add('open');
     }
 
@@ -5971,7 +8240,7 @@
         }
         mobStatus.textContent = 'Checking date…';
         var url = SUPABASE_URL + '/functions/v1/hail-lsr-by-date?date=' + encodeURIComponent(val);
-        fetch(url, { headers: { apikey: SUPABASE_ANON_KEY } })
+        fetch(url, { headers: { Authorization: 'Bearer ' + SUPABASE_ANON_KEY, apikey: SUPABASE_ANON_KEY } })
           .then(function (r) { return r.json(); })
           .then(function (json) {
             if (json.points && json.points.length) {
@@ -10568,40 +12837,75 @@
       /* ── Sync swaths from Maps page onto campaign map ── */
       function cmpSyncSwaths() {
         // Remove old campaign swath overlays
-        cmpSwathOverlays.forEach(function(p) { try { p.setMap(null); } catch(_){} });
+        cmpSwathOverlays.forEach(function(p) { try { p.setMap(null); } catch(_){} try { p.destroy && p.destroy(); } catch(_){} });
         cmpSwathOverlays = [];
         var map = window.cMap;
-        if (!map || !mapsState || !mapsState.swathPolygons) return;
+        if (!map || !mapsState) return;
         var count = 0;
         var bounds = new google.maps.LatLngBounds();
         var hasBounds = false;
-        // mapsState.swathPolygons is dateStr -> google.maps.Polygon[]
-        // We read the raw GeoJSON stored in each polygon's _geojson property or reconstruct from paths
-        Object.keys(mapsState.swathPolygons).forEach(function(dateStr) {
-          var polys = mapsState.swathPolygons[dateStr];
-          if (!Array.isArray(polys)) return;
-          polys.forEach(function(srcPoly) {
-            // Clone paths from the source polygon
-            var srcPaths = srcPoly.getPaths();
-            var paths = [];
-            srcPaths.forEach(function(srcPath) {
-              var ring = [];
-              srcPath.forEach(function(ll) {
-                ring.push({ lat: ll.lat(), lng: ll.lng() });
-                bounds.extend(ll);
-                hasBounds = true;
+
+        // 1) Clone saved storm polygons
+        if (mapsState.swathPolygons) {
+          Object.keys(mapsState.swathPolygons).forEach(function(dateStr) {
+            var polys = mapsState.swathPolygons[dateStr];
+            if (!Array.isArray(polys)) return;
+            polys.forEach(function(srcPoly) {
+              var srcPaths = srcPoly.getPaths();
+              var paths = [];
+              srcPaths.forEach(function(srcPath) {
+                var ring = [];
+                srcPath.forEach(function(ll) {
+                  ring.push({ lat: ll.lat(), lng: ll.lng() });
+                  bounds.extend(ll);
+                  hasBounds = true;
+                });
+                paths.push(ring);
               });
-              paths.push(ring);
+              var clone = new google.maps.Polygon({
+                paths: paths, map: map,
+                strokeColor: '#00e5ff', strokeOpacity: 0.8, strokeWeight: 2,
+                fillColor: '#00e5ff', fillOpacity: 0.18, clickable: false, zIndex: 5
+              });
+              cmpSwathOverlays.push(clone);
+              count++;
             });
-            var clone = new google.maps.Polygon({
-              paths: paths, map: map,
-              strokeColor: '#00e5ff', strokeOpacity: 0.8, strokeWeight: 2,
-              fillColor: '#00e5ff', fillOpacity: 0.18, clickable: false, zIndex: 5
-            });
+          });
+        }
+
+        // 2) Clone AI swath overlays (SwathCanvasOverlay)
+        if (mapsState.aiSwathOverlays) {
+          Object.keys(mapsState.aiSwathOverlays).forEach(function(dateStr) {
+            var srcOv = mapsState.aiSwathOverlays[dateStr];
+            if (!srcOv || !srcOv.descriptor_) return;
+            ensureSwathOverlayProto();
+            var clone = new SwathCanvasOverlay(map, srcOv.descriptor_);
             cmpSwathOverlays.push(clone);
             count++;
+            // Extend bounds from corridor centerlines
+            var corridors = srcOv.descriptor_.corridors || [];
+            corridors.forEach(function(c) {
+              (c.centerline || []).forEach(function(pt) {
+                var ll = new google.maps.LatLng(pt[1], pt[0]);
+                bounds.extend(ll); hasBounds = true;
+              });
+            });
           });
-        });
+        }
+
+        // 3) Clone reference swath image overlays (RefSwathMapOverlay)
+        if (mapsState.refSwathOverlays) {
+          Object.keys(mapsState.refSwathOverlays).forEach(function(dateStr) {
+            var srcOv = mapsState.refSwathOverlays[dateStr];
+            if (!srcOv || !srcOv.imageUrl_ || !srcOv.bounds_) return;
+            ensureRefSwathOverlayProto();
+            var clone = new RefSwathMapOverlay(map, srcOv.imageUrl_, srcOv.bounds_, srcOv.opts_ || {});
+            cmpSwathOverlays.push(clone);
+            count++;
+            bounds.union(srcOv.bounds_); hasBounds = true;
+          });
+        }
+
         var chip = document.getElementById('cmpSwathChip');
         if (chip) {
           chip.textContent = count > 0 ? count + ' swath' + (count===1?'':'s') + ' from Maps' : '';
@@ -10776,7 +13080,8 @@
           window.cMap = new google.maps.Map(el, {
             center: cmpCenter, zoom: cmpZoom,
             mapTypeId: 'hybrid', zoomControl: true, streetViewControl: false,
-            mapTypeControl: false, fullscreenControl: false
+            mapTypeControl: false, fullscreenControl: false,
+            gestureHandling: 'greedy'
           });
 
           // Track Campaign viewport changes → shared state

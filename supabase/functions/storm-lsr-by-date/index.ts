@@ -36,8 +36,13 @@ serve(async (req: Request) => {
 
     const url = new URL(req.url);
     const date = url.searchParams.get("date")?.trim() ?? "";
+    const stormType = url.searchParams.get("type")?.trim().toLowerCase() ?? "";
+
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return json({ error: "Invalid date. Use date=YYYY-MM-DD" }, 400);
+    }
+    if (stormType !== "wind" && stormType !== "tornado") {
+      return json({ error: "Invalid type. Use type=wind or type=tornado" }, 400);
     }
 
     const globalHeaders: Record<string, string> = {};
@@ -50,48 +55,25 @@ serve(async (req: Request) => {
     });
 
     const { data, error } = await supabase
-      .from("hail_lsr_raw")
-      .select("lat, lon, hail_in, event_time")
+      .from("storm_lsr_raw")
+      .select("lat, lon, magnitude, magnitude_unit, event_time")
       .eq("event_date", date)
+      .eq("event_type", stormType)
       .order("event_time", { ascending: true });
 
     if (error) return json({ error: error.message }, 500);
 
-    let points = Array.isArray(data) ? data : [];
+    const points = (Array.isArray(data) ? data : []).map((r: Record<string, unknown>) => ({
+      lat: r.lat,
+      lon: r.lon,
+      magnitude: r.magnitude != null ? Number(r.magnitude) : null,
+      magnitude_unit: r.magnitude_unit || (stormType === "wind" ? "mph" : "ef"),
+      event_time: r.event_time || null,
+    })).filter((p: { lat: unknown; lon: unknown }) =>
+      Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lon))
+    );
 
-    // Fallback: if hail_lsr_raw is empty, try hail_reports
-    if (points.length === 0) {
-      const { data: hrData, error: hrErr } = await supabase
-        .from("hail_reports")
-        .select("lat, lon, hail_in, event_time")
-        .eq("event_date", date)
-        .order("event_time", { ascending: true });
-      if (!hrErr && Array.isArray(hrData) && hrData.length > 0) {
-        points = hrData;
-      }
-    }
-
-    // Fallback: March 2026 reference-image-derived synthetic points
-    if (points.length === 0) {
-      const SYNTHETIC: Record<string, Array<{ lat: number; lon: number; hail_in: number; event_time: null }>> = {
-        "2026-03-14": [
-          { lat: 26.72, lon: -80.10, hail_in: 1.0, event_time: null },
-          { lat: 26.68, lon: -80.06, hail_in: 1.0, event_time: null },
-        ],
-        "2026-03-24": [
-          { lat: 28.52, lon: -81.35, hail_in: 1.0, event_time: null },
-          { lat: 28.48, lon: -81.30, hail_in: 1.0, event_time: null },
-        ],
-        "2026-03-29": [
-          { lat: 32.22, lon: -110.95, hail_in: 1.0, event_time: null },
-          { lat: 32.15, lon: -110.90, hail_in: 1.0, event_time: null },
-          { lat: 31.65, lon: -111.00, hail_in: 1.0, event_time: null },
-        ],
-      };
-      if (SYNTHETIC[date]) points = SYNTHETIC[date];
-    }
-
-    return json({ points });
+    return json({ points, storm_type: stormType });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }
