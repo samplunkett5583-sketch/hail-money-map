@@ -7081,7 +7081,7 @@
       });
       var _skipSet = {};
       var _nexradHidden = 0;
-      if (nexradIemIndices.length > 1) {
+      if (nexradIemIndices.length >= 1) {
         nexradIemIndices.forEach(function (i) {
           var r = validRows[i];
           var area = Number(r.area_sq_mi) || 0;
@@ -7089,7 +7089,7 @@
           var lat1 = Number(r.centroid_lat) || 0;
           var lon1 = Number(r.centroid_lon) || 0;
           if (!lat1 || !lon1) return; // no centroid, keep it
-          var isolated = true;
+          var hasNeighbor = false;
           for (var k = 0; k < nexradIemIndices.length; k++) {
             var j = nexradIemIndices[k];
             if (j === i) continue;
@@ -7098,9 +7098,13 @@
             var dlon = (Number(r2.centroid_lon) || 0) - lon1;
             var cosLat = Math.cos(lat1 * Math.PI / 180);
             var distMi = 69.0 * Math.sqrt(dlat * dlat + (dlon * cosLat) * (dlon * cosLat));
-            if (distMi <= ISOLATED_RENDER_RADIUS_MI) { isolated = false; break; }
+            if (distMi <= ISOLATED_RENDER_RADIUS_MI) { hasNeighbor = true; break; }
           }
-          if (isolated) { _skipSet[i] = true; _nexradHidden++; }
+          if (!hasNeighbor) {
+            _skipSet[i] = true; _nexradHidden++;
+            console.log('[nexrad_iem filter] HIDE id=' + (r.id || i) +
+              ' area=' + area + 'mi² ctr=[' + lat1.toFixed(2) + ',' + lon1.toFixed(2) + ']');
+          }
         });
       }
       if (nexradIemIndices.length > 0) {
@@ -7167,8 +7171,11 @@
             ' pts=' + allLats.length);
         }
 
-        // Skip isolated small nexrad_iem leftovers
-        if (_skipSet[ri]) return;
+        // Skip isolated small nexrad_iem leftovers (before drawing)
+        if (_skipSet[ri]) {
+          console.log('[drawSavedPoly] FILTERED id=' + (row.id || ri) + ' src=' + row.source + ' area=' + (row.area_sq_mi || '?') + 'mi²');
+          return;
+        }
 
         var isNexradIem = (row.source || '').toLowerCase() === 'nexrad_iem';
         var segStrokeWeight = isNexradIem ? 3 : 2;
