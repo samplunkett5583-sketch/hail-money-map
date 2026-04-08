@@ -7145,7 +7145,7 @@
           var bboxLonSpan = Math.max.apply(null, allLons) - Math.min.apply(null, allLons);
           var storedArea = Number(row.area_sq_mi) || 0;
           var rowSrc = (row.source || '').toLowerCase();
-          var isCorridorSrc = rowSrc === 'corridor' || rowSrc === 'nexrad_iem' || rowSrc === 'nexrad_poc';
+          var isCorridorSrc = VALID_SWATH_SOURCES.indexOf(rowSrc) !== -1;
           if (!isCorridorSrc && (bboxLatSpan > 3.0 || bboxLonSpan > 3.0 || storedArea > 800)) {
             console.warn('[drawSavedPoly] SKIP oversized row ' + (row.id || ri) +
               ' src=' + row.source + ' bboxLat=' + bboxLatSpan.toFixed(2) +
@@ -7200,7 +7200,7 @@
         sourceMap[cls] = (sourceMap[cls] || 0) + 1;
       });
       var sourceStr = Object.keys(sourceMap).map(function (k) { return k + ':' + sourceMap[k]; }).join(', ');
-      console.log('[drawSavedPoly] ' + dateStr + ': built ' + polys.length + ' polygon(s) from ' + validRows.length + ' valid row(s) (of ' + rows.length + ' total) | sources=[' + sourceStr + ']');
+      console.log('[drawSavedPoly] ' + dateStr + ': built ' + polys.length + ' polygon(s) from ' + validRows.length + ' valid row(s) (of ' + rows.length + ' total) | sources=[' + sourceStr + '] | fragmentsHidden=' + _nexradHidden);
 
       // One-time debug: log applied nexrad_iem style if present
       if (sourceMap['nexrad_iem'] && !mapsState._nexradIemStyleLogged) {
