@@ -7837,6 +7837,17 @@
     function finishDraw(result, dateStr, points, statusEl, windPts, tornadoPts) {
       windPts = windPts || [];
       tornadoPts = tornadoPts || [];
+
+      // Per-date draw diagnostics
+      var _savedSrcClass = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || '';
+      var _savedPolyCount = mapsState.swathPolygons[dateStr] ? mapsState.swathPolygons[dateStr].length : 0;
+      console.log('[finishDraw] ' + dateStr +
+        ' | swath_source=' + (result.swathSource || 'none') +
+        ' | savedClass=' + (_savedSrcClass || 'none') +
+        ' | savedPolys=' + _savedPolyCount +
+        ' | drewSaved=' + !!result.drewSaved +
+        ' | points=' + points.length);
+
       // Last resort: render hail intensity field + band polygons from points
       if (!result.drewRef && !result.drewHailTrace && !result.drewSaved && !result.drewAi && !result.drewField && points.length >= 2) {
         result.swathSource = 'noaa_points_fallback';
@@ -7855,15 +7866,15 @@
       }
 
       // Draw hail-size band polygons on top of saved swaths when point data is available
-      // Skip when source already provides corridor-level geometry (nexrad_iem/nexrad_poc)
-      // because convex-hull bands over scattered corridor polys create giant multi-state wedges
+      // Skip when any saved corridor geometry exists — convex-hull bands over corridor
+      // polygons from ANY source create giant multi-state wedges / blob artifacts
       var savedSrc = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || '';
-      var skipBands = savedSrc === 'nexrad_iem' || savedSrc === 'nexrad_poc';
+      var skipBands = !!result.drewSaved;
       if (result.drewSaved && !result.drewBands && points.length >= 3 && !skipBands) {
         var drewBands = mapsDrawHailBandsForDate(dateStr, points);
         if (drewBands) result.drewBands = true;
       } else if (skipBands) {
-        console.log('[finishDraw] ' + dateStr + ': skipped hail band hulls (source=' + savedSrc + ' already has corridor geometry)');
+        console.log('[finishDraw] ' + dateStr + ': skipped hail band hulls (source=' + savedSrc + ' — saved corridor geometry exists)');
       }
 
       // ── Draw wind band polygons (blue palette) ──
