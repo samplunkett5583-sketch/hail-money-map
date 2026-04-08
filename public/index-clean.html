@@ -7081,10 +7081,11 @@
       });
       var _skipSet = {};
       var _nexradHidden = 0;
-      if (nexradIemIndices.length >= 1) {
+      if (nexradIemIndices.length >= 2) {
         nexradIemIndices.forEach(function (i) {
           var r = validRows[i];
-          var area = Number(r.area_sq_mi) || 0;
+          var area = Number(r.area_sq_mi);
+          if (!isFinite(area) || area <= 0) return; // null/unknown area — keep
           if (area >= MIN_RENDER_AREA_SQ_MI) return; // big enough to keep
           var lat1 = Number(r.centroid_lat) || 0;
           var lon1 = Number(r.centroid_lon) || 0;
@@ -7106,6 +7107,18 @@
               ' area=' + area + 'mi² ctr=[' + lat1.toFixed(2) + ',' + lon1.toFixed(2) + ']');
           }
         });
+        // Safety: never filter ALL nexrad_iem rows
+        if (_nexradHidden >= nexradIemIndices.length) {
+          var keepIdx = nexradIemIndices[0];
+          var keepArea = 0;
+          nexradIemIndices.forEach(function (i) {
+            var a = Number(validRows[i].area_sq_mi) || 0;
+            if (a > keepArea) { keepArea = a; keepIdx = i; }
+          });
+          delete _skipSet[keepIdx];
+          _nexradHidden--;
+          console.log('[nexrad_iem filter] SAFETY: kept largest row idx=' + keepIdx + ' area=' + keepArea + 'mi²');
+        }
       }
       if (nexradIemIndices.length > 0) {
         console.log('[nexrad_iem filter] ' + dateStr + ': loaded=' + nexradIemIndices.length +
@@ -7795,6 +7808,9 @@
             var sc = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || 'unknown';
             result.swathSource = sc;
             console.log('[mapsDrawDate] ' + dateStr + ' saved polygon draw: true | swath_source=' + sc);
+            // Clear any stale fallback overlays from a previous draw of this date
+            mapsRemoveHailFieldForDate(dateStr);
+            mapsRemoveHailBandsForDate(dateStr);
           } else {
             console.log('[mapsDrawDate] ' + dateStr + ' saved polygon draw: false');
           }
