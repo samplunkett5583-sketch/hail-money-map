@@ -4591,7 +4591,7 @@
           statusEl.textContent = mapsState.stormDates.length + ' storm dates loaded.';
           mapsRenderStormList();
           // Kick off sequential HailTrace swath prefetch for ALL dates
-          mapsPrefetchAllHailTraceSwaths();
+          if (ENABLE_HAILTRACE) mapsPrefetchAllHailTraceSwaths();
         })
         .catch(function (err) {
           mapsState.fetching = false;
@@ -4607,7 +4607,7 @@
           mapsState.stormDates = fallbackDates;
           mapsState.stormPage = 0;
           mapsRenderStormList();
-          mapsPrefetchAllHailTraceSwaths();
+          if (ENABLE_HAILTRACE) mapsPrefetchAllHailTraceSwaths();
         });
     }
 
@@ -6348,7 +6348,10 @@
 
     // ── Draw saved storm polygons from Supabase ──
     // Only valid primary swath sources are drawn. Legacy point-built rows are excluded.
-    var VALID_SWATH_SOURCES = ['hailtrace', 'mrms', 'swdi', 'manual'];
+    var VALID_SWATH_SOURCES = ['hailtrace', 'mrms', 'swdi', 'manual', 'corridor', 'nexrad_poc', 'nexrad_iem'];
+
+    // ── HailTrace feature flag — set to true to re-enable HailTrace fetch/draw ──
+    var ENABLE_HAILTRACE = false;
 
     // ── March 2026 saved reference swath images (date → filename) ──
     // These are the truth-set swath images. When present for a date,
@@ -7078,8 +7081,14 @@
             return;
           }
         }
-        if (!gj || !gj.type || !gj.coordinates) {
+        if (!gj || !gj.type) {
           console.warn('[drawSavedPoly] ' + dateStr + ' row ' + ri + ': invalid geojson', gj && gj.type);
+          return;
+        }
+        // Unwrap Feature wrapper
+        if (gj.type === 'Feature' && gj.geometry) { gj = gj.geometry; }
+        if (!gj.coordinates) {
+          console.warn('[drawSavedPoly] ' + dateStr + ' row ' + ri + ': no coordinates', gj.type);
           return;
         }
 
@@ -7094,6 +7103,32 @@
         } else {
           console.warn('[drawSavedPoly] ' + dateStr + ' row ' + ri + ': unsupported geojson type ' + gj.type);
           return;
+        }
+
+        // ── Render-time safety guard: skip impossible polygons ──
+        var allLats = [], allLons = [];
+        ringArrays.forEach(function (ring) {
+          if (!Array.isArray(ring)) return;
+          ring.forEach(function (c) { allLats.push(c[1]); allLons.push(c[0]); });
+        });
+        if (allLats.length > 0) {
+          var bboxLatSpan = Math.max.apply(null, allLats) - Math.min.apply(null, allLats);
+          var bboxLonSpan = Math.max.apply(null, allLons) - Math.min.apply(null, allLons);
+          var storedArea = Number(row.area_sq_mi) || 0;
+          if (bboxLatSpan > 3.0 || bboxLonSpan > 3.0 || storedArea > 800) {
+            console.warn('[drawSavedPoly] SKIP oversized row ' + (row.id || ri) +
+              ' src=' + row.source + ' bboxLat=' + bboxLatSpan.toFixed(2) +
+              '° bboxLon=' + bboxLonSpan.toFixed(2) + '° area=' + storedArea + 'mi²');
+            return;
+          }
+          // Temp diagnostic log for all rendered rows
+          console.log('[drawSavedPoly] RENDER id=' + (row.id || ri) +
+            ' src=' + row.source + '/' + row.source_product +
+            ' pri=' + row.source_priority + ' idx=' + row.swath_index +
+            ' ctr=[' + (row.centroid_lat || '?') + ',' + (row.centroid_lon || '?') + ']' +
+            ' area=' + (row.area_sq_mi || '?') + 'mi²' +
+            ' bbox=' + bboxLatSpan.toFixed(2) + '°x' + bboxLonSpan.toFixed(2) + '°' +
+            ' pts=' + allLats.length);
         }
 
         ringArrays.forEach(function (ring) {
@@ -7623,9 +7658,8 @@
         : Promise.resolve(cachedPts || []);
 
       // 3) HailTrace swath probe (parallel with polygon/point fetches)
-      //    Probe HailTrace for EVERY date — it is the primary swath source.
-      //    If unavailable, mapsDrawDate falls through to local reference images.
-      var htProm = fetchHailTraceSwath(dateStr);
+      //    Gated by ENABLE_HAILTRACE flag — disabled while nexrad_iem is primary source.
+      var htProm = ENABLE_HAILTRACE ? fetchHailTraceSwath(dateStr) : Promise.resolve({});
 
       // 4) Wind/tornado point fetches (parallel, only if date has those types)
       var dateTypes = mapsState.dateEventTypes[dateStr] || [];
@@ -7651,13 +7685,28 @@
         console.log('[mapsDrawDate] ' + dateStr + ' fetch done — saved:' + savedPolys.length +
           ' points:' + points.length + ' hailtrace:' + (htResult.available ? 'yes' : 'no'));
 
+        console.log('DATA AUDIT', {
+          date: dateStr,
+          storm_polygons: savedPolys.length,
+          storm_polygon_sources: savedPolys.map(function(p) {
+            return {
+              source: p.source,
+              source_product: p.source_product,
+              priority: p.source_priority
+            };
+          }),
+          lsr_points: points.length,
+          hailtrace_available: !!(htResult && htResult.available),
+          hailtrace_url: (htResult && htResult.imageUrl) || 'none'
+        });
+
         // Cache point data for this date
         mapsState.lsrPointsByDate[dateStr] = points;
 
         var result = { date: dateStr, drewSaved: false, drewAi: false, drewField: false, drewBands: false, drewRef: false, drewHailTrace: false, pointCount: points.length, hasAnyData: false, statusText: '', swathSource: 'none' };
 
-        // Priority 0: HailTrace date-matched swath (best external source — exact geometry)
-        if (htResult.available && htResult.imageUrl) {
+        // Priority 0: HailTrace date-matched swath (gated by ENABLE_HAILTRACE)
+        if (ENABLE_HAILTRACE && htResult.available && htResult.imageUrl) {
           var drewHt = mapsDrawHailTraceSwath(dateStr, htResult.imageUrl, points);
           if (drewHt) {
             result.drewHailTrace = true;
@@ -7750,9 +7799,15 @@
       }
 
       // Draw hail-size band polygons on top of saved swaths when point data is available
-      if (result.drewSaved && !result.drewBands && points.length >= 3) {
+      // Skip when source already provides corridor-level geometry (nexrad_iem/nexrad_poc)
+      // because convex-hull bands over scattered corridor polys create giant multi-state wedges
+      var savedSrc = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || '';
+      var skipBands = savedSrc === 'nexrad_iem' || savedSrc === 'nexrad_poc';
+      if (result.drewSaved && !result.drewBands && points.length >= 3 && !skipBands) {
         var drewBands = mapsDrawHailBandsForDate(dateStr, points);
         if (drewBands) result.drewBands = true;
+      } else if (skipBands) {
+        console.log('[finishDraw] ' + dateStr + ': skipped hail band hulls (source=' + savedSrc + ' already has corridor geometry)');
       }
 
       // ── Draw wind band polygons (blue palette) ──

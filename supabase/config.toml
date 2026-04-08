@@ -382,3 +382,13 @@ s3_access_key = "env(S3_ACCESS_KEY)"
 s3_secret_key = "env(S3_SECRET_KEY)"
 [functions.hail-dates]
 verify_jwt = false
+[functions.hailtrace-swath]
+verify_jwt = false
+[functions.hail-lsr-by-date]
+verify_jwt = false
+[functions.swath-render]
+verify_jwt = false
+[functions.storm-lsr-by-date]
+verify_jwt = false
+[functions.hail-near-point]
+verify_jwt = false
