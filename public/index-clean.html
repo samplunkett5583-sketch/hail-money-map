@@ -7073,8 +7073,8 @@
       var polys = [];
 
       // ── Render-time leftover filter for nexrad_iem fragments ──
-      var MIN_RENDER_AREA_SQ_MI = 20;
-      var ISOLATED_RENDER_RADIUS_MI = 150;
+      var MIN_RENDER_AREA_SQ_MI = 15;
+      var ISOLATED_RENDER_RADIUS_MI = 120;
       var nexradIemIndices = [];
       validRows.forEach(function (r, i) {
         if ((r.source || '').toLowerCase() === 'nexrad_iem') nexradIemIndices.push(i);
