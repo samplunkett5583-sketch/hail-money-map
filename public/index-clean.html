@@ -7131,6 +7131,10 @@
             ' pts=' + allLats.length);
         }
 
+        var isNexradIem = (row.source || '').toLowerCase() === 'nexrad_iem';
+        var segStrokeWeight = isNexradIem ? 3 : 2;
+        var segFillOpacity  = isNexradIem ? Math.min(mapsState.swathOpacity * 1.5, 1) : mapsState.swathOpacity;
+
         ringArrays.forEach(function (ring) {
           if (!Array.isArray(ring) || ring.length < 3) return;
           var path = ring.map(function (coord) {
@@ -7143,9 +7147,9 @@
             paths: path,
             strokeColor: '#00c2ff',
             strokeOpacity: 0.8,
-            strokeWeight: 2,
+            strokeWeight: segStrokeWeight,
             fillColor: '#00c2ff',
-            fillOpacity: mapsState.swathOpacity,
+            fillOpacity: segFillOpacity,
             map: mapsState.map
           }));
         });
@@ -7160,6 +7164,12 @@
       });
       var sourceStr = Object.keys(sourceMap).map(function (k) { return k + ':' + sourceMap[k]; }).join(', ');
       console.log('[drawSavedPoly] ' + dateStr + ': built ' + polys.length + ' polygon(s) from ' + validRows.length + ' valid row(s) (of ' + rows.length + ' total) | sources=[' + sourceStr + ']');
+
+      // One-time debug: log applied nexrad_iem style if present
+      if (sourceMap['nexrad_iem'] && !mapsState._nexradIemStyleLogged) {
+        mapsState._nexradIemStyleLogged = true;
+        console.log('[nexrad_iem style] strokeWeight=3, strokeColor=#00c2ff, strokeOpacity=0.8, fillColor=#00c2ff, fillOpacity=' + Math.min(mapsState.swathOpacity * 1.5, 1));
+      }
 
       if (!polys.length) return false;
       mapsState.swathPolygons[dateStr] = polys;
