@@ -7072,6 +7072,42 @@
 
       var polys = [];
 
+      // ── Render-time leftover filter for nexrad_iem fragments ──
+      var MIN_RENDER_AREA_SQ_MI = 20;
+      var ISOLATED_RENDER_RADIUS_MI = 150;
+      var nexradIemIndices = [];
+      validRows.forEach(function (r, i) {
+        if ((r.source || '').toLowerCase() === 'nexrad_iem') nexradIemIndices.push(i);
+      });
+      var _skipSet = {};
+      var _nexradHidden = 0;
+      if (nexradIemIndices.length > 1) {
+        nexradIemIndices.forEach(function (i) {
+          var r = validRows[i];
+          var area = Number(r.area_sq_mi) || 0;
+          if (area >= MIN_RENDER_AREA_SQ_MI) return; // big enough to keep
+          var lat1 = Number(r.centroid_lat) || 0;
+          var lon1 = Number(r.centroid_lon) || 0;
+          if (!lat1 || !lon1) return; // no centroid, keep it
+          var isolated = true;
+          for (var k = 0; k < nexradIemIndices.length; k++) {
+            var j = nexradIemIndices[k];
+            if (j === i) continue;
+            var r2 = validRows[j];
+            var dlat = (Number(r2.centroid_lat) || 0) - lat1;
+            var dlon = (Number(r2.centroid_lon) || 0) - lon1;
+            var cosLat = Math.cos(lat1 * Math.PI / 180);
+            var distMi = 69.0 * Math.sqrt(dlat * dlat + (dlon * cosLat) * (dlon * cosLat));
+            if (distMi <= ISOLATED_RENDER_RADIUS_MI) { isolated = false; break; }
+          }
+          if (isolated) { _skipSet[i] = true; _nexradHidden++; }
+        });
+      }
+      if (nexradIemIndices.length > 0) {
+        console.log('[nexrad_iem filter] ' + dateStr + ': loaded=' + nexradIemIndices.length +
+          ' hidden=' + _nexradHidden + ' drawn=' + (nexradIemIndices.length - _nexradHidden));
+      }
+
       validRows.forEach(function (row, ri) {
         var gj = row && row.polygon_geojson;
         // Parse if still a string
@@ -7130,6 +7166,9 @@
             ' bbox=' + bboxLatSpan.toFixed(2) + '°x' + bboxLonSpan.toFixed(2) + '°' +
             ' pts=' + allLats.length);
         }
+
+        // Skip isolated small nexrad_iem leftovers
+        if (_skipSet[ri]) return;
 
         var isNexradIem = (row.source || '').toLowerCase() === 'nexrad_iem';
         var segStrokeWeight = isNexradIem ? 3 : 2;
