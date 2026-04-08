@@ -5020,7 +5020,7 @@
         '/rest/v1/storm_polygons?event_date=eq.' +
         encodeURIComponent(dateStr) +
         '&order=source_priority.asc,created_at.desc' +
-        '&select=id,event_date,source,source_product,source_priority,polygon_geojson,centroid_lat,centroid_lon,area_sq_mi,threshold_value,event_start_utc,event_end_utc';
+        '&select=id,event_date,source,source_product,source_priority,swath_index,polygon_geojson,centroid_lat,centroid_lon,area_sq_mi,threshold_value,event_start_utc,event_end_utc';
 
       console.log('[fetchStormPolygons] ' + dateStr + ' url:', url);
 
@@ -7168,9 +7168,9 @@
           return;
         }
 
-        var isNexradIem = (row.source || '').toLowerCase() === 'nexrad_iem';
-        var segStrokeWeight = isNexradIem ? 3 : 2;
-        var segFillOpacity  = isNexradIem ? Math.min(mapsState.swathOpacity * 1.5, 1) : mapsState.swathOpacity;
+        var isCorridorSource = VALID_SWATH_SOURCES.indexOf((row.source || '').toLowerCase()) !== -1;
+        var segStrokeWeight = isCorridorSource ? 3 : 2;
+        var segFillOpacity  = isCorridorSource ? Math.min(mapsState.swathOpacity * 1.5, 1) : mapsState.swathOpacity;
 
         ringArrays.forEach(function (ring) {
           if (!Array.isArray(ring) || ring.length < 3) return;
