@@ -1583,6 +1583,47 @@
     .maps-prop-card-btn.directions:hover { background:var(--accent-2); }
     .maps-prop-card-btn.inspection { background:var(--accent-2); color:var(--text); }
     .maps-prop-card-btn.inspection:hover { background:var(--accent); }
+
+    /* ── Property Panel (replaces left panel when property selected) ── */
+    .maps-prop-panel { display:none; flex-direction:column; overflow-y:auto; }
+    .maps-prop-panel.open { display:flex; }
+    .maps-panel.hidden-by-prop { display:none; }
+    .maps-prop-panel-header {
+      padding:12px 16px; border-bottom:1px solid var(--border);
+      display:flex; align-items:flex-start; gap:10px;
+    }
+    .maps-prop-panel-img {
+      width:120px; height:90px; object-fit:cover; border-radius:6px;
+      background:var(--panel-2); flex-shrink:0; cursor:pointer;
+    }
+    .maps-prop-panel-info { flex:1; min-width:0; }
+    .maps-prop-panel-title { font-size:14px; font-weight:700; color:var(--text); margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .maps-prop-panel-sub { font-size:11px; color:var(--muted); margin:2px 0 0; }
+    .maps-prop-panel-close { background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; padding:0; line-height:1; flex-shrink:0; }
+    .maps-prop-panel-close:hover { color:var(--text); }
+    .maps-prop-panel-actions {
+      display:flex; gap:6px; padding:8px 16px; border-bottom:1px solid var(--border);
+    }
+    .maps-prop-panel-actions button {
+      flex:1; padding:8px 8px; border:none; border-radius:8px;
+      font-size:12px; font-weight:600; cursor:pointer; text-align:center;
+    }
+    .maps-prop-panel-actions .pp-directions { background:var(--panel-2); color:var(--text); border:1px solid var(--border); }
+    .maps-prop-panel-actions .pp-directions:hover { background:var(--accent-2); }
+    .maps-prop-panel-actions .pp-inspect { background:var(--accent-2); color:var(--text); }
+    .maps-prop-panel-actions .pp-inspect:hover { background:var(--accent); }
+    .maps-prop-tabs {
+      display:flex; border-bottom:1px solid var(--border);
+    }
+    .maps-prop-tab {
+      flex:1; padding:8px 4px; border:none; background:none;
+      font-size:11px; font-weight:600; cursor:pointer; text-align:center;
+      color:var(--muted); border-bottom:2px solid transparent; transition:color .15s, border-color .15s;
+    }
+    .maps-prop-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+    .maps-prop-tab:hover { color:var(--text); }
+    .maps-prop-tab-body { flex:1; overflow-y:auto; padding:12px 16px; font-size:13px; color:var(--text); }
+
     /* ── Mobile Maps Toggle Bar ── */
     .maps-mobile-bar {
       display:none;
@@ -2100,6 +2141,41 @@
             </div>
           </div>
 
+          <!-- Property Panel (replaces left panel when a property is selected) -->
+          <div class="maps-prop-panel" id="maps-prop-panel">
+            <div style="display:flex;align-items:center;gap:6px;padding:8px 12px 0 12px;">
+              <button type="button" id="pp-back" style="background:none;border:1px solid var(--border);color:var(--accent);font-size:13px;padding:4px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;">&larr; Most Recent Storms</button>
+            </div>
+            <div class="maps-prop-panel-header">
+              <img id="pp-img" class="maps-prop-panel-img" src="" alt="Property" />
+              <div class="maps-prop-panel-info">
+                <div id="pp-title" class="maps-prop-panel-title">Selected Property</div>
+                <div id="pp-sub" class="maps-prop-panel-sub"></div>
+                <div id="pp-hail-summary" style="font-size:11px;margin-top:3px;font-weight:600;color:var(--muted);"></div>
+              </div>
+              <button type="button" id="pp-close" class="maps-prop-panel-close">&times;</button>
+            </div>
+            <div class="maps-prop-panel-actions">
+              <button type="button" id="pp-directions" class="pp-directions">Get Directions</button>
+              <button type="button" id="pp-inspect" class="pp-inspect">Start Inspection</button>
+            </div>
+            <div class="maps-prop-tabs">
+              <button type="button" class="maps-prop-tab active" data-pp-tab="storms">Recent Storms</button>
+              <button type="button" class="maps-prop-tab" data-pp-tab="value">Value / Assessment</button>
+              <button type="button" class="maps-prop-tab" data-pp-tab="owner">Homeowner</button>
+            </div>
+            <div class="maps-prop-tab-body" id="pp-tab-body">
+              <div style="color:var(--muted);font-size:12px;">Loading...</div>
+            </div>
+          </div>
+
+          <!-- Street View Panorama Modal -->
+          <div id="pp-lightbox" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.92);flex-direction:column;align-items:center;justify-content:center;">
+            <div id="pp-sv-container" style="width:90vw;height:80vh;border-radius:10px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.6);background:#1a1a2e;"></div>
+            <div id="pp-sv-unavailable" style="display:none;color:#aaa;font-size:16px;font-family:system-ui,sans-serif;text-align:center;padding:40px;">Street View is not available at this location.</div>
+            <button type="button" id="pp-sv-close" style="position:absolute;top:16px;right:20px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:28px;cursor:pointer;line-height:1;padding:4px 12px;border-radius:8px;z-index:1;">&times;</button>
+          </div>
+
           <!-- Mobile Toggle Bar -->
           <div class="maps-mobile-bar">
             <button type="button" class="maps-mobile-bar-btn back-to-menu" style="flex:0 0 auto;padding:10px 12px;">&#8592; Back</button>
@@ -2143,10 +2219,10 @@
             <div id="hail-band-legend" class="hail-band-legend" style="display:none;">
               <div class="hail-band-legend-title">Hail Size</div>
               <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#FFD700;border-color:#B8960F;"></span>&frac12;&ndash; 1&Prime;</div>
-              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#FF8C00;border-color:#CC7000;"></span>1&ndash; 1&frac12;&Prime;</div>
-              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#FF3B30;border-color:#CC2F26;"></span>1&frac12;&ndash; 2&Prime;</div>
-              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#E040FB;border-color:#AB30BC;"></span>2&ndash; 2&frac12;&Prime;</div>
-              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#7B1FA2;border-color:#4A0072;"></span>2&frac12;&Prime; +</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#FAAA0A;border-color:#C88808;"></span>1&ndash; 1&frac12;&Prime;</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#F06400;border-color:#B84C00;"></span>1&frac12;&ndash; 2&Prime;</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#DC1E1E;border-color:#A01616;"></span>2&ndash; 2&frac12;&Prime;</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#9419B4;border-color:#6B1080;"></span>2&frac12;&Prime; +</div>
             </div>
             <!-- Swath Opacity Control -->
             <div class="maps-opacity-ctrl">
@@ -3224,7 +3300,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry&v=weekly" async defer></script>
   <script src="demo_swaths.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -4522,6 +4598,7 @@
       swathOpacity: 0.3,         // current fill opacity for swath polygons
       stormPage: 0,              // current page index
       selectedProperty: null,    // { lat, lng, address, title }
+      rawStormRows: {},          // dateStr -> raw row[] from storm_polygons (for nearby-storm search)
       map: null,
       ready: false,
       fetching: false
@@ -4545,6 +4622,7 @@
         mapsWireDatePicker();
         mapsWireDownload();
         mapsWirePropCard();
+        ppWire();
         mapsWireMobileDrawers();
         mapsWireOpacityCtrl();
         mapsWireStreetColorCtrl();
@@ -4705,70 +4783,31 @@
         observer.observe(container, { childList: true, subtree: true });
       })(mapEl);
 
-      // ── Map click → property InfoWindow with actions ──
-      var _mapClickInfoWindow = null;
+      // ── Map click → property left panel only (no InfoWindow, no bottom-right card) ──
+      var _mapClickInfoWindow = null; // kept for backward compat close calls
 
       map.addListener('click', function (e) {
         // Close any open hail InfoWindows first
         try {
           (window._lsrInfoWindows || []).forEach(function (iw) { try { iw.close(); } catch (_) {} });
         } catch (_) {}
-        // Close previous property InfoWindow
+        // Close previous property InfoWindow if any
         if (_mapClickInfoWindow) try { _mapClickInfoWindow.close(); } catch (_) {}
+        _mapClickInfoWindow = null;
+
+        // Also force-hide bottom-right prop card
+        try { document.getElementById('maps-prop-card').classList.remove('open'); } catch (_) {}
 
         var lat = e.latLng.lat();
         var lng = e.latLng.lng();
         mapsState.selectedProperty = { lat: lat, lng: lng, address: '', title: 'Selected Property' };
+        console.log('[PROP-DEBUG] property click fired — selected lat=' + lat.toFixed(5) + ' lng=' + lng.toFixed(5));
 
-        var buildContent = function () {
-          var p = mapsState.selectedProperty;
-          var title = p.title || 'Selected Property';
-          var sub = p.address
-            ? p.lat.toFixed(5) + ', ' + p.lng.toFixed(5)
-            : 'Lat: ' + p.lat.toFixed(5) + '&nbsp;&nbsp;Lng: ' + p.lng.toFixed(5);
-          var stormHtml = '';
-          var hits = stormHitTest(p.lat, p.lng);
-          var hailHit = hits.hail;
-          var windHit = hits.wind;
-          var tornadoHit = hits.tornado;
-          if (hailHit && hailHit.hailIn > 0) {
-            var rgba = swathSeverityColor(hailHit.hailIn);
-            stormHtml += '<div style="background:rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',0.15);border-left:3px solid rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',0.9);padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">' +
-              '&#x1F9CA; ' + swathSeverityLabel(hailHit.hailIn) + ' (' + hailHit.dateStr + ')' +
-            '</div>';
-          }
-          if (windHit) {
-            stormHtml += '<div style="background:rgba(30,136,229,0.12);border-left:3px solid rgba(30,136,229,0.9);padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">' +
-              '&#x1F4A8; Approx. ' + windHit.mph + ' mph wind here (' + windHit.dateStr + ')' +
-            '</div>';
-          }
-          if (tornadoHit) {
-            stormHtml += '<div style="background:rgba(142,36,170,0.12);border-left:3px solid rgba(142,36,170,0.9);padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">' +
-              '&#x1F32A;&#xFE0F; Approx. ' + tornadoHit.label + ' tornado zone here (' + tornadoHit.dateStr + ')' +
-            '</div>';
-          }
-          if (stormHtml) stormHtml += '<div style="margin-bottom:4px;"></div>';
-          return '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:13px;line-height:1.4;color:#1a1a1a;min-width:200px;">' +
-            '<div style="font-weight:700;font-size:14px;margin-bottom:2px;">' + title + '</div>' +
-            '<div style="color:#555;font-size:12px;margin-bottom:8px;">' + sub + '</div>' +
-            stormHtml +
-            '<div style="display:flex;flex-direction:column;gap:6px;">' +
-              '<button onclick="window._mapsPopupGetDirections()" style="width:100%;padding:8px 10px;border:1px solid #bbb;border-radius:8px;background:#f0f0f0;color:#222;font-size:13px;font-weight:600;cursor:pointer;text-align:center;">Get Directions</button>' +
-              '<button onclick="window._mapsPopupStartInspection()" style="width:100%;padding:8px 10px;border:none;border-radius:8px;background:#8a6a2c;color:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;">Start Inspection</button>' +
-            '</div>' +
-          '</div>';
-        };
+        // Single UI: left property panel only
+        console.log('[PROP-DEBUG] duplicate popup/card suppressed (InfoWindow + prop card)');
+        ppOpen(mapsState.selectedProperty);
 
-        _mapClickInfoWindow = new google.maps.InfoWindow({
-          content: buildContent(),
-          position: e.latLng
-        });
-        _mapClickInfoWindow.open(map);
-
-        // Also update the fixed card
-        mapsShowPropCard();
-
-        // Reverse-geocode to update address, then refresh both
+        // Reverse-geocode to update address, then lightweight-update title/sub
         try {
           if (window.google && google.maps.Geocoder) {
             var geocoder = new google.maps.Geocoder();
@@ -4776,8 +4815,12 @@
               if (status === 'OK' && results && results[0]) {
                 mapsState.selectedProperty.address = results[0].formatted_address;
                 mapsState.selectedProperty.title = results[0].formatted_address.split(',')[0] || 'Selected Property';
-                if (_mapClickInfoWindow) _mapClickInfoWindow.setContent(buildContent());
-                mapsShowPropCard();
+                // Lightweight update — only refresh title/sub, don't re-trigger tabs or hail summary
+                var _titleEl = document.getElementById('pp-title');
+                var _subEl = document.getElementById('pp-sub');
+                if (_titleEl) _titleEl.textContent = mapsState.selectedProperty.title;
+                if (_subEl) _subEl.textContent = mapsState.selectedProperty.lat.toFixed(5) + ', ' + mapsState.selectedProperty.lng.toFixed(5);
+                console.log('[PROP-DEBUG] geocode updated title/sub (no full ppOpen re-trigger)');
               }
             });
           }
@@ -4830,12 +4873,13 @@
 
     function hailInToColor(hailIn) {
       var h = Number(hailIn);
-      if (!isFinite(h)) return '#66d966';
-      if (h >= 3)   return '#ff00ff';
-      if (h >= 2)   return '#ff3b30';
-      if (h >= 1.5) return '#ff9500';
-      if (h >= 1)   return '#ffd60a';
-      return '#66d966';
+      if (!isFinite(h)) return '#ffd700';
+      if (h >= 3)   return '#9419b4'; // deep purple
+      if (h >= 2.5) return '#c81e78'; // magenta
+      if (h >= 2)   return '#dc1e1e'; // red
+      if (h >= 1.5) return '#f06400'; // dark orange
+      if (h >= 1)   return '#faaa0a'; // orange-yellow
+      return '#ffd700';               // yellow (≤1")
     }
 
     function drawLsrPointsOnMap(points) {
@@ -5020,7 +5064,7 @@
         '/rest/v1/storm_polygons?event_date=eq.' +
         encodeURIComponent(dateStr) +
         '&order=source_priority.asc,created_at.desc' +
-        '&select=id,event_date,source,source_product,source_priority,swath_index,polygon_geojson,centroid_lat,centroid_lon,area_sq_mi,threshold_value,event_start_utc,event_end_utc';
+        '&select=id,event_date,storm_type,source,source_product,source_priority,swath_index,polygon_geojson,centroid_lat,centroid_lon,area_sq_mi,threshold_value,band_min,band_max,event_start_utc,event_end_utc';
 
       console.log('[fetchStormPolygons] ' + dateStr + ' url:', url);
 
@@ -5057,13 +5101,22 @@
     //  AI SWATH RENDERER — Phase A fetch + Phase B canvas painter
     // ══════════════════════════════════════════════════════════════
 
-    // ── Severity → color (hail-only, no blue/grey/cyan) ──
+    // ── Severity → color (hail-only, no blue/green/cyan) ──
+    // Nested-swath ramp: yellow (outer/weak) → orange → red → purple (inner/strongest)
     function swathSeverityColor(hailIn) {
-      if (hailIn >= 3)    return [140,  55, 160, 0.45]; // purple    (>3")
-      if (hailIn >= 2.5)  return [195,  45,  40, 0.42]; // red       (2.50–3")
-      if (hailIn >= 1.75) return [210, 130,  30, 0.38]; // orange    (1.75–2.50")
-      if (hailIn >= 1.25) return [200, 170,  20, 0.35]; // dark yellow (1.25–1.75")
-      return                     [220, 200,  50, 0.32]; // yellow    (≤1.25")
+      if (hailIn >= 2.5)  return [148,  25, 180, 0.50]; // deep purple   (2.50"+)   #9419B4
+      if (hailIn >= 2)    return [220,  30,  30, 0.45]; // red           (2.00–2.50") #DC1E1E
+      if (hailIn >= 1.5)  return [240, 100,   0, 0.42]; // dark orange   (1.50–2.00") #F06400
+      if (hailIn >= 1)    return [250, 170,  10, 0.38]; // orange-yellow (1.00–1.50") #FAAA0A
+      return                     [255, 215,   0, 0.35]; // yellow        (≤1.00")    #FFD700
+    }
+
+    // ── Wind severity → blue color ramp (band_min mapped to 0.5–2.0 range) ──
+    function windSeverityColor(bandMin) {
+      if (bandMin >= 2.0)  return [ 20,  10, 120, 0.50]; // deep navy    (wind-severe)
+      if (bandMin >= 1.5)  return [ 40,  80, 200, 0.45]; // medium blue  (wind-strong)
+      if (bandMin >= 1.0)  return [ 60, 130, 220, 0.42]; // blue         (wind-moderate)
+      return                      [100, 170, 240, 0.38]; // light blue   (wind-light)
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -5074,13 +5127,13 @@
     // ══════════════════════════════════════════════════════════════
 
     // Hail size → color band (RGB).  Used by HailFieldOverlay.
-    // Bands: yellow < 1.25 < dark-yellow < 1.75 < orange < 2.50 < red < 3.0 < purple
+    // Nested ramp: yellow → orange-yellow → dark orange → red → purple
     var HAIL_FIELD_BANDS = [
-      { min: 0.00, max: 1.25, r: 220, g: 200, b:  50 }, // yellow
-      { min: 1.25, max: 1.75, r: 200, g: 170, b:  20 }, // dark yellow
-      { min: 1.75, max: 2.50, r: 210, g: 130, b:  30 }, // orange
-      { min: 2.50, max: 3.00, r: 195, g:  45, b:  40 }, // red
-      { min: 3.00, max: 99,   r: 140, g:  55, b: 160 }  // purple
+      { min: 0.00, max: 1.00, r: 255, g: 215, b:   0 }, // yellow       #FFD700
+      { min: 1.00, max: 1.50, r: 250, g: 170, b:  10 }, // orange-yellow #FAAA0A
+      { min: 1.50, max: 2.00, r: 240, g: 100, b:   0 }, // dark orange  #F06400
+      { min: 2.00, max: 2.50, r: 220, g:  30, b:  30 }, // red          #DC1E1E
+      { min: 2.50, max: 99,   r: 148, g:  25, b: 180 }  // deep purple  #9419B4
     ];
 
     function _hailFieldColor(hailIn) {
@@ -5361,11 +5414,11 @@
     // ══════════════════════════════════════════════════════════════
 
     var HAIL_SIZE_BANDS = [
-      { threshold: 0.50, label: '\u00BD\u2013 1\u2033',    fill: '#FFD700', stroke: '#B8960F' },
-      { threshold: 1.00, label: '1\u2013 1\u00BD\u2033',   fill: '#FF8C00', stroke: '#CC7000' },
-      { threshold: 1.50, label: '1\u00BD\u2013 2\u2033',   fill: '#FF3B30', stroke: '#CC2F26' },
-      { threshold: 2.00, label: '2\u2013 2\u00BD\u2033',   fill: '#E040FB', stroke: '#AB30BC' },
-      { threshold: 2.50, label: '2\u00BD\u2033 +',          fill: '#7B1FA2', stroke: '#4A0072' }
+      { threshold: 0.50, label: '\u00BD\u2013 1\u2033',    fill: '#FFD700', stroke: '#B8960F' },  // yellow
+      { threshold: 1.00, label: '1\u2013 1\u00BD\u2033',   fill: '#FAAA0A', stroke: '#C88808' },  // orange-yellow
+      { threshold: 1.50, label: '1\u00BD\u2013 2\u2033',   fill: '#F06400', stroke: '#B84C00' },  // dark orange
+      { threshold: 2.00, label: '2\u2013 2\u00BD\u2033',   fill: '#DC1E1E', stroke: '#A01616' },  // red
+      { threshold: 2.50, label: '2\u00BD\u2033 +',          fill: '#9419B4', stroke: '#6B1080' }   // deep purple
     ];
 
     // ── Wind speed bands (blue palette) ──
@@ -5457,19 +5510,38 @@
           zIndex: 1000 + bi,
           clickable: true
         });
+        poly._bandIdx = bi;
+        poly._bandThreshold = band.threshold;
 
-        // Band info on click
+        // Band info on click — suppress when property panel is active
         (function (poly, band, cnt) {
-          var iw = new google.maps.InfoWindow({
-            content: '<div style="font:600 14px system-ui;color:#1a1a1a;">' +
-              '<span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:' + band.fill + ';border:1px solid ' + band.stroke + ';vertical-align:middle;margin-right:6px;"></span>' +
-              band.label + ' hail zone' +
-              '<div style="font-weight:400;font-size:12px;color:#555;margin-top:4px;">' + cnt + ' report' + (cnt === 1 ? '' : 's') + ' in this zone</div>' +
-              '</div>'
-          });
           poly.addListener('click', function (e) {
-            iw.setPosition(e.latLng);
-            iw.open(mapsState.map);
+            if (e.stop) e.stop();
+            // If property panel is active, forward to ppOpen instead of opening InfoWindow
+            var ppPanel = document.getElementById('maps-prop-panel');
+            if (ppPanel && ppPanel.classList.contains('open')) {
+              console.log('[PROP-DEBUG] duplicate popup/card suppressed (band polygon click while pp open)');
+              return;
+            }
+            // Open property panel via map click path
+            var lat = e.latLng.lat(), lng = e.latLng.lng();
+            mapsState.selectedProperty = { lat: lat, lng: lng, address: '', title: 'Selected Property' };
+            console.log('[PROP-DEBUG] property click fired through hail band — selected lat=' + lat.toFixed(5) + ' lng=' + lng.toFixed(5));
+            ppOpen(mapsState.selectedProperty);
+            try {
+              if (window.google && google.maps.Geocoder) {
+                new google.maps.Geocoder().geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
+                  if (status === 'OK' && results && results[0]) {
+                    mapsState.selectedProperty.address = results[0].formatted_address;
+                    mapsState.selectedProperty.title = results[0].formatted_address.split(',')[0] || 'Selected Property';
+                    var _t = document.getElementById('pp-title');
+                    var _s = document.getElementById('pp-sub');
+                    if (_t) _t.textContent = mapsState.selectedProperty.title;
+                    if (_s) _s.textContent = lat.toFixed(5) + ', ' + lng.toFixed(5);
+                  }
+                });
+              }
+            } catch (_) {}
           });
         })(poly, band, bPts.length);
 
@@ -5545,14 +5617,32 @@
         });
 
         (function (poly, band, cnt) {
-          var iw = new google.maps.InfoWindow({
-            content: '<div style="font:600 14px system-ui;color:#1a1a1a;">' +
-              '<span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:' + band.fill + ';border:1px solid ' + band.stroke + ';vertical-align:middle;margin-right:6px;"></span>' +
-              band.label + ' wind zone' +
-              '<div style="font-weight:400;font-size:12px;color:#555;margin-top:4px;">' + cnt + ' report' + (cnt === 1 ? '' : 's') + ' in this zone</div>' +
-              '</div>'
+          poly.addListener('click', function (e) {
+            if (e.stop) e.stop();
+            var ppPanel = document.getElementById('maps-prop-panel');
+            if (ppPanel && ppPanel.classList.contains('open')) {
+              console.log('[PROP-DEBUG] duplicate popup/card suppressed (wind band click while pp open)');
+              return;
+            }
+            var lat = e.latLng.lat(), lng = e.latLng.lng();
+            mapsState.selectedProperty = { lat: lat, lng: lng, address: '', title: 'Selected Property' };
+            console.log('[PROP-DEBUG] property click fired through wind band — selected lat=' + lat.toFixed(5) + ' lng=' + lng.toFixed(5));
+            ppOpen(mapsState.selectedProperty);
+            try {
+              if (window.google && google.maps.Geocoder) {
+                new google.maps.Geocoder().geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
+                  if (status === 'OK' && results && results[0]) {
+                    mapsState.selectedProperty.address = results[0].formatted_address;
+                    mapsState.selectedProperty.title = results[0].formatted_address.split(',')[0] || 'Selected Property';
+                    var _t = document.getElementById('pp-title');
+                    var _s = document.getElementById('pp-sub');
+                    if (_t) _t.textContent = mapsState.selectedProperty.title;
+                    if (_s) _s.textContent = lat.toFixed(5) + ', ' + lng.toFixed(5);
+                  }
+                });
+              }
+            } catch (_) {}
           });
-          poly.addListener('click', function (e) { iw.setPosition(e.latLng); iw.open(mapsState.map); });
         })(poly, band, bPts.length);
 
         polys.push(poly);
@@ -5613,14 +5703,32 @@
         });
 
         (function (poly, band, cnt) {
-          var iw = new google.maps.InfoWindow({
-            content: '<div style="font:600 14px system-ui;color:#1a1a1a;">' +
-              '<span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:' + band.fill + ';border:1px solid ' + band.stroke + ';vertical-align:middle;margin-right:6px;"></span>' +
-              band.label + ' tornado zone' +
-              '<div style="font-weight:400;font-size:12px;color:#555;margin-top:4px;">' + cnt + ' report' + (cnt === 1 ? '' : 's') + ' in this zone</div>' +
-              '</div>'
+          poly.addListener('click', function (e) {
+            if (e.stop) e.stop();
+            var ppPanel = document.getElementById('maps-prop-panel');
+            if (ppPanel && ppPanel.classList.contains('open')) {
+              console.log('[PROP-DEBUG] duplicate popup/card suppressed (tornado band click while pp open)');
+              return;
+            }
+            var lat = e.latLng.lat(), lng = e.latLng.lng();
+            mapsState.selectedProperty = { lat: lat, lng: lng, address: '', title: 'Selected Property' };
+            console.log('[PROP-DEBUG] property click fired through tornado band — selected lat=' + lat.toFixed(5) + ' lng=' + lng.toFixed(5));
+            ppOpen(mapsState.selectedProperty);
+            try {
+              if (window.google && google.maps.Geocoder) {
+                new google.maps.Geocoder().geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
+                  if (status === 'OK' && results && results[0]) {
+                    mapsState.selectedProperty.address = results[0].formatted_address;
+                    mapsState.selectedProperty.title = results[0].formatted_address.split(',')[0] || 'Selected Property';
+                    var _t = document.getElementById('pp-title');
+                    var _s = document.getElementById('pp-sub');
+                    if (_t) _t.textContent = mapsState.selectedProperty.title;
+                    if (_s) _s.textContent = lat.toFixed(5) + ', ' + lng.toFixed(5);
+                  }
+                });
+              }
+            } catch (_) {}
           });
-          poly.addListener('click', function (e) { iw.setPosition(e.latLng); iw.open(mapsState.map); });
         })(poly, band, bPts.length);
 
         polys.push(poly);
@@ -6065,23 +6173,61 @@
         }
       }
 
-      // 3) Check saved storm polygons — find nearest cached LSR point inside the polygon
+      // 3) Check saved storm polygons — containsLocation, use highest band at point
       //    Skip dates that have a reference swath overlay
       Object.keys(mapsState.swathPolygons).forEach(function (d) {
         if (refHitDates[d]) return;
         var polys = mapsState.swathPolygons[d];
         if (!polys) return;
-        var inside = false;
+        var highestBand = -1;
+        var allMatchedBands = [];
         for (var pi = 0; pi < polys.length; pi++) {
-          try { if (google.maps.geometry && google.maps.geometry.poly.containsLocation(
-            new google.maps.LatLng(lat, lng), polys[pi])) { inside = true; break; } } catch (_) {}
+          try {
+            if (google.maps.geometry && google.maps.geometry.poly.containsLocation(
+              new google.maps.LatLng(lat, lng), polys[pi])) {
+              var bm = polys[pi]._bandMin || 0;
+              allMatchedBands.push(bm);
+              if (bm > highestBand) highestBand = bm;
+            }
+          } catch (_) {}
         }
-        if (!inside) return;
+        if (highestBand < 0) return;
+        console.log('[swathHitTest] inside saved polygon for ' + d + ' matchedBands=[' + allMatchedBands.join(',') + '] highestBand=' + highestBand);
+        // Use highest band_min as hail size (aligns with swathSeverityLabel thresholds)
+        if (highestBand > 0) {
+          bestDist = 0;
+          best = { hailIn: highestBand, dateStr: d };
+          console.log('[swathHitTest] hail size chosen from band containment: ' + highestBand + '" for ' + d);
+          return;
+        }
+        // Fallback for polygons without _bandMin: use rawStormRows or LSR
+        var fallbackHail = 0;
         var pts = mapsState.lsrPointsByDate[d] || [];
-        var nearHail = _nearestPointHail(lat, lng, pts, 50);
-        if (nearHail && nearHail.distKm < bestDist) {
-          bestDist = nearHail.distKm;
-          best = { hailIn: nearHail.hailIn, dateStr: d };
+        // Check all LSR points within range, take MAX hail (not nearest)
+        for (var li = 0; li < pts.length; li++) {
+          var pLat = Number(pts[li].lat), pLon = Number(pts[li].lon);
+          if (!isFinite(pLat) || !isFinite(pLon)) continue;
+          var dLat2 = (lat - pLat) * 111.1;
+          var dLon2 = (lng - pLon) * 111.1 * Math.cos(lat * Math.PI / 180);
+          var dKm2 = Math.sqrt(dLat2 * dLat2 + dLon2 * dLon2);
+          if (dKm2 <= 50) {
+            var h2 = Number(pts[li].hail_in) || 0;
+            if (h2 > fallbackHail) fallbackHail = h2;
+          }
+        }
+        // Also check rawStormRows band data
+        (mapsState.rawStormRows[d] || []).forEach(function (row) {
+          var bMax = Number(row.band_max);
+          var bMin = Number(row.band_min);
+          var tv = Number(row.threshold_value);
+          var h = bMax > 0 ? bMax : (tv > 0 ? tv : (bMin > 0 ? bMin : 0));
+          if (h > fallbackHail) fallbackHail = h;
+        });
+        if (fallbackHail <= 0) fallbackHail = 1.0;
+        console.log('[swathHitTest] inside polygon ' + d + ' fallbackHail=' + fallbackHail + ' (no _bandMin on polygons)');
+        if (0 < bestDist) {
+          bestDist = 0;
+          best = { hailIn: fallbackHail, dateStr: d };
         }
       });
 
@@ -6120,17 +6266,26 @@
         if (refHitDates[d]) return;
         var bandPolys = mapsState.hailBandPolygons[d];
         if (!bandPolys || !bandPolys.length) return;
-        var bestBandIdx = -1;
+        var bestBandThreshold = -1;
+        var bestBandLabel = '';
+        var allBandHits = [];
         // Check from highest band (last) to lowest — first hit = highest hail
         for (var bi = bandPolys.length - 1; bi >= 0; bi--) {
           try {
             if (hasPoly && google.maps.geometry.poly.containsLocation(clickLL, bandPolys[bi])) {
-              bestBandIdx = bi; break;
+              var bThr = bandPolys[bi]._bandThreshold || 0;
+              var bIdx = bandPolys[bi]._bandIdx;
+              allBandHits.push(bThr);
+              if (bThr > bestBandThreshold) {
+                bestBandThreshold = bThr;
+                bestBandLabel = (bIdx !== undefined && HAIL_SIZE_BANDS[bIdx]) ? HAIL_SIZE_BANDS[bIdx].label : '';
+              }
+              break; // highest first, so first hit is best
             }
           } catch (_) {}
         }
         // Edge tolerance: if no exact hit, check if click is near any band edge (~10km)
-        if (bestBandIdx === -1) {
+        if (bestBandThreshold < 0) {
           var toleranceDeg = 0.09; // ~10km
           for (var bi = bandPolys.length - 1; bi >= 0; bi--) {
             try {
@@ -6143,16 +6298,20 @@
                 var dLo = Math.abs(lng - v.lng());
                 if (dLa < toleranceDeg && dLo < toleranceDeg) nearEdge = true;
               });
-              if (nearEdge) { bestBandIdx = bi; break; }
+              if (nearEdge) {
+                var bThr2 = bandPolys[bi]._bandThreshold || 0;
+                var bIdx2 = bandPolys[bi]._bandIdx;
+                bestBandThreshold = bThr2;
+                bestBandLabel = (bIdx2 !== undefined && HAIL_SIZE_BANDS[bIdx2]) ? HAIL_SIZE_BANDS[bIdx2].label : '';
+                break;
+              }
             } catch (_) {}
           }
         }
-        if (bestBandIdx >= 0 && bestBandIdx < HAIL_SIZE_BANDS.length) {
-          var band = HAIL_SIZE_BANDS[bestBandIdx];
-          var nextBand = HAIL_SIZE_BANDS[bestBandIdx + 1];
-          var midHail = nextBand ? (band.threshold + nextBand.threshold) / 2 : band.threshold + 0.25;
+        if (bestBandThreshold > 0) {
+          console.log('[swathHitTest] hailBandPoly hit for ' + d + ' bestBandThreshold=' + bestBandThreshold + ' allBandHits=[' + allBandHits.join(',') + ']');
           bestDist = 0;
-          best = { hailIn: Math.round(midHail * 100) / 100, dateStr: d, bandLabel: band.label };
+          best = { hailIn: bestBandThreshold, dateStr: d, bandLabel: bestBandLabel };
         }
       });
 
@@ -6309,12 +6468,11 @@
 
     // ── Convert hail severity (inches) to user-facing label ──
     function swathSeverityLabel(hailIn) {
-      if (hailIn >= 3)    return 'Over 3\u2033 hail here \u2014 purple zone';
-      if (hailIn >= 2.5)  return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 red zone';
-      if (hailIn >= 1.75) return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 orange zone';
-      if (hailIn >= 1.25) return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 dark yellow zone';
-      if (hailIn >= 1)    return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 yellow zone';
-      if (hailIn > 0)     return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here';
+      if (hailIn >= 2.5)  return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 purple zone';
+      if (hailIn >= 2)    return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 red zone';
+      if (hailIn >= 1.5)  return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 orange zone';
+      if (hailIn >= 1)    return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 yellow-orange zone';
+      if (hailIn > 0)     return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 yellow zone';
       return '';
     }
 
@@ -7028,17 +7186,32 @@
     }
 
     function mapsDrawSavedStormPolygonForDate(dateStr, rows) {
-      if (mapsState.swathPolygons[dateStr]) return true;
+      // Preferred saved corridor sources — exempt from oversized guard & fragment cleanup
+      var PREFERRED_CORRIDOR_SOURCES = ['corridor', 'nexrad_iem', 'nexrad_poc'];
+
+      // Cache raw rows for nearby-storm radius search in property panel
+      mapsState.rawStormRows[dateStr] = rows || [];
+
+      console.log('[drawSavedPoly] ▸ selected date=' + dateStr + ' | raw saved row count=' + (rows ? rows.length : 0));
+
+      // Clear prior overlays for this date so we get a full fresh draw
+      if (mapsState.swathPolygons[dateStr]) {
+        mapsState.swathPolygons[dateStr].forEach(function (p) { try { p.setMap(null); } catch (_) {} });
+        delete mapsState.swathPolygons[dateStr];
+      }
       if (!rows || !rows.length) {
         console.log('[drawSavedPoly] ' + dateStr + ': no rows to draw');
         return false;
       }
 
-      // Filter to valid primary swath sources, sort by source_priority ascending
+      // Filter to valid primary swath sources, sort by source_priority then band_min
+      // band_min ascending ensures outer (low severity) bands draw first, inner (high) on top
       var validRows = rows.filter(function (r) {
         return r && VALID_SWATH_SOURCES.indexOf((r.source || '').toLowerCase()) !== -1;
       }).sort(function (a, b) {
-        return (a.source_priority || 99) - (b.source_priority || 99);
+        var priDiff = (a.source_priority || 99) - (b.source_priority || 99);
+        if (priDiff !== 0) return priDiff;
+        return (Number(a.band_min) || 0) - (Number(b.band_min) || 0);
       });
 
       if (!validRows.length) {
@@ -7046,14 +7219,27 @@
         return false;
       }
 
+      // ── Debug: row count by source ──
+      var _srcCount = {};
+      validRows.forEach(function (r) {
+        var s = (r.source || 'unknown').toLowerCase();
+        _srcCount[s] = (_srcCount[s] || 0) + 1;
+      });
+      console.log('[drawSavedPoly] ' + dateStr + ' row count by source: ' + JSON.stringify(_srcCount));
+
       var polys = [];
+      var _rejectedInvalidGeom = 0;
+      var _rejectedCleanup = 0;
 
       // ── Render-time leftover filter for nexrad_iem fragments ──
+      // TEMP: disabled for preferred corridor sources to verify sparseness cause
       var MIN_RENDER_AREA_SQ_MI = 15;
       var ISOLATED_RENDER_RADIUS_MI = 120;
       var nexradIemIndices = [];
       validRows.forEach(function (r, i) {
-        if ((r.source || '').toLowerCase() === 'nexrad_iem') nexradIemIndices.push(i);
+        var _src = (r.source || '').toLowerCase();
+        // Skip collection for preferred corridor sources — cleanup disabled for them
+        if (_src === 'nexrad_iem' && PREFERRED_CORRIDOR_SOURCES.indexOf(_src) === -1) nexradIemIndices.push(i);
       });
       var _skipSet = {};
       var _nexradHidden = 0;
@@ -7103,38 +7289,65 @@
 
       validRows.forEach(function (row, ri) {
         var gj = row && row.polygon_geojson;
+        var rowSrcLower = (row.source || '').toLowerCase();
+        var isPreferred = PREFERRED_CORRIDOR_SOURCES.indexOf(rowSrcLower) !== -1;
         // Parse if still a string
         if (gj && typeof gj === 'string') {
           try { gj = JSON.parse(gj); } catch (e) {
-            console.warn('[drawSavedPoly] ' + dateStr + ' row ' + ri + ': failed to parse polygon_geojson string');
+            console.warn('[drawSavedPoly] ' + dateStr + ' row ' + ri + ' src=' + row.source + ': failed to parse polygon_geojson string');
+            _rejectedInvalidGeom++;
             return;
           }
         }
         if (!gj || !gj.type) {
-          console.warn('[drawSavedPoly] ' + dateStr + ' row ' + ri + ': invalid geojson', gj && gj.type);
-          return;
-        }
-        // Unwrap Feature wrapper
-        if (gj.type === 'Feature' && gj.geometry) { gj = gj.geometry; }
-        if (!gj.coordinates) {
-          console.warn('[drawSavedPoly] ' + dateStr + ' row ' + ri + ': no coordinates', gj.type);
+          console.warn('[drawSavedPoly] REJECT row ' + ri + ' src=' + row.source + ' reason=no_type');
+          _rejectedInvalidGeom++;
           return;
         }
 
-        // Collect rings from Polygon or MultiPolygon
-        var ringArrays = [];
-        if (gj.type === 'Polygon' && Array.isArray(gj.coordinates)) {
-          ringArrays.push(gj.coordinates[0]);
-        } else if (gj.type === 'MultiPolygon' && Array.isArray(gj.coordinates)) {
-          gj.coordinates.forEach(function (poly) {
-            if (Array.isArray(poly) && Array.isArray(poly[0])) ringArrays.push(poly[0]);
+        // Collect geometries — handle Feature, FeatureCollection, or bare geometry
+        var geometries = [];
+        if (gj.type === 'FeatureCollection' && Array.isArray(gj.features)) {
+          gj.features.forEach(function (f) {
+            if (f && f.type === 'Feature' && f.geometry) geometries.push(f.geometry);
+            else if (f && f.coordinates) geometries.push(f);
           });
+          if (!geometries.length) {
+            console.warn('[drawSavedPoly] REJECT row ' + ri + ' src=' + row.source + ' reason=empty_feature_collection');
+            _rejectedInvalidGeom++;
+            return;
+          }
+        } else if (gj.type === 'Feature' && gj.geometry) {
+          geometries.push(gj.geometry);
+        } else if (gj.coordinates) {
+          geometries.push(gj);
         } else {
-          console.warn('[drawSavedPoly] ' + dateStr + ' row ' + ri + ': unsupported geojson type ' + gj.type);
+          console.warn('[drawSavedPoly] REJECT row ' + ri + ' src=' + row.source + ' reason=no_coordinates type=' + gj.type);
+          _rejectedInvalidGeom++;
+          return;
+        }
+
+        // Collect rings from all geometries (Polygon or MultiPolygon)
+        var ringArrays = [];
+        geometries.forEach(function (geom) {
+          if (geom.type === 'Polygon' && Array.isArray(geom.coordinates)) {
+            ringArrays.push(geom.coordinates[0]);
+          } else if (geom.type === 'MultiPolygon' && Array.isArray(geom.coordinates)) {
+            geom.coordinates.forEach(function (poly) {
+              if (Array.isArray(poly) && Array.isArray(poly[0])) ringArrays.push(poly[0]);
+            });
+          } else {
+            console.warn('[drawSavedPoly] REJECT geom in row ' + ri + ' src=' + row.source + ' reason=unsupported_geom_type type=' + geom.type);
+          }
+        });
+        if (!ringArrays.length) {
+          console.warn('[drawSavedPoly] REJECT row ' + ri + ' src=' + row.source + ' reason=no_valid_rings geom_count=' + geometries.length);
+          _rejectedInvalidGeom++;
           return;
         }
 
         // ── Render-time safety guard: skip impossible polygons ──
+        // Preferred corridor sources are exempt from oversized guard
         var allLats = [], allLons = [];
         ringArrays.forEach(function (ring) {
           if (!Array.isArray(ring)) return;
@@ -7144,33 +7357,47 @@
           var bboxLatSpan = Math.max.apply(null, allLats) - Math.min.apply(null, allLats);
           var bboxLonSpan = Math.max.apply(null, allLons) - Math.min.apply(null, allLons);
           var storedArea = Number(row.area_sq_mi) || 0;
-          var rowSrc = (row.source || '').toLowerCase();
-          var isCorridorSrc = VALID_SWATH_SOURCES.indexOf(rowSrc) !== -1;
-          if (!isCorridorSrc && (bboxLatSpan > 3.0 || bboxLonSpan > 3.0 || storedArea > 800)) {
+          if (!isPreferred && (bboxLatSpan > 3.0 || bboxLonSpan > 3.0 || storedArea > 800)) {
             console.warn('[drawSavedPoly] SKIP oversized row ' + (row.id || ri) +
-              ' src=' + row.source + ' bboxLat=' + bboxLatSpan.toFixed(2) +
+              ' src=' + row.source + ' reason=oversized bboxLat=' + bboxLatSpan.toFixed(2) +
               '° bboxLon=' + bboxLonSpan.toFixed(2) + '° area=' + storedArea + 'mi²');
+            _rejectedInvalidGeom++;
             return;
           }
-          // Temp diagnostic log for all rendered rows
           console.log('[drawSavedPoly] RENDER id=' + (row.id || ri) +
             ' src=' + row.source + '/' + row.source_product +
             ' pri=' + row.source_priority + ' idx=' + row.swath_index +
-            ' ctr=[' + (row.centroid_lat || '?') + ',' + (row.centroid_lon || '?') + ']' +
+            ' rings=' + ringArrays.length +
             ' area=' + (row.area_sq_mi || '?') + 'mi²' +
             ' bbox=' + bboxLatSpan.toFixed(2) + '°x' + bboxLonSpan.toFixed(2) + '°' +
-            ' pts=' + allLats.length);
+            ' pts=' + allLats.length +
+            ' preferred=' + isPreferred);
         }
 
         // Skip isolated small nexrad_iem leftovers (before drawing)
         if (_skipSet[ri]) {
+          _rejectedCleanup++;
           console.log('[drawSavedPoly] FILTERED id=' + (row.id || ri) + ' src=' + row.source + ' area=' + (row.area_sq_mi || '?') + 'mi²');
           return;
         }
 
         var isCorridorSource = VALID_SWATH_SOURCES.indexOf((row.source || '').toLowerCase()) !== -1;
-        var segStrokeWeight = isCorridorSource ? 3 : 2;
-        var segFillOpacity  = isCorridorSource ? Math.min(mapsState.swathOpacity * 1.5, 1) : mapsState.swathOpacity;
+        var baseOpacity     = isCorridorSource ? Math.min(mapsState.swathOpacity * 1.5, 1) : mapsState.swathOpacity;
+
+        // Color from band_min: hail → yellow/orange/red/purple, wind → blue ramp
+        var bandMin = Number(row.band_min) || 0;
+        var isWind = (row.storm_type === 'wind');
+        var isEnvelope = (row.source_product || '') === 'nexrad_iem_envelope';
+        var effectiveBand = isEnvelope ? 0.5 : Math.max(bandMin, 0.5);
+        var rgba = isWind ? windSeverityColor(effectiveBand) : swathSeverityColor(effectiveBand);
+        var segFill   = 'rgb(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ')';
+
+        // Per-band opacity: stronger severity → more solid, same color family
+        var bandOpacityScale = 0.55 + Math.min(effectiveBand, 2.5) * 0.24;
+        var segFillOpacity = Math.min(baseOpacity * bandOpacityScale, 0.85);
+        if (isEnvelope) segFillOpacity = Math.min(baseOpacity * 0.35, 0.18);
+        // zIndex: higher band_min draws on top so inner severity bands overlay outer
+        var segZIndex = 100 + Math.round(effectiveBand * 100);
 
         ringArrays.forEach(function (ring) {
           if (!Array.isArray(ring) || ring.length < 3) return;
@@ -7180,15 +7407,19 @@
             return isFinite(pt.lat) && isFinite(pt.lng);
           });
           if (path.length < 3) return;
-          polys.push(new google.maps.Polygon({
+          var _poly = new google.maps.Polygon({
             paths: path,
-            strokeColor: '#00c2ff',
-            strokeOpacity: 0.8,
-            strokeWeight: segStrokeWeight,
-            fillColor: '#00c2ff',
+            strokeColor: segFill,
+            strokeOpacity: segFillOpacity,
+            strokeWeight: 1,
+            fillColor: segFill,
             fillOpacity: segFillOpacity,
+            zIndex: segZIndex,
+            clickable: false,
             map: mapsState.map
-          }));
+          });
+          _poly._bandMin = effectiveBand;
+          polys.push(_poly);
         });
       });
 
@@ -7200,12 +7431,36 @@
         sourceMap[cls] = (sourceMap[cls] || 0) + 1;
       });
       var sourceStr = Object.keys(sourceMap).map(function (k) { return k + ':' + sourceMap[k]; }).join(', ');
-      console.log('[drawSavedPoly] ' + dateStr + ': built ' + polys.length + ' polygon(s) from ' + validRows.length + ' valid row(s) (of ' + rows.length + ' total) | sources=[' + sourceStr + '] | fragmentsHidden=' + _nexradHidden);
+      // Wind vs hail row counts
+      var _windRows = validRows.filter(function (r) { return r.storm_type === 'wind'; }).length;
+      var _hailRows = validRows.length - _windRows;
+      console.log('[drawSavedPoly] ' + dateStr + ': built ' + polys.length + ' polygon(s) from ' + validRows.length + ' valid row(s) (of ' + rows.length + ' total) | hail=' + _hailRows + ' wind=' + _windRows + ' | sources=[' + sourceStr + '] | fragmentsHidden=' + _nexradHidden);
+
+      // ── Debug summary for corridor sparseness diagnosis ──
+      var _prefCount = 0;
+      var _prefSrcChosen = '';
+      validRows.forEach(function (r) {
+        var s = (r.source || '').toLowerCase();
+        if (PREFERRED_CORRIDOR_SOURCES.indexOf(s) !== -1) {
+          _prefCount++;
+          if (!_prefSrcChosen) _prefSrcChosen = s;
+        }
+      });
+      var _fallbackSkipped = _prefCount > 0 && polys.length > 0;
+      console.log('[drawSavedPoly] ▸ SUMMARY ' + dateStr +
+        ' | canonicalSource=' + (_prefSrcChosen || 'none') +
+        ' | canonicalRowsBeforeValidation=' + _prefCount +
+        ' | canonicalRowsAfterValidation=' + (_prefCount - _rejectedInvalidGeom) +
+        ' | validGeomRows=' + (validRows.length - _rejectedInvalidGeom) +
+        ' | rejectedInvalidGeom=' + _rejectedInvalidGeom +
+        ' | rejectedCleanup=' + _rejectedCleanup +
+        ' | finalDrawnPolygons=' + polys.length +
+        ' | fallbackSkipped=' + _fallbackSkipped);
 
       // One-time debug: log applied nexrad_iem style if present
       if (sourceMap['nexrad_iem'] && !mapsState._nexradIemStyleLogged) {
         mapsState._nexradIemStyleLogged = true;
-        console.log('[nexrad_iem style] strokeWeight=3, strokeColor=#00c2ff, strokeOpacity=0.8, fillColor=#00c2ff, fillOpacity=' + Math.min(mapsState.swathOpacity * 1.5, 1));
+        console.log('[nexrad_iem style] band-based hail colors (yellow→red→purple), strokeWeight=3, fillOpacity=' + Math.min(mapsState.swathOpacity * 1.5, 1));
       }
 
       if (!polys.length) return false;
@@ -7230,6 +7485,7 @@
           strokeWeight: 2,
           fillColor: s.color || '#caa85c',
           fillOpacity: mapsState.swathOpacity,
+          clickable: false,
           map: mapsState.map
         }));
       });
@@ -7369,12 +7625,8 @@
       mapsState.previewDate = dateStr;
       mapsSyncSelectedDates();
 
-      // Draw if not already on map
-      if (!mapsState.swathPolygons[dateStr] && !mapsState.pointOverlaysByDate[dateStr] && !mapsState.refSwathOverlays[dateStr]) {
-        mapsDrawDate(dateStr);
-      } else {
-        fitMapToStormDate(dateStr);
-      }
+      // Always draw — mapsDrawDate clears stale overlays and re-fetches fresh rows
+      mapsDrawDate(dateStr);
 
       mapsRenderStormList();
       mapsRenderSavedList();
@@ -7402,10 +7654,8 @@
           return;
         }
         mapsState.pinnedDates.push(dateStr);
-        // Draw if not already on map
-        if (!mapsState.swathPolygons[dateStr] && !mapsState.pointOverlaysByDate[dateStr] && !mapsState.refSwathOverlays[dateStr]) {
-          mapsDrawDate(dateStr);
-        }
+        // Always draw — mapsDrawDate clears stale overlays and re-fetches fresh rows
+        mapsDrawDate(dateStr);
       }
 
       mapsSyncSelectedDates();
@@ -7679,7 +7929,8 @@
       console.log('[mapsDrawDate] ' + dateStr + ' | needSwath=' + needSwath + ' needPoints=' + needPoints);
 
       // 1) Geometry fetch — storm_polygons table (MRMS / SWDI pre-ingested)
-      var savedPolyProm = needSwath ? fetchStormPolygonsByDate(dateStr) : Promise.resolve([]);
+      // Always fetch fresh — mapsDrawSavedStormPolygonForDate clears stale overlays before redraw
+      var savedPolyProm = fetchStormPolygonsByDate(dateStr);
 
       // 2) Point fetch: LSR detail first, summary (hail_reports) fallback
       var pointsProm = needPoints
@@ -7769,7 +8020,8 @@
         console.log('[mapsDrawDate] ' + dateStr + ' | refImage=disabled | savedRows=' + savedPolys.length);
 
         // Priority 2: saved storm polygon geometry (from storm_polygons table)
-        if (needSwath && savedPolys.length) {
+        // Always attempt draw — mapsDrawSavedStormPolygonForDate clears stale overlays internally
+        if (savedPolys.length) {
           result.drewSaved = mapsDrawSavedStormPolygonForDate(dateStr, savedPolys);
           if (result.drewSaved) {
             var sc = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || 'unknown';
@@ -7781,9 +8033,6 @@
           } else {
             console.log('[mapsDrawDate] ' + dateStr + ' saved polygon draw: false');
           }
-        } else if (!needSwath) {
-          result.drewSaved = true; // already cached
-          result.swathSource = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || 'unknown';
         }
 
         // Priority 3: Hail intensity field from report points (raster canvas overlay)
@@ -8008,11 +8257,14 @@
         wrap.classList.toggle('open');
       });
 
-      slider.value = Math.round(mapsState.swathOpacity * 100);
+      // Inverse of power curve: slider = opacity^(1/2.2) * 100
+      slider.value = Math.round(Math.pow(mapsState.swathOpacity, 1 / 2.2) * 100);
       valEl.textContent = slider.value + '%';
 
       slider.addEventListener('input', function () {
-        var opacity = Number(slider.value) / 100;
+        // Power-curve remap: slider 50% → visual ~25%, avoids "almost full" in the middle
+        var raw = Number(slider.value) / 100;
+        var opacity = Math.pow(raw, 2.2);
         mapsState.swathOpacity = opacity;
         valEl.textContent = slider.value + '%';
         // Live-update all visible saved swath polygons
@@ -8215,6 +8467,611 @@
         if (!prop) return;
         mapsCreateJobAndInspect(prop);
       });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Property Panel — left‐panel replacement when property selected
+    // ═══════════════════════════════════════════════════════════
+    var _ppActiveTab = 'storms';
+
+    function ppOpen(prop) {
+      console.log('[PROP-DEBUG] ppOpen lat=' + prop.lat.toFixed(5) + ' lng=' + prop.lng.toFixed(5));
+      var panel = document.getElementById('maps-prop-panel');
+      var mapsPanel = document.querySelector('.maps-panel');
+      if (!panel || !mapsPanel) return;
+
+      // Hide default left panel, show property panel
+      mapsPanel.classList.add('hidden-by-prop');
+      panel.classList.add('open');
+      console.log('[PROP-DEBUG] property panel opened');
+
+      // Title / sub
+      document.getElementById('pp-title').textContent = prop.title || prop.address || 'Selected Property';
+      document.getElementById('pp-sub').textContent = prop.address
+        ? prop.lat.toFixed(5) + ', ' + prop.lng.toFixed(5)
+        : 'Lat: ' + prop.lat.toFixed(5) + '  Lng: ' + prop.lng.toFixed(5);
+
+      // Street View static image — use key from Maps API script tag
+      var imgEl = document.getElementById('pp-img');
+      var _svKey = '';
+      try {
+        var scripts = document.querySelectorAll('script[src*="maps.googleapis.com"]');
+        for (var si = 0; si < scripts.length; si++) {
+          var m = scripts[si].src.match(/key=([^&]+)/);
+          if (m) { _svKey = m[1]; break; }
+        }
+        console.log('[IMG-DEBUG] API key extraction: found ' + scripts.length + ' maps script tag(s), key=' + (_svKey ? _svKey.substring(0, 8) + '...' : '(none)'));
+      } catch (_) {}
+
+      var _noImageSvg = function (msg) {
+        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400">' +
+          '<rect fill="#2a2a3e" width="600" height="400"/>' +
+          '<text x="300" y="190" text-anchor="middle" fill="#888" font-family="system-ui,sans-serif" font-size="16">' + (msg || 'No Street View') + '</text>' +
+          '<text x="300" y="216" text-anchor="middle" fill="#666" font-family="system-ui,sans-serif" font-size="12">' +
+          prop.lat.toFixed(5) + ', ' + prop.lng.toFixed(5) + '</text></svg>');
+      };
+
+      // Check Street View availability via metadata API, then load image
+      if (_svKey) {
+        var metaUrl = 'https://maps.googleapis.com/maps/api/streetview/metadata?location=' + prop.lat + ',' + prop.lng + '&key=' + _svKey;
+        imgEl.src = _noImageSvg('Loading\u2026');
+        imgEl._ppFullUrl = '';
+        fetch(metaUrl).then(function (resp) { return resp.json(); }).then(function (meta) {
+          console.log('[IMG-DEBUG] streetview metadata status=' + (meta && meta.status));
+          if (meta && meta.status === 'OK') {
+            var svUrl = 'https://maps.googleapis.com/maps/api/streetview?size=600x400&location=' + prop.lat + ',' + prop.lng + '&key=' + _svKey;
+            console.log('[IMG-DEBUG] property image URL resolved: ' + svUrl.substring(0, 80) + '...');
+            imgEl._ppFullUrl = svUrl;
+            imgEl.onload = function () {
+              console.log('[IMG-DEBUG] property image loaded successfully');
+            };
+            imgEl.onerror = function () {
+              console.log('[IMG-DEBUG] property image failed to load');
+              imgEl.src = _noImageSvg('No Street View');
+              imgEl._ppFullUrl = '';
+            };
+            imgEl.src = svUrl;
+          } else {
+            console.log('[IMG-DEBUG] no street view coverage at this location (status=' + (meta && meta.status) + ')');
+            imgEl.src = _noImageSvg('No Street View');
+            imgEl._ppFullUrl = '';
+          }
+        }).catch(function () {
+          // Metadata fetch failed — try direct load as fallback
+          var svUrl = 'https://maps.googleapis.com/maps/api/streetview?size=600x400&location=' + prop.lat + ',' + prop.lng + '&key=' + _svKey;
+          console.log('[IMG-DEBUG] metadata fetch failed, trying direct image load');
+          imgEl._ppFullUrl = svUrl;
+          imgEl.onload = function () { console.log('[IMG-DEBUG] property image loaded (fallback)'); };
+          imgEl.onerror = function () { imgEl.src = _noImageSvg('No Street View'); imgEl._ppFullUrl = ''; };
+          imgEl.src = svUrl;
+        });
+      } else {
+        console.log('[IMG-DEBUG] property image URL resolved: (no API key found)');
+        imgEl.src = _noImageSvg('No Image Available');
+        imgEl._ppFullUrl = '';
+      }
+
+      // Load default tab
+      _ppActiveTab = 'storms';
+      ppActivateTab('storms');
+
+      // Bust nearby-storm cache so direct polygon containment is re-checked with current overlays
+      _ppNearbyCache = {};
+
+      // Populate hail summary in header (async)
+      var summaryEl = document.getElementById('pp-hail-summary');
+      if (summaryEl) summaryEl.textContent = 'Loading storm impact\u2026';
+      _ppFetchNearbyStorms(prop).then(function (result) {
+        if (!summaryEl) return;
+        var curProp = mapsState.selectedProperty;
+        if (!curProp || curProp.lat !== prop.lat || curProp.lng !== prop.lng) return;
+
+        console.log('[PROP-DEBUG] === PROPERTY STORM LOOKUP ===');
+        console.log('[PROP-DEBUG] property clicked lat=' + prop.lat.toFixed(5) + ' lng=' + prop.lng.toFixed(5));
+        console.log('[PROP-DEBUG] loaded swath dates: swathPolygons=' + Object.keys(mapsState.swathPolygons).length +
+          ' hailBandPolygons=' + Object.keys(mapsState.hailBandPolygons).length +
+          ' aiSwathOverlays=' + Object.keys(mapsState.aiSwathOverlays).length +
+          ' hailFieldOverlays=' + Object.keys(mapsState.hailFieldOverlays).length +
+          ' rawStormRows=' + Object.keys(mapsState.rawStormRows).length);
+        console.log('[PROP-DEBUG] total candidate storm dates checked (DB+local): within1=' + result.within1.length + ' within5=' + result.within5.length);
+
+        // Check direct hits first (only works if swath polygons are loaded in memory)
+        var hits = stormHitTest(prop.lat, prop.lng);
+        console.log('[PROP-DEBUG] direct swath hits found: hail=' + (hits.hail ? hits.hail.hailIn + '"' : 'none') + ' wind=' + (hits.wind ? hits.wind.mph + 'mph' : 'none') + ' tornado=' + (hits.tornado ? hits.tornado.label : 'none'));
+        if (hits.hail && hits.hail.hailIn > 0) {
+          var rgba = swathSeverityColor(hits.hail.hailIn);
+          summaryEl.style.color = 'rgb(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ')';
+          summaryEl.textContent = '\u{1F3AF} Inside swath \u2022 ' + swathSeverityLabel(hits.hail.hailIn);
+          console.log('[PROP-DEBUG] best property hit selected: direct swath hit ' + hits.hail.hailIn + '" on ' + hits.hail.dateStr);
+          console.log('[PROP-DEBUG] hail size chosen for summary: ' + hits.hail.hailIn);
+          return;
+        }
+        // Check within-1-mile bucket (includes direct polygon containment hits at dist=0)
+        if (result.within1.length) {
+          var best = result.within1[0];
+          for (var i = 1; i < result.within1.length; i++) {
+            if (result.within1[i].maxHail > best.maxHail) best = result.within1[i];
+          }
+          if (best.maxHail > 0) {
+            var rgba2 = swathSeverityColor(best.maxHail);
+            summaryEl.style.color = 'rgb(' + rgba2[0] + ',' + rgba2[1] + ',' + rgba2[2] + ')';
+            var summaryLabel = best.dist === 0
+              ? '\u{1F3AF} Inside swath \u2022 ' + swathSeverityLabel(best.maxHail) + ' (' + best.date + ')'
+              : '\u26A0 Within 1 mi \u2022 max ' + best.maxHail.toFixed(2) + '" hail (' + best.date + ')';
+            summaryEl.textContent = summaryLabel;
+            console.log('[PROP-DEBUG] best property hit selected: within 1mi ' + best.maxHail + '" on ' + best.date + ' dist=' + best.dist);
+            console.log('[PROP-DEBUG] hail size chosen for summary: ' + best.maxHail);
+            return;
+          }
+        }
+        // Check within-5-mile bucket
+        if (result.within5.length) {
+          var best5 = result.within5[0];
+          for (var j = 1; j < result.within5.length; j++) {
+            if (result.within5[j].maxHail > best5.maxHail) best5 = result.within5[j];
+          }
+          if (best5.maxHail > 0) {
+            var rgba3 = swathSeverityColor(best5.maxHail);
+            summaryEl.style.color = 'rgb(' + rgba3[0] + ',' + rgba3[1] + ',' + rgba3[2] + ')';
+            summaryEl.textContent = '\u{1F4CD} Within 5 mi \u2022 max ' + best5.maxHail.toFixed(2) + '" hail (' + best5.date + ')';
+            console.log('[PROP-DEBUG] best property hit selected: within 5mi ' + best5.maxHail + '" on ' + best5.date);
+            console.log('[PROP-DEBUG] hail size chosen for summary: ' + best5.maxHail);
+            return;
+          }
+        }
+        summaryEl.style.color = 'var(--muted)';
+        summaryEl.textContent = 'No recent hail impact found';
+        console.log('[PROP-DEBUG] final hail summary: NO IMPACT FOUND — within1=' + result.within1.length + ' within5=' + result.within5.length + ' hailHit=' + !!(hits.hail) + ' swathPolyDates=' + Object.keys(mapsState.swathPolygons).join(','));
+      }).catch(function (err) {
+        console.error('[PROP-DEBUG] hail summary fetch FAILED:', err);
+        if (summaryEl) { summaryEl.style.color = 'var(--muted)'; summaryEl.textContent = 'Storm lookup error'; }
+      });
+    }
+
+    function ppClose() {
+      var panel = document.getElementById('maps-prop-panel');
+      var mapsPanel = document.querySelector('.maps-panel');
+      if (panel) panel.classList.remove('open');
+      if (mapsPanel) mapsPanel.classList.remove('hidden-by-prop');
+      // Also hide the bottom-right prop card if it was open
+      try { document.getElementById('maps-prop-card').classList.remove('open'); } catch (_) {}
+      mapsState.selectedProperty = null;
+      console.log('[PROP-DEBUG] property panel closed');
+    }
+
+    // ── Fetch nearby storms from Supabase by bounding box (last 3 years) ──
+    var _ppNearbyCache = {}; // "lat,lng" -> Promise<{within1, within5}>
+    var R_EARTH_MI = 3958.8;
+    function _haversineMi(lat1, lon1, lat2, lon2) {
+      var dLat = (lat2 - lat1) * Math.PI / 180;
+      var dLon = (lon2 - lon1) * Math.PI / 180;
+      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R_EARTH_MI * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function _ppFetchNearbyStorms(prop) {
+      var cacheKey = prop.lat.toFixed(4) + ',' + prop.lng.toFixed(4);
+      if (_ppNearbyCache[cacheKey]) return _ppNearbyCache[cacheKey];
+
+      // Wider bounding box: ~50 miles to catch long corridors whose centroid is far but coverage overlaps
+      var degPerMi = 1 / 69.0;
+      var boxMi = 50;
+      var dLat = boxMi * degPerMi;
+      var dLon = dLat / Math.cos(prop.lat * Math.PI / 180);
+      var latMin = (prop.lat - dLat).toFixed(6);
+      var latMax = (prop.lat + dLat).toFixed(6);
+      var lonMin = (prop.lng - dLon).toFixed(6);
+      var lonMax = (prop.lng + dLon).toFixed(6);
+
+      // Date window: last 3 years
+      var now = new Date();
+      var threeYearsAgo = new Date(now.getFullYear() - 3, now.getMonth(), now.getDate());
+      var fromDate = threeYearsAgo.toISOString().slice(0, 10);
+
+      // Query storm_polygons by centroid bounding box + date range
+      // Filter out sentinel rows (no_swath) and include source for filtering
+      var url = SUPABASE_URL + '/rest/v1/storm_polygons?' +
+        'centroid_lat=gte.' + latMin + '&centroid_lat=lte.' + latMax +
+        '&centroid_lon=gte.' + lonMin + '&centroid_lon=lte.' + lonMax +
+        '&event_date=gte.' + fromDate +
+        '&source_product=neq.no_swath' +
+        '&source=in.(' + VALID_SWATH_SOURCES.join(',') + ')' +
+        '&select=event_date,source,source_product,centroid_lat,centroid_lon,threshold_value,band_min,band_max' +
+        '&order=event_date.desc' +
+        '&limit=500';
+
+      // Also query hail_lsr_raw for precise point-level proximity (5mi box)
+      var lsrBoxMi = 5;
+      var lsrDLat = lsrBoxMi * degPerMi;
+      var lsrDLon = lsrDLat / Math.cos(prop.lat * Math.PI / 180);
+      var lsrUrl = SUPABASE_URL + '/rest/v1/hail_lsr_raw?' +
+        'lat=gte.' + (prop.lat - lsrDLat).toFixed(6) + '&lat=lte.' + (prop.lat + lsrDLat).toFixed(6) +
+        '&lon=gte.' + (prop.lng - lsrDLon).toFixed(6) + '&lon=lte.' + (prop.lng + lsrDLon).toFixed(6) +
+        '&event_date=gte.' + fromDate +
+        '&select=event_date,lat,lon,hail_in' +
+        '&order=event_date.desc' +
+        '&limit=200';
+
+      console.log('[PROP-DEBUG] nearby storm DB query url=' + url.substring(0, 120) + '...');
+      console.log('[PROP-DEBUG] nearby hail_lsr_raw query url=' + lsrUrl.substring(0, 120) + '...');
+
+      var _headers = { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY };
+      var polyProm = fetch(url, { headers: _headers })
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('storm_polygons nearby HTTP ' + resp.status);
+          return resp.json();
+        }).catch(function (err) { console.warn('[PROP-DEBUG] storm_polygons query failed:', err); return []; });
+
+      var lsrProm = fetch(lsrUrl, { headers: _headers })
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('hail_lsr_raw nearby HTTP ' + resp.status);
+          return resp.json();
+        }).catch(function (err) { console.warn('[PROP-DEBUG] hail_lsr_raw query failed:', err); return []; });
+
+      var prom = Promise.all([polyProm, lsrProm])
+      .then(function (results) {
+        var rows = Array.isArray(results[0]) ? results[0] : [];
+        var lsrRows = Array.isArray(results[1]) ? results[1] : [];
+        console.log('[PROP-DEBUG] nearby storm DB rows returned: ' + rows.length);
+        console.log('[PROP-DEBUG] nearby hail_lsr_raw rows returned: ' + lsrRows.length);
+
+        var within1 = [];
+        var within5 = [];
+
+        // Helper: extract max hail from row — use band_max (upper bound of hail band), fallback to threshold_value or band_min
+        function extractMaxHail(row) {
+          var bMax = Number(row.band_max);
+          var bMin = Number(row.band_min);
+          var tv = Number(row.threshold_value);
+          // band_max is the upper hail size for the band (e.g., 1.5 for 1-1.5" band)
+          if (bMax > 0) return bMax;
+          // threshold_value may hold a legacy value
+          if (tv > 0) return tv;
+          // band_min is the lower bound (e.g., 0.5 for 0.5-1")
+          if (bMin > 0) return bMin;
+          return 0;
+        }
+
+        // DB rows — let all band rows through, dedupeByDate later keeps best hail per date
+        rows.forEach(function (row) {
+          var cLat = Number(row.centroid_lat);
+          var cLon = Number(row.centroid_lon);
+          if (!isFinite(cLat) || !isFinite(cLon)) return;
+          var dist = _haversineMi(prop.lat, prop.lng, cLat, cLon);
+          var dateStr = row.event_date || '';
+          var maxHail = extractMaxHail(row);
+          var entry = { date: dateStr, dist: dist, source: row.source || '', maxHail: maxHail };
+          if (dist <= 1) within1.push(entry);
+          else if (dist <= 5) within5.push(entry);
+        });
+
+        // hail_lsr_raw DB rows — precise point-level proximity
+        lsrRows.forEach(function (row) {
+          var pLat = Number(row.lat);
+          var pLon = Number(row.lon);
+          if (!isFinite(pLat) || !isFinite(pLon)) return;
+          var dist = _haversineMi(prop.lat, prop.lng, pLat, pLon);
+          var dateStr = row.event_date || '';
+          var hailIn = Number(row.hail_in) || 0;
+          var entry = { date: dateStr, dist: dist, source: 'lsr_db', maxHail: hailIn };
+          if (dist <= 1) within1.push(entry);
+          else if (dist <= 5) within5.push(entry);
+        });
+
+        // Also merge any locally-cached rawStormRows + LSR points
+        Object.keys(mapsState.rawStormRows).forEach(function (dateStr) {
+          (mapsState.rawStormRows[dateStr] || []).forEach(function (row) {
+            var cLat = Number(row.centroid_lat);
+            var cLon = Number(row.centroid_lon);
+            if (!isFinite(cLat) || !isFinite(cLon)) return;
+            var dist = _haversineMi(prop.lat, prop.lng, cLat, cLon);
+            var maxHail = extractMaxHail(row);
+            var entry = { date: dateStr, dist: dist, source: row.source || '', maxHail: maxHail };
+            if (dist <= 1) within1.push(entry);
+            else if (dist <= 5) within5.push(entry);
+          });
+        });
+        Object.keys(mapsState.lsrPointsByDate).forEach(function (dateStr) {
+          (mapsState.lsrPointsByDate[dateStr] || []).forEach(function (p) {
+            var pLat = Number(p.lat); var pLon = Number(p.lon);
+            if (!isFinite(pLat) || !isFinite(pLon)) return;
+            var dist = _haversineMi(prop.lat, prop.lng, pLat, pLon);
+            var entry = { date: dateStr, dist: dist, source: 'lsr', maxHail: Number(p.hail_in) || 0 };
+            if (dist <= 1) within1.push(entry);
+            else if (dist <= 5) within5.push(entry);
+          });
+        });
+
+        // Check loaded swath polygons for direct containment (covers long corridors
+        // whose centroid is far away but swath still covers the property)
+        var hasPoly = window.google && google.maps.geometry && google.maps.geometry.poly;
+        var clickLL = new google.maps.LatLng(prop.lat, prop.lng);
+        var directHitDates = {};
+        Object.keys(mapsState.swathPolygons).forEach(function (dateStr) {
+          var polys = mapsState.swathPolygons[dateStr];
+          if (!polys) return;
+          for (var pi = 0; pi < polys.length; pi++) {
+            try {
+              if (hasPoly && google.maps.geometry.poly.containsLocation(clickLL, polys[pi])) {
+                directHitDates[dateStr] = true;
+                break;
+              }
+            } catch (_) {}
+          }
+        });
+        // Also check hail band polygons
+        Object.keys(mapsState.hailBandPolygons).forEach(function (dateStr) {
+          var bandPolys = mapsState.hailBandPolygons[dateStr];
+          if (!bandPolys) return;
+          for (var bi = 0; bi < bandPolys.length; bi++) {
+            try {
+              if (hasPoly && google.maps.geometry.poly.containsLocation(clickLL, bandPolys[bi])) {
+                directHitDates[dateStr] = true;
+                break;
+              }
+            } catch (_) {}
+          }
+        });
+        var directDates = Object.keys(directHitDates);
+        console.log('[PROP-DEBUG] direct polygon containment dates: ' + directDates.length + ' [' + directDates.join(',') + ']');
+        directDates.forEach(function (dateStr) {
+          // Derive hail size from highest band polygon containing the point
+          var maxH = 0;
+          // Check swathPolygons for highest _bandMin at point
+          var polys = mapsState.swathPolygons[dateStr];
+          if (polys) {
+            for (var pi = 0; pi < polys.length; pi++) {
+              try {
+                if (hasPoly && google.maps.geometry.poly.containsLocation(clickLL, polys[pi])) {
+                  var bm = polys[pi]._bandMin || 0;
+                  if (bm > maxH) maxH = bm;
+                }
+              } catch (_) {}
+            }
+          }
+          // Check hailBandPolygons for highest _bandThreshold at point
+          var bandPolys2 = mapsState.hailBandPolygons[dateStr];
+          if (bandPolys2) {
+            for (var bi2 = bandPolys2.length - 1; bi2 >= 0; bi2--) {
+              try {
+                if (hasPoly && google.maps.geometry.poly.containsLocation(clickLL, bandPolys2[bi2])) {
+                  var bt = bandPolys2[bi2]._bandThreshold || 0;
+                  if (bt > maxH) maxH = bt;
+                  break;
+                }
+              } catch (_) {}
+            }
+          }
+          // Fallback: rawStormRows
+          if (maxH <= 0) {
+            (mapsState.rawStormRows[dateStr] || []).forEach(function (row) {
+              var h = extractMaxHail(row);
+              if (h > maxH) maxH = h;
+            });
+          }
+          if (maxH <= 0) maxH = 1.0;
+          console.log('[PROP-DEBUG] direct hit ' + dateStr + ' highestBandAtPoint=' + maxH);
+          within1.push({ date: dateStr, dist: 0, source: 'direct_hit', maxHail: maxH });
+        });
+
+        console.log('[PROP-DEBUG] nearby raw counts: within1=' + within1.length + ' within5=' + within5.length + ' (before dedup)');
+
+        // Dedupe by date (keep best per date per bucket)
+        function dedupeByDate(arr) {
+          var best = {};
+          arr.forEach(function (e) {
+            if (!best[e.date] || e.maxHail > best[e.date].maxHail) best[e.date] = e;
+          });
+          return Object.keys(best).sort().reverse().map(function (d) { return best[d]; });
+        }
+        within1 = dedupeByDate(within1);
+        within5 = dedupeByDate(within5);
+
+        return { within1: within1, within5: within5 };
+      });
+
+      _ppNearbyCache[cacheKey] = prom;
+      return prom;
+    }
+
+    function ppActivateTab(tabName) {
+      _ppActiveTab = tabName;
+      var tabs = document.querySelectorAll('.maps-prop-tab');
+      tabs.forEach(function (t) {
+        t.classList.toggle('active', t.getAttribute('data-pp-tab') === tabName);
+      });
+      var body = document.getElementById('pp-tab-body');
+      if (!body) return;
+      var prop = mapsState.selectedProperty;
+
+      if (tabName === 'storms') {
+        console.log('[PROP-DEBUG] property storms tab lookup started');
+        body.innerHTML = '<div style="color:var(--muted);font-size:12px;">Loading storm history\u2026</div>';
+        if (!prop) { body.innerHTML = '<div style="color:var(--muted);font-size:12px;">No property selected.</div>'; return; }
+        console.log('[PROP-DEBUG] property selected lat=' + prop.lat.toFixed(5) + ' lng=' + prop.lng.toFixed(5));
+
+        // ── Async: fetch nearby storms from Supabase (last 3 years, bounding-box) ──
+        _ppFetchNearbyStorms(prop).then(function (result) {
+          // Guard: tab may have changed while fetch was in-flight
+          if (_ppActiveTab !== 'storms') return;
+          var curProp = mapsState.selectedProperty;
+          if (!curProp || curProp.lat !== prop.lat || curProp.lng !== prop.lng) return;
+
+          var html = '';
+
+          // Direct hit section (from currently-loaded swath polygons, if any)
+          var hits = stormHitTest(prop.lat, prop.lng);
+          if (hits.hail && hits.hail.hailIn > 0) {
+            var rgba = swathSeverityColor(hits.hail.hailIn);
+            html += '<div style="background:rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',0.15);border-left:3px solid rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',0.9);padding:6px 10px;border-radius:6px;margin-bottom:6px;font-size:12px;font-weight:600;">' +
+              '\u{1F3AF} Direct swath hit \u2022 ' + swathSeverityLabel(hits.hail.hailIn) + '<br><span style="font-weight:400;color:var(--muted);">' + hits.hail.dateStr + ' \u2022 inside swath</span></div>';
+          }
+          if (hits.wind) {
+            html += '<div style="background:rgba(30,136,229,0.12);border-left:3px solid rgba(30,136,229,0.9);padding:6px 10px;border-radius:6px;margin-bottom:6px;font-size:12px;font-weight:600;">' +
+              '\u{1F4A8} ' + hits.wind.mph + ' mph wind<br><span style="font-weight:400;color:var(--muted);">' + hits.wind.dateStr + ' \u2022 inside swath</span></div>';
+          }
+          if (hits.tornado) {
+            html += '<div style="background:rgba(142,36,170,0.12);border-left:3px solid rgba(142,36,170,0.9);padding:6px 10px;border-radius:6px;margin-bottom:6px;font-size:12px;font-weight:600;">' +
+              '\u{1F32A}\uFE0F ' + hits.tornado.label + ' tornado zone<br><span style="font-weight:400;color:var(--muted);">' + hits.tornado.dateStr + ' \u2022 inside swath</span></div>';
+          }
+          console.log('[PROP-DEBUG] exact swath hits found: hail=' + !!(hits.hail && hits.hail.hailIn > 0) + ' wind=' + !!hits.wind + ' tornado=' + !!hits.tornado);
+
+          // Nearby storm buckets from DB fetch + local cache
+          var b1 = result.within1;
+          var b5 = result.within5;
+          console.log('[PROP-DEBUG] nearby storm hits found within 1 mile: ' + b1.length);
+          console.log('[PROP-DEBUG] nearby storm hits found within 5 miles: ' + b5.length);
+
+          function renderBucket(label, items) {
+            if (!items.length) return '';
+            var out = '<div style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;margin:10px 0 4px;">' + label + ' (' + items.length + ')</div>';
+            items.forEach(function (item) {
+              var hailStr = item.maxHail > 0 ? ' \u2022 max ' + item.maxHail.toFixed(2) + '"' : '';
+              var srcLabel = item.source === 'direct_hit' ? 'inside swath' : (item.source === 'lsr' ? 'LSR report' : (item.source || 'storm polygon'));
+              var rgba = item.maxHail > 0 ? swathSeverityColor(item.maxHail) : [120, 120, 120, 0.3];
+              var distLabel = item.dist === 0 ? 'inside swath' : (item.dist.toFixed(1) + ' mi away');
+              out += '<div class="pp-storm-row" data-storm-date="' + item.date + '" style="background:rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',0.10);border-left:3px solid rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',0.7);padding:5px 10px;border-radius:6px;margin-bottom:4px;font-size:12px;cursor:pointer;transition:background 0.15s;">' +
+                '<span style="font-weight:600;">' + item.date + '</span> \u2022 ' + srcLabel + hailStr +
+                '<br><span style="color:var(--muted);font-size:11px;">' + distLabel + '</span></div>';
+            });
+            return out;
+          }
+          html += renderBucket('Within 1 mile', b1);
+          html += renderBucket('Within 5 miles', b5);
+
+          var totalCount = (hits.hail ? 1 : 0) + (hits.wind ? 1 : 0) + (hits.tornado ? 1 : 0) + b1.length + b5.length;
+          console.log('[PROP-DEBUG] recent storms rendered count: ' + totalCount);
+          if (!html) html = '<div style="color:var(--muted);font-size:12px;">No nearby storm history found for this location in the last 3 years.</div>';
+          body.innerHTML = html;
+
+          // Wire clickable storm rows
+          body.querySelectorAll('.pp-storm-row').forEach(function (row) {
+            row.addEventListener('mouseenter', function () { row.style.background = 'rgba(202,168,92,0.18)'; });
+            row.addEventListener('mouseleave', function () { row.style.background = ''; });
+            row.addEventListener('click', function () {
+              var dateStr = row.getAttribute('data-storm-date');
+              if (!dateStr) return;
+              console.log('[PROP-DEBUG] storm row clicked');
+              console.log('[PROP-DEBUG] clicked storm date: ' + dateStr);
+              console.log('[PROP-DEBUG] mapsDrawDate called from property panel row click');
+              mapsPreviewDate(dateStr);
+              // After draw completes, refresh the storms tab to show updated direct-hit info
+              setTimeout(function () {
+                console.log('[PROP-DEBUG] swath load complete from property row click');
+                if (_ppActiveTab === 'storms') {
+                  _ppNearbyCache = {}; // bust cache so direct-hit re-checks
+                  ppActivateTab('storms');
+                }
+              }, 2500);
+            });
+          });
+        }).catch(function (err) {
+          console.warn('[PROP-DEBUG] nearby storm fetch error', err);
+          body.innerHTML = '<div style="color:var(--muted);font-size:12px;">Error loading storm history. Check console.</div>';
+        });
+
+      } else if (tabName === 'value') {
+        console.log('[PROP-DEBUG] value/assessment tab loaded');
+        console.log('[PROP-DEBUG] value source available: false (no provider wired)');
+        body.innerHTML =
+          '<div style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px;">Property Value / Assessment</div>' +
+          '<div style="color:var(--muted);font-size:13px;margin-top:12px;">Value data unavailable</div>';
+
+      } else if (tabName === 'owner') {
+        console.log('[PROP-DEBUG] homeowner/residence tab loaded');
+        console.log('[PROP-DEBUG] owner source available: false (no provider wired)');
+        console.log('[PROP-DEBUG] dnc source available: false (no compliant source)');
+        body.innerHTML =
+          '<div style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px;">Homeowner / Residence Info</div>' +
+          '<div style="color:var(--muted);font-size:13px;margin-top:12px;">Owner data unavailable</div>' +
+          '<div style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;margin:16px 0 6px;">DNC Status</div>' +
+          '<div style="color:var(--muted);font-size:13px;">Unknown</div>';
+      }
+    }
+
+    function ppWire() {
+      var closeBtn = document.getElementById('pp-close');
+      if (closeBtn) closeBtn.addEventListener('click', ppClose);
+
+      var backBtn = document.getElementById('pp-back');
+      if (backBtn) backBtn.addEventListener('click', function () {
+        console.log('[PROP-DEBUG] back/return to storm list fired');
+        ppClose();
+      });
+
+      var dirBtn = document.getElementById('pp-directions');
+      if (dirBtn) dirBtn.addEventListener('click', function () {
+        var prop = mapsState.selectedProperty;
+        if (!prop) return;
+        var dest = prop.address || (prop.lat + ',' + prop.lng);
+        window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(dest), '_blank');
+      });
+
+      var inspBtn = document.getElementById('pp-inspect');
+      if (inspBtn) inspBtn.addEventListener('click', function () {
+        var prop = mapsState.selectedProperty;
+        if (!prop) return;
+        mapsCreateJobAndInspect(prop);
+      });
+
+      // Tab switching
+      document.querySelectorAll('.maps-prop-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          ppActivateTab(tab.getAttribute('data-pp-tab'));
+        });
+      });
+
+      // Image click → interactive Street View
+      var ppImg = document.getElementById('pp-img');
+      var lightbox = document.getElementById('pp-lightbox');
+      var svContainer = document.getElementById('pp-sv-container');
+      var svUnavail = document.getElementById('pp-sv-unavailable');
+      var svCloseBtn = document.getElementById('pp-sv-close');
+      if (ppImg && lightbox && svContainer) {
+        ppImg.addEventListener('click', function () {
+          console.log('[SV-DEBUG] property image clicked');
+          var sp = mapsState.selectedProperty;
+          if (!sp) { console.log('[SV-DEBUG] no selected property'); return; }
+          console.log('[SV-DEBUG] Street View launch requested for lat=' + sp.lat + ' lng=' + sp.lng);
+          svContainer.style.display = 'block';
+          svUnavail.style.display = 'none';
+          lightbox.style.display = 'flex';
+          console.log('[SV-DEBUG] Street View modal opened');
+          var pos = { lat: sp.lat, lng: sp.lng };
+          var svService = new google.maps.StreetViewService();
+          svService.getPanorama({ location: pos, radius: 100 }, function (data, status) {
+            if (status === google.maps.StreetViewStatus.OK) {
+              console.log('[SV-DEBUG] Street View available at this location');
+              svContainer.style.display = 'block';
+              svUnavail.style.display = 'none';
+              new google.maps.StreetViewPanorama(svContainer, {
+                position: data.location.latLng,
+                pov: { heading: 0, pitch: 0 },
+                zoom: 1,
+                addressControl: true,
+                fullscreenControl: true,
+                motionTracking: false,
+                motionTrackingControl: false
+              });
+            } else {
+              console.log('[SV-DEBUG] Street View unavailable (status=' + status + ')');
+              svContainer.style.display = 'none';
+              svUnavail.style.display = 'block';
+            }
+          });
+        });
+        // Close button
+        if (svCloseBtn) {
+          svCloseBtn.addEventListener('click', function () {
+            lightbox.style.display = 'none';
+            svContainer.innerHTML = '';
+            console.log('[SV-DEBUG] Street View modal closed');
+          });
+        }
+      }
     }
 
     function mapsCreateJobAndInspect(prop) {

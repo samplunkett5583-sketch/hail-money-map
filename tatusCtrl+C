@@ -1,0 +1,10 @@
+[33mdc0bf79[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mbackup/campaign-working[m[33m)[m CHECKPOINT jobs page + campaign progress
+[33mc15413c[m[33m ([m[1;33mtag: [m[1;33mWORKING-STREET-VALUES[m[33m, [m[1;31morigin/backup/campaign-working[m[33m, [m[1;32msave-before-full-insert[m[33m)[m WORKING: Census tract + street value overlays fully functional
+[33m7b46411[m[33m ([m[1;33mtag: [m[1;33mcampaign-working-checkpoint[m[33m, [m[1;32mmaster[m[33m)[m CHECKPOINT: Campaign working view stable, street overlay rendering working, UI mostly complete before property-value targeting
+[33mb4e14df[m[33m ([m[1;33mtag: [m[1;33mworking-map-baseline[m[33m)[m WORKING MAP BASELINE - UI stable before brightness fix
+[33mf742863[m[33m ([m[1;33mtag: [m[1;33mSWATH_SLIDER_WORKING[m[33m)[m WORKING STATE: swath opacity slider fully functional, live overlay control working
+[33m3715031[m Add maps rail icon assets
+[33mea06849[m Revert "Merge pull request #5 from samplunkett5583-sketch/feature/swath-opacity-control"
+[33mdda4e0e[m Merge pull request #5 from samplunkett5583-sketch/feature/swath-opacity-control
+[33mbc34798[m[33m ([m[1;32mfeature/swath-opacity-control[m[33m)[m Start swath opacity control implementation
+[33ma0bbe27[m fix: regenerate package lock for LSR hail ingest

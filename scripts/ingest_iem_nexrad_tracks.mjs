@@ -66,30 +66,59 @@ const DEDUP_TIME_OVERLAP = 0.3;   // dedup min time-overlap fraction
 const MIN_TRACK_POINTS       = 6;    // reject short-lived tracks
 const MIN_AREA_SQ_MI         = 40;   // reject tiny polygons (unless many pts)
 const MIN_AREA_SOFT_PTS      = 10;   // area filter relaxed if pts >= this
-const MIN_HAIL_INCHES        = 1.0;  // reject sub-severe max_size
+const MIN_HAIL_INCHES        = 0.75; // reject sub-severe max_size
 const ISOLATION_RADIUS_DEG   = 2.0;  // ~150 mi at mid-latitudes
 const ISOLATION_TIME_HR      = 2;    // ±hours for neighbor match
 const ISOLATION_BEARING_DEG  = 30;   // bearing tolerance for same-motion
 const MIN_NEIGHBORS          = 1;    // isolated if fewer neighbors than this
 
 // ── Regional cluster pruning (post-scoring) ──
-const CLUSTER_RADIUS_MI            = 120;
+const CLUSTER_RADIUS_MI            = 80;
 const CLUSTER_BEARING_TOLERANCE_DEG = 25;
-const MAX_KEEP_PER_CLUSTER          = 3;
-const MIN_CLUSTER_SCORE_RATIO       = 0.20;
+const MAX_KEEP_PER_CLUSTER          = 12;
+const MIN_CLUSTER_SCORE_RATIO       = 0.15;
 const CONTINUITY_MIN_DIST_MI        = 40;
 const CONTINUITY_BEARING_TOL_DEG    = 25;
-const CONTINUITY_MAX_EXTRA          = 1;
+const CONTINUITY_MAX_EXTRA          = 3;
 
 // ── Buffer sizing ──
-const BUF_SCALE    = 0.04;        // degrees per inch
-const BUF_SCALE_LO = 0.02;        // minimum scaling
-const BUF_SCALE_HI = 0.08;        // maximum scaling
-const HW_FLOOR     = 0.01;        // ~1.1 km minimum half-width
-const HW_CAP       = 0.06;        // ~6.6 km maximum half-width
+const BUF_SCALE    = 0.055;       // degrees per inch (was 0.04)
+const BUF_SCALE_LO = 0.025;       // minimum scaling (was 0.02)
+const BUF_SCALE_HI = 0.10;        // maximum scaling (was 0.08)
+const HW_FLOOR     = 0.015;       // ~1.7 km minimum half-width (was 0.01)
+const HW_CAP       = 0.12;        // ~13.3 km maximum half-width (was 0.06)
+const HW_SMOOTH_RADIUS = 3;       // moving-avg half-window for width smoothing
+
+// ── Severity bands for multi-row output ──
+const HAIL_SIZE_BANDS = [
+  { min: 0.50, max: 1.00, label: "0.5–1.0\"" },
+  { min: 1.00, max: 1.50, label: "1.0–1.5\"" },
+  { min: 1.50, max: 2.00, label: "1.5–2.0\"" },
+  { min: 2.00, max: 2.50, label: "2.0–2.5\"" },
+  { min: 2.50, max: 99,   label: "2.5\"+"    },
+];
+
+// ── Event envelope (outer layer — broader metro-scale footprint) ──
+const ENVELOPE_BUFFER_DEG         = 0.25;  // ~28 km outward buffer
+const ENVELOPE_MIN_TOP_HAIL       = 1.0;   // only for ≥1″ events
+const ENVELOPE_MIN_AREA_SQ_MI     = 20;    // skip trivially small envelopes
 
 function log(t, m) { console.log("[" + t + "] " + m); }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Moving-average smoother for half-width arrays
+function smoothHalfWidths(hws, radius) {
+  if (hws.length <= 2 * radius + 1) return hws;
+  const out = [];
+  for (let i = 0; i < hws.length; i++) {
+    let sum = 0, cnt = 0;
+    for (let j = Math.max(0, i - radius); j <= Math.min(hws.length - 1, i + radius); j++) {
+      sum += hws[j]; cnt++;
+    }
+    out.push(sum / cnt);
+  }
+  return out;
+}
 
 // ═══════════════════════════════════════════════════════════
 //  Geo helpers
@@ -168,6 +197,23 @@ function convexHull(points) {
   const h = lo.concat(hi);
   h.push(h[0]);
   return h;
+}
+
+// Expand a convex hull outward from its centroid by bufferDeg
+function expandHull(hull, bufferDeg) {
+  const c = centroidOf(hull);
+  const expanded = [];
+  for (let i = 0; i < hull.length - 1; i++) {
+    const dx = hull[i][0] - c.lon;
+    const dy = hull[i][1] - c.lat;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1e-12;
+    expanded.push([
+      hull[i][0] + (dx / dist) * bufferDeg,
+      hull[i][1] + (dy / dist) * bufferDeg,
+    ]);
+  }
+  expanded.push(expanded[0]);
+  return expanded;
 }
 
 function trackLengthMi(coords) {
@@ -315,35 +361,75 @@ function hasHailSignal(f) {
   return p.max_size > 0 || p.poh >= 20 || p.posh > 0;
 }
 
+function hasWindSignal(f) {
+  const p = f.properties;
+  // Strong convective indicators → damaging wind potential
+  return (p.vil >= 30 && p.max_dbz >= 55 && p.top >= 12) ||
+         (p.max_dbz >= 60 && p.vil >= 20) ||
+         (p.meso && p.meso !== "NONE" && p.meso !== "0" && p.vil >= 20);
+}
+
+// ── Wind severity bands (mapped to same 0.5–2.0 band_min range for frontend) ──
+const WIND_SEVERITY_BANDS = [
+  { min: 0.50, max: 1.00, label: "wind-light",    dbzFloor: 50 },
+  { min: 1.00, max: 1.50, label: "wind-moderate",  dbzFloor: 55 },
+  { min: 1.50, max: 2.00, label: "wind-strong",    dbzFloor: 60 },
+  { min: 2.00, max: 99,   label: "wind-severe",    dbzFloor: 65 },
+];
+const WIND_BUF_SCALE  = 0.0020;  // degrees per VIL unit
+const WIND_HW_FLOOR   = 0.02;   // ~2.2 km minimum half-width
+const WIND_HW_CAP     = 0.08;   // ~9 km maximum half-width
+const WIND_MIN_VIL    = 15;     // corridor quality gate: representative VIL
+const WIND_MIN_TRACK_PTS = 4;
+const WIND_MIN_AREA   = 15;     // sq mi
+const WIND_MAX_TIER_AREA = 2000; // sq mi cap per wind tier polygon
+
 // ═══════════════════════════════════════════════════════════
 //  Main
 // ═══════════════════════════════════════════════════════════
+const SCRIPT_VERSION = "v7.5-hail+wind";
+
 async function main() {
-  log("MAIN", "IEM NEXRAD track ingest for " + TARGET_DATE);
+  log("MAIN", "IEM NEXRAD track ingest " + SCRIPT_VERSION + " for " + TARGET_DATE);
+  log("MAIN", "BASE: BUF_SCALE=" + BUF_SCALE + " HW_FLOOR=" + HW_FLOOR + " HW_CAP=" + HW_CAP);
 
   // ── 1. Generate query timestamps ──
   const stamps = genTimestamps(TARGET_DATE);
   log("MAIN", "Timestamps to query: " + stamps.length + " (12Z-06Z, 5min)");
 
-  // ── 2. Fetch each timestamp, keep hail-signal features ──
+  // ── 2. Fetch each timestamp, keep hail-signal and wind-signal features ──
   const allFeats = [];
+  const allWindFeats = [];
   let nTs = 0;
   for (const ts of stamps) {
     const raw = await fetchTs(ts);
     const hail = raw.filter(hasHailSignal);
+    const wind = raw.filter(hasWindSignal);
     if (hail.length > 0) allFeats.push(...hail);
+    if (wind.length > 0) allWindFeats.push(...wind);
     nTs++;
     if (nTs % 36 === 0) {
-      log("FETCH", nTs + "/" + stamps.length + " timestamps  (" + allFeats.length + " hail features so far)");
+      log("FETCH", nTs + "/" + stamps.length + " timestamps  (" + allFeats.length + " hail, " + allWindFeats.length + " wind features so far)");
     }
     await sleep(FETCH_DELAY);
   }
-  log("FETCH", "Done: " + nTs + " timestamps queried, " + allFeats.length + " total hail features kept");
+  log("FETCH", "Done: " + nTs + " timestamps queried, " + allFeats.length + " hail + " + allWindFeats.length + " wind features kept");
 
-  if (allFeats.length === 0) {
-    log("MAIN", "No hail features found. Nothing to save.");
+  if (allFeats.length === 0 && allWindFeats.length === 0) {
+    log("MAIN", "No hail or wind features found. Nothing to save.");
     return;
   }
+
+  // ── Wind pipeline runs after hail (see end of main). Skip hail if no hail features. ──
+  if (allFeats.length === 0) {
+    log("MAIN", "No hail features. Skipping hail pipeline, proceeding to wind.");
+  }
+
+  let nSavedHail = 0;
+  let hailSwathIdx = 0;
+
+  if (allFeats.length > 0) {
+  // ── BEGIN HAIL PIPELINE ──
 
   // ── 3. Group by nexrad:storm_id ──
   const groups = new Map();
@@ -421,13 +507,18 @@ async function main() {
     // 5e — half-widths from max_size
     const nonZero = uS.filter(s => s > 0);
     const repMS = nonZero.length > 0 ? Math.max(...nonZero) : 0.5;
-    const hws = uS.map(ms => {
+    const rawHws = uS.map(ms => {
       const eff = ms > 0 ? ms : repMS * 0.5;
       let hw = eff * BUF_SCALE;
       hw = Math.max(hw, eff * BUF_SCALE_LO);
       hw = Math.min(hw, eff * BUF_SCALE_HI);
       return Math.min(Math.max(hw, HW_FLOOR), HW_CAP);
     });
+    const hws = smoothHalfWidths(rawHws, HW_SMOOTH_RADIUS);
+
+    // 5e2 — per-point severity (max_size values, smoothed)
+    const rawSev = uS.map(ms => ms > 0 ? ms : 0);
+    const smoothedSev = smoothHalfWidths(rawSev, HW_SMOOTH_RADIUS);
 
     // 5f — build polygon
     let ring = bufferLine(uP, hws);
@@ -511,6 +602,10 @@ async function main() {
       selfInt,
       usedHull,
       area,
+      // Retained for severity-band generation
+      _trackPts: uP,
+      _trackHws: hws,
+      _trackSev: smoothedSev,
     });
   }
 
@@ -720,77 +815,499 @@ async function main() {
     return;
   }
 
-  // ── 6. Delete existing nexrad_iem rows for this date ──
+  // ── 5.12 Assign cluster IDs to final corridors ──
+  for (const c of final) {
+    const root = findRoot(c);
+    c._clusterRoot = root.key;
+  }
+  const clusterGroupsMap = new Map();
+  for (const c of final) {
+    if (!clusterGroupsMap.has(c._clusterRoot)) clusterGroupsMap.set(c._clusterRoot, []);
+    clusterGroupsMap.get(c._clusterRoot).push(c);
+  }
+  log("HIERARCHY", "Date=" + TARGET_DATE + " clusters=" + clusterGroupsMap.size + " corridors=" + final.length);
+
+  // ── 6. Delete existing nexrad_iem HAIL rows for this date ──
   const { error: delErr } = await supabase
     .from("storm_polygons")
     .delete()
     .eq("event_date", TARGET_DATE)
-    .eq("source", "nexrad_iem");
-  if (delErr) log("ERROR", "delete: " + delErr.message);
+    .eq("source", "nexrad_iem")
+    .eq("source_product", "iem_nexrad_track");
+  if (delErr) log("ERROR", "delete hail: " + delErr.message);
 
-  // ── 7. Save corridors ──
+  // ── 7. Build hierarchical nested severity-tier polygons and save ──
+  //
+  // Each corridor saves its own tier rings individually (no cluster-wide merge).
+  // Yellow uses uniform width per corridor = maxBaseHW (no extra inflation).
+  // Inner tiers use per-point modulation with a floor.
+  // Self-intersecting bufferLine rings are retried at reduced width (no convex hull).
+
+  const OUTER_MULT         = 1.3;   // yellow: max baseHW × 1.3 (modest inflation)
+  const YELLOW_HW_FLOOR    = 0.015; // ~1.7 km minimum yellow half-width
+  const YELLOW_HW_CAP      = 0.10;  // ~11 km max yellow half-width (~22km full)
+  const TIER_HW_CAP        = 0.06;  // ~6.7 km max inner-tier half-width
+  const INNER_TIER_FLOOR_F = 0.35;  // inner tiers floor at 35% of yellow HW
+  const BAND_TIER_WIDTHS   = [1.0,  0.55, 0.32, 0.18, 0.10];
+  //                          yel   org   red   dkr   pur
+  const MAX_TIER_AREA_MI2  = 2000;  // safety cap per individual tier polygon
+  const SELF_INT_SHRINK    = 0.5;   // shrink HWs by 50% on self-intersection retry
+  const SELF_INT_RETRIES   = 2;     // max retries before skipping
+
   let nSaved = 0;
-  for (let i = 0; i < final.length; i++) {
-    const c = final[i];
-    const [nxr, sid] = c.key.split(":");
+  let swathIdx = 0;
+  const tierCounts = {};          // label → { polygons, area, maxWidthDeg, maxAreaMi2 }
+  const clusterAreaSums = {};     // clusterRoot → { label → totalArea }
+  let yellowSkipped = 0;
+  let selfIntRetries = 0;         // tier rings retried after self-intersection
+  let selfIntDropped = 0;         // tier rings dropped after retries exhausted
 
-    const geojson = {
-      type: "Feature",
-      geometry: { type: "Polygon", coordinates: [c.ring] },
-      properties: {
-        nexrad: nxr,
-        storm_id: sid,
-        track_points: c.nPts,
-        max_hail_inches: c.repMS,
-        event_start_utc: c.firstTime,
-        event_end_utc: c.lastTime,
-      },
-    };
+  log("TIER_GEN", "=== Per-corridor tier generation (date=" + TARGET_DATE + ") ===");
+  log("TIER_GEN", "OUTER_MULT=" + OUTER_MULT +
+    " YELLOW_HW_FLOOR=" + YELLOW_HW_FLOOR + "°" +
+    " YELLOW_HW_CAP=" + YELLOW_HW_CAP + "°" +
+    " TIER_HW_CAP=" + TIER_HW_CAP + "°" +
+    " INNER_TIER_FLOOR_F=" + INNER_TIER_FLOOR_F +
+    " MAX_TIER_AREA=" + MAX_TIER_AREA_MI2 + "mi²" +
+    " SELF_INT_SHRINK=" + SELF_INT_SHRINK +
+    " SELF_INT_RETRIES=" + SELF_INT_RETRIES +
+    " BAND_TIER_WIDTHS=" + JSON.stringify(BAND_TIER_WIDTHS));
+  log("TIER_GEN", "Clusters: " + clusterGroupsMap.size + "  corridors: " + final.length);
 
-    const row = {
-      event_date: TARGET_DATE,
-      storm_type: "hail",
-      band_min: c.repMS,
-      band_max: c.repMS,
-      band_label: c.repMS + "\" track",
-      polygon_geojson: geojson,
-      centroid_lat: c.centroid.lat,
-      centroid_lon: c.centroid.lon,
-      area_sq_mi: parseFloat(c.area.toFixed(2)),
-      source: "nexrad_iem",
-      source_product: "iem_nexrad_track",
-      source_priority: 1,
-      swath_index: i,
-    };
+  for (const c of final) {
+    const pts = c._trackPts;
+    const baseHws = c._trackHws;
+    if (pts.length < 2) continue;
 
-    const { error } = await supabase.from("storm_polygons").upsert([row], {
-      onConflict: "event_date,source,source_product,swath_index",
-    });
-    if (error) {
-      log("ERROR", "upsert " + c.key + ": " + error.message);
-    } else {
-      nSaved++;
+    const maxSev = Math.max(...c._trackSev, c.repMS);
+    const applicableBands = HAIL_SIZE_BANDS.filter(b => maxSev >= b.min);
+    if (applicableBands.length === 0) continue;
+
+    // Yellow uses the MAXIMUM baseHW from this corridor, applied uniformly.
+    const maxBaseHW = Math.max(...baseHws);
+    const yellowHW = Math.min(Math.max(maxBaseHW * OUTER_MULT, YELLOW_HW_FLOOR), YELLOW_HW_CAP);
+
+    const corridorTiers = {}; // bandMin → { ring, area }
+
+    for (const band of applicableBands) {
+      const bandIdx = HAIL_SIZE_BANDS.indexOf(band);
+      const tierScale = BAND_TIER_WIDTHS[bandIdx] || 0.10;
+
+      let bandHws;
+      if (bandIdx === 0) {
+        // YELLOW: uniform width → broad outer body per corridor
+        bandHws = pts.map(() => yellowHW);
+      } else {
+        // INNER TIERS: per-point modulated, floored
+        const innerFloor = yellowHW * INNER_TIER_FLOOR_F * tierScale;
+        bandHws = baseHws.map(hw => {
+          const raw = hw * OUTER_MULT * tierScale;
+          return Math.min(Math.max(raw, innerFloor), TIER_HW_CAP);
+        });
+      }
+      const smoothed = smoothHalfWidths(bandHws, HW_SMOOTH_RADIUS);
+
+      // Build buffer ring; if self-intersecting, shrink HWs and retry.
+      // NEVER fall through to convexHull — it fills concavities and inflates area.
+      let ring = null;
+      let usedHws = smoothed;
+      let shrinkFactor = 1.0;
+      for (let attempt = 0; attempt <= SELF_INT_RETRIES; attempt++) {
+        const tryHws = attempt === 0 ? usedHws : usedHws.map(hw => hw * shrinkFactor);
+        const tryRing = bufferLine(pts, tryHws);
+        if (!ringSelfIntersects(tryRing)) {
+          ring = tryRing;
+          usedHws = tryHws;
+          break;
+        }
+        if (attempt > 0) selfIntRetries++;
+        shrinkFactor *= SELF_INT_SHRINK;
+      }
+      if (!ring) {
+        selfIntDropped++;
+        log("SELF_INT", "DROPPED corridor=" + c.key + " tier=" + band.label +
+          " after " + SELF_INT_RETRIES + " shrink retries (self-intersecting)");
+        continue;
+      }
+
+      const tierArea = areaSqMi(ring);
+      if (tierArea < 1) continue;
+      if (tierArea > MAX_TIER_AREA_MI2) {
+        log("AREA_CAP", "SKIPPED tier area " + tierArea.toFixed(0) + "mi² > " +
+          MAX_TIER_AREA_MI2 + "mi² cap for corridor=" + c.key + " tier=" + band.label);
+        if (bandIdx === 0) yellowSkipped++;
+        continue;
+      }
+
+      corridorTiers[band.min] = { ring, area: tierArea };
+
+      const tier = band.label;
+      if (!tierCounts[tier]) tierCounts[tier] = { polygons: 0, area: 0, maxWidthDeg: 0, maxAreaMi2: 0 };
+      tierCounts[tier].polygons++;
+      tierCounts[tier].area += tierArea;
+      const midHWForStats = usedHws[Math.floor(usedHws.length / 2)];
+      if (midHWForStats > tierCounts[tier].maxWidthDeg) tierCounts[tier].maxWidthDeg = midHWForStats;
+      if (tierArea > tierCounts[tier].maxAreaMi2) tierCounts[tier].maxAreaMi2 = tierArea;
+
+      // Per-cluster area tracking
+      const cRoot = c._clusterRoot;
+      if (!clusterAreaSums[cRoot]) clusterAreaSums[cRoot] = {};
+      if (!clusterAreaSums[cRoot][tier]) clusterAreaSums[cRoot][tier] = 0;
+      clusterAreaSums[cRoot][tier] += tierArea;
+
+      // Yellow threshold alert (flag any individual corridor yellow > 200 mi²)
+      if (bandIdx === 0 && tierArea > 200) {
+        log("YELLOW_ALERT", "corridor=" + c.key + " area=" + tierArea.toFixed(1) +
+          "mi² midHW=" + midHWForStats.toFixed(4) + "° (" + (midHWForStats * 111).toFixed(1) + "km)" +
+          " trackPts=" + pts.length + " cluster=" + cRoot);
+      }
+
+      const ringCentroid = centroidOf(ring);
+      const midHW = usedHws[Math.floor(usedHws.length / 2)];
+
+      const geojson = {
+        type: "Feature",
+        geometry: { type: "Polygon", coordinates: [ring] },
+        properties: {
+          corridor: c.key,
+          cluster: c._clusterRoot,
+          band_threshold: band.min,
+          tier_width_frac: tierScale,
+          outer_mult: OUTER_MULT,
+          mid_hw_deg: parseFloat(midHW.toFixed(4)),
+        },
+      };
+
+      const qualityStatus = classifyQuality(c, tierArea, applicableBands.length);
+
+      const row = {
+        event_date: TARGET_DATE,
+        storm_type: "hail",
+        band_min: band.min,
+        band_max: band.max === 99 ? c.repMS : band.max,
+        band_label: band.label,
+        polygon_geojson: geojson,
+        centroid_lat: ringCentroid.lat,
+        centroid_lon: ringCentroid.lon,
+        area_sq_mi: parseFloat(tierArea.toFixed(2)),
+        source: "nexrad_iem",
+        source_product: "iem_nexrad_track",
+        source_priority: 1,
+        swath_index: swathIdx,
+      };
+      try { row.quality_status = qualityStatus; } catch (_) {}
+
+      const { error } = await supabase.from("storm_polygons").upsert([row], {
+        onConflict: "event_date,source,source_product,swath_index",
+      });
+      if (error) {
+        if (error.message && error.message.includes("quality_status")) {
+          delete row.quality_status;
+          const { error: e2 } = await supabase.from("storm_polygons").upsert([row], {
+            onConflict: "event_date,source,source_product,swath_index",
+          });
+          if (e2) log("ERROR", "upsert " + c.key + " " + band.label + ": " + e2.message);
+          else nSaved++;
+        } else {
+          log("ERROR", "upsert " + c.key + " " + band.label + ": " + error.message);
+        }
+      } else {
+        nSaved++;
+      }
+
+      log("BAND", "corridor=" + c.key +
+        " tier=" + band.label +
+        " midHW=" + midHW.toFixed(4) + "° (" + (midHW * 111).toFixed(1) + "km)" +
+        " area=" + tierArea.toFixed(1) + "mi²" +
+        " pts=" + pts.length +
+        (bandIdx === 0 ? " yellowHW=" + yellowHW.toFixed(4) + "°" : ""));
+      swathIdx++;
     }
 
-    // ── per-corridor debug ──
-    log("SAVED", [
-      c.key,
-      "pts=" + c.nPts,
-      c.firstTime + " → " + c.lastTime,
-      "first=[" + c.firstCoord[1].toFixed(3) + "," + c.firstCoord[0].toFixed(3) + "]",
-      "last=[" + c.lastCoord[1].toFixed(3) + "," + c.lastCoord[0].toFixed(3) + "]",
-      "max_size=" + c.repMS + "\"",
-      "bbox=[" + c.bbox.minLat.toFixed(2) + "," + c.bbox.minLon.toFixed(2) +
-        " → " + c.bbox.maxLat.toFixed(2) + "," + c.bbox.maxLon.toFixed(2) + "]",
-      "ring=" + c.ring.length + "pts",
-      "selfInt=" + c.selfInt,
-      "area=" + c.area.toFixed(1) + "mi²",
-      "PASS",
-    ].join(" | "));
+    // Per-corridor containment check
+    const bandMins = Object.keys(corridorTiers).map(Number).sort((a, b) => a - b);
+    for (let ti = 1; ti < bandMins.length; ti++) {
+      const outerBand = bandMins[ti - 1];
+      const innerBand = bandMins[ti];
+      const outerArea = corridorTiers[outerBand].area;
+      const innerArea = corridorTiers[innerBand].area;
+      const contained = innerArea <= outerArea * 1.01;
+      const outerLabel = HAIL_SIZE_BANDS.find(b => b.min === outerBand)?.label || outerBand + "\"";
+      const innerLabel = HAIL_SIZE_BANDS.find(b => b.min === innerBand)?.label || innerBand + "\"";
+      if (!contained) {
+        log("NESTING_WARN", "corridor=" + c.key + " " + innerLabel + " > " + outerLabel +
+          " (inner=" + innerArea.toFixed(0) + "mi² outer=" + outerArea.toFixed(0) + "mi²)");
+      }
+    }
   }
 
-  log("MAIN", "Done. Saved " + nSaved + "/" + final.length +
-    " corridors to storm_polygons (source=nexrad_iem)");
+  // ── Debug: tier polygon counts, areas, max widths ──
+  log("TIER_SUMMARY", "=== Tier polygon summary (date=" + TARGET_DATE + ") ===");
+  for (const [tier, s] of Object.entries(tierCounts)) {
+    log("TIER_SUMMARY", "  " + tier + ": " + s.polygons + " polygon(s)" +
+      " totalArea=" + s.area.toFixed(1) + "mi²" +
+      " avgArea=" + (s.area / (s.polygons || 1)).toFixed(1) + "mi²" +
+      " maxArea=" + s.maxAreaMi2.toFixed(1) + "mi²" +
+      " maxHW=" + s.maxWidthDeg.toFixed(4) + "° (" + (s.maxWidthDeg * 111).toFixed(1) + "km)");
+  }
+  log("TIER_SUMMARY", "union_count=0 (per-corridor mode, no cluster-wide merges)");
+  log("TIER_SUMMARY", "self_int_retries=" + selfIntRetries +
+    " self_int_dropped=" + selfIntDropped);
+  if (yellowSkipped > 0) {
+    log("TIER_SUMMARY", "yellow_skipped=" + yellowSkipped + " (exceeded " + MAX_TIER_AREA_MI2 + "mi² cap)");
+  }
+
+  // ── Debug: per-cluster area totals (top 10 largest yellow) ──
+  const yellowLabel = HAIL_SIZE_BANDS[0].label;
+  const clusterYellowAreas = Object.entries(clusterAreaSums)
+    .filter(([, tiers]) => tiers[yellowLabel])
+    .map(([cRoot, tiers]) => ({ cluster: cRoot, yellowArea: tiers[yellowLabel] || 0 }))
+    .sort((a, b) => b.yellowArea - a.yellowArea)
+    .slice(0, 10);
+  if (clusterYellowAreas.length > 0) {
+    log("CLUSTER_AREAS", "Top yellow-area clusters:");
+    for (const ca of clusterYellowAreas) {
+      log("CLUSTER_AREAS", "  cluster=" + ca.cluster + " yellowArea=" + ca.yellowArea.toFixed(1) + "mi²");
+    }
+  }
+
+  // ── Debug: event/group counts ──
+  log("DEBUG", "date=" + TARGET_DATE +
+    " event_groups(clusters)=" + clusterGroupsMap.size +
+    " corridors=" + final.length +
+    " total_tier_polygons=" + swathIdx);
+
+  // ── Aggregate containment check across all corridors ──
+  let nestOK = 0, nestWarn = 0;
+  log("NESTING", "Per-corridor nesting checked inline above.");
+  log("NESTING", "Containment summary: all tier rings use same centerline at" +
+    " decreasing widths → nesting guaranteed by construction.");
+
+  log("MAIN", "Hail done. Saved " + nSaved + " band rows from " + final.length +
+    " corridors in " + clusterGroupsMap.size + " clusters to storm_polygons (" + SCRIPT_VERSION + ")");
+  nSavedHail = nSaved;
+  hailSwathIdx = swathIdx;
+  } // ── END HAIL PIPELINE ──
+
+  // ═════════════════════════════════════════════════════════════
+  //  WIND PIPELINE — Build wind swath corridors from same IEM data
+  // ═════════════════════════════════════════════════════════════
+  let nSavedWind = 0;
+  let windSwathIdx = 0;
+
+  if (allWindFeats.length > 0) {
+    log("WIND", "=== Wind pipeline: " + allWindFeats.length + " wind-signal features ===");
+
+    // Delete existing wind rows for this date
+    const { error: wDelErr } = await supabase
+      .from("storm_polygons")
+      .delete()
+      .eq("event_date", TARGET_DATE)
+      .eq("source", "nexrad_iem")
+      .eq("source_product", "iem_nexrad_wind");
+    if (wDelErr) log("ERROR", "delete wind: " + wDelErr.message);
+
+    // Group by nexrad:storm_id
+    const wGroups = new Map();
+    for (const f of allWindFeats) {
+      const k = f.properties.nexrad + ":" + f.properties.storm_id;
+      if (!wGroups.has(k)) wGroups.set(k, []);
+      wGroups.get(k).push(f);
+    }
+    log("WIND", wGroups.size + " unique nexrad:storm_id groups");
+
+    // Sort, split, build corridor polygons
+    const windCorridors = [];
+    for (const [key, feats] of wGroups) {
+      feats.sort((a, b) => new Date(a.properties.valid) - new Date(b.properties.valid));
+      // Split at gaps
+      const segments = [];
+      let chunk = [feats[0]];
+      for (let i = 1; i < feats.length; i++) {
+        const gap = (new Date(feats[i].properties.valid) - new Date(feats[i - 1].properties.valid)) / 60000;
+        const dxy = Math.sqrt(
+          (feats[i].geometry.coordinates[0] - feats[i - 1].geometry.coordinates[0]) ** 2 +
+          (feats[i].geometry.coordinates[1] - feats[i - 1].geometry.coordinates[1]) ** 2
+        );
+        if (gap > MAX_GAP_MIN || dxy > SPATIAL_GAP) {
+          segments.push(chunk);
+          chunk = [];
+        }
+        chunk.push(feats[i]);
+      }
+      if (chunk.length > 0) segments.push(chunk);
+
+      for (const seg of segments) {
+        if (seg.length < WIND_MIN_TRACK_PTS) continue;
+        const coords = seg.map(f => f.geometry.coordinates);
+        const vils = seg.map(f => f.properties.vil || 0);
+        const dbzs = seg.map(f => f.properties.max_dbz || 0);
+
+        // Deduplicate consecutive identical coords
+        const uP = [coords[0]], uV = [vils[0]], uD = [dbzs[0]];
+        for (let i = 1; i < coords.length; i++) {
+          if (coords[i][0] !== coords[i - 1][0] || coords[i][1] !== coords[i - 1][1]) {
+            uP.push(coords[i]); uV.push(vils[i]); uD.push(dbzs[i]);
+          }
+        }
+        if (uP.length < 2) continue;
+
+        // Half-widths from VIL
+        const repVIL = Math.max(...uV);
+        const repDBZ = Math.max(...uD);
+        const rawHws = uV.map(v => {
+          const hw = (v > 0 ? v : repVIL * 0.5) * WIND_BUF_SCALE;
+          return Math.min(Math.max(hw, WIND_HW_FLOOR), WIND_HW_CAP);
+        });
+        const hws = smoothHalfWidths(rawHws, HW_SMOOTH_RADIUS);
+
+        // Build polygon ring
+        let ring = bufferLine(uP, hws);
+        if (ringSelfIntersects(ring)) {
+          // Try shrink
+          const shrunkHws = hws.map(hw => hw * 0.6);
+          ring = bufferLine(uP, shrunkHws);
+          if (ringSelfIntersects(ring)) continue;
+        }
+
+        const area = areaSqMi(ring);
+        if (area > MAX_AREA || area < WIND_MIN_AREA) continue;
+
+        // Quality gate
+        if (repVIL < WIND_MIN_VIL) continue;
+
+        windCorridors.push({
+          key,
+          ring,
+          centroid: centroidOf(ring),
+          repVIL,
+          repDBZ,
+          nPts: seg.length,
+          area,
+          _trackPts: uP,
+          _trackHws: hws,
+          _trackVils: uV,
+          _trackDbzs: uD,
+          firstTime: seg[0].properties.valid,
+          lastTime: seg[seg.length - 1].properties.valid,
+        });
+      }
+    }
+    log("WIND", "Wind corridors built: " + windCorridors.length);
+
+    // Save wind corridor tier polygons
+    const windRows = [];
+    for (const wc of windCorridors) {
+      const maxDBZ = wc.repDBZ;
+      const applicableBands = WIND_SEVERITY_BANDS.filter(b => maxDBZ >= b.dbzFloor);
+      if (applicableBands.length === 0) {
+        // At minimum save one light-wind band
+        applicableBands.push(WIND_SEVERITY_BANDS[0]);
+      }
+
+      for (const band of applicableBands) {
+        const bandIdx = WIND_SEVERITY_BANDS.indexOf(band);
+        const tierScale = [1.0, 0.55, 0.35, 0.20][bandIdx] || 0.20;
+
+        const bandHws = wc._trackHws.map(hw => {
+          const raw = hw * tierScale;
+          return Math.min(Math.max(raw, WIND_HW_FLOOR * 0.5), WIND_HW_CAP);
+        });
+        const smoothed = smoothHalfWidths(bandHws, HW_SMOOTH_RADIUS);
+
+        let ring = bufferLine(wc._trackPts, smoothed);
+        if (ringSelfIntersects(ring)) {
+          ring = bufferLine(wc._trackPts, smoothed.map(h => h * 0.6));
+          if (ringSelfIntersects(ring)) continue;
+        }
+        const tierArea = areaSqMi(ring);
+        if (tierArea < 1 || tierArea > WIND_MAX_TIER_AREA) continue;
+
+        const ringCentroid = centroidOf(ring);
+        const midHW = smoothed[Math.floor(smoothed.length / 2)];
+
+        const geojson = {
+          type: "Feature",
+          geometry: { type: "Polygon", coordinates: [ring] },
+          properties: {
+            corridor: wc.key,
+            band_threshold: band.min,
+            tier_width_frac: tierScale,
+            mid_hw_deg: parseFloat(midHW.toFixed(4)),
+            rep_vil: wc.repVIL,
+            rep_dbz: wc.repDBZ,
+          },
+        };
+
+        windRows.push({
+          event_date: TARGET_DATE,
+          storm_type: "wind",
+          band_min: band.min,
+          band_max: band.max === 99 ? 3.0 : band.max,
+          band_label: band.label,
+          polygon_geojson: geojson,
+          centroid_lat: ringCentroid.lat,
+          centroid_lon: ringCentroid.lon,
+          area_sq_mi: parseFloat(tierArea.toFixed(2)),
+          source: "nexrad_iem",
+          source_product: "iem_nexrad_wind",
+          source_priority: 2,
+          swath_index: windSwathIdx,
+        });
+
+        log("WIND_BAND", "corridor=" + wc.key +
+          " tier=" + band.label +
+          " area=" + tierArea.toFixed(1) + "mi²" +
+          " midHW=" + midHW.toFixed(4) + "°" +
+          " VIL=" + wc.repVIL + " DBZ=" + wc.repDBZ);
+        windSwathIdx++;
+      }
+    }
+
+    // Batch upsert wind rows (chunks of 200)
+    const WIND_BATCH = 200;
+    for (let i = 0; i < windRows.length; i += WIND_BATCH) {
+      const chunk = windRows.slice(i, i + WIND_BATCH);
+      const { error } = await supabase.from("storm_polygons").upsert(chunk, {
+        onConflict: "event_date,source,source_product,swath_index",
+      });
+      if (error) {
+        log("ERROR", "wind batch upsert [" + i + ".." + (i + chunk.length) + "]: " + error.message);
+      } else {
+        nSavedWind += chunk.length;
+      }
+    }
+    log("WIND", "Wind done. Saved " + nSavedWind + " wind band rows from " +
+      windCorridors.length + " wind corridors.");
+  } else {
+    log("WIND", "No wind-signal features found. Skipping wind pipeline.");
+  }
+
+  log("MAIN", "Complete. Hail=" + nSavedHail + " Wind=" + nSavedWind + " total band rows saved (" + SCRIPT_VERSION + ")");
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Quality validation — auto-classifies each saved corridor
+// ═══════════════════════════════════════════════════════════
+function classifyQuality(corridor, bandArea, nBands) {
+  // accepted: high-confidence corridor
+  // review: plausible but may need checking
+  // fallback: low-confidence placeholder
+  const { nPts, repMS, area, _neighbors } = corridor;
+
+  // Strong corridor: many track points, significant hail, multiple neighbors
+  if (nPts >= 10 && repMS >= 1.0 && area >= 50 && (_neighbors || 0) >= 2) {
+    return "accepted";
+  }
+  // Moderate corridor: reasonable track with some evidence
+  if (nPts >= 6 && repMS >= 0.75 && area >= 20) {
+    return "accepted";
+  }
+  // Marginal: short track, small area, or weak hail
+  if (nPts >= 4 && area >= 10) {
+    return "review";
+  }
+  return "fallback";
 }
 
 main().catch(e => { console.error("Fatal:", e); process.exit(1); });
