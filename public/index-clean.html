@@ -1832,7 +1832,14 @@
                   <div class="menu-row-header">
                     <div class="menu-row-title">Start Inspection</div>
                   </div>
-                  <div class="menu-row-desc">Open the inspection flow for the current job</div>
+                  <div class="menu-row-desc">Open the camera and capture inspection photos</div>
+                </button>
+
+                <button class="menu-row" type="button" id="open-photo-files">
+                  <div class="menu-row-header">
+                    <div class="menu-row-title">Photo Files</div>
+                  </div>
+                  <div class="menu-row-desc">View saved inspection photo sessions by job</div>
                 </button>
               </div>
             </section>
@@ -2476,6 +2483,53 @@
           </div>
           <div id="photo-upload-progress" style="display:none;color:var(--accent);font-size:14px;font-weight:700;margin-bottom:10px;"></div>
           <div id="job-photos-content"></div>
+        </div>
+      </section>
+
+      <!-- ── Inspection Capture Flow (camera-first) ── -->
+      <section id="page-inspection-capture" class="page">
+        <div style="position:relative;max-width:540px;margin:0 auto;padding:0 12px 40px;">
+          <h1 class="page-title">Inspection Capture</h1>
+          <p class="page-subtitle">Take photos for this inspection. Tap Finish when done.</p>
+          <input type="file" id="insp-capture-input" accept="image/*" capture="environment" style="display:none;" />
+          <div style="display:flex;gap:8px;margin-bottom:14px;">
+            <button class="btn btn-primary" type="button" id="insp-capture-take" style="flex:1;">📷 Take Photo</button>
+            <button class="btn" type="button" id="insp-capture-upload" style="flex:1;">Upload from Gallery</button>
+            <input type="file" id="insp-capture-gallery" accept="image/*" multiple style="display:none;" />
+          </div>
+          <div id="insp-capture-count" style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:10px;"></div>
+          <div id="insp-capture-grid" class="photo-grid" style="margin-bottom:18px;"></div>
+          <div style="position:sticky;bottom:16px;display:flex;gap:8px;z-index:20;">
+            <button class="btn" type="button" id="insp-capture-cancel" style="flex:1;">Cancel</button>
+            <button class="btn btn-primary" type="button" id="insp-capture-finish" style="flex:2;font-size:16px;padding:14px;">✅ Finish</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Photo Files ── -->
+      <section id="page-photo-files" class="page">
+        <div class="files-wrap">
+          <h1 class="page-title">Photo Files</h1>
+          <p class="page-subtitle">Inspection photo sessions grouped by job.</p>
+          <div class="page-actions">
+            <button class="btn back-to-menu" type="button">Back to Main Menu</button>
+          </div>
+          <input type="text" id="photo-files-search" class="costing-search-input" placeholder="Search by address or homeowner name…" style="margin-bottom:14px;" />
+          <div id="photo-files-list" class="doc-file-list"></div>
+        </div>
+      </section>
+
+      <!-- ── Photo File Detail (independent from My Jobs) ── -->
+      <section id="page-photo-file-detail" class="page">
+        <div class="files-wrap">
+          <h1 class="page-title" id="pf-detail-title">Photo File</h1>
+          <p class="page-subtitle" id="pf-detail-subtitle"></p>
+          <div class="page-actions">
+            <button class="btn" type="button" id="pf-detail-back">Back to Photo Files</button>
+            <button class="btn btn-primary" type="button" id="pf-detail-report">Start Report</button>
+          </div>
+          <div id="pf-detail-meta" style="font-size:13px;color:var(--muted);margin-bottom:14px;"></div>
+          <div id="pf-detail-grid" class="photo-grid"></div>
         </div>
       </section>
 
@@ -3530,6 +3584,24 @@
       }
     }
 
+    function getPhotoFiles() {
+      try {
+        return JSON.parse(localStorage.getItem('hmm_photo_files_v1') || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function savePhotoFiles(pfs) {
+      try {
+        localStorage.setItem('hmm_photo_files_v1', JSON.stringify(pfs));
+        return true;
+      } catch (e) {
+        showUploadToast('Save failed — storage full');
+        return false;
+      }
+    }
+
     function saveJobs(jobs) {
       try {
         localStorage.setItem('hmm_clean_jobs_v1', JSON.stringify(jobs));
@@ -4174,7 +4246,17 @@
   var photosBtn = document.getElementById('open-job-photos');
   if (photosBtn) {
     photosBtn.addEventListener('click', function () {
-      openJobPhotos(job.id);
+      // Route to linked Photo File if one exists
+      var pfs = getPhotoFiles();
+      var linkedPf = null;
+      for (var pi = 0; pi < pfs.length; pi++) {
+        if (pfs[pi].jobId === job.id) { linkedPf = pfs[pi]; break; }
+      }
+      if (linkedPf) {
+        openPhotoFileDetail(linkedPf.id);
+      } else {
+        openJobPhotos(job.id);
+      }
     });
   }
 
@@ -11212,9 +11294,7 @@
     });
 
     document.getElementById('open-start-inspection-menu').addEventListener('click', function () {
-      renderPipeline();
-      showPage('page-my-jobs');
-      showUploadToast('Select a job, then tap Start Inspection');
+      startInspectionCapture();
     });
 
     document.querySelectorAll('.back-to-menu, #back-to-menu').forEach(function (btn) {
@@ -11454,6 +11534,24 @@
     job.assignmentStatus = '';
     job.scheduledAt = '';
 
+    // Attach inspection session photos if coming from inspection capture flow
+    var _inspPhotos = [];
+    if (_inspectionSession && _inspectionSession.photos.length) {
+      _inspectionSession.photos.forEach(function (p) {
+        var photoEntry = {
+          imageKey: p.imageKey,
+          name: p.name,
+          takenAt: p.takenAt,
+          category: 'inspection',
+          inspectionSessionId: _inspectionSession.id
+        };
+        job.photos.push(photoEntry);
+        _inspPhotos.push(photoEntry);
+      });
+      job.photosCount = job.photos.length;
+      job.inspectionCompleted = true;
+    }
+
     var jobs = getJobs();
     jobs.push(job);
 
@@ -11465,6 +11563,28 @@
     await saveJobToSupabase(job);
 
     addJobHistory(job.id, 'lead_created', (currentRep || 'Unknown') + ' created lead');
+
+    // Create separate Photo File record if inspection photos were captured
+    if (_inspectionSession && _inspPhotos.length) {
+      var photoFile = {
+        id: 'pf_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        jobId: job.id,
+        inspectionSessionId: _inspectionSession.id,
+        createdAt: _inspectionSession.startedAt,
+        homeownerName: job.homeownerName || '',
+        street: job.street || '',
+        city: job.city || '',
+        state: job.state || '',
+        zip: job.zip || '',
+        photos: _inspPhotos.slice()
+      };
+      var pfs = getPhotoFiles();
+      pfs.push(photoFile);
+      savePhotoFiles(pfs);
+    }
+
+    // Clear inspection session after successful save
+    _inspectionSession = null;
 
     msg.style.display = 'block';
 
@@ -14147,6 +14267,236 @@
     loadJobsFromSupabase().then(function (jobs) {
       renderPipeline(jobs);
       updateAssignedCount(jobs);
+    });
+
+    /* ========== Inspection Capture Flow ========== */
+
+    // Temporary inspection session: holds photos until Finish -> New Lead -> Save
+    var _inspectionSession = null; // { id, startedAt, photos: [{ imageKey, name, blob }] }
+
+    function startInspectionCapture() {
+      _inspectionSession = {
+        id: 'insp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        startedAt: new Date().toISOString(),
+        photos: []
+      };
+      document.getElementById('insp-capture-grid').innerHTML = '';
+      _updateInspCaptureCount();
+      showPage('page-inspection-capture');
+      // Auto-open camera on first entry
+      document.getElementById('insp-capture-input').click();
+    }
+
+    function _updateInspCaptureCount() {
+      var n = _inspectionSession ? _inspectionSession.photos.length : 0;
+      document.getElementById('insp-capture-count').textContent = n ? n + ' photo' + (n > 1 ? 's' : '') + ' captured' : '';
+    }
+
+    function _addInspCapturePhoto(file) {
+      if (!_inspectionSession) return Promise.resolve();
+      var imageKey = 'insp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+      var entry = { imageKey: imageKey, name: file.name || 'photo.jpg', takenAt: new Date().toISOString() };
+      _inspectionSession.photos.push(entry);
+
+      // Store blob in IndexedDB
+      return savePhotoBlob(imageKey, file).then(function () {
+        // Render thumbnail
+        var grid = document.getElementById('insp-capture-grid');
+        var url = URL.createObjectURL(file);
+        var card = document.createElement('div');
+        card.className = 'photo-card';
+        card.innerHTML = '<img class="photo-card-img" src="' + url + '" alt="' + entry.name + '" /><div class="photo-card-name">' + entry.name + '</div>';
+        grid.appendChild(card);
+        _updateInspCaptureCount();
+      });
+    }
+
+    // Camera button
+    document.getElementById('insp-capture-take').addEventListener('click', function () {
+      document.getElementById('insp-capture-input').click();
+    });
+
+    document.getElementById('insp-capture-input').addEventListener('change', function () {
+      var files = this.files;
+      if (!files || !files.length) return;
+      var chain = Promise.resolve();
+      for (var i = 0; i < files.length; i++) {
+        (function (f) {
+          chain = chain.then(function () { return _addInspCapturePhoto(f); });
+        })(files[i]);
+      }
+      chain.then(function () {
+        document.getElementById('insp-capture-input').value = '';
+      });
+    });
+
+    // Gallery upload button
+    document.getElementById('insp-capture-upload').addEventListener('click', function () {
+      document.getElementById('insp-capture-gallery').click();
+    });
+
+    document.getElementById('insp-capture-gallery').addEventListener('change', function () {
+      var files = this.files;
+      if (!files || !files.length) return;
+      var chain = Promise.resolve();
+      for (var i = 0; i < files.length; i++) {
+        (function (f) {
+          chain = chain.then(function () { return _addInspCapturePhoto(f); });
+        })(files[i]);
+      }
+      chain.then(function () {
+        document.getElementById('insp-capture-gallery').value = '';
+      });
+    });
+
+    // Cancel
+    document.getElementById('insp-capture-cancel').addEventListener('click', function () {
+      _inspectionSession = null;
+      showPage('page-main-menu');
+    });
+
+    // Finish -> open New Lead form with inspection session carried forward
+    document.getElementById('insp-capture-finish').addEventListener('click', function () {
+      if (!_inspectionSession || !_inspectionSession.photos.length) {
+        showUploadToast('Take at least one photo first');
+        return;
+      }
+      // Go to New Lead; _inspectionSession stays alive until save
+      showPage('page-new-lead');
+      showUploadToast(_inspectionSession.photos.length + ' inspection photo(s) ready — fill out the lead');
+    });
+
+    /* ========== Photo Files View (separate from My Jobs) ========== */
+
+    document.getElementById('open-photo-files').addEventListener('click', function () {
+      renderPhotoFiles();
+      showPage('page-photo-files');
+    });
+
+    document.getElementById('photo-files-search').addEventListener('input', function () {
+      renderPhotoFiles(this.value.trim().toLowerCase());
+    });
+
+    function renderPhotoFiles(filter) {
+      var pfs = getPhotoFiles();
+      var list = document.getElementById('photo-files-list');
+
+      var filtered = pfs.filter(function (pf) {
+        if (!Array.isArray(pf.photos) || !pf.photos.length) return false;
+        if (!filter) return true;
+        var name = (pf.homeownerName || '').toLowerCase();
+        var addr = (pf.street || '').toLowerCase();
+        return name.indexOf(filter) !== -1 || addr.indexOf(filter) !== -1;
+      });
+
+      if (!filtered.length) {
+        list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:14px;">No photo files yet.</div>';
+        return;
+      }
+
+      var html = '';
+      filtered.forEach(function (pf) {
+        var name = pf.homeownerName || 'Unnamed';
+        var addr = pf.street || '';
+        var loc = [pf.city, pf.state].filter(Boolean).join(', ');
+        var count = pf.photos.length;
+        var dateStr = pf.createdAt ? new Date(pf.createdAt).toLocaleDateString() : '';
+
+        html += '<div class="doc-file-row" style="flex-wrap:wrap;cursor:pointer;" data-pf-id="' + pf.id + '">';
+        html += '<div class="doc-file-thumb" style="display:flex;align-items:center;justify-content:center;font-size:20px;">📷</div>';
+        html += '<div class="doc-file-info">';
+        html += '<div class="doc-file-name">' + name + '</div>';
+        html += '<div class="doc-file-date">' + addr + (loc ? ', ' + loc : '') + '</div>';
+        html += '<div class="doc-file-date">' + count + ' photo' + (count > 1 ? 's' : '') + (dateStr ? ' · ' + dateStr : '') + '</div>';
+        html += '</div>';
+        html += '<div style="width:100%;display:flex;gap:8px;margin-top:8px;">';
+        html += '<button class="btn" type="button" style="flex:1;font-size:13px;" data-pf-open="' + pf.id + '">View Photos</button>';
+        html += '<button class="btn btn-primary" type="button" style="flex:1;font-size:13px;" data-pf-report="' + pf.id + '">Start Report</button>';
+        html += '</div>';
+        html += '</div>';
+      });
+
+      list.innerHTML = html;
+
+      // View Photos -> open Photo File detail (NOT job detail)
+      list.querySelectorAll('[data-pf-open]').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          openPhotoFileDetail(this.getAttribute('data-pf-open'));
+        });
+      });
+
+      // Start Report placeholder
+      list.querySelectorAll('[data-pf-report]').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          showUploadToast('Report builder coming soon');
+        });
+      });
+
+      // Row click -> open detail
+      list.querySelectorAll('[data-pf-id]').forEach(function (row) {
+        row.addEventListener('click', function () {
+          openPhotoFileDetail(this.getAttribute('data-pf-id'));
+        });
+      });
+    }
+
+    /* ========== Photo File Detail (stays inside Photo Files) ========== */
+
+    function openPhotoFileDetail(pfId) {
+      var pfs = getPhotoFiles();
+      var pf = null;
+      for (var i = 0; i < pfs.length; i++) {
+        if (pfs[i].id === pfId) { pf = pfs[i]; break; }
+      }
+      if (!pf) return;
+
+      var name = pf.homeownerName || 'Unnamed';
+      var addr = pf.street || '';
+      var loc = [pf.city, pf.state, pf.zip].filter(Boolean).join(', ');
+      var dateStr = pf.createdAt ? new Date(pf.createdAt).toLocaleDateString() : '';
+
+      document.getElementById('pf-detail-title').textContent = name;
+      document.getElementById('pf-detail-subtitle').textContent = addr + (loc ? ', ' + loc : '');
+      document.getElementById('pf-detail-meta').textContent = pf.photos.length + ' photo' + (pf.photos.length > 1 ? 's' : '') + (dateStr ? ' · ' + dateStr : '');
+
+      var grid = document.getElementById('pf-detail-grid');
+      grid.innerHTML = '';
+
+      pf.photos.forEach(function (photo) {
+        var card = document.createElement('div');
+        card.className = 'photo-card';
+
+        if (photo.fullUrl) {
+          card.innerHTML = '<img class="photo-card-img" src="' + photo.fullUrl + '" alt="' + (photo.name || '') + '" /><div class="photo-card-name">' + (photo.name || 'Photo') + '</div>';
+          grid.appendChild(card);
+        } else if (photo.imageKey) {
+          var nameText = photo.name || 'Photo';
+          card.innerHTML = '<div class="photo-card-img" style="display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;">Loading…</div><div class="photo-card-name">' + nameText + '</div>';
+          grid.appendChild(card);
+          getPhotoBlob(photo.imageKey).then(function (blob) {
+            if (blob) {
+              var url = URL.createObjectURL(blob);
+              card.querySelector('.photo-card-img').outerHTML = '<img class="photo-card-img" src="' + url + '" alt="' + nameText + '" />';
+            }
+          });
+        } else {
+          card.innerHTML = '<div class="photo-card-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;">📷</div><div class="photo-card-name">' + (photo.name || 'Photo') + '</div>';
+          grid.appendChild(card);
+        }
+      });
+
+      showPage('page-photo-file-detail');
+    }
+
+    document.getElementById('pf-detail-back').addEventListener('click', function () {
+      renderPhotoFiles();
+      showPage('page-photo-files');
+    });
+
+    document.getElementById('pf-detail-report').addEventListener('click', function () {
+      showUploadToast('Report builder coming soon');
     });
   </script>
 </body>
