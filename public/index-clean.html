@@ -1645,18 +1645,34 @@
     @media (max-width:768px) {
       .maps-layout { flex-direction:column; height:calc(100vh - 64px); overflow:hidden; }
       .maps-panel { display:none; }
+      .maps-map-area { order:-1; flex:1; min-height:0; height:auto; }
       .maps-mobile-bar {
         display:flex; gap:8px; padding:8px 12px;
-        background:var(--panel); border-bottom:1px solid var(--border); flex-shrink:0;
+        background:var(--panel); border-top:1px solid var(--border); flex-shrink:0;
+        order:1; position:relative;
       }
       .maps-mobile-drawer {
-        background:var(--panel); border-bottom:1px solid var(--border);
-        max-height:42vh; flex-shrink:0;
+        background:var(--panel); border-top:1px solid var(--border);
+        max-height:42vh; flex-shrink:0; order:2;
       }
       .maps-mobile-drawer .maps-panel-section { padding:10px 14px; border-bottom:1px solid var(--border); }
       .maps-mobile-drawer .maps-panel-section:last-child { border-bottom:none; }
-      .maps-map-area { flex:1; min-height:0; height:auto; }
-      .maps-prop-card { bottom:10px; right:10px; left:10px; width:auto; }
+      .maps-prop-card { bottom:auto; top:10px; right:10px; left:10px; width:auto; }
+      /* Bottom panel collapse handle */
+      .maps-mobile-bar::before {
+        content:''; position:absolute; top:-12px; left:50%; transform:translateX(-50%);
+        width:36px; height:4px; border-radius:2px; background:var(--muted); opacity:0.5;
+        pointer-events:none;
+      }
+      /* Collapsed state: hide drawers */
+      .maps-mobile-bar.collapsed ~ .maps-mobile-drawer { display:none !important; }
+      /* Property panel at bottom on mobile */
+      .maps-prop-panel {
+        order:3; max-height:50vh; border-top:1px solid var(--border);
+        border-right:none; width:100%;
+      }
+      .maps-prop-panel.open ~ .maps-mobile-bar,
+      .maps-prop-panel.open ~ .maps-mobile-drawer { display:none !important; }
     }
 
     /* ═══ Campaign Page (scoped) ═══ */
@@ -2185,6 +2201,7 @@
 
           <!-- Mobile Toggle Bar -->
           <div class="maps-mobile-bar">
+            <button type="button" id="maps-mob-collapse" class="maps-mobile-bar-btn" style="flex:0 0 auto;padding:10px 8px;font-size:16px;" title="Collapse panel">▼</button>
             <button type="button" class="maps-mobile-bar-btn back-to-menu" style="flex:0 0 auto;padding:10px 12px;">&#8592; Back</button>
             <button type="button" id="maps-mob-storms-btn" class="maps-mobile-bar-btn">Most Recent Storms</button>
             <button type="button" id="maps-mob-search-btn" class="maps-mobile-bar-btn">Search for Date</button>
@@ -5145,6 +5162,7 @@
         SUPABASE_URL +
         '/rest/v1/storm_polygons?event_date=eq.' +
         encodeURIComponent(dateStr) +
+        '&source_product=neq.no_swath' +
         '&order=source_priority.asc,created_at.desc' +
         '&select=id,event_date,storm_type,source,source_product,source_priority,swath_index,polygon_geojson,centroid_lat,centroid_lon,area_sq_mi,threshold_value,band_min,band_max,event_start_utc,event_end_utc';
 
@@ -7301,6 +7319,23 @@
         return false;
       }
 
+      // ── Source precedence: keep only the best (lowest) source_priority ──
+      // When higher-priority sources exist (e.g., nexrad_iem at 1), skip
+      // lower-priority sources (e.g., corridor at 3) to avoid stale overlaps.
+      var bestSrcPri = 99;
+      validRows.forEach(function (r) {
+        var pri = Number(r.source_priority) || 99;
+        if (pri < bestSrcPri) bestSrcPri = pri;
+      });
+      var preFilterCount = validRows.length;
+      validRows = validRows.filter(function (r) {
+        return (Number(r.source_priority) || 99) === bestSrcPri;
+      });
+      if (validRows.length < preFilterCount) {
+        console.log('[drawSavedPoly] ' + dateStr + ' source precedence: kept priority=' + bestSrcPri +
+          ' (' + validRows.length + ' rows), dropped ' + (preFilterCount - validRows.length) + ' lower-priority rows');
+      }
+
       // ── Debug: row count by source ──
       var _srcCount = {};
       validRows.forEach(function (r) {
@@ -9243,6 +9278,11 @@
         var wasOpen = stormsDrawer.classList.contains('open');
         closeAll();
         if (!wasOpen) {
+          // Un-collapse if collapsed
+          var bar = stormsBtn.closest('.maps-mobile-bar');
+          if (bar) { bar.classList.remove('collapsed'); }
+          var cb = document.getElementById('maps-mob-collapse');
+          if (cb) { cb.textContent = '▼'; cb.title = 'Collapse panel'; }
           stormsDrawer.classList.add('open');
           stormsBtn.classList.add('active');
           mapsMobSyncStorms();
@@ -9254,6 +9294,11 @@
         var wasOpen = searchDrawer.classList.contains('open');
         closeAll();
         if (!wasOpen) {
+          // Un-collapse if collapsed
+          var bar = searchBtn.closest('.maps-mobile-bar');
+          if (bar) { bar.classList.remove('collapsed'); }
+          var cb = document.getElementById('maps-mob-collapse');
+          if (cb) { cb.textContent = '▼'; cb.title = 'Collapse panel'; }
           searchDrawer.classList.add('open');
           searchBtn.classList.add('active');
         }
@@ -9311,6 +9356,19 @@
       function mobDownload() { document.getElementById('maps-download-btn').click(); }
       mobDl1.addEventListener('click', mobDownload);
       mobDl2.addEventListener('click', mobDownload);
+
+      // Mobile bottom panel collapse/expand toggle
+      var collapseBtn = document.getElementById('maps-mob-collapse');
+      var mobileBar = collapseBtn ? collapseBtn.closest('.maps-mobile-bar') : null;
+      if (collapseBtn && mobileBar) {
+        collapseBtn.addEventListener('click', function () {
+          var isCollapsed = mobileBar.classList.toggle('collapsed');
+          collapseBtn.textContent = isCollapsed ? '▲' : '▼';
+          collapseBtn.title = isCollapsed ? 'Expand panel' : 'Collapse panel';
+          if (isCollapsed) { closeAll(); }
+          setTimeout(function () { if (mapsState.map) google.maps.event.trigger(mapsState.map, 'resize'); }, 50);
+        });
+      }
     }
 
     // Mirror the desktop storm list into the mobile drawer
