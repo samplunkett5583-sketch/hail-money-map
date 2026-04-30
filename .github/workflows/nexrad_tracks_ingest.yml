@@ -1,0 +1,52 @@
+name: NEXRAD Track Polygon Ingest
+
+on:
+  workflow_dispatch:
+    inputs:
+      dates:
+        description: 'Specific dates to process (comma-separated YYYY-MM-DD), or leave blank for --batch'
+        required: false
+      force:
+        description: 'Re-process dates that already have polygons'
+        required: false
+        default: 'false'
+  schedule:
+    # Run daily at 08:00 UTC (after overnight storms finish at 06Z)
+    - cron: "0 8 * * *"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run NEXRAD track polygon ingest
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -n "${{ github.event.inputs.dates }}" ]; then
+            # Manual run with specific dates
+            IFS=',' read -ra DATES <<< "${{ github.event.inputs.dates }}"
+            node scripts/ingest_iem_nexrad_tracks.mjs "${DATES[@]}"
+          elif [ "${{ github.event.inputs.force }}" = "true" ]; then
+            node scripts/ingest_iem_nexrad_tracks.mjs --batch --force --days=7
+          else
+            # Daily cron: look back 7 days for any new dates missing polygons
+            node scripts/ingest_iem_nexrad_tracks.mjs --batch --days=7
+          fi

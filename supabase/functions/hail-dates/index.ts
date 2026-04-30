@@ -61,7 +61,7 @@ serve(async (req: Request) => {
     from.setUTCMonth(from.getUTCMonth() - 24);
     const fromIso = from.toISOString();
 
-    const pageSize = 1000;
+    const pageSize = 2000;
     const dateSet = new Set<string>();
     // Per-date event types and summaries
     const dateEventTypes: Record<string, string[]> = {};
@@ -119,21 +119,16 @@ serve(async (req: Request) => {
 
     // ── 2) Wind & tornado dates from storm_lsr_raw ──
     {
-      let offset = 0;
-      for (;;) {
-        const { data, error } = await supabase
-          .from("storm_lsr_raw")
-          .select("event_date, event_type, magnitude")
-          .order("event_date", { ascending: false })
-          .range(offset, offset + pageSize - 1);
+      const { data, error } = await supabase
+        .from("storm_lsr_raw")
+        .select("event_date, event_type, magnitude")
+        .order("event_date", { ascending: false })
+        .limit(15000);
 
-        // Table may not exist yet — treat as empty
-        if (error) {
-          console.warn("storm_lsr_raw query error (may not exist yet):", error.message);
-          break;
-        }
-        if (!data || data.length === 0) break;
-
+      // Table may not exist yet — treat as empty
+      if (error) {
+        console.warn("storm_lsr_raw query error (may not exist yet):", error.message);
+      } else if (data && data.length > 0) {
         for (const row of data as Array<{ event_date: unknown; event_type: unknown; magnitude?: unknown }>) {
           const v = row.event_date;
           const et = String(row.event_type || "").toLowerCase();
@@ -156,9 +151,56 @@ serve(async (req: Request) => {
             dateSummaries[v][key] = { min: mag, max: mag };
           }
         }
+      }
+    }
 
-        if (data.length < pageSize) break;
-        offset += pageSize;
+    // ── 3) Polygon-derived dates from storm_polygons ──
+    {
+      const q = supabase
+        .from("storm_polygons")
+        .select("event_date,storm_type,band_min,band_max,state")
+        .order("event_date", { ascending: false })
+        .limit(15000);
+
+      if (state) q.ilike("state", state);
+      if (eventTypeNormalized) {
+        if (eventTypeNormalized === "hail") {
+          q.not("storm_type", "in.(wind,tornado)");
+        } else if (eventTypeNormalized === "wind" || eventTypeNormalized === "tornado") {
+          q.ilike("storm_type", eventTypeNormalized);
+        }
+      }
+
+      const { data, error } = await q;
+      if (error) {
+        console.warn("storm_polygons query error (may not exist yet):", error.message);
+      } else if (data && data.length > 0) {
+        for (const row of data as Array<{ event_date: unknown; storm_type?: unknown; band_min?: unknown; band_max?: unknown }>) {
+          const v = row.event_date;
+          if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) continue;
+          const st = String(row.storm_type || "").toLowerCase();
+          const type = st === "wind" || st === "tornado" ? st : "hail";
+
+          dateSet.add(v);
+          addType(v, type);
+
+          const minBand = Number(row.band_min);
+          const maxBand = Number(row.band_max);
+          if (Number.isFinite(minBand) && minBand > 0) {
+            if (!dateSummaries[v]) dateSummaries[v] = {};
+            const existing = dateSummaries[v].hail as { min: number; max: number } | undefined;
+            const candidate = {
+              min: minBand,
+              max: Number.isFinite(maxBand) && maxBand >= minBand ? maxBand : minBand,
+            };
+            if (existing) {
+              existing.min = Math.min(existing.min, candidate.min);
+              existing.max = Math.max(existing.max, candidate.max);
+            } else {
+              dateSummaries[v].hail = candidate;
+            }
+          }
+        }
       }
     }
 

@@ -21,6 +21,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import polygonClipping from "polygon-clipping";
 
 // ── Env / args ──────────────────────────────────────────────
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -33,11 +34,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false },
 });
 
-const TARGET_DATE = process.argv[2] || "2026-04-01";
-if (!/^\d{4}-\d{2}-\d{2}$/.test(TARGET_DATE)) {
-  console.error("Invalid date format. Use YYYY-MM-DD");
-  process.exit(1);
-}
+// Date handling moved to entry point — supports single, multi, and batch modes
+let TARGET_DATE = "2026-04-01"; // overwritten by entry point
 
 // ── Tunables ────────────────────────────────────────────────
 const IEM_URL      = "https://mesonet.agron.iastate.edu/geojson/nexrad_attr.py";
@@ -298,6 +296,72 @@ function dominanceScore(c, neighbors) {
   return (c.nPts * 2) + (c.repMS * 10) + (c.area * 0.1) + (neighbors * 5);
 }
 
+// ── Longitude-binned swath outline ──
+// Builds an elongated swath outline from track centerline points.
+// At each lon bin, uses the median lat ± capped IQR half-spread ± buffer
+// to create the northern/southern edges.  The IQR spread is capped at
+// maxSpreadDeg per side so the swath stays a reasonable width even when
+// many parallel tracks exist.
+function buildSwathOutline(trackPoints, bufferDeg, binWidthDeg, maxSpreadDeg) {
+  if (trackPoints.length < 3) return convexHull(trackPoints);
+  const binW = binWidthDeg || 0.25;
+  const maxSpread = maxSpreadDeg || 0.15; // ~17km max IQR half-spread
+
+  // Bin track points by longitude, collect latitudes
+  const bins = new Map();
+  for (const p of trackPoints) {
+    const bi = Math.floor(p[0] / binW);
+    if (!bins.has(bi)) bins.set(bi, []);
+    bins.get(bi).push(p[1]);
+  }
+
+  const sortedKeys = [...bins.keys()].sort((a, b) => a - b);
+  if (sortedKeys.length < 2) return convexHull(trackPoints);
+
+  // For each bin, compute median lat and capped IQR-based spread
+  const northPts = [];
+  const southPts = [];
+  for (const k of sortedKeys) {
+    const lats = bins.get(k).sort((a, b) => a - b);
+    const medLat = lats[Math.floor(lats.length / 2)];
+    const q25 = lats[Math.max(0, Math.floor(lats.length * 0.25))];
+    const q75 = lats[Math.min(lats.length - 1, Math.ceil(lats.length * 0.75))];
+    const iqrHalf = Math.min(Math.max((q75 - q25) / 2, 0), maxSpread);
+    const lon = (k + 0.5) * binW;
+    northPts.push([lon, medLat + iqrHalf + bufferDeg]);
+    southPts.push([lon, medLat - iqrHalf - bufferDeg]);
+  }
+  southPts.reverse();
+
+  // Rounded end-caps at west and east ends
+  const wN = northPts[0], wS = southPts[southPts.length - 1];
+  const eN = northPts[northPts.length - 1], eS = southPts[0];
+  const capPts = 5;
+
+  function semicap(pA, pB, n) {
+    const mx = (pA[0] + pB[0]) / 2, my = (pA[1] + pB[1]) / 2;
+    const r = Math.sqrt((pA[0] - mx) ** 2 + (pA[1] - my) ** 2) || 0.01;
+    const a0 = Math.atan2(pA[1] - my, pA[0] - mx);
+    const a1 = Math.atan2(pB[1] - my, pB[0] - mx);
+    let diff = a1 - a0;
+    if (diff > Math.PI) diff -= 2 * Math.PI;
+    if (diff < -Math.PI) diff += 2 * Math.PI;
+    const pts = [];
+    for (let ci = 1; ci < n; ci++) {
+      const t = ci / n;
+      const ang = a0 + t * diff;
+      pts.push([mx + r * Math.cos(ang), my + r * Math.sin(ang)]);
+    }
+    return pts;
+  }
+
+  const eastCap = semicap(eN, eS, capPts);
+  const westCap = semicap(wS, wN, capPts);
+
+  const ring = [...northPts, ...eastCap, ...southPts, ...westCap, northPts[0]];
+  return ring;
+}
+
 // ═══════════════════════════════════════════════════════════
 //  Corridor construction
 // ═══════════════════════════════════════════════════════════
@@ -327,8 +391,49 @@ function bufferLine(pts, hws) {
     right.push([pts[i][0] - perps[i][0] * hw, pts[i][1] - perps[i][1] * hw]);
   }
   right.reverse();
-  const ring = [...left, ...right, left[0]];
+
+  // Semicircular end caps — rounds squared-off corridor ends
+  const CAP_N = 6;
+  function semicap(center, pA, pB) {
+    const a0 = Math.atan2(pA[1] - center[1], pA[0] - center[0]);
+    let a1 = Math.atan2(pB[1] - center[1], pB[0] - center[0]);
+    let diff = a1 - a0;
+    if (diff > Math.PI) diff -= 2 * Math.PI;
+    if (diff < -Math.PI) diff += 2 * Math.PI;
+    // Ensure we sweep the short way (≈ π radians for a semicircle)
+    if (Math.abs(diff) < 0.5) {
+      diff = diff > 0 ? diff + 2 * Math.PI : diff - 2 * Math.PI;
+    }
+    const r = Math.sqrt((pA[0] - center[0]) ** 2 + (pA[1] - center[1]) ** 2) || 0.001;
+    const cap = [];
+    for (let ci = 1; ci < CAP_N; ci++) {
+      const t = ci / CAP_N;
+      const ang = a0 + t * diff;
+      cap.push([center[0] + r * Math.cos(ang), center[1] + r * Math.sin(ang)]);
+    }
+    return cap;
+  }
+  // End cap at last track point (between left[last] and right[0])
+  const endCap = semicap(pts[pts.length - 1], left[left.length - 1], right[0]);
+  // Start cap at first track point (between right[last] and left[0])
+  const startCap = semicap(pts[0], right[right.length - 1], left[0]);
+
+  const ring = [...left, ...endCap, ...right, ...startCap, left[0]];
   return ring;
+}
+
+// Apply taper to corridor half-widths at both ends so corridors
+// narrow smoothly at their start/end instead of cutting off abruptly.
+function taperHalfWidths(hws, taperLen, minFrac) {
+  if (hws.length < 4) return hws;
+  const tLen = Math.min(taperLen, Math.floor(hws.length / 3));
+  const out = hws.slice();
+  for (let i = 0; i < tLen; i++) {
+    const f = minFrac + (1 - minFrac) * (i / tLen);
+    out[i] *= f;
+    out[out.length - 1 - i] *= f;
+  }
+  return out;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -387,9 +492,10 @@ const WIND_MAX_TIER_AREA = 2000; // sq mi cap per wind tier polygon
 // ═══════════════════════════════════════════════════════════
 //  Main
 // ═══════════════════════════════════════════════════════════
-const SCRIPT_VERSION = "v7.5-hail+wind";
+const SCRIPT_VERSION = "v8.0-batch";
 
-async function main() {
+async function main(dateArg) {
+  TARGET_DATE = dateArg;
   log("MAIN", "IEM NEXRAD track ingest " + SCRIPT_VERSION + " for " + TARGET_DATE);
   log("MAIN", "BASE: BUF_SCALE=" + BUF_SCALE + " HW_FLOOR=" + HW_FLOOR + " HW_CAP=" + HW_CAP);
 
@@ -416,8 +522,7 @@ async function main() {
   log("FETCH", "Done: " + nTs + " timestamps queried, " + allFeats.length + " hail + " + allWindFeats.length + " wind features kept");
 
   if (allFeats.length === 0 && allWindFeats.length === 0) {
-    log("MAIN", "No hail or wind features found. Nothing to save.");
-    return;
+    throw new Error("No hail or wind features found for " + TARGET_DATE);
   }
 
   // ── Wind pipeline runs after hail (see end of main). Skip hail if no hail features. ──
@@ -729,20 +834,238 @@ async function main() {
     members.sort((a, b) => b._score - a._score);
   }
 
+  // ── 5.9a Linear system bridging ──
+  // After initial clustering, bridge clusters that share similar motion
+  // bearing and are arranged along a common storm line. This prevents
+  // long linear storm events from fragmenting into isolated clusters.
+  // Uses nearest-member distance (not centroid-to-centroid) so elongated
+  // clusters can bridge across their closest edges.
+  const LINEAR_BRIDGE_DIST_MI     = 200;   // max nearest-member distance between clusters
+  const LINEAR_BRIDGE_BEARING_TOL = 35;    // motion bearing similarity tolerance
+  const LINEAR_BRIDGE_ALIGN_TOL   = 75;    // inter-cluster angle vs motion tolerance
+  const LINEAR_BRIDGE_TIME_GAP_HR = 4;     // max time gap between clusters
+  const LINEAR_KEEP_PER_BRIDGE    = 6;     // extra keep slots per merged sub-cluster
+
+  // Save original cluster assignment before bridging
+  const _origClusterOf = new Map();
+  for (const c of qualified) _origClusterOf.set(c, findRoot(c));
+
+  // Compute per-cluster metadata for bridging decisions
+  const _bridgeMeta = new Map();
+  for (const [root, members] of clusterMap) {
+    let latSum = 0, lonSum = 0, tMin = Infinity, tMax = -Infinity;
+    for (const c of members) {
+      latSum += c.centroid.lat; lonSum += c.centroid.lon;
+      const t0 = new Date(c.firstTime).getTime();
+      const t1 = new Date(c.lastTime).getTime();
+      if (t0 < tMin) tMin = t0;
+      if (t1 > tMax) tMax = t1;
+    }
+    const n = members.length;
+    _bridgeMeta.set(root, {
+      centroid: { lat: latSum / n, lon: lonSum / n },
+      bearing: members[0]._bearing,
+      tMin, tMax, members,
+    });
+  }
+
+  // Try bridging cluster pairs using nearest-member distance
+  const _bridgeRoots = [...clusterMap.keys()];
+  let _bridgeCount = 0;
+  // Diagnostic: log each cluster's bearing and centroid for debugging
+  for (const _br of _bridgeRoots) {
+    const _bm = _bridgeMeta.get(_br);
+    log("BRIDGE_DIAG", "cluster root=" + _bm.members[0].key +
+      " centroid=[" + _bm.centroid.lat.toFixed(2) + "," + _bm.centroid.lon.toFixed(2) + "]" +
+      " bearing=" + _bm.bearing.toFixed(1) + "° members=" + _bm.members.length);
+  }
+  for (let _bi = 0; _bi < _bridgeRoots.length; _bi++) {
+    for (let _bj = _bi + 1; _bj < _bridgeRoots.length; _bj++) {
+      const mA = _bridgeMeta.get(_bridgeRoots[_bi]);
+      const mB = _bridgeMeta.get(_bridgeRoots[_bj]);
+      // Motion bearing similarity
+      const _brgDiff = bearingDiff(mA.bearing, mB.bearing);
+      if (_brgDiff > LINEAR_BRIDGE_BEARING_TOL) {
+        log("BRIDGE_SKIP", mA.members[0].key + " ↔ " + mB.members[0].key +
+          " reason=bearing_diff " + _brgDiff.toFixed(0) + "° > " + LINEAR_BRIDGE_BEARING_TOL + "°");
+        continue;
+      }
+      // Nearest-member distance (closest corridor pair across the two clusters)
+      let nearestDistMi = Infinity;
+      for (const cA of mA.members) {
+        for (const cB of mB.members) {
+          const d = centroidDistMi(cA, cB);
+          if (d < nearestDistMi) nearestDistMi = d;
+        }
+      }
+      if (nearestDistMi > LINEAR_BRIDGE_DIST_MI) {
+        log("BRIDGE_SKIP", mA.members[0].key + " ↔ " + mB.members[0].key +
+          " reason=nearest_dist " + nearestDistMi.toFixed(0) + "mi > " + LINEAR_BRIDGE_DIST_MI + "mi");
+        continue;
+      }
+      // Inter-cluster bearing alignment with storm motion (centroid-to-centroid)
+      const interBrg = (Math.atan2(mB.centroid.lon - mA.centroid.lon,
+        mB.centroid.lat - mA.centroid.lat) * 180 / Math.PI + 360) % 360;
+      const avgBrg = (mA.bearing + mB.bearing) / 2;
+      const _alignDiff1 = bearingDiff(interBrg, avgBrg);
+      const _alignDiff2 = bearingDiff((interBrg + 180) % 360, avgBrg);
+      if (_alignDiff1 > LINEAR_BRIDGE_ALIGN_TOL &&
+          _alignDiff2 > LINEAR_BRIDGE_ALIGN_TOL) {
+        log("BRIDGE_SKIP", mA.members[0].key + " ↔ " + mB.members[0].key +
+          " reason=align interBrg=" + interBrg.toFixed(0) + "° avgMotion=" + avgBrg.toFixed(0) +
+          "° diffs=" + _alignDiff1.toFixed(0) + "/" + _alignDiff2.toFixed(0) + "° > " + LINEAR_BRIDGE_ALIGN_TOL + "°");
+        continue;
+      }
+      // Time gap
+      const tGap = Math.max(mA.tMin, mB.tMin) - Math.min(mA.tMax, mB.tMax);
+      if (tGap > LINEAR_BRIDGE_TIME_GAP_HR * 3600000) {
+        log("BRIDGE_SKIP", mA.members[0].key + " ↔ " + mB.members[0].key +
+          " reason=time_gap " + (tGap / 3600000).toFixed(1) + "hr > " + LINEAR_BRIDGE_TIME_GAP_HR + "hr");
+        continue;
+      }
+      // Bridge: merge via union-find
+      union(mA.members[0], mB.members[0]);
+      _bridgeCount++;
+      log("BRIDGE", "Merged clusters [" +
+        mA.centroid.lat.toFixed(2) + "," + mA.centroid.lon.toFixed(2) + "] ↔ [" +
+        mB.centroid.lat.toFixed(2) + "," + mB.centroid.lon.toFixed(2) + "]" +
+        " nearestDist=" + nearestDistMi.toFixed(0) + "mi brgDiff=" +
+        bearingDiff(mA.bearing, mB.bearing).toFixed(0) + "°");
+    }
+  }
+
+  // Rebuild clusterMap if any bridges were made
+  const _mergedSubCounts = new Map();
+  if (_bridgeCount > 0) {
+    const _preSize = clusterMap.size;
+    clusterMap.clear();
+    for (const c of qualified) {
+      const root = findRoot(c);
+      if (!clusterMap.has(root)) clusterMap.set(root, []);
+      clusterMap.get(root).push(c);
+    }
+    for (const members of clusterMap.values()) {
+      members.sort((a, b) => b._score - a._score);
+    }
+    log("BRIDGE", "Clusters: " + _preSize + " → " + clusterMap.size + " after linear bridging");
+
+    // ── 5.9b Post-bridge bearing validation ──
+    // Transitive bridging can pull in sub-clusters whose bearing is compatible
+    // with an intermediate hop but diverges too far from the dominant system.
+    // For each merged cluster, find the largest original sub-cluster (by member
+    // count) and use its bearing as the reference. Remove any sub-cluster whose
+    // bearing deviates more than LINEAR_BRIDGE_BEARING_TOL from the dominant.
+    const _ejected = [];
+    for (const [root, members] of clusterMap) {
+      // Group members by their original cluster root
+      const subGroups = new Map();
+      for (const c of members) {
+        const orig = _origClusterOf.get(c);
+        if (!subGroups.has(orig)) subGroups.set(orig, []);
+        subGroups.get(orig).push(c);
+      }
+      if (subGroups.size < 2) continue; // nothing to validate
+
+      // Find dominant sub-cluster (most members)
+      let domOrig = null, domSize = 0, domBrg = 0;
+      for (const [orig, subs] of subGroups) {
+        if (subs.length > domSize) {
+          domOrig = orig; domSize = subs.length;
+          domBrg = _bridgeMeta.get(orig) ? _bridgeMeta.get(orig).bearing : subs[0]._bearing;
+        }
+      }
+
+      // Check each non-dominant sub-cluster
+      for (const [orig, subs] of subGroups) {
+        if (orig === domOrig) continue;
+        const subBrg = _bridgeMeta.get(orig) ? _bridgeMeta.get(orig).bearing : subs[0]._bearing;
+        const bDiff = bearingDiff(subBrg, domBrg);
+        if (bDiff > LINEAR_BRIDGE_BEARING_TOL) {
+          log("BRIDGE_EJECT", "Sub-cluster " + subs[0].key +
+            " (bearing=" + subBrg.toFixed(1) + "° n=" + subs.length + ")" +
+            " ejected from merged cluster (dominant=" + domBrg.toFixed(1) +
+            "° diff=" + bDiff.toFixed(1) + "° > " + LINEAR_BRIDGE_BEARING_TOL + "°)");
+          _ejected.push(...subs);
+        }
+      }
+    }
+    // Rebuild clusterMap if any sub-clusters were ejected
+    if (_ejected.length > 0) {
+      const ejectedSet = new Set(_ejected);
+      clusterMap.clear();
+      for (const c of qualified) {
+        if (ejectedSet.has(c)) {
+          // Re-assign ejected corridors to their original cluster root
+          const orig = _origClusterOf.get(c);
+          if (!clusterMap.has(orig)) clusterMap.set(orig, []);
+          clusterMap.get(orig).push(c);
+        } else {
+          const root = findRoot(c);
+          if (!clusterMap.has(root)) clusterMap.set(root, []);
+          clusterMap.get(root).push(c);
+        }
+      }
+      for (const members of clusterMap.values()) {
+        members.sort((a, b) => b._score - a._score);
+      }
+      log("BRIDGE", "After bearing validation: " + clusterMap.size + " clusters (ejected " + _ejected.length + " corridors)");
+    }
+  }
+  // Count how many original sub-clusters each merged cluster contains
+  for (const [root, members] of clusterMap) {
+    const origRoots = new Set();
+    for (const c of members) origRoots.add(_origClusterOf.get(c));
+    _mergedSubCounts.set(root, origRoots.size);
+  }
+
   const final = [];
   let clusterDropped = 0;
   const clusterDebug = [];
+  const LINE_LAT_PRUNE_TOL = 3.5;   // max lat deviation from cluster median for merged clusters
+  const LINE_GAP_FILL_DEG  = 3.0;   // lon gap threshold that triggers gap-fill
+  const LINE_GAP_FILL_MAX  = 5;     // max gap-filler corridors per gap
+
   for (const [root, members] of clusterMap) {
-    const topScore = members[0]._score;
     const domBearing = members[0]._bearing;
     const kept = [];
     let keptByScore = 0;
     let keptByContinuity = 0;
+    let keptByGapFill = 0;
     let dropped = 0;
     let continuityExtras = 0;
+    let latOutliers = 0;
 
-    for (const c of members) {
-      if (kept.length >= MAX_KEEP_PER_CLUSTER) { dropped++; clusterDropped++; continue; }
+    const subClusters = _mergedSubCounts.get(root) || 1;
+    const isMerged = subClusters >= 2;
+
+    // ── 5.10a Lat outlier pruning for merged clusters ──
+    // Remove N/S stray corridors that are far from the cluster's median latitude.
+    // This prevents distant fragments (e.g., Oklahoma lat 33) from eating keep
+    // slots that should go to gap-filling corridors on the main E-W line.
+    let effectiveMembers = members;
+    let clusterMedianLat = 0;
+    if (isMerged && members.length > 2) {
+      const sortedLats = members.map(c => c.centroid.lat).sort((a, b) => a - b);
+      clusterMedianLat = sortedLats[Math.floor(sortedLats.length / 2)];
+      effectiveMembers = members.filter(c =>
+        Math.abs(c.centroid.lat - clusterMedianLat) <= LINE_LAT_PRUNE_TOL
+      );
+      latOutliers = members.length - effectiveMembers.length;
+      effectiveMembers.sort((a, b) => b._score - a._score);
+      if (latOutliers > 0) {
+        log("LINE_PRUNE", "Cluster " + members[0].key +
+          ": removed " + latOutliers + " lat outliers (medLat=" +
+          clusterMedianLat.toFixed(1) + " ±" + LINE_LAT_PRUNE_TOL + "°)" +
+          " remaining=" + effectiveMembers.length);
+      }
+    }
+
+    const topScore = effectiveMembers.length ? effectiveMembers[0]._score : members[0]._score;
+    const _effectiveMaxKeep = MAX_KEEP_PER_CLUSTER +
+      (subClusters - 1) * LINEAR_KEEP_PER_BRIDGE;
+
+    for (const c of effectiveMembers) {
+      if (kept.length >= _effectiveMaxKeep) { dropped++; clusterDropped++; continue; }
 
       // Normal score-ratio pass
       if (c._score >= topScore * MIN_CLUSTER_SCORE_RATIO) {
@@ -767,6 +1090,51 @@ async function main() {
 
       dropped++; clusterDropped++;
     }
+
+    // ── 5.10b Longitude gap-fill for merged clusters ──
+    // After score-based pruning, scan the kept set for large longitude gaps.
+    // Fill gaps by pulling in the highest-scoring corridor(s) from the gap
+    // region, even if they didn't make the score cutoff. This ensures the
+    // E-W storm line stays connected instead of fragmenting.
+    // Runs iteratively: after filling a gap, re-scan for remaining sub-gaps.
+    if (isMerged && kept.length > 1) {
+      let gapPassCount = 0;
+      let gapChanged = true;
+      while (gapChanged && gapPassCount < 5) {
+        gapChanged = false;
+        gapPassCount++;
+        const byLon = kept.slice().sort((a, b) => a.centroid.lon - b.centroid.lon);
+        for (let gi = 0; gi < byLon.length - 1; gi++) {
+          const gapDeg = byLon[gi + 1].centroid.lon - byLon[gi].centroid.lon;
+          if (gapDeg < LINE_GAP_FILL_DEG) continue;
+          const gapMinLon = byLon[gi].centroid.lon;
+          const gapMaxLon = byLon[gi + 1].centroid.lon;
+          // Find gap-filler candidates from the lat-filtered member set
+          const gapCandidates = effectiveMembers.filter(c =>
+            !kept.includes(c) &&
+            c.centroid.lon > gapMinLon && c.centroid.lon < gapMaxLon
+          ).sort((a, b) => b._score - a._score).slice(0, LINE_GAP_FILL_MAX);
+          for (const filler of gapCandidates) {
+            kept.push(filler);
+            final.push(filler);
+            keptByGapFill++;
+          }
+          if (gapCandidates.length) {
+            gapChanged = true;
+            log("GAP_FILL", "Pass " + gapPassCount + ": filled " + gapDeg.toFixed(1) +
+              "° gap [" + gapMinLon.toFixed(1) + " → " + gapMaxLon.toFixed(1) + "] with " +
+              gapCandidates.length + " corridor(s): " +
+              gapCandidates.map(c => c.key + " [" + c.centroid.lat.toFixed(2) + "," +
+                c.centroid.lon.toFixed(2) + "]").join(", "));
+          }
+        }
+      }
+    }
+
+    // Tag kept corridors with their cluster root for outlier filter
+    const _clusterRootKey = members[0].key;
+    for (const c of kept) c._pruneCluster = _clusterRootKey;
+
     clusterDebug.push({
       top: members[0].key,
       topScore: members[0]._score,
@@ -778,6 +1146,8 @@ async function main() {
       kept: kept.length,
       keptByScore,
       keptByContinuity,
+      keptByGapFill,
+      latOutliers,
       dropped,
     });
   }
@@ -794,11 +1164,67 @@ async function main() {
       " score=" + d.topScore.toFixed(1) + " pts=" + d.topPts + " hail=" + d.topHail +
       "\" area=" + d.topArea.toFixed(1) + "mi² [" + d.topCentroid.lat.toFixed(2) + "," +
       d.topCentroid.lon.toFixed(2) + "] size=" + d.size +
-      " kept=" + d.kept + "(score=" + d.keptByScore + " cont=" + d.keptByContinuity + ")" +
+      " kept=" + d.kept + "(score=" + d.keptByScore + " cont=" + d.keptByContinuity +
+      " gap=" + (d.keptByGapFill || 0) + " latDrop=" + (d.latOutliers || 0) + ")" +
       " dropped=" + d.dropped);
   }
 
-  // ── 5.11 Final summary ──
+  // ── 5.11 Outlier cluster filter ──
+  // After per-cluster pruning, drop clusters that are geographically
+  // disconnected from the dominant cluster.  Find the dominant cluster
+  // (highest total kept area).  For each non-dominant cluster, compute
+  // the nearest-corridor distance to any corridor in the dominant.
+  // If it exceeds OUTLIER_CLUSTER_DIST_MI, remove its corridors.
+  const OUTLIER_CLUSTER_DIST_MI = 300;
+  {
+    // Build per-cluster kept lists using _pruneCluster tag
+    const _ocMap = new Map();
+    for (const c of final) {
+      const rk = c._pruneCluster;
+      if (!_ocMap.has(rk)) _ocMap.set(rk, []);
+      _ocMap.get(rk).push(c);
+    }
+    if (_ocMap.size > 1) {
+      // Find dominant cluster by total area
+      let _domRk = null, _domArea = -1;
+      for (const [rk, members] of _ocMap) {
+        const totalArea = members.reduce((s, c) => s + (c.area || 0), 0);
+        if (totalArea > _domArea) { _domArea = totalArea; _domRk = rk; }
+      }
+      const domMembers = _ocMap.get(_domRk);
+      const _dropSet = new Set();
+      for (const [rk, members] of _ocMap) {
+        if (rk === _domRk) continue;
+        // Nearest-corridor distance between this cluster and the dominant
+        let minDist = Infinity;
+        for (const cA of members) {
+          for (const cB of domMembers) {
+            const d = centroidDistMi(cA, cB);
+            if (d < minDist) minDist = d;
+          }
+        }
+        if (minDist > OUTLIER_CLUSTER_DIST_MI) {
+          log("OUTLIER_DROP", "Cluster " + members[0].key +
+            " (n=" + members.length + " nearestDist=" + minDist.toFixed(0) +
+            "mi) dropped — too far from dominant cluster " + _domRk +
+            " (threshold=" + OUTLIER_CLUSTER_DIST_MI + "mi)");
+          for (const c of members) _dropSet.add(c);
+        }
+      }
+      if (_dropSet.size > 0) {
+        const preFinal = final.length;
+        // Remove outlier corridors from final array
+        for (let i = final.length - 1; i >= 0; i--) {
+          if (_dropSet.has(final[i])) final.splice(i, 1);
+        }
+        log("OUTLIER_DROP", "Removed " + _dropSet.size + " corridors from " +
+          (preFinal - final.length > 0 ? "outlier clusters" : "none") +
+          " (final: " + preFinal + " → " + final.length + ")");
+      }
+    }
+  }
+
+  // ── 5.12 Final summary ──
   final.sort((a, b) => b._score - a._score);
   log("SUMMARY", "Rejection breakdown: " + JSON.stringify(rejStats));
   log("SUMMARY", "Total pipeline: " + corridors.length + " built → " + deduped.length + " deduped → " + preClusterCount + " qualified → " + final.length + " final");
@@ -815,7 +1241,7 @@ async function main() {
     return;
   }
 
-  // ── 5.12 Assign cluster IDs to final corridors ──
+  // ── 5.13 Assign cluster IDs to final corridors ──
   for (const c of final) {
     const root = findRoot(c);
     c._clusterRoot = root.key;
@@ -836,159 +1262,328 @@ async function main() {
     .eq("source_product", "iem_nexrad_track");
   if (delErr) log("ERROR", "delete hail: " + delErr.message);
 
-  // ── 7. Build hierarchical nested severity-tier polygons and save ──
+  // ── 7. Build cluster-merged severity-tier polygons and save ──
   //
-  // Each corridor saves its own tier rings individually (no cluster-wide merge).
-  // Yellow uses uniform width per corridor = maxBaseHW (no extra inflation).
-  // Inner tiers use per-point modulation with a floor.
-  // Self-intersecting bufferLine rings are retried at reduced width (no convex hull).
+  // Merges all corridors within each cluster into one broad storm corridor
+  // per severity band using polygon boolean union (polygon-clipping).
+  // For each cluster + band:
+  //   1. Select corridors whose maxSev qualifies for that band
+  //   2. Build inflated buffer-line polygon rings per corridor
+  //   3. Union all corridor polygons via polygon-clipping
+  //   4. Keep the largest connected polygon (drops outlier fragments)
+  //   5. For inner bands, intersect with outer to guarantee nesting
+  //   6. Save one row per cluster + band
 
-  const OUTER_MULT         = 1.3;   // yellow: max baseHW × 1.3 (modest inflation)
-  const YELLOW_HW_FLOOR    = 0.015; // ~1.7 km minimum yellow half-width
-  const YELLOW_HW_CAP      = 0.10;  // ~11 km max yellow half-width (~22km full)
-  const TIER_HW_CAP        = 0.06;  // ~6.7 km max inner-tier half-width
-  const INNER_TIER_FLOOR_F = 0.35;  // inner tiers floor at 35% of yellow HW
-  const BAND_TIER_WIDTHS   = [1.0,  0.55, 0.32, 0.18, 0.10];
-  //                          yel   org   red   dkr   pur
-  const MAX_TIER_AREA_MI2  = 2000;  // safety cap per individual tier polygon
-  const SELF_INT_SHRINK    = 0.5;   // shrink HWs by 50% on self-intersection retry
-  const SELF_INT_RETRIES   = 2;     // max retries before skipping
+  const OUTER_MULT       = 1.15;   // half-width inflation for outer envelope
+  const YELLOW_HW_FLOOR  = 0.015;  // ~1.7 km minimum yellow half-width
+  const YELLOW_HW_CAP    = 0.08;   // ~8.9 km max yellow half-width
+  const MERGE_BUFFER     = 0.055;  // ~6.1 km per-side extra dilation to close gaps
+  const BAND_TIER_WIDTHS = [1.0, 0.62, 0.42, 0.28, 0.18];
+  //                        yel  org   red   dkr   pur
 
   let nSaved = 0;
   let swathIdx = 0;
-  const tierCounts = {};          // label → { polygons, area, maxWidthDeg, maxAreaMi2 }
-  const clusterAreaSums = {};     // clusterRoot → { label → totalArea }
-  let yellowSkipped = 0;
-  let selfIntRetries = 0;         // tier rings retried after self-intersection
-  let selfIntDropped = 0;         // tier rings dropped after retries exhausted
+  const tierCounts = {};
 
-  log("TIER_GEN", "=== Per-corridor tier generation (date=" + TARGET_DATE + ") ===");
+  log("TIER_GEN", "=== Per-CLUSTER polygon-union tier generation (date=" + TARGET_DATE + ") ===");
   log("TIER_GEN", "OUTER_MULT=" + OUTER_MULT +
     " YELLOW_HW_FLOOR=" + YELLOW_HW_FLOOR + "°" +
     " YELLOW_HW_CAP=" + YELLOW_HW_CAP + "°" +
-    " TIER_HW_CAP=" + TIER_HW_CAP + "°" +
-    " INNER_TIER_FLOOR_F=" + INNER_TIER_FLOOR_F +
-    " MAX_TIER_AREA=" + MAX_TIER_AREA_MI2 + "mi²" +
-    " SELF_INT_SHRINK=" + SELF_INT_SHRINK +
-    " SELF_INT_RETRIES=" + SELF_INT_RETRIES +
+    " MERGE_BUFFER=" + MERGE_BUFFER + "°" +
     " BAND_TIER_WIDTHS=" + JSON.stringify(BAND_TIER_WIDTHS));
   log("TIER_GEN", "Clusters: " + clusterGroupsMap.size + "  corridors: " + final.length);
 
-  for (const c of final) {
-    const pts = c._trackPts;
-    const baseHws = c._trackHws;
-    if (pts.length < 2) continue;
-
-    const maxSev = Math.max(...c._trackSev, c.repMS);
-    const applicableBands = HAIL_SIZE_BANDS.filter(b => maxSev >= b.min);
+  for (const [clusterRoot, clusterCorridors] of clusterGroupsMap) {
+    let clusterMaxSev = 0;
+    let clusterMaxRepMS = 0;
+    for (const c of clusterCorridors) {
+      const ms = Math.max(...c._trackSev, c.repMS);
+      if (ms > clusterMaxSev) clusterMaxSev = ms;
+      if (c.repMS > clusterMaxRepMS) clusterMaxRepMS = c.repMS;
+    }
+    const applicableBands = HAIL_SIZE_BANDS.filter(b => clusterMaxSev >= b.min);
     if (applicableBands.length === 0) continue;
 
-    // Yellow uses the MAXIMUM baseHW from this corridor, applied uniformly.
-    const maxBaseHW = Math.max(...baseHws);
-    const yellowHW = Math.min(Math.max(maxBaseHW * OUTER_MULT, YELLOW_HW_FLOOR), YELLOW_HW_CAP);
+    log("TIER_GEN", "Cluster " + clusterRoot + ": " + clusterCorridors.length +
+      " corridors, maxSev=" + clusterMaxSev.toFixed(2) + "\"" +
+      ", bands=" + applicableBands.length);
 
-    const corridorTiers = {}; // bandMin → { ring, area }
+    let outerBandPoly = null; // [ring] coords for intersection-based nesting
+    const clusterTierAreas = {};
 
     for (const band of applicableBands) {
       const bandIdx = HAIL_SIZE_BANDS.indexOf(band);
       const tierScale = BAND_TIER_WIDTHS[bandIdx] || 0.10;
+      const mergeExtra = MERGE_BUFFER * tierScale;
 
-      let bandHws;
-      if (bandIdx === 0) {
-        // YELLOW: uniform width → broad outer body per corridor
-        bandHws = pts.map(() => yellowHW);
-      } else {
-        // INNER TIERS: per-point modulated, floored
-        const innerFloor = yellowHW * INNER_TIER_FLOOR_F * tierScale;
-        bandHws = baseHws.map(hw => {
-          const raw = hw * OUTER_MULT * tierScale;
-          return Math.min(Math.max(raw, innerFloor), TIER_HW_CAP);
-        });
-      }
-      const smoothed = smoothHalfWidths(bandHws, HW_SMOOTH_RADIUS);
-
-      // Build buffer ring; if self-intersecting, shrink HWs and retry.
-      // NEVER fall through to convexHull — it fills concavities and inflates area.
-      let ring = null;
-      let usedHws = smoothed;
-      let shrinkFactor = 1.0;
-      for (let attempt = 0; attempt <= SELF_INT_RETRIES; attempt++) {
-        const tryHws = attempt === 0 ? usedHws : usedHws.map(hw => hw * shrinkFactor);
-        const tryRing = bufferLine(pts, tryHws);
-        if (!ringSelfIntersects(tryRing)) {
-          ring = tryRing;
-          usedHws = tryHws;
-          break;
+      // Build inflated corridor rings for this band
+      const bandRings = [];
+      let nQualifying = 0;
+      for (const c of clusterCorridors) {
+        if (c._trackPts.length < 2) continue;
+        // Yellow band: all corridors; inner bands: only qualifying corridors
+        if (bandIdx > 0) {
+          const maxSev = Math.max(...c._trackSev, c.repMS);
+          if (maxSev < band.min) continue;
         }
-        if (attempt > 0) selfIntRetries++;
-        shrinkFactor *= SELF_INT_SHRINK;
-      }
-      if (!ring) {
-        selfIntDropped++;
-        log("SELF_INT", "DROPPED corridor=" + c.key + " tier=" + band.label +
-          " after " + SELF_INT_RETRIES + " shrink retries (self-intersecting)");
-        continue;
+        nQualifying++;
+
+        // Half-widths: severity-weighted for inner bands, uniform for yellow
+        const scaledHws = c._trackHws.map((hw, pi) => {
+          if (bandIdx === 0) {
+            // Yellow band: uniform scaling — all corridors
+            let scaled = hw * OUTER_MULT * tierScale;
+            scaled = Math.max(scaled, YELLOW_HW_FLOOR * tierScale);
+            scaled = Math.min(scaled, YELLOW_HW_CAP * tierScale);
+            return scaled;
+          }
+          // Inner bands: boost half-width where per-point severity exceeds threshold
+          const ptSev = (c._trackSev && c._trackSev[pi]) || 0;
+          const sevRatio = ptSev / Math.max(band.min, 0.5);
+          // Points at/above threshold → boost up to 1.8×; below → narrow to 0.4×
+          const boost = Math.min(Math.max(sevRatio, 0.4), 1.8);
+          let scaled = hw * OUTER_MULT * tierScale * boost;
+          scaled = Math.max(scaled, YELLOW_HW_FLOOR * tierScale * 0.5);
+          // Cap at yellow-level (nesting clips to outer band anyway)
+          scaled = Math.min(scaled, YELLOW_HW_CAP);
+          return scaled;
+        });
+        const smoothed = smoothHalfWidths(scaledHws, 2);
+        const tapered = taperHalfWidths(smoothed, 3, 0.30);
+        // Add merge buffer AFTER taper so overlap is preserved at tapered tips
+        const finalHws = tapered.map(hw => hw + mergeExtra);
+        let ring = bufferLine(c._trackPts, finalHws);
+
+        // Fallback for self-intersecting rings
+        if (ringSelfIntersects(ring)) {
+          ring = convexHull(ring.slice(0, -1));
+        }
+        if (ring.length >= 4) bandRings.push(ring);
       }
 
-      const tierArea = areaSqMi(ring);
-      if (tierArea < 1) continue;
-      if (tierArea > MAX_TIER_AREA_MI2) {
-        log("AREA_CAP", "SKIPPED tier area " + tierArea.toFixed(0) + "mi² > " +
-          MAX_TIER_AREA_MI2 + "mi² cap for corridor=" + c.key + " tier=" + band.label);
-        if (bandIdx === 0) yellowSkipped++;
-        continue;
+      if (bandRings.length === 0) continue;
+
+      // ── Polygon union via polygon-clipping ──
+      // Union merges overlapping/adjacent corridor polygons into broader
+      // shapes.  Result is a MultiPolygon: multiple separate pieces where
+      // corridors don't physically overlap.
+      let unionResult;
+      try {
+        const polys = bandRings.map(ring => [ring]);
+        if (polys.length === 1) {
+          unionResult = [polys[0]];
+        } else {
+          unionResult = polygonClipping.union(...polys);
+        }
+      } catch (e) {
+        log("UNION_ERR", "cluster=" + clusterRoot + " " + band.label +
+          ": " + e.message + " — fallback to convex hull");
+        const allVerts = [];
+        for (const ring of bandRings) for (const pt of ring) allVerts.push(pt);
+        const hullRing = convexHull(allVerts);
+        unionResult = [[hullRing]];
       }
 
-      corridorTiers[band.min] = { ring, area: tierArea };
+      if (!unionResult || unionResult.length === 0) continue;
+
+      // ── Post-union fragment filter ──
+      // Drops small isolated fragments that clutter the swath (e.g. off-axis
+      // side strips in Kansas/Missouri).  BFS expansion from the largest
+      // fragment: keep neighbours within FRAG_KEEP_DIST, drop the rest if
+      // they fall below FRAG_MIN_AREA.
+      const FRAG_MIN_AREA_BASE = 80;  // mi² base — scaled down for inner bands
+      const FRAG_MIN_AREA   = bandIdx === 0 ? FRAG_MIN_AREA_BASE
+                              : Math.max(FRAG_MIN_AREA_BASE * tierScale, 5);
+      const FRAG_BIG_AREA   = bandIdx === 0 ? 300 : Math.max(300 * tierScale, 20);
+      const FRAG_KEEP_DIST  = 120;   // mi — max gap between kept fragments
+      if (unionResult.length > 1) {
+        // Compute area + centroid per fragment
+        const fragMeta = unionResult.map(poly => {
+          if (!poly[0] || poly[0].length < 4) return { area: 0, lat: 0, lon: 0 };
+          const c = centroidOf(poly[0]);
+          let a = Math.abs(areaSqMi(poly[0]));
+          for (let hi = 1; hi < poly.length; hi++) a -= Math.abs(areaSqMi(poly[hi]));
+          return { area: Math.max(a, 0), lat: c.lat, lon: c.lon };
+        });
+
+        // Diagnostic: log each fragment before filtering
+        if (bandIdx === 0) {
+          for (let fi = 0; fi < fragMeta.length; fi++) {
+            log("FRAG_DIAG", "cluster=" + clusterRoot + " " + band.label +
+              " frag " + fi + ": area=" + fragMeta[fi].area.toFixed(0) + "mi²" +
+              " ctr=[" + fragMeta[fi].lat.toFixed(2) + "," + fragMeta[fi].lon.toFixed(2) + "]");
+          }
+        }
+
+        // Compute area-weighted median latitude (main track axis)
+        const sortedByLat = fragMeta
+          .map((f, i) => ({ ...f, i }))
+          .filter(f => f.area > 0)
+          .sort((a, b) => a.lat - b.lat);
+        let cumArea = 0;
+        const halfTotal = sortedByLat.reduce((s, f) => s + f.area, 0) / 2;
+        let medianLat = sortedByLat.length ? sortedByLat[0].lat : 0;
+        for (const f of sortedByLat) {
+          cumArea += f.area;
+          if (cumArea >= halfTotal) { medianLat = f.lat; break; }
+        }
+
+        const OFF_AXIS_LAT = 2.0;    // degrees from median — tighter than before
+        const OFF_AXIS_FRAC = 0.25;   // off-axis frags need ≥ 25% of on-axis best
+
+        // Find largest on-axis fragment as BFS seed (not absolute largest)
+        const kept = new Set();
+        let bestIdx = 0;
+        for (let fi = 1; fi < fragMeta.length; fi++) {
+          if (fragMeta[fi].area > fragMeta[bestIdx].area) bestIdx = fi;
+        }
+        let onAxisBest = -1;
+        for (let fi = 0; fi < fragMeta.length; fi++) {
+          if (Math.abs(fragMeta[fi].lat - medianLat) <= OFF_AXIS_LAT) {
+            if (onAxisBest < 0 || fragMeta[fi].area > fragMeta[onAxisBest].area) {
+              onAxisBest = fi;
+            }
+          }
+        }
+        if (onAxisBest >= 0) bestIdx = onAxisBest;
+        kept.add(bestIdx);
+
+        log("FRAG_SEED", "cluster=" + clusterRoot + " " + band.label +
+          " medianLat=" + medianLat.toFixed(2) +
+          " bestIdx=" + bestIdx +
+          " bestArea=" + fragMeta[bestIdx].area.toFixed(0) + "mi²" +
+          " [" + fragMeta[bestIdx].lat.toFixed(2) + "," + fragMeta[bestIdx].lon.toFixed(2) + "]");
+
+        // Auto-seed big fragments ONLY if on-axis
+        for (let fi = 0; fi < fragMeta.length; fi++) {
+          if (fragMeta[fi].area >= FRAG_BIG_AREA &&
+              Math.abs(fragMeta[fi].lat - medianLat) <= OFF_AXIS_LAT) {
+            kept.add(fi);
+          }
+        }
+        let changed = true;
+        while (changed) {
+          changed = false;
+          for (let fi = 0; fi < fragMeta.length; fi++) {
+            if (kept.has(fi)) continue;
+            if (fragMeta[fi].area < FRAG_MIN_AREA) continue; // too small
+            // Off-axis check: far from median latitude AND small → skip
+            const latDev = Math.abs(fragMeta[fi].lat - medianLat);
+            if (latDev > OFF_AXIS_LAT && fragMeta[fi].area < fragMeta[bestIdx].area * OFF_AXIS_FRAC) continue;
+            // Check distance to any kept fragment
+            let nearKept = false;
+            for (const ki of kept) {
+              const dy = fragMeta[fi].lat - fragMeta[ki].lat;
+              const dx = fragMeta[fi].lon - fragMeta[ki].lon;
+              const cosLat = Math.cos(fragMeta[fi].lat * Math.PI / 180);
+              const distMi = 69.0 * Math.sqrt(dy * dy + (dx * cosLat) * (dx * cosLat));
+              if (distMi <= FRAG_KEEP_DIST) { nearKept = true; break; }
+            }
+            if (nearKept) { kept.add(fi); changed = true; }
+          }
+        }
+        if (kept.size < unionResult.length) {
+          const nDropped = unionResult.length - kept.size;
+          const droppedArea = fragMeta
+            .filter((_, i) => !kept.has(i))
+            .reduce((s, f) => s + f.area, 0);
+          unionResult = unionResult.filter((_, i) => kept.has(i));
+          log("FRAG_FILTER", "cluster=" + clusterRoot + " " + band.label +
+            ": dropped " + nDropped + " fragment(s) (" + droppedArea.toFixed(0) + "mi²)" +
+            " — kept " + kept.size);
+        }
+      }
+
+      // Compute total area across all union fragments (outer - holes per poly)
+      let totalArea = 0;
+      for (const poly of unionResult) {
+        if (!poly[0] || poly[0].length < 4) continue;
+        let a = Math.abs(areaSqMi(poly[0]));
+        for (let hi = 1; hi < poly.length; hi++) {
+          a -= Math.abs(areaSqMi(poly[hi]));
+        }
+        totalArea += Math.max(a, 0);
+      }
+      if (totalArea < 1) continue;
+
+      log("UNION", "cluster=" + clusterRoot + " " + band.label +
+        ": " + bandRings.length + " rings → " + unionResult.length + " fragment(s)" +
+        ", totalArea=" + totalArea.toFixed(1) + "mi²");
+
+      // Cascading nesting: clip each band to the PREVIOUS band's final polygon
+      // This guarantees purple ⊂ darkred ⊂ red ⊂ orange ⊂ yellow.
+      if (bandIdx === 0) {
+        outerBandPoly = unionResult; // yellow becomes the outer envelope
+      } else if (outerBandPoly) {
+        try {
+          const clipped = polygonClipping.intersection(unionResult, outerBandPoly);
+          if (clipped && clipped.length > 0) {
+            unionResult = clipped;
+            // Recompute area after clipping
+            totalArea = 0;
+            for (const poly of unionResult) {
+              if (!poly[0] || poly[0].length < 4) continue;
+              let a = Math.abs(areaSqMi(poly[0]));
+              for (let hi = 1; hi < poly.length; hi++) {
+                a -= Math.abs(areaSqMi(poly[hi]));
+              }
+              totalArea += Math.max(a, 0);
+            }
+          }
+        } catch (e) {
+          log("CLIP_WARN", "cluster=" + clusterRoot + " " + band.label + ": " + e.message);
+        }
+        // Update outerBandPoly for next-inner band (cascading)
+        outerBandPoly = unionResult;
+      }
+
+      const tierArea = totalArea;
+      clusterTierAreas[band.min] = tierArea;
 
       const tier = band.label;
-      if (!tierCounts[tier]) tierCounts[tier] = { polygons: 0, area: 0, maxWidthDeg: 0, maxAreaMi2: 0 };
+      if (!tierCounts[tier]) tierCounts[tier] = { polygons: 0, area: 0, maxAreaMi2: 0 };
       tierCounts[tier].polygons++;
       tierCounts[tier].area += tierArea;
-      const midHWForStats = usedHws[Math.floor(usedHws.length / 2)];
-      if (midHWForStats > tierCounts[tier].maxWidthDeg) tierCounts[tier].maxWidthDeg = midHWForStats;
       if (tierArea > tierCounts[tier].maxAreaMi2) tierCounts[tier].maxAreaMi2 = tierArea;
 
-      // Per-cluster area tracking
-      const cRoot = c._clusterRoot;
-      if (!clusterAreaSums[cRoot]) clusterAreaSums[cRoot] = {};
-      if (!clusterAreaSums[cRoot][tier]) clusterAreaSums[cRoot][tier] = 0;
-      clusterAreaSums[cRoot][tier] += tierArea;
-
-      // Yellow threshold alert (flag any individual corridor yellow > 200 mi²)
-      if (bandIdx === 0 && tierArea > 200) {
-        log("YELLOW_ALERT", "corridor=" + c.key + " area=" + tierArea.toFixed(1) +
-          "mi² midHW=" + midHWForStats.toFixed(4) + "° (" + (midHWForStats * 111).toFixed(1) + "km)" +
-          " trackPts=" + pts.length + " cluster=" + cRoot);
+      // Weighted centroid across all fragments
+      let cLat = 0, cLon = 0, cWeight = 0;
+      for (const poly of unionResult) {
+        if (!poly[0] || poly[0].length < 4) continue;
+        const c = centroidOf(poly[0]);
+        const a = Math.abs(areaSqMi(poly[0]));
+        cLat += c.lat * a; cLon += c.lon * a; cWeight += a;
       }
-
-      const ringCentroid = centroidOf(ring);
-      const midHW = usedHws[Math.floor(usedHws.length / 2)];
+      cLat /= cWeight || 1; cLon /= cWeight || 1;
 
       const geojson = {
         type: "Feature",
-        geometry: { type: "Polygon", coordinates: [ring] },
+        geometry: { type: "MultiPolygon", coordinates: unionResult },
         properties: {
-          corridor: c.key,
-          cluster: c._clusterRoot,
+          corridor: clusterRoot,
+          cluster: clusterRoot,
           band_threshold: band.min,
           tier_width_frac: tierScale,
           outer_mult: OUTER_MULT,
-          mid_hw_deg: parseFloat(midHW.toFixed(4)),
+          merged_corridors: bandRings.length,
+          merge_mode: "polygon_union",
+          merge_buffer_deg: parseFloat(mergeExtra.toFixed(4)),
+          fragments: unionResult.length,
         },
       };
 
-      const qualityStatus = classifyQuality(c, tierArea, applicableBands.length);
+      const topCorridor = clusterCorridors[0];
+      const qualityStatus = classifyQuality(topCorridor, tierArea, applicableBands.length);
 
       const row = {
         event_date: TARGET_DATE,
         storm_type: "hail",
         band_min: band.min,
-        band_max: band.max === 99 ? c.repMS : band.max,
+        band_max: band.max === 99 ? clusterMaxRepMS : band.max,
         band_label: band.label,
         polygon_geojson: geojson,
-        centroid_lat: ringCentroid.lat,
-        centroid_lon: ringCentroid.lon,
+        centroid_lat: cLat,
+        centroid_lon: cLon,
         area_sq_mi: parseFloat(tierArea.toFixed(2)),
         source: "nexrad_iem",
         source_product: "iem_nexrad_track",
@@ -1006,85 +1601,59 @@ async function main() {
           const { error: e2 } = await supabase.from("storm_polygons").upsert([row], {
             onConflict: "event_date,source,source_product,swath_index",
           });
-          if (e2) log("ERROR", "upsert " + c.key + " " + band.label + ": " + e2.message);
+          if (e2) log("ERROR", "upsert cluster=" + clusterRoot + " " + band.label + ": " + e2.message);
           else nSaved++;
         } else {
-          log("ERROR", "upsert " + c.key + " " + band.label + ": " + error.message);
+          log("ERROR", "upsert cluster=" + clusterRoot + " " + band.label + ": " + error.message);
         }
       } else {
         nSaved++;
       }
 
-      log("BAND", "corridor=" + c.key +
+      log("BAND", "cluster=" + clusterRoot +
         " tier=" + band.label +
-        " midHW=" + midHW.toFixed(4) + "° (" + (midHW * 111).toFixed(1) + "km)" +
         " area=" + tierArea.toFixed(1) + "mi²" +
-        " pts=" + pts.length +
-        (bandIdx === 0 ? " yellowHW=" + yellowHW.toFixed(4) + "°" : ""));
+        " corridors_used=" + nQualifying +
+        " rings_built=" + bandRings.length +
+        " fragments=" + unionResult.length);
       swathIdx++;
     }
 
-    // Per-corridor containment check
-    const bandMins = Object.keys(corridorTiers).map(Number).sort((a, b) => a - b);
+    // Per-cluster containment check
+    const bandMins = Object.keys(clusterTierAreas).map(Number).sort((a, b) => a - b);
     for (let ti = 1; ti < bandMins.length; ti++) {
       const outerBand = bandMins[ti - 1];
       const innerBand = bandMins[ti];
-      const outerArea = corridorTiers[outerBand].area;
-      const innerArea = corridorTiers[innerBand].area;
+      const outerArea = clusterTierAreas[outerBand];
+      const innerArea = clusterTierAreas[innerBand];
       const contained = innerArea <= outerArea * 1.01;
       const outerLabel = HAIL_SIZE_BANDS.find(b => b.min === outerBand)?.label || outerBand + "\"";
       const innerLabel = HAIL_SIZE_BANDS.find(b => b.min === innerBand)?.label || innerBand + "\"";
       if (!contained) {
-        log("NESTING_WARN", "corridor=" + c.key + " " + innerLabel + " > " + outerLabel +
+        log("NESTING_WARN", "cluster=" + clusterRoot + " " + innerLabel + " > " + outerLabel +
           " (inner=" + innerArea.toFixed(0) + "mi² outer=" + outerArea.toFixed(0) + "mi²)");
       }
     }
   }
 
-  // ── Debug: tier polygon counts, areas, max widths ──
+  // ── Debug: tier polygon summary ──
   log("TIER_SUMMARY", "=== Tier polygon summary (date=" + TARGET_DATE + ") ===");
   for (const [tier, s] of Object.entries(tierCounts)) {
     log("TIER_SUMMARY", "  " + tier + ": " + s.polygons + " polygon(s)" +
       " totalArea=" + s.area.toFixed(1) + "mi²" +
       " avgArea=" + (s.area / (s.polygons || 1)).toFixed(1) + "mi²" +
-      " maxArea=" + s.maxAreaMi2.toFixed(1) + "mi²" +
-      " maxHW=" + s.maxWidthDeg.toFixed(4) + "° (" + (s.maxWidthDeg * 111).toFixed(1) + "km)");
+      " maxArea=" + s.maxAreaMi2.toFixed(1) + "mi²");
   }
-  log("TIER_SUMMARY", "union_count=0 (per-corridor mode, no cluster-wide merges)");
-  log("TIER_SUMMARY", "self_int_retries=" + selfIntRetries +
-    " self_int_dropped=" + selfIntDropped);
-  if (yellowSkipped > 0) {
-    log("TIER_SUMMARY", "yellow_skipped=" + yellowSkipped + " (exceeded " + MAX_TIER_AREA_MI2 + "mi² cap)");
-  }
+  log("TIER_SUMMARY", "merge_mode=polygon_union (buffered corridor rings + polygon-clipping union)");
+  log("TIER_SUMMARY", "total_rows=" + swathIdx + " (was " + final.length + " corridors × bands in per-corridor mode)");
 
-  // ── Debug: per-cluster area totals (top 10 largest yellow) ──
-  const yellowLabel = HAIL_SIZE_BANDS[0].label;
-  const clusterYellowAreas = Object.entries(clusterAreaSums)
-    .filter(([, tiers]) => tiers[yellowLabel])
-    .map(([cRoot, tiers]) => ({ cluster: cRoot, yellowArea: tiers[yellowLabel] || 0 }))
-    .sort((a, b) => b.yellowArea - a.yellowArea)
-    .slice(0, 10);
-  if (clusterYellowAreas.length > 0) {
-    log("CLUSTER_AREAS", "Top yellow-area clusters:");
-    for (const ca of clusterYellowAreas) {
-      log("CLUSTER_AREAS", "  cluster=" + ca.cluster + " yellowArea=" + ca.yellowArea.toFixed(1) + "mi²");
-    }
-  }
-
-  // ── Debug: event/group counts ──
   log("DEBUG", "date=" + TARGET_DATE +
     " event_groups(clusters)=" + clusterGroupsMap.size +
     " corridors=" + final.length +
     " total_tier_polygons=" + swathIdx);
 
-  // ── Aggregate containment check across all corridors ──
-  let nestOK = 0, nestWarn = 0;
-  log("NESTING", "Per-corridor nesting checked inline above.");
-  log("NESTING", "Containment summary: all tier rings use same centerline at" +
-    " decreasing widths → nesting guaranteed by construction.");
-
-  log("MAIN", "Hail done. Saved " + nSaved + " band rows from " + final.length +
-    " corridors in " + clusterGroupsMap.size + " clusters to storm_polygons (" + SCRIPT_VERSION + ")");
+  log("MAIN", "Hail done. Saved " + nSaved + " merged band rows from " +
+    clusterGroupsMap.size + " clusters (" + final.length + " corridors) to storm_polygons (" + SCRIPT_VERSION + ")");
   nSavedHail = nSaved;
   hailSwathIdx = swathIdx;
   } // ── END HAIL PIPELINE ──
@@ -1195,89 +1764,251 @@ async function main() {
     }
     log("WIND", "Wind corridors built: " + windCorridors.length);
 
-    // Save wind corridor tier polygons
-    const windRows = [];
+    // ── Merged wind band generation via polygon union ──
+    // Union all wind corridors per severity band into a single MultiPolygon
+    // (mirrors the hail pipeline).  Produces ~4 merged rows instead of 3000+.
+    const WIND_MERGE_BUFFER = 0.055;
+    const WIND_TIER_WIDTHS  = [1.0, 0.55, 0.35, 0.20];
+
+    // Determine globally applicable wind bands from max DBZ across all corridors
+    let globalMaxDBZ = 0;
     for (const wc of windCorridors) {
-      const maxDBZ = wc.repDBZ;
-      const applicableBands = WIND_SEVERITY_BANDS.filter(b => maxDBZ >= b.dbzFloor);
-      if (applicableBands.length === 0) {
-        // At minimum save one light-wind band
-        applicableBands.push(WIND_SEVERITY_BANDS[0]);
-      }
-
-      for (const band of applicableBands) {
-        const bandIdx = WIND_SEVERITY_BANDS.indexOf(band);
-        const tierScale = [1.0, 0.55, 0.35, 0.20][bandIdx] || 0.20;
-
-        const bandHws = wc._trackHws.map(hw => {
-          const raw = hw * tierScale;
-          return Math.min(Math.max(raw, WIND_HW_FLOOR * 0.5), WIND_HW_CAP);
-        });
-        const smoothed = smoothHalfWidths(bandHws, HW_SMOOTH_RADIUS);
-
-        let ring = bufferLine(wc._trackPts, smoothed);
-        if (ringSelfIntersects(ring)) {
-          ring = bufferLine(wc._trackPts, smoothed.map(h => h * 0.6));
-          if (ringSelfIntersects(ring)) continue;
-        }
-        const tierArea = areaSqMi(ring);
-        if (tierArea < 1 || tierArea > WIND_MAX_TIER_AREA) continue;
-
-        const ringCentroid = centroidOf(ring);
-        const midHW = smoothed[Math.floor(smoothed.length / 2)];
-
-        const geojson = {
-          type: "Feature",
-          geometry: { type: "Polygon", coordinates: [ring] },
-          properties: {
-            corridor: wc.key,
-            band_threshold: band.min,
-            tier_width_frac: tierScale,
-            mid_hw_deg: parseFloat(midHW.toFixed(4)),
-            rep_vil: wc.repVIL,
-            rep_dbz: wc.repDBZ,
-          },
-        };
-
-        windRows.push({
-          event_date: TARGET_DATE,
-          storm_type: "wind",
-          band_min: band.min,
-          band_max: band.max === 99 ? 3.0 : band.max,
-          band_label: band.label,
-          polygon_geojson: geojson,
-          centroid_lat: ringCentroid.lat,
-          centroid_lon: ringCentroid.lon,
-          area_sq_mi: parseFloat(tierArea.toFixed(2)),
-          source: "nexrad_iem",
-          source_product: "iem_nexrad_wind",
-          source_priority: 2,
-          swath_index: windSwathIdx,
-        });
-
-        log("WIND_BAND", "corridor=" + wc.key +
-          " tier=" + band.label +
-          " area=" + tierArea.toFixed(1) + "mi²" +
-          " midHW=" + midHW.toFixed(4) + "°" +
-          " VIL=" + wc.repVIL + " DBZ=" + wc.repDBZ);
-        windSwathIdx++;
-      }
+      if (wc.repDBZ > globalMaxDBZ) globalMaxDBZ = wc.repDBZ;
+    }
+    const windApplicableBands = WIND_SEVERITY_BANDS.filter(b => globalMaxDBZ >= b.dbzFloor);
+    if (windApplicableBands.length === 0 && windCorridors.length > 0) {
+      windApplicableBands.push(WIND_SEVERITY_BANDS[0]);
     }
 
-    // Batch upsert wind rows (chunks of 200)
-    const WIND_BATCH = 200;
-    for (let i = 0; i < windRows.length; i += WIND_BATCH) {
-      const chunk = windRows.slice(i, i + WIND_BATCH);
-      const { error } = await supabase.from("storm_polygons").upsert(chunk, {
+    log("WIND_MERGE", "globalMaxDBZ=" + globalMaxDBZ +
+      " applicableBands=" + windApplicableBands.length +
+      " corridors=" + windCorridors.length);
+
+    let outerWindPoly = null;
+    const windTierAreas = {};
+
+    for (const band of windApplicableBands) {
+      const bandIdx = WIND_SEVERITY_BANDS.indexOf(band);
+      const tierScale = WIND_TIER_WIDTHS[bandIdx] || 0.20;
+      const mergeExtra = WIND_MERGE_BUFFER * tierScale;
+
+      // Build inflated corridor rings for this band
+      const bandRings = [];
+      for (const wc of windCorridors) {
+        if (wc._trackPts.length < 2) continue;
+        // Light band: all corridors; inner bands: only qualifying by DBZ
+        if (bandIdx > 0 && wc.repDBZ < band.dbzFloor) continue;
+
+        const scaledHws = wc._trackHws.map(hw => {
+          let scaled = hw * tierScale;
+          scaled = Math.max(scaled, WIND_HW_FLOOR * 0.5);
+          scaled = Math.min(scaled, WIND_HW_CAP);
+          return scaled;
+        });
+        const smoothed = smoothHalfWidths(scaledHws, 2);
+        const tapered = taperHalfWidths(smoothed, 3, 0.30);
+        const finalHws = tapered.map(hw => hw + mergeExtra);
+
+        let ring = bufferLine(wc._trackPts, finalHws);
+        if (ringSelfIntersects(ring)) {
+          ring = convexHull(ring.slice(0, -1));
+        }
+        if (ring.length >= 4) bandRings.push(ring);
+      }
+
+      if (bandRings.length === 0) continue;
+
+      // Polygon union via polygon-clipping
+      let unionResult;
+      try {
+        const polys = bandRings.map(ring => [ring]);
+        if (polys.length === 1) {
+          unionResult = [polys[0]];
+        } else {
+          unionResult = polygonClipping.union(...polys);
+        }
+      } catch (e) {
+        log("WIND_UNION_ERR", band.label + ": " + e.message + " — fallback to convex hull");
+        const allVerts = [];
+        for (const ring of bandRings) for (const pt of ring) allVerts.push(pt);
+        unionResult = [[convexHull(allVerts)]];
+      }
+
+      if (!unionResult || unionResult.length === 0) continue;
+
+      // Fragment filter — BFS from largest on-axis fragment (same as hail)
+      const WIND_FRAG_MIN_AREA  = 50;
+      const WIND_FRAG_BIG_AREA  = 200;
+      const WIND_FRAG_KEEP_DIST = 120;
+      if (unionResult.length > 1) {
+        const fragMeta = unionResult.map(poly => {
+          if (!poly[0] || poly[0].length < 4) return { area: 0, lat: 0, lon: 0 };
+          const c = centroidOf(poly[0]);
+          let a = Math.abs(areaSqMi(poly[0]));
+          for (let hi = 1; hi < poly.length; hi++) a -= Math.abs(areaSqMi(poly[hi]));
+          return { area: Math.max(a, 0), lat: c.lat, lon: c.lon };
+        });
+
+        if (bandIdx === 0) {
+          for (let fi = 0; fi < fragMeta.length; fi++) {
+            log("WIND_FRAG_DIAG", band.label + " frag " + fi +
+              ": area=" + fragMeta[fi].area.toFixed(0) + "mi²" +
+              " ctr=[" + fragMeta[fi].lat.toFixed(2) + "," + fragMeta[fi].lon.toFixed(2) + "]");
+          }
+        }
+
+        // Area-weighted median latitude
+        const sortedByLat = fragMeta.map((f, i) => ({ ...f, i }))
+          .filter(f => f.area > 0).sort((a, b) => a.lat - b.lat);
+        let cumArea = 0;
+        const halfTotal = sortedByLat.reduce((s, f) => s + f.area, 0) / 2;
+        let medianLat = sortedByLat.length ? sortedByLat[0].lat : 0;
+        for (const f of sortedByLat) {
+          cumArea += f.area;
+          if (cumArea >= halfTotal) { medianLat = f.lat; break; }
+        }
+
+        const WIND_OFF_AXIS_LAT  = 2.5;
+        const WIND_OFF_AXIS_FRAC = 0.20;
+
+        const kept = new Set();
+        let bestIdx = 0;
+        for (let fi = 1; fi < fragMeta.length; fi++) {
+          if (fragMeta[fi].area > fragMeta[bestIdx].area) bestIdx = fi;
+        }
+        let onAxisBest = -1;
+        for (let fi = 0; fi < fragMeta.length; fi++) {
+          if (Math.abs(fragMeta[fi].lat - medianLat) <= WIND_OFF_AXIS_LAT) {
+            if (onAxisBest < 0 || fragMeta[fi].area > fragMeta[onAxisBest].area) onAxisBest = fi;
+          }
+        }
+        if (onAxisBest >= 0) bestIdx = onAxisBest;
+        kept.add(bestIdx);
+
+        for (let fi = 0; fi < fragMeta.length; fi++) {
+          if (fragMeta[fi].area >= WIND_FRAG_BIG_AREA &&
+              Math.abs(fragMeta[fi].lat - medianLat) <= WIND_OFF_AXIS_LAT) {
+            kept.add(fi);
+          }
+        }
+        let changed = true;
+        while (changed) {
+          changed = false;
+          for (let fi = 0; fi < fragMeta.length; fi++) {
+            if (kept.has(fi)) continue;
+            if (fragMeta[fi].area < WIND_FRAG_MIN_AREA) continue;
+            const latDev = Math.abs(fragMeta[fi].lat - medianLat);
+            if (latDev > WIND_OFF_AXIS_LAT &&
+                fragMeta[fi].area < fragMeta[bestIdx].area * WIND_OFF_AXIS_FRAC) continue;
+            let nearKept = false;
+            for (const ki of kept) {
+              const dy = fragMeta[fi].lat - fragMeta[ki].lat;
+              const dx = fragMeta[fi].lon - fragMeta[ki].lon;
+              const cosLat = Math.cos(fragMeta[fi].lat * Math.PI / 180);
+              const distMi = 69.0 * Math.sqrt(dy * dy + (dx * cosLat) * (dx * cosLat));
+              if (distMi <= WIND_FRAG_KEEP_DIST) { nearKept = true; break; }
+            }
+            if (nearKept) { kept.add(fi); changed = true; }
+          }
+        }
+        if (kept.size < unionResult.length) {
+          const nDropped = unionResult.length - kept.size;
+          const droppedArea = fragMeta.filter((_, i) => !kept.has(i)).reduce((s, f) => s + f.area, 0);
+          unionResult = unionResult.filter((_, i) => kept.has(i));
+          log("WIND_FRAG", band.label + ": dropped " + nDropped +
+            " fragment(s) (" + droppedArea.toFixed(0) + "mi²) — kept " + kept.size);
+        }
+      }
+
+      // Total area across all union fragments (outer − holes)
+      let totalArea = 0;
+      for (const poly of unionResult) {
+        if (!poly[0] || poly[0].length < 4) continue;
+        let a = Math.abs(areaSqMi(poly[0]));
+        for (let hi = 1; hi < poly.length; hi++) a -= Math.abs(areaSqMi(poly[hi]));
+        totalArea += Math.max(a, 0);
+      }
+      if (totalArea < 1) continue;
+
+      // Inner band nesting: intersect with outer band
+      if (bandIdx === 0) {
+        outerWindPoly = unionResult;
+      } else if (outerWindPoly) {
+        try {
+          const clipped = polygonClipping.intersection(unionResult, outerWindPoly);
+          if (clipped && clipped.length > 0) {
+            unionResult = clipped;
+            totalArea = 0;
+            for (const poly of unionResult) {
+              if (!poly[0] || poly[0].length < 4) continue;
+              let a = Math.abs(areaSqMi(poly[0]));
+              for (let hi = 1; hi < poly.length; hi++) a -= Math.abs(areaSqMi(poly[hi]));
+              totalArea += Math.max(a, 0);
+            }
+          }
+        } catch (e) {
+          log("WIND_CLIP_WARN", band.label + ": " + e.message);
+        }
+      }
+
+      windTierAreas[band.min] = totalArea;
+
+      // Weighted centroid across fragments
+      let cLat = 0, cLon = 0, cWeight = 0;
+      for (const poly of unionResult) {
+        if (!poly[0] || poly[0].length < 4) continue;
+        const c = centroidOf(poly[0]);
+        const a = Math.abs(areaSqMi(poly[0]));
+        cLat += c.lat * a; cLon += c.lon * a; cWeight += a;
+      }
+      cLat /= cWeight || 1; cLon /= cWeight || 1;
+
+      const geojson = {
+        type: "Feature",
+        geometry: { type: "MultiPolygon", coordinates: unionResult },
+        properties: {
+          band_threshold: band.min,
+          tier_width_frac: tierScale,
+          merged_corridors: bandRings.length,
+          merge_mode: "polygon_union",
+          merge_buffer_deg: parseFloat(mergeExtra.toFixed(4)),
+          fragments: unionResult.length,
+        },
+      };
+
+      const row = {
+        event_date: TARGET_DATE,
+        storm_type: "wind",
+        band_min: band.min,
+        band_max: band.max === 99 ? 3.0 : band.max,
+        band_label: band.label,
+        polygon_geojson: geojson,
+        centroid_lat: cLat,
+        centroid_lon: cLon,
+        area_sq_mi: parseFloat(totalArea.toFixed(2)),
+        source: "nexrad_iem",
+        source_product: "iem_nexrad_wind",
+        source_priority: 1,
+        swath_index: windSwathIdx,
+      };
+
+      const { error } = await supabase.from("storm_polygons").upsert([row], {
         onConflict: "event_date,source,source_product,swath_index",
       });
       if (error) {
-        log("ERROR", "wind batch upsert [" + i + ".." + (i + chunk.length) + "]: " + error.message);
+        log("ERROR", "wind band upsert " + band.label + ": " + error.message);
       } else {
-        nSavedWind += chunk.length;
+        nSavedWind++;
       }
+
+      log("WIND_BAND", "tier=" + band.label +
+        " area=" + totalArea.toFixed(1) + "mi²" +
+        " corridors=" + bandRings.length +
+        " fragments=" + unionResult.length);
+      windSwathIdx++;
     }
-    log("WIND", "Wind done. Saved " + nSavedWind + " wind band rows from " +
+
+    log("WIND", "Wind done. Saved " + nSavedWind + " merged wind band rows from " +
       windCorridors.length + " wind corridors.");
   } else {
     log("WIND", "No wind-signal features found. Skipping wind pipeline.");
@@ -1310,4 +2041,133 @@ function classifyQuality(corridor, bandArea, nBands) {
   return "fallback";
 }
 
-main().catch(e => { console.error("Fatal:", e); process.exit(1); });
+// ═══════════════════════════════════════════════════════════
+//  Entry point — single date, multi-date, or batch mode
+// ═══════════════════════════════════════════════════════════
+//
+//  Usage:
+//    node scripts/ingest_iem_nexrad_tracks.mjs 2026-04-15
+//    node scripts/ingest_iem_nexrad_tracks.mjs 2026-04-15 2026-04-14 2026-04-13
+//    node scripts/ingest_iem_nexrad_tracks.mjs --batch          (fetch recent dates from DB, process those missing polygons)
+//    node scripts/ingest_iem_nexrad_tracks.mjs --batch --force  (re-process ALL recent dates even if polygons exist)
+//
+async function fetchRecentStormDates() {
+  // Replicate hail-dates edge function logic: union of hail_lsr_raw + storm_lsr_raw + synthetic
+  const dateSet = new Set();
+  const pageSize = 1000;
+
+  // hail_lsr_raw
+  let offset = 0;
+  for (;;) {
+    const { data, error } = await supabase.from("hail_lsr_raw")
+      .select("event_date").order("event_date", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+    if (error || !data || !data.length) break;
+    data.forEach(r => { if (/^\d{4}-\d{2}-\d{2}$/.test(r.event_date)) dateSet.add(r.event_date); });
+    if (data.length < pageSize) break;
+    offset += pageSize;
+  }
+
+  // storm_lsr_raw
+  offset = 0;
+  for (;;) {
+    const { data, error } = await supabase.from("storm_lsr_raw")
+      .select("event_date").order("event_date", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+    if (error || !data || !data.length) break;
+    data.forEach(r => { if (/^\d{4}-\d{2}-\d{2}$/.test(r.event_date)) dateSet.add(r.event_date); });
+    if (data.length < pageSize) break;
+    offset += pageSize;
+  }
+
+  // Synthetic dates
+  ["2026-03-14", "2026-03-24", "2026-03-29", "2026-04-02"].forEach(d => dateSet.add(d));
+
+  return [...dateSet].sort().reverse();
+}
+
+async function fetchDatesWithPolygons() {
+  const { data, error } = await supabase.from("storm_polygons")
+    .select("event_date")
+    .eq("source", "nexrad_iem");
+  if (error || !data) return new Set();
+  return new Set(data.map(r => String(r.event_date).slice(0, 10)));
+}
+
+async function entryPoint() {
+  const args = process.argv.slice(2);
+  const isBatch = args.includes("--batch");
+  const isForce = args.includes("--force");
+  const dateArgs = args.filter(a => /^\d{4}-\d{2}-\d{2}$/.test(a));
+  const daysArg = args.find(a => /^--days=\d+$/.test(a));
+  const maxDays = daysArg ? parseInt(daysArg.split("=")[1], 10) : null;
+
+  let datesToProcess = [];
+
+  if (isBatch) {
+    log("BATCH", "Fetching recent storm dates from DB...");
+    let allDates = await fetchRecentStormDates();
+    log("BATCH", "Found " + allDates.length + " total storm dates in DB");
+
+    // Filter by --days=N if supplied (default: 30 days for scheduled runs)
+    const dayLimit = maxDays || 30;
+    const cutoff = new Date();
+    cutoff.setUTCDate(cutoff.getUTCDate() - dayLimit);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    allDates = allDates.filter(d => d >= cutoffStr);
+    log("BATCH", "After --days=" + dayLimit + " filter (cutoff " + cutoffStr + "): " + allDates.length + " dates");
+
+    if (isForce) {
+      datesToProcess = allDates;
+      log("BATCH", "--force: will re-process ALL " + allDates.length + " dates");
+    } else {
+      const existing = await fetchDatesWithPolygons();
+      datesToProcess = allDates.filter(d => !existing.has(d));
+      log("BATCH", "Dates already with nexrad_iem polygons: " + existing.size +
+        " | dates to process: " + datesToProcess.length);
+    }
+  } else if (dateArgs.length > 0) {
+    datesToProcess = dateArgs;
+  } else {
+    datesToProcess = ["2026-04-01"];
+  }
+
+  if (!datesToProcess.length) {
+    log("BATCH", "Nothing to process. All dates already have polygons.");
+    return;
+  }
+
+  log("BATCH", "Processing " + datesToProcess.length + " date(s): " + datesToProcess.join(", "));
+
+  const results = { success: [], failed: [], noData: [] };
+
+  for (let i = 0; i < datesToProcess.length; i++) {
+    const d = datesToProcess[i];
+    log("BATCH", "\n════════════════════════════════════════");
+    log("BATCH", "Date " + (i + 1) + "/" + datesToProcess.length + ": " + d);
+    log("BATCH", "════════════════════════════════════════");
+    try {
+      await main(d);
+      results.success.push(d);
+    } catch (e) {
+      if (e.message && e.message.includes("No hail or wind features found")) {
+        results.noData.push(d);
+        log("BATCH", "No IEM data for " + d + " (may be too old for IEM archive)");
+      } else {
+        results.failed.push({ date: d, error: e.message || String(e) });
+        log("BATCH", "FAILED " + d + ": " + (e.message || e));
+      }
+    }
+  }
+
+  log("BATCH", "\n═══════════ BATCH SUMMARY ═══════════");
+  log("BATCH", "Total dates:  " + datesToProcess.length);
+  log("BATCH", "Success:      " + results.success.length + " " + (results.success.length ? results.success.join(", ") : ""));
+  log("BATCH", "No IEM data:  " + results.noData.length + " " + (results.noData.length ? results.noData.join(", ") : ""));
+  log("BATCH", "Failed:       " + results.failed.length + " " + (results.failed.length ? results.failed.map(f => f.date + "(" + f.error.slice(0,60) + ")").join(", ") : ""));
+  log("BATCH", "═════════════════════════════════════");
+
+  if (results.failed.length > 0) process.exit(1);
+}
+
+entryPoint().catch(e => { console.error("Fatal:", e); process.exit(1); });

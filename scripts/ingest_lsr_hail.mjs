@@ -94,6 +94,8 @@ async function main() {
     startDate.setUTCDate(startDate.getUTCDate() - 7);
   }
 
+  console.log("[INGEST] recent NOAA window", startDate.toISOString().slice(0, 10), "->", new Date(endDate.getTime() - 1).toISOString().slice(0, 10));
+
   const sts = toIemIsoStartOfDayZ(startDate);
   const ets = toIemIsoStartOfDayZ(endDate);
 
@@ -171,6 +173,7 @@ async function main() {
   const deduped = Array.from(byId.values());
 
   console.log(`[LSR] fetched=${fetched} parsed_hail=${rows.length} deduped=${deduped.length}`);
+  console.log("[INGEST] recent hail rows upserted", deduped.length);
 
   const BATCH_SIZE = 1000;
   let upserted = 0;
@@ -195,8 +198,9 @@ async function main() {
   let swathOk = 0;
   let swathFail = 0;
   for (const d of distinctDates) {
+    console.log(`[INGEST] recent swath generation attempted ${d}`);
     try {
-      const resp = await fetch(`${SWATH_RENDER_URL}?date=${d}`, {
+      const resp = await fetch(`${SWATH_RENDER_URL}?date=${d}&persist=1`, {
         headers: {
           Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
           apikey: SUPABASE_SERVICE_ROLE_KEY,
@@ -204,10 +208,11 @@ async function main() {
       });
       if (resp.ok) {
         const body = await resp.json();
-        console.log(`[LSR] swath-render ${d}: ${(body.corridors || []).length} corridors, ${body.pointCount || 0} points`);
+        console.log(`[LSR] swath-render ${d}: persisted=${body.persisted || false} corridors=${(body.corridors || []).length} points=${body.pointCount || 0}`);
         swathOk++;
       } else {
-        console.warn(`[LSR] swath-render ${d}: HTTP ${resp.status}`);
+        const raw = await resp.text();
+        console.warn(`[LSR] swath-render ${d}: HTTP ${resp.status} ${raw.slice(0, 200)}`);
         swathFail++;
       }
     } catch (err) {

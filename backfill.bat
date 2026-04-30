@@ -1,0 +1,11 @@
+node --env-file=.env scripts/ingest_lsr_wind_tornado.mjs 2015-01-01 2015-12-31
+node --env-file=.env scripts/ingest_lsr_wind_tornado.mjs 2016-01-01 2016-12-31
+node --env-file=.env scripts/ingest_lsr_wind_tornado.mjs 2017-01-01 2017-12-31
+node --env-file=.env scripts/ingest_lsr_wind_tornado.mjs 2018-01-01 2018-12-31
+node --env-file=.env scripts/ingest_lsr_wind_tornado.mjs 2019-01-01 2019-12-31
+node --env-file=.env scripts/ingest_lsr_wind_tornado.mjs 2020-01-01 2020-12-31
+node --env-file=.env scripts/ingest_lsr_wind_tornado.mjs 2021-01-01 2021-12-31
+node --env-file=.env scripts/ingest_lsr_wind_tornado.mjs 2022-01-01 2022-12-31
+node --env-file=.env scripts/ingest_lsr_wind_tornado.mjs 2023-01-01 2023-12-31
+node --env-file=.env scripts/ingest_lsr_wind_tornado.mjs 2024-01-01 2024-12-31
+node --env-file=.env scripts/ingest_lsr_wind_tornado.mjs 2025-01-01 2025-04-29
