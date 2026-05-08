@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Swath Opacity: layered transparent bands with slider -->
+  <rect width="100" height="100" rx="18" fill="#32ADE6"/>
+  <!-- Opacity bands - showing transparency gradient concept -->
+  <rect x="15" y="22" width="70" height="14" rx="4" fill="white" opacity="1.0"/>
+  <rect x="15" y="40" width="70" height="14" rx="4" fill="white" opacity="0.75"/>
+  <rect x="15" y="58" width="70" height="14" rx="4" fill="white" opacity="0.45"/>
+  <!-- Slider control -->
+  <rect x="15" y="78" width="70" height="5" rx="2.5" fill="white" opacity="0.4"/>
+  <circle cx="52" cy="80" r="7" fill="white"/>
+  <circle cx="52" cy="80" r="3" fill="#32ADE6"/>
+</svg>

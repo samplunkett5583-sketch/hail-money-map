@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- My Jobs: person with hard hat / single worker -->
+  <rect width="100" height="100" rx="18" fill="#0c73e1"/>
+  <!-- Person body -->
+  <circle cx="50" cy="35" r="14" fill="white"/>
+  <!-- Hard hat -->
+  <path d="M34,32 Q34,18 50,18 Q66,18 66,32" fill="#FF9F0A"/>
+  <rect x="30" y="30" width="40" height="6" rx="3" fill="#FF9F0A"/>
+  <!-- Shoulders / torso -->
+  <path d="M22,82 Q22,60 50,60 Q78,60 78,82" fill="white"/>
+  <!-- Shirt/vest detail -->
+  <path d="M50,60 L50,82" stroke="#0c73e1" stroke-width="3"/>
+  <path d="M36,63 Q50,58 64,63" fill="none" stroke="#e0e0e0" stroke-width="2"/>
+</svg>

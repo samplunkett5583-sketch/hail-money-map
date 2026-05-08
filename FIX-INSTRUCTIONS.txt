@@ -1,0 +1,77 @@
+HAIL MONEY MAP — 3 EXACT FIXES IN VS CODE
+==========================================
+
+Your app is mostly working. Only 3 things need fixing.
+Do them in order. Each one takes 30 seconds.
+
+
+═══════════════════════════════════════════
+FIX 1 — ADD THE CSS  (30 seconds)
+═══════════════════════════════════════════
+
+1. Press Ctrl+F in VS Code
+2. Search for:    </style>
+3. Click the line ABOVE </style>
+4. Open the file "hmm-css-patch.css" from your project folder
+5. Select all (Ctrl+A), Copy (Ctrl+C)
+6. Go back to your main file, paste it on the line above </style>
+7. Save
+
+
+═══════════════════════════════════════════
+FIX 2 — REMOVE DUPLICATE FUNCTION (1 minute)
+═══════════════════════════════════════════
+
+There is a copy of initCampaignPageOnce() that got pasted
+INSIDE the doLogin function by mistake. Find it and delete it.
+
+1. Press Ctrl+F in VS Code
+2. Search for this exact text:
+   const pass = (authPassword?.value || "").trim();
+
+3. You will see TWO things after that line:
+   - The duplicate initCampaignPageOnce function (DELETE THIS)
+   - Then: if (!email || !pass) {
+
+4. Select everything from:
+   let _campaignInited = false;
+   function initCampaignPageOnce() {
+
+   All the way down to the closing  }  of that function,
+   which ends just before:
+   if (!email || !pass) {
+
+5. Delete that entire selected block
+6. Save
+
+
+═══════════════════════════════════════════
+FIX 3 — WIRE MAPS VIEW INIT (30 seconds)
+═══════════════════════════════════════════
+
+1. Press Ctrl+F in VS Code
+2. Search for:
+   if (viewEl.id === "mapsView") {
+
+3. On the NEXT LINE after that, add:
+   initMapsViewOnce();
+
+   So it looks like:
+   if (viewEl.id === "mapsView") {
+     initMapsViewOnce();
+     loadRecentEventsPage(0);
+
+4. Save
+
+
+═══════════════════════════════════════════
+DONE — Deploy
+═══════════════════════════════════════════
+
+After all 3 fixes:
+- Maps view will show the new rail with transparent panels
+- Campaign button will navigate to the campaign page
+- All door knock icons, drag-drop, step counter will work
+- Both globe nav buttons will work
+
+Deploy and test.

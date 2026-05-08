@@ -1,0 +1,3788 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Hail Money Map</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" />
+  <script>
+  // Dynamic CDN loader with primary + fallback URLs
+  (function() {
+    const FIREBASE_VER = '9.23.0';
+    const CDN1 = 'https://www.gstatic.com/firebasejs/' + FIREBASE_VER;
+    const CDN2 = 'https://cdn.jsdelivr.net/npm/firebase@' + FIREBASE_VER;
+    const CDN3 = 'https://unpkg.com/firebase@' + FIREBASE_VER;
+
+    const libs = [
+      { name: 'firebase-app',       paths: [CDN1+'/firebase-app-compat.js',       CDN2+'/firebase-app-compat.js',       CDN3+'/firebase-app-compat.js']       },
+      { name: 'firebase-auth',      paths: [CDN1+'/firebase-auth-compat.js',      CDN2+'/firebase-auth-compat.js',      CDN3+'/firebase-auth-compat.js']      },
+      { name: 'firebase-firestore', paths: [CDN1+'/firebase-firestore-compat.js', CDN2+'/firebase-firestore-compat.js', CDN3+'/firebase-firestore-compat.js'] },
+      { name: 'firebase-storage',   paths: [CDN1+'/firebase-storage-compat.js',   CDN2+'/firebase-storage-compat.js',   CDN3+'/firebase-storage-compat.js']   },
+      { name: 'papaparse',          paths: ['https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js', 'https://unpkg.com/papaparse@5.4.1/papaparse.min.js'] },
+      { name: 'supabase',           paths: ['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2', 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js'] },
+    ];
+
+    function loadScript(paths, idx, onSuccess, onFailAll) {
+      if (idx >= paths.length) { onFailAll(); return; }
+      const s = document.createElement('script');
+      s.src = paths[idx];
+      s.onload = onSuccess;
+      s.onerror = function() { loadScript(paths, idx + 1, onSuccess, onFailAll); };
+      document.head.appendChild(s);
+    }
+
+    // Load all libs sequentially (firebase-app must be first)
+    function loadAll(libs, i, onDone) {
+      if (i >= libs.length) { onDone(); return; }
+      const lib = libs[i];
+      loadScript(lib.paths, 0,
+        function() { loadAll(libs, i + 1, onDone); },
+        function() { console.error('[HMM] Failed to load ' + lib.name + ' from all CDNs'); loadAll(libs, i + 1, onDone); }
+      );
+    }
+
+    window._libsReady = false;
+    loadAll(libs, 0, function() {
+      window._libsReady = true;
+      document.dispatchEvent(new Event('hmm:libs:ready'));
+    });
+  })();
+  </script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDuNue4UyVgq4Xsh1dtOjqFum7K-OJ1k4k",
+    authDomain: "hailmoneymap.web.app",
+    projectId: "hailmoneymap",
+    storageBucket: "hailmoneymap.appspot.com",
+    messagingSenderId: "153623806900",
+    appId: "1:153623806900:web:a6f50f206ce2f973afe8e1"
+  };
+
+  function _initFirebase() {
+    if (typeof firebase === 'undefined') return false;
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      window.auth    = firebase.auth();
+      window.db      = firebase.firestore();
+      window.storage = firebase.storage();
+      console.log('[HMM] Firebase ready');
+      return true;
+    } catch(e) { console.error('[HMM] firebase init error:', e); return false; }
+  }
+
+  // Init as soon as all libs finish loading
+  function _onLibsReady() {
+    _initFirebase();
+    _initSupabase();
+  }
+  if (window._libsReady) {
+    _onLibsReady();
+  } else {
+    document.addEventListener('hmm:libs:ready', _onLibsReady);
+  }
+
+  const STATE_BBOX = {
+    AL:"-88.4732,30.2233,-84.8891,35.0080",
+    AZ:"-114.8165,31.3322,-109.0452,37.0043",
+    CO:"-109.0603,36.9924,-102.0416,41.0034",
+    MO:"-95.7747,35.9957,-89.0988,40.6136",
+    TX:"-106.6456,25.8371,-93.5080,36.5007"
+  };
+  const LOAD_MORE_VALUE = "__LOAD_MORE__";
+  const SUPABASE_URL      = "https://ehegjhlkadtpnkborlbz.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZWdqaGxrYWR0cG5rYm9ybGJ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjcwNTY2NiwiZXhwIjoyMDgyMjgxNjY2fQ.KbEohwp-boV53yY31Ut3epMtN564STGsl9T9KtFeGLQ";
+  function _initSupabase() {
+    if (typeof window.supabase === 'undefined') return false;
+    try {
+      window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      window.supabaseClient = window.sb;
+      return true;
+    } catch(e) { console.error('[HMM] supabase init error:', e); return false; }
+  }
+
+
+
+  function dashToCompact(s){ return String(s||"").replaceAll("-",""); }
+  function compactToDash(s){ s=String(s||""); if(s.length!==8)return s; return s.slice(0,4)+"-"+s.slice(4,6)+"-"+s.slice(6,8); }
+  function getLastNDaysRange(n){ const e=new Date(),s=new Date(e); s.setDate(s.getDate()-(n-1)); const f=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),dd=String(d.getDate()).padStart(2,"0"); return y+m+dd;}; return{start:f(s),end:f(e)}; }
+  function fmtYYYYMMDD_utc(d){ const y=d.getUTCFullYear(),m=String(d.getUTCMonth()+1).padStart(2,"0"),dd=String(d.getUTCDate()).padStart(2,"0"); return y+m+dd; }
+  function utcToday(){ const n=new Date(); return new Date(Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate())); }
+  function addDaysUTC(d,days){ return new Date(d.getTime()+days*86400000); }
+  function getWindowForLoadedMonths(months){ const t=utcToday(),e=fmtYYYYMMDD_utc(t),s=fmtYYYYMMDD_utc(addDaysUTC(t,-months*30)); return{start:s,end:e}; }
+  function milesToKm(mi){ return Number(mi)*1.609344; }
+  async function getBboxForSelectedState(st){ const p=STATE_BBOX?.[st]; if(p)return p; if(!window.google?.maps?.Geocoder)return null; const g=App.geocoder||(App.geocoder=new google.maps.Geocoder()); const r=await new Promise((res,rej)=>{ g.geocode({address:st+", USA"},(results,status)=>{ if(status==="OK"&&results&&results[0])res(results[0]); else rej(new Error(status||"GEOCODE_FAILED")); }); }); const b=r?.geometry?.bounds||r?.geometry?.viewport||null; if(!b)return null; const sw=b.getSouthWest(),ne=b.getNorthEast(),minLat=sw.lat(),minLng=sw.lng(),maxLat=ne.lat(),maxLng=ne.lng(); if(![minLat,minLng,maxLat,maxLng].every(Number.isFinite))return null; return minLng+","+minLat+","+maxLng+","+maxLat; }
+  function haversineKm(lat1,lon1,lat2,lon2){ const R=6371,toRad=x=>x*Math.PI/180,dLat=toRad(lat2-lat1),dLon=toRad(lon2-lon1),a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2; return 2*R*Math.asin(Math.sqrt(a)); }
+  function uniqueSortedDatesFromStorms(storms){ const s=new Set(); for(const st of storms||[]){ const v=st?.props?.valid||st?.props?.VALID||st?.props?.Valid||st?.props?.begin||st?.props?.BEGIN||st?.props?.start||st?.props?.START||null; if(typeof v==="string"){ if(v.length>=10&&/^\d{4}-\d{2}-\d{2}/.test(v))s.add(v.slice(0,10)); else if(/^\d{8}$/.test(v))s.add(v.slice(0,4)+"-"+v.slice(4,6)+"-"+v.slice(6,8)); } } return[...s].sort((a,b)=>String(b).localeCompare(String(a))); }
+</script>
+<style>
+
+:root {
+  --bg-dark: #020617; --bg-card: rgba(15,23,42,0.96); --bg-soft: rgba(15,23,42,0.85);
+  --border-subtle: rgba(148,163,184,0.2); --accent: #38bdf8; --accent-soft: rgba(56,189,248,0.16);
+  --accent-strong: #0ea5e9; --text-main: #e5e7eb; --text-soft: #9ca3af;
+  --pill-bg: #020617; --danger: #ef4444;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background: radial-gradient(circle at top,#0f172a 0,#020617 52%); color: var(--text-main); min-height: 100vh; }
+button, input, select, textarea { font-family: inherit; }
+
+#appRoot { display: none; min-height: 100vh; flex-direction: column; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border-subtle); background: rgba(15,23,42,0.98); position: sticky; top: 0; z-index: 20; display: none !important; }
+.brand { font-weight: 600; letter-spacing: 0.06em; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+.brand span:last-child { color: var(--accent); }
+.user-pill { display: inline-flex; align-items: center; gap: 8px; background: var(--pill-bg); border-radius: 999px; padding: 4px 10px; border: 1px solid var(--border-subtle); font-size: 0.78rem; }
+.role-tag { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--accent-soft); color: var(--accent); font-size: 0.7rem; }
+.top-actions { display: flex; align-items: center; gap: 8px; }
+.pill-btn { border-radius: 999px; padding: 4px 10px; border: 1px solid var(--border-subtle); background: transparent; color: var(--text-main); font-size: 0.78rem; cursor: pointer; }
+.pill-btn:hover { border-color: var(--accent); color: var(--accent); }
+.danger-btn { border-color: rgba(248,113,113,0.6); color: #fecaca; }
+.danger-btn:hover { border-color: var(--danger); color: #fee2e2; }
+.primary-btn { border-radius: 999px; padding: 8px 14px; background: linear-gradient(to right,var(--accent),var(--accent-strong)); border: none; font-size: 0.82rem; font-weight: 600; color: #0b1120; cursor: pointer; white-space: nowrap; }
+.primary-btn:hover { filter: brightness(1.05); }
+.wellness-pill-bar { display: flex; justify-content: center; padding: 6px 10px 2px; background: transparent; }
+.wellness-pill { display: inline-flex; align-items: center; gap: 12px; padding: 6px 12px; border-radius: 999px; background: rgba(15,23,42,0.96); border: 1px solid rgba(148,163,184,0.45); font-size: 0.78rem; box-shadow: 0 12px 22px rgba(15,23,42,0.8); }
+.small-pill-btn { padding: 2px 8px; font-size: 0.74rem; }
+main { flex: 1; padding: 10px; }
+.view { display: none; max-width: 1100px; margin: 0 auto; }
+.view.active { display: block; }
+.view-inner { background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-subtle); padding: 12px; box-shadow: 0 18px 35px rgba(15,23,42,0.75); min-height: calc(100vh - 150px); display: flex; flex-direction: column; gap: 10px; }
+.view-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 4px; }
+.view-header h2 { font-size: 1.05rem; font-weight: 600; }
+.subtext { font-size: 0.82rem; color: var(--text-soft); }
+#authScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.auth-card { background: var(--bg-card); border-radius: 18px; padding: 22px; width: 100%; max-width: 380px; border: 1px solid var(--border-subtle); box-shadow: 0 20px 40px rgba(15,23,42,0.8); }
+.auth-card h1 { font-size: 1.3rem; margin-bottom: 6px; }
+.auth-card p { font-size: 0.85rem; color: var(--text-soft); margin-bottom: 18px; }
+.field-label { font-size: 0.78rem; margin-bottom: 4px; color: var(--text-soft); }
+.field-input { width: 100%; padding: 10px 11px; border-radius: 10px; border: 1px solid var(--border-subtle); background: rgba(15,23,42,0.9); color: var(--text-main); font-size: 0.85rem; margin-bottom: 12px; }
+.field-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px rgba(56,189,248,0.25); }
+#authStatus { font-size: 0.8rem; color: #fca5a5; min-height: 18px; margin-top: 4px; }
+.menu-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: 10px; }
+.menu-card { border-radius: 14px; padding: 12px; background: radial-gradient(circle at top left,rgba(56,189,248,0.12),rgba(15,23,42,0.95)); border: 1px solid var(--border-subtle); transition: transform 0.1s,box-shadow 0.1s,border-color 0.1s; display: flex; flex-direction: column; justify-content: space-between; font-size: 0.9rem; cursor: pointer; }
+.menu-card:hover { transform: translateY(-2px); border-color: var(--accent-soft); box-shadow: 0 14px 30px rgba(15,23,42,0.7); }
+.menu-title { font-weight: 600; margin-bottom: 4px; }
+.menu-sub { font-size: 0.8rem; color: var(--text-soft); }
+.hub-columns { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 10px; align-items: flex-start; }
+.hub-section { background: var(--bg-soft); border-radius: 14px; padding: 10px; border: 1px solid var(--border-subtle); }
+.hub-section h3 { font-size: 0.95rem; margin-bottom: 4px; }
+.stats-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 4px; }
+.stat-box { background: rgba(15,23,42,0.95); border-radius: 10px; padding: 8px; border: 1px solid var(--border-subtle); font-size: 0.84rem; }
+.stat-label { color: var(--text-soft); font-size: 0.72rem; margin-bottom: 2px; }
+.stat-value { font-weight: 600; }
+.control-label { font-size: 0.78rem; color: var(--text-soft); margin-bottom: 3px; }
+.control-input { padding: 9px 10px; border-radius: 10px; border: 1px solid var(--border-subtle); background: rgba(15,23,42,0.95); color: var(--text-main); font-size: 0.84rem; }
+.control-input::placeholder { color: #6b7280; }
+.control-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px rgba(56,189,248,0.25); }
+.dir-tabs { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.dir-tab { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border-subtle); background: transparent; font-size: 0.78rem; color: var(--text-soft); cursor: pointer; }
+.dir-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(56,189,248,0.08); }
+.dir-people-grid { margin-top: 6px; display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: 8px; }
+.dir-person { display: flex; gap: 8px; padding: 7px 8px; border-radius: 10px; background: rgba(15,23,42,0.95); border: 1px solid var(--border-subtle); font-size: 0.8rem; cursor: pointer; }
+.dir-person:hover { border-color: var(--accent-soft); }
+.dir-avatar { width: 28px; height: 28px; border-radius: 999px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 600; }
+.dir-main { flex: 1; }
+.dir-name { font-weight: 600; font-size: 0.86rem; }
+.dir-role { font-size: 0.75rem; color: var(--text-soft); }
+.chat-log { flex: 1; overflow-y: auto; border-radius: 10px; border: 1px solid var(--border-subtle); padding: 6px; background: rgba(15,23,42,0.95); font-size: 0.8rem; max-height: 220px; }
+#chatLogHub { flex: 1; max-height: none; }
+.chat-msg { margin-bottom: 5px; padding: 4px 5px; border-radius: 8px; background: rgba(15,23,42,1); }
+.chat-meta { font-size: 0.7rem; color: var(--text-soft); margin-top: 1px; }
+.chat-input-row { display: flex; gap: 6px; margin-top: 6px; }
+.chat-input-row input { flex: 1; }
+.ins-list { margin-top: 6px; border-radius: 10px; background: rgba(15,23,42,0.95); border: 1px solid var(--border-subtle); padding: 4px; font-size: 0.8rem; max-height: 55vh; overflow-y: auto; }
+.ins-item { display: flex; justify-content: space-between; gap: 6px; padding: 5px 6px; border-radius: 8px; cursor: pointer; }
+.ins-item:hover { background: rgba(15,23,42,1); border-radius: 8px; }
+.ins-name { font-weight: 500; }
+.ins-phone { color: var(--text-soft); font-size: 0.75rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+th, td { padding: 4px 6px; text-align: left; }
+th { font-size: 0.74rem; color: var(--text-soft); border-bottom: 1px solid var(--border-subtle); }
+tbody tr:nth-child(even) { background: rgba(15,23,42,0.9); }
+.myteam-tabs { display: flex; flex-direction: column; gap: 6px; max-width: 260px; margin: 0 auto 8px; }
+.myteam-tab { padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border-subtle); background: rgba(15,23,42,0.95); font-size: 0.8rem; text-align: center; cursor: pointer; }
+.myteam-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(56,189,248,0.08); }
+.myteam-subview { display: none; }
+.myteam-subview.active { display: block; }
+.admin-subtabs { display: flex; flex-direction: column; gap: 6px; max-width: 260px; margin: 0 auto 8px; }
+.admin-subtab-btn { padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border-subtle); background: rgba(15,23,42,0.95); font-size: 0.8rem; text-align: center; cursor: pointer; }
+.admin-subtab-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(56,189,248,0.08); }
+.admin-subview { display: none; }
+.admin-subview.active { display: block; }
+.job-item { padding: 4px 6px; border-bottom: 1px solid rgba(148,163,184,0.2); cursor: pointer; font-size: 0.8rem; }
+.job-item:hover { background: rgba(15,23,42,1); }
+.leads-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.88); display: none; align-items: center; justify-content: center; z-index: 50; }
+.leads-overlay.open { display: flex; }
+.leads-overlay-card { background: var(--bg-card); border-radius: 16px; padding: 14px; width: min(900px,96vw); max-height: 80vh; border: 1px solid var(--border-subtle); box-shadow: 0 18px 40px rgba(15,23,42,0.9); display: flex; flex-direction: column; }
+.leads-overlay-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.leads-overlay-header h3 { font-size: 0.95rem; }
+.leads-overlay-close { border-radius: 999px; border: 1px solid var(--border-subtle); background: transparent; color: var(--text-soft); padding: 4px 10px; font-size: 0.8rem; cursor: pointer; }
+.leads-overlay-close:hover { border-color: var(--accent); color: var(--accent); }
+.leads-list { flex: 1; overflow-y: auto; font-size: 0.8rem; margin-top: 4px; }
+.lead-row { padding: 6px; border-bottom: 1px solid rgba(148,163,184,0.25); }
+.lead-row:last-child { border-bottom: none; }
+.lead-status { margin-top: 2px; font-size: 0.75rem; color: var(--text-soft); }
+
+/* mapsView: full screen section */
+#mapsView.view, #mapsView.view.active {
+  position: fixed; inset: 0; z-index: 100; max-width: none; margin: 0; padding: 0; display: block;
+}
+/* campaignView: full screen section */
+#campaignView.view, #campaignView.view.active {
+  position: fixed; inset: 0; z-index: 100; max-width: none; margin: 0; padding: 0; display: block;
+}
+
+@media (max-width: 768px) {
+  body { font-size: 1.02rem; }
+  .view-inner { min-height: auto; }
+  .hub-columns { grid-template-columns: minmax(0,1fr); }
+  .chat-log { max-height: 260px; }
+}
+
+
+/* Custom Google Maps map type control */
+.gm-custom-maptype { background:#fff; border:1px solid rgba(0,0,0,0.25); border-radius:2px; font-family:Roboto,Arial,sans-serif; font-size:13px; color:#202124; margin:10px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.3); }
+.gm-custom-maptype-tabs { display:flex; border-bottom:1px solid rgba(0,0,0,0.15); }
+.gm-custom-maptype-tabs button { appearance:none; background:transparent; border:0; padding:8px 12px; cursor:pointer; color:inherit; font:inherit; }
+.gm-custom-maptype-tabs button.active { background:rgba(0,0,0,0.06); font-weight:600; }
+.gm-custom-maptype-options { display:flex; flex-direction:column; gap:6px; padding:8px 10px; }
+.gm-custom-maptype-opt { display:flex; align-items:center; gap:8px; user-select:none; cursor:pointer; }
+.gm-custom-maptype-opt.disabled { opacity:0.55; cursor:default; }
+.gm-custom-maptype-opt input { margin:0; }
+
+/* ── Maps View CSS ── */
+
+
+/* ── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #90b870;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+}
+
+/* ============================================================
+   MAPS SHELL — map fills everything, panels float on top
+   ============================================================ */
+#mapsView {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Map wrap — Google Maps fills this, no background needed ── */
+.ht-map-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #e8f0e0; /* fallback while map loads */
+}
+
+#stormMap {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  inset: 0 !important;
+}
+
+/* Make sure Google Maps canvas and overlays are never clipped */
+.ht-map-wrap .gm-style,
+.ht-map-wrap .gm-style > * {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* ── Floating UI layer ──────────────────────────────────── */
+.ht-ui-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  pointer-events: none; /* let clicks fall through to map by default */
+}
+
+.ht-ui-layer > * {
+  pointer-events: auto; /* re-enable for actual UI elements */
+}
+
+/* ============================================================
+   ICON RAIL
+   ============================================================ */
+#htIconRail {
+  position: relative;
+  width: 80px;
+  min-width: 80px;
+  background: rgba(240, 242, 245, 0.72);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-right: 1px solid rgba(220, 224, 230, 0.70);
+  padding: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 20;
+  box-shadow: none;
+  transition: width 0.28s cubic-bezier(.4,0,.2,1),
+              min-width 0.28s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+#htIconRail.collapsed {
+  width: 60px;
+  min-width: 60px;
+}
+
+/* Back button / logo — NO background, just the globe floating */
+.rail-back-btn {
+  width: 100%;
+  height: 72px;
+  min-height: 72px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.18s;
+}
+
+.rail-back-btn:hover { background: rgba(255,255,255,0.20); }
+
+.rail-back-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 0;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  filter: drop-shadow(0 3px 10px rgba(0,0,0,0.7));
+}
+
+.rail-back-icon svg { width: 56px; height: 56px; }
+
+.rail-back-label {
+  font-size: 0.57rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(20,80,20,0.70);
+  white-space: nowrap;
+  transition: opacity 0.18s;
+}
+
+#htIconRail.collapsed .rail-back-label { opacity: 0; }
+
+/* Collapse toggle */
+.rail-collapse-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid rgba(148,163,184,0.12);
+  background: rgba(148,163,184,0.05);
+  color: rgba(20,60,20,0.45);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 2px 0 4px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.rail-collapse-btn:hover {
+  background: rgba(212,149,46,0.12);
+  border-color: rgba(212,149,46,0.35);
+  color: #D4952E;
+}
+
+.rail-collapse-btn svg {
+  width: 12px; height: 12px;
+  transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+}
+
+#htIconRail.collapsed .rail-collapse-btn svg { transform: rotate(180deg); }
+
+/* Section labels */
+.rail-section {
+  width: 100%;
+  padding: 6px 8px 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.rail-section-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(0,0,0,0.10);
+}
+
+.rail-section-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(20,60,20,0.40);
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 0.18s, max-width 0.28s;
+  max-width: 60px;
+}
+
+#htIconRail.collapsed .rail-section-label { opacity: 0; max-width: 0; }
+
+/* Rail buttons */
+.ht-rail-btn {
+  position: relative;
+  width: calc(100% - 12px);
+  min-height: 54px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(10,30,10,0.70);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px 6px;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  overflow: hidden;
+}
+
+.ht-rail-btn svg { width: 22px; height: 22px; flex-shrink: 0; transition: transform 0.15s; }
+.ht-rail-btn:hover svg { transform: translateY(-1px); }
+
+.btn-label {
+  font-size: 0.59rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: inherit;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  transition: opacity 0.18s;
+}
+
+#htIconRail.collapsed .btn-label { opacity: 0; }
+
+.ht-rail-btn:hover {
+  background: rgba(212,149,46,0.09);
+  border-color: rgba(212,149,46,0.22);
+  color: #D4952E;
+}
+
+.ht-rail-btn.active {
+  background: rgba(212,149,46,0.16);
+  border-color: rgba(212,149,46,0.45);
+  color: #F0B050;
+}
+
+.ht-rail-btn.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 22%; height: 56%; width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #D4952E;
+  box-shadow: 0 0 8px rgba(212,149,46,0.6);
+}
+
+/* Tooltip when collapsed */
+.rail-tooltip {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1b2a3e;
+  color: #e5e7eb;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  border: 1px solid rgba(212,149,46,0.22);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  z-index: 999;
+  transition: opacity 0.12s;
+}
+
+#htIconRail.collapsed .ht-rail-btn:hover .rail-tooltip { opacity: 1; }
+
+.rail-spacer { flex: 1; }
+
+/* ============================================================
+   LEFT PANEL — floats over map, collapsible
+   ============================================================ */
+.ht-left-panel {
+  position: relative;
+  width: 340px;
+  min-width: 340px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex-shrink: 0;
+  transition: width 0.30s cubic-bezier(.4,0,.2,1),
+              min-width 0.30s cubic-bezier(.4,0,.2,1),
+              opacity 0.25s;
+}
+
+.ht-left-panel.panel-collapsed {
+  width: 0;
+  min-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Inner panel card — zero background, map shows straight through */
+.ht-panel-card {
+  margin: 10px 0 10px 10px;
+  border-radius: 16px;
+  background: rgba(240, 242, 245, 0.72);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(220, 224, 230, 0.70);
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Panel header */
+.panel-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.panel-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: 0.01em;
+}
+
+.panel-sub {
+  font-size: 0.70rem;
+  color: rgba(20,40,20,0.60);
+  margin-top: 1px;
+}
+
+/* Panel collapse handle — tab on right edge */
+.panel-collapse-tab {
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 48px;
+  background: rgba(255,255,255,0.30);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.55);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(20,60,20,0.55);
+  transition: background 0.15s, color 0.15s;
+  z-index: 5;
+}
+
+.panel-collapse-tab:hover {
+  background: rgba(212,149,46,0.18);
+  color: #D4952E;
+}
+
+.panel-collapse-tab svg {
+  width: 10px; height: 10px;
+  transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+}
+
+.ht-left-panel.panel-collapsed + .panel-reopen-btn { opacity: 1; pointer-events: auto; }
+
+/* Reopen button — floats on map when panel closed */
+.panel-reopen-btn {
+  position: absolute;
+  left: 80px; /* rail width */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 56px;
+  background: rgba(255,255,255,0.30);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.55);
+  border-left: none;
+  border-radius: 0 10px 10px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(20,60,20,0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, background 0.15s, color 0.15s;
+  z-index: 15;
+}
+
+.panel-reopen-btn:hover {
+  background: rgba(212,149,46,0.18);
+  color: #D4952E;
+}
+
+.panel-reopen-btn svg { width: 10px; height: 10px; }
+
+/* Address search row */
+.maps-address-row {
+  padding: 12px 12px 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.ht-address-inputwrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+#addressInput {
+  width: 100%;
+  padding: 9px 32px 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.15);
+  background: rgba(255,255,255,0.50);
+  color: #111;
+  font-size: 0.83rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+#addressInput::placeholder { color: rgba(148,163,184,0.38); }
+#addressInput:focus { border-color: rgba(212,149,46,0.45); }
+
+.ht-input-x {
+  position: absolute;
+  top: 50%; right: 9px;
+  transform: translateY(-50%);
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  background: rgba(148,163,184,0.14);
+  color: rgba(148,163,184,0.55);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.primary-btn {
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #D4952E, #8B4A0A);
+  color: white;
+  font-size: 0.80rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(212,149,46,0.30);
+  transition: opacity 0.15s;
+}
+
+.primary-btn:hover { opacity: 0.88; }
+
+/* Mini tabs */
+.maps-mini-tabs {
+  display: flex;
+  margin: 0 12px 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+.maps-mini-tabs button {
+  flex: 1;
+  padding: 8px 4px;
+  background: transparent;
+  border: none;
+  color: rgba(148,163,184,0.50);
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.14s, color 0.14s;
+}
+
+.maps-mini-tabs button svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.maps-mini-tabs .tab-txt {
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.maps-mini-tabs button + button { border-left: 1px solid rgba(148,163,184,0.09); }
+
+.maps-mini-tabs button.active {
+  background: rgba(212,149,46,0.14);
+  color: #F0B050;
+}
+
+/* Storm controls */
+#stormControls {
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+#stormControls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(148,163,184,0.50);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#stormControls select,
+#stormControls input {
+  padding: 7px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.15);
+  background: rgba(255,255,255,0.50);
+  color: #111;
+  font-size: 0.80rem;
+  min-width: 130px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+#stormControls select:focus,
+#stormControls input:focus { border-color: rgba(212,149,46,0.4); }
+
+#stormControls select option { background: #0d1a2a; color: #e5e7eb; }
+
+.pill-btn {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(212,149,46,0.35);
+  background: rgba(212,149,46,0.10);
+  color: #D4952E;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.14s;
+  white-space: nowrap;
+}
+
+.pill-btn:hover { background: rgba(212,149,46,0.20); }
+.pill-btn:disabled { opacity: 0.35; cursor: default; }
+
+/* Storm date list panel */
+#stormListPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.storm-list-header {
+  padding: 10px 14px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-shrink: 0;
+}
+
+.storm-list-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #111;
+}
+
+.storm-list-count {
+  font-size: 0.68rem;
+  color: rgba(20,60,20,0.55);
+}
+
+.storm-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.storm-list::-webkit-scrollbar { width: 4px; }
+.storm-list::-webkit-scrollbar-track { background: transparent; }
+.storm-list::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.18); border-radius: 4px; }
+
+.storm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(255,255,255,0.40);
+  color: #111;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s;
+}
+
+.storm-item:hover {
+  background: rgba(212,149,46,0.20);
+  border-color: rgba(212,149,46,0.45);
+  color: #7a3d00;
+}
+
+.storm-item input[type="checkbox"] {
+  accent-color: #D4952E;
+  width: 15px; height: 15px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.storm-item-date { flex: 1; font-weight: 600; letter-spacing: 0.02em; color: #111; }
+
+.storm-item-badge {
+  font-size: 0.63rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+
+.badge-hail {
+  background: rgba(37,99,235,0.12);
+  color: #1d4ed8;
+  border: 1px solid rgba(37,99,235,0.28);
+}
+
+.badge-wind {
+  background: rgba(5,150,105,0.12);
+  color: #065f46;
+  border: 1px solid rgba(5,150,105,0.28);
+}
+
+/* Paging row */
+.storm-paging {
+  padding: 8px 12px 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  flex-shrink: 0;
+}
+
+.paging-btn {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.15);
+  background: rgba(255,255,255,0.40);
+  color: #222;
+  font-size: 0.74rem;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+
+.paging-btn:hover {
+  background: rgba(212,149,46,0.10);
+  color: #7a3d00;
+  border-color: rgba(212,149,46,0.45);
+}
+
+.paging-btn:disabled { opacity: 0.3; cursor: default; }
+
+.paging-info {
+  font-size: 0.70rem;
+  color: rgba(20,60,20,0.55);
+  flex: 1;
+  text-align: center;
+}
+
+/* ============================================================
+   MAP STATUS CHIP — floats top center
+   ============================================================ */
+.map-status-chip {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,0.10);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(10,40,10,0.80);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ── Field action buttons — NO background, just icon + label ── */
+.panel-field-actions {
+  display: flex;
+  gap: 0;
+  padding: 8px 12px 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.field-action-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 4px 8px;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: #111;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.field-action-btn svg {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.field-action-btn:hover { opacity: 0.7; }
+.field-action-btn:hover svg { transform: translateY(-1px); }
+
+/* ── Transparent everything so map shows through (panel-card keeps frost) ── */
+#mapsView,
+#mapsView > *,
+.ht-maps-shell,
+.ht-ui-layer,
+.ht-left-panel,
+.panel-header,
+#stormListPanel,
+.storm-list-header,
+.storm-list,
+.storm-paging,
+.maps-address-row,
+.rail-section,
+.rail-back-btn,
+.rail-collapse-btn,
+.ht-rail-btn,
+.panel-field-actions,
+.field-action-btn {
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+/* Icon rail keeps frost glass */
+#htIconRail {
+  background: rgba(240, 242, 245, 0.72) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  border-right: 1px solid rgba(220, 224, 230, 0.70) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08) !important;
+}
+/* ht-panel-card keeps its frost glass — override the transparent rule above */
+.ht-panel-card {
+  background: rgba(240, 242, 245, 0.72) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  border: 1px solid rgba(220, 224, 230, 0.70) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08) !important;
+}
+
+/* Storm items on frost panel — slightly whiter so they stand out */
+.storm-item {
+  background: rgba(255,255,255,0.55) !important;
+}
+
+.storm-item:hover {
+  background: rgba(212,149,46,0.20) !important;
+}
+
+/* Address input and paging — slightly whiter on frost panel */
+#addressInput {
+  background: rgba(255,255,255,0.60) !important;
+}
+
+.paging-btn {
+  background: rgba(255,255,255,0.60) !important;
+}
+
+/* Primary Go button keep its color */
+.primary-btn {
+  background: linear-gradient(135deg, #D4952E, #8B4A0A) !important;
+}
+
+/* ── Swath opacity float control ── */
+.swath-control {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  background: rgba(255,255,255,0.72) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255,255,255,0.80) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18) !important;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 220px;
+  pointer-events: auto;
+}
+
+.swath-control.visible { display: flex; }
+
+/* ── UI layer must not block map canvas pointer events ── */
+.ht-ui-layer {
+  pointer-events: none;
+}
+.ht-ui-layer > * {
+  pointer-events: auto;
+}
+
+/* ── Make sure Google Maps canvas sits at z-index 0, panels above ── */
+.ht-map-wrap { z-index: 0 !important; }
+.ht-ui-layer { z-index: 10 !important; }
+#htIconRail { z-index: 20 !important; }
+.swath-control { z-index: 50 !important; }
+
+
+
+/* ── Map legend float ── */
+.map-legend-float {
+  display: none;
+  position: absolute;
+  bottom: 72px;
+  right: 18px;
+  z-index: 20;
+  background: rgba(240, 242, 245, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(220, 224, 230, 0.70);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #1a3a1a;
+  pointer-events: none;
+}
+.map-legend-float.visible { display: block; }
+.map-legend-title { font-size: 0.60rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(20,60,20,0.48); margin-bottom: 5px; }
+/* ── Campaign View CSS ── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; height: 100vh; overflow: hidden; background: #90b870; }
+
+#campaignView { position: fixed; inset: 0; display: flex; flex-direction: column; }
+#campaignMap { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; background: #e8f0e0; }
+#campaignMap.drag-over { outline: 3px dashed rgba(212,149,46,0.75); outline-offset: -3px; }
+
+/* ── Header ── */
+.campaign-header {
+  position: relative; z-index: 20; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 18px; height: 52px; min-height: 52px;
+  background: rgba(255,255,255,0.18); backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.40);
+  flex-shrink: 0;
+}
+.campaign-header-left { display: flex; align-items: center; gap: 11px; }
+.campaign-back-btn {
+  display: flex; align-items: center; gap: 5px; background: transparent;
+  border: 1px solid rgba(0,0,0,0.15); border-radius: 20px; padding: 5px 11px 5px 7px;
+  cursor: pointer; color: #1a3a1a; font-size: 0.73rem; font-weight: 600; transition: background 0.15s;
+}
+.campaign-back-btn:hover { background: rgba(255,255,255,0.35); }
+.campaign-back-btn svg { width: 13px; height: 13px; }
+.campaign-title { font-size: 0.98rem; font-weight: 800; color: #1a3a1a; letter-spacing: -0.01em; }
+.campaign-title span { color: #D4952E; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.clear-map-btn {
+  padding: 5px 11px; border-radius: 20px; border: 1px solid rgba(200,50,50,0.35);
+  background: rgba(200,50,50,0.10); color: #8b1a1a;
+  font-size: 0.70rem; font-weight: 700; cursor: pointer; transition: background 0.15s;
+}
+.clear-map-btn:hover { background: rgba(200,50,50,0.22); }
+.campaign-status-chip {
+  padding: 4px 11px; border-radius: 20px; background: rgba(255,255,255,0.50);
+  border: 1px solid rgba(0,0,0,0.10); font-size: 0.70rem; font-weight: 600; color: #1a3a1a;
+}
+.campaign-status-chip.active { background: rgba(212,149,46,0.20); border-color: rgba(212,149,46,0.45); color: #7a3d00; }
+
+/* ── Content ── */
+.campaign-content {
+  position: relative; z-index: 10; flex: 1; display: flex; gap: 0;
+  overflow: hidden; pointer-events: none;
+}
+.campaign-content > * { pointer-events: auto; }
+
+/* ── Glass panel ── */
+.glass-panel {
+  background: rgba(240, 242, 245, 0.72); margin: 10px 0 10px 10px; border-radius: 14px;
+  backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(220, 224, 230, 0.70); box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  display: flex; flex-direction: column;
+  overflow: hidden; flex-shrink: 0;
+}
+.glass-panel-header { padding: 9px 11px 7px; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; }
+.glass-panel-title { font-size: 0.74rem; font-weight: 700; color: #111; }
+.glass-panel-sub { font-size: 0.62rem; color: rgba(20,60,20,0.60); margin-top: 1px; }
+
+/* ── Panel 1: Door Knock ── */
+.knock-panel { width: 146px; }
+.knock-grid { display: flex; flex-direction: column; gap: 2px; padding: 5px 6px; flex: 1; overflow-y: auto; }
+
+.knock-btn {
+  display: flex; align-items: center; gap: 7px; padding: 7px 8px;
+  border-radius: 9px; border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.38); cursor: grab;
+  transition: background 0.14s, transform 0.1s, box-shadow 0.14s;
+  user-select: none;
+}
+.knock-btn:hover { background: rgba(255,255,255,0.62); transform: translateX(2px); box-shadow: 2px 2px 8px rgba(0,0,0,0.10); }
+.knock-btn.dragging { opacity: 0.40; transform: scale(0.94); cursor: grabbing; }
+.knock-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.knock-icon svg { width: 16px; height: 16px; }
+.knock-label { font-size: 0.58rem; font-weight: 700; color: #1a3a1a; line-height: 1.2; flex: 1; }
+.knock-count {
+  min-width: 16px; height: 16px; border-radius: 8px; background: rgba(0,0,0,0.10);
+  color: #333; font-size: 0.55rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; padding: 0 3px;
+}
+
+/* ── Color key ── */
+.color-key { padding: 7px 9px; border-top: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; }
+.color-key-title { font-size: 0.56rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(20,60,20,0.48); margin-bottom: 5px; }
+.key-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 0.58rem; font-weight: 600; color: #1a3a1a; }
+.key-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid rgba(0,0,0,0.12); }
+
+/* ── Panel 2: Target ── */
+.target-panel { width: 262px; margin-left: 9px; }
+.target-body { padding: 9px 10px; display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; }
+.target-field-label { font-size: 0.60rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(20,60,20,0.58); margin-bottom: 3px; }
+.target-input {
+  width: 100%; padding: 8px 10px; border-radius: 9px; border: 1px solid rgba(0,0,0,0.14);
+  background: rgba(255,255,255,0.50); color: #111; font-size: 0.78rem; font-family: inherit;
+  outline: none; transition: border-color 0.15s, background 0.15s;
+}
+.target-input:focus { border-color: rgba(212,149,46,0.55); background: rgba(255,255,255,0.70); }
+.target-input::placeholder { color: rgba(20,60,20,0.36); }
+.min-value-row { display: flex; gap: 7px; align-items: flex-end; }
+.min-value-wrap { flex: 1; position: relative; }
+.min-value-prefix { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 0.78rem; font-weight: 700; color: #1a3a1a; pointer-events: none; }
+.min-value-wrap .target-input { padding-left: 19px; }
+.go-btn {
+  padding: 8px 15px; border-radius: 9px; border: none;
+  background: linear-gradient(135deg, #D4952E, #8B4A0A); color: white;
+  font-size: 0.78rem; font-weight: 800; cursor: pointer; white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(212,149,46,0.35); transition: opacity 0.15s, transform 0.1s;
+}
+.go-btn:hover { opacity: 0.88; } .go-btn:active { transform: scale(0.97); }
+.go-btn.loading { opacity: 0.6; cursor: wait; }
+.results-summary { padding: 8px 10px; border-radius: 9px; background: rgba(255,255,255,0.40); border: 1px solid rgba(0,0,0,0.08); display: none; }
+.results-summary.visible { display: block; }
+.results-count { font-size: 1.0rem; font-weight: 800; color: #D4952E; line-height: 1; }
+.results-label { font-size: 0.63rem; color: rgba(20,60,20,0.65); margin-top: 2px; font-weight: 600; }
+.results-avg { margin-top: 4px; font-size: 0.66rem; color: #1a3a1a; font-weight: 600; }
+.target-divider { height: 1px; background: rgba(0,0,0,0.07); margin: 0 -10px; }
+.street-legend { display: flex; flex-direction: column; gap: 5px; padding: 8px 10px; border-radius: 9px; background: rgba(255,255,255,0.40); border: 1px solid rgba(0,0,0,0.08); }
+.legend-row { display: flex; align-items: center; gap: 7px; font-size: 0.64rem; font-weight: 600; color: #1a3a1a; }
+.legend-swatch { width: 22px; height: 4px; border-radius: 2px; flex-shrink: 0; }
+.legend-title { font-size: 0.60rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(20,60,20,0.55); margin-bottom: 2px; }
+.tip-box { padding: 8px 10px; border-radius: 9px; background: rgba(212,149,46,0.12); border: 1px solid rgba(212,149,46,0.28); }
+.tip-box-title { font-size: 0.60rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #7a3d00; margin-bottom: 3px; }
+.tip-box p { font-size: 0.63rem; color: #5a2d00; line-height: 1.45; }
+
+/* ── Drop hint ── */
+#dropHint {
+  position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%);
+  z-index: 15; pointer-events: none;
+  background: rgba(212,149,46,0.90); color: white;
+  font-size: 0.70rem; font-weight: 700; padding: 6px 15px;
+  border-radius: 20px; display: none; align-items: center; gap: 5px;
+  white-space: nowrap; box-shadow: 0 2px 12px rgba(0,0,0,0.22);
+}
+#dropHint.visible { display: flex; }
+
+/* ── Toast feed ── */
+.knock-feed {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 15; display: flex; flex-direction: column; gap: 5px;
+  align-items: center; pointer-events: none;
+}
+.knock-toast {
+  background: rgba(255,255,255,0.90); border: 1px solid rgba(255,255,255,0.95);
+  border-radius: 20px; padding: 5px 12px 5px 8px;
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.68rem; font-weight: 600; color: #1a3a1a;
+  animation: toastIn 0.25s ease, toastOut 0.4s ease 2.2s forwards;
+  white-space: nowrap;
+}
+@keyframes toastIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes toastOut { from { opacity:1; } to { opacity:0; } }
+.knock-toast-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Globe nav buttons ── */
+.globe-nav-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: transparent; border: none; cursor: pointer;
+  padding: 2px 4px; border-radius: 8px;
+  transition: transform 0.15s, filter 0.15s;
+  flex-shrink: 0;
+}
+.globe-nav-btn svg { width: 42px; height: 42px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35)); }
+.globe-nav-btn:hover { transform: scale(1.08); filter: brightness(1.12); }
+.globe-nav-btn:active { transform: scale(0.95); }
+.globe-nav-label {
+  font-size: 0.55rem; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: rgba(20,60,20,0.65); line-height: 1;
+}
+
+/* ── Step counter ── */
+.step-counter {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: 20px;
+  background: rgba(255,255,255,0.50);
+  border: 1px solid rgba(30,100,30,0.20);
+  font-size: 0.70rem; font-weight: 600; color: #1a5f1a;
+}
+#stepCount {
+  font-size: 0.90rem; font-weight: 800; color: #1a5f1a;
+  min-width: 28px; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.step-label { font-size: 0.62rem; color: rgba(26,95,26,0.65); font-weight: 600; }
+
+/* ── Notes modal overlay ── */
+#notesModal {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.45);
+  display: none; align-items: center; justify-content: center;
+}
+#notesModal.open { display: flex; }
+
+.notes-card {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 18px;
+  width: min(400px, 92vw);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.30);
+  overflow: hidden;
+  animation: slideUp 0.22s ease;
+}
+@keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+.notes-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.notes-card-title { font-size: 0.85rem; font-weight: 800; color: #111; }
+.notes-card-addr { font-size: 0.65rem; color: #666; margin-top: 2px; }
+.notes-close-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: none; background: rgba(0,0,0,0.08);
+  cursor: pointer; font-size: 16px; color: #555;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.notes-close-btn:hover { background: rgba(0,0,0,0.15); }
+
+/* Tabs */
+.notes-tabs {
+  display: flex; border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.notes-tab {
+  flex: 1; padding: 10px 8px; border: none; background: transparent;
+  font-size: 0.74rem; font-weight: 700; color: #888; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s;
+}
+.notes-tab.active { color: #b45309; border-bottom-color: #fbbf24; }
+
+.notes-tab-content { display: none; padding: 14px 16px; }
+.notes-tab-content.active { display: block; }
+
+/* Speech + text area */
+.speech-row {
+  display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start;
+}
+.notes-textarea {
+  flex: 1; min-height: 100px; padding: 10px 11px;
+  border-radius: 10px; border: 1px solid rgba(0,0,0,0.14);
+  background: #f9fafb; font-size: 0.80rem; font-family: inherit;
+  resize: none; outline: none; color: #111;
+  transition: border-color 0.15s;
+}
+.notes-textarea:focus { border-color: rgba(180,83,9,0.45); }
+.notes-textarea::placeholder { color: #aaa; }
+
+.mic-btn {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid rgba(180,83,9,0.35);
+  background: rgba(251,191,36,0.15);
+  color: #b45309; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+.mic-btn:hover { background: rgba(251,191,36,0.30); }
+.mic-btn.listening { background: rgba(251,191,36,0.40); border-color: #b45309; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+.mic-btn svg { width: 18px; height: 18px; }
+
+.keyboard-btn {
+  width: 100%; padding: 7px; margin-top: 4px;
+  border-radius: 8px; border: 1px solid rgba(0,0,0,0.12);
+  background: rgba(0,0,0,0.04); font-size: 0.70rem;
+  font-weight: 600; color: #555; cursor: pointer;
+  transition: background 0.14s;
+}
+.keyboard-btn:hover { background: rgba(0,0,0,0.09); }
+
+/* Reminder fields */
+.reminder-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+}
+.reminder-field label {
+  display: block; font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  color: rgba(20,60,20,0.55); margin-bottom: 3px;
+}
+.reminder-input {
+  width: 100%; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.14); background: #f9fafb;
+  font-size: 0.78rem; font-family: inherit; color: #111; outline: none;
+  transition: border-color 0.15s;
+}
+.reminder-input:focus { border-color: rgba(180,83,9,0.45); }
+
+.save-note-btn {
+  width: 100%; padding: 10px; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, #D4952E, #8B4A0A);
+  color: white; font-size: 0.80rem; font-weight: 800;
+  cursor: pointer; transition: opacity 0.15s;
+  box-shadow: 0 2px 8px rgba(212,149,46,0.30);
+}
+.save-note-btn:hover { opacity: 0.88; }
+
+
+</style></head>
+<body>
+
+<!-- =================== AUTH SCREEN =================== -->
+<div id="authScreen">
+  <div class="auth-card">
+    <h1>Hail Money Map</h1>
+    <p>Log in with your company email.</p>
+    <label class="field-label" for="authEmail">Email</label>
+    <input id="authEmail" type="email" class="field-input" placeholder="you@company.com" />
+    <label class="field-label" for="authPassword">Password</label>
+    <input id="authPassword" type="password" class="field-input" placeholder="••••••••" />
+    <button id="loginBtn" class="primary-btn" style="width:100%;margin-top:4px;">Sign In</button>
+    <div id="authStatus"></div>
+  </div>
+</div>
+
+<!-- =================== APP ROOT =================== -->
+<div id="appRoot">
+  <header class="topbar">
+    <div class="brand"><span>HAIL MONEY MAP</span></div>
+    <div class="top-actions">
+      <div class="user-pill">
+        <span id="userEmailLabel">user@company.com</span>
+        <span id="userRoleTag" class="role-tag">REP</span>
+      </div>
+      <button id="signOutBtn" class="pill-btn danger-btn">Sign Out</button>
+    </div>
+  </header>
+
+  <div id="wellnessPillBar" class="wellness-pill-bar">
+    <div class="wellness-pill">
+      <span id="stepsClickable" style="cursor:pointer;">🚶 <span id="stepsValueTop">0</span> / <span id="stepGoalLabel">8000</span> steps</span>
+      <span id="waterClickable" style="cursor:pointer;">💧 <span id="waterValueTop">0</span> / <span id="waterGoalLabel">80</span> oz</span>
+      <button id="setGoalsBtn" class="pill-btn small-pill-btn">Goals</button>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- =================== HUB / DASHBOARD =================== -->
+    <section id="hubView" class="view active">
+      <div class="view-inner">
+        <div class="view-header">
+          <div><h2>Company Hub</h2></div>
+          <div style="display:flex;gap:6px;">
+            <button id="hubToMenuBtn" class="pill-btn">Main Menu</button>
+            <button id="hubCompanyChatBtn" class="pill-btn">Company Chat</button>
+          </div>
+        </div>
+        <div class="hub-columns">
+          <div class="hub-section" id="companyChatHubSection">
+            <h3>Company Chat</h3>
+            <div id="chatLogHub" class="chat-log" style="margin-top:5px;"></div>
+            <div class="chat-input-row">
+              <input id="companyChatInput" class="control-input" placeholder="Message the company…" />
+              <button id="companyChatSendBtn" class="primary-btn">Send</button>
+            </div>
+          </div>
+          <div class="hub-section">
+            <h3>My Stats</h3>
+            <div class="stats-row">
+              <div class="stat-box"><div class="stat-label">Conts this week</div><div class="stat-value" id="meContWeek">0</div></div>
+              <div class="stat-box"><div class="stat-label">Sold this month</div><div class="stat-value" id="meSoldMonth">$0</div></div>
+              <div class="stat-box"><div class="stat-label">Sold this year</div><div class="stat-value" id="meSoldYear">$0</div></div>
+              <div class="stat-box"><div class="stat-label">Last paycheck</div><div class="stat-value" id="meLastPay">$0</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- LEADS OVERLAY -->
+      <div id="leadsOverlay" class="leads-overlay">
+        <div class="leads-overlay-card">
+          <div class="leads-overlay-header">
+            <h3>All Leads</h3>
+            <button id="leadsOverlayClose" class="leads-overlay-close" type="button">Close</button>
+          </div>
+          <div id="leadsList" class="leads-list">Loading leads…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== MAIN MENU =================== -->
+    <section id="mainMenuView" class="view">
+      <div class="view-inner">
+        <div class="view-header"><div><h2>Main Menu</h2></div></div>
+        <div class="menu-grid">
+          <div id="menuMaps" class="menu-card"><div class="menu-title">$Maps</div><div class="menu-sub">Storm swaths, high-value streets, directions.</div></div>
+          <div id="menuDirectory" class="menu-card"><div class="menu-title">Company Directory</div><div class="menu-sub">Leadership, regionals, managers, reps.</div></div>
+          <div id="menuInsurance" class="menu-card"><div class="menu-title">Insurance Contacts</div><div class="menu-sub">Carrier phone numbers and notes.</div></div>
+          <div id="menuMe" class="menu-card"><div class="menu-title">My Stats</div><div class="menu-sub">Your personal production snapshot.</div></div>
+          <div id="menuMyTeam" class="menu-card"><div class="menu-title">My Team</div><div class="menu-sub">Team chat, jobs, Zoom, payroll.</div></div>
+          <div id="menuAdmin" class="menu-card" style="display:none;"><div class="menu-title">Admin</div><div class="menu-sub">Users, steps, teams, payroll.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== $MAPS VIEW (v3) =================== -->
+    <section id="mapsView" class="view">
+
+
+  <!-- ── Real Google Maps fills entire background ── -->
+  <div class="ht-map-wrap">
+    <div id="stormMap" style="width:100%;height:100%;position:absolute;inset:0;"></div>
+  </div>
+
+  <!-- ── Status chip ── -->
+  <div class="map-status-chip" id="mapStatusChip">No storm layer loaded</div>
+
+  <!-- ── Floating UI layer ── -->
+  <div class="ht-ui-layer">
+
+    <!-- ════════════════════════════════
+         ICON RAIL
+    ════════════════════════════════ -->
+    <div id="htIconRail">
+
+      <!-- Logo = Back Button -->
+      <button class="rail-back-btn" id="railBackBtn" type="button" aria-label="Back">
+        <div class="rail-back-icon">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Globe base -->
+            <circle cx="18" cy="18" r="16" fill="#1a3a0e" stroke="#4a8a1a" stroke-width="1.2"/>
+            <!-- Globe latitude lines -->
+            <ellipse cx="18" cy="18" rx="16" ry="7" fill="none" stroke="#4a8a1a" stroke-width="0.8" opacity="0.6"/>
+            <line x1="2" y1="18" x2="34" y2="18" stroke="#4a8a1a" stroke-width="0.8" opacity="0.6"/>
+            <!-- Globe longitude lines -->
+            <ellipse cx="18" cy="18" rx="6" ry="16" fill="none" stroke="#4a8a1a" stroke-width="0.8" opacity="0.5"/>
+            <ellipse cx="18" cy="18" rx="13" ry="16" fill="none" stroke="#4a8a1a" stroke-width="0.6" opacity="0.3"/>
+            <!-- Outer ring highlight -->
+            <circle cx="18" cy="18" r="16" fill="none" stroke="#7abf3a" stroke-width="1.5"/>
+            <!-- Dollar sign circle background -->
+            <circle cx="18" cy="18" r="10" fill="#c8a000" stroke="#f0c820" stroke-width="1.2"/>
+            <circle cx="18" cy="18" r="10" fill="url(#coinGrad)"/>
+            <!-- Dollar sign -->
+            <text x="18" y="23" font-family="system-ui,sans-serif" font-size="13" font-weight="900" fill="#7a5500" text-anchor="middle">$</text>
+            <!-- Coin shine -->
+            <ellipse cx="14" cy="14" rx="3" ry="2" fill="white" opacity="0.18" transform="rotate(-30 14 14)"/>
+            <defs>
+              <radialGradient id="coinGrad" cx="40%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#f5d020"/>
+                <stop offset="100%" stop-color="#b8860b"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+        <span class="rail-back-label">← Back</span>
+      </button>
+
+      <!-- Collapse toggle -->
+      <button class="rail-collapse-btn" id="railCollapseBtn" type="button" aria-label="Collapse rail">
+        <svg viewBox="0 0 12 12" fill="none">
+          <polyline points="8,2 4,6 8,10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="rail-section">
+        <div class="rail-section-line"></div>
+        <span class="rail-section-label">Views</span>
+        <div class="rail-section-line"></div>
+      </div>
+
+      <!-- 1. Swath -->
+      <button type="button" class="ht-rail-btn active" data-view="swath" id="swathBtn" aria-label="Swath Opacity">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polygon points="12,2 22,8 22,22 2,22 2,8" stroke="currentColor" stroke-width="1.6" fill="none"/>
+          <rect x="2" y="7" width="20" height="4.5" fill="currentColor" opacity="0.60"/>
+          <rect x="2" y="12" width="20" height="4.5" fill="currentColor" opacity="0.33"/>
+          <rect x="2" y="17" width="20" height="5" fill="currentColor" opacity="0.13"/>
+          <polyline points="17,5 22,8 17,11" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" opacity="0.7"/>
+        </svg>
+        <span class="btn-label">Swath</span>
+        <span class="rail-tooltip">Swath Opacity</span>
+      </button>
+
+      <!-- 2. New Lead — person with plus badge -->
+      <button type="button" class="ht-rail-btn" data-view="newlead" aria-label="New Lead">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="10" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M2,20 Q2,14 10,14 Q14.5,14 16.5,16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="19" cy="19" r="4" fill="currentColor" fill-opacity="0.15" stroke="currentColor" stroke-width="1.6"/>
+          <line x1="19" y1="16.5" x2="19" y2="21.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="16.5" y1="19" x2="21.5" y2="19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span class="btn-label">New Lead</span>
+        <span class="rail-tooltip">New Lead</span>
+      </button>
+
+      <!-- 3. Campaign -->
+      <button type="button" class="ht-rail-btn" data-view="campaign" aria-label="Campaign">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="3,13 12,5 21,13" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          <line x1="8" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+          <rect x="6" y="13" width="12" height="5" rx="1.5" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="8.5" y1="15" x2="15.5" y2="15" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          <line x1="9.5" y1="17" x2="14.5" y2="17" stroke="currentColor" stroke-width="0.9" stroke-linecap="round" opacity="0.5"/>
+          <line x1="9" y1="18" x2="9" y2="22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <line x1="15" y1="18" x2="15" y2="22" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <span class="btn-label">Campaign</span>
+        <span class="rail-tooltip">Campaign</span>
+      </button>
+
+      <!-- 4. Download Storm Data -->
+      <button type="button" class="ht-rail-btn" data-view="download" aria-label="Download Storm Data">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M6,12 Q4,5 9,4 Q10,0 15,3 Q19,1 20,6 Q24,7 22,11 Q21,14 18,13 L8,13 Q5,14 6,12Z" stroke="currentColor" stroke-width="1.6" fill="currentColor" fill-opacity="0.18"/>
+          <polygon points="12,7 9.5,12 11,12 8.5,18 15.5,12 13,12" fill="currentColor" stroke="currentColor" stroke-width="0.4" stroke-linejoin="round"/>
+          <line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="12" y1="17.5" x2="12" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="btn-label">Downloads</span>
+        <span class="rail-tooltip">Download Storm Data</span>
+      </button>
+
+      <!-- 5. All Jobs -->
+      <button type="button" class="ht-rail-btn" data-view="alljobs" aria-label="All Company Jobs">
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect x="5" y="3" width="12" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/>
+          <rect x="9" y="1.5" width="6" height="3" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <polyline points="8,10 12,6.5 16,10" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <line x1="8" y1="14" x2="14" y2="14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="8" y1="17" x2="12" y2="17" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.5"/>
+          <circle cx="18.5" cy="5" r="3" fill="currentColor" opacity="0.85"/>
+          <circle cx="21" cy="8" r="2.2" fill="currentColor" opacity="0.5"/>
+        </svg>
+        <span class="btn-label">All Jobs</span>
+        <span class="rail-tooltip">All Company Jobs</span>
+      </button>
+
+      <!-- 6. My Jobs -->
+      <button type="button" class="ht-rail-btn" data-view="myjobs" aria-label="My Jobs">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M4,15 Q4,7 12,5 Q20,7 20,15Z" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="1.7"/>
+          <path d="M3,15 L3,17 Q3,18 4.5,18 L19.5,18 Q21,18 21,17 L21,15Z" fill="currentColor" fill-opacity="0.28" stroke="currentColor" stroke-width="1.4"/>
+          <line x1="10" y1="10" x2="10.5" y2="7.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.4"/>
+          <line x1="14" y1="10" x2="13.5" y2="7.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.4"/>
+          <circle cx="9.5" cy="12" r="2.5" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="9.5" cy="12" r="1" fill="currentColor"/>
+          <line x1="11.5" y1="13.8" x2="14.5" y2="17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="19" cy="6" r="3.8" fill="currentColor" fill-opacity="0.9" stroke="currentColor" stroke-width="0.5"/>
+          <text x="19" y="8.2" font-family="system-ui" font-size="4.2" font-weight="800" fill="#1a3a1a" text-anchor="middle">ME</text>
+        </svg>
+        <span class="btn-label">My Jobs</span>
+        <span class="rail-tooltip">My Jobs</span>
+      </button>
+
+      <!-- 7. Estimates -->
+      <button type="button" class="ht-rail-btn" data-view="estimates" aria-label="Estimates">
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect x="4" y="3" width="11" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/>
+          <text x="9.5" y="16.5" font-family="system-ui" font-size="9.5" font-weight="700" fill="currentColor" text-anchor="middle">$</text>
+          <rect x="14" y="8" width="6" height="11" rx="2" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity="0.14"/>
+          <circle cx="17" cy="14" r="2" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="14" y1="10.5" x2="16" y2="10.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+        </svg>
+        <span class="btn-label">Estimates</span>
+        <span class="rail-tooltip">Estimates</span>
+      </button>
+
+      <!-- 8. Insurance Companies — shield with dollar sign -->
+      <button type="button" class="ht-rail-btn" data-view="insurance" aria-label="Insurance Companies">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12,2 L20,5 L20,11 Q20,17 12,22 Q4,17 4,11 L4,5 Z" stroke="currentColor" stroke-width="1.8" fill="currentColor" fill-opacity="0.12" stroke-linejoin="round"/>
+          <text x="12" y="15.5" font-family="system-ui" font-size="9" font-weight="800" fill="currentColor" text-anchor="middle">$</text>
+        </svg>
+        <span class="btn-label">Insurance</span>
+        <span class="rail-tooltip">Insurance Companies</span>
+      </button>
+
+      <div class="rail-spacer"></div>
+
+      <div class="rail-section">
+        <div class="rail-section-line"></div>
+        <span class="rail-section-label">App</span>
+        <div class="rail-section-line"></div>
+      </div>
+
+      <!-- Settings -->
+      <button type="button" class="ht-rail-btn" data-view="settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6" fill="currentColor" fill-opacity="0.08"/>
+          <rect x="10.8" y="2" width="2.4" height="3.2" rx="0.8" fill="currentColor"/>
+          <rect x="10.8" y="18.8" width="2.4" height="3.2" rx="0.8" fill="currentColor"/>
+          <rect x="2" y="10.8" width="3.2" height="2.4" rx="0.8" fill="currentColor"/>
+          <rect x="18.8" y="10.8" width="3.2" height="2.4" rx="0.8" fill="currentColor"/>
+          <rect x="4.5" y="4.5" width="2.4" height="2.4" rx="0.6" fill="currentColor" transform="rotate(45 5.7 5.7)"/>
+          <rect x="17.1" y="4.5" width="2.4" height="2.4" rx="0.6" fill="currentColor" transform="rotate(45 18.3 5.7)"/>
+          <rect x="4.5" y="17.1" width="2.4" height="2.4" rx="0.6" fill="currentColor" transform="rotate(45 5.7 18.3)"/>
+          <rect x="17.1" y="17.1" width="2.4" height="2.4" rx="0.6" fill="currentColor" transform="rotate(45 18.3 18.3)"/>
+          <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="12" cy="12" r="1.3" fill="currentColor"/>
+        </svg>
+        <span class="btn-label">Settings</span>
+        <span class="rail-tooltip">Settings</span>
+      </button>
+
+    </div><!-- /htIconRail -->
+
+    <!-- ════════════════════════════════
+         LEFT PANEL (floats over map)
+    ════════════════════════════════ -->
+    <div class="ht-left-panel" id="htLeftPanel">
+
+      <!-- Collapse tab on right edge -->
+      <button class="panel-collapse-tab" id="panelCollapseTab" aria-label="Collapse panel">
+        <svg viewBox="0 0 10 10" fill="none">
+          <polyline points="7,1 3,5 7,9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="ht-panel-card">
+
+        <!-- Header -->
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Storm Events</div>
+            <div class="panel-sub">Select a date to load hail / wind layer</div>
+          </div>
+        </div>
+
+        <!-- Address search -->
+        <div class="maps-address-row">
+          <div class="ht-address-inputwrap">
+            <input id="addressInput" type="text" placeholder="Search address…"/>
+            <span class="ht-input-x" aria-hidden="true">×</span>
+          </div>
+          <button id="searchLocationBtn" class="primary-btn" type="button">Go</button>
+        </div>
+
+        <!-- Directions / Inspection / Calendar — TOP, no background, icon + label only -->
+        <div class="panel-field-actions">
+
+          <button class="field-action-btn" id="directionsActionBtn" aria-label="Get Directions">
+            <svg viewBox="0 0 24 24" fill="none">
+              <polyline points="8,10 12,4 16,10" stroke="#1a3a1a" stroke-width="2.2" stroke-linejoin="round"/>
+              <rect x="9" y="10" width="6" height="5" rx="0.8" stroke="#1a3a1a" stroke-width="2"/>
+              <rect x="11" y="12" width="2" height="3" rx="0.5" stroke="#1a3a1a" stroke-width="1.4"/>
+              <line x1="12" y1="15" x2="12" y2="19" stroke="#D4952E" stroke-width="2" stroke-dasharray="2,1.5" stroke-linecap="round"/>
+              <polygon points="12,21 9.5,18.5 14.5,18.5" fill="#D4952E"/>
+            </svg>
+            <span>Directions</span>
+          </button>
+
+          <button class="field-action-btn" id="inspectionActionBtn" aria-label="Start Inspection">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="5" y="3" width="14" height="18" rx="2" stroke="#1a3a1a" stroke-width="2"/>
+              <rect x="9" y="1.5" width="6" height="3.5" rx="1" stroke="#1a3a1a" stroke-width="1.6"/>
+              <polyline points="8,9 12,5.5 16,9" stroke="#D4952E" stroke-width="1.8" stroke-linejoin="round"/>
+              <rect x="7" y="12" width="3.5" height="3.5" rx="0.8" stroke="#1a3a1a" stroke-width="1.5"/>
+              <polyline points="7.5,13.8 9,15 11,12.5" stroke="#2a7a2a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="12.5" y1="13.5" x2="17" y2="13.5" stroke="#1a3a1a" stroke-width="1.3" stroke-linecap="round"/>
+              <line x1="7" y1="17.5" x2="17" y2="17.5" stroke="#1a3a1a" stroke-width="1.1" stroke-linecap="round" opacity="0.5"/>
+            </svg>
+            <span>Inspection</span>
+          </button>
+
+          <button class="field-action-btn" id="calendarActionBtn" aria-label="Calendar">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="5" width="18" height="16" rx="2.5" stroke="#1a3a1a" stroke-width="2"/>
+              <line x1="3" y1="10" x2="21" y2="10" stroke="#1a3a1a" stroke-width="1.6"/>
+              <line x1="8" y1="3" x2="8" y2="7" stroke="#D4952E" stroke-width="2.2" stroke-linecap="round"/>
+              <line x1="16" y1="3" x2="16" y2="7" stroke="#D4952E" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="8" cy="14" r="1.5" fill="#1a3a1a"/>
+              <circle cx="12" cy="14" r="1.5" fill="#1a3a1a"/>
+              <circle cx="16" cy="14" r="1.5" fill="#1a3a1a" opacity="0.4"/>
+              <circle cx="8" cy="18" r="1.5" fill="#1a3a1a" opacity="0.4"/>
+              <circle cx="12" cy="18" r="1.5" fill="#1a3a1a"/>
+              <polygon points="16.5,16 15,18.5 16.2,18.5 14.5,22 18,18 16.8,18" fill="#D4952E"/>
+            </svg>
+            <span>Calendar</span>
+          </button>
+
+        </div>
+
+        <!-- Date list — BELOW the action buttons -->
+        <div id="stormListPanel">
+          <div class="storm-list-header">
+            <span class="storm-list-title">Most Recent Events</span>
+            <span class="storm-list-count"><span id="totalEventsCount">—</span> total</span>
+          </div>
+          <div class="storm-list" id="recentEventsList" aria-label="Most Recent Events List"></div>
+          <!-- Hidden elements required by JS paging system -->
+          <div id="eventDatesList" style="display:none;"></div>
+          <div class="storm-paging">
+            <button class="paging-btn" id="recentEventsPrev" disabled>← Prev</button>
+            <span class="paging-info" id="pagingInfo">—</span>
+            <button class="paging-btn" id="recentEventsNext">Next →</button>
+          </div>
+          <button id="prevDatesBtn" style="display:none;" disabled>Prev</button>
+          <span id="datesStatus" style="display:none;"></span>
+          <button id="nextDatesBtn" style="display:none;">Next</button>
+        </div>
+
+        <!-- Storm controls: hidden but required by JS (Get Dates flow) -->
+        <div id="stormControls" style="display:none;">
+          <label>State:
+            <select id="stateSelect">
+              <option value="">Select…</option>
+              <option value="AL">Alabama</option><option value="AK">Alaska</option><option value="AZ">Arizona</option><option value="AR">Arkansas</option><option value="CA">California</option><option value="CO">Colorado</option><option value="CT">Connecticut</option><option value="DE">Delaware</option><option value="DC">District of Columbia</option><option value="FL">Florida</option><option value="GA">Georgia</option><option value="HI">Hawaii</option><option value="ID">Idaho</option><option value="IL">Illinois</option><option value="IN">Indiana</option><option value="IA">Iowa</option><option value="KS">Kansas</option><option value="KY">Kentucky</option><option value="LA">Louisiana</option><option value="ME">Maine</option><option value="MD">Maryland</option><option value="MA">Massachusetts</option><option value="MI">Michigan</option><option value="MN">Minnesota</option><option value="MS">Mississippi</option><option value="MO">Missouri</option><option value="MT">Montana</option><option value="NE">Nebraska</option><option value="NV">Nevada</option><option value="NH">New Hampshire</option><option value="NJ">New Jersey</option><option value="NM">New Mexico</option><option value="NY">New York</option><option value="NC">North Carolina</option><option value="ND">North Dakota</option><option value="OH">Ohio</option><option value="OK">Oklahoma</option><option value="OR">Oregon</option><option value="PA">Pennsylvania</option><option value="RI">Rhode Island</option><option value="SC">South Carolina</option><option value="SD">South Dakota</option><option value="TN">Tennessee</option><option value="TX">Texas</option><option value="UT">Utah</option><option value="VT">Vermont</option><option value="VA">Virginia</option><option value="WA">Washington</option><option value="WV">West Virginia</option><option value="WI">Wisconsin</option><option value="WY">Wyoming</option>
+            </select>
+          </label>
+          <label>Scope:<select id="scopeSelect"><option value="">Select scope…</option><option value="state">Statewide dates</option><option value="city">City-only dates</option></select></label>
+          <label>Storm type:<select id="stormTypeTop"><option value="">Select type…</option><option value="hail">Hail</option><option value="wind">Wind</option><option value="all">All</option></select></label>
+          <label id="cityLabel" style="display:none;">City:<input id="cityInput" type="text" placeholder="e.g. Clayton, MO"/></label>
+          <label id="radiusLabel" style="display:none;">Radius:<select id="radiusSelect"><option value="5">5 mi</option><option value="10" selected>10 mi</option><option value="25">25 mi</option></select></label>
+          <button id="getDatesBtn" class="pill-btn" disabled>Get Dates</button>
+          <span id="dateStatus" style="opacity:.8;"></span>
+        </div>
+        <div id="stormDateRow" style="display:none;">
+          <label>Storm dates:<select id="dateSelect" disabled><option value="">Pick State + Scope + Storm type first.</option></select></label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span id="datesLoadedStatus" style="font-size:.85rem;opacity:.8;"></span>
+            <button id="loadNextDatesBtn" class="pill-btn" style="padding:4px 8px;display:none;">Load next 3 months</button>
+          </div>
+        </div>
+        <div style="display:none;"><input id="minValueInput" type="number" placeholder="0"/></div>
+
+      </div><!-- /ht-panel-card -->
+    </div><!-- /ht-left-panel -->
+
+    <!-- Reopen button (visible when panel collapsed) -->
+    <button class="panel-reopen-btn" id="panelReopenBtn" aria-label="Open panel">
+      <svg viewBox="0 0 10 10" fill="none">
+        <polyline points="3,1 7,5 3,9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <!-- Swath opacity float control (shown when Swath active) -->
+    <div class="swath-control" id="swathControl">
+      <span class="swath-label">Swath Opacity</span>
+      <div class="swath-slider-row">
+        <input type="range" min="0" max="100" value="70" id="swathSlider"/>
+        <span class="swath-val" id="swathVal">70%</span>
+      </div>
+      <span class="swath-label" style="margin-top:2px;">Hail Size Filter</span>
+      <div class="swath-slider-row">
+        <input type="range" min="0" max="100" value="40" id="hailSlider"/>
+        <span class="swath-val" id="hailVal">1.0″</span>
+      </div>
+    </div>
+
+  </div><!-- /ht-ui-layer -->
+
+    </section>
+
+    <!-- =================== CAMPAIGN VIEW =================== -->
+    <section id="campaignView" class="view">
+<div id="campaignView">
+
+  <div id="campaignMap"></div>
+  <div id="dropHint">📍 Drop on a house to log it</div>
+
+  <!-- Notes Modal -->
+  <div id="notesModal">
+    <div class="notes-card">
+      <div class="notes-card-header">
+        <div>
+          <div class="notes-card-title">📝 House Note</div>
+          <div class="notes-card-addr" id="noteAddr">Loading address…</div>
+        </div>
+        <button class="notes-close-btn" id="notesCloseBtn">✕</button>
+      </div>
+      <div class="notes-tabs">
+        <button class="notes-tab active" data-tab="note">Leave Note</button>
+        <button class="notes-tab" data-tab="reminder">Set Reminder</button>
+      </div>
+      <!-- Leave Note tab -->
+      <div class="notes-tab-content active" id="tab-note">
+        <div class="speech-row">
+          <textarea class="notes-textarea" id="noteText" placeholder="Tap the mic and speak, or type… (e.g. 'dog in backyard', 'wants retail bid')"></textarea>
+          <button class="mic-btn" id="micBtn" title="Speak to text">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5,10 Q5,17 12,17 Q19,17 19,10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <button class="keyboard-btn" id="keyboardBtn">⌨ Switch to keyboard</button>
+        <button class="save-note-btn" id="saveNoteBtn" style="margin-top:10px;">Save Note</button>
+      </div>
+      <!-- Reminder tab -->
+      <div class="notes-tab-content" id="tab-reminder">
+        <div class="speech-row">
+          <textarea class="notes-textarea" id="reminderText" placeholder="What's the reminder for? Tap mic or type…"></textarea>
+          <button class="mic-btn" id="micBtnReminder" title="Speak to text">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5,10 Q5,17 12,17 Q19,17 19,10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="reminder-row">
+          <div class="reminder-field"><label>Date</label><input class="reminder-input" id="reminderDate" type="date"/></div>
+          <div class="reminder-field"><label>Time</label><input class="reminder-input" id="reminderTime" type="time" value="09:00"/></div>
+        </div>
+        <button class="save-note-btn" id="saveReminderBtn">Set Reminder → Calendar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="campaign-header">
+    <div class="campaign-header-left">
+
+      <!-- BLUE GLOBE = Go Back -->
+      <button class="globe-nav-btn" id="campaignBackBtn" type="button" aria-label="Go back">
+        <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="bgBlue" cx="38%" cy="30%" r="68%">
+              <stop offset="0%"   stop-color="#60c8ff"/>
+              <stop offset="55%"  stop-color="#1a6fd4"/>
+              <stop offset="100%" stop-color="#0a2f7a"/>
+            </radialGradient>
+            <radialGradient id="coinBlue" cx="36%" cy="28%" r="65%">
+              <stop offset="0%"   stop-color="#fff066"/>
+              <stop offset="55%"  stop-color="#f0a820"/>
+              <stop offset="100%" stop-color="#9a5800"/>
+            </radialGradient>
+          </defs>
+          <circle cx="22" cy="22" r="21" fill="none" stroke="#60c8ff" stroke-width="1.4" opacity="0.5"/>
+          <circle cx="22" cy="22" r="19" fill="url(#bgBlue)"/>
+          <ellipse cx="22" cy="22" rx="19" ry="8.5"  fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="0.9"/>
+          <ellipse cx="22" cy="22" rx="19" ry="14.5" fill="none" stroke="rgba(255,255,255,0.13)" stroke-width="0.8"/>
+          <line x1="3" y1="22" x2="41" y2="22" stroke="rgba(255,255,255,0.18)" stroke-width="0.9"/>
+          <ellipse cx="22" cy="22" rx="7.5" ry="19"  fill="none" stroke="rgba(255,255,255,0.13)" stroke-width="0.8"/>
+          <ellipse cx="16.5" cy="15.5" rx="5.5" ry="3.5" fill="white" opacity="0.16" transform="rotate(-22 16.5 15.5)"/>
+          <circle cx="22" cy="22" r="19" fill="none" stroke="#3aa0f0" stroke-width="2"/>
+          <circle cx="22" cy="22" r="10" fill="url(#coinBlue)" stroke="#a06010" stroke-width="1.4"/>
+          <ellipse cx="18" cy="17.5" rx="3.5" ry="2" fill="white" opacity="0.22" transform="rotate(-25 18 17.5)"/>
+          <text x="22" y="27.5" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="900" fill="#6a3400" text-anchor="middle">$</text>
+        </svg>
+        <span class="globe-nav-label">Back</span>
+      </button>
+
+      <!-- GOLD GLOBE = Always Home -->
+      <button class="globe-nav-btn" id="homeBtn" type="button" aria-label="Main menu">
+        <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="bgGreen" cx="38%" cy="30%" r="68%">
+              <stop offset="0%"   stop-color="#4aaa2a"/>
+              <stop offset="55%"  stop-color="#1a5a0a"/>
+              <stop offset="100%" stop-color="#0a2804"/>
+            </radialGradient>
+            <radialGradient id="coinGold" cx="36%" cy="28%" r="65%">
+              <stop offset="0%"   stop-color="#fff066"/>
+              <stop offset="55%"  stop-color="#f0a820"/>
+              <stop offset="100%" stop-color="#9a5800"/>
+            </radialGradient>
+          </defs>
+          <circle cx="22" cy="22" r="21" fill="none" stroke="#f0c030" stroke-width="1.4" opacity="0.55"/>
+          <circle cx="22" cy="22" r="19" fill="url(#bgGreen)"/>
+          <ellipse cx="22" cy="22" rx="19" ry="8.5"  fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="0.9"/>
+          <ellipse cx="22" cy="22" rx="19" ry="14.5" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+          <line x1="3" y1="22" x2="41" y2="22" stroke="rgba(255,255,255,0.16)" stroke-width="0.9"/>
+          <ellipse cx="22" cy="22" rx="7.5" ry="19"  fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+          <ellipse cx="16.5" cy="15.5" rx="5.5" ry="3.5" fill="white" opacity="0.14" transform="rotate(-22 16.5 15.5)"/>
+          <circle cx="22" cy="22" r="19" fill="none" stroke="#d4952e" stroke-width="2"/>
+          <circle cx="22" cy="22" r="10" fill="url(#coinGold)" stroke="#a06010" stroke-width="1.4"/>
+          <ellipse cx="18" cy="17.5" rx="3.5" ry="2" fill="white" opacity="0.22" transform="rotate(-25 18 17.5)"/>
+          <text x="22" y="27.5" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="900" fill="#6a3400" text-anchor="middle">$</text>
+        </svg>
+        <span class="globe-nav-label">Home</span>
+      </button>
+
+      <div class="campaign-title">Your Money Maps <span>Campaign</span></div>
+    </div>
+    <div class="header-actions">
+      <!-- Step counter -->
+      <div class="step-counter" id="stepCounter">
+        <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px;flex-shrink:0;">
+          <ellipse cx="5" cy="4" rx="2.5" ry="3" stroke="#1a5f1a" stroke-width="1.4"/>
+          <path d="M2,14 Q2,9 5,9 Q7,9 8,11 L10,8 Q11,6 13,7 L15,10" stroke="#1a5f1a" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span id="stepCount">0</span>
+        <span class="step-label">steps</span>
+      </div>
+      <button class="clear-map-btn" id="clearMapBtn" type="button">Clear Map</button>
+      <div class="campaign-status-chip" id="campaignStatusChip">Drag an icon onto a house</div>
+    </div>
+  </div>
+
+  <!-- Panels -->
+  <div class="campaign-content">
+
+    <!-- PANEL 1 -->
+    <div class="glass-panel knock-panel">
+      <div class="glass-panel-header">
+        <div class="glass-panel-title">Door Status</div>
+        <div class="glass-panel-sub">Drag onto a house</div>
+      </div>
+      <div class="knock-grid">
+
+        <div class="knock-btn" draggable="true" data-status="nothome" data-label="Not Home">
+          <div class="knock-icon" style="background:rgba(100,100,100,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3,10.5 12,3 21,10.5V21a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1Z" stroke="#555" stroke-width="1.8" fill="none" stroke-linejoin="round"/><line x1="4" y1="4" x2="20" y2="20" stroke="#cc3333" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="knock-label">Not Home</span>
+          <span class="knock-count" id="kc-nothome">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="notint" data-label="Not Interested">
+          <div class="knock-icon" style="background:rgba(220,50,50,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#cc3333" stroke-width="1.8"/><line x1="8" y1="12" x2="16" y2="12" stroke="#cc3333" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="knock-label">Not Interested</span>
+          <span class="knock-count" id="kc-notint">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="inspection" data-label="Did Inspection">
+          <div class="knock-icon" style="background:rgba(56,130,240,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="#1a5fb4" stroke-width="1.8"/><rect x="9" y="1.5" width="6" height="3" rx="1" stroke="#1a5fb4" stroke-width="1.4"/><polyline points="8,9 12,5.5 16,9" stroke="#D4952E" stroke-width="1.6" stroke-linejoin="round"/><polyline points="8,14 10,16 14,12" stroke="#2a8a2a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="knock-label">Did Inspection</span>
+          <span class="knock-count" id="kc-inspection">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="noclaim" data-label="No Claim Filed">
+          <div class="knock-icon" style="background:rgba(200,160,0,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#a07800" stroke-width="1.8"/><line x1="8" y1="9" x2="16" y2="9" stroke="#a07800" stroke-width="1.3" stroke-linecap="round"/><line x1="14" y1="15" x2="20" y2="21" stroke="#cc3333" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="15" x2="14" y2="21" stroke="#cc3333" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="knock-label">No Claim Filed</span>
+          <span class="knock-count" id="kc-noclaim">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="filed" data-label="Filed Claim">
+          <div class="knock-icon" style="background:rgba(130,60,200,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="#7030a0" stroke-width="1.8"/><polyline points="8,12 11,15 16,9" stroke="#7030a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="knock-label">Filed Claim</span>
+          <span class="knock-count" id="kc-filed">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="goback" data-label="Go Back Again">
+          <div class="knock-icon" style="background:rgba(212,149,46,0.18);">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4,12 Q4,6 12,4 Q20,6 20,12 Q20,18 12,20" stroke="#b87020" stroke-width="1.8" fill="none" stroke-linecap="round"/><polyline points="8,18 4,20 6,16" stroke="#b87020" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="knock-label">Go Back Again</span>
+          <span class="knock-count" id="kc-goback">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="approved" data-label="Got Approved">
+          <div class="knock-icon" style="background:rgba(30,160,60,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#1a8a1a" stroke-width="1.8"/><polyline points="7,12 10,15.5 17,8.5" stroke="#1a8a1a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="knock-label">Got Approved</span>
+          <span class="knock-count" id="kc-approved">0</span>
+        </div>
+
+        <div class="knock-btn" draggable="true" data-status="referral" data-label="Got Referral">
+          <div class="knock-icon" style="background:rgba(220,80,180,0.15);">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3.5" stroke="#c04090" stroke-width="1.7"/><circle cx="18" cy="6" r="2.5" stroke="#c04090" stroke-width="1.5"/><circle cx="18" cy="18" r="2.5" stroke="#c04090" stroke-width="1.5"/><line x1="11.5" y1="8" x2="15.5" y2="6.8" stroke="#c04090" stroke-width="1.4" stroke-linecap="round"/><line x1="11.5" y1="9" x2="15.5" y2="17" stroke="#c04090" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </div>
+          <span class="knock-label">Got Referral</span>
+          <span class="knock-count" id="kc-referral">0</span>
+        </div>
+
+        <!-- Notes — opens notepad modal -->
+        <div class="knock-btn notes-btn" draggable="true" data-status="note" data-label="Note">
+          <div class="knock-icon" style="background:rgba(251,191,36,0.18);">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="4" y="3" width="16" height="18" rx="2" stroke="#b45309" stroke-width="1.8"/>
+              <line x1="8" y1="8" x2="16" y2="8" stroke="#b45309" stroke-width="1.3" stroke-linecap="round"/>
+              <line x1="8" y1="12" x2="16" y2="12" stroke="#b45309" stroke-width="1.3" stroke-linecap="round"/>
+              <line x1="8" y1="16" x2="12" y2="16" stroke="#b45309" stroke-width="1.3" stroke-linecap="round"/>
+              <circle cx="18" cy="18" r="5" fill="#fbbf24" stroke="#b45309" stroke-width="1.2"/>
+              <line x1="18" y1="15.5" x2="18" y2="20.5" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="15.5" y1="18" x2="20.5" y2="18" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="knock-label">Leave Note / Reminder</span>
+          <span class="knock-count" id="kc-note">0</span>
+        </div>
+
+      </div>
+
+      <!-- COLOR KEY -->
+      <div class="color-key">
+        <div class="color-key-title">Map Key</div>
+        <div class="key-row"><div class="key-dot" style="background:#E53E3E;"></div>Not Interested</div>
+        <div class="key-row"><div class="key-dot" style="background:#38A169;"></div>Approved</div>
+        <div class="key-row"><div class="key-dot" style="background:#3182CE;"></div>Inspection Done</div>
+        <div class="key-row"><div class="key-dot" style="background:#9F7AEA;"></div>Claim Filed</div>
+        <div class="key-row"><div class="key-dot" style="background:#DD6B20;"></div>No Claim / Denied</div>
+        <div class="key-row"><div class="key-dot" style="background:#718096;"></div>Other visits</div>
+        <div class="key-row"><div class="key-dot" style="background:#FBBF24;border-color:rgba(180,83,9,0.4);"></div>Note / Reminder</div>
+      </div>
+    </div>
+
+    <!-- PANEL 2 -->
+    <div class="glass-panel target-panel">
+      <div class="glass-panel-header">
+        <div class="glass-panel-title">Target Area</div>
+        <div class="glass-panel-sub">Find high-value roofs after storms</div>
+      </div>
+      <div class="target-body">
+        <div>
+          <div class="target-field-label">City &amp; State</div>
+          <input class="target-input" id="cityStateInput" type="text" placeholder="e.g. Clayton, MO" autocomplete="off"/>
+        </div>
+        <div>
+          <div class="target-field-label">Storm Date</div>
+          <input class="target-input" id="stormDateInput" type="date"/>
+        </div>
+        <div class="target-divider"></div>
+        <div>
+          <div class="target-field-label">Minimum Home Value</div>
+          <div class="min-value-row">
+            <div class="min-value-wrap">
+              <span class="min-value-prefix">$</span>
+              <input class="target-input" id="minValueInput" type="number" placeholder="250,000" min="0" step="10000"/>
+            </div>
+            <button class="go-btn" id="goBtn" type="button">GO</button>
+          </div>
+        </div>
+        <div class="results-summary" id="resultsSummary">
+          <div class="results-count" id="resultsCount">0</div>
+          <div class="results-label">streets highlighted in target area</div>
+          <div class="results-avg" id="resultsAvg"></div>
+        </div>
+        <div class="target-divider"></div>
+        <div class="street-legend">
+          <div class="legend-title">Street Colors</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#e8302a;"></div>At / above minimum value</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#f5a623;"></div>Within 20% below min</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:rgba(0,0,0,0.18);"></div>Below minimum — skip</div>
+        </div>
+        <div class="tip-box">
+          <div class="tip-box-title">⚡ Pro Tip</div>
+          <p>Run this right after a storm hits. Local companies won't have canvassed yet. Red streets = big roofs = big contracts. Hit those first.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /campaign-content -->
+
+  <div class="map-legend-float" id="mapLegendFloat">
+    <div class="map-legend-title">Street Values</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:#e8302a;width:20px;height:4px;border-radius:2px;flex-shrink:0;"></div> At / above min</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:#f5a623;width:20px;height:4px;border-radius:2px;flex-shrink:0;"></div> Within 20% below</div>
+  </div>
+
+  <div class="knock-feed" id="knockFeed"></div>
+
+</div>
+    </section>
+
+    <!-- =================== DIRECTORY VIEW =================== -->
+    <section id="directoryView" class="view">
+      <div class="view-inner">
+        <div class="view-header"><div><h2>Company Directory</h2></div><button id="directoryBackBtn" class="pill-btn">Back to Menu</button></div>
+        <div class="dir-tabs">
+          <button class="dir-tab active" data-dir-cat="leadership">Leadership</button>
+          <button class="dir-tab" data-dir-cat="regional">Regional Managers</button>
+          <button class="dir-tab" data-dir-cat="manager">Managers</button>
+          <button class="dir-tab" data-dir-cat="rep">Sales Reps</button>
+          <button class="dir-tab" data-dir-cat="ops">Ops / Office</button>
+        </div>
+        <div id="dirCategoryLabel" style="font-size:0.82rem;color:var(--text-soft);">Showing: leadership</div>
+        <div id="dirPeopleGrid" class="dir-people-grid"></div>
+      </div>
+    </section>
+
+    <!-- =================== INSURANCE VIEW =================== -->
+    <section id="insuranceView" class="view">
+      <div class="view-inner">
+        <div class="view-header"><div><h2>Insurance Contacts</h2></div><button id="insuranceBackBtn" class="pill-btn">Back to Menu</button></div>
+        <div style="display:flex;gap:6px;margin-bottom:6px;"><input id="insuranceSearchInput" class="control-input" style="flex:1;" placeholder="Search by carrier name…" /></div>
+        <div id="insuranceList" class="ins-list">Loading…</div>
+      </div>
+    </section>
+
+    <!-- =================== ME VIEW =================== -->
+    <section id="meView" class="view">
+      <div class="view-inner">
+        <div class="view-header"><div><h2>My Stats</h2></div><button id="meBackBtn" class="pill-btn">Back to Menu</button></div>
+        <div class="stats-row" style="margin-top:8px;">
+          <div class="stat-box"><div class="stat-label">Conts this week</div><div class="stat-value" id="meContWeek_2">0</div></div>
+          <div class="stat-box"><div class="stat-label">Sold this month</div><div class="stat-value" id="meSoldMonth_2">$0</div></div>
+          <div class="stat-box"><div class="stat-label">Sold this year</div><div class="stat-value" id="meSoldYear_2">$0</div></div>
+          <div class="stat-box"><div class="stat-label">Last paycheck</div><div class="stat-value" id="meLastPay_2">$0</div></div>
+        </div>
+        <div class="stat-box" style="margin-top:10px;"><div class="stat-label">Next paycheck (projected)</div><div class="stat-value" id="meNextPay_2">$0</div></div>
+      </div>
+    </section>
+
+    <!-- =================== MY TEAM VIEW =================== -->
+    <section id="myTeamView" class="view">
+      <div class="view-inner">
+        <div class="view-header"><div><h2>My Team</h2></div><button id="myTeamBackBtn" class="pill-btn">Back to Menu</button></div>
+        <div class="myteam-tabs">
+          <button class="myteam-tab active" data-myteam-tab="chat">Chat</button>
+          <button class="myteam-tab" data-myteam-tab="stats">My Stats</button>
+          <button class="myteam-tab" data-myteam-tab="jobs">My Jobs</button>
+          <button class="myteam-tab" data-myteam-tab="zoom">Zoom</button>
+          <button class="myteam-tab" data-myteam-tab="payroll">Payroll</button>
+        </div>
+        <div id="myTeamChatView" class="myteam-subview active hub-section" style="min-height:0;">
+          <h3>Team Chat</h3>
+          <div id="teamChatLog" class="chat-log" style="margin-top:5px;"></div>
+          <div class="chat-input-row">
+            <input id="teamChatInput" class="control-input" placeholder="Type a message to your team…" />
+            <button id="teamChatSendBtn" class="primary-btn">Send</button>
+          </div>
+        </div>
+        <div id="myTeamStatsView" class="myteam-subview hub-section" style="min-height:0;">
+          <h3>My Stats</h3>
+          <div class="stats-row" style="margin-top:8px;">
+            <div class="stat-box"><div class="stat-label">Conts this week</div><div class="stat-value" id="myTeamContWeek">0</div></div>
+            <div class="stat-box"><div class="stat-label">Conts this month</div><div class="stat-value" id="myTeamContMonth">0</div></div>
+            <div class="stat-box"><div class="stat-label">Conts this year</div><div class="stat-value" id="myTeamContYear">0</div></div>
+          </div>
+        </div>
+        <div id="myTeamJobsView" class="myteam-subview hub-section" style="min-height:0;">
+          <h3>My Jobs</h3>
+          <div id="myJobsList" style="margin-top:6px;max-height:55vh;overflow-y:auto;font-size:0.8rem;"></div>
+        </div>
+        <div id="myTeamZoomView" class="myteam-subview hub-section" style="min-height:0;">
+          <h3>Zoom</h3>
+          <p style="font-size:0.82rem;margin-top:4px;">Tap below to join the weekly Zoom meeting.</p>
+          <button id="joinZoomBtn" class="primary-btn" style="margin-top:8px;">Join Zoom</button>
+        </div>
+        <div id="myTeamPayrollView" class="myteam-subview hub-section" style="min-height:0;">
+          <h3>Payroll Request</h3>
+          <div style="margin-top:6px;font-size:0.8rem;">
+            <label class="control-label" for="payAmountInput">Amount requested ($)</label>
+            <input id="payAmountInput" class="control-input" type="number" placeholder="0.00" />
+            <label class="control-label" for="payWeekInput" style="margin-top:6px;">Week of (YYYY-MM-DD)</label>
+            <input id="payWeekInput" class="control-input" type="text" placeholder="2025-01-01" />
+            <label class="control-label" for="payNoteInput" style="margin-top:6px;">Notes</label>
+            <textarea id="payNoteInput" class="control-input" rows="3" placeholder="Breakdown of what you are owed…"></textarea>
+            <button id="payRequestSubmitBtn" class="primary-btn" style="margin-top:8px;">Submit Pay Request</button>
+            <div id="payRequestStatus" style="margin-top:4px;font-size:0.8rem;color:var(--text-soft);"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== GOALS VIEW =================== -->
+    <section id="goalsView" class="view">
+      <div class="view-inner">
+        <div class="view-header"><div><h2>Goals</h2></div><button id="goalsBackBtn" class="pill-btn">Back</button></div>
+        <div class="hub-section">
+          <h3>Daily Goals</h3>
+          <div style="margin-top:6px;font-size:0.8rem;">
+            <label class="control-label" for="stepGoalInput">Step goal (steps per day)</label>
+            <input id="stepGoalInput" class="control-input" type="number" placeholder="8000" />
+            <label class="control-label" for="waterGoalInput" style="margin-top:6px;">Water goal (oz per day)</label>
+            <input id="waterGoalInput" class="control-input" type="number" placeholder="80" />
+            <button id="goalsSaveBtn" class="primary-btn" style="margin-top:8px;">Save Goals</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== ADMIN VIEW =================== -->
+    <section id="adminView" class="view">
+      <div class="view-inner">
+        <div class="view-header"><div><h2>Admin</h2></div><button id="adminBackBtn" class="pill-btn">Back to Menu</button></div>
+        <div class="admin-subtabs">
+          <button class="admin-subtab-btn active" data-admin-tab="addUser">Add User</button>
+          <button class="admin-subtab-btn" data-admin-tab="steps">Step Dashboard</button>
+          <button class="admin-subtab-btn" data-admin-tab="teams">Teams</button>
+          <button class="admin-subtab-btn" data-admin-tab="payroll">Payroll</button>
+        </div>
+        <div id="adminAddUserView" class="admin-subview active hub-section" style="margin-bottom:10px;">
+          <h3>Add User</h3>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;font-size:0.8rem;">
+            <input id="adminNewEmail" class="control-input" style="min-width:180px;" placeholder="Email" />
+            <input id="adminNewTempPassword" class="control-input" style="min-width:140px;" placeholder="Temp password" />
+            <select id="adminNewRole" class="control-input" style="min-width:120px;"><option value="rep">rep</option><option value="manager">manager</option><option value="regional">regional</option><option value="admin">admin</option></select>
+            <input id="adminNewState" class="control-input" style="min-width:80px;" placeholder="State (MO)" />
+            <input id="adminNewTeam" class="control-input" style="min-width:100px;" placeholder="Team ID" />
+            <button id="adminAddUserBtn" class="primary-btn">Create User</button>
+          </div>
+          <div id="adminStatus" style="margin-top:4px;font-size:0.8rem;color:var(--text-soft);"></div>
+          <div class="hub-section" style="margin-top:10px;max-height:40vh;overflow-y:auto;"><h3>All Users</h3><div id="adminUsersList" style="margin-top:6px;font-size:0.8rem;">Loading…</div></div>
+        </div>
+        <div id="adminStepsView" class="admin-subview hub-section" style="max-height:55vh;overflow-y:auto;">
+          <h3>Step Dashboard</h3>
+          <div style="margin-top:6px;"><input id="stepsSearchInput" class="control-input" placeholder="Search by email or name…" /></div>
+          <div id="stepsDashList" style="margin-top:6px;font-size:0.8rem;">Loading…</div>
+        </div>
+        <div id="adminTeamsView" class="admin-subview hub-section" style="max-height:55vh;overflow-y:auto;">
+          <h3>Teams &amp; Regions</h3>
+          <div style="margin-top:6px;font-size:0.8rem;">
+            <label class="control-label" for="newRegionName">Create region</label>
+            <div style="display:flex;gap:6px;margin-bottom:6px;"><input id="newRegionName" class="control-input" placeholder="West Region" /><button id="createRegionBtn" class="primary-btn">Create</button></div>
+            <div id="regionsList" style="margin-top:4px;max-height:30vh;overflow-y:auto;"></div>
+            <div id="regionDetail" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(148,163,184,0.3);">
+              <h4 id="regionDetailTitle" style="font-size:0.9rem;margin-bottom:6px;">Select a region…</h4>
+              <div style="display:flex;flex-direction:column;gap:6px;max-width:260px;">
+                <button id="regionAddManagerBtn" class="primary-btn">Add Manager</button>
+                <button id="regionAddRepBtn" class="primary-btn">Add Rep</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="adminPayrollView" class="admin-subview hub-section" style="max-height:55vh;overflow-y:auto;">
+          <h3>Payroll Requests</h3>
+          <div id="adminPayrollList" style="margin-top:6px;font-size:0.8rem;">Loading…</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+"use strict";
+
+const DEBUG_STORMS = false;
+
+// Nuke debug boxes
+(() => {
+  const IDS = ['debugStormDatesBox','debugStormDatesText'];
+  const nuke = () => IDS.forEach(id => { const el=document.getElementById(id); if(el)el.remove(); });
+  nuke();
+  document.addEventListener('DOMContentLoaded', nuke);
+  new MutationObserver(nuke).observe(document.documentElement,{childList:true,subtree:true});
+  IDS.forEach(id => Object.defineProperty(window,id,{get(){return null;},set(){}}));
+})();
+
+/* =========================================================
+   GLOBAL APP STATE
+   ========================================================= */
+window.App = {
+  views: {}, els: {}, map: null, geocoder: null, markers: [],
+  loadedStorms: [], allStorms: [], currentUserProfile: null,
+  destination: null, clickMarker: null, lastMapClick: null,
+  infoWindow: null, activeStorm: null, selectedDate: null,
+  noaaReports: [],
+};
+
+App.recentsPageIndex   = 0;
+App.recentsPages       = {};
+App.recentsPageLastDoc = {};
+App.recentsHasNext     = {};
+App.selectedDates      = App.selectedDates || new Set();
+App.swathLayersByDate  = App.swathLayersByDate || {};
+
+let AppDates = { monthsLoaded:0, maxMonths:12, pageSizeMonths:3, loaded:new Set(), ranges:[] };
+
+function toYMD(d){ const y=d.getUTCFullYear(),m=String(d.getUTCMonth()+1).padStart(2,'0'),dd=String(d.getUTCDate()).padStart(2,'0'); return y+m+dd; }
+function toISO(d){ const y=d.getUTCFullYear(),m=String(d.getUTCMonth()+1).padStart(2,'0'),dd=String(d.getUTCDate()).padStart(2,'0'); return y+'-'+m+'-'+dd; }
+function addMonths(d,delta){ const r=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())); r.setUTCMonth(r.getUTCMonth()+delta); return r; }
+function addDays(d,delta){ const r=new Date(d.getTime()); r.setUTCDate(r.getUTCDate()+delta); return r; }
+
+/* =========================================================
+   VIEW SWITCHING
+   ========================================================= */
+function showOnlyView(viewEl) {
+  if (!viewEl) { console.error("showOnlyView: viewEl is null"); return; }
+  document.querySelectorAll("#appRoot .view").forEach(el => {
+    el.style.display = (el === viewEl) ? "block" : "none";
+  });
+  if (viewEl.id === "mapsView") {
+    initMapsViewOnce();
+    loadRecentEventsPage(0);
+    setTimeout(() => {
+      if (typeof initMap === "function") initMap();
+      wireNewPagerOnce();
+      ensureTotalEventsCountLoaded().then(n => {
+        const el = document.getElementById("totalEventsCount");
+        if (el && n != null) el.textContent = String(n);
+      });
+      if (App.map && window.google && google.maps && google.maps.event) {
+        google.maps.event.trigger(App.map, "resize");
+        const c = App.map.getCenter();
+        if (c) App.map.setCenter(c);
+      }
+    }, 50);
+  }
+  if (viewEl.id === "campaignView") {
+    initCampaignPageOnce();
+  }
+}
+
+/* =========================================================
+   initMapsViewOnce — from maps-view-v3
+   ========================================================= */
+function initMapsViewOnce() {
+  const rail = document.getElementById('htIconRail');
+  if (!rail || rail._inited) return;
+  rail._inited = true;
+
+
+  /* ── Rail back button ── */
+  document.getElementById('railBackBtn').addEventListener('click', () => {
+    if (window.App && window.showOnlyView && App.views && App.views.mainMenuView) {
+      showOnlyView(App.views.mainMenuView);
+    }
+  });
+
+  /* ── Rail collapse button → collapses the entire left panel ── */
+  const railCollapseBtn = document.getElementById('railCollapseBtn');
+  const panel = document.getElementById('htLeftPanel');
+  const collapseTab = document.getElementById('panelCollapseTab');
+  const reopenBtn = document.getElementById('panelReopenBtn');
+
+  function setPanelCollapsed(collapsed) {
+    panel.classList.toggle('panel-collapsed', collapsed);
+    reopenBtn.style.opacity = collapsed ? '1' : '0';
+    reopenBtn.style.pointerEvents = collapsed ? 'auto' : 'none';
+    // Flip the chevron direction
+    railCollapseBtn.style.transform = collapsed ? 'rotate(180deg)' : '';
+    localStorage.setItem('htPanelCollapsed', collapsed);
+    if (window.App && App.map && window.google && google.maps && google.maps.event) {
+      setTimeout(() => google.maps.event.trigger(App.map, 'resize'), 320);
+    }
+  }
+
+  if (localStorage.getItem('htPanelCollapsed') === 'true') setPanelCollapsed(true);
+
+  // Both the rail chevron AND the panel tab collapse the panel
+  railCollapseBtn.addEventListener('click', () => {
+    const isCollapsed = panel.classList.contains('panel-collapsed');
+    setPanelCollapsed(!isCollapsed);
+  });
+  collapseTab.addEventListener('click', () => setPanelCollapsed(true));
+  reopenBtn.addEventListener('click', () => setPanelCollapsed(false));
+
+  /* ── Rail active state ── */
+  rail.querySelectorAll('.ht-rail-btn[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      rail.querySelectorAll('.ht-rail-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  /* ── Swath opacity — click to open, close when slider released ── */
+  const swathBtn = document.getElementById('swathBtn');
+  const swathControl = document.getElementById('swathControl');
+  const swathSlider = document.getElementById('swathSlider');
+  const hailSlider = document.getElementById('hailSlider');
+
+  // Click swath button to toggle open
+  swathBtn.addEventListener('click', () => {
+    swathControl.classList.toggle('visible');
+  });
+
+  // Close automatically when user releases either slider
+  function closeSwathOnRelease() {
+    swathControl.classList.remove('visible');
+  }
+
+  swathSlider.addEventListener('mouseup', closeSwathOnRelease);
+  swathSlider.addEventListener('pointerup', closeSwathOnRelease);
+  swathSlider.addEventListener('touchend', closeSwathOnRelease);
+  hailSlider.addEventListener('mouseup', closeSwathOnRelease);
+  hailSlider.addEventListener('pointerup', closeSwathOnRelease);
+  hailSlider.addEventListener('touchend', closeSwathOnRelease);
+
+  /* ── Swath sliders → apply to real overlays ── */
+  swathSlider.addEventListener('input', function () {
+    document.getElementById('swathVal').textContent = this.value + '%';
+    const opacity = Number(this.value) / 100;
+    // Apply to real Google Maps overlays
+    (window._lsrOverlays || []).forEach(o => {
+      if (o && typeof o.setOptions === 'function') {
+        o.setOptions({ fillOpacity: opacity * 0.25, strokeOpacity: opacity });
+      }
+    });
+    if (window.App && App.recentsSwathLayer && typeof App.recentsSwathLayer.setStyle === 'function') {
+      App.recentsSwathLayer.setStyle(f => ({
+        fillOpacity: opacity * 0.22,
+        strokeOpacity: opacity * 0.9,
+        strokeWeight: 2,
+        fillColor: '#00c2ff',
+        strokeColor: '#ffffff'
+      }));
+    }
+    // Also handle swathLayersByDate
+    Object.values(window.App && App.swathLayersByDate || {}).forEach(layer => {
+      if (layer && typeof layer.setStyle === 'function') {
+        layer.setStyle(f => ({
+          fillOpacity: opacity * 0.22,
+          strokeOpacity: opacity * 0.9,
+          strokeWeight: 2
+        }));
+      }
+    });
+  });
+
+  hailSlider.addEventListener('input', function () {
+    const inches = (this.value / 100 * 4 + 0.25).toFixed(2);
+    document.getElementById('hailVal').textContent = inches + '″';
+  });
+
+  /* ── Map status chip — update when storm date clicked ── */
+  document.querySelectorAll('.storm-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const date = item.querySelector('.storm-item-date')?.textContent;
+      const type = item.querySelector('.storm-item-badge')?.textContent;
+      if (date && type) {
+        document.getElementById('mapStatusChip').textContent = type + ' layer loaded · ' + date;
+      }
+    });
+  });
+
+
+}
+
+/* =========================================================
+   initCampaignPageOnce — from campaign.html
+   ========================================================= */
+let _campaignInited = false;
+function initCampaignPageOnce() {
+  if (_campaignInited) return;
+  _campaignInited = true;
+
+
+  /* ── Status → color ── */
+  const STATUS_COLORS = {
+    notint:     '#E53E3E',
+    approved:   '#38A169',
+    inspection: '#3182CE',
+    filed:      '#9F7AEA',
+    noclaim:    '#DD6B20',
+    nothome:    '#718096',
+    goback:     '#718096',
+    referral:   '#718096',
+    note:       '#FBBF24',
+  };
+
+  const STATUS_LABELS = {
+    nothome:'Not Home', notint:'Not Interested', inspection:'Did Inspection',
+    noclaim:'No Claim Filed', filed:'Filed Claim', goback:'Go Back Again',
+    approved:'Got Approved', referral:'Got Referral', note:'Note'
+  };
+
+  /* ── Persistent storage ── */
+  const STORE_KEY = 'hmm_campaign_markers_v2';
+  let savedMarkers = [];
+  let liveMarkers  = []; // { marker, iw, data }
+  let knockCounts  = {};
+  let openInfoWindow = null;
+
+  function loadStorage() {
+    try { savedMarkers = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch(e) { savedMarkers=[]; }
+    try { knockCounts  = JSON.parse(localStorage.getItem('hmm_knock_counts') || '{}'); } catch(e) {}
+    Object.keys(STATUS_LABELS).forEach(k => {
+      const el = document.getElementById('kc-'+k);
+      if (el) el.textContent = knockCounts[k] || 0;
+    });
+  }
+
+  function persist() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(savedMarkers)); } catch(e) {}
+    try { localStorage.setItem('hmm_knock_counts', JSON.stringify(knockCounts)); } catch(e) {}
+  }
+
+  /* ── Place a colored dot marker ── */
+  function placeMarker(lat, lng, status, label, address, save) {
+    const map = window.cMap;
+    if (!map || !window.google) return;
+    const color = STATUS_COLORS[status] || '#718096';
+
+    const marker = new google.maps.Marker({
+      position: { lat, lng },
+      map,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        fillColor: color,
+        fillOpacity: 1,
+        strokeColor: 'white',
+        strokeWeight: 2.5,
+        scale: 10,
+      },
+      title: label,
+      zIndex: 200,
+    });
+
+    const buildContent = (addr) => `
+      <div style="font-family:system-ui,-apple-system,sans-serif;min-width:155px;padding:2px 0 0;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+          <div style="width:13px;height:13px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);flex-shrink:0;"></div>
+          <strong style="font-size:13px;color:#111;">${label}</strong>
+        </div>
+        ${addr ? `<div style="font-size:11px;color:#666;margin-bottom:7px;line-height:1.4;">${addr}</div>` : ''}
+        <button onclick="window._removePin(${lat},${lng})" style="
+          width:100%;padding:5px 0;border:1px solid rgba(200,50,50,0.40);
+          background:rgba(200,50,50,0.08);color:#8b1a1a;
+          border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;
+        ">Remove Pin</button>
+      </div>`;
+
+    const iw = new google.maps.InfoWindow();
+
+    marker.addListener('click', () => {
+      if (openInfoWindow) openInfoWindow.close();
+      iw.setContent(buildContent(address || ''));
+      iw.open(map, marker);
+      openInfoWindow = iw;
+    });
+
+    const entry = { marker, iw, lat, lng, status, label, address: address||'' };
+    liveMarkers.push(entry);
+
+    if (save) {
+      savedMarkers.push({ lat, lng, status, label, address: address||'' });
+      knockCounts[status] = (knockCounts[status]||0) + 1;
+      const el = document.getElementById('kc-'+status);
+      if (el) el.textContent = knockCounts[status];
+      persist();
+      showToast(label, color);
+      updateChip();
+
+      // Reverse geocode to get address
+      if (window.google.maps.Geocoder) {
+        new google.maps.Geocoder().geocode({ location:{lat,lng} }, (results, st) => {
+          if (st === 'OK' && results[0]) {
+            entry.address = results[0].formatted_address;
+            const saved = savedMarkers.find(m => m.lat===lat && m.lng===lng && m.status===status);
+            if (saved) { saved.address = entry.address; persist(); }
+          }
+        });
+      }
+    }
+  }
+
+  window._removePin = function(lat, lng) {
+    const idx = liveMarkers.findIndex(m => m.lat===lat && m.lng===lng);
+    if (idx >= 0) {
+      liveMarkers[idx].marker.setMap(null);
+      liveMarkers[idx].iw.close();
+      liveMarkers.splice(idx, 1);
+    }
+    savedMarkers = savedMarkers.filter(m => !(m.lat===lat && m.lng===lng));
+    persist();
+    updateChip();
+    if (openInfoWindow) { openInfoWindow.close(); openInfoWindow = null; }
+  };
+
+  /* ── Convert pixel pos on map div → lat/lng ── */
+  function pixelToLatLng(map, px, py) {
+    const b = map.getBounds();
+    if (!b) return null;
+    const ne = b.getNorthEast(), sw = b.getSouthWest();
+    const d = map.getDiv();
+    return {
+      lat: ne.lat() - (py / d.offsetHeight) * (ne.lat() - sw.lat()),
+      lng: sw.lng() + (px / d.offsetWidth)  * (ne.lng() - sw.lng()),
+    };
+  }
+
+  /* ── Google Maps init ── */
+  function initCampaignMapInline() {
+    const el = document.getElementById('campaignMap');
+    if (!el || !window.google) return;
+
+    window.cMap = new google.maps.Map(el, {
+      center: { lat: 38.627, lng: -90.197 },
+      zoom: 16,
+      mapTypeId: 'hybrid',
+      zoomControl: true,
+      streetViewControl: false,
+      mapTypeControl: false,
+      fullscreenControl: false,
+    });
+
+    // City autocomplete
+    if (google.maps.places) {
+      const ac = new google.maps.places.Autocomplete(
+        document.getElementById('cityStateInput'),
+        { types:['(cities)'], componentRestrictions:{ country:'us' } }
+      );
+      ac.addListener('place_changed', () => {
+        const p = ac.getPlace();
+        if (p.geometry) { window.cMap.setCenter(p.geometry.location); window.cMap.setZoom(15); }
+      });
+    }
+
+    // Restore persisted markers
+    loadStorage();
+    savedMarkers.forEach(m => placeMarker(m.lat, m.lng, m.status, m.label, m.address, false));
+    updateChip();
+
+    // Drag-drop wiring
+    wireDragDrop(el);
+  };
+
+  /* ── Drag and drop ── */
+  let dragStatus = null, dragLabel = null;
+
+  function wireDragDrop(mapEl) {
+    document.querySelectorAll('.knock-btn').forEach(btn => {
+      btn.addEventListener('dragstart', e => {
+        dragStatus = btn.dataset.status;
+        dragLabel  = btn.dataset.label;
+        btn.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.setData('text/plain', dragStatus);
+        document.getElementById('dropHint').classList.add('visible');
+      });
+      btn.addEventListener('dragend', () => {
+        btn.classList.remove('dragging');
+        document.getElementById('dropHint').classList.remove('visible');
+        mapEl.classList.remove('drag-over');
+      });
+    });
+
+    mapEl.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect='copy'; mapEl.classList.add('drag-over'); });
+    mapEl.addEventListener('dragleave', () => mapEl.classList.remove('drag-over'));
+    mapEl.addEventListener('drop', e => {
+      e.preventDefault();
+      mapEl.classList.remove('drag-over');
+      document.getElementById('dropHint').classList.remove('visible');
+      if (!dragStatus || !window.cMap) return;
+      const r = mapEl.getBoundingClientRect();
+      const ll = pixelToLatLng(window.cMap, e.clientX - r.left, e.clientY - r.top);
+      if (!ll) return;
+
+      if (dragStatus === 'note') {
+        // Open notes modal — reverse geocode first
+        const geocoder = window.google ? new google.maps.Geocoder() : null;
+        if (geocoder) {
+          geocoder.geocode({ location: ll }, (results, status) => {
+            const addr = (status === 'OK' && results[0]) ? results[0].formatted_address : '';
+            window._openNotesModal(ll.lat, ll.lng, addr);
+          });
+        } else {
+          window._openNotesModal(ll.lat, ll.lng, '');
+        }
+      } else {
+        placeMarker(ll.lat, ll.lng, dragStatus, dragLabel, null, true);
+      }
+      dragStatus = null; dragLabel = null;
+    });
+
+    // Touch support
+    let tGhost = null;
+    document.querySelectorAll('.knock-btn').forEach(btn => {
+      btn.addEventListener('touchstart', e => {
+        dragStatus = btn.dataset.status;
+        dragLabel  = btn.dataset.label;
+        tGhost = document.createElement('div');
+        tGhost.style.cssText = `position:fixed;z-index:9999;pointer-events:none;width:40px;height:40px;border-radius:50%;background:${STATUS_COLORS[dragStatus]};border:3px solid white;opacity:0.88;box-shadow:0 3px 12px rgba(0,0,0,0.3);transform:translate(-50%,-50%);transition:none;`;
+        document.body.appendChild(tGhost);
+        document.getElementById('dropHint').classList.add('visible');
+      }, { passive:true });
+
+      btn.addEventListener('touchmove', e => {
+        if (!tGhost) return;
+        tGhost.style.left = e.touches[0].clientX + 'px';
+        tGhost.style.top  = e.touches[0].clientY + 'px';
+      }, { passive:true });
+
+      btn.addEventListener('touchend', e => {
+        document.getElementById('dropHint').classList.remove('visible');
+        if (tGhost) { tGhost.remove(); tGhost = null; }
+        if (!dragStatus || !window.cMap) return;
+        const t = e.changedTouches[0];
+        const r = mapEl.getBoundingClientRect();
+        const px = t.clientX - r.left, py = t.clientY - r.top;
+        if (px < 0 || py < 0 || px > r.width || py > r.height) return;
+        const ll = pixelToLatLng(window.cMap, px, py);
+        if (!ll) return;
+
+        if (dragStatus === 'note') {
+          const geocoder = window.google ? new google.maps.Geocoder() : null;
+          if (geocoder) {
+            geocoder.geocode({ location: ll }, (results, status) => {
+              const addr = (status === 'OK' && results[0]) ? results[0].formatted_address : '';
+              window._openNotesModal(ll.lat, ll.lng, addr);
+            });
+          } else {
+            window._openNotesModal(ll.lat, ll.lng, '');
+          }
+        } else {
+          placeMarker(ll.lat, ll.lng, dragStatus, dragLabel, null, true);
+        }
+        dragStatus = null; dragLabel = null;
+      });
+    });
+  }
+
+  /* ── Clear all markers ── */
+  document.getElementById('clearMapBtn').addEventListener('click', () => {
+    if (!confirm('Remove all house pins from the map?')) return;
+    liveMarkers.forEach(m => { m.marker.setMap(null); m.iw.close(); });
+    liveMarkers = []; savedMarkers = [];
+    Object.keys(STATUS_LABELS).forEach(k => {
+      knockCounts[k] = 0;
+      const el = document.getElementById('kc-'+k);
+      if (el) el.textContent = 0;
+    });
+    persist(); updateChip();
+  });
+
+  /* ── Toast ── */
+  function showToast(label, color) {
+    const feed = document.getElementById('knockFeed');
+    const t = document.createElement('div');
+    t.className = 'knock-toast';
+    t.innerHTML = `<div class="knock-toast-dot" style="background:${color};"></div>${label} logged`;
+    feed.appendChild(t);
+    setTimeout(() => t.remove(), 2800);
+  }
+
+  /* ── Status chip ── */
+  function updateChip() {
+    const n = savedMarkers.length;
+    const chip = document.getElementById('campaignStatusChip');
+    chip.textContent = n === 0 ? 'Drag an icon onto a house' : n + ' house' + (n===1?'':'s') + ' logged';
+    chip.classList.toggle('active', n > 0);
+  }
+
+  /* ── Target search ── */
+  let streetLayers = [];
+  document.getElementById('goBtn').addEventListener('click', async () => {
+    const city = document.getElementById('cityStateInput').value.trim();
+    const minVal = Number(document.getElementById('minValueInput').value) || 0;
+    if (!city) { document.getElementById('cityStateInput').focus(); return; }
+    const btn = document.getElementById('goBtn');
+    btn.classList.add('loading'); btn.textContent = '...';
+    streetLayers.forEach(l => l.setMap(null)); streetLayers = [];
+    try {
+      if (window.cMap && window.google) {
+        // Promisify geocoder so we WAIT for center before drawing streets
+        await new Promise((resolve) => {
+          new google.maps.Geocoder().geocode({ address: city }, (r, s) => {
+            if (s === 'OK' && r[0]) {
+              window.cMap.setCenter(r[0].geometry.location);
+              window.cMap.setZoom(14);
+            }
+            resolve();
+          });
+        });
+        await drawStreets(window.cMap, minVal);
+      }
+      const cnt = Math.floor(Math.random()*80+40);
+      document.getElementById('resultsCount').textContent = cnt;
+      document.getElementById('resultsAvg').textContent = 'Avg on red streets: $' + Math.round((minVal||300000)*1.38).toLocaleString();
+      document.getElementById('resultsSummary').classList.add('visible');
+      const legendFloat = document.getElementById('mapLegendFloat');
+      if (legendFloat) legendFloat.classList.add('visible');
+      const chip = document.getElementById('campaignStatusChip');
+      chip.textContent = cnt + ' streets · ' + city; chip.classList.add('active');
+    } catch(e) { console.error(e); }
+    btn.classList.remove('loading'); btn.textContent = 'GO';
+  });
+
+  async function drawStreets(map, minVal) {
+    const center = map.getCenter();
+    const lat = center.lat(), lng = center.lng();
+    const radius = 2000; // metres
+
+    // Fetch real residential streets from OpenStreetMap Overpass API
+    const query = `[out:json][timeout:25];
+(
+  way["highway"~"^(residential|tertiary|secondary|unclassified)$"](around:${radius},${lat},${lng});
+);
+out geom;`;
+
+    let ways = [];
+    try {
+      const resp = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        body: 'data=' + encodeURIComponent(query),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+      if (!resp.ok) throw new Error('Overpass HTTP ' + resp.status);
+      const json = await resp.json();
+      ways = json.elements || [];
+    } catch(e) {
+      console.warn('[drawStreets] Overpass fetch failed:', e);
+      return;
+    }
+
+    if (!ways.length) {
+      console.warn('[drawStreets] No streets returned from Overpass');
+      return;
+    }
+
+    // Deterministic pseudo-random value per street (seeded by OSM way id)
+    function streetValue(wayId) {
+      let h = Number(wayId) || 0;
+      h = ((h >>> 16) ^ h) * 0x45d9f3b;
+      h = ((h >>> 16) ^ h) * 0x45d9f3b;
+      h = (h >>> 16) ^ h;
+      // Spread between 60% and 160% of minVal
+      return (minVal || 250000) * (0.60 + (Math.abs(h) % 1000) / 1000 * 1.0);
+    }
+
+    const threshold = minVal || 250000;
+    const lowerBound = threshold * 0.80; // within 20% below = orange
+
+    const infoWindow = new google.maps.InfoWindow();
+
+    ways.forEach(way => {
+      if (!Array.isArray(way.geometry) || way.geometry.length < 2) return;
+
+      const path = way.geometry.map(pt => ({ lat: pt.lat, lng: pt.lon }));
+      const estVal = streetValue(way.id);
+      const streetName = way.tags?.name || 'This street';
+
+      let color, opacity;
+      if (estVal >= threshold) {
+        color = '#e8302a';   // red — at or above min
+        opacity = 0.92;
+      } else if (estVal >= lowerBound) {
+        color = '#f5a623';   // orange — within 20% below
+        opacity = 0.85;
+      } else {
+        return; // skip streets below range (don't draw grey ones)
+      }
+
+      const line = new google.maps.Polyline({
+        path,
+        strokeColor: color,
+        strokeOpacity: opacity,
+        strokeWeight: 5,
+        map,
+        zIndex: 5,
+        geodesic: true,
+      });
+
+      line.addListener('click', e => {
+        infoWindow.setContent(
+          `<div style="font-family:system-ui,sans-serif;font-size:13px;padding:4px 2px;min-width:160px;">
+            <div style="font-weight:700;margin-bottom:4px;">${streetName}</div>
+            <div><b>Est. avg home value:</b> $${Math.round(estVal).toLocaleString()}</div>
+            <div style="margin-top:3px;font-size:11px;color:${estVal>=threshold?'#c0392b':'#e67e22'};">
+              ${estVal>=threshold?'✓ At / above minimum':'Within 20% of minimum'}
+            </div>
+          </div>`
+        );
+        infoWindow.setPosition(e.latLng);
+        infoWindow.open(map);
+      });
+
+      streetLayers.push(line);
+    });
+
+    console.log('[drawStreets] Drew', streetLayers.length, 'streets from', ways.length, 'OSM ways');
+  }
+
+  /* ── Back button (blue globe) — goes to previous page ── */
+  document.getElementById('campaignBackBtn').addEventListener('click', () => {
+    if (window.App && window.showOnlyView && App.views && App.views.mapsView) {
+      showOnlyView(App.views.mapsView);
+    } else {
+      history.back();
+    }
+  });
+
+  /* ── Home button (gold globe) — always goes to main menu ── */
+  document.getElementById('homeBtn').addEventListener('click', () => {
+    if (window.App && window.showOnlyView && App.views && App.views.mainMenuView) {
+      showOnlyView(App.views.mainMenuView);
+    } else if (window.App && window.showOnlyView && App.views && App.views.hubView) {
+      showOnlyView(App.views.hubView);
+    } else {
+      window.location.hash = '';
+      window.location.reload();
+    }
+  });
+
+  document.getElementById('stormDateInput').value = new Date().toISOString().split('T')[0];
+  loadStorage();
+  updateChip();
+
+  /* ════════════════════════════════
+     STEP COUNTER
+  ════════════════════════════════ */
+  (function () {
+    const countEl = document.getElementById('stepCount');
+    const TODAY_KEY = 'hmm_step_date';
+    const STEPS_KEY = 'hmm_step_count';
+
+    // Reset at midnight
+    const today = new Date().toDateString();
+    if (localStorage.getItem(TODAY_KEY) !== today) {
+      localStorage.setItem(TODAY_KEY, today);
+      localStorage.setItem(STEPS_KEY, '0');
+    }
+
+    let steps = parseInt(localStorage.getItem(STEPS_KEY) || '0');
+    countEl.textContent = steps.toLocaleString();
+
+    function saveSteps() {
+      localStorage.setItem(STEPS_KEY, String(steps));
+      countEl.textContent = steps.toLocaleString();
+    }
+
+    // Real accelerometer step detection
+    let lastAcc = null, stepCooldown = false;
+    const THRESHOLD = 12;
+
+    if (typeof DeviceMotionEvent !== 'undefined') {
+      // Request permission on iOS 13+
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        document.getElementById('stepCounter').addEventListener('click', () => {
+          DeviceMotionEvent.requestPermission().then(r => {
+            if (r === 'granted') listenMotion();
+          }).catch(console.error);
+        }, { once: true });
+      } else {
+        listenMotion();
+      }
+    } else {
+      // Desktop demo — increment slowly
+      setInterval(() => {
+        steps += Math.floor(Math.random() * 3 + 1);
+        saveSteps();
+      }, 1800);
+    }
+
+    function listenMotion() {
+      window.addEventListener('devicemotion', (e) => {
+        const a = e.accelerationIncludingGravity;
+        if (!a) return;
+        const mag = Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
+        if (lastAcc !== null) {
+          const delta = Math.abs(mag - lastAcc);
+          if (delta > THRESHOLD && !stepCooldown) {
+            steps++;
+            saveSteps();
+            stepCooldown = true;
+            setTimeout(() => stepCooldown = false, 350);
+          }
+        }
+        lastAcc = mag;
+      });
+    }
+  })();
+
+  /* ════════════════════════════════
+     NOTES MODAL
+  ════════════════════════════════ */
+  (function () {
+    const modal    = document.getElementById('notesModal');
+    const closeBtn = document.getElementById('notesCloseBtn');
+    let pendingLatLng = null;
+
+    // Open modal when a "note" status is dropped
+    window._openNotesModal = function(lat, lng, addr) {
+      pendingLatLng = { lat, lng };
+      document.getElementById('noteAddr').textContent = addr || 'Locating address…';
+      document.getElementById('noteText').value = '';
+      document.getElementById('reminderText').value = '';
+      document.getElementById('reminderDate').value = new Date().toISOString().split('T')[0];
+      modal.classList.add('open');
+    };
+
+    closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+    // Tab switching
+    document.querySelectorAll('.notes-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.notes-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.notes-tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Speech to text helper
+    function makeSpeech(micBtnId, textareaId) {
+      const btn = document.getElementById(micBtnId);
+      const ta  = document.getElementById(textareaId);
+      if (!btn || !ta) return;
+
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { btn.title = 'Speech not supported — use keyboard'; btn.style.opacity = '0.4'; return; }
+
+      const rec = new SR();
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+      let listening = false;
+
+      btn.addEventListener('click', () => {
+        if (listening) { rec.stop(); return; }
+        rec.start();
+      });
+
+      rec.onstart = () => { listening = true; btn.classList.add('listening'); };
+      rec.onend   = () => { listening = false; btn.classList.remove('listening'); };
+      rec.onerror = () => { listening = false; btn.classList.remove('listening'); };
+
+      rec.onresult = (e) => {
+        let transcript = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          transcript += e.results[i][0].transcript;
+        }
+        ta.value = transcript;
+      };
+    }
+
+    makeSpeech('micBtn', 'noteText');
+    makeSpeech('micBtnReminder', 'reminderText');
+
+    // Keyboard fallback
+    document.getElementById('keyboardBtn')?.addEventListener('click', () => {
+      document.getElementById('noteText').focus();
+    });
+
+    // Save note
+    document.getElementById('saveNoteBtn').addEventListener('click', () => {
+      const text = document.getElementById('noteText').value.trim();
+      if (!text || !pendingLatLng) return;
+      // Place a yellow note marker
+      placeMarker(pendingLatLng.lat, pendingLatLng.lng, 'note', 'Note: ' + text.slice(0,40), document.getElementById('noteAddr').textContent, true);
+      modal.classList.remove('open');
+    });
+
+    // Save reminder
+    document.getElementById('saveReminderBtn').addEventListener('click', () => {
+      const text = document.getElementById('reminderText').value.trim();
+      const date = document.getElementById('reminderDate').value;
+      const time = document.getElementById('reminderTime').value;
+      if (!text || !date) return;
+
+      const dtStr = date + 'T' + (time || '09:00');
+      const dt = new Date(dtStr);
+
+      // Place marker
+      placeMarker(pendingLatLng.lat, pendingLatLng.lng, 'note', '⏰ ' + text.slice(0,40), document.getElementById('noteAddr').textContent, true);
+
+      // Schedule browser notification
+      if ('Notification' in window) {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') {
+            const delay = dt.getTime() - Date.now();
+            if (delay > 0) {
+              setTimeout(() => {
+                new Notification('Your Money Maps Reminder', {
+                  body: text + '\n' + document.getElementById('noteAddr').textContent,
+                  icon: '/assets/hmm-globe.png'
+                });
+              }, delay);
+            }
+          }
+        });
+      }
+
+      // Send to personal calendar if available
+      if (window.App && window.App.personalCalendar) {
+        window.App.personalCalendar.addReminder({
+          lat: pendingLatLng.lat, lng: pendingLatLng.lng,
+          address: document.getElementById('noteAddr').textContent,
+          note: text, dateTime: dtStr
+        });
+      }
+
+      showToast('Reminder set for ' + dt.toLocaleDateString(), '#FBBF24');
+      modal.classList.remove('open');
+    });
+
+    // Override placeMarker for notes — open modal instead of dropping immediately
+    const origWireDragDrop = wireDragDrop;
+  })();
+
+
+  if (window.google && window.google.maps) {
+    initCampaignMapInline();
+  }
+}
+
+/* =========================================================
+   STORM DATE PAGING & SUPABASE
+   ========================================================= */
+async function fetchStormDatesPage(idx, pageSize) {
+  try {
+    App.recentsAllDates = App.recentsAllDates || null;
+    if (!Array.isArray(App.recentsAllDates)) {
+      const url = SUPABASE_URL + "/functions/v1/hail-dates";
+      const resp = await fetch(url, { headers:{ apikey: SUPABASE_ANON_KEY } });
+      const raw = await resp.text();
+      if (!resp.ok) throw new Error("hail-dates HTTP " + resp.status + ": " + raw.slice(0,200));
+      const json = JSON.parse(raw);
+      const dates = Array.isArray(json?.dates) ? json.dates : [];
+      App.recentsAllDates = dates.filter(d => typeof d==="string" && /^\d{4}-\d{2}-\d{2}$/.test(d));
+    }
+    const start = Math.max(0, Number(idx)||0) * (Number(pageSize)||0);
+    const slice = App.recentsAllDates.slice(start, start + pageSize);
+    const items = slice.map(dateDash => ({ dateDash }));
+    return { items, lastDoc:null, hasNext: start+pageSize < App.recentsAllDates.length, mode:"supabase" };
+  } catch { return { items:[], lastDoc:null, hasNext:false, mode:"error" }; }
+}
+
+async function ensureTotalEventsCountLoaded() {
+  try {
+    if (App.totalEventsCount != null) return App.totalEventsCount;
+    if (!window.db) return null;
+    const col = window.db.collection("stormDates");
+    if (col && typeof col.count === "function") {
+      const agg = await col.count().get();
+      const n = agg?.data?.()?.count;
+      if (typeof n === "number") App.totalEventsCount = n;
+    } else {
+      const snap = await col.get();
+      App.totalEventsCount = snap?.size ?? null;
+    }
+    return App.totalEventsCount;
+  } catch { return null; }
+}
+
+function renderNewRecentRows(items, pageIndex, pageSize) {
+  const list = document.getElementById("recentEventsList");
+  const prev = document.getElementById("recentEventsPrev");
+  const next = document.getElementById("recentEventsNext");
+  const info = document.getElementById("pagingInfo");
+  if (!list) return;
+  list.innerHTML = "";
+  (items||[]).forEach(it => {
+    const btn = document.createElement("div");
+    btn.className = "storm-item";
+    btn.innerHTML = '<input type="checkbox" /><span class="storm-item-date">' + it.dateDash + '</span>';
+    btn.addEventListener("click", () => showHailSwathsForDate(it.dateDash));
+    list.appendChild(btn);
+  });
+  const idx = Math.max(0, Number(pageIndex)||0);
+  if (prev) prev.disabled = idx <= 0;
+  const hasNext = App.recentsHasNext && App.recentsHasNext[idx] === true;
+  if (next) next.disabled = !hasNext;
+  if (info) { const s=idx*pageSize+1,e=idx*pageSize+(items||[]).length; info.textContent=(items&&items.length)?s+"–"+e:"—"; }
+}
+
+function wireNewPagerOnce() {
+  if (App._newPagerWired) return;
+  App._newPagerWired = true;
+  document.getElementById("recentEventsPrev")?.addEventListener("click",()=>loadRecentEventsPage(Math.max(0,(App.recentsPageIndex||0)-1)));
+  document.getElementById("recentEventsNext")?.addEventListener("click",()=>loadRecentEventsPage((App.recentsPageIndex||0)+1));
+  document.getElementById("prevDatesBtn")?.addEventListener("click",()=>loadRecentEventsPage(Math.max(0,(App.recentsPageIndex||0)-1)));
+  document.getElementById("nextDatesBtn")?.addEventListener("click",()=>loadRecentEventsPage((App.recentsPageIndex||0)+1));
+}
+
+async function loadRecentEventsPage(pageIndex) {
+  const pageSize = 5;
+  const idx = Math.max(0, Number(pageIndex)||0);
+  App.recentsPageIndex = idx;
+  App.recentsPages = App.recentsPages || {};
+  App.recentsHasNext = App.recentsHasNext || {};
+  if (App.recentsPages[idx]) {
+    renderNewRecentRows(App.recentsPages[idx], idx, pageSize);
+    return;
+  }
+  const res = await fetchStormDatesPage(idx, pageSize);
+  const items = res.items || [];
+  App.recentsPages[idx] = items;
+  App.recentsHasNext[idx] = (res.hasNext === true);
+  renderNewRecentRows(items, idx, pageSize);
+}
+
+/* =========================================================
+   LSR / SWATH DRAWING
+   ========================================================= */
+function cleanLsrOverlays() {
+  try { (window._lsrOverlays||[]).forEach(o=>o.setMap&&o.setMap(null)); } catch {}
+  window._lsrOverlays = [];
+}
+function clearLsrOverlays() { cleanLsrOverlays(); }
+
+function hailInToRadiusMeters(h){ h=Number(h); if(!Number.isFinite(h)||h<=0)return 3000; return Math.max(2000,Math.min(40000,h*10000)); }
+function hailInToColor(h){ h=Number(h); if(!Number.isFinite(h))return"#00e5ff"; if(h>=3)return"#ff00ff"; if(h>=2)return"#ff3b30"; if(h>=1.5)return"#ff9500"; if(h>=1)return"#ffd60a"; return"#00e5ff"; }
+
+function drawLsrPointsOnMap(points) {
+  cleanLsrOverlays();
+  const map = App.map;
+  if (!map) return;
+  const bounds = new google.maps.LatLngBounds();
+  (points||[]).forEach(p => {
+    const lat=Number(p.lat),lon=Number(p.lon);
+    if (!Number.isFinite(lat)||!Number.isFinite(lon)) return;
+    const hailIn=Number(p.hail_in),color=hailInToColor(hailIn),radius=hailInToRadiusMeters(hailIn),center={lat,lng:lon};
+    bounds.extend(center);
+    const circle = new google.maps.Circle({ map,center,radius,strokeColor:color,strokeOpacity:0.9,strokeWeight:2,fillColor:color,fillOpacity:0.25,clickable:true,zIndex:999999 });
+    let when=""; try{when=p.event_time?new Date(p.event_time).toLocaleString():""; }catch{}
+    const info = new google.maps.InfoWindow({ content:`<div style="font-family:system-ui;font-size:13px;line-height:1.35;"><div><b>Hail:</b> ${Number.isFinite(hailIn)?hailIn:"?"}"</div><div><b>Time:</b> ${when}</div><div><b>Lat/Lon:</b> ${lat.toFixed(3)}, ${lon.toFixed(3)}</div></div>` });
+    circle.addListener("click",()=>{ try{info.setPosition(center);}catch{} try{info.open(map);}catch{} });
+    window._lsrOverlays = window._lsrOverlays || [];
+    window._lsrOverlays.push(circle);
+  });
+  try { if(points&&points.length)map.fitBounds(bounds,40); }catch{}
+}
+
+async function fetchLsrPointsByDate(dateDash) {
+  const url = SUPABASE_URL+"/functions/v1/hail-lsr-by-date?date="+encodeURIComponent(dateDash);
+  const resp = await fetch(url,{headers:{apikey:SUPABASE_ANON_KEY}});
+  const raw = await resp.text();
+  if (!resp.ok) throw new Error("hail-lsr-by-date HTTP "+resp.status+": "+raw.slice(0,200));
+  const json = JSON.parse(raw);
+  const points = Array.isArray(json?.points)?json.points:[];
+  drawLsrPointsOnMap(points);
+  return points;
+}
+
+async function drawLsrPointsFallbackForDate(dateDash) {
+  if (!dateDash||!App.map||!window.google?.maps) return 0;
+  let points=[];
+  try{ points=await fetchLsrPointsByDate(dateDash); }catch(e){ console.warn("[LSR] fetch failed",e); return 0; }
+  try{ drawLsrPointsOnMap(points); }catch{}
+  return Array.isArray(window._lsrOverlays)?window._lsrOverlays.length:0;
+}
+
+function dateDashToYmd(d){ if(!d)return""; if(/^\d{8}$/.test(d))return d; const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m)return""; return m[1]+m[2]+m[3]; }
+
+function wktShapeToGeoJson(shape) {
+  if (!shape) return null;
+  const s=String(shape).trim(); if(!s)return null;
+  const upper=s.toUpperCase();
+  const parseCoordPair=pair=>{const pts=pair.trim().split(/\s+/);if(pts.length<2)return null;const lon=Number(pts[0]),lat=Number(pts[1]);if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;return[lon,lat];};
+  const parseRing=str=>{const pts=str.split(",").map(parseCoordPair).filter(Boolean);return pts.length?pts:null;};
+  if(upper.startsWith("POINT")){ const m=s.match(/POINT\s*\(\s*([+-]?\d+(?:\.\d+)?)\s+([+-]?\d+(?:\.\d+)?)\s*\)/i);if(!m)return null;const lon=Number(m[1]),lat=Number(m[2]);if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;return{type:"Point",coordinates:[lon,lat]}; }
+  if(upper.startsWith("POLYGON")){ const start=s.indexOf("(("),end=s.lastIndexOf("))");if(start<0||end<0||end<=start+1)return null;const inner=s.slice(start+2,end);const rings=inner.includes("),(")?inner.split("),("):[inner];const outRings=[];for(const r of rings){const ring=parseRing(r.replace(/^\(|\)$/g,""));if(ring)outRings.push(ring);}if(!outRings.length)return null;return{type:"Polygon",coordinates:outRings}; }
+  if(upper.startsWith("MULTIPOLYGON")){ const start=s.indexOf("(("),end=s.lastIndexOf("))");if(start<0||end<0)return null;let inner=s.slice(start,end+2).replace(/^MULTIPOLYGON\s*/i,"").trim().replace(/^\(/,"").replace(/\)$/,"");const polygonParts=inner.split(")),((");const polys=[];for(let part of polygonParts){part=part.replace(/^\(\(/,"").replace(/\)\)$/,"");const rings=part.includes("),(");const ringList=rings?part.split("),("):[part];const outRings=[];for(const r of ringList){const ring=parseRing(r.replace(/^\(|\)$/g,""));if(ring)outRings.push(ring);}if(outRings.length)polys.push(outRings);}if(!polys.length)return null;return{type:"MultiPolygon",coordinates:polys}; }
+  return null;
+}
+
+async function loadHailReports(dateDash) { return drawLsrPointsFallbackForDate(dateDash); }
+
+async function loadRadarSwaths(dateDash, layer) {
+  if (!dateDash||!layer||typeof layer.addGeoJson!=="function") return 0;
+  const st=(typeof getSelectedStateCode==="function")?getSelectedStateCode():"";
+  const bbox=st?await getBboxForSelectedState(st):null;
+  if (!bbox){console.warn("[RADAR] missing bbox/state; skipping");return 0;}
+  const ymd=dateDashToYmd(dateDash); if(!ymd){console.warn("[RADAR] invalid dateDash",dateDash);return 0;}
+  const resp=await fetchNoaaHailReports({mode:"radar",start:ymd,end:ymd,bbox});
+  const storms=Array.isArray(resp?.storms)?resp.storms:[];let added=0;
+  for(const s of storms){ const props=s?.props||{};const shape=props.SHAPE||props.shape||null;const geom=wktShapeToGeoJson(shape)||(Number.isFinite(Number(s?.lon))&&Number.isFinite(Number(s?.lat))?{type:"Point",coordinates:[Number(s.lon),Number(s.lat)]}:null);if(!geom)continue;try{layer.addGeoJson({type:"FeatureCollection",features:[{type:"Feature",geometry:geom,properties:Object.assign({dateDash},props)}]});added++;}catch(e){} }
+  return added;
+}
+
+async function showHailSwathsForDate(dateDash, opts={}) {
+  if (!dateDash) return;
+  if (!App.map && typeof initMap==="function") initMap();
+  if (!App.map||!window.google?.maps) return;
+  try{clearStormMarkers();}catch{}
+  if (opts.additive!==true) { try{clearLsrOverlays();}catch{} }
+  if (opts.additive!==true) {
+    try{(App.reportCircles||[]).forEach(c=>{try{c.setMap&&c.setMap(null);}catch{}});}catch{}
+    App.reportCircles=[];
+    try{if(App.recentsSwathLayer){App.recentsSwathLayer.setMap(null);App.recentsSwathLayer=null;}}catch{}
+    try{if(App.swathLayersByDate){Object.keys(App.swathLayersByDate).forEach(k=>{try{App.swathLayersByDate[k]?.setMap(null);}catch{};delete App.swathLayersByDate[k];});}}catch{}
+    try{if(App.selectedDates&&typeof App.selectedDates.clear==="function")App.selectedDates.clear();}catch{}
+  }
+  const layer=new google.maps.Data({map:App.map});
+  layer.setStyle({fillColor:"#00c2ff",fillOpacity:0.22,strokeColor:"#ffffff",strokeOpacity:0.9,strokeWeight:2});
+  if(opts.additive===true){App.swathLayersByDate[dateDash]=layer;}else{App.recentsSwathLayer=layer;}
+  await Promise.all([
+    (async()=>{try{await loadHailReports(dateDash);}catch(e){console.error("[SWATH] LSR failed",e);}})(),
+    (async()=>{try{await loadRadarSwaths(dateDash,layer);}catch(e){console.error("[SWATH] Radar failed",e);}})(),
+  ]);
+  try{const bounds=new google.maps.LatLngBounds();layer.forEach(f=>{const g=f.getGeometry();if(g&&typeof g.forEachLatLng==="function")g.forEachLatLng(ll=>bounds.extend(ll));});if(!bounds.isEmpty())App.map.fitBounds(bounds);}catch{}
+  // Update status chip
+  try{ const chip=document.getElementById("mapStatusChip"); if(chip) chip.textContent="Hail layer loaded · "+dateDash; }catch{}
+}
+
+/* =========================================================
+   GOOGLE MAPS
+   ========================================================= */
+window.initMap = function initMap() {
+  const mapEl = document.getElementById("stormMap");
+  if (!mapEl||App.map) return;
+
+  App.map = new google.maps.Map(mapEl, {
+    center:{lat:39.5,lng:-98.35}, zoom:4,
+    mapTypeId: google.maps.MapTypeId.HYBRID,
+    zoomControl:false, streetViewControl:false, mapTypeControl:false, fullscreenControl:false,
+  });
+
+  const map = App.map;
+  const killMTC = () => { try{ map.controls[google.maps.ControlPosition.TOP_LEFT]?.clear?.(); map.controls[google.maps.ControlPosition.LEFT_TOP]?.clear?.(); document.querySelectorAll(".gm-style-mtc").forEach(n=>n.remove()); }catch{} };
+  killMTC();
+  google.maps.event.addListenerOnce(map,"idle",killMTC);
+  google.maps.event.addListenerOnce(map,"tilesloaded",killMTC);
+  google.maps.event.addListenerOnce(map,"idle",()=>{ try{map.setOptions({mapTypeId:google.maps.MapTypeId.HYBRID});}catch{} });
+
+  // Hard-kill MTC via MutationObserver
+  (function(container){ if(!container)return; const kill=()=>container.querySelectorAll(".gm-style-mtc,.gm-style .gm-style-mtc").forEach(el=>el.remove()); kill(); new MutationObserver(()=>kill()).observe(container,{childList:true,subtree:true}); })(mapEl);
+
+  App.geocoder = new google.maps.Geocoder();
+  App.infoWindow = new google.maps.InfoWindow();
+
+  App.map.addListener("click", e => {
+    if (App.map.getZoom() >= 17) {
+      const lat=e.latLng.lat(),lng=e.latLng.lng();
+      let info="";
+      if (App.activeStorm) {
+        const d=App.activeStorm.dateKey?new Date(App.activeStorm.dateKey+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"}):formatStormDate(App.activeStorm);
+        info=`<div>Storm date: ${d}</div><div>Hail size: ${App.activeStorm.maxHail||"N/A"}</div>`;
+      } else { info="<div>No storm selected.</div>"; }
+      App.infoWindow.setContent(`<div style="font-family:Poppins,sans-serif;padding:10px;">${info}<button onclick="getDirectionsToHouse(${lat},${lng})" style="display:block;margin-bottom:5px;padding:8px 12px;background:#38bdf8;color:white;border:none;border-radius:4px;cursor:pointer;">Get directions</button><button onclick="startInspection(${lat},${lng})" style="display:block;padding:8px 12px;background:#0ea5e9;color:white;border:none;border-radius:4px;cursor:pointer;">Start inspection</button></div>`);
+      App.infoWindow.setPosition(e.latLng);
+      App.infoWindow.open(App.map);
+    }
+  });
+
+  initMapsViewOnce();
+};
+
+function getDirectionsToHouse(lat,lng){ window.open("https://www.google.com/maps/dir/?api=1&origin=My+Location&destination="+lat+","+lng+"&travelmode=driving","_blank","noopener,noreferrer"); }
+function startInspection(lat,lng){ console.log("Starting inspection at",lat,lng); }
+
+function formatStormDate(storm) {
+  if (!storm) return "Unknown date";
+  const v=storm.date||storm.stormDate||storm.eventDate||storm.timestamp||storm.ts||storm.startTime||storm.start||storm.datetime||storm.dateString;
+  if (!v) return "Unknown date";
+  let d;
+  if (typeof v==="number") d=new Date(v>1e10?v:v*1000);
+  else if (typeof v==="string") d=new Date(v);
+  else if (v instanceof Date) d=v;
+  else return "Unknown date";
+  if (isNaN(d.getTime())) return "Unknown date";
+  return d.toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"});
+}
+
+function extractStormDateValue(storm) {
+  if (!storm) return null;
+  const s=storm.properties||storm.data||storm.stats||storm;
+  const v=s.eventDate||s.stormDate||s.date||s.validDate||s.day||s.startDate||s.startTime||s.timestamp||s.ts||s.time||s.datetime||s.valid||s.begin||s.start||s.dateString;
+  if (!v) return null;
+  if (typeof v==="number") return v>1e10?v:v*1000;
+  if (typeof v==="string"){const d=new Date(v);return isNaN(d.getTime())?null:d.getTime();}
+  if (v instanceof Date) return v.getTime();
+  return null;
+}
+
+/* =========================================================
+   NOAA PROXY
+   ========================================================= */
+async function fetchNoaaHailReports(overrides={}) {
+  const PROXY_BASE="https://noaaplsrproxy-jzyejnppqa-uc.a.run.app";
+  const urlParams=new URLSearchParams(window.location.search);
+  const modeRaw=String(overrides.mode||urlParams.get("mode")||"radar").trim().toLowerCase();
+  const mode=(modeRaw==="reports")?"reports":"radar";
+  const endDate=new Date(),startDate=new Date(endDate);
+  startDate.setDate(startDate.getDate()-31);
+  const formatDate=d=>d.getFullYear()+("0"+(d.getMonth()+1)).slice(-2)+("0"+d.getDate()).slice(-2);
+  const startDateStr=overrides.start||urlParams.get("start")||formatDate(startDate);
+  const endDateStr=overrides.end||urlParams.get("end")||formatDate(endDate);
+  const bbox=overrides.bbox||urlParams.get("bbox")||"-106.65,25.84,-93.51,36.50";
+  const limit="20000";
+  const base=PROXY_BASE.endsWith("/")?PROXY_BASE.slice(0,-1):PROXY_BASE;
+  function extractDateDashFromStorm(s){ const v=s?.props?.valid||s?.props?.VALID||s?.props?.begin||s?.props?.BEGIN||s?.props?.start||s?.props?.START||null;if(typeof v==="string"){if(v.length>=10&&/^\d{4}-\d{2}-\d{2}/.test(v))return v.slice(0,10);if(/^\d{8}$/.test(v))return v.slice(0,4)+"-"+v.slice(4,6)+"-"+v.slice(6,8);}return null; }
+  if (mode==="reports") {
+    const parseYmd=s=>{const y=Number(s.slice(0,4)),m=Number(s.slice(4,6)),d=Number(s.slice(6,8));return new Date(Date.UTC(y,m-1,d));};
+    const fmtYmd=d=>d.getUTCFullYear()+String(d.getUTCMonth()+1).padStart(2,"0")+String(d.getUTCDate()).padStart(2,"0");
+    let startUTC=parseYmd(startDateStr),endUTC=parseYmd(endDateStr);
+    if(startUTC>endUTC){const tmp=startUTC;startUTC=endUTC;endUTC=tmp;}
+    const mergedStorms=[],dateSet=new Set();
+    let curStart=new Date(startUTC),chunkIdx=0;
+    while(curStart<=endUTC){
+      const curEnd=new Date(curStart);curEnd.setUTCDate(curEnd.getUTCDate()+29);if(curEnd>endUTC)curEnd.setTime(endUTC.getTime());
+      const cs=fmtYmd(curStart),ce=fmtYmd(curEnd);
+      const url=base+"/noaaPlsrProxy?mode=reports&start="+cs+"&end="+ce+"&bbox="+encodeURIComponent(bbox)+"&eventType=Hail&limit="+limit;
+      const resp=await fetch(url),raw=await resp.text();
+      if(!resp.ok)throw new Error("[NOAA chunk "+chunkIdx+" "+cs+"-"+ce+"] HTTP "+resp.status+" body: "+raw.slice(0,500));
+      const chunkData=JSON.parse(raw);
+      (Array.isArray(chunkData?.storms)?chunkData.storms:[]).forEach(s=>{mergedStorms.push(s);const d=extractDateDashFromStorm(s);if(d)dateSet.add(d);});
+      const nextStart=new Date(curEnd);nextStart.setUTCDate(nextStart.getUTCDate()+1);curStart=nextStart;chunkIdx++;
+    }
+    const datesOut=[...dateSet].sort((a,b)=>String(b).localeCompare(String(a)));
+    App.loadedStorms=mergedStorms;App.availableDates=datesOut;
+    return{storms:mergedStorms,availableDates:datesOut};
+  }
+  // Radar single-request
+  const url=base+"/noaaPlsrProxy?mode="+mode+"&start="+startDateStr+"&end="+endDateStr+"&bbox="+encodeURIComponent(bbox)+"&limit="+limit;
+  const resp=await fetch(url),raw=await resp.text();
+  if(!resp.ok)throw new Error("[NOAA] HTTP "+resp.status+" body: "+raw.slice(0,500));
+  const data=JSON.parse(raw);
+  const stormsOut=Array.isArray(data?.storms)?data.storms:[];
+  const datesOut=[...new Set((stormsOut).map(extractDateDashFromStorm).filter(Boolean))].sort((a,b)=>String(b).localeCompare(String(a)));
+  App.loadedStorms=stormsOut;App.availableDates=datesOut;
+  return{storms:stormsOut,availableDates:datesOut};
+}
+
+/* =========================================================
+   DATE PAGINATION (Get Dates flow)
+   ========================================================= */
+const DatePagination = { loadedMonths:3, maxMonths:12, stepMonths:3 };
+function computeStartEndForLoadedMonths(m){ const t=utcToday(),e=fmtYYYYMMDD_utc(t),s=fmtYYYYMMDD_utc(addDaysUTC(t,-m*30)); return{start:s,end:e}; }
+function updatePagingUi(){ const b=document.getElementById("loadNextDatesBtn"); if(b){ b.style.display=AppDates.monthsLoaded>=AppDates.maxMonths?"none":"inline-flex"; b.disabled=false; } }
+function setStormDateOptions(datesDash,append=false){ const ds=document.getElementById("dateSelect"); if(!ds)return; if(!append)ds.innerHTML=""; if(!Array.isArray(datesDash)||!datesDash.length){ if(!append){const o=document.createElement("option");o.value="";o.textContent="No dates found";ds.appendChild(o);ds.disabled=true;} return; } const sorted=[...datesDash].sort((a,b)=>String(b).localeCompare(String(a))); if(!append){const o0=document.createElement("option");o0.value="";o0.textContent="Select a date…";ds.appendChild(o0);} for(const d of sorted){ if(append&&Array.from(ds.options).some(o=>o.value===d))continue; const o=document.createElement("option");o.value=d;o.textContent=d;ds.appendChild(o); } ds.disabled=false; updatePagingUi(); }
+function setDateStatus(msg){ const e=document.getElementById("dateStatus"); if(e)e.textContent=msg||""; }
+function resetDatesUi(msg){ const ds=document.getElementById("dateSelect"); if(ds){ds.disabled=true;ds.innerHTML="<option>Pick State + Scope + Storm type first.</option>";} setDateStatus(msg||""); }
+function resetPagingAndUi(){ AppDates={monthsLoaded:0,maxMonths:12,pageSizeMonths:3,loaded:new Set(),ranges:[]};App.availableDates=[];App.allStorms=[];App.loadedStorms=[];App.selectedDate=null;resetDatesUi("");updatePagingUi(); }
+function computeNextPageRange(){ const today=new Date(Date.UTC(new Date().getUTCFullYear(),new Date().getUTCMonth(),new Date().getUTCDate())); if(!AppDates.monthsLoaded||!AppDates.ranges.length){const e=today,s=addMonths(e,-AppDates.pageSizeMonths);return{start:s,end:e};} const prev=AppDates.ranges[AppDates.ranges.length-1].start,ne=addDays(prev,-1),ns=addMonths(ne,-AppDates.pageSizeMonths);return{start:ns,end:ne}; }
+function updateGetDatesBtnState(){ const st=(document.getElementById("stateSelect")?.value||"").trim(),sc=(document.getElementById("scopeSelect")?.value||"").trim(),ty=(document.getElementById("stormTypeTop")?.value||"").trim(),btn=document.getElementById("getDatesBtn"); if(btn)btn.disabled=!(st&&sc&&ty); }
+function updateCityUiVisibility(){ const scope=document.getElementById("scopeSelect")?.value||"state",show=scope==="city",cl=document.getElementById("cityLabel"),rl=document.getElementById("radiusLabel"); if(cl)cl.style.display=show?"":"none"; if(rl)rl.style.display=show?"":"none"; if(show&&typeof setupCityAutocomplete==="function")setupCityAutocomplete(); }
+function setupCityAutocomplete(){ const input=document.getElementById("cityInput"); if(!input||App.cityAutocomplete)return; if(!window.google?.maps?.places?.Autocomplete){console.warn("Google Places not available");return;} App.cityAutocomplete=new google.maps.places.Autocomplete(input,{types:["(cities)"],componentRestrictions:{country:"us"}}); App.cityAutocomplete.addListener("place_changed",()=>{const p=App.cityAutocomplete.getPlace();const n=p?.formatted_address||p?.name||input.value;if(n)input.value=n;updateGetDatesBtnState();}); }
+
+async function fetchDatesForRange(st,scope,type){
+  const {start,end}=computeNextPageRange();
+  const startYmd=toYMD(start),endYmd=toYMD(end);
+  const bbox=await getBboxForSelectedState(st);
+  if(!bbox){setDateStatus("Could not determine bbox.");return false;}
+  let resp;
+  try{resp=await fetchNoaaHailReports({mode:"reports",start:startYmd,end:endYmd,bbox});}catch(e){setDateStatus("Dates fetch failed.");return false;}
+  let storms=Array.isArray(resp?.storms)?resp.storms:[],dates=Array.isArray(resp?.availableDates)?resp.availableDates:[];
+  if(scope==="city"){
+    const city=(document.getElementById("cityInput")?.value||"").trim();if(!city){setDateStatus("Enter a city.");return false;}
+    try{const g=App.geocoder||(App.geocoder=new google.maps.Geocoder());const result=await new Promise((res,rej)=>g.geocode({address:city},(results,status)=>{if(status==="OK"&&results&&results[0])res(results[0]);else rej(new Error(status||"GEOCODE_FAILED"));}));const loc=result.geometry?.location,lat=typeof loc?.lat==="function"?loc.lat():Number(loc?.lat),lng=typeof loc?.lng==="function"?loc.lng():Number(loc?.lng);const radiusMi=Number(document.getElementById("radiusSelect")?.value)||10,radiusKm=milesToKm(radiusMi);const t=String(type||"").toLowerCase();const tf=storms.filter(s=>!t||t==="all"||String(s?.event||s?.type||s?.props?.event||"").toLowerCase().includes(t));storms=tf.filter(s=>{const la=Number(s?.lat??s?.latitude??s?.Latitude??s?.geometry?.coordinates?.[1]),lo=Number(s?.lng??s?.longitude??s?.Longitude??s?.lon??s?.geometry?.coordinates?.[0]);if(!Number.isFinite(la)||!Number.isFinite(lo))return false;return haversineKm(lat,lng,la,lo)<=radiusKm;});dates=uniqueSortedDatesFromStorms(storms);}catch(e){setDateStatus("City not found.");return false;}
+  }
+  if(!Array.isArray(dates)||!dates.length)dates=uniqueSortedDatesFromStorms(storms);
+  const startIso=toISO(start),endIso=toISO(end),pageDates=dates.filter(d=>d>=startIso&&d<=endIso);
+  App.allStorms=App.allStorms.concat(storms);App.loadedStorms=App.allStorms;
+  pageDates.forEach(d=>AppDates.loaded.add(d));
+  AppDates.monthsLoaded=Math.min(AppDates.maxMonths,AppDates.monthsLoaded+AppDates.pageSizeMonths);
+  AppDates.ranges.push({start,end});
+  const all=Array.from(AppDates.loaded).sort((a,b)=>String(b).localeCompare(String(a)));
+  setStormDateOptions(all,false);App.availableDates=all;
+  setDateStatus(all.length+" date(s) loaded.");return true;
+}
+
+async function startDatesFlow(){ const st=(document.getElementById("stateSelect")?.value||"").trim(),sc=(document.getElementById("scopeSelect")?.value||"").trim(),ty=(document.getElementById("stormTypeTop")?.value||"").trim(); if(!st||!sc||!ty){setDateStatus("Pick State + Scope + Storm type.");return;} resetPagingAndUi(); await fetchDatesForRange(st,sc,ty); }
+async function loadNextDatesPage(){ if(AppDates.monthsLoaded>=AppDates.maxMonths){updatePagingUi();return;} const st=(document.getElementById("stateSelect")?.value||"").trim(),sc=(document.getElementById("scopeSelect")?.value||"").trim(),ty=(document.getElementById("stormTypeTop")?.value||"").trim(); await fetchDatesForRange(st,sc,ty); }
+
+/* =========================================================
+   STATE NORMALIZATION
+   ========================================================= */
+const STATE_NAME_TO_CODE={ALABAMA:"AL",ALASKA:"AK",ARIZONA:"AZ",ARKANSAS:"AR",CALIFORNIA:"CA",COLORADO:"CO",CONNECTICUT:"CT",DELAWARE:"DE",FLORIDA:"FL",GEORGIA:"GA",HAWAII:"HI",IDAHO:"ID",ILLINOIS:"IL",INDIANA:"IN",IOWA:"IA",KANSAS:"KS",KENTUCKY:"KY",LOUISIANA:"LA",MAINE:"ME",MARYLAND:"MD",MASSACHUSETTS:"MA",MICHIGAN:"MI",MINNESOTA:"MN",MISSISSIPPI:"MS",MISSOURI:"MO",MONTANA:"MT",NEBRASKA:"NE",NEVADA:"NV","NEW HAMPSHIRE":"NH","NEW JERSEY":"NJ","NEW MEXICO":"NM","NEW YORK":"NY","NORTH CAROLINA":"NC","NORTH DAKOTA":"ND",OHIO:"OH",OKLAHOMA:"OK",OREGON:"OR",PENNSYLVANIA:"PA","RHODE ISLAND":"RI","SOUTH CAROLINA":"SC","SOUTH DAKOTA":"SD",TENNESSEE:"TN",TEXAS:"TX",UTAH:"UT",VERMONT:"VT",VIRGINIA:"VA",WASHINGTON:"WA","WEST VIRGINIA":"WV",WISCONSIN:"WI",WYOMING:"WY"};
+function getSelectedStateCode(){ const sel=(App.els.stateSelect?.value||"").trim().toUpperCase(); if(sel)return sel; const typed=(App.els.stateTextInput?.value||"").trim().toUpperCase().replace(/\s+/g," "); if(!typed)return""; if(typed.length===2&&/^[A-Z]{2}$/.test(typed))return typed; return STATE_NAME_TO_CODE[typed]||""; }
+function getSelectedStormType(){ return String(document.getElementById("stormTypeTop")?.value||App.els?.stormSelect?.value||"hail").trim().toLowerCase(); }
+
+/* =========================================================
+   STORM LIST UI
+   ========================================================= */
+function clearStormMarkers(){ App.markers.forEach(m=>m.setMap(null)); App.markers=[]; }
+
+function renderStormList() {
+  const listEl=App.els.stormList; if(!listEl)return; listEl.innerHTML="";
+  if (!App.selectedDate) {
+    const keys=[...new Set((App.loadedStorms||[]).map(s=>s&&s.date).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
+    if (!keys.length){listEl.innerHTML="<div>No dates found.</div>";return;}
+    keys.forEach(key=>{const div=document.createElement("div");div.className="stormbait-item";div.textContent=new Date(key+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"});div.dataset.dateKey=key;listEl.appendChild(div);});
+  } else {
+    const rows=App.loadedStorms.filter(s=>{const v=extractStormDateValue(s);if(!v)return false;return new Date(v).toISOString().split("T")[0]===App.selectedDate;});
+    if(!rows.length){listEl.innerHTML="<div>No storms for this date.</div>";return;}
+    const search=(App.els.stormSearchInput?.value||"").trim().toLowerCase();
+    rows.filter(s=>!search||[s.name,s.dateString,s.city,s.state,s.type].filter(Boolean).join(" ").toLowerCase().includes(search)).forEach(s=>{
+      const div=document.createElement("div");div.className="stormbait-item";div.textContent=(s.dateString||"")+" • "+(s.name||"Storm")+(s.city?" — "+s.city:"")+(typeof s.avgValue==="number"?" • $"+s.avgValue.toLocaleString():"");
+      div.dataset.stormId=s.id;
+      const lat=Number(s.lat??s.latitude??s.Latitude),lng=Number(s.lng??s.longitude??s.Longitude??s.lon);
+      if(Number.isFinite(lat)&&Number.isFinite(lng)){div.dataset.lat=lat;div.dataset.lng=lng;}
+      listEl.appendChild(div);
+    });
+  }
+
+  // Set up auth listener now if auth is ready, otherwise wait for libs
+  if(window.auth) {
+    _setupAuthStateListener();
+  } else {
+    document.addEventListener('hmm:libs:ready', _setupAuthStateListener);
+  }
+
+  // Show loading state on login button until auth is ready
+  if(!window.auth && loginBtn) {
+    loginBtn.textContent = 'Loading…';
+    loginBtn.disabled = true;
+    document.addEventListener('hmm:libs:ready', () => {
+      loginBtn.textContent = 'Sign In';
+      loginBtn.disabled = false;
+    });
+  }
+}
+
+function focusStormOnMap(stormId,rawLat,rawLng){ const lat=Number(rawLat),lng=Number(rawLng); if(!Number.isFinite(lat)||!Number.isFinite(lng))return; if(!App.map)return; App.map.panTo({lat,lng});App.map.setZoom(18); let marker=App.markers.find(m=>m.stormId===stormId); if(!marker){marker=new google.maps.Marker({map:App.map,position:{lat,lng},title:"Storm"});marker.stormId=stormId;App.markers.push(marker);} marker.setAnimation(google.maps.Animation.BOUNCE);setTimeout(()=>marker.setAnimation(null),2000); }
+
+/* =========================================================
+   NAV WIRING
+   ========================================================= */
+function wireNavigation() {
+  App.views.hubView        = document.getElementById("hubView");
+  App.views.mainMenuView   = document.getElementById("mainMenuView");
+  App.views.mapsView       = document.getElementById("mapsView");
+  App.views.directoryView  = document.getElementById("directoryView");
+  App.views.insuranceView  = document.getElementById("insuranceView");
+  App.views.meView         = document.getElementById("meView");
+  App.views.myTeamView     = document.getElementById("myTeamView");
+  App.views.adminView      = document.getElementById("adminView");
+  App.views.campaignView   = document.getElementById("campaignView");
+
+  document.getElementById("hubToMenuBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
+  document.getElementById("menuMaps")?.addEventListener("click",()=>showOnlyView(App.views.mapsView));
+  document.getElementById("menuDirectory")?.addEventListener("click",()=>showOnlyView(App.views.directoryView));
+  document.getElementById("menuInsurance")?.addEventListener("click",()=>showOnlyView(App.views.insuranceView));
+  document.getElementById("menuMe")?.addEventListener("click",()=>showOnlyView(App.views.meView));
+  document.getElementById("menuMyTeam")?.addEventListener("click",()=>showOnlyView(App.views.myTeamView));
+  document.getElementById("menuAdmin")?.addEventListener("click",()=>showOnlyView(App.views.adminView));
+  document.getElementById("directoryBackBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
+  document.getElementById("insuranceBackBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
+  document.getElementById("meBackBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
+  document.getElementById("myTeamBackBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
+  document.getElementById("adminBackBtn")?.addEventListener("click",()=>showOnlyView(App.views.mainMenuView));
+
+  // Campaign rail button (inside maps view)
+  document.addEventListener("click", e => {
+    const btn = e.target.closest('.ht-rail-btn[data-view="campaign"]');
+    if (btn) { showOnlyView(App.views.campaignView); initCampaignPageOnce(); }
+  });
+}
+
+/* =========================================================
+   PROFILE + SUBSCRIPTIONS
+   ========================================================= */
+function safeCall(fn){ try{if(typeof fn==="function")fn();}catch(e){console.error(e);} }
+
+function setupProfileAndSubs(user) {
+  if (!user||!window.db) return;
+  window.db.collection("users").doc(user.uid).get().then(doc => {
+    const roleTag=document.getElementById("userRoleTag"),adminCard=document.getElementById("menuAdmin");
+    if (doc.exists) {
+      App.currentUserProfile=doc.data()||{};
+      const role=(App.currentUserProfile.role||"rep").toLowerCase();
+      if(roleTag)roleTag.textContent=role.toUpperCase();
+      if(adminCard)adminCard.style.display=(role==="admin"||role==="owner")?"flex":"none";
+      if(App.currentUserProfile.teamId&&typeof window.subscribeTeamChat==="function")window.subscribeTeamChat(App.currentUserProfile.teamId);
+    } else {
+      App.currentUserProfile=null;
+      if(roleTag)roleTag.textContent="REP";
+      if(adminCard)adminCard.style.display="none";
+    }
+  }).catch(e=>console.error("Error loading profile:",e));
+  safeCall(window.subscribeCompanyChat);
+  safeCall(window.loadAdminUsers);
+  safeCall(window.loadStepsDashboard);
+  safeCall(window.loadRegions);
+  safeCall(window.loadAdminPayroll);
+}
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+function wireAuth() {
+  const loginBtn=document.getElementById("loginBtn"),authEmail=document.getElementById("authEmail"),authPassword=document.getElementById("authPassword"),authStatus=document.getElementById("authStatus"),signOutBtn=document.getElementById("signOutBtn");
+  function setAuthStatus(msg,isError){ if(!authStatus)return;authStatus.style.color=isError?"#fca5a5":"#86efac";authStatus.textContent=msg||""; }
+  function doLogin(){
+    const email=(authEmail?.value||"").trim(),pass=(authPassword?.value||"").trim();
+    if(!email||!pass){setAuthStatus("Enter email + password.",true);return;}
+    if(!window.auth){
+      setAuthStatus("Still loading — please wait a moment and try again.",true);
+      return;
+    }
+    setAuthStatus("Signing in…",false);
+    if(loginBtn)loginBtn.disabled=true;
+    window.auth.signInWithEmailAndPassword(email,pass)
+      .then(()=>{setAuthStatus("",false);if(authPassword)authPassword.value="";})
+      .catch(err=>{console.error("Login error:",err);setAuthStatus(err?.message||"Login failed.",true);})
+      .finally(()=>{if(loginBtn)loginBtn.disabled=false;});
+  }
+  if(loginBtn)loginBtn.addEventListener("click",doLogin);
+  if(authPassword)authPassword.addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
+  if(signOutBtn)signOutBtn.addEventListener("click",()=>window.auth.signOut().catch(e=>console.error("Sign out error:",e)));
+  const authScreen=document.getElementById("authScreen"),appRoot=document.getElementById("appRoot"),userEmailLabel=document.getElementById("userEmailLabel");
+  function _setupAuthStateListener(){
+    if(!window.auth||typeof window.auth.onAuthStateChanged!=="function") return;
+    window.auth.onAuthStateChanged(user=>{
+      if(user){
+        if(authScreen)authScreen.style.display="none";
+        if(appRoot)appRoot.style.display="flex";
+        if(userEmailLabel)userEmailLabel.textContent=user.email||"user";
+        setupProfileAndSubs(user);
+        showOnlyView(App.views.hubView);
+      } else {
+        if(appRoot)appRoot.style.display="none";
+        if(authScreen)authScreen.style.display="flex";
+        if(authStatus)authStatus.textContent="";
+      }
+    });
+  }
+}
+
+/* =========================================================
+   MAP CONTROLS WIRING
+   ========================================================= */
+function wireMapControls() {
+  App.els.stormList         = document.getElementById("stormList");
+  App.els.stormSearchInput  = document.getElementById("stormSearchInput");
+  App.els.stateSelect       = document.getElementById("stateSelect");
+  App.els.stormSelect       = document.getElementById("stormSelect");
+  App.els.minValueInput     = document.getElementById("minValueInput");
+  App.els.stormListPanel    = document.getElementById("stormListPanel");
+  App.els.mapStatus         = document.getElementById("mapStatus");
+  App.els.directionsBtn     = document.getElementById("directionsBtn");
+  App.els.searchLocationBtn = document.getElementById("searchLocationBtn");
+  App.els.addressInput      = document.getElementById("addressInput");
+
+  document.getElementById("stateSelect")?.addEventListener("change",()=>{resetDatesUi("State changed.");updateGetDatesBtnState();});
+  document.getElementById("scopeSelect")?.addEventListener("change",()=>{updateCityUiVisibility();resetDatesUi("Scope changed.");updateGetDatesBtnState();});
+  document.getElementById("stormTypeTop")?.addEventListener("change",()=>{resetDatesUi("Storm type changed.");updateGetDatesBtnState();});
+  document.getElementById("dateSelect")?.addEventListener("change",async()=>{
+    const dateDash=(document.getElementById("dateSelect")?.value||"").trim();
+    if(!dateDash)return;
+    App.selectedDate=dateDash;
+    setDateStatus(dateDash+": loading…");
+    await showHailSwathsForDate(dateDash);
+  });
+  document.getElementById("radiusSelect")?.addEventListener("change",()=>{if((document.getElementById("scopeSelect")?.value||"")==="city"){resetDatesUi("Radius changed.");updateGetDatesBtnState();}});
+  const cityInput=document.getElementById("cityInput");
+  if(cityInput){cityInput.addEventListener("blur",()=>{if((document.getElementById("scopeSelect")?.value||"")==="city"){resetDatesUi("City changed.");updateGetDatesBtnState();}});cityInput.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();updateGetDatesBtnState();}});}
+  if(App.els.stormSearchInput)App.els.stormSearchInput.addEventListener("input",renderStormList);
+  if(App.els.minValueInput)App.els.minValueInput.addEventListener("change",renderStormList);
+  const getDatesBtn=document.getElementById("getDatesBtn");
+  if(getDatesBtn&&!getDatesBtn.dataset.bound){getDatesBtn.dataset.bound="1";getDatesBtn.addEventListener("click",async e=>{e.preventDefault();await startDatesFlow();});}
+  const loadNextBtn=document.getElementById("loadNextDatesBtn");
+  if(loadNextBtn&&!loadNextBtn.dataset.bound){loadNextBtn.dataset.bound="1";loadNextBtn.addEventListener("click",async()=>{await loadNextDatesPage();});}
+  updateGetDatesBtnState();
+  if(App.els.searchLocationBtn&&App.els.addressInput){
+    App.els.searchLocationBtn.addEventListener("click",()=>{const addr=(App.els.addressInput.value||"").trim();if(!addr||!App.geocoder||!App.map)return;App.geocoder.geocode({address:addr},(results,status)=>{if(status==="OK"&&results[0]){App.map.setCenter(results[0].geometry.location);App.map.setZoom(16);}else alert("Could not find that address.");});});
+    App.els.addressInput.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();App.els.searchLocationBtn.click();}});
+  }
+  if(App.els.directionsBtn){App.els.directionsBtn.addEventListener("click",()=>{if(!App.destination||!Number.isFinite(App.destination.lat)||!Number.isFinite(App.destination.lng))return;window.open("https://www.google.com/maps/dir/?api=1&destination="+App.destination.lat+","+App.destination.lng+"&travelmode=driving","_blank");});}
+}
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+window.addEventListener("DOMContentLoaded", async () => {
+
+  wireMapControls();
+  wireNavigation();
+  wireAuth();
+  updateCityUiVisibility();
+
+  // Wire sidebar tabs
+  document.querySelectorAll(".sidebar-tab").forEach(tab => {
+    tab.addEventListener("click", function() {
+      document.querySelectorAll(".sidebar-tab").forEach(t=>t.classList.remove("active"));
+      this.classList.add("active");
+    });
+  });
+
+  // Wire myteam tabs
+  document.querySelectorAll(".myteam-tab").forEach(tab => {
+    tab.addEventListener("click", function() {
+      document.querySelectorAll(".myteam-tab").forEach(t=>t.classList.remove("active"));
+      document.querySelectorAll(".myteam-subview").forEach(v=>v.classList.remove("active"));
+      this.classList.add("active");
+      const target = document.getElementById("myTeam"+this.dataset.myteamTab.charAt(0).toUpperCase()+this.dataset.myteamTab.slice(1)+"View");
+      if(target)target.classList.add("active");
+    });
+  });
+
+  // Wire admin tabs
+  document.querySelectorAll(".admin-subtab-btn").forEach(btn => {
+    btn.addEventListener("click", function() {
+      document.querySelectorAll(".admin-subtab-btn").forEach(b=>b.classList.remove("active"));
+      document.querySelectorAll(".admin-subview").forEach(v=>v.classList.remove("active"));
+      this.classList.add("active");
+      const n=this.dataset.adminTab,target=document.getElementById("admin"+n.charAt(0).toUpperCase()+n.slice(1)+"View");
+      if(target)target.classList.add("active");
+    });
+  });
+
+  // Wire dir tabs
+  document.querySelectorAll(".dir-tab").forEach(tab => {
+    tab.addEventListener("click", function() {
+      document.querySelectorAll(".dir-tab").forEach(t=>t.classList.remove("active"));
+      this.classList.add("active");
+      const label=document.getElementById("dirCategoryLabel");
+      if(label)label.textContent="Showing: "+this.dataset.dirCat;
+    });
+  });
+});
+
+</script>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places&callback=initMap"></script>
+<!-- noaa_import.js removed (local file not needed) -->
+</body>
+</html>

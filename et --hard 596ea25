@@ -1,0 +1,115 @@
+[33m596ea25[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mbackup/campaign-working[m[33m)[m HEAD@{0}: reset: moving to 596ea25
+[33mc15413c[m[33m ([m[1;33mtag: [m[1;33mWORKING-STREET-VALUES[m[33m, [m[1;31morigin/backup/campaign-working[m[33m, [m[1;32msave-before-full-insert[m[33m)[m HEAD@{1}: reset: moving to c15413c
+[33mc15413c[m[33m ([m[1;33mtag: [m[1;33mWORKING-STREET-VALUES[m[33m, [m[1;31morigin/backup/campaign-working[m[33m, [m[1;32msave-before-full-insert[m[33m)[m HEAD@{2}: rebase (abort): returning to refs/heads/backup/campaign-working
+[33mc1ec920[m HEAD@{3}: rebase (continue): CHECKPOINT: Campaign working view stable, street overlay rendering working, UI mostly complete before property-value targeting
+[33m605dbef[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{4}: pull origin master --rebase (start): checkout 605dbef62c77cd2602a3712884f1e4c7137e0127
+[33mc15413c[m[33m ([m[1;33mtag: [m[1;33mWORKING-STREET-VALUES[m[33m, [m[1;31morigin/backup/campaign-working[m[33m, [m[1;32msave-before-full-insert[m[33m)[m HEAD@{5}: commit: WORKING: Census tract + street value overlays fully functional
+[33m7b46411[m[33m ([m[1;33mtag: [m[1;33mcampaign-working-checkpoint[m[33m, [m[1;32mmaster[m[33m)[m HEAD@{6}: checkout: moving from master to backup/campaign-working
+[33m7b46411[m[33m ([m[1;33mtag: [m[1;33mcampaign-working-checkpoint[m[33m, [m[1;32mmaster[m[33m)[m HEAD@{7}: commit: CHECKPOINT: Campaign working view stable, street overlay rendering working, UI mostly complete before property-value targeting
+[33mb4e14df[m[33m ([m[1;33mtag: [m[1;33mworking-map-baseline[m[33m)[m HEAD@{8}: commit: WORKING MAP BASELINE - UI stable before brightness fix
+[33mf742863[m[33m ([m[1;33mtag: [m[1;33mSWATH_SLIDER_WORKING[m[33m)[m HEAD@{9}: reset: moving to f742863
+[33mf742863[m[33m ([m[1;33mtag: [m[1;33mSWATH_SLIDER_WORKING[m[33m)[m HEAD@{10}: reset: moving to f742863
+[33mf742863[m[33m ([m[1;33mtag: [m[1;33mSWATH_SLIDER_WORKING[m[33m)[m HEAD@{11}: reset: moving to f742863
+[33mae7c5d9[m HEAD@{12}: commit: test UI changes
+[33mb0dffd3[m HEAD@{13}: commit: icon rail fix
+[33me73dcbd[m[33m ([m[1;31morigin/backup-before-ui-rollback[m[33m, [m[1;32mbackup-before-ui-rollback[m[33m)[m HEAD@{14}: checkout: moving from master to master
+[33me73dcbd[m[33m ([m[1;31morigin/backup-before-ui-rollback[m[33m, [m[1;32mbackup-before-ui-rollback[m[33m)[m HEAD@{15}: checkout: moving from 830c396251b8c1cfef8fb59368216ffd94671840 to master
+[33m830c396[m HEAD@{16}: commit: Revert UI to SWATH_SLIDER_WORKING state
+[33m6e9e0bd[m HEAD@{17}: checkout: moving from 9dd13d8a616f702af1a90752a0140e273815ef26 to 6e9e0bd
+[33m9dd13d8[m[33m ([m[1;32mrebuild-ui-from-working-state[m[33m)[m HEAD@{18}: checkout: moving from rebuild-ui-from-working-state to 9dd13d8
+[33m9dd13d8[m[33m ([m[1;32mrebuild-ui-from-working-state[m[33m)[m HEAD@{19}: commit: Add tool icons to glass maps rail
+[33m6e9e0bd[m HEAD@{20}: commit: Restore maps left panel and flex layout
+[33m986899d[m HEAD@{21}: commit: Tighten icon rail CSS; remove !important override
+[33mf0fa9de[m HEAD@{22}: commit: Update maps icon rail layout
+[33mf742863[m[33m ([m[1;33mtag: [m[1;33mSWATH_SLIDER_WORKING[m[33m)[m HEAD@{23}: checkout: moving from f7428635cddba0d15dd575bf75dee9b750e3d54c to rebuild-ui-from-working-state
+[33mf742863[m[33m ([m[1;33mtag: [m[1;33mSWATH_SLIDER_WORKING[m[33m)[m HEAD@{24}: checkout: moving from 451345384a07981941b5afa922272647044726d0 to f742863
+[33m4513453[m[33m ([m[1;31morigin/copilot/fix-map-display-issue[m[33m)[m HEAD@{25}: checkout: moving from b2b05d23babfdb266ba04ba3844b1040917a26e7 to 4513453
+[33mb2b05d2[m[33m ([m[1;31morigin/copilot/fix-bugs-in-index-html[m[33m)[m HEAD@{26}: checkout: moving from b708a1b80eaf1de26d613c4dc89424b3a1ade445 to b2b05d2
+[33mb708a1b[m[33m ([m[1;31morigin/copilot/fix-rail-icon-image-paths[m[33m)[m HEAD@{27}: checkout: moving from master to b708a1b
+[33me73dcbd[m[33m ([m[1;31morigin/backup-before-ui-rollback[m[33m, [m[1;32mbackup-before-ui-rollback[m[33m)[m HEAD@{28}: pull --rebase origin master (finish): returning to refs/heads/master
+[33me73dcbd[m[33m ([m[1;31morigin/backup-before-ui-rollback[m[33m, [m[1;32mbackup-before-ui-rollback[m[33m)[m HEAD@{29}: pull --rebase origin master (pick): Add missing public assets
+[33m5fc9e15[m HEAD@{30}: pull --rebase origin master (pick): save current work before pull
+[33mbad8e07[m HEAD@{31}: pull --rebase origin master (start): checkout bad8e0794fb3e59989f06cb631346568196da481
+[33m10f1f14[m HEAD@{32}: commit: Add missing public assets
+[33mad3c499[m HEAD@{33}: pull origin master: Merge made by the 'ort' strategy.
+[33me61f7fe[m HEAD@{34}: checkout: moving from master to master
+[33me61f7fe[m HEAD@{35}: pull origin master: Merge made by the 'ort' strategy.
+[33md724de8[m HEAD@{36}: commit: save current work before pull
+[33mfc7c7dd[m HEAD@{37}: pull origin master: Fast-forward
+[33m2c15d31[m HEAD@{38}: pull origin master: Fast-forward
+[33mf742863[m[33m ([m[1;33mtag: [m[1;33mSWATH_SLIDER_WORKING[m[33m)[m HEAD@{39}: commit: WORKING STATE: swath opacity slider fully functional, live overlay control working
+[33m3715031[m HEAD@{40}: commit: Add maps rail icon assets
+[33mea06849[m HEAD@{41}: revert: Revert "Merge pull request #5 from samplunkett5583-sketch/feature/swath-opacity-control"
+[33mdda4e0e[m HEAD@{42}: checkout: moving from master to master
+[33mdda4e0e[m HEAD@{43}: checkout: moving from master to master
+[33mdda4e0e[m HEAD@{44}: checkout: moving from master to master
+[33mdda4e0e[m HEAD@{45}: pull: Fast-forward
+[33ma0bbe27[m HEAD@{46}: checkout: moving from feature/swath-opacity-control to master
+[33mbc34798[m[33m ([m[1;32mfeature/swath-opacity-control[m[33m)[m HEAD@{47}: commit: Start swath opacity control implementation
+[33ma0bbe27[m HEAD@{48}: checkout: moving from master to feature/swath-opacity-control
+[33ma0bbe27[m HEAD@{49}: checkout: moving from master to master
+[33ma0bbe27[m HEAD@{50}: commit: fix: regenerate package lock for LSR hail ingest
+[33m10b72a3[m HEAD@{51}: checkout: moving from master to master
+[33m10b72a3[m HEAD@{52}: commit: fix: sync package-lock.json for GitHub Actions npm ci
+[33m596ea25[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mbackup/campaign-working[m[33m)[m HEAD@{53}: reset: moving to origin/master
+[33mc66df90[m HEAD@{54}: checkout: moving from master to master
+[33mc66df90[m HEAD@{55}: checkout: moving from fix-hail-ingest to master
+[33m610e0b1[m[33m ([m[1;31morigin/fix-hail-ingest[m[33m, [m[1;32mfix-hail-ingest[m[33m)[m HEAD@{56}: pull: Fast-forward
+[33mb7e28a1[m HEAD@{57}: commit: Run LSR hail ingest every 5 minutes
+[33m87017a8[m HEAD@{58}: commit: WIP: local LSR hail ingest and hail-dates union wiring
+[33ma3157e3[m HEAD@{59}: commit: Fix NOAA domain (ncdc -> ncei)
+[33m1af0c1f[m HEAD@{60}: commit: Proxy: log upstream URL/body on NOAA failures
+[33mdafd5a7[m HEAD@{61}: commit: Pass NOAA_PROXY_BASE and verify rolling in CI
+[33m4d470e3[m HEAD@{62}: commit: Fix YAML indentation in stormevents ingest workflow
+[33m6d0fa69[m HEAD@{63}: commit: Fix stormevents workflow + echo NOAA proxy
+[33m48c76ee[m HEAD@{64}: commit: Inject NOAA_PROXY_BASE secret into stormevents ingest workflow
+[33m2e35d6d[m HEAD@{65}: commit: Fix duplicate NOAA_PROXY_BASE echo
+[33mc376970[m HEAD@{66}: commit: Increase NOAA proxy timeout and reduce default limit
+[33m5b793c7[m HEAD@{67}: commit: Reduce rolling reports limit and skip failed tiles to avoid 504
+[33mfba513b[m HEAD@{68}: commit: Do not fail ingest if rolling reports times out
+[33m1939c81[m HEAD@{69}: commit: Tile rolling reports bbox and retry to avoid proxy 504
+[33m2718226[m HEAD@{70}: commit: Deduplicate StormEvents batch by dedupe_key before upsert
+[33m77624f8[m HEAD@{71}: pull --rebase (finish): returning to refs/heads/fix-hail-ingest
+[33m77624f8[m HEAD@{72}: pull --rebase (pick): Add csv-parse dependency for StormEvents ingest
+[33m6b789b9[m HEAD@{73}: pull --rebase (start): checkout 6b789b96e6a370b9020fa7a94744189919cec797
+[33maa989ef[m HEAD@{74}: commit: Add csv-parse dependency for StormEvents ingest
+[33m62bf102[m HEAD@{75}: commit: Add root deps for ingestion (supabase-js)
+[33m65f78fb[m HEAD@{76}: commit: Add supabase-js dependency for ingestion scripts
+[33m245f30e[m HEAD@{77}: commit: Debug: log before rolling reports pass
+[33m186eb63[m HEAD@{78}: commit: Daily ingest: add rolling 14-day reports pass
+[33mef363e0[m HEAD@{79}: commit: Daily ingest: add rolling 14-day reports pass
+[33mf542015[m HEAD@{80}: commit: add automatic monthly hail ingestion
+[33me0ff52c[m HEAD@{81}: commit: load recents when maps view opens
+[33mf29a8a3[m HEAD@{82}: commit: load recents on maps init
+[33mb898891[m HEAD@{83}: commit: wire recents to supabase hail-dates
+[33md734c1c[m HEAD@{84}: commit: maps: permanently remove debug UI
+[33m6c7b216[m HEAD@{85}: commit: maps: remove right-side google map controls
+[33m4813953[m HEAD@{86}: commit: maps: disable DEBUG_STORMS
+[33mc1fa050[m HEAD@{87}: rebase (finish): returning to refs/heads/fix-hail-ingest
+[33mc1fa050[m HEAD@{88}: rebase (pick): hail-dates: use hail_reports.event_date
+[33m7a73914[m HEAD@{89}: rebase (pick): chore: remove local MRMS sample and server script from repo
+[33m839abed[m HEAD@{90}: rebase (continue): checkpoint: lock glass UI and maps layout
+[33ma7f6ef3[m HEAD@{91}: pull --rebase (start): checkout a7f6ef3d525b29ceb16c4236f4e6dffaa3987763
+[33m148bd38[m HEAD@{92}: commit: hail-dates: use hail_reports.event_date
+[33m82a2a14[m[33m ([m[1;32mui-locked-checkpoint[m[33m)[m HEAD@{93}: checkout: moving from ui-locked-checkpoint to fix-hail-ingest
+[33m82a2a14[m[33m ([m[1;32mui-locked-checkpoint[m[33m)[m HEAD@{94}: merge fix-hail-ingest: Fast-forward
+[33m7e1e990[m HEAD@{95}: checkout: moving from fix-hail-ingest to ui-locked-checkpoint
+[33m82a2a14[m[33m ([m[1;32mui-locked-checkpoint[m[33m)[m HEAD@{96}: commit: chore: remove local MRMS sample and server script from repo
+[33m7e1e990[m HEAD@{97}: commit: checkpoint: lock glass UI and maps layout
+[33m63e9f9e[m HEAD@{98}: commit: Maps UI: left panel translucency and layout cleanup
+[33m6e7b953[m HEAD@{99}: checkout: moving from master to fix-hail-ingest
+[33mc66df90[m HEAD@{100}: reset: moving to HEAD
+[33mc66df90[m HEAD@{101}: commit: Add local NOAA proxy and tiled ingest for SWDI bbox limits
+[33md7898e1[m HEAD@{102}: commit: chore: add root gitignore for MRMS, secrets, and local tooling
+[33m5ed72d5[m HEAD@{103}: commit: Dedupe stormevents_raw upsert batch
+[33m82802f2[m HEAD@{104}: commit: Add supabase-js and csv-parse deps
+[33m88db041[m HEAD@{105}: commit: Add debug step to workflow
+[33m974fb8e[m HEAD@{106}: reset: moving to 974fb8e566c9ef153540f909262e10d0f56235ee
+[33m974fb8e[m HEAD@{107}: reset: moving to origin/master
+[33m465a0f1[m HEAD@{108}: rebase (abort): returning to refs/heads/master
+[33m974fb8e[m HEAD@{109}: pull --rebase origin master (start): checkout 974fb8e566c9ef153540f909262e10d0f56235ee
+[33m465a0f1[m HEAD@{110}: reset: moving to HEAD
+[33m465a0f1[m HEAD@{111}: commit: Fix workflow install ordering for hail ingest
+[33m3e68f98[m HEAD@{112}: commit: Add nightly StormEvents hail ingest job
+[33m93019de[m HEAD@{113}: commit: Baseline before storm date fixes
+[33m3813c42[m HEAD@{114}: commit (initial): Initial clean baseline

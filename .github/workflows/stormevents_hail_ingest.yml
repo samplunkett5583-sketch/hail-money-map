@@ -8,6 +8,8 @@ on:
 jobs:
   ingest:
     runs-on: ubuntu-latest
+    env:
+      NOAA_PROXY_BASE: ${{ secrets.NOAA_PROXY_BASE }}
     timeout-minutes: 45
 
     steps:
@@ -26,11 +28,23 @@ jobs:
         run: |
           pwd
           ls -la
-          ls -la node_modules || echo "no node_modules here"
-          cat package.json || echo "no package.json here"
-
+          echo "----- package.json -----"
+          cat package.json || echo "NO ROOT package.json"
+          echo "----- node_modules -----"
+          ls node_modules || echo "NO node_modules"
+            
       - name: Run hail ingest
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node scripts/ingest_stormevents_hail.mjs
+          NOAA_PROXY_BASE: ${{ secrets.NOAA_PROXY_BASE }}
+        run: |
+          echo "NOAA_PROXY_BASE=$NOAA_PROXY_BASE"
+          grep -n "ENTERING rolling" scripts/ingest_stormevents_hail.mjs || true
+          node scripts/ingest_stormevents_hail.mjs
+
+
+
+
+
+
