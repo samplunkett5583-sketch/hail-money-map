@@ -2538,11 +2538,53 @@ async function fetchNoaaHailReports(overrides = {}) {
     throw e;
   }
 
-  const stormsOut = Array.isArray(data?.storms) ? data.storms : [];
-  const datesOut = [...new Set((stormsOut || []).map(extractDateDashFromStorm).filter(Boolean))]
-    .sort((a, b) => String(b).localeCompare(String(a)));
+  const rows = Array.isArray(data?.storms)
+    ? data.storms
+    : (Array.isArray(data?.features) ? data.features : []);
+  const rangeByDate = {};
+  const dateSet = new Set();
+  const getDateKey = (row) => {
+    const direct = row?.date;
+    if (typeof direct === "string" && /^\d{4}-\d{2}-\d{2}/.test(direct)) {
+      return direct.slice(0, 10);
+    }
+    const timeVal = row?.ztime ?? row?.validTime ?? row?.eventTime;
+    if (timeVal == null) return null;
+    let dt;
+    if (typeof timeVal === "number") {
+      const ms = timeVal > 1e12 ? timeVal : (timeVal > 1e10 ? timeVal : timeVal * 1000);
+      dt = new Date(ms);
+    } else {
+      dt = new Date(timeVal);
+    }
+    if (isNaN(dt.getTime())) return null;
+    return dt.toISOString().split("T")[0];
+  };
 
-  console.log("NOAA storms length:", stormsOut.length);
+  rows.forEach((row) => {
+    const dateKey = getDateKey(row);
+    if (dateKey) {
+      dateSet.add(dateKey);
+    }
+    const hailSize = Number(row?.hailSize);
+    let hailValue = Number.isFinite(hailSize) && hailSize > 0 ? hailSize : null;
+    if (hailValue == null) {
+      const props = row?.props || row?.properties || {};
+      const candidates = [props?.MAXSIZE, props?.MESH, props?.POSH]
+        .map((v) => Number(v))
+        .filter((n) => Number.isFinite(n) && n > 0);
+      if (candidates.length) hailValue = Math.max(...candidates);
+    }
+    if (dateKey && Number.isFinite(hailValue) && hailValue > 0) {
+      const prev = rangeByDate[dateKey];
+      if (!Number.isFinite(prev) || hailValue > prev) rangeByDate[dateKey] = hailValue;
+    }
+  });
+
+  const stormsOut = rows;
+  const datesOut = [...dateSet].sort((a, b) => String(b).localeCompare(String(a)));
+
+  console.log("[DATES RADAR QUERY] storms length:", stormsOut.length, "sample:", stormsOut[0]);
   console.log("NOAA availableDates length:", datesOut.length);
   console.log("NOAA firstDate:", datesOut[0]);
   if (!datesOut.length) {
@@ -2555,7 +2597,8 @@ async function fetchNoaaHailReports(overrides = {}) {
 
   App.loadedStorms = stormsOut;
   App.availableDates = datesOut;
-  return { storms: stormsOut, availableDates: datesOut };
+  App.rangeByDate = rangeByDate;
+  return { storms: stormsOut, availableDates: datesOut, rangeByDate };
 }
 
 const DatePagination = {
@@ -3918,4 +3961,3 @@ document.addEventListener("DOMContentLoaded", ensureStormListClickHandler);
 
 <!-- NOAA importer (dev tool) -->
 <script src="noaa_import.js"></script>
-
