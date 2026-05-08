@@ -2943,7 +2943,7 @@ function initMapsViewOnce() {
     // Apply to real Google Maps overlays
     (window._lsrOverlays || []).forEach(o => {
       if (o && typeof o.setOptions === 'function') {
-        o.setOptions({ fillOpacity: opacity * 0.25, strokeOpacity: opacity });
+        o.setOptions({ fillOpacity: opacity * 0.18, strokeOpacity: opacity * 0.28 });
       }
     });
     if (window.App && App.recentsSwathLayer && typeof App.recentsSwathLayer.setStyle === 'function') {
@@ -3731,7 +3731,22 @@ function cleanLsrOverlays() {
 function clearLsrOverlays() { cleanLsrOverlays(); }
 
 function hailInToRadiusMeters(h){ h=Number(h); if(!Number.isFinite(h)||h<=0)return 3000; return Math.max(2000,Math.min(40000,h*10000)); }
-function hailInToColor(h){ h=Number(h); if(!Number.isFinite(h))return"#00e5ff"; if(h>=3)return"#ff00ff"; if(h>=2)return"#ff3b30"; if(h>=1.5)return"#ff9500"; if(h>=1)return"#ffd60a"; return"#00e5ff"; }
+function hailInToColor(h){ h=Number(h); if(!Number.isFinite(h))return"#d6cfaa"; if(h>=2.5)return"#a51aa8"; if(h>=2)return"#e9232e"; if(h>=1.5)return"#f46d11"; if(h>=1)return"#f3df48"; return"#d6cfaa"; }
+
+const HAILTRACE_SWATH_DEFAULT_BAND={fill:"#6f8fb8",stroke:"#6f8fb8",alpha:0.34,strokeAlpha:0,zIndex:410};
+const HAILTRACE_SWATH_BANDS=[
+  {min:2.5,fill:"#a51aa8",stroke:"#a51aa8",alpha:0.82,strokeAlpha:0.18,zIndex:470},
+  {min:2.0,fill:"#e9232e",stroke:"#e9232e",alpha:0.80,strokeAlpha:0.16,zIndex:460},
+  {min:1.5,fill:"#f46d11",stroke:"#f46d11",alpha:0.74,strokeAlpha:0.14,zIndex:450},
+  {min:1.0,fill:"#f3df48",stroke:"#f3df48",alpha:0.68,strokeAlpha:0.12,zIndex:440},
+  {min:0.75,fill:"#d6cfaa",stroke:"#d6cfaa",alpha:0.52,strokeAlpha:0.08,zIndex:430},
+  {min:0.5,fill:"#6f8fb8",stroke:"#6f8fb8",alpha:0.38,strokeAlpha:0.06,zIndex:420}
+];
+function getHailTraceSwathBand(hailIn){const h=Number(hailIn);if(!Number.isFinite(h))return HAILTRACE_SWATH_DEFAULT_BAND;return HAILTRACE_SWATH_BANDS.find(b=>h>=b.min)||HAILTRACE_SWATH_DEFAULT_BAND;}
+function getSwathFeatureHailSize(feature){if(!feature||typeof feature.getProperty!=="function")return null;const keys=["MAXSIZE","maxSize","hailSize","hail_in","HAIL_IN","MAGNITUDE","magnitude","band_min","BAND_MIN"];for(const key of keys){const parsed=Number(feature.getProperty(key));if(Number.isFinite(parsed)&&parsed>0)return parsed;}return null;}
+function getCurrentSwathOpacity(){const slider=document.getElementById("swathSlider");const raw=slider?Number(slider.value):70;return Number.isFinite(raw)?Math.max(0,Math.min(1,raw/100)):0.7;}
+function hailTraceSwathStyle(feature,opacity=getCurrentSwathOpacity()){const band=getHailTraceSwathBand(getSwathFeatureHailSize(feature));const fillOpacity=Math.min(0.82,Math.max(0.08,opacity*band.alpha));return{fillColor:band.fill,fillOpacity,strokeColor:band.stroke,strokeOpacity: 0,strokeWeight: 0,zIndex:band.zIndex};}
+function applyHailTraceSwathStyle(layer,opacity=getCurrentSwathOpacity()){if(layer&&typeof layer.setStyle==="function")layer.setStyle(f=>hailTraceSwathStyle(f,opacity));}
 
 const HAILTRACE_SWATH_DEFAULT_BAND={fill:"#6f8fb8",stroke:"#6f8fb8",alpha:0.34,strokeAlpha:0.08,zIndex:410};
 const HAILTRACE_SWATH_BANDS=[
@@ -3758,7 +3773,7 @@ function drawLsrPointsOnMap(points) {
     if (!Number.isFinite(lat)||!Number.isFinite(lon)) return;
     const hailIn=Number(p.hail_in),color=hailInToColor(hailIn),radius=hailInToRadiusMeters(hailIn),center={lat,lng:lon};
     bounds.extend(center);
-    const circle = new google.maps.Circle({ map,center,radius,strokeColor:color,strokeOpacity:0.9,strokeWeight:2,fillColor:color,fillOpacity:0.25,clickable:true,zIndex:999999 });
+    const circle = new google.maps.Circle({ map,center,radius,strokeColor:color,strokeOpacity:0.28,strokeWeight:0.75,fillColor:color,fillOpacity:0.18,clickable:true,zIndex:999999 });
     let when=""; try{when=p.event_time?new Date(p.event_time).toLocaleString():""; }catch{}
     const info = new google.maps.InfoWindow({ content:`<div style="font-family:system-ui;font-size:13px;line-height:1.35;"><div><b>Hail:</b> ${Number.isFinite(hailIn)?hailIn:"?"}"</div><div><b>Time:</b> ${when}</div><div><b>Lat/Lon:</b> ${lat.toFixed(3)}, ${lon.toFixed(3)}</div></div>` });
     circle.addListener("click",()=>{ try{info.setPosition(center);}catch{} try{info.open(map);}catch{} });
@@ -3847,9 +3862,13 @@ window.initMap = function initMap() {
   const mapEl = document.getElementById("stormMap");
   if (!mapEl||App.map) return;
 
+  const hailTraceDarkMapStyles=[
+    {elementType:"geometry",stylers:[{color:"#242424"}]},{elementType:"labels.icon",stylers:[{visibility:"off"}]},{elementType:"labels.text.fill",stylers:[{color:"#7f7f7f"}]},{elementType:"labels.text.stroke",stylers:[{color:"#242424"}]},{featureType:"administrative",elementType:"geometry",stylers:[{color:"#3b3b3b"}]},{featureType:"landscape",elementType:"geometry",stylers:[{color:"#252525"}]},{featureType:"poi",stylers:[{visibility:"off"}]},{featureType:"road",elementType:"geometry",stylers:[{color:"#383838"}]},{featureType:"road",elementType:"geometry.stroke",stylers:[{color:"#202020"}]},{featureType:"road",elementType:"labels.text.fill",stylers:[{color:"#6f6f6f"}]},{featureType:"road.highway",elementType:"geometry",stylers:[{color:"#444444"}]},{featureType:"road.highway",elementType:"geometry.stroke",stylers:[{color:"#282828"}]},{featureType:"transit",stylers:[{visibility:"off"}]},{featureType:"water",elementType:"geometry",stylers:[{color:"#1b1f22"}]},{featureType:"water",elementType:"labels.text.fill",stylers:[{color:"#555555"}]}
+  ];
   App.map = new google.maps.Map(mapEl, {
     center:{lat:39.5,lng:-98.35}, zoom:4,
-    mapTypeId: google.maps.MapTypeId.HYBRID,
+    mapTypeId: google.maps.MapTypeId.ROADMAP,
+    styles:hailTraceDarkMapStyles,
     zoomControl:false, streetViewControl:false, mapTypeControl:false, fullscreenControl:false,
   });
 
@@ -3858,7 +3877,7 @@ window.initMap = function initMap() {
   killMTC();
   google.maps.event.addListenerOnce(map,"idle",killMTC);
   google.maps.event.addListenerOnce(map,"tilesloaded",killMTC);
-  google.maps.event.addListenerOnce(map,"idle",()=>{ try{map.setOptions({mapTypeId:google.maps.MapTypeId.HYBRID});}catch{} });
+  google.maps.event.addListenerOnce(map,"idle",()=>{ try{map.setOptions({mapTypeId:google.maps.MapTypeId.ROADMAP,styles:hailTraceDarkMapStyles});}catch{} });
 
   // Hard-kill MTC via MutationObserver
   (function(container){ if(!container)return; const kill=()=>container.querySelectorAll(".gm-style-mtc,.gm-style .gm-style-mtc").forEach(el=>el.remove()); kill(); new MutationObserver(()=>kill()).observe(container,{childList:true,subtree:true}); })(mapEl);
