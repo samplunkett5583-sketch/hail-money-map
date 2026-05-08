@@ -3748,6 +3748,21 @@ function getCurrentSwathOpacity(){const slider=document.getElementById("swathSli
 function hailTraceSwathStyle(feature,opacity=getCurrentSwathOpacity()){const band=getHailTraceSwathBand(getSwathFeatureHailSize(feature));const fillOpacity=Math.min(0.82,Math.max(0.08,opacity*band.alpha));return{fillColor:band.fill,fillOpacity,strokeColor:band.stroke,strokeOpacity: 0,strokeWeight: 0,zIndex:band.zIndex};}
 function applyHailTraceSwathStyle(layer,opacity=getCurrentSwathOpacity()){if(layer&&typeof layer.setStyle==="function")layer.setStyle(f=>hailTraceSwathStyle(f,opacity));}
 
+const HAILTRACE_SWATH_DEFAULT_BAND={fill:"#6f8fb8",stroke:"#6f8fb8",alpha:0.34,strokeAlpha:0.08,zIndex:410};
+const HAILTRACE_SWATH_BANDS=[
+  {min:2.5,fill:"#a51aa8",stroke:"#a51aa8",alpha:0.82,strokeAlpha:0.18,zIndex:470},
+  {min:2.0,fill:"#e9232e",stroke:"#e9232e",alpha:0.80,strokeAlpha:0.16,zIndex:460},
+  {min:1.5,fill:"#f46d11",stroke:"#f46d11",alpha:0.74,strokeAlpha:0.14,zIndex:450},
+  {min:1.0,fill:"#f3df48",stroke:"#f3df48",alpha:0.68,strokeAlpha:0.12,zIndex:440},
+  {min:0.75,fill:"#d6cfaa",stroke:"#d6cfaa",alpha:0.52,strokeAlpha:0.08,zIndex:430},
+  {min:0.5,fill:"#6f8fb8",stroke:"#6f8fb8",alpha:0.38,strokeAlpha:0.06,zIndex:420}
+];
+function getHailTraceSwathBand(hailIn){const h=Number(hailIn);if(!Number.isFinite(h))return HAILTRACE_SWATH_DEFAULT_BAND;return HAILTRACE_SWATH_BANDS.find(b=>h>=b.min)||HAILTRACE_SWATH_DEFAULT_BAND;}
+function getSwathFeatureHailSize(feature){if(!feature||typeof feature.getProperty!=="function")return null;const keys=["MAXSIZE","maxSize","hailSize","hail_in","HAIL_IN","MAGNITUDE","magnitude","band_min","BAND_MIN"];for(const key of keys){const parsed=Number(feature.getProperty(key));if(Number.isFinite(parsed)&&parsed>0)return parsed;}return null;}
+function getCurrentSwathOpacity(){const slider=document.getElementById("swathSlider");const raw=slider?Number(slider.value):70;return Number.isFinite(raw)?Math.max(0,Math.min(1,raw/100)):0.7;}
+function hailTraceSwathStyle(feature,opacity=getCurrentSwathOpacity()){const band=getHailTraceSwathBand(getSwathFeatureHailSize(feature));const fillOpacity=Math.min(0.82,Math.max(0.08,opacity*band.alpha));const strokeOpacity=Math.min(0.22,opacity*band.strokeAlpha);return{fillColor:band.fill,fillOpacity,strokeColor:band.stroke,strokeOpacity,strokeWeight:0.45,zIndex:band.zIndex};}
+function applyHailTraceSwathStyle(layer,opacity=getCurrentSwathOpacity()){if(layer&&typeof layer.setStyle==="function")layer.setStyle(f=>hailTraceSwathStyle(f,opacity));}
+
 function drawLsrPointsOnMap(points) {
   cleanLsrOverlays();
   const map = App.map;
