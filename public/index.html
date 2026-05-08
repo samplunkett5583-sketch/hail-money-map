@@ -44,8 +44,19 @@
     AL: "-88.4732,30.2233,-84.8891,35.0080",
     AZ: "-114.8165,31.3322,-109.0452,37.0043",
     CO: "-109.0603,36.9924,-102.0416,41.0034",
+    IA: "-96.6397,40.3754,-90.1401,43.5012",
+    IL: "-91.5131,36.9701,-87.4948,42.5083",
+    IN: "-88.0979,37.7717,-84.7846,41.7611",
+    KY: "-89.5715,36.4971,-81.9645,39.1475",
+    MD: "-79.4877,37.9117,-75.0489,39.7230",
     MO: "-95.7747,35.9957,-89.0988,40.6136",
-    TX: "-106.6456,25.8371,-93.5080,36.5007"
+    NJ: "-75.5636,38.9285,-73.8939,41.3574",
+    NY: "-79.7624,40.4774,-71.7775,45.0159",
+    OH: "-84.8203,38.4031,-80.5187,41.9773",
+    PA: "-80.5199,39.7198,-74.6895,42.2699",
+    TX: "-106.6456,25.8371,-93.5080,36.5007",
+    WV: "-82.6447,37.2015,-77.7190,40.6388",
+    WI: "-92.8894,42.4919,-86.8054,47.0806"
   };
 
   const LOAD_MORE_VALUE = "__LOAD_MORE__";
@@ -8043,6 +8054,74 @@ async function loadHailReports(dateDash) {
   return drawLsrPointsFallbackForDate(dateDash);
 }
 
+async function fetchSavedSwathPolygonsByDate(dateDash) {
+  if (!dateDash) return [];
+  const eventDate = /^\d{8}$/.test(String(dateDash)) ? compactToDash(dateDash) : String(dateDash);
+  const url = `${SUPABASE_URL}/rest/v1/storm_polygons?event_date=eq.${encodeURIComponent(eventDate)}` +
+    `&select=id,event_date,storm_type,source,source_product,source_priority,swath_index,polygon_geojson,centroid_lat,centroid_lon,area_sq_mi,threshold_value,band_min,band_max,event_start_utc,event_end_utc` +
+    `&order=source_priority.asc,swath_index.asc`;
+  const resp = await fetch(url, {
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+  });
+  const raw = await resp.text();
+  if (!resp.ok) throw new Error(`storm_polygons HTTP ${resp.status}: ${raw.slice(0, 200)}`);
+  const rows = JSON.parse(raw);
+  return Array.isArray(rows) ? rows : [];
+}
+
+function normalizeSavedSwathGeometry(geometry) {
+  if (!geometry) return null;
+  if (typeof geometry === "string") {
+    try { return normalizeSavedSwathGeometry(JSON.parse(geometry)); } catch { return null; }
+  }
+  if (geometry.type === "FeatureCollection" || geometry.type === "Feature") return geometry;
+  if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {
+    return { type: "Feature", geometry, properties: {} };
+  }
+  return null;
+}
+
+async function loadSavedSwaths(dateDash, layer) {
+  if (!dateDash || !layer || typeof layer.addGeoJson !== "function") return 0;
+  const rows = await fetchSavedSwathPolygonsByDate(dateDash);
+  let added = 0;
+  for (const row of rows) {
+    const geo = normalizeSavedSwathGeometry(row?.polygon_geojson);
+    if (!geo) continue;
+    const rowProps = {
+      dateDash,
+      event_date: row.event_date,
+      storm_type: row.storm_type,
+      source: row.source,
+      source_product: row.source_product,
+      source_priority: row.source_priority,
+      swath_index: row.swath_index,
+      band_min: row.band_min,
+      band_max: row.band_max,
+      threshold_value: row.threshold_value,
+    };
+    try {
+      if (geo.type === "FeatureCollection") {
+        geo.features = (geo.features || []).map((feature) => ({
+          ...feature,
+          properties: { ...(feature.properties || {}), ...rowProps },
+        }));
+        added += layer.addGeoJson(geo).length;
+      } else {
+        geo.properties = { ...(geo.properties || {}), ...rowProps };
+        added += layer.addGeoJson(geo).length;
+      }
+    } catch (e) {
+      console.warn("[SAVED_SWATH] failed to add row", row?.id, e);
+    }
+  }
+  console.log("[SAVED_SWATH] added features:", added, "date:", dateDash);
+  return added;
+}
+
 async function loadRadarSwaths(dateDash, layer) {
   if (!dateDash) return 0;
   if (!layer || typeof layer.addGeoJson !== "function") return 0;
@@ -8146,23 +8225,32 @@ async function showHailSwathsForDate(dateDash, opts = {}) {
 
   console.log("[SWATH_CLICK] dateDash=", dateDash);
 
-  // Load both: (1) hail reports (LSR points) and (2) radar swaths via NOAA proxy
-  await Promise.all([
-    (async () => {
-      try {
-        await loadHailReports(dateDash);
-      } catch (e) {
-        console.error("[SWATH] LSR draw failed", e);
-      }
-    })(),
-    (async () => {
-      try {
-        await loadRadarSwaths(dateDash, layer);
-      } catch (e) {
-        console.error("[SWATH] Radar swath load failed", e);
-      }
-    })(),
-  ]);
+  // Load LSR points plus saved storm_polygons first. Saved polygons are date-anchored
+  // swaths, so they avoid drawing the same date in whichever state is currently selected.
+  const loadReportsPromise = (async () => {
+    try {
+      await loadHailReports(dateDash);
+    } catch (e) {
+      console.error("[SWATH] LSR draw failed", e);
+    }
+  })();
+
+  let savedCount = 0;
+  try {
+    savedCount = await loadSavedSwaths(dateDash, layer);
+  } catch (e) {
+    console.warn("[SWATH] saved swath load failed; falling back to NOAA radar", e);
+  }
+
+  if (!savedCount) {
+    try {
+      await loadRadarSwaths(dateDash, layer);
+    } catch (e) {
+      console.error("[SWATH] Radar swath load failed", e);
+    }
+  }
+
+  await loadReportsPromise;
 
   if (opts.additive !== true) {
     let hasAny = Array.isArray(App.reportCircles) && App.reportCircles.length > 0;
