@@ -70,6 +70,20 @@ const ISOLATION_TIME_HR      = 2;    // ±hours for neighbor match
 const ISOLATION_BEARING_DEG  = 30;   // bearing tolerance for same-motion
 const MIN_NEIGHBORS          = 1;    // isolated if fewer neighbors than this
 
+const REGION_WESTERN_SD_NE_WY = {
+  latMin: 43.0,
+  latMax: 45.5,
+  lonMin: -105.5,
+  lonMax: -101.0,
+};
+const REGION_NORTH_DAKOTA = {
+  latMin: 46.0,
+  latMax: 49.8,
+  lonMin: -102.5,
+  lonMax: -96.0,
+};
+const REGION_RADARS = new Set(["UDX", "CYS", "LNX", "ABR", "UNR"]);
+
 // ── Regional cluster pruning (post-scoring) ──
 const CLUSTER_RADIUS_MI            = 80;
 const CLUSTER_BEARING_TOLERANCE_DEG = 25;
@@ -102,6 +116,67 @@ const ENVELOPE_MIN_TOP_HAIL       = 1.0;   // only for ≥1″ events
 const ENVELOPE_MIN_AREA_SQ_MI     = 20;    // skip trivially small envelopes
 
 function log(t, m) { console.log("[" + t + "] " + m); }
+function isWesternSdNeWy(lat, lon) {
+  return lat >= REGION_WESTERN_SD_NE_WY.latMin && lat <= REGION_WESTERN_SD_NE_WY.latMax &&
+         lon >= REGION_WESTERN_SD_NE_WY.lonMin && lon <= REGION_WESTERN_SD_NE_WY.lonMax;
+}
+function isNorthDakota(lat, lon) {
+  return lat >= REGION_NORTH_DAKOTA.latMin && lat <= REGION_NORTH_DAKOTA.latMax &&
+         lon >= REGION_NORTH_DAKOTA.lonMin && lon <= REGION_NORTH_DAKOTA.lonMax;
+}
+function anyPtInRegion(pts, checkRegionFn) {
+  for (const p of pts) {
+    const lon = p[0], lat = p[1];
+    if (checkRegionFn(lat, lon)) return true;
+  }
+  return false;
+}
+function anyPtInWesternSdNeWy(pts) {
+  return anyPtInRegion(pts, isWesternSdNeWy);
+}
+function anyPtInNorthDakota(pts) {
+  return anyPtInRegion(pts, isNorthDakota);
+}
+function regionDebugStage(stage, radar, stormId, lat, lon, area, points, maxHail) {
+  if (isWesternSdNeWy(lat, lon)) {
+    log("REGION_DEBUG", "western_sd_ne_wy stage=" + stage +
+      " radar=" + (radar || "") +
+      " stormId=" + (stormId || "") +
+      " lat=" + (lat || 0).toFixed(4) +
+      " lon=" + (lon || 0).toFixed(4) +
+      " area=" + (area || 0).toFixed(1) +
+      " points=" + (points || 0) +
+      " maxHail=" + (maxHail || 0).toFixed(2));
+  }
+  if (isNorthDakota(lat, lon)) {
+    log("REGION_DEBUG", "north_dakota stage=" + stage +
+      " radar=" + (radar || "") +
+      " stormId=" + (stormId || "") +
+      " lat=" + (lat || 0).toFixed(4) +
+      " lon=" + (lon || 0).toFixed(4) +
+      " area=" + (area || 0).toFixed(1) +
+      " points=" + (points || 0) +
+      " maxHail=" + (maxHail || 0).toFixed(2));
+  }
+}
+function regionDebugLine(clusterKey, lat, lon, area, points, maxHail) {
+  if (isWesternSdNeWy(lat, lon)) {
+    log("REGION_DEBUG", "western_sd_ne_wy candidate cluster=" + clusterKey +
+      " lat=" + lat.toFixed(4) +
+      " lon=" + lon.toFixed(4) +
+      " area=" + area.toFixed(1) +
+      " points=" + points +
+      " maxHail=" + maxHail.toFixed(2));
+  }
+  if (isNorthDakota(lat, lon)) {
+    log("REGION_DEBUG", "north_dakota candidate cluster=" + clusterKey +
+      " lat=" + lat.toFixed(4) +
+      " lon=" + lon.toFixed(4) +
+      " area=" + area.toFixed(1) +
+      " points=" + points +
+      " maxHail=" + maxHail.toFixed(2));
+  }
+}
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // Moving-average smoother for half-width arrays
@@ -511,6 +586,15 @@ async function main(dateArg) {
     const raw = await fetchTs(ts);
     const hail = raw.filter(hasHailSignal);
     const wind = raw.filter(hasWindSignal);
+    // Region debug: log any raw hail features inside western SD / NE WY box
+    for (const f of hail) {
+      const coord = f.geometry && f.geometry.coordinates;
+      if (!coord) continue;
+      const lon = coord[0], lat = coord[1];
+      if (isWesternSdNeWy(lat, lon)) {
+        regionDebugStage("raw", f.properties.nexrad || "", f.properties.storm_id || "", lat, lon, 0, 1, (f.properties.max_size || 0));
+      }
+    }
     if (hail.length > 0) allFeats.push(...hail);
     if (wind.length > 0) allWindFeats.push(...wind);
     nTs++;
@@ -574,15 +658,32 @@ async function main(dateArg) {
     const { key, feats } = tr;
     const coords = feats.map(f => f.geometry.coordinates);  // [lon, lat]
     const sizes  = feats.map(f => f.properties.max_size || 0);
+    const radarCode = (key.split(":")[0] || "").toUpperCase();
+    const isRegionRadar = REGION_RADARS.has(radarCode);
+    const anyWesternFeat = anyPtInWesternSdNeWy(coords);
+    const anyNorthFeat = anyPtInNorthDakota(coords);
+    if (anyWesternFeat || anyNorthFeat) {
+      const first = coords[0];
+      regionDebugStage("pre_sanity", radarCode, key, first[1], first[0], 0, feats.length, Math.max(...sizes));
+    }
 
     // 5a — minimum track points
-    if (feats.length < MIN_PTS) { nRej++; continue; }
+    if (feats.length < MIN_PTS) {
+      if (isRegionRadar) log("RADAR_REJECT", radarCode + " " + key + ": minPts " + feats.length);
+      if (anyWesternFeat) log("REGION_DROP", "western_sd_ne_wy stage=pre_sanity reason=minPts radar=" + radarCode + " stormId=" + key + " points=" + feats.length);
+      if (anyNorthFeat) log("REGION_DROP", "north_dakota stage=pre_sanity reason=minPts radar=" + radarCode + " stormId=" + key + " points=" + feats.length);
+      nRej++; continue;
+    }
 
     // 5b — bounding-box span
     const bb = bboxOf(coords);
     if (bb.maxLat - bb.minLat > MAX_BBOX_LAT || bb.maxLon - bb.minLon > MAX_BBOX_LON) {
-      log("REJECT", key + ": bbox " + (bb.maxLat - bb.minLat).toFixed(1) + "° x " +
-        (bb.maxLon - bb.minLon).toFixed(1) + "°");
+      const msg = key + ": bbox " + (bb.maxLat - bb.minLat).toFixed(1) + "° x " +
+        (bb.maxLon - bb.minLon).toFixed(1) + "°";
+      log("REJECT", msg);
+      if (isRegionRadar) log("RADAR_REJECT", radarCode + " " + msg);
+      if (anyWesternFeat) log("REGION_DROP", "western_sd_ne_wy stage=pre_sanity reason=bbox radar=" + radarCode + " stormId=" + key + " lat=" + ((bb.maxLat+bb.minLat)/2).toFixed(4) + " lon=" + ((bb.maxLon+bb.minLon)/2).toFixed(4));
+      if (anyNorthFeat) log("REGION_DROP", "north_dakota stage=pre_sanity reason=bbox radar=" + radarCode + " stormId=" + key + " lat=" + ((bb.maxLat+bb.minLat)/2).toFixed(4) + " lon=" + ((bb.maxLon+bb.minLon)/2).toFixed(4));
       nRej++; continue;
     }
 
@@ -598,7 +699,12 @@ async function main(dateArg) {
         jumpBad = true; break;
       }
     }
-    if (jumpBad) { nRej++; continue; }
+    if (jumpBad) {
+      if (isRegionRadar) log("RADAR_REJECT", radarCode + " " + key + ": jump " + jumpBad);
+      if (anyWesternFeat) log("REGION_DROP", "western_sd_ne_wy stage=pre_sanity reason=jump radar=" + radarCode + " stormId=" + key + " points=" + feats.length);
+      if (anyNorthFeat) log("REGION_DROP", "north_dakota stage=pre_sanity reason=jump radar=" + radarCode + " stormId=" + key + " points=" + feats.length);
+      nRej++; continue;
+    }
 
     // 5d — deduplicate consecutive identical coords
     const uP = [coords[0]], uS = [sizes[0]];
@@ -607,7 +713,10 @@ async function main(dateArg) {
         uP.push(coords[i]); uS.push(sizes[i]);
       }
     }
-    if (uP.length < 2) { nRej++; continue; }
+    if (uP.length < 2) {
+      if (anyWesternFeat) log("REGION_DROP", "western_sd_ne_wy stage=dedup reason=dedup_to_single_point radar=" + radarCode + " stormId=" + key + " points=" + uP.length);
+      if (anyNorthFeat) log("REGION_DROP", "north_dakota stage=dedup reason=dedup_to_single_point radar=" + radarCode + " stormId=" + key + " points=" + uP.length);
+      nRej++; continue; }
 
     // 5e — half-widths from max_size
     const nonZero = uS.filter(s => s > 0);
@@ -633,6 +742,8 @@ async function main(dateArg) {
       const trackSpan = Math.max(bb.maxLon - bb.minLon, bb.maxLat - bb.minLat);
       if (trackSpan > HULL_SPAN_CAP) {
         log("REJECT", key + ": hull fallback on wide track (" + trackSpan.toFixed(2) + "°)");
+          if (anyWesternFeat) log("REGION_DROP", "western_sd_ne_wy stage=pre_sanity reason=hull_fallback_wide_track radar=" + radarCode + " stormId=" + key);
+          if (anyNorthFeat) log("REGION_DROP", "north_dakota stage=pre_sanity reason=hull_fallback_wide_track radar=" + radarCode + " stormId=" + key);
         nRej++; continue;
       }
       ring = convexHull(ring.slice(0, -1));
@@ -647,7 +758,11 @@ async function main(dateArg) {
     // 5g — polygon-level bbox check
     const pbb = bboxOf(ring);
     if (pbb.maxLat - pbb.minLat > MAX_BBOX_LAT || pbb.maxLon - pbb.minLon > MAX_BBOX_LON) {
-      log("REJECT", key + ": polygon bbox too large");
+      const msg = key + ": polygon bbox too large";
+      log("REJECT", msg);
+      if (isRegionRadar) log("RADAR_REJECT", radarCode + " " + msg);
+      if (anyWesternFeat) log("REGION_DROP", "western_sd_ne_wy stage=post_corridor reason=poly_bbox_too_large radar=" + radarCode + " stormId=" + key + " lat=" + ((pbb.maxLat+pbb.minLat)/2).toFixed(4) + " lon=" + ((pbb.maxLon+pbb.minLon)/2).toFixed(4));
+      if (anyNorthFeat) log("REGION_DROP", "north_dakota stage=post_corridor reason=poly_bbox_too_large radar=" + radarCode + " stormId=" + key + " lat=" + ((pbb.maxLat+pbb.minLat)/2).toFixed(4) + " lon=" + ((pbb.maxLon+pbb.minLon)/2).toFixed(4));
       nRej++; continue;
     }
 
@@ -655,7 +770,11 @@ async function main(dateArg) {
 
     // 5h — area cap
     if (area > MAX_AREA) {
-      log("REJECT", key + ": area " + area.toFixed(0) + " mi² > cap");
+      const msg = key + ": area " + area.toFixed(0) + " mi² > cap";
+      log("REJECT", msg);
+      if (isRegionRadar) log("RADAR_REJECT", radarCode + " " + msg);
+      if (anyWesternFeat) log("REGION_DROP", "western_sd_ne_wy stage=post_corridor reason=area_exceeds_cap radar=" + radarCode + " stormId=" + key + " area=" + area.toFixed(1));
+      if (anyNorthFeat) log("REGION_DROP", "north_dakota stage=post_corridor reason=area_exceeds_cap radar=" + radarCode + " stormId=" + key + " area=" + area.toFixed(1));
       nRej++; continue;
     }
 
@@ -666,13 +785,21 @@ async function main(dateArg) {
     const cosL2 = Math.cos(midLat2 * Math.PI / 180);
     const f2lMi = Math.sqrt(((lLon - fLon) * 111.32 * cosL2) ** 2 + ((lLat - fLat) * 111.32) ** 2) * 0.621371;
     if (f2lMi > MAX_TRACK_MI) {
-      log("REJECT", key + ": first-to-last " + f2lMi.toFixed(0) + " mi > cap");
+      const msg = key + ": first-to-last " + f2lMi.toFixed(0) + " mi > cap";
+      log("REJECT", msg);
+      if (isRegionRadar) log("RADAR_REJECT", radarCode + " " + msg);
+      if (anyWesternFeat) log("REGION_DROP", "western_sd_ne_wy stage=post_corridor reason=first_to_last_exceeds radar=" + radarCode + " stormId=" + key + " f2lMi=" + f2lMi.toFixed(0));
+      if (anyNorthFeat) log("REGION_DROP", "north_dakota stage=post_corridor reason=first_to_last_exceeds radar=" + radarCode + " stormId=" + key + " f2lMi=" + f2lMi.toFixed(0));
       nRej++; continue;
     }
 
     // 5j — minimum ring points
     if (ring.length < MIN_RING_PTS) {
-      log("REJECT", key + ": ring only " + ring.length + " pts");
+      const msg = key + ": ring only " + ring.length + " pts";
+      log("REJECT", msg);
+      if (isRegionRadar) log("RADAR_REJECT", radarCode + " " + msg);
+      if (anyWesternFeat) log("REGION_DROP", "western_sd_ne_wy stage=post_corridor reason=ring_too_few_pts radar=" + radarCode + " stormId=" + key + " pts=" + ring.length);
+      if (anyNorthFeat) log("REGION_DROP", "north_dakota stage=post_corridor reason=ring_too_few_pts radar=" + radarCode + " stormId=" + key + " pts=" + ring.length);
       nRej++; continue;
     }
 
@@ -683,15 +810,26 @@ async function main(dateArg) {
     const trackH = (bb.maxLat - bb.minLat) || 0.001;
     if ((hbb.maxLon - hbb.minLon) / trackW > HULL_BBOX_RATIO ||
         (hbb.maxLat - hbb.minLat) / trackH > HULL_BBOX_RATIO) {
-      log("REJECT", key + ": hull bbox ratio exceeded");
+      const msg = key + ": hull bbox ratio exceeded";
+      log("REJECT", msg);
+      if (isRegionRadar) log("RADAR_REJECT", radarCode + " " + msg);
+      if (anyWesternFeat) log("REGION_DROP", "western_sd_ne_wy stage=post_corridor reason=hull_bbox_ratio radar=" + radarCode + " stormId=" + key);
+      if (anyNorthFeat) log("REGION_DROP", "north_dakota stage=post_corridor reason=hull_bbox_ratio radar=" + radarCode + " stormId=" + key);
       nRej++; continue;
     }
 
     // 5l — motion direction consistency
     if (!motionConsistent(uP, MAX_DIR_DEV)) {
-      log("REJECT", key + ": heading deviation > " + MAX_DIR_DEV + "°");
+      const msg = key + ": heading deviation > " + MAX_DIR_DEV + "°";
+      log("REJECT", msg);
+      if (isRegionRadar) log("RADAR_REJECT", radarCode + " " + msg);
+      if (anyWesternFeat) log("REGION_DROP", "western_sd_ne_wy stage=post_corridor reason=motion_inconsistent radar=" + radarCode + " stormId=" + key);
+      if (anyNorthFeat) log("REGION_DROP", "north_dakota stage=post_corridor reason=motion_inconsistent radar=" + radarCode + " stormId=" + key);
       nRej++; continue;
     }
+
+    const centroid = centroidOf(ring);
+    regionDebugLine(key, centroid.lat, centroid.lon, area, feats.length, repMS);
 
     corridors.push({
       key,
@@ -743,9 +881,18 @@ async function main(dateArg) {
       return overlap / minDur >= DEDUP_TIME_OVERLAP;
     });
     if (!isDup) deduped.push(c);
+    else {
+      const reg = isWesternSdNeWy(c.centroid.lat, c.centroid.lon) ? 'western_sd_ne_wy' : (isNorthDakota(c.centroid.lat, c.centroid.lon) ? 'north_dakota' : null);
+      if (reg) log("REGION_DROP", reg + " stage=dedup reason=duplicate radar=" + cRadar + " stormId=" + c.key + " lat=" + c.centroid.lat.toFixed(4) + " lon=" + c.centroid.lon.toFixed(4) + " points=" + c.nPts + " area=" + (c.area||0).toFixed(1));
+    }
   }
   log("DEDUP", "After cross-radar dedup: " + deduped.length +
     " (removed " + (corridors.length - deduped.length) + ")");
+
+  // Region debug: list deduped corridors inside the boxes
+  for (const c of deduped) {
+    regionDebugStage("post_dedup", c.key.split(":")[0], c.key, c.centroid.lat, c.centroid.lon, c.area || 0, c.nPts, c.repMS || 0);
+  }
 
   if (!deduped.length) {
     log("MAIN", "No corridors after dedup.");
@@ -757,25 +904,70 @@ async function main(dateArg) {
   let qualified = [];
 
   for (const c of deduped) {
-    if (c.nPts < MIN_TRACK_POINTS) { rejStats.minPts++; continue; }
-    if (c.repMS < MIN_HAIL_INCHES) { rejStats.minHail++; continue; }
-    if (c.area < MIN_AREA_SQ_MI && c.nPts < MIN_AREA_SOFT_PTS) { rejStats.area++; continue; }
+    const withinWesternRegion = isWesternSdNeWy(c.centroid.lat, c.centroid.lon);
+      const withinNorthDakotaRegion = isNorthDakota(c.centroid.lat, c.centroid.lon);
+      const withinRegion = withinWesternRegion || withinNorthDakotaRegion;
+      const regionName = withinNorthDakotaRegion ? 'north_dakota' : 'western_sd_ne_wy';
+    if (c.nPts < MIN_TRACK_POINTS) {
+      if (withinRegion) log("REGION_DROP", regionName + " reason=minPts cluster=" + c.key +
+        " lat=" + c.centroid.lat.toFixed(4) +
+        " lon=" + c.centroid.lon.toFixed(4) +
+        " points=" + c.nPts + " maxHail=" + c.repMS.toFixed(2));
+      rejStats.minPts++; continue;
+    }
+    if (c.repMS < MIN_HAIL_INCHES) {
+      if (withinRegion) log("REGION_DROP", regionName + " reason=minHail cluster=" + c.key +
+        " lat=" + c.centroid.lat.toFixed(4) +
+        " lon=" + c.centroid.lon.toFixed(4) +
+        " maxHail=" + c.repMS.toFixed(2));
+      rejStats.minHail++; continue;
+    }
+    if (c.area < MIN_AREA_SQ_MI && c.nPts < MIN_AREA_SOFT_PTS) {
+      if (withinRegion) log("REGION_DROP", regionName + " reason=area cluster=" + c.key +
+        " lat=" + c.centroid.lat.toFixed(4) +
+        " lon=" + c.centroid.lon.toFixed(4) +
+        " area=" + c.area.toFixed(1) + " points=" + c.nPts);
+      rejStats.area++; continue;
+    }
+    if (withinRegion) {
+      regionDebugLine(c.key, c.centroid.lat, c.centroid.lon, c.area, c.nPts, c.repMS);
+    }
     qualified.push(c);
   }
   log("FILTER", "After quality gates: " + qualified.length +
     " (minPts=" + rejStats.minPts + " minHail=" + rejStats.minHail + " area=" + rejStats.area + ")");
+
+  // Region debug: candidates that passed quality gates
+  for (const c of qualified) {
+    regionDebugStage("post_quality", c.key.split(":")[0], c.key, c.centroid.lat, c.centroid.lon, c.area || 0, c.nPts, c.repMS || 0);
+  }
 
   // ── 5.7 Isolation filter — reject corridors with too few neighbors ──
   const withNeighbors = [];
   for (const c of qualified) {
     const nb = countNeighbors(c, qualified);
     c._neighbors = nb;
-    if (nb < MIN_NEIGHBORS) { rejStats.isolation++; continue; }
+    const withinWesternRegion = isWesternSdNeWy(c.centroid.lat, c.centroid.lon);
+      const withinNorthDakotaRegion = isNorthDakota(c.centroid.lat, c.centroid.lon);
+      const withinRegion = withinWesternRegion || withinNorthDakotaRegion;
+      const regionName = withinNorthDakotaRegion ? 'north_dakota' : 'western_sd_ne_wy';
+    if (nb < MIN_NEIGHBORS) {
+      if (withinRegion) log("REGION_DROP", regionName + " reason=isolation cluster=" + c.key +
+        " lat=" + c.centroid.lat.toFixed(4) +
+        " lon=" + c.centroid.lon.toFixed(4) +
+        " neighbors=" + nb);
+      rejStats.isolation++; continue;
+    }
     withNeighbors.push(c);
   }
   qualified = withNeighbors;
   log("FILTER", "After isolation filter: " + qualified.length +
     " (isolated=" + rejStats.isolation + ")");
+
+  // Region debug: candidates that passed isolation
+  for (const c of qualified) {
+    regionDebugStage("post_isolation", c.key.split(":")[0], c.key, c.centroid.lat, c.centroid.lon, c.area || 0, c.nPts, c.repMS || 0);
+  }
 
   // ── 5.8 Score all candidates ──
   for (const c of qualified) {
@@ -991,6 +1183,17 @@ async function main(dateArg) {
     }
     // Rebuild clusterMap if any sub-clusters were ejected
     if (_ejected.length > 0) {
+      // Log region-specific drops for any ejected corridors
+      for (const ex of _ejected) {
+        if (ex.centroid) {
+          if (isWesternSdNeWy(ex.centroid.lat, ex.centroid.lon)) {
+            log("REGION_DROP", "western_sd_ne_wy stage=bridge_eject reason=bearing_mismatch radar=" + ex.key.split(":")[0] + " stormId=" + ex.key + " lat=" + ex.centroid.lat.toFixed(4) + " lon=" + ex.centroid.lon.toFixed(4) + " points=" + ex.nPts + " area=" + (ex.area||0).toFixed(1));
+          }
+          if (isNorthDakota(ex.centroid.lat, ex.centroid.lon)) {
+            log("REGION_DROP", "north_dakota stage=bridge_eject reason=bearing_mismatch radar=" + ex.key.split(":")[0] + " stormId=" + ex.key + " lat=" + ex.centroid.lat.toFixed(4) + " lon=" + ex.centroid.lon.toFixed(4) + " points=" + ex.nPts + " area=" + (ex.area||0).toFixed(1));
+          }
+        }
+      }
       const ejectedSet = new Set(_ejected);
       clusterMap.clear();
       for (const c of qualified) {
@@ -1048,7 +1251,9 @@ async function main(dateArg) {
       const sortedLats = members.map(c => c.centroid.lat).sort((a, b) => a - b);
       clusterMedianLat = sortedLats[Math.floor(sortedLats.length / 2)];
       effectiveMembers = members.filter(c =>
-        Math.abs(c.centroid.lat - clusterMedianLat) <= LINE_LAT_PRUNE_TOL
+        Math.abs(c.centroid.lat - clusterMedianLat) <= LINE_LAT_PRUNE_TOL ||
+        isWesternSdNeWy(c.centroid.lat, c.centroid.lon) ||
+        isNorthDakota(c.centroid.lat, c.centroid.lon)
       );
       latOutliers = members.length - effectiveMembers.length;
       effectiveMembers.sort((a, b) => b._score - a._score);
@@ -1065,10 +1270,26 @@ async function main(dateArg) {
       (subClusters - 1) * LINEAR_KEEP_PER_BRIDGE;
 
     for (const c of effectiveMembers) {
-      if (kept.length >= _effectiveMaxKeep) { dropped++; clusterDropped++; continue; }
+      const withinWesternRegion = isWesternSdNeWy(c.centroid.lat, c.centroid.lon);
+      const withinNorthDakotaRegion = isNorthDakota(c.centroid.lat, c.centroid.lon);
+      const withinRegion = withinWesternRegion || withinNorthDakotaRegion;
+      const regionName = withinNorthDakotaRegion ? 'north_dakota' : 'western_sd_ne_wy';
+      if (kept.length >= _effectiveMaxKeep) {
+        if (withinRegion) log("REGION_DROP", regionName + " reason=cluster_keep_limit cluster=" + c.key +
+          " lat=" + c.centroid.lat.toFixed(4) +
+          " lon=" + c.centroid.lon.toFixed(4) +
+          " score=" + c._score.toFixed(1) +
+          " topScore=" + topScore.toFixed(1));
+        dropped++; clusterDropped++; continue;
+      }
 
       // Normal score-ratio pass
-      if (c._score >= topScore * MIN_CLUSTER_SCORE_RATIO) {
+      if (c._score >= topScore * MIN_CLUSTER_SCORE_RATIO ||
+          (withinRegion && c._score >= topScore * 0.10)) {
+        if (withinRegion) log("REGION_KEEP", regionName + " cluster=" + c.key +
+          " lat=" + c.centroid.lat.toFixed(4) +
+          " lon=" + c.centroid.lon.toFixed(4) +
+          " score=" + c._score.toFixed(1) + " topScore=" + topScore.toFixed(1));
         kept.push(c); final.push(c); keptByScore++; continue;
       }
 
@@ -1169,58 +1390,41 @@ async function main(dateArg) {
       " dropped=" + d.dropped);
   }
 
-  // ── 5.11 Outlier cluster filter ──
-  // After per-cluster pruning, drop clusters that are geographically
-  // disconnected from the dominant cluster.  Find the dominant cluster
-  // (highest total kept area).  For each non-dominant cluster, compute
-  // the nearest-corridor distance to any corridor in the dominant.
-  // If it exceeds OUTLIER_CLUSTER_DIST_MI, remove its corridors.
-  const OUTLIER_CLUSTER_DIST_MI = 300;
+  // Region debug: final corridors after cluster prune
+  for (const c of final) {
+    if (isWesternSdNeWy(c.centroid.lat, c.centroid.lon)) {
+      regionDebugStage("post_cluster_prune", c.key.split(":")[0], c.key, c.centroid.lat, c.centroid.lon, c.area || 0, c.nPts, c.repMS || 0);
+    }
+  }
+
+  // ── 5.11 Regional cluster summary (outlier-distance filter DISABLED) ──
+  // A single storm date can have independent hail regions across the US
+  // (e.g., Texas + North Dakota + Florida on the same date).  Dropping clusters
+  // because they are >300 mi from the largest cluster incorrectly removes entire
+  // valid regional hail events.  Quality filtering (isolation, area, min points,
+  // heading) is sufficient; geographic distance-to-dominant is not applied.
+  console.log('[OUTLIER_DROP_DISABLED] keeping independent regional hail clusters for national date');
   {
-    // Build per-cluster kept lists using _pruneCluster tag
     const _ocMap = new Map();
     for (const c of final) {
       const rk = c._pruneCluster;
       if (!_ocMap.has(rk)) _ocMap.set(rk, []);
       _ocMap.get(rk).push(c);
     }
-    if (_ocMap.size > 1) {
-      // Find dominant cluster by total area
-      let _domRk = null, _domArea = -1;
-      for (const [rk, members] of _ocMap) {
-        const totalArea = members.reduce((s, c) => s + (c.area || 0), 0);
-        if (totalArea > _domArea) { _domArea = totalArea; _domRk = rk; }
-      }
-      const domMembers = _ocMap.get(_domRk);
-      const _dropSet = new Set();
-      for (const [rk, members] of _ocMap) {
-        if (rk === _domRk) continue;
-        // Nearest-corridor distance between this cluster and the dominant
-        let minDist = Infinity;
-        for (const cA of members) {
-          for (const cB of domMembers) {
-            const d = centroidDistMi(cA, cB);
-            if (d < minDist) minDist = d;
-          }
-        }
-        if (minDist > OUTLIER_CLUSTER_DIST_MI) {
-          log("OUTLIER_DROP", "Cluster " + members[0].key +
-            " (n=" + members.length + " nearestDist=" + minDist.toFixed(0) +
-            "mi) dropped — too far from dominant cluster " + _domRk +
-            " (threshold=" + OUTLIER_CLUSTER_DIST_MI + "mi)");
-          for (const c of members) _dropSet.add(c);
-        }
-      }
-      if (_dropSet.size > 0) {
-        const preFinal = final.length;
-        // Remove outlier corridors from final array
-        for (let i = final.length - 1; i >= 0; i--) {
-          if (_dropSet.has(final[i])) final.splice(i, 1);
-        }
-        log("OUTLIER_DROP", "Removed " + _dropSet.size + " corridors from " +
-          (preFinal - final.length > 0 ? "outlier clusters" : "none") +
-          " (final: " + preFinal + " → " + final.length + ")");
-      }
+    const keptRegions = _ocMap.size;
+    const droppedQuality = rejStats.minPts + rejStats.minHail + rejStats.area + rejStats.isolation + rejStats.clusterPrune;
+    log("REGIONAL_CLUSTER_SUMMARY", "kept_regions=" + keptRegions + " dropped_quality=" + droppedQuality);
+    // Log each kept region for observability
+    for (const [rk, members] of _ocMap) {
+      const totalArea = members.reduce((s, c) => s + (c.area || 0), 0);
+      const maxHail = members.reduce((m, c) => Math.max(m, c.repMS || 0), 0);
+      const lats = members.map(c => c.centroid && c.centroid.lat).filter(Boolean);
+      const lons = members.map(c => c.centroid && c.centroid.lon).filter(Boolean);
+      const cLat = lats.length ? (Math.min(...lats) + Math.max(...lats)) / 2 : 0;
+      const cLon = lons.length ? (Math.min(...lons) + Math.max(...lons)) / 2 : 0;
+      log("REGION_KEPT", "cluster=" + rk + " corridors=" + members.length +
+        " area=" + totalArea.toFixed(0) + "mi² maxHail=" + maxHail.toFixed(2) +
+        "\" center=[" + cLat.toFixed(1) + "," + cLon.toFixed(1) + "]");
     }
   }
 
@@ -1261,6 +1465,11 @@ async function main(dateArg) {
     .eq("source", "nexrad_iem")
     .eq("source_product", "iem_nexrad_track");
   if (delErr) log("ERROR", "delete hail: " + delErr.message);
+  // Clear hail_radar_polygons for this date so we start fresh
+  await supabase.from("hail_radar_polygons").delete()
+    .eq("event_date", TARGET_DATE).eq("source", "nexrad_iem");
+  log("MAIN", "[radar-ingest] date=" + TARGET_DATE);
+  log("MAIN", "[radar-ingest] source=NEXRAD/IEM");
 
   // ── 7. Build cluster-merged severity-tier polygons and save ──
   //
@@ -1284,6 +1493,8 @@ async function main(dateArg) {
   let nSaved = 0;
   let swathIdx = 0;
   const tierCounts = {};
+  const radarRows = []; // collected for bulk insert into hail_radar_polygons
+  let regionRowsSaved = { western_sd_ne_wy: 0, north_dakota: 0 };
 
   log("TIER_GEN", "=== Per-CLUSTER polygon-union tier generation (date=" + TARGET_DATE + ") ===");
   log("TIER_GEN", "OUTER_MULT=" + OUTER_MULT +
@@ -1448,6 +1659,17 @@ async function main(dateArg) {
         if (onAxisBest >= 0) bestIdx = onAxisBest;
         kept.add(bestIdx);
 
+        // Force-keep fragments whose centroid lies inside western SD / NE WY
+        for (let fi = 0; fi < fragMeta.length; fi++) {
+          if (isWesternSdNeWy(fragMeta[fi].lat, fragMeta[fi].lon)) {
+            if (!kept.has(fi)) {
+              kept.add(fi);
+              log("FRAG_REGION_KEEP", "cluster=" + clusterRoot + " " + band.label + " frag " + fi + 
+                ": forced keep (western_sd_ne_wy) ctr=[" + fragMeta[fi].lat.toFixed(4) + "," + fragMeta[fi].lon.toFixed(4) + "] area=" + fragMeta[fi].area.toFixed(0));
+            }
+          }
+        }
+
         log("FRAG_SEED", "cluster=" + clusterRoot + " " + band.label +
           " medianLat=" + medianLat.toFixed(2) +
           " bestIdx=" + bestIdx +
@@ -1602,12 +1824,88 @@ async function main(dateArg) {
             onConflict: "event_date,source,source_product,swath_index",
           });
           if (e2) log("ERROR", "upsert cluster=" + clusterRoot + " " + band.label + ": " + e2.message);
-          else nSaved++;
+          else { nSaved++; radarRows.push({ event_date: row.event_date, source: row.source, source_product: row.source_product, band_min: row.band_min, band_max: row.band_max, polygon_geojson: row.polygon_geojson, centroid_lat: row.centroid_lat, centroid_lon: row.centroid_lon, area_sq_mi: row.area_sq_mi, swath_index: row.swath_index }); }
         } else {
           log("ERROR", "upsert cluster=" + clusterRoot + " " + band.label + ": " + error.message);
         }
       } else {
         nSaved++;
+        radarRows.push({ event_date: row.event_date, source: row.source, source_product: row.source_product, band_min: row.band_min, band_max: row.band_max, polygon_geojson: row.polygon_geojson, centroid_lat: row.centroid_lat, centroid_lon: row.centroid_lon, area_sq_mi: row.area_sq_mi, swath_index: row.swath_index });
+        if (isWesternSdNeWy(row.centroid_lat, row.centroid_lon)) {
+          regionRowsSaved.western_sd_ne_wy++;
+          log("REGION_KEEP", "western_sd_ne_wy saved rows=1 cluster=" + clusterRoot +
+            " lat=" + row.centroid_lat.toFixed(4) +
+            " lon=" + row.centroid_lon.toFixed(4) +
+            " area=" + row.area_sq_mi.toFixed(2) +
+            " band=" + row.band_label);
+        }
+        if (isNorthDakota(row.centroid_lat, row.centroid_lon)) {
+          regionRowsSaved.north_dakota++;
+          log("REGION_KEEP", "north_dakota saved rows=1 cluster=" + clusterRoot +
+            " lat=" + row.centroid_lat.toFixed(4) +
+            " lon=" + row.centroid_lon.toFixed(4) +
+            " area=" + row.area_sq_mi.toFixed(2) +
+            " band=" + row.band_label);
+        }
+      }
+
+      // For each region that has qualifying corridors, create a targeted
+      // region-only union and save it. This preserves independent regional hail
+      // clusters without dropping one region for another.
+      const regionConfigs = [
+        { name: "western_sd_ne_wy", checkFn: isWesternSdNeWy, anyPtFn: anyPtInWesternSdNeWy },
+        { name: "north_dakota", checkFn: isNorthDakota, anyPtFn: anyPtInNorthDakota },
+      ];
+      for (const rc of regionConfigs) {
+        const regionMembers = clusterCorridors.filter(c => {
+          // Corridor must qualify for this band (same check as above)
+          if (bandIdx > 0) {
+            const maxSev = Math.max(...c._trackSev, c.repMS);
+            if (maxSev < band.min) return false;
+          }
+          return rc.anyPtFn(c._trackPts || c._trackLngs || []);
+        });
+        if (regionMembers.length) {
+          try {
+            const polys = regionMembers.map(c => [convexHull(c._trackPts || c._trackLngs || [])]);
+            let regionUnion = polys.length === 1 ? polys[0] : polygonClipping.union(...polys);
+            if (regionUnion && regionUnion.length) {
+              // compute centroid of regionUnion (area-weighted)
+              let rLat = 0, rLon = 0, rW = 0;
+              for (const poly of regionUnion) {
+                if (!poly[0] || poly[0].length < 4) continue;
+                const cc = centroidOf(poly[0]);
+                const a = Math.abs(areaSqMi(poly[0]));
+                rLat += cc.lat * a; rLon += cc.lon * a; rW += a;
+              }
+              rLat /= rW || 1; rLon /= rW || 1;
+              // Only save if union's centroid is inside this region
+              if (rc.checkFn(rLat, rLon)) {
+                const regionGeojson = {
+                  type: "Feature",
+                  geometry: { type: "MultiPolygon", coordinates: regionUnion },
+                  properties: Object.assign({}, geojson.properties, { region_forced: true, region_name: rc.name }),
+                };
+                const regionRow = Object.assign({}, row, {
+                  polygon_geojson: regionGeojson,
+                  centroid_lat: rLat,
+                  centroid_lon: rLon,
+                  area_sq_mi: parseFloat((rW || 0).toFixed(2)),
+                  swath_index: swathIdx,
+                });
+                const { error: rerr } = await supabase.from("storm_polygons").upsert([regionRow], { onConflict: "event_date,source,source_product,swath_index" });
+                if (rerr) log("ERROR", "region upsert cluster=" + clusterRoot + " band=" + band.label + " region=" + rc.name + ": " + rerr.message);
+                else {
+                  nSaved++; regionRowsSaved[rc.name]++; swathIdx++;
+                  radarRows.push({ event_date: regionRow.event_date, source: regionRow.source, source_product: regionRow.source_product, band_min: regionRow.band_min, band_max: regionRow.band_max, polygon_geojson: regionRow.polygon_geojson, centroid_lat: regionRow.centroid_lat, centroid_lon: regionRow.centroid_lon, area_sq_mi: regionRow.area_sq_mi, swath_index: regionRow.swath_index });
+                  log("REGION_KEEP", rc.name + " saved rows=1 (forced region-only) cluster=" + clusterRoot + " lat=" + rLat.toFixed(4) + " lon=" + rLon.toFixed(4) + " area=" + regionRow.area_sq_mi.toFixed(2) + " band=" + band.label);
+                }
+              }
+            }
+          } catch (e) {
+            log("ERROR", "region-only union cluster=" + clusterRoot + " band=" + band.label + " region=" + rc.name + ": " + e.message);
+          }
+        }
       }
 
       log("BAND", "cluster=" + clusterRoot +
@@ -1646,6 +1944,7 @@ async function main(dateArg) {
   }
   log("TIER_SUMMARY", "merge_mode=polygon_union (buffered corridor rings + polygon-clipping union)");
   log("TIER_SUMMARY", "total_rows=" + swathIdx + " (was " + final.length + " corridors × bands in per-corridor mode)");
+  log("REGION_SUMMARY", "western_sd_ne_wy saved_rows=" + regionRowsSaved.western_sd_ne_wy + " north_dakota saved_rows=" + regionRowsSaved.north_dakota);
 
   log("DEBUG", "date=" + TARGET_DATE +
     " event_groups(clusters)=" + clusterGroupsMap.size +
@@ -1654,6 +1953,25 @@ async function main(dateArg) {
 
   log("MAIN", "Hail done. Saved " + nSaved + " merged band rows from " +
     clusterGroupsMap.size + " clusters (" + final.length + " corridors) to storm_polygons (" + SCRIPT_VERSION + ")");
+
+  // ── Bulk-insert collected rows into hail_radar_polygons ──
+  if (radarRows.length > 0) {
+    const { count: beforeCount } = await supabase.from("hail_radar_polygons")
+      .select("id", { count: "exact", head: true }).eq("event_date", TARGET_DATE);
+    const RADAR_CHUNK = 100;
+    let nRadarSaved = 0;
+    for (let ri = 0; ri < radarRows.length; ri += RADAR_CHUNK) {
+      const chunk = radarRows.slice(ri, ri + RADAR_CHUNK);
+      const { error: radarErr } = await supabase.from("hail_radar_polygons").insert(chunk);
+      if (radarErr) log("ERROR", "[radar-ingest] bulk insert chunk " + ri + ": " + radarErr.message);
+      else nRadarSaved += chunk.length;
+    }
+    log("MAIN", "[radar-ingest] rows before=" + (beforeCount || 0) + " rows after=" + nRadarSaved);
+    log("MAIN", "[radar-ingest] polygons saved=" + nRadarSaved);
+  } else {
+    log("MAIN", "[radar-ingest] polygons saved=0 (no hail corridors generated)");
+  }
+
   nSavedHail = nSaved;
   hailSwathIdx = swathIdx;
   } // ── END HAIL PIPELINE ──
@@ -2171,3 +2489,4 @@ async function entryPoint() {
 }
 
 entryPoint().catch(e => { console.error("Fatal:", e); process.exit(1); });
+

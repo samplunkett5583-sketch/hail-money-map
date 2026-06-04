@@ -8480,7 +8480,6 @@ window.initCampaignMap = function (campaign) {
       streetViewControl: false,
       mapTypeControl: false,
       fullscreenControl: false,
-      scrollwheel: false,
     });
     // City autocomplete (wired once)
     if (google.maps.places) {
@@ -8495,37 +8494,6 @@ window.initCampaignMap = function (campaign) {
     }
     // Drag-drop wiring (wired once)
     campaignWireDragDrop(el);
-
-    if (!el._hmmCampaignWheelZoomAttached) {
-      el._hmmCampaignWheelZoomAttached = true;
-      var campaignWheelZoomTimer = null;
-      var campaignLatestWheelDeltaY = 0;
-      el.addEventListener(
-        'wheel',
-        function (event) {
-          event.preventDefault();
-          event.stopPropagation();
-          campaignLatestWheelDeltaY = event.deltaY;
-          if (campaignWheelZoomTimer) {
-            clearTimeout(campaignWheelZoomTimer);
-          }
-          campaignWheelZoomTimer = window.setTimeout(function () {
-            campaignWheelZoomTimer = null;
-            var currentZoom = window.cMap.getZoom();
-            if (typeof currentZoom !== 'number') return;
-            var minZoom = typeof window.cMap.get('minZoom') === 'number' ? window.cMap.get('minZoom') : 3;
-            var maxZoom = typeof window.cMap.get('maxZoom') === 'number' ? window.cMap.get('maxZoom') : 21;
-            var nextZoom = Math.min(
-              maxZoom,
-              Math.max(minZoom, currentZoom + (campaignLatestWheelDeltaY < 0 ? 0.25 : -0.25))
-            );
-            window.cMap.setZoom(nextZoom);
-          }, 700);
-        },
-        { passive: false, capture: true }
-      );
-      console.log('[HMM] campaign debounced slow wheel zoom attached');
-    }
 
     // Live user-location dot (blue, separate from status markers)
     window._campaignLocMarker = null;
@@ -10617,7 +10585,6 @@ window.initMap = function initMap() {
     fullscreenControl: false,
     rotateControl: false,
     clickableIcons: false,
-    scrollwheel: false,
   });
 
   function applyMapBrightness() {
@@ -10648,43 +10615,6 @@ window.initMap = function initMap() {
   App.map.setOptions({ mapTypeControl: false });
 
   const map = App.map;
-  let wheelZoomTimer = null;
-  let latestWheelDeltaY = 0;
-  let wheelZoomAttached = false;
-  mapEl.addEventListener(
-    "wheel",
-    (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      latestWheelDeltaY = event.deltaY;
-      if (wheelZoomTimer) {
-        clearTimeout(wheelZoomTimer);
-      }
-
-      wheelZoomTimer = window.setTimeout(() => {
-        wheelZoomTimer = null;
-        const currentZoom = map.getZoom();
-        if (typeof currentZoom !== "number") return;
-
-        const minZoom = typeof map.get("minZoom") === "number" ? map.get("minZoom") : 3;
-        const maxZoom = typeof map.get("maxZoom") === "number" ? map.get("maxZoom") : 21;
-        const nextZoom = Math.min(
-          maxZoom,
-          Math.max(minZoom, currentZoom + (latestWheelDeltaY < 0 ? 0.25 : -0.25))
-        );
-
-        map.setZoom(nextZoom);
-      }, 700);
-
-      if (!wheelZoomAttached) {
-        console.log("[HMM] debounced slow wheel zoom attached");
-        wheelZoomAttached = true;
-      }
-    },
-    { passive: false, capture: true }
-  );
-
   const killMapTypeUI = () => {
     try {
       const pos = google.maps.ControlPosition;
