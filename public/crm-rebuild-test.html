@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hail Money CRM Rebuild Test</title>
+  <style>
+    :root {
+      --bg: #f4f4f2;
+      --bg-soft: #fbfaf7;
+      --panel: #ffffff;
+      --panel-soft: #f1f1ec;
+      --panel-muted: #e6e6de;
+      --text: #1b1b18;
+      --muted: #67675f;
+      --line: #d8d8d0;
+      --brand: #9d6a2f;
+      --brand-soft: #ead7bf;
+      --shadow: 0 18px 48px rgba(39, 31, 18, 0.08);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top, rgba(157, 106, 47, 0.08), transparent 34%),
+        linear-gradient(180deg, #f9f8f4 0%, #f1f0eb 100%);
+      color: var(--text);
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+    }
+
+    body {
+      padding: 24px;
+    }
+
+    .crm-shell {
+      max-width: 1180px;
+      margin: 0 auto;
+      min-height: calc(100vh - 48px);
+    }
+
+    .topbar {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 20px 30px;
+    }
+
+    .brand-left {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .logo-wrap {
+      justify-self: center;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(157, 106, 47, 0.18);
+      box-shadow: 0 10px 30px rgba(157, 106, 47, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .role-badge {
+      justify-self: end;
+      padding: 12px 18px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid var(--line);
+      color: var(--brand);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      box-shadow: 0 10px 28px rgba(29, 24, 16, 0.05);
+    }
+
+    .company-card {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(157, 106, 47, 0.12);
+      border-radius: var(--radius-xl);
+      padding: 22px 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .company-name {
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .company-meta {
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .page {
+      display: none;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(216, 216, 208, 0.9);
+      border-radius: 34px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .page-kicker {
+      color: var(--brand);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .page-subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .back-btn,
+    .action-btn {
+      border: 0;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      font-weight: 700;
+      padding: 12px 18px;
+      cursor: pointer;
+      border: 1px solid var(--line);
+      box-shadow: 0 10px 22px rgba(30, 25, 17, 0.05);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .back-btn:hover,
+    .action-btn:hover,
+    .menu-card:hover,
+    .lead-card:hover,
+    .placeholder-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 30px rgba(30, 25, 17, 0.08);
+      border-color: rgba(157, 106, 47, 0.28);
+    }
+
+    .menu-section-title {
+      color: var(--brand);
+      font-size: 0.84rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .menu-card,
+    .lead-card,
+    .placeholder-card,
+    .section-card,
+    .activity-feed,
+    .calendar-card,
+    .inspection-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 14px 28px rgba(30, 25, 17, 0.05);
+    }
+
+    .menu-card {
+      width: 100%;
+      border: 1px solid var(--line);
+      text-align: left;
+      padding: 20px 22px;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .menu-card-title {
+      font-size: 1.12rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .menu-card-desc {
+      color: var(--muted);
+      font-size: 0.96rem;
+      line-height: 1.5;
+    }
+
+    .lead-list,
+    .form-stack,
+    .settings-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .lead-card,
+    .placeholder-card,
+    .section-card,
+    .calendar-card,
+    .inspection-card {
+      padding: 20px 22px;
+    }
+
+    .lead-header,
+    .calendar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .lead-name,
+    .section-card h3,
+    .placeholder-card h3,
+    .calendar-card h3,
+    .inspection-card h3,
+    .activity-feed h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: var(--panel-soft);
+      color: var(--brand);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .mini-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      background: #fcfcfa;
+      color: var(--text);
+      font: inherit;
+      resize: vertical;
+    }
+
+    .field textarea {
+      min-height: 110px;
+    }
+
+    .placeholder-copy {
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 10px 0 0;
+    }
+
+    .pipeline-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) 320px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .pipeline-board {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(150px, 1fr));
+      gap: 14px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .pipeline-column {
+      min-height: 320px;
+      padding: 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #f5f3ee 100%);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: 0 12px 28px rgba(30, 25, 17, 0.04);
+    }
+
+    .pipeline-column h3 {
+      margin: 0 0 14px;
+      font-size: 0.92rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .pipeline-item {
+      padding: 14px;
+      background: #fff;
+      border: 1px solid var(--panel-muted);
+      border-radius: 16px;
+      margin-bottom: 12px;
+    }
+
+    .pipeline-item strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .pipeline-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .activity-feed {
+      padding: 20px 22px;
+    }
+
+    .feed-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .feed-item {
+      padding: 14px;
+      border-radius: 16px;
+      background: var(--bg-soft);
+      border: 1px solid var(--panel-muted);
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .numbered-list,
+    .plain-list {
+      margin: 14px 0 0;
+      padding-left: 22px;
+      color: var(--text);
+      line-height: 1.8;
+    }
+
+    .plain-list {
+      padding-left: 18px;
+    }
+
+    .settings-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .inspection-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.9fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .section-chip {
+      padding: 14px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fbfbf9;
+      text-align: center;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .section-chip.active {
+      background: linear-gradient(180deg, #f2e8db 0%, #fff7ed 100%);
+      border-color: rgba(157, 106, 47, 0.32);
+      color: var(--brand);
+    }
+
+    .inspection-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .section-status {
+      color: var(--muted);
+      font-size: 0.94rem;
+      font-weight: 700;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .calendar-day {
+      min-height: 110px;
+      padding: 14px 12px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff 0%, #f7f5ef 100%);
+    }
+
+    .calendar-day strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+
+    .calendar-note {
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+
+    .footer-note {
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 1080px) {
+      .pipeline-layout,
+      .inspection-layout,
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pipeline-board {
+        grid-template-columns: repeat(7, minmax(180px, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 14px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+        padding-bottom: 22px;
+      }
+
+      .brand-left,
+      .role-badge {
+        justify-self: center;
+      }
+
+      .menu-grid,
+      .form-grid,
+      .section-grid,
+      .calendar-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .page {
+        padding: 22px 18px;
+        border-radius: 24px;
+      }
+
+      .page-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="crm-shell">
+    <header class="topbar">
+      <div class="brand-left">Hail Money</div>
+      <div class="logo-wrap">
+        <img src="assets/hailmoney-logo.png" alt="Hail Money logo" />
+      </div>
+      <div class="role-badge">Sales Rep</div>
+    </header>
+
+    <section class="company-card">
+      <div class="company-name">YoPro Construction</div>
+      <div class="company-meta">6187913908 · yoproconstruction@gmail.com</div>
+    </section>
+
+    <section class="page active" data-route="menu">
+      <div class="page-header">
+        <div>
+          <div class="page-kicker">CRM Shell Test</div>
+          <h1 class="page-title">Main Menu</h1>
+          <p class="page-subtitle">Choose the next task.</p>
+        </div>
+      </div>
+
+      <div class="menu-section-title">Sales Rep</div>
+      <div class="menu-grid">
+        <button class="menu-card" type="button" data-route-link="assigned-leads">
+          <div class="menu-card-title">My Assigned Leads</div>
+          <div class="menu-card-desc">Leads assigned to you from the office</div>
+        </button>
+
+        <button class="menu-card" type="button" data-route-link="add-field-lead">
+          <div class="menu-card-title">Add Field Lead</div>
+          <div class="menu-card-desc">Create a new lead from the field</div>
+        </button>
+
+        <button class="menu-card" type="button" data-route-link="pipeline">
+          <div class="menu-card-title">My Pipeline</div>
+          <div class="menu-card-desc">Your leads by stage</div>
+        </button>
+
+        <button class="menu-card" type="button" data-route-link="inspections">
+          <div class="menu-card-title">Inspections</div>
+          <div class="menu-card-desc">Finish insurance and contingency details later</div>
+        </button>
+
+        <button class="menu-card" type="button" data-route-link="calendar">
+          <div class="menu-card-title">Calendar</div>
+          <div class="menu-card-desc">Your appointments, reminders, and follow-ups</div>
+        </button>
+
+        <button class="menu-card" type="button" data-route-link="settings">
+          <div class="menu-card-title">Settings</div>
+          <div class="menu-card-desc">Pipeline, team, users, and app settings</div>
+        </button>
+      </div>
+
+      <div class="footer-note">This standalone test shell bypasses login so the May 30 CRM layout can be reviewed immediately.</div>
+    </section>
+
+    <section class="page" data-route="assigned-leads">
+      <div class="page-header">
+        <div>
+          <div class="page-kicker">Sales Rep</div>
+          <h1 class="page-title">My Assigned Leads</h1>
+          <p class="page-subtitle">Leads assigned to you from the office.</p>
+        </div>
+        <button class="back-btn" type="button" data-route-link="menu">Back to Main Menu</button>
+      </div>
+
+      <div class="lead-list">
+        <div class="lead-card">
+          <div class="lead-header">
+            <div>
+              <div class="lead-name">Dylan Harper</div>
+              <div class="muted">1424 Oak Hill Drive, Marion, IL</div>
+            </div>
+            <span class="pill">Lead</span>
+          </div>
+          <div class="muted">Needs first contact and inspection scheduling.</div>
+        </div>
+
+        <div class="lead-card">
+          <div class="lead-header">
+            <div>
+              <div class="lead-name">Rachel Summers</div>
+              <div class="muted">903 Meadow Lane, Carterville, IL</div>
+            </div>
+            <span class="pill">Inspected</span>
+          </div>
+          <div class="muted">Waiting on claim number from homeowner.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" data-route="add-field-lead">
+      <div class="page-header">
+        <div>
+          <div class="page-kicker">Field Lead</div>
+          <h1 class="page-title">Add Field Lead</h1>
+          <p class="page-subtitle">Create a new lead from the field.</p>
+        </div>
+        <button class="back-btn" type="button" data-route-link="menu">Back to Main Menu</button>
+      </div>
+
+      <div class="section-card">
+        <div class="form-grid">
+          <div class="field">
+            <label for="lead-name">Homeowner Name</label>
+            <input id="lead-name" type="text" placeholder="Jane Smith" />
+          </div>
+          <div class="field">
+            <label for="lead-phone">Phone</label>
+            <input id="lead-phone" type="text" placeholder="(618) 555-0194" />
+          </div>
+          <div class="field full">
+            <label for="lead-address">Address</label>
+            <input id="lead-address" type="text" placeholder="123 Main Street, Marion, IL" />
+          </div>
+          <div class="field">
+            <label for="lead-source">Lead Source</label>
+            <input id="lead-source" type="text" placeholder="Door Knock" />
+          </div>
+          <div class="field">
+            <label for="lead-notes">Status</label>
+            <input id="lead-notes" type="text" placeholder="New field lead" />
+          </div>
+          <div class="field full">
+            <label for="lead-comments">Notes</label>
+            <textarea id="lead-comments" placeholder="Quick field notes, damage hints, or homeowner comments"></textarea>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" data-route="pipeline">
+      <div class="page-header">
+        <div>
+          <div class="page-kicker">Sales Pipeline</div>
+          <h1 class="page-title">My Pipeline</h1>
+          <p class="page-subtitle">Your leads by stage.</p>
+        </div>
+        <button class="back-btn" type="button" data-route-link="menu">Back to Main Menu</button>
+      </div>
+
+      <div class="pipeline-layout">
+        <div class="pipeline-board">
+          <div class="pipeline-column">
+            <h3>Lead</h3>
+            <div class="pipeline-item">
+              <strong>Dylan Harper</strong>
+              <span>1424 Oak Hill Drive</span>
+            </div>
+          </div>
+          <div class="pipeline-column">
+            <h3>Inspected</h3>
+            <div class="pipeline-item">
+              <strong>Rachel Summers</strong>
+              <span>903 Meadow Lane</span>
+            </div>
+          </div>
+          <div class="pipeline-column">
+            <h3>Claim Filed</h3>
+            <div class="pipeline-item">
+              <strong>Chris Walker</strong>
+              <span>117 Pine Street</span>
+            </div>
+          </div>
+          <div class="pipeline-column">
+            <h3>Approved</h3>
+            <div class="pipeline-item">
+              <strong>Terry Collins</strong>
+              <span>200 Cedar Court</span>
+            </div>
+          </div>
+          <div class="pipeline-column">
+            <h3>Built</h3>
+            <div class="pipeline-item">
+              <strong>Monica Bell</strong>
+              <span>88 Longview Road</span>
+            </div>
+          </div>
+          <div class="pipeline-column">
+            <h3>Invoiced</h3>
+            <div class="pipeline-item">
+              <strong>Amber Price</strong>
+              <span>315 Ridge Avenue</span>
+            </div>
+          </div>
+          <div class="pipeline-column">
+            <h3>Complete</h3>
+            <div class="pipeline-item">
+              <strong>Caleb Reed</strong>
+              <span>51 Briarwood Lane</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="activity-feed">
+          <h3>Activity Feed</h3>
+          <div class="feed-list">
+            <div class="feed-item">Sam updated Rachel Summers at 903 Meadow Lane to Inspected.</div>
+            <div class="feed-item">Alex filed the claim for Chris Walker at 117 Pine Street.</div>
+            <div class="feed-item">Jordan marked Amber Price at 315 Ridge Avenue as Invoiced.</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="page" data-route="inspections">
+      <div class="page-header">
+        <div>
+          <div class="page-kicker">Inspection Flow</div>
+          <h1 class="page-title">Inspections</h1>
+          <p class="page-subtitle">Finish insurance and contingency details later.</p>
+        </div>
+        <button class="back-btn" type="button" data-route-link="menu">Back to Main Menu</button>
+      </div>
+
+      <div class="inspection-layout">
+        <div class="inspection-card">
+          <h3>Photo Sections</h3>
+          <p class="placeholder-copy">Tap through the sections as you document the property.</p>
+          <div class="section-grid" id="inspection-sections"></div>
+          <div class="inspection-footer">
+            <div class="section-status" id="current-section-label">Current Section: Front</div>
+            <button class="action-btn" type="button" id="next-section-btn">Next Section</button>
+          </div>
+        </div>
+
+        <div class="placeholder-card">
+          <h3>Inspection Notes</h3>
+          <p class="placeholder-copy">Use this shell placeholder to verify the May 30 inspection layout and section flow.</p>
+          <p class="placeholder-copy">Required sections shown: Front, Rear, Left, Right, Roof, Gutters, Siding, Windows, Damage.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" data-route="calendar">
+      <div class="page-header">
+        <div>
+          <div class="page-kicker">Calendar</div>
+          <h1 class="page-title">Calendar</h1>
+          <p class="page-subtitle">Your appointments, reminders, and follow-ups.</p>
+        </div>
+        <div>
+          <button class="action-btn" type="button" id="add-event-btn">Add Event</button>
+          <button class="back-btn" type="button" data-route-link="menu">Back to Main Menu</button>
+        </div>
+      </div>
+
+      <div class="calendar-card">
+        <div class="calendar-head">
+          <h3>CRM Calendar Placeholder</h3>
+          <span class="pill" id="calendar-status">No new events added</span>
+        </div>
+        <div class="calendar-grid">
+          <div class="calendar-day"><strong>Mon</strong><div class="calendar-note">Follow-up calls</div></div>
+          <div class="calendar-day"><strong>Tue</strong><div class="calendar-note">Inspection slot</div></div>
+          <div class="calendar-day"><strong>Wed</strong><div class="calendar-note">Claim paperwork</div></div>
+          <div class="calendar-day"><strong>Thu</strong><div class="calendar-note">Adjuster meeting</div></div>
+          <div class="calendar-day"><strong>Fri</strong><div class="calendar-note">Production check-in</div></div>
+          <div class="calendar-day"><strong>Sat</strong><div class="calendar-note">Open availability</div></div>
+          <div class="calendar-day"><strong>Sun</strong><div class="calendar-note">Weekend reminders</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" data-route="settings">
+      <div class="page-header">
+        <div>
+          <div class="page-kicker">App Settings</div>
+          <h1 class="page-title">Settings</h1>
+          <p class="page-subtitle">Pipeline, team, users, and app settings.</p>
+        </div>
+        <button class="back-btn" type="button" data-route-link="menu">Back to Main Menu</button>
+      </div>
+
+      <div class="settings-grid">
+        <div class="section-card">
+          <h3>Pipeline Stages</h3>
+          <ol class="numbered-list">
+            <li>Lead</li>
+            <li>Inspected</li>
+            <li>Claim Filed</li>
+            <li>Approved</li>
+            <li>Built</li>
+            <li>Invoiced</li>
+            <li>Complete</li>
+          </ol>
+        </div>
+
+        <div class="section-card">
+          <h3>Team</h3>
+          <ul class="plain-list">
+            <li>Sam</li>
+            <li>Alex</li>
+            <li>Jordan</li>
+            <li>Casey</li>
+            <li>Morgan</li>
+          </ul>
+        </div>
+
+        <div class="section-card">
+          <h3>Users / Permissions</h3>
+          <ul class="plain-list">
+            <li>Admin</li>
+            <li>Manager</li>
+            <li>Sales Rep</li>
+            <li>Canvasser</li>
+            <li>Office</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      var routeEls = Array.prototype.slice.call(document.querySelectorAll("[data-route]"));
+      var sectionNames = ["Front", "Rear", "Left", "Right", "Roof", "Gutters", "Siding", "Windows", "Damage"];
+      var currentSectionIndex = 0;
+      var sectionWrap = document.getElementById("inspection-sections");
+      var currentLabel = document.getElementById("current-section-label");
+      var nextBtn = document.getElementById("next-section-btn");
+      var calendarStatus = document.getElementById("calendar-status");
+      var addEventBtn = document.getElementById("add-event-btn");
+
+      function normalizeRoute(hash) {
+        var clean = String(hash || "").replace(/^#\/?/, "").trim();
+        return clean || "menu";
+      }
+
+      function renderRoute(route) {
+        routeEls.forEach(function (el) {
+          el.classList.toggle("active", el.getAttribute("data-route") === route);
+        });
+      }
+
+      function navigate(route) {
+        var target = route || "menu";
+        if (window.location.hash === "#/" + target) {
+          renderRoute(target);
+          return;
+        }
+        window.location.hash = "#/" + target;
+      }
+
+      function renderInspectionSections() {
+        if (!sectionWrap) return;
+        sectionWrap.innerHTML = sectionNames.map(function (name, index) {
+          var activeClass = index === currentSectionIndex ? "section-chip active" : "section-chip";
+          return '<button class="' + activeClass + '" type="button" data-section-index="' + index + '">' + name + "</button>";
+        }).join("");
+        if (currentLabel) {
+          currentLabel.textContent = "Current Section: " + sectionNames[currentSectionIndex];
+        }
+        Array.prototype.slice.call(sectionWrap.querySelectorAll("[data-section-index]")).forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            currentSectionIndex = Number(btn.getAttribute("data-section-index")) || 0;
+            renderInspectionSections();
+          });
+        });
+      }
+
+      Array.prototype.slice.call(document.querySelectorAll("[data-route-link]")).forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          navigate(btn.getAttribute("data-route-link"));
+        });
+      });
+
+      if (nextBtn) {
+        nextBtn.addEventListener("click", function () {
+          currentSectionIndex = (currentSectionIndex + 1) % sectionNames.length;
+          renderInspectionSections();
+        });
+      }
+
+      if (addEventBtn && calendarStatus) {
+        addEventBtn.addEventListener("click", function () {
+          calendarStatus.textContent = "Sample event added";
+        });
+      }
+
+      window.addEventListener("hashchange", function () {
+        renderRoute(normalizeRoute(window.location.hash));
+      });
+
+      renderInspectionSections();
+      renderRoute(normalizeRoute(window.location.hash));
+      if (!window.location.hash) {
+        window.location.hash = "#/menu";
+      }
+    })();
+  </script>
+</body>
+</html>
