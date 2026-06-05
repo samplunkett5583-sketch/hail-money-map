@@ -16,6 +16,7 @@
       --accent-2: #caa85c;
       --input: #ffffff;
       --error: #d93025;
+      --maps-panel-width: 320px;
     }
 
     * {
@@ -26,6 +27,7 @@
       margin: 0;
       padding: 0;
       min-height: 100%;
+      overflow-y: auto;
       background: var(--bg);
       color: var(--text);
       font-family: Arial, Helvetica, sans-serif;
@@ -42,38 +44,79 @@
     }
 
     .topbar {
-      min-height: 84px;
+      min-height: 88px;
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: space-between;
-      padding: 18px 20px 12px;
+      padding: 12px 20px 10px;
       border-bottom: 1px solid var(--border);
       background: var(--panel);
+      width: 100%;
+      margin: 0;
+      box-sizing: border-box;
+      position: relative;
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 40;
     }
 
-    .app-top-hail-logo {
+    .topbar-left-spacer {
+      min-width: 120px;
+      height: 48px;
+      flex: 0 0 auto;
+    }
+
+    .map-header-brand {
       position: absolute;
       left: 50%;
-      top: 8px;
-      transform: translateX(-50%);
-      height: 56px;
-      width: auto;
-      max-width: min(240px, 44vw);
-      object-fit: contain;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
       pointer-events: none;
       user-select: none;
       z-index: 20;
     }
 
-    .brand {
-      font-size: 18px;
+    .app-top-hail-logo {
+      position: static;
+      height: 56px;
+      width: auto;
+      max-width: min(240px, 44vw);
+      object-fit: contain;
+    }
+
+    .map-header-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #111;
+      line-height: 1;
       letter-spacing: 0.02em;
     }
 
     .topbar-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: flex-end;
+      margin-left: auto;
+      position: relative;
+      z-index: 30;
+    }
+
+    .company-logo-slot {
+      min-width: 120px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex: 0 0 auto;
+    }
+
+    .topbar-controls {
       display: flex;
       gap: 10px;
       align-items: center;
@@ -83,16 +126,51 @@
       padding: 8px 12px;
     }
 
+    body.map-page-active .topbar {
+      position: fixed;
+      top: 0;
+      left: var(--maps-panel-width);
+      right: 0;
+      margin: 0;
+      z-index: 30;
+    }
+
     @media (max-width: 700px) {
+      body.map-page-active .topbar {
+        left: 0;
+      }
+
       header.topbar {
-        min-height: 72px;
-        padding: 14px 14px 10px;
+        min-height: 78px;
+        padding: 10px 12px 8px;
+      }
+
+      .topbar-left-spacer {
+        min-width: 24px;
+        height: 40px;
+      }
+
+      .company-logo-slot {
+        min-width: 0;
+        width: 0;
+        height: 40px;
+      }
+
+      .topbar-controls {
+        gap: 8px;
+      }
+
+      .map-header-brand {
+        gap: 1px;
       }
 
       img.app-top-hail-logo {
         height: 40px;
         max-width: min(170px, 52vw);
-        top: 6px;
+      }
+
+      .map-header-title {
+        font-size: 12px;
       }
     }
 
@@ -1518,15 +1596,90 @@
     }
 
     /* ── Maps Page ── */
+    #mapsView,
+    #page-map {
+      position: fixed;
+      inset: 0;
+      padding: 0;
+      margin: 0;
+      overflow: hidden;
+      background: #111;
+    }
+    #mapsView .ht-maps-shell,
+    #page-map .maps-layout {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #mapsView .ht-map-wrap,
+    #page-map .maps-map-area {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: auto;
+    }
+    #mapsView #stormMap,
+    #page-map #stormMap,
+    #page-map .maps-map-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: auto;
+    }
+    #mapsView .ht-ui-layer,
+    #page-map .maps-layout {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #mapsView .ht-ui-layer {
+      z-index: 30;
+    }
+    #page-map .maps-layout > *,
+    #page-map .maps-layout > * * {
+      pointer-events: auto;
+    }
+    #mapsView .ht-left-panel,
+    .ht-left-panel {
+      top: 0;
+      margin-top: 0;
+      padding-top: 0;
+      z-index: 100;
+      pointer-events: auto;
+    }
+    .ht-panel-card {
+      margin-top: 0;
+    }
+    #htIconRail {
+      z-index: 110;
+      pointer-events: auto;
+    }
     .maps-layout {
-      display:flex; gap:0; height:calc(100vh - 64px); overflow:hidden;
+      display:flex; gap:0;
     }
     .maps-panel {
-      width:320px; min-width:260px; background:var(--panel);
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 36px;
+      width:var(--maps-panel-width); min-width:260px; max-width:min(var(--maps-panel-width), 100vw);
+      background:var(--panel);
       border-right:1px solid var(--border); display:flex; flex-direction:column;
       overflow-y:auto; padding:0;
+      margin-top: 0;
+      z-index:100;
+      pointer-events:auto;
     }
     .maps-panel-header {
+      margin-top: 0;
       padding:16px; border-bottom:1px solid var(--border);
     }
     .maps-panel-header h1 { font-size:20px; margin:0 0 2px; }
@@ -1633,10 +1786,10 @@
       opacity:.45; cursor:not-allowed;
     }
     .maps-map-area {
-      flex:1; position:relative; background:#111;
+      flex:1; background:#111;
     }
     .maps-map-container {
-      width:100%; height:100%; position:relative;
+      background:#111;
     }
     /* ── Reference Swath Panel ── */
     .ref-swath-panel {
@@ -1684,8 +1837,9 @@
     }
     /* ── Swath Opacity Control ── */
     .maps-swath-toggle-ctrl {
-      position:absolute; top:12px; left:12px; z-index:99998;
+      position:fixed; top:12px; left:12px; z-index:20;
       display:flex; align-items:center; gap:6px;
+      pointer-events:auto;
     }
     .maps-swath-toggle-btn {
       padding:0 12px; min-height:36px; border:none; border-radius:10px;
@@ -1698,8 +1852,9 @@
       background:var(--accent-2); color:var(--text);
     }
     .maps-opacity-ctrl {
-      position:absolute; top:66px; left:12px; z-index:99998;
+      position:fixed; top:66px; left:12px; z-index:20;
       display:flex; align-items:center; gap:6px;
+      pointer-events:auto;
     }
     .maps-hurricane-ticker {
       position:fixed; left:0; right:0; bottom:0; height:36px;
@@ -1758,8 +1913,9 @@
     }
     /* ── Street Color Overlay Control (Maps page) ── */
     .maps-street-ctrl {
-      position:absolute; top:12px; right:12px; z-index:99998;
+      position:fixed; top:12px; right:12px; z-index:20;
       display:flex; align-items:center; gap:6px;
+      pointer-events:auto;
     }
     .maps-street-toggle-btn {
       width:36px; height:36px; border:none; border-radius:8px;
@@ -1797,9 +1953,10 @@
     .maps-street-clear:hover { color:var(--text); }
     /* ── Property Action Card ── */
     .maps-prop-card {
-      display:none; position:absolute; bottom:16px; right:16px; z-index:99999;
+      display:none; position:fixed; bottom:48px; right:16px; z-index:20;
       width:280px; background:var(--panel); border:1px solid var(--border);
       border-radius:12px; padding:14px 16px; box-shadow:0 4px 20px rgba(0,0,0,.5);
+      pointer-events:auto;
     }
     .maps-prop-card.open { display:block; }
     .maps-prop-card-header {
@@ -1824,7 +1981,23 @@
     .maps-prop-card-btn.inspection:hover { background:var(--accent); }
 
     /* ── Property Panel (replaces left panel when property selected) ── */
-    .maps-prop-panel { display:none; flex-direction:column; overflow-y:auto; }
+    .maps-prop-panel {
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      bottom:36px;
+      width:var(--maps-panel-width);
+      min-width:260px;
+      max-width:min(var(--maps-panel-width), 100vw);
+      background:var(--panel);
+      border-right:1px solid var(--border);
+      flex-direction:column;
+      overflow-y:auto;
+      margin-top: 0;
+      z-index:100;
+      pointer-events:auto;
+    }
     .maps-prop-panel.open { display:flex; }
     .maps-panel.hidden-by-prop { display:none; }
     .maps-prop-panel-header {
@@ -1884,6 +2057,8 @@
     /* ── Mobile Maps Toggle Bar ── */
     .maps-mobile-bar {
       display:none;
+      z-index:20;
+      pointer-events:auto;
     }
     .maps-mobile-bar-btn {
       flex:1; padding:10px 8px; border:none; border-radius:10px;
@@ -1895,26 +2070,35 @@
     }
     .maps-mobile-drawer {
       display:none; overflow-y:auto;
+      z-index:20;
+      pointer-events:auto;
     }
     .maps-mobile-drawer.open {
       display:block;
     }
     @media (max-width:768px) {
-      .maps-layout { flex-direction:column; height:calc(100vh - 64px); overflow:hidden; }
+      body.map-page-active .topbar {
+        left: 0;
+      }
+
+      .maps-layout { flex-direction:column; height:100vh; overflow:hidden; }
       .maps-panel { display:none; }
-      .maps-map-area { order:-1; flex:1; min-height:0; height:auto; }
+      .maps-map-area { order:-1; flex:1; min-height:0; height:100vh; }
       .maps-mobile-bar {
         display:flex; gap:8px; padding:8px 12px;
-        background:var(--panel); border-top:1px solid var(--border); flex-shrink:0;
-        order:1; position:relative;
+        background:var(--panel); border:1px solid var(--border); flex-shrink:0;
+        order:1; position:fixed; left:12px; right:12px; bottom:48px;
+        border-radius:16px; box-shadow:0 10px 24px rgba(0,0,0,.18);
       }
       .maps-mobile-drawer {
-        background:var(--panel); border-top:1px solid var(--border);
+        background:var(--panel); border:1px solid var(--border);
         max-height:42vh; flex-shrink:0; order:2;
+        position:fixed; left:12px; right:12px; bottom:108px;
+        border-radius:16px; box-shadow:0 10px 24px rgba(0,0,0,.18);
       }
       .maps-mobile-drawer .maps-panel-section { padding:10px 14px; border-bottom:1px solid var(--border); }
       .maps-mobile-drawer .maps-panel-section:last-child { border-bottom:none; }
-      .maps-prop-card { bottom:auto; top:10px; right:10px; left:10px; width:auto; }
+      .maps-prop-card { bottom:100px; top:auto; right:10px; left:10px; width:auto; }
       /* Bottom panel collapse handle */
       .maps-mobile-bar::before {
         content:''; position:absolute; top:-12px; left:50%; transform:translateX(-50%);
@@ -1925,8 +2109,10 @@
       .maps-mobile-bar.collapsed ~ .maps-mobile-drawer { display:none !important; }
       /* Property panel at bottom on mobile */
       .maps-prop-panel {
-        order:3; max-height:50vh; border-top:1px solid var(--border);
-        border-right:none; width:100%;
+        order:3; max-height:50vh;
+        top:auto; left:12px; right:12px; bottom:108px; width:auto;
+        border:1px solid var(--border); border-radius:16px;
+        box-shadow:0 10px 24px rgba(0,0,0,.18);
       }
       .maps-prop-panel.open ~ .maps-mobile-bar,
       .maps-prop-panel.open ~ .maps-mobile-drawer { display:none !important; }
@@ -4818,13 +5004,19 @@
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <div class="brand">Hail Money</div>
-      <img class="app-top-hail-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
+      <div class="topbar-left-spacer" aria-hidden="true"></div>
+      <div class="map-header-brand">
+        <img class="app-top-hail-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
+        <div class="map-header-title">Hail Money</div>
+      </div>
       <div class="topbar-right">
-        <button class="jf-notif-btn" type="button" id="jf-notif-btn" title="Notifications" aria-label="Notifications" style="display:none;">
-          🔔<span class="jf-notif-badge" id="jf-notif-badge"></span>
-        </button>
-        <div class="crm-role-pill" id="crm-topbar-role">Rep</div>
+        <div class="company-logo-slot"></div>
+        <div class="topbar-controls">
+          <button class="jf-notif-btn" type="button" id="jf-notif-btn" title="Notifications" aria-label="Notifications" style="display:none;">
+            🔔<span class="jf-notif-badge" id="jf-notif-badge"></span>
+          </button>
+          <div class="crm-role-pill" id="crm-topbar-role">Rep</div>
+        </div>
       </div>
     </header>
 
@@ -8305,6 +8497,12 @@
       if (target) {
         target.classList.add('active');
       }
+      document.body.classList.toggle('map-page-active', pageId === 'page-map');
+      if (pageId === 'page-map' && window.google && mapsState && mapsState.map) {
+        var center = mapsState.map.getCenter();
+        google.maps.event.trigger(mapsState.map, 'resize');
+        if (center) mapsState.map.setCenter(center);
+      }
       window.scrollTo({ top: 0, behavior: 'auto' });
       /* Refresh activity panel for pages that have one */
       var _apLeadId = pageId === 'page-lead-detail' ? (_crmCurrentLeadId || null)
@@ -9564,7 +9762,6 @@
           if (mapsState.ready && !mapsState.fetching) mapsFetchRecentDates();
         }, 5 * 60 * 1000);
       } else {
-        if (mapsState.map) google.maps.event.trigger(mapsState.map, 'resize');
         // Re-fetch storm dates when returning to the Maps page so the panel stays
         // current without requiring a manual Refresh click. Mirrors Refresh behavior.
         // Skip if a fetch is already in flight; also skip if data was loaded recently.
@@ -9870,7 +10067,7 @@
 
       mapsState.map = new google.maps.Map(mapEl, {
         center: { lat: 39.5, lng: -98.35 },
-        zoom: 5,
+        zoom: 6,
         mapTypeId: google.maps.MapTypeId.HYBRID,
         styles: brightHybridStyles,
         zoomControl: false,
@@ -14885,8 +15082,8 @@
           console.warn('[fitMapToStormDate] ' + dateStr + ': SKIP oversized bounds ' +
             _latSpan.toFixed(1) + '° lat x ' + _lonSpan.toFixed(1) + '° lon — clamping to CONUS center');
           map.setCenter({ lat: 39.0, lng: -95.0 });
-          map.setZoom(5);
-          mapsState._fitBoundsCache[dateStr] = { center: { lat: 39.0, lng: -95.0 }, zoom: 5 };
+          map.setZoom(9);
+          mapsState._fitBoundsCache[dateStr] = { center: { lat: 39.0, lng: -95.0 }, zoom: 9 };
         } else {
           // Pad bounds by 20% of span so storm cells aren't flush against the viewport edge
           var _latPad = _latSpan * 0.20, _lonPad = _lonSpan * 0.20;
