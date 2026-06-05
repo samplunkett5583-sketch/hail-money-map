@@ -1691,6 +1691,35 @@
       font-size:12px; text-transform:uppercase; letter-spacing:.6px;
       color:var(--muted); margin:0 0 8px; font-weight:600;
     }
+    .maps-panel-storm-types {
+      display:flex; gap:6px; padding:0 0 10px;
+      pointer-events:auto;
+    }
+    .maps-panel-storm-type-btn {
+      flex:1 1 0; min-height:34px; padding:0 10px;
+      border:1px solid var(--border); border-radius:10px;
+      background:var(--panel-2); color:var(--text); font-size:12px; font-weight:700;
+      cursor:pointer; transition:background .15s, border-color .15s, color .15s;
+    }
+    .maps-panel-storm-type-btn:hover { border-color:var(--accent-2); }
+    .maps-panel-storm-type-btn.active {
+      background:var(--accent-2); border-color:var(--accent-2); color:var(--text);
+    }
+    .maps-storm-search-row {
+      padding:0 0 10px;
+      pointer-events:auto;
+    }
+    .maps-storm-search-input {
+      width:100%; box-sizing:border-box; padding:8px 10px;
+      border-radius:8px; border:1px solid var(--border);
+      background:var(--panel-2); color:var(--text); font-size:13px;
+      font-family:inherit; outline:none;
+    }
+    .maps-storm-search-input:focus { border-color:var(--accent-2); }
+    .maps-storm-search-error {
+      min-height:16px; margin-top:6px; font-size:11px; color:var(--muted);
+    }
+    .maps-storm-search-error.error { color:var(--error); }
     .maps-storm-list {
       list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px;
     }
@@ -1851,9 +1880,29 @@
     .maps-swath-toggle-btn.active {
       background:var(--accent-2); color:var(--text);
     }
+    @media (min-width: 769px) {
+      #page-map .maps-swath-toggle-ctrl {
+        display:none;
+      }
+    }
+    #page-map .maps-style-ctrl {
+      position:fixed; top:calc(88px + 12px); right:12px; z-index:20;
+      pointer-events:auto;
+    }
+    #page-map .maps-style-select {
+      min-width:124px; height:36px; padding:0 10px;
+      border:1px solid var(--border); border-radius:10px;
+      background:var(--panel); color:var(--text); font-size:12px; font-weight:700;
+      box-shadow:0 2px 8px rgba(0,0,0,.16); cursor:pointer; outline:none;
+    }
+    #page-map .maps-style-select:focus { border-color:var(--accent-2); }
     .maps-opacity-ctrl {
       position:fixed; top:66px; left:12px; z-index:20;
       display:flex; align-items:center; gap:6px;
+      pointer-events:auto;
+    }
+    #page-map .maps-opacity-ctrl {
+      top:calc(88px + 56px); right:12px; left:auto; z-index:20;
       pointer-events:auto;
     }
     .maps-hurricane-ticker {
@@ -2099,6 +2148,8 @@
       .maps-mobile-drawer .maps-panel-section { padding:10px 14px; border-bottom:1px solid var(--border); }
       .maps-mobile-drawer .maps-panel-section:last-child { border-bottom:none; }
       .maps-prop-card { bottom:100px; top:auto; right:10px; left:10px; width:auto; }
+      #page-map .maps-style-ctrl { top:calc(78px + 10px); right:10px; }
+      #page-map .maps-opacity-ctrl { top:calc(78px + 54px); right:10px; left:auto; }
       /* Bottom panel collapse handle */
       .maps-mobile-bar::before {
         content:''; position:absolute; top:-12px; left:50%; transform:translateX(-50%);
@@ -5418,6 +5469,15 @@
             <!-- Most Recent Storms -->
             <div class="maps-panel-section">
               <div class="maps-panel-section-title">Most Recent Storms</div>
+              <div id="stormTypeButtons" class="maps-panel-storm-types" style="pointer-events:auto;">
+                <button type="button" data-type="hail" class="maps-panel-storm-type-btn active">Hail</button>
+                <button type="button" data-type="wind" class="maps-panel-storm-type-btn active">Wind</button>
+                <button type="button" data-type="tornado" class="maps-panel-storm-type-btn active">Tornado</button>
+              </div>
+              <div id="stormSearchRow" class="maps-storm-search-row" style="pointer-events:auto;">
+                <input type="text" id="stormSearchInput" class="maps-storm-search-input" placeholder="Search property or date" />
+                <div id="stormSearchError" class="maps-storm-search-error" aria-live="polite"></div>
+              </div>
               <ul id="maps-storm-list" class="maps-storm-list"></ul>
               <div class="maps-paging">
                 <button type="button" id="maps-page-prev" class="maps-paging-btn" disabled>&laquo; Prev</button>
@@ -5542,6 +5602,14 @@
           <!-- Map Area -->
           <div class="maps-map-area">
             <div id="stormMap" class="maps-map-container"></div>
+            <div class="maps-style-ctrl">
+              <select id="mapStyleSelect" class="maps-style-select" style="position:relative;z-index:20;pointer-events:auto;">
+                <option value="roadmap">Roadmap</option>
+                <option value="satellite">Satellite</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="terrain">Terrain</option>
+              </select>
+            </div>
             <div class="maps-swath-toggle-ctrl">
               <button type="button" id="maps-toggle-hail" class="maps-swath-toggle-btn active" data-type="hail" title="Toggle hail swaths">Hail</button>
               <button type="button" id="maps-toggle-wind" class="maps-swath-toggle-btn active" data-type="wind" title="Toggle wind swaths">Wind</button>
@@ -9700,6 +9768,7 @@
       hailBandPolygons: {},      // dateStr -> google.maps.Polygon[] (hail-size band hulls)
       windBandPolygons: {},       // dateStr -> google.maps.Polygon[] (wind-speed band hulls)
       tornadoBandPolygons: {},    // dateStr -> google.maps.Polygon[] (tornado EF band hulls)
+      focusCandidatesByDate: {},  // dateStr -> [{ bounds, maxHail, maxWind, area, center, type }]
       windPointsByDate: {},       // dateStr -> [{lat,lon,magnitude,...}]
       tornadoPointsByDate: {},    // dateStr -> [{lat,lon,magnitude,...}]
       dateSummaries: {},          // dateStr -> { hail:{min,max}, wind:{min,max}, tornado:{min,max} }
@@ -9728,6 +9797,9 @@
     };
     var MAPS_MAX_SELECT = 10;
     var MAPS_PAGE_SIZE = 7;
+    var STORM_DATE_CACHE_MS = 10 * 60 * 1000;
+    var STORM_SWATH_CACHE_MS = 10 * 60 * 1000;
+    var MAPS_VERBOSE_DATE_LOGS = false;
 
     // Rebuild selectedDates = union of previewDate + pinnedDates (deduped)
     function mapsSyncSelectedDates() {
@@ -9738,29 +9810,188 @@
       mapsState.selectedDates = all;
     }
 
+    function mapsGetAppState() {
+      return window.App = window.App || {};
+    }
+
+    function mapsGetCachedStormDateData(dateStr) {
+      var App = mapsGetAppState();
+      App.stormDateDataCache = App.stormDateDataCache || {};
+      var cached = App.stormDateDataCache[dateStr];
+      if (!cached) return null;
+      if (Date.now() - cached.loadedAt >= STORM_DATE_CACHE_MS) return null;
+      return cached.data || null;
+    }
+
+    function mapsSetCachedStormDateData(dateStr, data) {
+      var App = mapsGetAppState();
+      App.stormDateDataCache = App.stormDateDataCache || {};
+      App.stormDateDataCache[dateStr] = {
+        loadedAt: Date.now(),
+        data: data
+      };
+    }
+
+    function mapsGetCachedStormSwaths(dateStr) {
+      var App = mapsGetAppState();
+      App.stormSwathCache = App.stormSwathCache || {};
+      var cached = App.stormSwathCache[dateStr];
+      if (!cached) return null;
+      if (Date.now() - cached.loadedAt >= STORM_SWATH_CACHE_MS) return null;
+      return cached.data || null;
+    }
+
+    function mapsSetCachedStormSwaths(dateStr, data, confirmedEmpty) {
+      var App = mapsGetAppState();
+      App.stormSwathCache = App.stormSwathCache || {};
+      data = data || {};
+      if (!Array.isArray(data.rows)) return;
+      if (!data.rows.length && !confirmedEmpty) return;
+      App.stormSwathCache[dateStr] = {
+        loadedAt: Date.now(),
+        data: data
+      };
+    }
+
+    function mapsCollectActiveOverlayRefs(dateStr) {
+      var refs = [];
+      [
+        mapsState.swathPolygons[dateStr],
+        mapsState.swathCenterlines[dateStr],
+        mapsState.pointOverlaysByDate[dateStr],
+        mapsState.hailBandPolygons[dateStr],
+        mapsState.windBandPolygons[dateStr],
+        mapsState.tornadoBandPolygons[dateStr]
+      ].forEach(function (list) {
+        if (Array.isArray(list) && list.length) refs = refs.concat(list);
+      });
+      if (mapsState.aiSwathOverlays[dateStr]) refs.push(mapsState.aiSwathOverlays[dateStr]);
+      if (mapsState.hailFieldOverlays[dateStr]) refs.push(mapsState.hailFieldOverlays[dateStr]);
+      if (mapsState.refSwathOverlays[dateStr]) refs.push(mapsState.refSwathOverlays[dateStr]);
+      return refs;
+    }
+
+    function mapsDrawInChunks(items, drawOne, chunkSize) {
+      items = Array.isArray(items) ? items : [];
+      chunkSize = Math.max(1, Number(chunkSize) || 150);
+      return new Promise(function (resolve) {
+        var index = 0;
+        function step() {
+          var end = Math.min(index + chunkSize, items.length);
+          for (; index < end; index++) {
+            try {
+              drawOne(items[index], index);
+            } catch (err) {
+              console.warn('[drawInChunks] skipped item', err);
+            }
+          }
+          if (index < items.length) {
+            requestAnimationFrame(step);
+          } else {
+            resolve();
+          }
+        }
+        step();
+      });
+    }
+
+    function mapsRememberVisibleStormDate(dateStr) {
+      var App = mapsGetAppState();
+      App.currentVisibleStormDate = dateStr;
+      App.activeStormOverlays = mapsCollectActiveOverlayRefs(dateStr);
+    }
+
+    function mapsClearPreviewVisibilityTimers() {
+      var App = mapsGetAppState();
+      if (!Array.isArray(App.previewVisibilityTimers)) return;
+      while (App.previewVisibilityTimers.length) {
+        clearTimeout(App.previewVisibilityTimers.pop());
+      }
+    }
+
+    function mapsApplySwathOpacity(opacity) {
+      mapsState.swathOpacity = opacity;
+      Object.keys(mapsState.swathPolygons).forEach(function (dateStr) {
+        var polys = mapsState.swathPolygons[dateStr];
+        if (!polys) return;
+        polys.forEach(function (p) {
+          try { p.setOptions({ fillOpacity: opacity, strokeOpacity: Math.min(1, opacity + 0.4) }); } catch (_) {}
+        });
+      });
+      Object.keys(mapsState.aiSwathOverlays).forEach(function (dateStr) {
+        var overlay = mapsState.aiSwathOverlays[dateStr];
+        if (overlay && overlay.canvas_) {
+          try { overlay.draw(); } catch (_) {}
+        }
+      });
+      Object.keys(mapsState.refSwathOverlays).forEach(function (dateStr) {
+        var overlay = mapsState.refSwathOverlays[dateStr];
+        if (overlay) {
+          try { overlay.setOpacity(Math.min(1, opacity + 0.3)); } catch (_) {}
+        }
+      });
+      Object.keys(mapsState.hailFieldOverlays).forEach(function (dateStr) {
+        var overlay = mapsState.hailFieldOverlays[dateStr];
+        if (overlay && overlay.canvas_) {
+          try { overlay.draw(); } catch (_) {}
+        }
+      });
+      Object.keys(mapsState.hailBandPolygons).forEach(function (dateStr) {
+        var polys = mapsState.hailBandPolygons[dateStr];
+        if (!polys) return;
+        polys.forEach(function (p, bi) {
+          try { p.setOptions({ fillOpacity: opacity * (0.28 + bi * 0.03) }); } catch (_) {}
+        });
+      });
+      Object.keys(mapsState.windBandPolygons).forEach(function (dateStr) {
+        var polys = mapsState.windBandPolygons[dateStr];
+        if (!polys) return;
+        polys.forEach(function (p, bi) {
+          try { p.setOptions({ fillOpacity: opacity * (0.28 + bi * 0.03) }); } catch (_) {}
+        });
+      });
+      Object.keys(mapsState.tornadoBandPolygons).forEach(function (dateStr) {
+        var polys = mapsState.tornadoBandPolygons[dateStr];
+        if (!polys) return;
+        polys.forEach(function (p, bi) {
+          try { p.setOptions({ fillOpacity: opacity * (0.28 + bi * 0.03) }); } catch (_) {}
+        });
+      });
+    }
+
     function mapsInit() {
+      var App = mapsGetAppState();
       if (!mapsState.ready) {
         mapsInitMap();
-        mapsWirePaging();
-        mapsWireDatePicker();
-        mapsWireDownload();
-        mapsWirePropCard();
-        ppWire();
-        mapsWireMobileDrawers();
-        mapsWireOpacityCtrl();
-        mapsWireSwathToggleCtrl();
-        mapsWireStreetColorCtrl();
+        if (!App.mapControlsBound) {
+          mapsWirePaging();
+          mapsWireDatePicker();
+          mapsWireDownload();
+          mapsWirePropCard();
+          ppWire();
+          mapsWireMobileDrawers();
+          mapsWireOpacityCtrl();
+          mapsWireSwathToggleCtrl();
+          mapsWireStormTypeButtons();
+          mapsWireStormSearch();
+          mapsWireMapStyleCtrl();
+          mapsWireStreetColorCtrl();
+          mapsWireRefreshBtn();
+          App.mapControlsBound = true;
+        }
         initHurricaneTicker();
         mapsState.ready = true;
         renderStormPanelActionButtons(document.getElementById('maps-storm-actions'));
-        mapsWireRefreshBtn();
         mapsFetchRecentDates();
-        // Auto-refresh storm dates every 5 min to pick up newly ingested dates.
-        // mapsFetchRecentDates → mapsRenderStormList → mapsPrefetchAllHailTraceSwaths
-        // so new dates automatically get their HailTrace swaths fetched too.
-        setInterval(function () {
-          if (mapsState.ready && !mapsState.fetching) mapsFetchRecentDates();
-        }, 5 * 60 * 1000);
+        if (!App.mapsRefreshIntervalBound) {
+          // Auto-refresh storm dates every 5 min to pick up newly ingested dates.
+          // mapsFetchRecentDates → mapsRenderStormList → mapsPrefetchAllHailTraceSwaths
+          // so new dates automatically get their HailTrace swaths fetched too.
+          setInterval(function () {
+            if (mapsState.ready && !mapsState.fetching) mapsFetchRecentDates();
+          }, 5 * 60 * 1000);
+          App.mapsRefreshIntervalBound = true;
+        }
       } else {
         // Re-fetch storm dates when returning to the Maps page so the panel stays
         // current without requiring a manual Refresh click. Mirrors Refresh behavior.
@@ -9836,219 +10067,353 @@
       });
     }
 
-    // ── Paginated fetch of ALL event_date values from a single Supabase table ──
-    // Supabase/PostgREST silently caps single requests at the server's max_rows
-    // setting (often as low as 23 or 1 000).  This helper keeps requesting pages
-    // of PAGE_SIZE rows via the Range header until a page comes back with fewer
-    // rows than PAGE_SIZE, at which point we know we have everything.
-    // Returns a Promise that resolves to a plain object keyed by valid YYYY-MM-DD
-    // strings (the "set" pattern used by the rest of the code).
-    function _fetchAllEventDatesFromTable(tableName, extraFilter, rowMapper) {
+    // ── Paginated fetch of event_date values from a single Supabase table ──
+    // Reads only the columns needed to build the Most Recent Storms date list and
+    // walks every page until the raw source is exhausted.
+    async function _fetchAllEventDatesFromTable(tableName, selectClause, rowMapper) {
       var PAGE_SIZE = 1000;
-      var authHeaders = {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-        // Ask PostgREST to return total count so we can log it
-        Prefer: 'count=estimated'
-      };
+      var MAX_PAGES = 250;
       var dateSet = {};
       var totalRawRows = 0;
 
-      function fetchPage(start) {
-        var end = start + PAGE_SIZE - 1;
-        var url = SUPABASE_URL + '/rest/v1/' + tableName +
-          '?select=event_date' + (extraFilter ? (',' + extraFilter.select) : '') +
-          (extraFilter && extraFilter.filter ? ('&' + extraFilter.filter) : '') +
-          '&order=event_date.desc';
-        return fetch(url, {
-          headers: Object.assign({}, authHeaders, {
-            // Range header tells PostgREST exactly which rows we want
-            Range: start + '-' + end,
-            'Range-Unit': 'items'
-          })
-        }).then(function (resp) {
-          if (!resp.ok) {
-            // Surface the actual HTTP error rather than silently returning []
-            return resp.text().then(function (body) {
-              throw new Error(tableName + ' HTTP ' + resp.status + ': ' + body.slice(0, 200));
-            });
-          }
-          return resp.json();
-        }).then(function (rows) {
-          if (!Array.isArray(rows)) rows = [];
-          totalRawRows += rows.length;
+      for (var page = 0; page < MAX_PAGES; page++) {
+        var from = page * PAGE_SIZE;
+        var to = from + PAGE_SIZE - 1;
+        var res = await sb.from(tableName)
+          .select(selectClause || 'event_date')
+          .order('event_date', { ascending: false })
+          .range(from, to);
 
-          rows.forEach(function (r) {
-            var d = String(r.event_date || '').slice(0, 10);
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
-            // Optional per-row filter (used for storm_lsr_raw to restrict event_type)
-            if (rowMapper && !rowMapper(r, d)) return;
-            dateSet[d] = true;
-          });
+        if (res && res.error) {
+          console.warn('[fetchAllDates] ' + tableName + ' failed', res.error);
+          break;
+        }
 
-          // If we got a full page there may be more — keep going
-          if (rows.length === PAGE_SIZE) {
-            return fetchPage(start + PAGE_SIZE);
-          }
-          // Fewer rows than PAGE_SIZE → we've reached the end
-          return null;
+        var rows = Array.isArray(res && res.data) ? res.data : [];
+        if (!rows.length) break;
+        totalRawRows += rows.length;
+
+        rows.forEach(function (row) {
+          var dateStr = String(row && row.event_date || '').slice(0, 10);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
+          if (rowMapper && rowMapper(row, dateStr) === false) return;
+          dateSet[dateStr] = true;
         });
+
+        if (rows.length < PAGE_SIZE) break;
+        if (page === MAX_PAGES - 1) {
+          console.warn('[fetchAllDates] ' + tableName + ' reached max pages at ' + MAX_PAGES);
+        }
       }
 
-      return fetchPage(0).then(function () {
-        var uniqueCount = Object.keys(dateSet).length;
-        console.log('[fetchAllDates] ' + tableName +
-          ': raw rows=' + totalRawRows +
-          ', unique dates=' + uniqueCount);
-        return dateSet;
+      console.log('[fetchAllDates] ' + tableName +
+        ': raw rows=' + totalRawRows +
+        ', unique dates=' + Object.keys(dateSet).length);
+      return dateSet;
+    }
+
+    function _normalizeFastStormDateRows(data) {
+      var raw = data;
+      if (typeof raw === 'string') {
+        try { raw = JSON.parse(raw); } catch (_) { raw = []; }
+      }
+      if (!Array.isArray(raw)) {
+        if (raw && Array.isArray(raw.rows)) raw = raw.rows;
+        else if (raw && Array.isArray(raw.data)) raw = raw.data;
+        else if (raw && Array.isArray(raw.dates)) raw = raw.dates;
+        else if (raw && Array.isArray(raw.event_dates)) raw = raw.event_dates;
+        else raw = [];
+      }
+      return raw.map(function (row) {
+        if (typeof row === 'string') return { event_date: row };
+        return row && typeof row === 'object' ? row : {};
       });
     }
 
-    // Query hail_lsr_raw, storm_lsr_raw, and storm_polygons directly to get ALL dates
-    // with any storm activity — no size/speed thresholds for listing purposes.
-    // Uses full pagination so no server-side row cap can truncate the results.
-    // Returns { dates:string[], hailSet:{}, windSet:{}, polySet:{} }
-    function _fetchLsr90DayDates() {
-      /* 1. hail_lsr_raw — every hail report, no date window restriction */
-      var hailP = _fetchAllEventDatesFromTable(
-        'hail_lsr_raw',
-        null,   // no extra select/filter columns needed
-        null    // accept every row
-      ).catch(function (e) {
-        console.warn('[lsr-dates] hail_lsr_raw pagination error:', e);
-        return {};
-      });
+    function _buildStormDateResultFromFastSource(rawRows, sourceLabel) {
+      var byDate = {};
+      var hailSet = {};
+      var windSet = {};
+      var polySet = {};
+      var dateEventTypes = {};
+      var dateSummaries = {};
 
-      /* 2. storm_lsr_raw — wind and tornado events only */
-      var windP = _fetchAllEventDatesFromTable(
-        'storm_lsr_raw',
-        { select: 'event_type', filter: null },
-        function (r) {
-          var et = (r.event_type || '').toLowerCase();
-          return et === 'wind' || et === 'tornado';
+      function ensureDate(dateStr) {
+        if (!byDate[dateStr]) {
+          byDate[dateStr] = {
+            event_date: dateStr,
+            date: dateStr,
+            source: sourceLabel
+          };
         }
-      ).catch(function (e) {
-        console.warn('[lsr-dates] storm_lsr_raw pagination error:', e);
-        return {};
+        return byDate[dateStr];
+      }
+
+      function addType(dateStr, type) {
+        if (!type) return;
+        var list = dateEventTypes[dateStr] || (dateEventTypes[dateStr] = []);
+        if (list.indexOf(type) === -1) list.push(type);
+      }
+
+      function updateRange(dateStr, key, minVal, maxVal) {
+        if (!Number.isFinite(minVal) && !Number.isFinite(maxVal)) return;
+        var summary = dateSummaries[dateStr] || (dateSummaries[dateStr] = {});
+        var slot = summary[key] || (summary[key] = { min: null, max: null });
+        if (Number.isFinite(minVal)) slot.min = slot.min == null ? minVal : Math.min(slot.min, minVal);
+        if (Number.isFinite(maxVal)) slot.max = slot.max == null ? maxVal : Math.max(slot.max, maxVal);
+      }
+
+      rawRows.forEach(function (row) {
+        var dateStr = String((row && (row.event_date || row.date || row.eventDate)) || '').slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
+
+        var item = ensureDate(dateStr);
+        var rawType = String((row && (row.event_type || row.storm_type || row.type || row.eventType)) || '').toLowerCase();
+        var normalizedType = '';
+        if (rawType.indexOf('hail') !== -1) normalizedType = 'hail';
+        else if (rawType.indexOf('tornado') !== -1) normalizedType = 'tornado';
+        else if (rawType.indexOf('wind') !== -1) normalizedType = 'wind';
+        else if (rawType === 'mixed') normalizedType = 'mixed';
+
+        if (normalizedType === 'hail') {
+          hailSet[dateStr] = true;
+          addType(dateStr, 'hail');
+        } else if (normalizedType === 'wind') {
+          windSet[dateStr] = true;
+          addType(dateStr, 'wind');
+        } else if (normalizedType === 'tornado') {
+          windSet[dateStr] = true;
+          addType(dateStr, 'tornado');
+        } else if (normalizedType === 'mixed') {
+          hailSet[dateStr] = true;
+          windSet[dateStr] = true;
+          addType(dateStr, 'mixed');
+        }
+
+        if (row && (row.has_hail || row.has_hail_reports || row.hail === true)) {
+          hailSet[dateStr] = true;
+          addType(dateStr, 'hail');
+        }
+        if (row && (row.has_wind || row.has_wind_reports || row.wind === true)) {
+          windSet[dateStr] = true;
+          addType(dateStr, 'wind');
+        }
+        if (row && row.has_tornado) {
+          windSet[dateStr] = true;
+          addType(dateStr, 'tornado');
+        }
+        if (row && (row.has_polygon || row.has_swath || row.has_saved_swath || row.source === 'storm_polygons' || row.source_name === 'storm_polygons')) {
+          polySet[dateStr] = true;
+        }
+
+        var hailVal = Number(row && (row.max_hail_size != null ? row.max_hail_size : row.hail_in));
+        if (Number.isFinite(hailVal)) {
+          item.max_hail_size = item.max_hail_size == null ? hailVal : Math.max(item.max_hail_size, hailVal);
+          hailSet[dateStr] = true;
+          if (!normalizedType) addType(dateStr, 'hail');
+          updateRange(dateStr, 'hail', hailVal, hailVal);
+        }
+
+        var windVal = Number(row && (row.max_wind_speed != null ? row.max_wind_speed : row.magnitude));
+        if (Number.isFinite(windVal)) {
+          item.max_wind_speed = item.max_wind_speed == null ? windVal : Math.max(item.max_wind_speed, windVal);
+          windSet[dateStr] = true;
+          if (!normalizedType) addType(dateStr, 'wind');
+          updateRange(dateStr, 'wind', windVal, windVal);
+        }
+
+        var reportCount = Number(row && row.report_count);
+        if (Number.isFinite(reportCount) && reportCount > 0) {
+          item.report_count = Math.max(item.report_count || 0, reportCount);
+        }
       });
 
-      /* 3. storm_polygons — dates that have saved swath geometry */
-      var polyP = _fetchAllEventDatesFromTable(
-        'storm_polygons',
-        null,
-        null
-      ).catch(function (e) {
-        console.warn('[lsr-dates] storm_polygons pagination error:', e);
-        return {};
-      });
+      var rows = Object.keys(byDate)
+        .sort(function (a, b) { return b.localeCompare(a); })
+        .map(function (dateStr) {
+          var item = byDate[dateStr];
+          var types = dateEventTypes[dateStr] || [];
+          if (!types.length) {
+            dateEventTypes[dateStr] = ['mixed'];
+            types = dateEventTypes[dateStr];
+          }
+          item.event_type = types.length > 1 ? 'mixed' : types[0];
+          return item;
+        });
 
-      return Promise.allSettled([hailP, windP, polyP]).then(function (results) {
-        var hailSet = (results[0].status === 'fulfilled' ? results[0].value : {}) || {};
-        var windSet = (results[1].status === 'fulfilled' ? results[1].value : {}) || {};
-        var polySet = (results[2].status === 'fulfilled' ? results[2].value : {}) || {};
+      rows._hailSet = hailSet;
+      rows._windSet = windSet;
+      rows._polySet = polySet;
+      rows._dateEventTypes = dateEventTypes;
+      rows._dateSummaries = dateSummaries;
 
-        /* Merge all three sets */
-        var merged = {};
-        Object.keys(hailSet).forEach(function (d) { merged[d] = true; });
-        Object.keys(windSet).forEach(function (d) { merged[d] = true; });
-        Object.keys(polySet).forEach(function (d) { merged[d] = true; });
-        var dates = Object.keys(merged)
-          .filter(function (d) { return /^\d{4}-\d{2}-\d{2}$/.test(d); })
+      return {
+        rows: rows,
+        hailSet: hailSet,
+        windSet: windSet,
+        polySet: polySet,
+        dateEventTypes: dateEventTypes,
+        dateSummaries: dateSummaries
+      };
+    }
+
+    async function _fetchLsr90DayDates() {
+      var t0 = Date.now();
+      var fastSources = [
+        { kind: 'rpc', name: 'get_storm_dates_json' },
+        { kind: 'rpc', name: 'get_storm_distinct_dates' },
+        { kind: 'view', name: 'storm_event_dates' },
+        { kind: 'view', name: 'storm_dates' },
+        { kind: 'view', name: 'event_dates' }
+      ];
+
+      for (var i = 0; i < fastSources.length; i++) {
+        var source = fastSources[i];
+        try {
+          var res = source.kind === 'rpc'
+            ? await sb.rpc(source.name)
+            : await sb.from(source.name).select('*').order('event_date', { ascending: false }).limit(5000);
+
+          if (res && res.error) throw res.error;
+
+          var normalizedRows = _normalizeFastStormDateRows(res ? res.data : []);
+          var result = _buildStormDateResultFromFastSource(normalizedRows, source.name);
+          if (result.rows.length < 50) {
+            console.warn('[fetchAllDates] date source returned too few dates', result.rows.length);
+            continue;
+          }
+
+          console.log('[fetchAllDates] loaded ' + result.rows.length + ' distinct dates in ' + (Date.now() - t0) + 'ms');
+          return result;
+        } catch (err) {
+          console.warn('[fetchAllDates] ' + source.name + ' failed', err);
+        }
+      }
+
+      console.warn('[fetchAllDates] No fast distinct-date RPC/view found. Need backend RPC/view.');
+      return {
+        rows: [],
+        hailSet: {},
+        windSet: {},
+        polySet: {},
+        dateEventTypes: {},
+        dateSummaries: {},
+        errorMessage: 'Fast storm date source unavailable. Need backend RPC/view.'
+      };
+    }
+
+    async function mapsFetchRecentDates(forceRefresh) {
+      var App = window.App = window.App || {};
+      var RECENT_STORM_DATES_CACHE_MS = 5 * 60 * 1000;
+      var statusEl = document.getElementById('maps-storm-status');
+
+      function applyRecentStormDateRows(rows) {
+        rows = Array.isArray(rows) ? rows : [];
+        var hailSet = rows._hailSet || {};
+        var windSet = rows._windSet || {};
+        var polySet = rows._polySet || {};
+        var dateEventTypes = rows._dateEventTypes || {};
+        var dateSummaries = rows._dateSummaries || {};
+        var sortedDates = rows
+          .map(function (row) { return String(row && row.event_date || '').slice(0, 10); })
+          .filter(function (dateStr, index, arr) {
+            return /^\d{4}-\d{2}-\d{2}$/.test(dateStr) && arr.indexOf(dateStr) === index;
+          })
           .sort(function (a, b) { return b.localeCompare(a); });
 
-        console.log('[lsr-dates] FINAL MERGE:' +
-          ' hail_lsr_raw unique dates=' + Object.keys(hailSet).length +
-          ', storm_lsr_raw unique dates=' + Object.keys(windSet).length +
-          ', storm_polygons unique dates=' + Object.keys(polySet).length +
-          ', total merged unique storm dates=' + dates.length);
+        mapsState.dateHasPolygon     = polySet;
+        mapsState.dateHasHailReports = hailSet;
+        mapsState.dateHasWindReports = windSet;
+        mapsState.stormDates         = sortedDates;
+        mapsState.dateEventTypes     = dateEventTypes;
+        mapsState.dateSummaries      = dateSummaries;
+        mapsState.stormPage          = 0;
 
-        return { dates: dates, hailSet: hailSet, windSet: windSet, polySet: polySet };
-      });
-    }
+        var aprilDates = sortedDates.filter(function (d) {
+          return d && d.slice(0, 7) === new Date().getFullYear() + '-04';
+        });
+        mapsState.debugSourceCounts = {
+          fromEdge:         0,
+          fromHailLsr:      Object.keys(hailSet).length,
+          fromWindLsr:      Object.keys(windSet).length,
+          fromPolygons:     Object.keys(polySet).length,
+          total:            sortedDates.length,
+          usingServiceRole: false,
+          fallbackUsed:     false,
+          lastError:        null,
+          lastFetchAt:      new Date().toISOString(),
+          aprilDates:       aprilDates
+        };
 
-    function mapsFetchRecentDates() {
-      var statusEl = document.getElementById('maps-storm-status');
-      statusEl.className = 'maps-status-msg';
-      statusEl.textContent = 'Loading storm dates…';
+        if (statusEl) {
+          statusEl.className = 'maps-status-msg';
+          statusEl.textContent = sortedDates.length ? (sortedDates.length + ' storm dates loaded.') : 'No recent storms found.';
+        }
+
+        mapsRenderStormList();
+        mapsUpdateDebugPanel();
+      }
+
+      if (
+        !forceRefresh &&
+        App.recentStormDatesCache &&
+        Array.isArray(App.recentStormDatesCache.rows) &&
+        App.recentStormDatesCache.rows.length >= 50 &&
+        Date.now() - App.recentStormDatesCache.loadedAt < RECENT_STORM_DATES_CACHE_MS
+      ) {
+        applyRecentStormDateRows(App.recentStormDatesCache.rows);
+        return;
+      }
+
+      if (App.recentStormDatesLoading) return;
+      App.recentStormDatesLoading = true;
+
       mapsState.fetching = true;
+      if (statusEl) {
+        statusEl.className = 'maps-status-msg';
+        statusEl.textContent = 'Loading storm dates…';
+      }
 
-      _fetchLsr90DayDates()
-        .then(function (lsrResult) {
-          var hailSet = (lsrResult && lsrResult.hailSet) || {};
-          var windSet = (lsrResult && lsrResult.windSet) || {};
-          var polySet = (lsrResult && lsrResult.polySet) || {};
+      try {
+        var lsrResult = await _fetchLsr90DayDates();
+        var rows = (lsrResult && lsrResult.rows) || [];
 
-          // Merge all direct-query sources; keep only valid YYYY-MM-DD, sort newest first.
-          var mergedMap = {};
-          Object.keys(hailSet).forEach(function (d) { mergedMap[d] = true; });
-          Object.keys(windSet).forEach(function (d) { mergedMap[d] = true; });
-          Object.keys(polySet).forEach(function (d) { mergedMap[d] = true; });
-          var sortedDates = Object.keys(mergedMap)
-            .filter(function (d) { return /^\d{4}-\d{2}-\d{2}$/.test(d); })
-            .sort(function (a, b) { return b.localeCompare(a); });
-
-          mapsState.dateHasPolygon     = polySet;
-          mapsState.dateHasHailReports = hailSet;
-          mapsState.dateHasWindReports = windSet;
-
-          var aprilDates = sortedDates.filter(function (d) {
-            return d && d.slice(0, 7) === new Date().getFullYear() + '-04';
-          });
-          mapsState.debugSourceCounts = {
-            fromEdge:         0,
-            fromHailLsr:      Object.keys(hailSet).length,
-            fromWindLsr:      Object.keys(windSet).length,
-            fromPolygons:     Object.keys(polySet).length,
-            total:            sortedDates.length,
-            usingServiceRole: false,
-            fallbackUsed:     true,
-            lastError:        null,
-            lastFetchAt:      new Date().toISOString(),
-            aprilDates:       aprilDates
+        if (rows.length >= 50) {
+          App.recentStormDatesCache = {
+            loadedAt: Date.now(),
+            rows: rows
           };
+        } else {
+          App.recentStormDatesCache = null;
+        }
 
-          mapsState.stormDates     = sortedDates;
-          mapsState.dateEventTypes = {};
-          mapsState.dateSummaries  = {};
-          mapsState.stormPage = 0;
-          mapsState.fetching  = false;
-
-          var todayStr  = new Date().toISOString().slice(0, 10);
-          var ninetyAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-          var in90 = sortedDates.filter(function (d) { return d >= ninetyAgo && d <= todayStr; }).length;
-          console.log('[date-list] total=' + sortedDates.length +
-            ' in-90d=' + in90 +
-            ' hail_lsr_raw=' + Object.keys(hailSet).length +
-            ' storm_lsr_raw=' + Object.keys(windSet).length +
-            ' storm_polygons=' + Object.keys(polySet).length);
-          console.log('[date-list final dates]', sortedDates);
-
-          if (sortedDates.length === 0) {
-            statusEl.textContent = 'No storm dates available.';
-          } else {
-            statusEl.textContent = sortedDates.length + ' storm dates loaded.';
-          }
-          mapsRenderStormList();
-          mapsUpdateDebugPanel();
+        applyRecentStormDateRows(rows);
+        if (rows.length) {
           _fetchPolyHailSummaries();
           if (ENABLE_HAILTRACE) mapsPrefetchAllHailTraceSwaths();
           mapsPrefetchAllMeshRows();
-        })
-        .catch(function (err) {
-          mapsState.fetching = false;
-          if (!mapsState.debugSourceCounts) mapsState.debugSourceCounts = { fromEdge:0, fromHailLsr:0, fromWindLsr:0, fromPolygons:0, total:0, aprilDates:[] };
-          mapsState.debugSourceCounts.lastError = 'date load failed: ' + String(err);
+        } else if (lsrResult && lsrResult.errorMessage && statusEl) {
+          statusEl.className = 'maps-status-msg error';
+          statusEl.textContent = lsrResult.errorMessage;
+        }
+      } catch (err) {
+        if (!mapsState.debugSourceCounts) mapsState.debugSourceCounts = { fromEdge:0, fromHailLsr:0, fromWindLsr:0, fromPolygons:0, total:0, aprilDates:[] };
+        mapsState.debugSourceCounts.lastError = 'date load failed: ' + String(err);
+        if (statusEl) {
           statusEl.className = 'maps-status-msg error';
           statusEl.textContent = 'Failed to load storm dates: ' + (err && err.message || err);
-          console.error('[date-list] direct query failed:', err);
-          mapsUpdateDebugPanel();
-          if (!mapsState.stormDates || !mapsState.stormDates.length) {
-            mapsState.stormDates = [];
-            mapsRenderStormList();
-          }
-          if (ENABLE_HAILTRACE) mapsPrefetchAllHailTraceSwaths();
-          mapsPrefetchAllMeshRows();
-        });
+        }
+        mapsUpdateDebugPanel();
+        if (!mapsState.stormDates || !mapsState.stormDates.length) {
+          mapsState.stormDates = [];
+          mapsRenderStormList();
+        }
+        if (ENABLE_HAILTRACE) mapsPrefetchAllHailTraceSwaths();
+        mapsPrefetchAllMeshRows();
+      } finally {
+        mapsState.fetching = false;
+        App.recentStormDatesLoading = false;
+      }
     }
 
     // ── Bright-Hybrid map style (satellite base, enhanced contrast for property work) ──
@@ -10062,6 +10427,7 @@
     ];
 
     function mapsInitMap() {
+      var App = mapsGetAppState();
       var mapEl = document.getElementById('stormMap');
       if (!mapEl) return;
 
@@ -10081,6 +10447,7 @@
       });
 
       var map = mapsState.map;
+      App.map = map;
       console.log('[HMM] native map wheel zoom restored');
 
       var wheelZoomTimeout = null;
@@ -10485,42 +10852,73 @@
     // ── Fetch canonical storm polygons from Supabase ──
     // storm_polygons is the ONLY primary swath source (MRMS / SWDI ingested).
     function fetchStormPolygonsByDate(dateStr) {
-      var url =
+      var normalizedDate = String(dateStr || '').slice(0, 10);
+      var endDateObj = new Date(normalizedDate + 'T00:00:00Z');
+      var pageSize = 2500;
+      var maxPages = 8;
+      if (isNaN(endDateObj.getTime())) {
+        console.warn('[fetchStormPolygons] invalid date', dateStr);
+        return Promise.resolve([]);
+      }
+      endDateObj.setUTCDate(endDateObj.getUTCDate() + 1);
+      var nextDateStr = endDateObj.toISOString().slice(0, 10);
+      var baseUrl =
         SUPABASE_URL +
-        '/rest/v1/storm_polygons?event_date=eq.' +
-        encodeURIComponent(dateStr) +
+        '/rest/v1/storm_polygons?event_date=gte.' +
+        encodeURIComponent(normalizedDate) +
+        '&event_date=lt.' +
+        encodeURIComponent(nextDateStr) +
         '&source_product=neq.no_swath' +
         '&order=source_priority.asc,created_at.desc' +
         '&select=id,event_date,storm_type,source,source_product,source_priority,swath_index,polygon_geojson,centroid_lat,centroid_lon,area_sq_mi,threshold_value,band_min,band_max,event_start_utc,event_end_utc';
 
-      console.log('[fetchStormPolygons] ' + dateStr + ' url:', url);
+      console.log('[fetchStormPolygons] ' + normalizedDate + ' baseUrl:', baseUrl);
 
-      return fetch(url, {
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: 'Bearer ' + SUPABASE_ANON_KEY
-        }
-      })
-        .then(function (resp) {
-          if (!resp.ok) throw new Error('storm_polygons HTTP ' + resp.status);
-          return resp.json();
+      function fetchPage(pageIndex, collectedRows) {
+        var offset = pageIndex * pageSize;
+        var url = baseUrl + '&limit=' + pageSize + '&offset=' + offset;
+        return fetch(url, {
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: 'Bearer ' + SUPABASE_ANON_KEY
+          }
         })
+          .then(function (resp) {
+            if (!resp.ok) throw new Error('storm_polygons HTTP ' + resp.status);
+            return resp.json();
+          })
+          .then(function (rows) {
+            rows = Array.isArray(rows) ? rows : [];
+            var mergedRows = (collectedRows || []).concat(rows);
+            console.log('[fetchStormPolygons] ' + normalizedDate + ' page ' + (pageIndex + 1) + ': ' + rows.length + ' row(s)');
+            if (rows.length === pageSize && pageIndex + 1 < maxPages) {
+              return fetchPage(pageIndex + 1, mergedRows);
+            }
+            return mergedRows;
+          });
+      }
+
+      return fetchPage(0, [])
         .then(function (rows) {
           rows = Array.isArray(rows) ? rows : [];
-          console.log('[fetchStormPolygons] ' + dateStr + ': ' + rows.length + ' row(s) returned');
-          if (mapsState.rawStormRows && rows && rows.length > 0) mapsState.rawStormRows[dateStr] = rows;
+          var rawCount = rows.length;
+          rows = rows.filter(function (row) {
+            return String(row && row.event_date || '').slice(0, 10) === normalizedDate;
+          });
+          console.log('[fetchStormPolygons] ' + normalizedDate + ': ' + rows.length + ' row(s) kept from ' + rawCount + ' fetched');
+          if (mapsState.rawStormRows && rows && rows.length > 0) mapsState.rawStormRows[normalizedDate] = rows;
           // Ensure polygon_geojson is parsed (may be JSON string from PostgREST)
           rows.forEach(function (row) {
             if (row.polygon_geojson && typeof row.polygon_geojson === 'string') {
               try { row.polygon_geojson = JSON.parse(row.polygon_geojson); } catch (e) {
-                console.warn('[fetchStormPolygons] Failed to parse polygon_geojson string for ' + dateStr, e);
+                console.warn('[fetchStormPolygons] Failed to parse polygon_geojson string for ' + normalizedDate, e);
               }
             }
           });
           return rows;
         })
         .catch(function (err) {
-          console.warn('[fetchStormPolygons] fetch failed for ' + dateStr + ':', err);
+          console.warn('[fetchStormPolygons] fetch failed for ' + normalizedDate + ':', err);
           return [];
         });
     }
@@ -11804,11 +12202,8 @@
 
     // ── Fetch wind/tornado points for a date ──
     function fetchStormLsrByDate(dateStr, type) {
-      console.log('[LSR-FETCH-FN] called dateStr=' + dateStr + ' type=' + type);
       var stormType = type;
-      console.log('[LSR-FETCH] fetchStormLsrByDate called for dateStr=' + dateStr + ' type=' + type);
       dateStr = mapsNormalizeDate(dateStr);
-      console.log('[Maps] Fetching ' + stormType + ' LSR for date:', dateStr);
       var url = SUPABASE_URL + '/functions/v1/storm-lsr-by-date?date=' + encodeURIComponent(dateStr) + '&type=' + encodeURIComponent(stormType);
       return fetch(url, { headers: { Authorization: 'Bearer ' + SUPABASE_ANON_KEY, apikey: SUPABASE_ANON_KEY } })
         .then(function (resp) {
@@ -11816,7 +12211,7 @@
             if (!resp.ok) throw new Error('storm-lsr-by-date HTTP ' + resp.status);
             var json = JSON.parse(raw);
             var result = Array.isArray(json && json.points) ? json.points : [];
-            console.log('[LSR-FETCH] fetchStormLsrByDate result for ' + dateStr + ' type=' + type + ':', result ? result.length : 0, 'points', result && result[0] ? JSON.stringify(result[0]) : 'no data');
+            console.log('[LSR-FETCH] ' + stormType + ' ' + dateStr + ' points=' + (result ? result.length : 0));
             return result;
           });
         })
@@ -13373,6 +13768,7 @@
     function mapsDrawSavedStormPolygonForDate(dateStr, rows) {
       // Preferred saved corridor sources — exempt from oversized guard & fragment cleanup
       var PREFERRED_CORRIDOR_SOURCES = ['corridor', 'nexrad_poc', 'mrms_mesh', 'synthesized_mesh', 'nexrad_iem'];
+      var _verboseDateLogs = MAPS_VERBOSE_DATE_LOGS;
 
       // Cache raw rows for nearby-storm radius search in property panel
       mapsState.rawStormRows[dateStr] = rows || [];
@@ -13380,7 +13776,7 @@
       console.log('[drawSavedPoly] ▸ selected date=' + dateStr + ' | raw saved row count=' + (rows ? rows.length : 0));
 
       // ── TEMP DIAGNOSTIC: dump every raw row before any filtering ──
-      if (rows && rows.length) {
+      if (_verboseDateLogs && rows && rows.length) {
         console.log('[ROW-DIAG] ═══ ' + dateStr + ' ═══ ' + rows.length + ' raw rows received from storm_polygons');
         var _diagSrcMap = {};
         var _diagPriMap = {};
@@ -13403,7 +13799,7 @@
         }
         console.log('[ROW-DIAG] ' + dateStr + ' summary by source: ' + JSON.stringify(_diagSrcMap));
         console.log('[ROW-DIAG] ' + dateStr + ' summary by source_priority: ' + JSON.stringify(_diagPriMap));
-      } else {
+      } else if (_verboseDateLogs) {
         console.log('[ROW-DIAG] ═══ ' + dateStr + ' ═══ NO rows returned from storm_polygons');
       }
 
@@ -13457,269 +13853,13 @@
         return false;
       }
 
-      // ── Source precedence: keep only the best (lowest) source_priority ──
-      // When higher-priority sources exist (e.g., nexrad_iem at 1), skip
-      // lower-priority sources (e.g., corridor at 3) to avoid stale overlaps.
-      var bestSrcPri = 99;
+      var _priorityCount = {};
       validRows.forEach(function (r) {
-        var pri = Number(r.source_priority) || 99;
-        if (pri < bestSrcPri) bestSrcPri = pri;
+        var pri = String(Number(r.source_priority) || 99);
+        _priorityCount[pri] = (_priorityCount[pri] || 0) + 1;
       });
-      var preFilterCount = validRows.length;
-      validRows = validRows.filter(function (r) {
-        return (Number(r.source_priority) || 99) === bestSrcPri;
-      });
-      if (validRows.length < preFilterCount) {
-        console.log('[drawSavedPoly] ' + dateStr + ' source precedence: kept priority=' + bestSrcPri +
-          ' (' + validRows.length + ' rows), dropped ' + (preFilterCount - validRows.length) + ' lower-priority rows');
-      }
-
-      // ── Connected-system selection: anchor cluster + iterative expansion ──
-      if (validRows.length > 1) {
-        var _csPre = validRows.length;
-        // Step 1: BFS clustering at 100 mi radius
-        var _csClusters = [];
-        var _csAssigned = [];
-        for (var _csi = 0; _csi < validRows.length; _csi++) _csAssigned.push(false);
-
-        for (var _csi = 0; _csi < validRows.length; _csi++) {
-          if (_csAssigned[_csi]) continue;
-          var _csCluster = [_csi];
-          _csAssigned[_csi] = true;
-          var _csQueue = [_csi];
-          while (_csQueue.length) {
-            var _csCur = _csQueue.shift();
-            var _csLat1 = Number(validRows[_csCur].centroid_lat) || 0;
-            var _csLon1 = Number(validRows[_csCur].centroid_lon) || 0;
-            for (var _csj = 0; _csj < validRows.length; _csj++) {
-              if (_csAssigned[_csj]) continue;
-              var _csLat2 = Number(validRows[_csj].centroid_lat) || 0;
-              var _csLon2 = Number(validRows[_csj].centroid_lon) || 0;
-              if (!_csLat1 || !_csLon1 || !_csLat2 || !_csLon2) continue;
-              var _csDlat = _csLat1 - _csLat2;
-              var _csDlon = _csLon1 - _csLon2;
-              var _csCos = Math.cos(_csLat1 * Math.PI / 180);
-              var _csDistMi = 69.0 * Math.sqrt(_csDlat * _csDlat + (_csDlon * _csCos) * (_csDlon * _csCos));
-              if (_csDistMi <= 100) {
-                _csAssigned[_csj] = true;
-                _csCluster.push(_csj);
-                _csQueue.push(_csj);
-              }
-            }
-          }
-          _csClusters.push(_csCluster);
-        }
-        for (var _csi = 0; _csi < validRows.length; _csi++) {
-          if (!_csAssigned[_csi]) _csClusters.push([_csi]);
-        }
-
-        // Step 2: Score clusters — total area_sq_mi, fallback row count
-        var _csHasArea = false;
-        var _csBestIdx = 0;
-        var _csBestScore = -1;
-        for (var _csk = 0; _csk < _csClusters.length; _csk++) {
-          var _csScore = 0;
-          for (var _csm = 0; _csm < _csClusters[_csk].length; _csm++) {
-            var _csA = Number(validRows[_csClusters[_csk][_csm]].area_sq_mi) || 0;
-            if (_csA > 0) _csHasArea = true;
-            _csScore += _csA;
-          }
-          if (_csScore > _csBestScore) { _csBestScore = _csScore; _csBestIdx = _csk; }
-        }
-        if (!_csHasArea) {
-          _csBestIdx = 0; _csBestScore = 0;
-          for (var _csk = 0; _csk < _csClusters.length; _csk++) {
-            if (_csClusters[_csk].length > _csBestScore) {
-              _csBestScore = _csClusters[_csk].length; _csBestIdx = _csk;
-            }
-          }
-        }
-
-        // Anchor cluster rows
-        var _csKeptSet = {};
-        var _csKept = [];
-        _csClusters[_csBestIdx].forEach(function (idx) {
-          _csKeptSet[idx] = true;
-          _csKept.push(validRows[idx]);
-        });
-        console.log('[drawSavedPoly] ' + dateStr + ' connected-system anchor cluster: kept ' +
-          _csKept.length + ' of ' + _csPre + ' rows across ' + _csClusters.length + ' clusters');
-
-        // Step 3: Find largest-row area and centroid in anchor cluster
-        var _csLargestArea = 0;
-        var _csLargestLat = 0;
-        var _csLargestLon = 0;
-        _csKept.forEach(function (r) {
-          var a = Number(r.area_sq_mi) || 0;
-          if (a > _csLargestArea) {
-            _csLargestArea = a;
-            _csLargestLat = Number(r.centroid_lat) || 0;
-            _csLargestLon = Number(r.centroid_lon) || 0;
-          }
-        });
-        var _csAreaThresh = _csLargestArea * 0.10;
-
-        // Step 4: Iterative expansion — add rows near the connected system
-        var _csChanged = true;
-        while (_csChanged) {
-          _csChanged = false;
-          for (var _csn = 0; _csn < validRows.length; _csn++) {
-            if (_csKeptSet[_csn]) continue;
-            var _csRLat = Number(validRows[_csn].centroid_lat) || 0;
-            var _csRLon = Number(validRows[_csn].centroid_lon) || 0;
-            if (!_csRLat || !_csRLon) continue;
-
-            // Rule A: within 140 mi of ANY row already in connected system
-            var _csNear = false;
-            for (var _csq = 0; _csq < _csKept.length; _csq++) {
-              var _csQLat = Number(_csKept[_csq].centroid_lat) || 0;
-              var _csQLon = Number(_csKept[_csq].centroid_lon) || 0;
-              if (!_csQLat || !_csQLon) continue;
-              var _csDy = _csRLat - _csQLat;
-              var _csDx = _csRLon - _csQLon;
-              var _csCosQ = Math.cos(_csQLat * Math.PI / 180);
-              var _csDm = 69.0 * Math.sqrt(_csDy * _csDy + (_csDx * _csCosQ) * (_csDx * _csCosQ));
-              if (_csDm <= 140) { _csNear = true; break; }
-            }
-
-            // Rule B: area >= 10% of largest AND within 180 mi of largest centroid
-            var _csAreaOk = false;
-            if (!_csNear && _csLargestArea > 0 && _csLargestLat && _csLargestLon) {
-              var _csRA = Number(validRows[_csn].area_sq_mi) || 0;
-              if (_csRA >= _csAreaThresh) {
-                var _csDy2 = _csRLat - _csLargestLat;
-                var _csDx2 = _csRLon - _csLargestLon;
-                var _csCos2 = Math.cos(_csLargestLat * Math.PI / 180);
-                var _csDm2 = 69.0 * Math.sqrt(_csDy2 * _csDy2 + (_csDx2 * _csCos2) * (_csDx2 * _csCos2));
-                if (_csDm2 <= 180) _csAreaOk = true;
-              }
-            }
-
-            if (_csNear || _csAreaOk) {
-              _csKeptSet[_csn] = true;
-              _csKept.push(validRows[_csn]);
-              _csChanged = true;
-            }
-          }
-        }
-
-        // Step 5: Safety — if expansion produced nothing, keep all
-        if (_csKept.length > 0) {
-          console.log('[drawSavedPoly] ' + dateStr + ' connected-system expansion: final ' + _csKept.length + ' rows');
-          validRows = _csKept;
-        }
-      }
-
-      // ── Bidirectional connected-line restore ──
-      // Restores rows along the same storm line in both directions (west and east)
-      // plus southern feeders, without broadening into unrelated nationwide fragments.
-      if (validRows.length > 1) {
-        // Build candidate set: all rows that passed date + priority filters
-        var _blAllRows = (rows || []).filter(function (r) {
-          if (!r || !r.polygon_geojson) return false;
-          return (Number(r.source_priority) || 99) === bestSrcPri;
-        });
-        // Mark current kept rows
-        var _blKeptIds = {};
-        validRows.forEach(function (r) {
-          var k = String(r.id || '') + '|' + String(r.centroid_lat) + '|' + String(r.centroid_lon) + '|' + String(r.band_min);
-          _blKeptIds[k] = true;
-        });
-        var _blPreCount = validRows.length;
-        var _blPreRows = validRows.slice(); // snapshot for safety fallback
-
-        // Helper: compute distance in miles between two lat/lon points
-        function _blDistMi(lat1, lon1, lat2, lon2) {
-          var dy = lat1 - lat2;
-          var dx = lon1 - lon2;
-          var cosLat = Math.cos(lat1 * Math.PI / 180);
-          return 69.0 * Math.sqrt(dy * dy + (dx * cosLat) * (dx * cosLat));
-        }
-
-        // Iterative expansion
-        var _blChanged = true;
-        while (_blChanged) {
-          _blChanged = false;
-
-          // Recompute kept set geometry each pass (grows as rows are added)
-          var _blLats = [], _blLons = [];
-          var _blLargestArea = 0;
-          validRows.forEach(function (r) {
-            var la = Number(r.centroid_lat) || 0;
-            var lo = Number(r.centroid_lon) || 0;
-            if (la && lo) { _blLats.push(la); _blLons.push(lo); }
-            var a = Number(r.area_sq_mi) || 0;
-            if (a > _blLargestArea) _blLargestArea = a;
-          });
-          if (!_blLats.length) break;
-          var _blSortedLats = _blLats.slice().sort(function (a, b) { return a - b; });
-          var _blMedianLat = _blSortedLats[Math.floor(_blSortedLats.length / 2)];
-          var _blMinLon = Math.min.apply(null, _blLons);
-          var _blMaxLon = Math.max.apply(null, _blLons);
-          var _blCenterLon = 0;
-          _blLons.forEach(function (lo) { _blCenterLon += lo; });
-          _blCenterLon /= _blLons.length;
-          var _blAreaThresh3 = _blLargestArea * 0.03;
-
-          for (var _bln = 0; _bln < _blAllRows.length; _bln++) {
-            var _blR = _blAllRows[_bln];
-            var _blRKey = String(_blR.id || '') + '|' + String(_blR.centroid_lat) + '|' + String(_blR.centroid_lon) + '|' + String(_blR.band_min);
-            if (_blKeptIds[_blRKey]) continue;
-            var _blRLat = Number(_blR.centroid_lat) || 0;
-            var _blRLon = Number(_blR.centroid_lon) || 0;
-            if (!_blRLat || !_blRLon) continue;
-
-            // Guardrail: hard lat cutoff — skip if more than 1.8° from median
-            if (Math.abs(_blRLat - _blMedianLat) > 1.8) continue;
-
-            // Guardrail: hard distance cutoff — must be within 220 mi of at least one kept row
-            var _blMinDist = Infinity;
-            for (var _blq = 0; _blq < validRows.length; _blq++) {
-              var _blQLat = Number(validRows[_blq].centroid_lat) || 0;
-              var _blQLon = Number(validRows[_blq].centroid_lon) || 0;
-              if (!_blQLat || !_blQLon) continue;
-              var _blD = _blDistMi(_blRLat, _blRLon, _blQLat, _blQLon);
-              if (_blD < _blMinDist) _blMinDist = _blD;
-            }
-            if (_blMinDist > 220) continue;
-
-            // Latitude band: within 1.4° of median
-            if (Math.abs(_blRLat - _blMedianLat) > 1.4) continue;
-
-            // Longitude gating: west or east of center, within limits
-            var _blLonOk = false;
-            if (_blRLon <= _blCenterLon) {
-              // West side: not more than 5.0° west of kept min lon
-              if (_blRLon >= _blMinLon - 5.0) _blLonOk = true;
-            } else {
-              // East side: not more than 3.5° east of kept max lon
-              if (_blRLon <= _blMaxLon + 3.5) _blLonOk = true;
-            }
-            if (!_blLonOk) continue;
-
-            // Size or proximity check: area >= 3% of largest OR <= 150 mi of any kept row
-            var _blSizeOk = false;
-            var _blRA = Number(_blR.area_sq_mi) || 0;
-            if (_blLargestArea > 0 && _blRA >= _blAreaThresh3) _blSizeOk = true;
-            if (!_blSizeOk && _blMinDist <= 150) _blSizeOk = true;
-            if (!_blSizeOk) continue;
-
-            // All checks passed — add to kept set
-            _blKeptIds[_blRKey] = true;
-            validRows.push(_blR);
-            _blChanged = true;
-          }
-        }
-
-        // Safety: if expansion somehow broke, revert
-        if (validRows.length === 0) {
-          validRows = _blPreRows;
-        }
-
-        if (validRows.length > _blPreCount) {
-          console.log('[drawSavedPoly] ' + dateStr + ' bidirectional line restore: final ' + validRows.length + ' rows (added ' + (validRows.length - _blPreCount) + ')');
-        }
-      }
+      console.log('[drawSavedPoly] ' + dateStr + ' drawing all valid rows across priorities: ' + JSON.stringify(_priorityCount) +
+        ' total=' + validRows.length);
 
       // ── Debug: row count by source ──
       var _srcCount = {};
@@ -13735,6 +13875,7 @@
       var _windCorridorGroups = [];
       var _rejectedInvalidGeom = 0;
       var _rejectedCleanup = 0;
+      var _focusCandidateMap = {};
 
       function _deriveNexradIemCenterline(ringArrays) {
         if (!ringArrays || !ringArrays.length) return null;
@@ -13764,6 +13905,52 @@
         var end = sorted[sorted.length - 1];
         if (!start || !end || (start.lat === end.lat && start.lng === end.lng)) return null;
         return [start, end];
+      }
+
+      function _focusCandidateKey(row, stormType) {
+        var baseId = String(row && row.id || '').replace(/_cell_\d+$/i, '');
+        if (baseId) return baseId;
+        return [
+          stormType || String(row && row.storm_type || 'hail').toLowerCase(),
+          String(row && row.source || 'unknown').toLowerCase(),
+          row && row.swath_index != null ? row.swath_index : '',
+          isFinite(Number(row && row.centroid_lat)) ? Number(row.centroid_lat).toFixed(3) : '0.000',
+          isFinite(Number(row && row.centroid_lon)) ? Number(row.centroid_lon).toFixed(3) : '0.000',
+          isFinite(Number(row && row.band_min)) ? Number(row.band_min).toFixed(2) : '0.00'
+        ].join('|');
+      }
+
+      function _accumulateFocusCandidate(row, stormType, ringArrays, effectiveBand) {
+        var key = _focusCandidateKey(row, stormType);
+        var candidate = _focusCandidateMap[key];
+        if (!candidate) {
+          candidate = _focusCandidateMap[key] = {
+            type: stormType,
+            bounds: new google.maps.LatLngBounds(),
+            maxHail: 0,
+            maxWind: 0,
+            area: Number(row && row.area_sq_mi) || 0,
+            hasAny: false
+          };
+        }
+        if (Number(row && row.area_sq_mi) > candidate.area) candidate.area = Number(row.area_sq_mi) || candidate.area;
+        ringArrays.forEach(function (ring) {
+          if (!Array.isArray(ring)) return;
+          ring.forEach(function (coord) {
+            var lat = Number(coord[1]);
+            var lng = Number(coord[0]);
+            if (!isFinite(lat) || !isFinite(lng)) return;
+            candidate.bounds.extend({ lat: lat, lng: lng });
+            candidate.hasAny = true;
+          });
+        });
+        if (stormType === 'hail') candidate.maxHail = Math.max(candidate.maxHail, Number(effectiveBand) || 0);
+        if (stormType === 'wind') {
+          var windValue = typeof _windBandToMph === 'function'
+            ? _windBandToMph(Number(row && row.band_min) || 0)
+            : Number(effectiveBand) || 0;
+          candidate.maxWind = Math.max(candidate.maxWind, windValue || 0);
+        }
       }
 
       // ── Render-time leftover filter for nexrad_iem fragments ──
@@ -13800,8 +13987,10 @@
           }
           if (!hasNeighbor) {
             _skipSet[i] = true; _nexradHidden++;
-            console.log('[nexrad_iem filter] HIDE id=' + (r.id || i) +
-              ' area=' + area + 'mi² ctr=[' + lat1.toFixed(2) + ',' + lon1.toFixed(2) + ']');
+            if (_verboseDateLogs) {
+              console.log('[nexrad_iem filter] HIDE id=' + (r.id || i) +
+                ' area=' + area + 'mi² ctr=[' + lat1.toFixed(2) + ',' + lon1.toFixed(2) + ']');
+            }
           }
         });
         // Safety: never filter ALL nexrad_iem rows
@@ -13913,20 +14102,24 @@
             _rejectedInvalidGeom++;
             return;
           }
-          console.log('[drawSavedPoly] RENDER id=' + (row.id || ri) +
-            ' src=' + row.source + '/' + row.source_product +
-            ' pri=' + row.source_priority + ' idx=' + row.swath_index +
-            ' rings=' + ringArrays.length +
-            ' area=' + (row.area_sq_mi || '?') + 'mi²' +
-            ' bbox=' + bboxLatSpan.toFixed(2) + '°x' + bboxLonSpan.toFixed(2) + '°' +
-            ' pts=' + allLats.length +
-            ' preferred=' + isPreferred);
+          if (_verboseDateLogs) {
+            console.log('[drawSavedPoly] RENDER id=' + (row.id || ri) +
+              ' src=' + row.source + '/' + row.source_product +
+              ' pri=' + row.source_priority + ' idx=' + row.swath_index +
+              ' rings=' + ringArrays.length +
+              ' area=' + (row.area_sq_mi || '?') + 'mi²' +
+              ' bbox=' + bboxLatSpan.toFixed(2) + '°x' + bboxLonSpan.toFixed(2) + '°' +
+              ' pts=' + allLats.length +
+              ' preferred=' + isPreferred);
+          }
         }
 
         // Skip isolated small nexrad_iem leftovers (before drawing)
         if (_skipSet[ri]) {
           _rejectedCleanup++;
-          console.log('[drawSavedPoly] FILTERED id=' + (row.id || ri) + ' src=' + row.source + ' area=' + (row.area_sq_mi || '?') + 'mi²');
+          if (_verboseDateLogs) {
+            console.log('[drawSavedPoly] FILTERED id=' + (row.id || ri) + ' src=' + row.source + ' area=' + (row.area_sq_mi || '?') + 'mi²');
+          }
           return;
         }
 
@@ -13967,12 +14160,14 @@
         var effectiveBand = isEnvelope ? 0.5 : Math.max(bandMin, 0.5);
         var rgba = isTornado ? tornadoSeverityColor(effectiveBand) : (isWind ? windSeverityColor(effectiveBand) : swathSeverityColor(effectiveBand));
         var segFill   = 'rgb(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ')';
-        console.log('[SWATH-DRAW] id=' + (row.id || ri) +
-          ' src=' + row.source + '/' + (row.source_product || '-') +
-          ' type=' + stormType + ' band_min=' + bandMin +
-          ' effectiveBand=' + effectiveBand.toFixed(2) +
-          ' fill=' + segFill + ' rings=' + ringArrays.length +
-          ' area=' + (row.area_sq_mi || '?') + 'mi²');
+        if (_verboseDateLogs) {
+          console.log('[SWATH-DRAW] id=' + (row.id || ri) +
+            ' src=' + row.source + '/' + (row.source_product || '-') +
+            ' type=' + stormType + ' band_min=' + bandMin +
+            ' effectiveBand=' + effectiveBand.toFixed(2) +
+            ' fill=' + segFill + ' rings=' + ringArrays.length +
+            ' area=' + (row.area_sq_mi || '?') + 'mi²');
+        }
 
         // Per-band opacity: outer 1" band is light/narrow halo; cores ramp to solid.
         // Hail Recon style: outer yellow nearly transparent, orange/red cores solid.
@@ -14025,13 +14220,17 @@
               }
             }
             if (_cellRings.length > 0) {
-              console.log('[nexrad_iem expand] date=' + dateStr + ' row=' + ri + ' orig-rings=' + ringArrays.length + ' cells=' + _cellRings.length);
+              if (_verboseDateLogs) {
+                console.log('[nexrad_iem expand] date=' + dateStr + ' row=' + ri + ' orig-rings=' + ringArrays.length + ' cells=' + _cellRings.length);
+              }
               ringArrays = _cellRings;
               nexradIemPolygonsDrawn += _cellRings.length;
             }
           }
           _t_nexradTotal += performance.now() - _t_nex0;
         } // end nexrad_iem expansion
+
+        _accumulateFocusCandidate(row, stormType, ringArrays, effectiveBand);
 
         console.log('[render] date=' + dateStr + ' source=' + rowSrcLower + ' polygon-count=' + ringArrays.length + ' render-path=canonical');
 
@@ -14091,6 +14290,20 @@
         mapsState._dateBbox = mapsState._dateBbox || {};
         mapsState._dateBbox[dateStr] = _dateBbox;
       }
+      mapsState.focusCandidatesByDate = mapsState.focusCandidatesByDate || {};
+      mapsState.focusCandidatesByDate[dateStr] = Object.keys(_focusCandidateMap).map(function (key) {
+        var candidate = _focusCandidateMap[key];
+        if (!candidate || !candidate.hasAny) return null;
+        var center = candidate.bounds.getCenter();
+        return {
+          type: candidate.type,
+          bounds: candidate.bounds,
+          maxHail: Number(candidate.maxHail) || 0,
+          maxWind: Number(candidate.maxWind) || 0,
+          area: Number(candidate.area) || 0,
+          center: { lat: center.lat(), lng: center.lng() }
+        };
+      }).filter(Boolean);
       var sourceStr = Object.keys(_srcCount || {}).map(function (k) { return k + ':' + (_srcCount || {})[k]; }).join(', ');
       // Storm-type row counts
       var _windRows = validRows.filter(function (r) { return (r.storm_type || '').toLowerCase() === 'wind'; }).length;
@@ -14139,6 +14352,9 @@
       mapsState._savedDrawQuality = mapsState._savedDrawQuality || {};
       mapsState._savedDrawQuality[dateStr] = {
         rawSavedRows: rows.length,
+        polygonsLoaded: rows.length,
+        polygonsDrawn: validRows.length,
+        mapPolygonObjects: polys.length,
         validGeomRows: validRows.length,
         rejectedInvalidGeom: _rejectedInvalidGeom,
         finalDrawnPolygons: polys.length,
@@ -14563,11 +14779,13 @@
 
     // refreshStormDates: bypass cache, reload from scratch
     function refreshStormDates() {
+      var App = window.App = window.App || {};
+      App.recentStormDatesCache = null;
       mapsState.dateHasPolygon     = {};
       mapsState.dateHasHailReports = {};
       mapsState.dateHasWindReports = {};
       mapsState._drawComplete      = {};  // bust draw cache so re-click re-fetches
-      mapsFetchRecentDates();
+      mapsFetchRecentDates(true);
     }
 
     // clearStormLayers: remove every non-pinned overlay from the map
@@ -14584,8 +14802,14 @@
     function loadStormDate(dateStr) {
       if (!dateStr) return;
       dateStr = mapsNormalizeDate(dateStr);
+      var App = mapsGetAppState();
       var statusEl = document.getElementById('maps-storm-status');
-      if (statusEl) { statusEl.className = 'maps-status-msg'; statusEl.textContent = 'Loading ' + dateStr + '…'; }
+      if (App.currentVisibleStormDate === dateStr && App.activeStormOverlays && App.activeStormOverlays.length) {
+        console.log('[loadStormDate] already visible', dateStr);
+        if (statusEl) { statusEl.className = 'maps-status-msg'; statusEl.textContent = dateStr + ' already visible.'; }
+        return;
+      }
+      if (statusEl) { statusEl.className = 'maps-status-msg'; statusEl.textContent = 'Loading swaths for ' + dateStr + '...'; }
       // Insert into date list if not already present
       if (mapsState.stormDates.indexOf(dateStr) === -1) {
         mapsState.stormDates.unshift(dateStr);
@@ -14607,6 +14831,7 @@
 
     // ── Hide overlays for a date (keeps cache intact for fast re-show) ──
     function hideStormDate(dateStr) {
+      var App = mapsGetAppState();
       dateStr = mapsNormalizeDate(dateStr);
       var map = null; // setMap(null) hides without destroying
       var polys = mapsState.swathPolygons[dateStr];
@@ -14624,24 +14849,29 @@
       try { if (mapsState.aiSwathOverlays[dateStr]) mapsState.aiSwathOverlays[dateStr].hide(); } catch (_) {}
       try { if (mapsState.refSwathOverlays[dateStr]) mapsState.refSwathOverlays[dateStr].hide(); } catch (_) {}
       try { if (mapsState.hailFieldOverlays[dateStr]) mapsState.hailFieldOverlays[dateStr].hide(); } catch (_) {}
+      if (App.currentVisibleStormDate === dateStr) {
+        App.currentVisibleStormDate = null;
+        App.activeStormOverlays = [];
+      }
     }
 
     // ── Preview a date (temporary, one at a time) ──
     var _mapsPreviewDebounceTimer = null;
     function mapsPreviewDate(dateStr) {
+      var App = mapsGetAppState();
       dateStr = mapsNormalizeDate(dateStr);
       // Debounce: if another date was clicked within 120 ms, cancel that draw and only render this one.
       if (_mapsPreviewDebounceTimer) { clearTimeout(_mapsPreviewDebounceTimer); _mapsPreviewDebounceTimer = null; }
+      mapsClearPreviewVisibilityTimers();
       // Always ensure Maps page is active — date clicks from any UI context must stay on Maps.
       // mapsInit() is idempotent: first call does full setup + fetch; subsequent calls refresh
       // stale dates and resize the map — so the panel is always populated before the draw runs.
       showPage('page-map');
       mapsInit();
-      console.log('[click] date=' + dateStr + ' route=maps reason=mapsPreviewDate');
       var statusEl = document.getElementById('maps-storm-status');
       if (statusEl) {
         statusEl.className = 'maps-status-msg';
-        statusEl.textContent = '';
+        statusEl.textContent = 'Loading swaths for ' + dateStr + '...';
       }
 
       // HMM_PREVIEW_DATE_SWITCH_FIX_V2
@@ -14651,19 +14881,24 @@
         rebuildVisibleStormOverlays();
         return;
       }
+      if (App.currentVisibleStormDate === dateStr && App.activeStormOverlays && App.activeStormOverlays.length) {
+        console.log('[loadStormDate] already visible', dateStr);
+        mapsState.previewDate = dateStr;
+        mapsSyncSelectedDates();
+        rebuildVisibleStormOverlays();
+        mapsRenderStormList();
+        mapsRenderSavedList();
+        mapsUpdateDownloadBtn();
+        return;
+      }
 
       // Purge all non-pinned date overlays (including previous preview) before drawing new date
       var _oldPreview = mapsState.previewDate;
       purgeNonPinnedDateOverlays(dateStr);
-      if (_oldPreview && _oldPreview !== dateStr) {
-        console.log('[DATE-OVERLAY-CLEAR] oldDate=' + _oldPreview + ' newDate=' + dateStr + ' removed=see_OVERLAY-PURGE');
-      }
       var _cachedN = mapsState.swathPolygons[dateStr] ? mapsState.swathPolygons[dateStr].length : 0;
       var _cacheHit = !!(mapsState._drawComplete[dateStr] && _cachedN > 0);
-      console.log('[DATE-CACHE-CHECK] date=' + dateStr + ' cacheHit=' + _cacheHit + ' overlayDate=' + dateStr + ' cachedPolys=' + _cachedN);
 
       mapsState.previewDate = dateStr;
-      console.log('[DATE-SELECT] ' + dateStr + ' selected');
 
       mapsSyncSelectedDates();
 
@@ -14674,13 +14909,19 @@
       // Draw selected date — debounced so rapid clicks only render the last one.
       _mapsPreviewDebounceTimer = setTimeout(function () {
         _mapsPreviewDebounceTimer = null;
-        mapsDrawDate(dateStr);
+        try {
+          mapsDrawDate(dateStr);
+        } catch (err) {
+          console.warn('[stormDateClick] failed to load date', dateStr, err);
+        }
       }, 120);
 
       // Async saved-swath draws can finish late, so enforce visibility again.
-      setTimeout(rebuildVisibleStormOverlays, 250);
-      setTimeout(rebuildVisibleStormOverlays, 1000);
-      setTimeout(rebuildVisibleStormOverlays, 2000);
+      App.previewVisibilityTimers = [
+        setTimeout(rebuildVisibleStormOverlays, 250),
+        setTimeout(rebuildVisibleStormOverlays, 1000),
+        setTimeout(rebuildVisibleStormOverlays, 2000)
+      ];
 
       mapsRenderStormList();
       mapsRenderSavedList();
@@ -14776,7 +15017,9 @@
       if (!map || !points || !points.length) return;
       var circles = [];
       var iws = [];
-      points.forEach(function (p) {
+      mapsState.pointOverlaysByDate[dateStr] = circles;
+      mapsState.pointInfoWindowsByDate[dateStr] = iws;
+      mapsDrawInChunks(points, function (p) {
         var lat = Number(p.lat);
         var lon = Number(p.lon);
         if (!isFinite(lat) || !isFinite(lon)) return;
@@ -14809,9 +15052,7 @@
         });
         circles.push(circle);
         iws.push(info);
-      });
-      mapsState.pointOverlaysByDate[dateStr] = circles;
-      mapsState.pointInfoWindowsByDate[dateStr] = iws;
+      }, 150);
     }
 
     // ── Remove point overlays for ONE date only ──
@@ -14830,6 +15071,7 @@
 
     // ── Remove ALL overlays for ONE date (swaths + points + cached data) ──
     function removeStormDate(dateStr) {
+      var App = mapsGetAppState();
       dateStr = mapsNormalizeDate(dateStr);
       console.log('[removeStormDate] ' + dateStr);
       // Remove reference swath map overlay for this date
@@ -14862,8 +15104,13 @@
       delete mapsState.lsrPointsByDate[dateStr];
       delete mapsState.windPointsByDate[dateStr];
       delete mapsState.tornadoPointsByDate[dateStr];
+      if (mapsState.focusCandidatesByDate) delete mapsState.focusCandidatesByDate[dateStr];
       delete mapsState._drawComplete[dateStr];
       delete mapsState._fitBoundsCache[dateStr];
+      if (App.currentVisibleStormDate === dateStr) {
+        App.currentVisibleStormDate = null;
+        App.activeStormOverlays = [];
+      }
     }
 
     // ── Rebuild all visible overlays from stored per-date data ──
@@ -14931,6 +15178,7 @@
 
     // ── Purge all overlay state for non-pinned dates that are not the active date ──
     function purgeNonPinnedDateOverlays(activeDate) {
+      var App = mapsGetAppState();
       var keepDates = mapsState.pinnedDates.slice();
       if (activeDate && keepDates.indexOf(activeDate) === -1) keepDates.push(activeDate);
       var removed = [];
@@ -14960,6 +15208,7 @@
       });
       // Wipe draw/fit caches for removed dates
       removed.forEach(function(d) {
+        if (mapsState.focusCandidatesByDate) delete mapsState.focusCandidatesByDate[d];
         delete mapsState._drawComplete[d];
         delete mapsState._fitBoundsCache[d];
       });
@@ -14969,11 +15218,270 @@
       if (removed.length) {
         console.log('[OVERLAY-PURGE] activeDate=' + activeDate + ' removedDates=' + removed.join(',') + ' remainingDates=' + remaining.join(','));
       }
+      if (App.currentVisibleStormDate && keepDates.indexOf(App.currentVisibleStormDate) === -1) {
+        App.currentVisibleStormDate = null;
+        App.activeStormOverlays = [];
+      }
     }
 
     // ── Fit map viewport to ONE date's overlays only ──
     function fitMapToStormDate(dateStr) {
       var map = mapsState.map;
+      dateStr = mapsNormalizeDate(dateStr);
+      if (!map) {
+        return Promise.resolve({ source: 'no-map', focusZoom: null, focusedOnlyOneCluster: false });
+      }
+
+      var _focusProp = mapsState.selectedProperty;
+      var _focusPropLat = _focusProp ? Number(_focusProp.lat) : NaN;
+      var _focusPropLng = _focusProp ? Number(_focusProp.lng) : NaN;
+      var _hasPropertyContext = isFinite(_focusPropLat) && isFinite(_focusPropLng);
+      var _focusPropertyKey = _hasPropertyContext ? _focusPropLat.toFixed(5) + ',' + _focusPropLng.toFixed(5) : '';
+
+      function _focusLatLngFromPoint(point) {
+        if (!point) return null;
+        if (typeof point.lat === 'function' && typeof point.lng === 'function') return point;
+        var lat = Number(point.lat);
+        var lng = Number(point.lng != null ? point.lng : point.lon);
+        if (!isFinite(lat) || !isFinite(lng)) return null;
+        return new google.maps.LatLng(lat, lng);
+      }
+
+      function _focusBuildAiOverlayBounds(dateKey) {
+        var overlay = mapsState.aiSwathOverlays[dateKey];
+        if (!overlay || !overlay.descriptor_ || !overlay.descriptor_.corridors) return null;
+        var bounds = new google.maps.LatLngBounds();
+        var hasAny = false;
+        overlay.descriptor_.corridors.forEach(function (corridor) {
+          var centerline = corridor && corridor.centerline ? corridor.centerline : [];
+          centerline.forEach(function (point) {
+            if (!point || point.length < 2) return;
+            bounds.extend(new google.maps.LatLng(Number(point[1]), Number(point[0])));
+            hasAny = true;
+          });
+        });
+        return hasAny ? bounds : null;
+      }
+
+      function _focusBoundsSpan(bounds) {
+        if (!bounds) return null;
+        try {
+          var ne = bounds.getNorthEast();
+          var sw = bounds.getSouthWest();
+          var latSpan = Math.abs(ne.lat() - sw.lat());
+          var lngSpan = Math.abs(ne.lng() - sw.lng());
+          if (!isFinite(latSpan) || !isFinite(lngSpan)) return null;
+          return { ne: ne, sw: sw, latSpan: latSpan, lngSpan: lngSpan };
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function _focusBoundsSpanScore(bounds) {
+        var span = _focusBoundsSpan(bounds);
+        if (!span) return 0;
+        return Math.abs(span.latSpan * span.lngSpan);
+      }
+
+      function _focusBoundsArea(bounds) {
+        return _focusBoundsSpanScore(bounds);
+      }
+
+      function _focusPointsInBounds(bounds, points) {
+        if (!bounds || !points || !points.length) return 0;
+        var total = 0;
+        for (var i = 0; i < points.length; i++) {
+          var ll = _focusLatLngFromPoint(points[i]);
+          if (ll && bounds.contains(ll)) total++;
+        }
+        return total;
+      }
+
+      function _focusCandidateCenter(candidate) {
+        if (!candidate) return null;
+        if (candidate.center) {
+          var centerLatLng = _focusLatLngFromPoint(candidate.center);
+          if (centerLatLng) return centerLatLng;
+        }
+        if (candidate.bounds && candidate.bounds.getCenter) {
+          try { return candidate.bounds.getCenter(); } catch (_) {}
+        }
+        return null;
+      }
+
+      function _focusDistanceToProperty(candidate) {
+        var center = _focusCandidateCenter(candidate);
+        if (!center || !_hasPropertyContext) return Number.POSITIVE_INFINITY;
+        var dLat = center.lat() - _focusPropLat;
+        var dLng = center.lng() - _focusPropLng;
+        return (dLat * dLat) + (dLng * dLng);
+      }
+
+      function _focusExpandBoundsIfTiny(bounds) {
+        var span = _focusBoundsSpan(bounds);
+        if (!span) return null;
+        var minSpan = 0.35;
+        if (span.latSpan >= minSpan && span.lngSpan >= minSpan) return bounds;
+        var center = bounds.getCenter();
+        var halfLat = Math.max(span.latSpan / 2, minSpan / 2);
+        var halfLng = Math.max(span.lngSpan / 2, minSpan / 2);
+        var expanded = new google.maps.LatLngBounds();
+        expanded.extend({ lat: center.lat() - halfLat, lng: center.lng() - halfLng });
+        expanded.extend({ lat: center.lat() + halfLat, lng: center.lng() + halfLng });
+        return expanded;
+      }
+
+      function _focusScoreCandidate(candidate) {
+        return (
+          (Number(candidate.maxHail) || 0) * 100000 +
+          (Number(candidate.maxWind) || 0) * 1000 +
+          (Number(candidate.reportCount) || 0) * 10 +
+          _focusBoundsSpanScore(candidate.bounds)
+        );
+      }
+
+      function _focusFitAndCache(bounds, sourceLabel, focusedOnlyOneCluster) {
+        if (!bounds) {
+          console.warn('[fitMapToStormDate] invalid bounds for', dateStr);
+          return Promise.resolve({ source: sourceLabel || 'invalid', focusZoom: map.getZoom() || null, focusedOnlyOneCluster: !!focusedOnlyOneCluster });
+        }
+        var safeBounds = _focusExpandBoundsIfTiny(bounds);
+        if (!safeBounds || !_focusBoundsSpan(safeBounds)) {
+          console.warn('[fitMapToStormDate] invalid bounds for', dateStr);
+          return Promise.resolve({ source: sourceLabel || 'invalid', focusZoom: map.getZoom() || null, focusedOnlyOneCluster: !!focusedOnlyOneCluster });
+        }
+        return new Promise(function (resolve) {
+          map.fitBounds(safeBounds, {
+            top: 110,
+            right: 90,
+            bottom: 90,
+            left: 430
+          });
+          function _focusFinalizeFit() {
+            var zoom = Number(map.getZoom()) || 6;
+            var clamped = Math.max(6, Math.min(9, zoom));
+            if (clamped !== zoom) {
+              google.maps.event.addListenerOnce(map, 'idle', _focusFinalizeFit);
+              map.setZoom(clamped);
+              return;
+            }
+            var center = map.getCenter();
+            mapsState._fitBoundsCache[dateStr] = {
+              center: { lat: center.lat(), lng: center.lng() },
+              zoom: clamped,
+              propertyKey: _focusPropertyKey,
+              source: sourceLabel,
+              focusedOnlyOneCluster: !!focusedOnlyOneCluster
+            };
+            console.log('[fitMapToStormDate] ' + dateStr + ' source=' + sourceLabel);
+            resolve({
+              source: sourceLabel,
+              focusZoom: clamped,
+              focusedOnlyOneCluster: !!focusedOnlyOneCluster
+            });
+          }
+          google.maps.event.addListenerOnce(map, 'idle', _focusFinalizeFit);
+        });
+      }
+
+      var _focusCached = mapsState._fitBoundsCache[dateStr];
+      if (_focusCached && String(_focusCached.propertyKey || '') === _focusPropertyKey) {
+        var _focusCachedZoom = Math.max(6, Math.min(9, Number(_focusCached.zoom) || map.getZoom() || 6));
+        try {
+          map.setCenter(_focusCached.center);
+          map.setZoom(_focusCachedZoom);
+        } catch (_) {}
+        console.log('[fitMapToStormDate] ' + dateStr + ' CACHED | zoom=' + _focusCachedZoom);
+        return Promise.resolve({
+          source: _focusCached.source || 'cache',
+          focusZoom: _focusCachedZoom,
+          focusedOnlyOneCluster: _focusCached.focusedOnlyOneCluster !== false
+        });
+      }
+
+      var _focusReportPoints = []
+        .concat(mapsState.lsrPointsByDate[dateStr] || [])
+        .concat(mapsState.windPointsByDate[dateStr] || [])
+        .concat(mapsState.tornadoPointsByDate[dateStr] || []);
+
+      var _focusRawCandidates = Array.isArray(mapsState.focusCandidatesByDate[dateStr])
+        ? mapsState.focusCandidatesByDate[dateStr]
+        : [];
+      var _focusCandidates = _focusRawCandidates.map(function (candidate) {
+        if (!candidate || !candidate.bounds || !_focusBoundsSpan(candidate.bounds)) return null;
+        return {
+          type: candidate.type || 'hail',
+          bounds: candidate.bounds,
+          maxHail: Number(candidate.maxHail) || 0,
+          maxWind: Number(candidate.maxWind) || 0,
+          reportCount: _focusPointsInBounds(candidate.bounds, _focusReportPoints),
+          area: Number(candidate.area) || _focusBoundsArea(candidate.bounds),
+          center: candidate.center || null
+        };
+      }).filter(Boolean);
+
+      if (!_focusCandidates.length) {
+        var _focusRefOverlay = mapsState.refSwathOverlays[dateStr];
+        if (_focusRefOverlay && _focusRefOverlay.bounds_ && _focusBoundsSpan(_focusRefOverlay.bounds_)) {
+          _focusCandidates.push({
+            type: 'hail',
+            bounds: _focusRefOverlay.bounds_,
+            maxHail: 0,
+            maxWind: 0,
+            reportCount: _focusPointsInBounds(_focusRefOverlay.bounds_, _focusReportPoints),
+            area: _focusBoundsArea(_focusRefOverlay.bounds_),
+            center: _focusRefOverlay.bounds_.getCenter()
+          });
+        }
+        var _focusAiBounds = _focusBuildAiOverlayBounds(dateStr);
+        if (_focusAiBounds && _focusBoundsSpan(_focusAiBounds)) {
+          _focusCandidates.push({
+            type: 'hail',
+            bounds: _focusAiBounds,
+            maxHail: 0,
+            maxWind: 0,
+            reportCount: _focusPointsInBounds(_focusAiBounds, _focusReportPoints),
+            area: _focusBoundsArea(_focusAiBounds),
+            center: _focusAiBounds.getCenter()
+          });
+        }
+      }
+
+      if (_focusCandidates.length) {
+        _focusCandidates.sort(function (a, b) {
+          if (_hasPropertyContext) {
+            var distDiff = _focusDistanceToProperty(a) - _focusDistanceToProperty(b);
+            if (distDiff) return distDiff;
+          }
+          var scoreDiff = _focusScoreCandidate(b) - _focusScoreCandidate(a);
+          if (scoreDiff) return scoreDiff;
+          if (b.area !== a.area) return b.area - a.area;
+          return (b.reportCount || 0) - (a.reportCount || 0);
+        });
+        return _focusFitAndCache(
+          _focusCandidates[0].bounds,
+          _hasPropertyContext ? 'nearest-property-cluster' : 'best-scored-cluster:' + (_focusCandidates[0].type || 'hail'),
+          true
+        );
+      }
+
+      if (_focusReportPoints.length) {
+        var _focusPointBounds = new google.maps.LatLngBounds();
+        var _focusHasPointBounds = false;
+        for (var _focusPi = 0; _focusPi < _focusReportPoints.length; _focusPi++) {
+          var _focusLl = _focusLatLngFromPoint(_focusReportPoints[_focusPi]);
+          if (!_focusLl) continue;
+          _focusPointBounds.extend(_focusLl);
+          _focusHasPointBounds = true;
+        }
+        if (_focusHasPointBounds) {
+          return _focusFitAndCache(_focusPointBounds, 'report-points', false);
+        }
+        console.warn('[fitMapToStormDate] invalid report-only bounds for', dateStr);
+      } else {
+        console.warn('[fitMapToStormDate] no valid bounds for', dateStr);
+      }
+      return Promise.resolve({ source: 'none', focusZoom: map.getZoom() || null, focusedOnlyOneCluster: false });
       if (!map) return;
 
       // Fast path: reuse cached bounds position from previous fit
@@ -14985,121 +15493,229 @@
         return;
       }
 
-      var bounds = new google.maps.LatLngBounds();
-      var hasAny = false;
+      function latLngFromPoint(point) {
+        if (!point) return null;
+        if (typeof point.lat === 'function' && typeof point.lng === 'function') return point;
+        var lat = Number(point.lat);
+        var lng = Number(point.lng != null ? point.lng : point.lon);
+        if (!isFinite(lat) || !isFinite(lng)) return null;
+        return new google.maps.LatLng(lat, lng);
+      }
 
-      // Include reference swath overlay bounds
+      function extendBoundsFromPolygon(poly, bounds) {
+        var added = false;
+        try {
+          if (poly && poly.getPaths) {
+            poly.getPaths().forEach(function (path) {
+              path.forEach(function (ll) {
+                bounds.extend(ll);
+                added = true;
+              });
+            });
+          } else if (poly && poly.getPath) {
+            poly.getPath().forEach(function (ll) {
+              bounds.extend(ll);
+              added = true;
+            });
+          }
+        } catch (_) {}
+        return added;
+      }
+
+      function buildPolygonBounds(poly) {
+        var bounds = new google.maps.LatLngBounds();
+        return extendBoundsFromPolygon(poly, bounds) ? bounds : null;
+      }
+
+      function buildAiOverlayBounds(dateKey) {
+        var overlay = mapsState.aiSwathOverlays[dateKey];
+        if (!overlay || !overlay.descriptor_ || !overlay.descriptor_.corridors) return null;
+        var bounds = new google.maps.LatLngBounds();
+        var hasAny = false;
+        overlay.descriptor_.corridors.forEach(function (corridor) {
+          var centerline = corridor && corridor.centerline ? corridor.centerline : [];
+          centerline.forEach(function (point) {
+            if (!point || point.length < 2) return;
+            bounds.extend(new google.maps.LatLng(Number(point[1]), Number(point[0])));
+            hasAny = true;
+          });
+        });
+        return hasAny ? bounds : null;
+      }
+
+      function boundsSpan(bounds) {
+        if (!bounds) return null;
+        try {
+          var ne = bounds.getNorthEast();
+          var sw = bounds.getSouthWest();
+          var latSpan = Math.abs(ne.lat() - sw.lat());
+          var lngSpan = Math.abs(ne.lng() - sw.lng());
+          if (!isFinite(latSpan) || !isFinite(lngSpan)) return null;
+          return { ne: ne, sw: sw, latSpan: latSpan, lngSpan: lngSpan };
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function boundsArea(bounds) {
+        var span = boundsSpan(bounds);
+        return span ? Math.abs(span.latSpan * span.lngSpan) : 0;
+      }
+
+      function pointsInBounds(bounds, points) {
+        if (!bounds || !points || !points.length) return 0;
+        var total = 0;
+        for (var i = 0; i < points.length; i++) {
+          var ll = latLngFromPoint(points[i]);
+          if (ll && bounds.contains(ll)) total++;
+        }
+        return total;
+      }
+
+      function unionBounds(targetBounds, sourceBounds) {
+        if (!targetBounds || !sourceBounds) return false;
+        var span = boundsSpan(sourceBounds);
+        if (!span) return false;
+        targetBounds.extend(span.sw);
+        targetBounds.extend(span.ne);
+        return true;
+      }
+
+      function expandBoundsIfTiny(bounds) {
+        var span = boundsSpan(bounds);
+        if (!span) return null;
+        var minSpan = 0.35;
+        if (span.latSpan >= minSpan && span.lngSpan >= minSpan) return bounds;
+        var center = bounds.getCenter();
+        var halfLat = Math.max(span.latSpan / 2, minSpan / 2);
+        var halfLng = Math.max(span.lngSpan / 2, minSpan / 2);
+        var expanded = new google.maps.LatLngBounds();
+        expanded.extend({ lat: center.lat() - halfLat, lng: center.lng() - halfLng });
+        expanded.extend({ lat: center.lat() + halfLat, lng: center.lng() + halfLng });
+        return expanded;
+      }
+
+      function fitAndCache(bounds, sourceLabel, maxZoom) {
+        if (!bounds) {
+          console.warn('[fitMapToStormDate] invalid bounds for', dateStr);
+          return;
+        }
+        var safeBounds = expandBoundsIfTiny(bounds);
+        if (!safeBounds || !boundsSpan(safeBounds)) {
+          console.warn('[fitMapToStormDate] invalid bounds for', dateStr);
+          return;
+        }
+        map.fitBounds(safeBounds, {
+          top: 110,
+          right: 90,
+          bottom: 90,
+          left: 430
+        });
+        google.maps.event.addListenerOnce(map, 'idle', function () {
+          if (typeof maxZoom === 'number' && map.getZoom() > maxZoom) {
+            map.setZoom(maxZoom);
+          }
+          var c = map.getCenter();
+          mapsState._fitBoundsCache[dateStr] = { center: { lat: c.lat(), lng: c.lng() }, zoom: map.getZoom() };
+        });
+        console.log('[fitMapToStormDate] ' + dateStr + ' source=' + sourceLabel);
+      }
+
+      var reportPoints = []
+        .concat(mapsState.lsrPointsByDate[dateStr] || [])
+        .concat(mapsState.windPointsByDate[dateStr] || [])
+        .concat(mapsState.tornadoPointsByDate[dateStr] || []);
+      var groups = {
+        hail: { type: 'hail', bounds: new google.maps.LatLngBounds(), hasAny: false, hailScore: 0, windScore: 0 },
+        wind: { type: 'wind', bounds: new google.maps.LatLngBounds(), hasAny: false, hailScore: 0, windScore: 0 },
+        tornado: { type: 'tornado', bounds: new google.maps.LatLngBounds(), hasAny: false, hailScore: 0, windScore: 0 }
+      };
+
+      function extendGroup(type, bounds, scores) {
+        var group = groups[type] || groups.hail;
+        if (!unionBounds(group.bounds, bounds)) return;
+        group.hasAny = true;
+        if (scores) {
+          if (Number.isFinite(scores.hailScore)) group.hailScore = Math.max(group.hailScore, scores.hailScore);
+          if (Number.isFinite(scores.windScore)) group.windScore = Math.max(group.windScore, scores.windScore);
+        }
+      }
+
+      (mapsState.swathPolygons[dateStr] || []).forEach(function (poly) {
+        var type = ((poly && poly._stormType) || 'hail').toString().toLowerCase();
+        var bounds = buildPolygonBounds(poly);
+        var hailScore = type === 'hail' ? Number(poly && (poly._bandThreshold != null ? poly._bandThreshold : poly._bandMin)) || 0 : 0;
+        var windScore = type === 'wind' && typeof _windBandToMph === 'function'
+          ? _windBandToMph(Number(poly && poly._bandMin) || 0)
+          : 0;
+        extendGroup(type, bounds, { hailScore: hailScore, windScore: windScore });
+      });
+
+      (mapsState.hailBandPolygons[dateStr] || []).forEach(function (poly) {
+        extendGroup('hail', buildPolygonBounds(poly), {
+          hailScore: Number(poly && (poly._bandThreshold != null ? poly._bandThreshold : poly._bandMin)) || 0
+        });
+      });
+
+      (mapsState.windBandPolygons[dateStr] || []).forEach(function (poly) {
+        extendGroup('wind', buildPolygonBounds(poly), {
+          windScore: typeof _windBandToMph === 'function' ? _windBandToMph(Number(poly && poly._bandMin) || 0) : 0
+        });
+      });
+
+      (mapsState.tornadoBandPolygons[dateStr] || []).forEach(function (poly) {
+        extendGroup('tornado', buildPolygonBounds(poly), {});
+      });
+
       var refOverlay = mapsState.refSwathOverlays[dateStr];
       if (refOverlay && refOverlay.bounds_) {
-        bounds.union(refOverlay.bounds_);
-        hasAny = true;
+        extendGroup('hail', refOverlay.bounds_, {});
+      }
+      var aiBounds = buildAiOverlayBounds(dateStr);
+      if (aiBounds) {
+        extendGroup('hail', aiBounds, {});
       }
 
-      // Include swath polygon bounds — use precomputed bbox from draw time (O(1) instead of
-      // iterating every polygon path). Falls back to getPaths() if bbox not yet stored.
-      var polys = mapsState.swathPolygons[dateStr];
-      if (polys && polys.length) {
-        var _storedBbox = mapsState._dateBbox && mapsState._dateBbox[dateStr];
-        if (_storedBbox && _storedBbox.hasAny) {
-          bounds.extend(new google.maps.LatLng(_storedBbox.minLat, _storedBbox.minLon));
-          bounds.extend(new google.maps.LatLng(_storedBbox.maxLat, _storedBbox.maxLon));
-          hasAny = true;
-        } else {
-          polys.forEach(function (p) {
-            try {
-              if (p.getPaths) {
-                p.getPaths().forEach(function (path) { path.forEach(function (ll) { bounds.extend(ll); hasAny = true; }); });
-              } else {
-                p.getPath().forEach(function (ll) { bounds.extend(ll); hasAny = true; });
-              }
-            } catch (_) {}
-          });
-        }
-        // Coverage diagnostic
-        var _bnds = bounds;
-        var _ne = _bnds.getNorthEast ? _bnds.getNorthEast() : null;
-        var _sw = _bnds.getSouthWest ? _bnds.getSouthWest() : null;
-        if (_ne && _sw) {
-          console.log('[swath-renderer] coverage date=' + dateStr +
-            ' polygon-count=' + polys.length +
-            ' bbox=' + _sw.lat().toFixed(2) + ',' + _sw.lng().toFixed(2) +
-            ',' + _ne.lat().toFixed(2) + ',' + _ne.lng().toFixed(2));
-        }
-      }
+      var candidates = Object.keys(groups).map(function (key) {
+        var group = groups[key];
+        if (!group.hasAny) return null;
+        return {
+          type: group.type,
+          bounds: group.bounds,
+          hailScore: group.hailScore,
+          windScore: group.windScore,
+          area: boundsArea(group.bounds),
+          reportCount: pointsInBounds(group.bounds, reportPoints)
+        };
+      }).filter(Boolean);
 
-      // Include AI swath overlay bounds
-      var aiOverlay = mapsState.aiSwathOverlays[dateStr];
-      if (aiOverlay && aiOverlay.descriptor_) {
-        var aiCorridors = aiOverlay.descriptor_.corridors || [];
-        for (var aci = 0; aci < aiCorridors.length; aci++) {
-          var cl = aiCorridors[aci].centerline;
-          for (var acj = 0; acj < cl.length; acj++) {
-            bounds.extend(new google.maps.LatLng(cl[acj][1], cl[acj][0]));
-            hasAny = true;
-          }
-        }
-      }
-
-      // Include hail field overlay bounds (from its point set)
-      var fieldOverlay = mapsState.hailFieldOverlays[dateStr];
-      if (fieldOverlay && fieldOverlay.points_) {
-        for (var fi = 0; fi < fieldOverlay.points_.length; fi++) {
-          var fp = fieldOverlay.points_[fi];
-          var fLat = Number(fp.lat), fLon = Number(fp.lon);
-          if (isFinite(fLat) && isFinite(fLon)) {
-            bounds.extend(new google.maps.LatLng(fLat, fLon));
-            hasAny = true;
-          }
-        }
-      }
-
-      // Include hail band polygon bounds
-      var bandPolys = mapsState.hailBandPolygons[dateStr];
-      if (bandPolys && bandPolys.length) {
-        bandPolys.forEach(function (p) {
-          try {
-            p.getPath().forEach(function (ll) { bounds.extend(ll); hasAny = true; });
-          } catch (_) {}
+      if (candidates.length) {
+        candidates.sort(function (a, b) {
+          if (b.hailScore !== a.hailScore) return b.hailScore - a.hailScore;
+          if (b.windScore !== a.windScore) return b.windScore - a.windScore;
+          if (b.area !== a.area) return b.area - a.area;
+          return b.reportCount - a.reportCount;
         });
+        fitAndCache(candidates[0].bounds, 'best-swath-group:' + candidates[0].type, 10);
+        return;
       }
 
-      // Wind/tornado band polygon bounds EXCLUDED — hail-only fitBounds mode
-
-      // Include point overlay bounds
-      var circles = mapsState.pointOverlaysByDate[dateStr];
-      if (circles && circles.length) {
-        circles.forEach(function (c) {
-          try { bounds.extend(c.getCenter()); hasAny = true; } catch (_) {}
-        });
-      }
-
-      if (hasAny) {
-        // Span guard: reject fits wider than ~10 degrees (whole-country/world-scale)
-        var _ne = bounds.getNorthEast(), _sw = bounds.getSouthWest();
-        var _latSpan = _ne.lat() - _sw.lat();
-        var _lonSpan = _ne.lng() - _sw.lng();
-        if (_latSpan > 10 || _lonSpan > 15) {
-          console.warn('[fitMapToStormDate] ' + dateStr + ': SKIP oversized bounds ' +
-            _latSpan.toFixed(1) + '° lat x ' + _lonSpan.toFixed(1) + '° lon — clamping to CONUS center');
-          map.setCenter({ lat: 39.0, lng: -95.0 });
-          map.setZoom(9);
-          mapsState._fitBoundsCache[dateStr] = { center: { lat: 39.0, lng: -95.0 }, zoom: 9 };
-        } else {
-          // Pad bounds by 20% of span so storm cells aren't flush against the viewport edge
-          var _latPad = _latSpan * 0.20, _lonPad = _lonSpan * 0.20;
-          var _paddedBounds = new google.maps.LatLngBounds(
-            new google.maps.LatLng(_sw.lat() - _latPad, _sw.lng() - _lonPad),
-            new google.maps.LatLng(_ne.lat() + _latPad, _ne.lng() + _lonPad)
-          );
-          map.fitBounds(_paddedBounds);
-          // Cache after idle so zoom is resolved
-          google.maps.event.addListenerOnce(map, 'idle', function () {
-            var c = map.getCenter();
-            mapsState._fitBoundsCache[dateStr] = { center: { lat: c.lat(), lng: c.lng() }, zoom: map.getZoom() };
-          });
+      if (reportPoints.length) {
+        var pointBounds = new google.maps.LatLngBounds();
+        var hasPointBounds = false;
+        for (var pi = 0; pi < reportPoints.length; pi++) {
+          var ll = latLngFromPoint(reportPoints[pi]);
+          if (!ll) continue;
+          pointBounds.extend(ll);
+          hasPointBounds = true;
         }
-        console.log('[fitMapToStormDate] Focused on ' + dateStr +
-          ' | span=' + _latSpan.toFixed(2) + '°x' + _lonSpan.toFixed(2) + '°');
+        if (hasPointBounds) {
+          fitAndCache(pointBounds, 'report-points', 9);
+        } else {
+          console.warn('[fitMapToStormDate] invalid report-only bounds for', dateStr);
+        }
+      } else {
+        console.warn('[fitMapToStormDate] no valid bounds for', dateStr);
       }
     }
 
@@ -15388,12 +16004,469 @@
     }
 
     function mapsDrawDate(dateStr) {
+      var _useFastStormDateFlow = true;
+      if (_useFastStormDateFlow) {
+        var _stormApp = mapsGetAppState();
+        var _stormClickT0 = Date.now();
+        dateStr = mapsNormalizeDate(dateStr);
+        if (_stormApp.currentVisibleStormDate === dateStr && _stormApp.activeStormOverlays && _stormApp.activeStormOverlays.length) {
+          console.log('[loadStormDate] already visible', dateStr);
+          return;
+        }
+        if (_stormApp.currentStormDateLoading === dateStr) {
+          console.log('[loadStormDate] duplicate ignored', dateStr);
+          return;
+        }
+        if (_stormApp.currentStormDateLoading) {
+          console.log('[loadStormDate] busy, ignored', dateStr);
+          return;
+        }
+        _stormApp.currentStormDateLoading = dateStr;
+        _stormApp.pendingStormDateLoad = null;
+        console.log('[loadStormDate] start', dateStr);
+
+        mapsState._drawCancelToken = mapsState._drawCancelToken || {};
+        var _stormDrawToken = (mapsState._drawCancelToken[dateStr] = Date.now() + Math.random());
+        var _stormStatusEl = document.getElementById('maps-storm-status');
+        var _stormWarned = false;
+        var _stormFinished = false;
+        var _stormTiming = {
+          swathFetchMs: 0,
+          swathDrawMs: 0,
+          focusMs: 0,
+          reportFetchMs: 0,
+          reportDrawMs: 0,
+          totalMs: 0
+        };
+
+        var _stormFinishLoad = function () {
+          if (_stormFinished) return;
+          _stormFinished = true;
+          if (_stormApp.currentStormDateLoading === dateStr) {
+            _stormApp.currentStormDateLoading = null;
+          }
+        };
+
+        var _stormWarnFailure = function (error) {
+          if (_stormWarned) return;
+          _stormWarned = true;
+          console.warn('[stormDateClick] failed to load date', dateStr, error);
+        };
+
+        var _stormIsCanceled = function () {
+          return mapsState._drawCancelToken && mapsState._drawCancelToken[dateStr] !== _stormDrawToken;
+        };
+
+        var _stormSetStatus = function (text, isError) {
+          if (!_stormStatusEl) return;
+          _stormStatusEl.className = isError ? 'maps-status-msg error' : 'maps-status-msg';
+          _stormStatusEl.textContent = text || '';
+        };
+
+        var _stormNextFrame = function () {
+          return new Promise(function (resolve) {
+            requestAnimationFrame(function () { resolve(); });
+          });
+        };
+
+        var _stormLogTiming = function () {
+          _stormTiming.totalMs = Date.now() - _stormClickT0;
+          console.log('[loadStormDate] timing', dateStr, {
+            swathFetchMs: _stormTiming.swathFetchMs,
+            swathDrawMs: _stormTiming.swathDrawMs,
+            focusMs: _stormTiming.focusMs,
+            reportFetchMs: _stormTiming.reportFetchMs,
+            reportDrawMs: _stormTiming.reportDrawMs,
+            totalMs: _stormTiming.totalMs
+          });
+        };
+
+        _stormSetStatus('Loading swaths for ' + dateStr + '...', false);
+
+        var _stormBuildStatusText = function (swathN, src, points, windPts, tornadoPts, cachedLabel) {
+          var parts = [];
+          if (swathN) parts.push(swathN + ' ' + src + ' swath polygon' + (swathN === 1 ? '' : 's'));
+          if (points.length) parts.push(points.length + ' hail report' + (points.length === 1 ? '' : 's'));
+          if (windPts.length) parts.push(windPts.length + ' wind report' + (windPts.length === 1 ? '' : 's'));
+          if (tornadoPts.length) parts.push(tornadoPts.length + ' tornado report' + (tornadoPts.length === 1 ? '' : 's'));
+          if (!parts.length) {
+            return dateStr + ': no storm polygons (' + points.length + ' hail + ' + windPts.length + ' wind + ' + tornadoPts.length + ' tornado reports)' + (cachedLabel ? ' (cached).' : '');
+          }
+          return dateStr + ': ' + parts.join(' + ') + (cachedLabel ? ' (cached).' : '.');
+        };
+
+        var _stormLogSummary = function (rows, points, windPts, tornadoPts, fitResult) {
+          var drawStats = (mapsState._savedDrawQuality || {})[dateStr] || {};
+          console.log('[loadStormDate] summary', dateStr, {
+            polygonsLoaded: Number(drawStats.polygonsLoaded || (rows && rows.length) || 0),
+            polygonsDrawn: Number(drawStats.polygonsDrawn || 0),
+            hailReportsLoaded: Number((points && points.length) || 0),
+            windReportsLoaded: Number((windPts && windPts.length) || 0),
+            tornadoReportsLoaded: Number((tornadoPts && tornadoPts.length) || 0),
+            focusedOnlyOneCluster: !!(fitResult && fitResult.focusedOnlyOneCluster),
+            focusZoom: fitResult && fitResult.focusZoom != null ? fitResult.focusZoom : (mapsState.map ? mapsState.map.getZoom() : null)
+          });
+        };
+
+        var _stormDrawSwathsAndFocus = async function (rows) {
+          if (_stormIsCanceled()) return { canceled: true, drew: false, swathN: 0, src: 'none', fitResult: null };
+          rows = Array.isArray(rows) ? rows : [];
+          var _swathDrawStartedAt = Date.now();
+          mapsRemoveAiSwathForDate(dateStr);
+          mapsRemoveHailFieldForDate(dateStr);
+          mapsRemoveHailBandsForDate(dateStr);
+          mapsRemoveWindBandsForDate(dateStr);
+          mapsRemoveTornadoBandsForDate(dateStr);
+          mapsRemovePointsForDate(dateStr);
+          mapsRemoveRefSwathForDate(dateStr);
+
+          var drew = mapsDrawSavedStormPolygonForDate(dateStr, rows);
+          applySwathToggles(dateStr);
+          var swathN = mapsState.swathPolygons[dateStr] ? mapsState.swathPolygons[dateStr].length : 0;
+          var src = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || (drew ? 'saved' : 'none');
+          _stormTiming.swathDrawMs = Date.now() - _swathDrawStartedAt;
+          mapsRememberVisibleStormDate(dateStr);
+          await _stormNextFrame();
+          console.log('[loadStormDate] swaths visible ' + dateStr + ' in ' + (Date.now() - _stormClickT0) + 'ms');
+          var _focusStartedAt = Date.now();
+          var fitPromise = fitMapToStormDate(dateStr);
+          var fitResult = await fitPromise;
+          _stormTiming.focusMs = Date.now() - _focusStartedAt;
+          return {
+            canceled: _stormIsCanceled(),
+            drew: drew,
+            swathN: swathN,
+            src: src,
+            fitResult: fitResult || null
+          };
+        };
+
+        var _stormShowExistingRenderedDate = async function (rowsForSummary, points, windPts, tornadoPts, cachedLabel) {
+          rebuildVisibleStormOverlays();
+          applySwathToggles(dateStr);
+          mapsRememberVisibleStormDate(dateStr);
+          await _stormNextFrame();
+          console.log('[loadStormDate] swaths visible ' + dateStr + ' in ' + (Date.now() - _stormClickT0) + 'ms');
+          var _focusStartedAt = Date.now();
+          var fitPromise = fitMapToStormDate(dateStr);
+          var fitResult = await fitPromise;
+          _stormTiming.focusMs = Date.now() - _focusStartedAt;
+          var swathN = mapsState.swathPolygons[dateStr] ? mapsState.swathPolygons[dateStr].length : 0;
+          var src = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || 'cached';
+          _stormSetStatus(_stormBuildStatusText(swathN, src, points, windPts, tornadoPts, cachedLabel), false);
+          mapsState._drawComplete[dateStr] = true;
+          _stormLogSummary(rowsForSummary, points, windPts, tornadoPts, fitResult);
+          _stormLogTiming();
+          console.log('[loadStormDate] complete ' + dateStr + ' in ' + (Date.now() - _stormClickT0) + 'ms');
+        };
+
+        void (async function () {
+          var cachedPts = mapsState.lsrPointsByDate[dateStr];
+          var needPoints = !mapsState.lsrPointsByDate.hasOwnProperty(dateStr);
+          var existingPoints = Array.isArray(cachedPts) ? cachedPts : [];
+          var existingWindPts = Array.isArray(mapsState.windPointsByDate[dateStr]) ? mapsState.windPointsByDate[dateStr] : [];
+          var existingTornadoPts = Array.isArray(mapsState.tornadoPointsByDate[dateStr]) ? mapsState.tornadoPointsByDate[dateStr] : [];
+
+          if (mapsState._drawComplete[dateStr]) {
+            var existingPolys = mapsState.swathPolygons[dateStr];
+            if (!existingPolys || existingPolys.length === 0) {
+              delete mapsState._drawComplete[dateStr];
+            } else {
+              await _stormShowExistingRenderedDate(
+                (mapsState.rawStormRows && mapsState.rawStormRows[dateStr]) || [],
+                existingPoints,
+                existingWindPts,
+                existingTornadoPts,
+                true
+              );
+              return;
+            }
+          }
+
+          var swathCls = mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass;
+          var hasSavedSwathOverlays = !!(
+            (swathCls && mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr].length) ||
+            (mapsState.swathCenterlines[dateStr] && mapsState.swathCenterlines[dateStr].length)
+          );
+          if (hasSavedSwathOverlays && !needPoints) {
+            await _stormShowExistingRenderedDate(
+              (mapsState.rawStormRows && mapsState.rawStormRows[dateStr]) || [],
+              existingPoints,
+              existingWindPts,
+              existingTornadoPts,
+              true
+            );
+            return;
+          }
+
+          var cachedDateData = mapsGetCachedStormDateData(dateStr) || {};
+          var cachedSwathData = mapsGetCachedStormSwaths(dateStr);
+          var LSR_ALWAYS_FETCH_CUTOFF = '2015-01-01';
+          var alwaysFetch = (dateStr >= LSR_ALWAYS_FETCH_CUTOFF);
+          var dateTypes = mapsState.dateEventTypes[dateStr] || [];
+          var hasWind = dateTypes.indexOf('wind') !== -1;
+          var hasTornado = dateTypes.indexOf('tornado') !== -1;
+          var pointsProm = null;
+          var windProm = null;
+          var tornadoProm = null;
+
+          function _stormGetPointsProm() {
+            if (pointsProm) return pointsProm;
+            pointsProm = Array.isArray(cachedDateData.points)
+              ? Promise.resolve(cachedDateData.points)
+              : needPoints
+              ? fetchLsrPointsByDate(dateStr)
+                  .then(function (pts) {
+                    if (pts && pts.length) return pts;
+                    return fetchHailReportsByDate(dateStr).then(function (fb) {
+                      return (fb && fb.length) ? fb : [];
+                    });
+                  })
+                  .catch(function (err) {
+                    console.warn('[mapsDrawDate] ' + dateStr + ' LSR error, trying hail_reports…', err && err.message || err);
+                    return fetchHailReportsByDate(dateStr)
+                      .then(function (fb) {
+                        return (fb && fb.length) ? fb : [];
+                      })
+                      .catch(function () { return []; });
+                  })
+              : Promise.resolve(existingPoints);
+            return pointsProm;
+          }
+
+          function _stormGetWindProm() {
+            if (windProm) return windProm;
+            windProm = Array.isArray(cachedDateData.windPts)
+              ? Promise.resolve(cachedDateData.windPts)
+              : (hasWind || alwaysFetch) && !mapsState.windPointsByDate[dateStr]
+              ? fetchStormLsrByDate(dateStr, 'wind')
+                  .then(function (rows) { return rows || []; })
+                  .catch(function (err) {
+                    _stormWarnFailure(err);
+                    console.warn('[mapsDrawDate] wind LSR fetch failed for ' + dateStr + ':', err && err.message || err);
+                    return [];
+                  })
+              : Promise.resolve(existingWindPts);
+            return windProm;
+          }
+
+          function _stormGetTornadoProm() {
+            if (tornadoProm) return tornadoProm;
+            tornadoProm = Array.isArray(cachedDateData.tornadoPts)
+              ? Promise.resolve(cachedDateData.tornadoPts)
+              : (hasTornado || alwaysFetch) && !mapsState.tornadoPointsByDate[dateStr]
+              ? fetchStormLsrByDate(dateStr, 'tornado')
+                  .then(function (rows) { return rows || []; })
+                  .catch(function (err) {
+                    _stormWarnFailure(err);
+                    console.warn('[mapsDrawDate] tornado LSR fetch failed for ' + dateStr + ':', err && err.message || err);
+                    return [];
+                  })
+              : Promise.resolve(existingTornadoPts);
+            return tornadoProm;
+          }
+
+          async function _stormFinishReports(drawResult, rows, points, windPts, tornadoPts, cachedLabel) {
+            _stormSetStatus('Swaths loaded. Loading reports...', false);
+            await _stormNextFrame();
+            var reportFetchStartedAt = Date.now();
+            points = Array.isArray(points) ? points : await _stormGetPointsProm();
+            windPts = Array.isArray(windPts) ? windPts : await _stormGetWindProm();
+            tornadoPts = Array.isArray(tornadoPts) ? tornadoPts : await _stormGetTornadoProm();
+            _stormTiming.reportFetchMs += Date.now() - reportFetchStartedAt;
+            if (_stormIsCanceled()) return;
+
+            points = Array.isArray(points) ? points : [];
+            windPts = Array.isArray(windPts) ? windPts : [];
+            tornadoPts = Array.isArray(tornadoPts) ? tornadoPts : [];
+            mapsState.lsrPointsByDate[dateStr] = points;
+            mapsState.windPointsByDate[dateStr] = windPts;
+            mapsState.tornadoPointsByDate[dateStr] = tornadoPts;
+            cachedDateData.points = points;
+            cachedDateData.windPts = windPts;
+            cachedDateData.tornadoPts = tornadoPts;
+            if (Array.isArray(rows)) {
+              cachedDateData.meshRows = rows;
+              mapsSetCachedStormSwaths(dateStr, {
+                rows: rows,
+                savedPolys: Array.isArray(cachedDateData.savedPolys) ? cachedDateData.savedPolys : [],
+                sourceName: drawResult && drawResult.src ? drawResult.src : 'storm_polygons'
+              }, rows.length === 0 && points.length === 0 && windPts.length === 0 && tornadoPts.length === 0);
+            }
+            mapsSetCachedStormDateData(dateStr, cachedDateData);
+
+            mapsState._drawComplete[dateStr] = true;
+            mapsRememberVisibleStormDate(dateStr);
+            _stormSetStatus(_stormBuildStatusText(drawResult.swathN, drawResult.src, points, windPts, tornadoPts, cachedLabel), false);
+            _stormLogSummary(rows, points, windPts, tornadoPts, drawResult.fitResult);
+            _stormLogTiming();
+            console.log('[loadStormDate] complete ' + dateStr + ' in ' + (Date.now() - _stormClickT0) + 'ms');
+          }
+
+          if (cachedSwathData && Array.isArray(cachedSwathData.rows) && cachedSwathData.rows.length) {
+            console.log('[loadStormDate] swaths from cache', dateStr);
+            console.log('[loadStormDate] swath source', cachedSwathData.sourceName || 'stormSwathCache', 'rows', cachedSwathData.rows.length);
+            cachedDateData.savedPolys = Array.isArray(cachedSwathData.savedPolys) ? cachedSwathData.savedPolys : (Array.isArray(cachedDateData.savedPolys) ? cachedDateData.savedPolys : []);
+            var cachedSwathDraw = await _stormDrawSwathsAndFocus(cachedSwathData.rows);
+            if (cachedSwathDraw.canceled) return;
+            await _stormFinishReports(
+              cachedSwathDraw,
+              cachedSwathData.rows,
+              Array.isArray(cachedDateData.points) ? cachedDateData.points : null,
+              Array.isArray(cachedDateData.windPts) ? cachedDateData.windPts : null,
+              Array.isArray(cachedDateData.tornadoPts) ? cachedDateData.tornadoPts : null,
+              true
+            );
+            return;
+          }
+
+          if (Array.isArray(cachedDateData.meshRows) && cachedDateData.meshRows.length) {
+            console.log('[loadStormDate] using cache', dateStr);
+            console.log('[loadStormDate] swath source', cachedDateData.swathSourceName || 'stormDateDataCache', 'rows', cachedDateData.meshRows.length);
+            mapsSetCachedStormSwaths(dateStr, {
+              rows: cachedDateData.meshRows,
+              savedPolys: Array.isArray(cachedDateData.savedPolys) ? cachedDateData.savedPolys : [],
+              sourceName: cachedDateData.swathSourceName || 'stormDateDataCache'
+            }, false);
+            var cachedDraw = await _stormDrawSwathsAndFocus(cachedDateData.meshRows);
+            if (cachedDraw.canceled) return;
+            await _stormFinishReports(
+              cachedDraw,
+              cachedDateData.meshRows,
+              Array.isArray(cachedDateData.points) ? cachedDateData.points : null,
+              Array.isArray(cachedDateData.windPts) ? cachedDateData.windPts : null,
+              Array.isArray(cachedDateData.tornadoPts) ? cachedDateData.tornadoPts : null,
+              true
+            );
+            return;
+          }
+
+          var cachedRows = mapsState.rawStormRows && mapsState.rawStormRows[dateStr] && mapsState.rawStormRows[dateStr].length > 0
+            ? mapsState.rawStormRows[dateStr]
+            : null;
+          var savedPolyProm = Array.isArray(cachedDateData.savedPolys) && cachedDateData.savedPolys.length
+            ? Promise.resolve(cachedDateData.savedPolys)
+            : cachedRows
+            ? Promise.resolve(cachedRows)
+            : fetchStormPolygonsByDate(dateStr).catch(function (err) {
+                _stormWarnFailure(err);
+                console.warn('[mapsDrawDate] storm_polygons fetch failed for ' + dateStr + ':', err && err.message || err);
+                return [];
+              });
+
+          var swathFetchStartedAt = Date.now();
+          var savedPolys = await savedPolyProm;
+          _stormTiming.swathFetchMs = Date.now() - swathFetchStartedAt;
+          if (_stormIsCanceled()) return;
+
+          savedPolys = Array.isArray(savedPolys) ? savedPolys : [];
+          cachedDateData.savedPolys = savedPolys;
+
+          var points = Array.isArray(cachedDateData.points) ? cachedDateData.points : null;
+          var windPts = Array.isArray(cachedDateData.windPts) ? cachedDateData.windPts : null;
+          var tornadoPts = Array.isArray(cachedDateData.tornadoPts) ? cachedDateData.tornadoPts : null;
+          var rows = null;
+          var swathSourceName = cachedRows ? 'storm_polygons_memory' : 'storm_polygons';
+
+          if (savedPolys.length) {
+            rows = savedPolys;
+          } else {
+            var neededReportFetchStartedAt = Date.now();
+            points = Array.isArray(points) ? points : await _stormGetPointsProm();
+            windPts = Array.isArray(windPts) ? windPts : await _stormGetWindProm();
+            tornadoPts = Array.isArray(tornadoPts) ? tornadoPts : await _stormGetTornadoProm();
+            _stormTiming.reportFetchMs += Date.now() - neededReportFetchStartedAt;
+            if (_stormIsCanceled()) return;
+            points = Array.isArray(points) ? points : [];
+            windPts = Array.isArray(windPts) ? windPts : [];
+            tornadoPts = Array.isArray(tornadoPts) ? tornadoPts : [];
+            mapsState.lsrPointsByDate[dateStr] = points;
+            mapsState.windPointsByDate[dateStr] = windPts;
+            mapsState.tornadoPointsByDate[dateStr] = tornadoPts;
+            cachedDateData.points = points;
+            cachedDateData.windPts = windPts;
+            cachedDateData.tornadoPts = tornadoPts;
+            rows = await ensureMeshRows(dateStr, points, windPts, tornadoPts, savedPolys);
+            swathSourceName = rows && rows.length ? 'synthesized_from_reports' : 'no_swaths';
+          }
+
+          if (_stormIsCanceled()) return;
+
+          rows = Array.isArray(rows) ? rows : [];
+          cachedDateData.meshRows = rows;
+          cachedDateData.swathSourceName = swathSourceName;
+          console.log('[loadStormDate] swath source', swathSourceName, 'rows', rows.length);
+          mapsSetCachedStormSwaths(dateStr, {
+            rows: rows,
+            savedPolys: savedPolys,
+            sourceName: swathSourceName
+          }, rows.length === 0 && (!points || !points.length) && (!windPts || !windPts.length) && (!tornadoPts || !tornadoPts.length));
+          mapsSetCachedStormDateData(dateStr, cachedDateData);
+
+          var drawResult = await _stormDrawSwathsAndFocus(rows);
+          if (drawResult.canceled) return;
+
+          await _stormFinishReports(
+            drawResult,
+            rows,
+            points,
+            windPts,
+            tornadoPts,
+            false
+          );
+        })().catch(function (err) {
+          _stormWarnFailure(err);
+          console.warn('[mapsDrawDate] failed for ' + dateStr + ':', err && err.message || err);
+          _stormSetStatus('Could not load storm date.', true);
+        }).finally(function () {
+          _stormFinishLoad();
+        });
+        return;
+      }
       var _perfStart = performance.now();
+      var App = mapsGetAppState();
       dateStr = mapsNormalizeDate(dateStr);
+      if (App.currentVisibleStormDate === dateStr && App.activeStormOverlays && App.activeStormOverlays.length) {
+        console.log('[loadStormDate] already visible', dateStr);
+        return;
+      }
+      if (App.currentStormDateLoading === dateStr) {
+        console.log('[loadStormDate] duplicate ignored', dateStr);
+        return;
+      }
+      if (App.currentStormDateLoading && App.currentStormDateLoading !== dateStr) {
+        App.pendingStormDateLoad = dateStr;
+        console.log('[loadStormDate] queued', dateStr);
+        return;
+      }
+      App.currentStormDateLoading = dateStr;
       // Mint a per-date draw token so in-flight async work can detect superseded renders
       mapsState._drawCancelToken = mapsState._drawCancelToken || {};
       var _drawToken = (mapsState._drawCancelToken[dateStr] = Date.now() + Math.random());
       var statusEl = document.getElementById('maps-storm-status');
+      var _dateClickWarned = false;
+      var _loadGuardFinished = false;
+
+      function finishCurrentStormDateLoad() {
+        if (_loadGuardFinished) return;
+        _loadGuardFinished = true;
+        if (App.currentStormDateLoading === dateStr) {
+          App.currentStormDateLoading = null;
+        }
+        if (App.pendingStormDateLoad && App.pendingStormDateLoad !== dateStr) {
+          var pendingDate = App.pendingStormDateLoad;
+          App.pendingStormDateLoad = null;
+          setTimeout(function () { mapsDrawDate(pendingDate); }, 0);
+        } else if (App.pendingStormDateLoad === dateStr) {
+          App.pendingStormDateLoad = null;
+        }
+      }
+
+      function warnStormDateClickFailure(error) {
+        if (_dateClickWarned) return;
+        _dateClickWarned = true;
+        console.warn('[stormDateClick] failed to load date', dateStr, error);
+      }
 
       function drawEmergencyOnDemandFallback(result, points, windPts, tornadoPts) {
         console.log('[MISSING-POLYS] ' + dateStr + ': 0 saved storm_polygons, ' + points.length + ' hail pts — trying on-demand swath-render');
@@ -15412,6 +16485,12 @@
           result.skipBlobFallback = true;
           result.swathSource = 'on_demand_no_corridors';
           finishDraw(result, dateStr, points, statusEl, windPts, tornadoPts);
+        }).catch(function (err) {
+          warnStormDateClickFailure(err);
+          console.warn('[mapsDrawDate] on-demand fallback failed for ' + dateStr + ':', err && err.message || err);
+          result.skipBlobFallback = true;
+          result.swathSource = 'on_demand_error';
+          finishDraw(result, dateStr, points, statusEl, windPts, tornadoPts);
         });
       }
 
@@ -15425,19 +16504,20 @@
           rebuildVisibleStormOverlays();
           applySwathToggles(dateStr);
           fitMapToStormDate(dateStr);
+          mapsRememberVisibleStormDate(dateStr);
           var _cp = (mapsState.lsrPointsByDate[dateStr] || []).length;
           var _wp = (mapsState.windPointsByDate[dateStr] || []).length;
           var _tp = (mapsState.tornadoPointsByDate[dateStr] || []).length;
           var _sn = mapsState.swathPolygons[dateStr] ? mapsState.swathPolygons[dateStr].length : 0;
           var _src = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || 'cached';
-          var _fitCached = !!mapsState._fitBoundsCache[dateStr];
-          console.log('[PERF] ' + dateStr + ' | cache=HIT | fetch=skip | redraw=skip | fitBounds=' + (_fitCached ? 'cached' : 'recomputed') + ' | time=' + (performance.now() - _perfStart).toFixed(1) + 'ms');
           var _parts = [];
           if (_sn) _parts.push(_sn + ' ' + _src + ' overlay' + (_sn === 1 ? '' : 's'));
           if (_cp) _parts.push(_cp + ' hail report' + (_cp === 1 ? '' : 's'));
           if (_wp) _parts.push(_wp + ' wind report' + (_wp === 1 ? '' : 's'));
           if (_tp) _parts.push(_tp + ' tornado report' + (_tp === 1 ? '' : 's'));
           statusEl.textContent = dateStr + ': ' + (_parts.length ? _parts.join(' + ') : 'no data') + ' (cached).';
+          console.log('[loadStormDate] loaded ' + dateStr + ' in ' + (performance.now() - _perfStart).toFixed(1) + 'ms');
+          finishCurrentStormDateLoad();
           return;
         }
       }
@@ -15458,6 +16538,7 @@
         rebuildVisibleStormOverlays();
         applySwathToggles(dateStr);
         fitMapToStormDate(dateStr);
+        mapsRememberVisibleStormDate(dateStr);
         var _cachedSrc = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || 'saved';
         var _cachedN = mapsState.swathPolygons[dateStr] ? mapsState.swathPolygons[dateStr].length : 0;
         var _cachedClN = (mapsState.swathCenterlines[dateStr] && mapsState.swathCenterlines[dateStr].length) || 0;
@@ -15471,35 +16552,38 @@
         if (_wb) _overlayParts.push(_wb + ' wind band' + (_wb === 1 ? '' : 's'));
         if (_tb) _overlayParts.push(_tb + ' tornado band' + (_tb === 1 ? '' : 's'));
         if (!_overlayParts.length) _overlayParts.push('overlays');
-        console.log('[PERF] ' + dateStr + ' | cache=HIT(saved swath) | fetch=skip | redraw=skip | fitBounds=reuse | time=' + (performance.now() - _perfStart).toFixed(1) + 'ms');
         statusEl.textContent = dateStr + ': ' + _overlayParts.join(' + ') + ' (cached).';
+        console.log('[loadStormDate] loaded ' + dateStr + ' in ' + (performance.now() - _perfStart).toFixed(1) + 'ms');
+        finishCurrentStormDateLoad();
         return;
       }
 
-      // Diagnostic: why this date is a cache miss
-      var _missReason = [];
-      if (!mapsState._drawComplete[dateStr]) _missReason.push('never-drawn');
-      if (needPoints) _missReason.push('no-cached-points');
-      if (needSwath && !hasSavedSwathOverlays) _missReason.push('no-saved-swath-overlays');
-      console.log('[PERF] ' + dateStr + ' | cache=MISS | reason=' + (_missReason.join('+') || 'unknown') +
-        ' | needSwath=' + needSwath + ' | needPoints=' + needPoints + ' | hasSavedSwathOverlays=' + hasSavedSwathOverlays);
+      var cachedDateData = mapsGetCachedStormDateData(dateStr);
+      if (cachedDateData) {
+        console.log('[loadStormDate] using cached data', dateStr);
+      }
 
       // 1) Geometry fetch — storm_polygons table; reuse cached rows if available
       var cachedRows = mapsState.rawStormRows && mapsState.rawStormRows[dateStr] && mapsState.rawStormRows[dateStr].length > 0
         ? mapsState.rawStormRows[dateStr] : null;
-      var savedPolyProm = cachedRows
-        ? (console.log('[mapsDrawDate] ' + dateStr + ' storm_polygons CACHE HIT (' + cachedRows.length + ' rows)'), Promise.resolve(cachedRows))
-        : fetchStormPolygonsByDate(dateStr);
+      var savedPolyProm = cachedDateData && Array.isArray(cachedDateData.savedPolys)
+        ? Promise.resolve(cachedDateData.savedPolys)
+        : cachedRows
+        ? Promise.resolve(cachedRows)
+        : fetchStormPolygonsByDate(dateStr).catch(function (err) {
+            warnStormDateClickFailure(err);
+            console.warn('[mapsDrawDate] storm_polygons fetch failed for ' + dateStr + ':', err && err.message || err);
+            return [];
+          });
 
       // 2) Point fetch: LSR detail first, summary (hail_reports) fallback
-      var pointsProm = needPoints
+      var pointsProm = cachedDateData && Array.isArray(cachedDateData.points)
+        ? Promise.resolve(cachedDateData.points)
+        : needPoints
         ? fetchLsrPointsByDate(dateStr)
             .then(function (pts) {
-              console.log('[mapsDrawDate] ' + dateStr + ' LSR detail: ' + ((pts && pts.length) || 0));
               if (pts && pts.length) return pts;
-              console.log('[mapsDrawDate] ' + dateStr + ' no LSR detail, trying hail_reports…');
               return fetchHailReportsByDate(dateStr).then(function (fb) {
-                console.log('[mapsDrawDate] ' + dateStr + ' hail_reports: ' + ((fb && fb.length) || 0));
                 return (fb && fb.length) ? fb : [];
               });
             })
@@ -15507,7 +16591,6 @@
               console.warn('[mapsDrawDate] ' + dateStr + ' LSR error, trying hail_reports…', err && err.message || err);
               return fetchHailReportsByDate(dateStr)
                 .then(function (fb) {
-                  console.log('[mapsDrawDate] ' + dateStr + ' hail_reports after error: ' + ((fb && fb.length) || 0));
                   return (fb && fb.length) ? fb : [];
                 })
                 .catch(function () { return []; });
@@ -15516,7 +16599,15 @@
 
       // 3) HailTrace swath probe (parallel with polygon/point fetches)
       //    Gated by ENABLE_HAILTRACE flag — disabled while nexrad_iem is primary source.
-      var htProm = ENABLE_HAILTRACE ? fetchHailTraceSwath(dateStr) : Promise.resolve({});
+      var htProm = cachedDateData && cachedDateData.htResult
+        ? Promise.resolve(cachedDateData.htResult)
+        : ENABLE_HAILTRACE
+        ? fetchHailTraceSwath(dateStr).catch(function (err) {
+            warnStormDateClickFailure(err);
+            console.warn('[mapsDrawDate] hailtrace fetch failed for ' + dateStr + ':', err && err.message || err);
+            return {};
+          })
+        : Promise.resolve({});
 
       // 4) Wind/tornado point fetches (parallel, only if date has those types)
       var LSR_ALWAYS_FETCH_CUTOFF = '2015-01-01';
@@ -15524,50 +16615,55 @@
       var dateTypes = mapsState.dateEventTypes[dateStr] || [];
       var hasWind = dateTypes.indexOf('wind') !== -1;
       var hasTornado = dateTypes.indexOf('tornado') !== -1;
-      console.log('[LSR-DEBUG] ' + dateStr + ' hasWind=' + hasWind + ' hasTornado=' + hasTornado + ' alwaysFetch=' + alwaysFetch + ' cached=' + !!mapsState.windPointsByDate[dateStr]);
-      var windProm = (hasWind || alwaysFetch) && !mapsState.windPointsByDate[dateStr]
-        ? fetchStormLsrByDate(dateStr, 'wind').then(function(r){ console.log('[LSR-FETCH] wind result for ' + dateStr + ':', r ? r.length : 0, 'pts'); mapsState.windPointsByDate[dateStr] = r || []; return mapsState.windPointsByDate[dateStr]; })
+      var windProm = cachedDateData && Array.isArray(cachedDateData.windPts)
+        ? Promise.resolve(cachedDateData.windPts)
+        : (hasWind || alwaysFetch) && !mapsState.windPointsByDate[dateStr]
+        ? fetchStormLsrByDate(dateStr, 'wind').then(function(r){ mapsState.windPointsByDate[dateStr] = r || []; return mapsState.windPointsByDate[dateStr]; }).catch(function (err) { warnStormDateClickFailure(err); console.warn('[mapsDrawDate] wind LSR fetch failed for ' + dateStr + ':', err && err.message || err); return []; })
         : Promise.resolve(mapsState.windPointsByDate[dateStr] || []);
-      var tornadoProm = (hasTornado || alwaysFetch) && !mapsState.tornadoPointsByDate[dateStr]
-        ? fetchStormLsrByDate(dateStr, 'tornado').then(function(r){ console.log('[LSR-FETCH] tornado result for ' + dateStr + ':', r ? r.length : 0, 'pts'); mapsState.tornadoPointsByDate[dateStr] = r || []; return mapsState.tornadoPointsByDate[dateStr]; })
+      var tornadoProm = cachedDateData && Array.isArray(cachedDateData.tornadoPts)
+        ? Promise.resolve(cachedDateData.tornadoPts)
+        : (hasTornado || alwaysFetch) && !mapsState.tornadoPointsByDate[dateStr]
+        ? fetchStormLsrByDate(dateStr, 'tornado').then(function(r){ mapsState.tornadoPointsByDate[dateStr] = r || []; return mapsState.tornadoPointsByDate[dateStr]; }).catch(function (err) { warnStormDateClickFailure(err); console.warn('[mapsDrawDate] tornado LSR fetch failed for ' + dateStr + ':', err && err.message || err); return []; })
         : Promise.resolve(mapsState.tornadoPointsByDate[dateStr] || []);
 
       // 5) Resolve all, draw in priority order — per-date only
       Promise.all([savedPolyProm, pointsProm, htProm, windProm, tornadoProm]).then(function (res) {
-        var _t_fetchRows = performance.now();
-        console.log('[perf] date=' + dateStr + ' step=fetch-rows ms=' + (_t_fetchRows - _perfStart).toFixed(1));
-
         var savedPolys  = res[0] || [];
         var points      = res[1] || [];
+        var htResult    = res[2] || {};
         var windPts     = res[3] || [];
         var tornadoPts  = res[4] || [];
 
         // Cancel if a newer click has superseded this one
         if (mapsState._drawCancelToken && mapsState._drawCancelToken[dateStr] !== _drawToken) {
-          console.log('[perf] date=' + dateStr + ' step=CANCELED by newer click');
           return;
         }
 
         mapsState.lsrPointsByDate[dateStr] = points;
         mapsState.windPointsByDate[dateStr] = windPts;
         mapsState.tornadoPointsByDate[dateStr] = tornadoPts;
-        console.log('[mapsDrawDate] ' + dateStr + ' fetch done — saved:' + savedPolys.length +
-          ' hailPts:' + points.length + ' windPts:' + windPts.length + ' tornadoPts:' + tornadoPts.length);
+        if (!cachedDateData) {
+          cachedDateData = {
+            savedPolys: savedPolys,
+            points: points,
+            htResult: htResult,
+            windPts: windPts,
+            tornadoPts: tornadoPts
+          };
+        }
 
         // ── Unified renderer: all dates → ensureMeshRows → mapsDrawSavedStormPolygonForDate ──
-        var _t_ingestStart = performance.now();
-        ensureMeshRows(dateStr, points, windPts, tornadoPts, savedPolys).then(function(rows) {
-          var _t_ingestEnd = performance.now();
-          console.log('[perf] date=' + dateStr + ' step=ingest-mrms-or-synthesize ms=' + (_t_ingestEnd - _t_ingestStart).toFixed(1));
-
+        var rowsProm = cachedDateData && Array.isArray(cachedDateData.meshRows)
+          ? Promise.resolve(cachedDateData.meshRows)
+          : ensureMeshRows(dateStr, points, windPts, tornadoPts, savedPolys);
+        return rowsProm.then(function(rows) {
           // Cancel check after async ingest
           if (mapsState._drawCancelToken && mapsState._drawCancelToken[dateStr] !== _drawToken) {
-            console.log('[perf] date=' + dateStr + ' step=CANCELED after ingest');
             return;
           }
+          cachedDateData.meshRows = Array.isArray(rows) ? rows : [];
+          mapsSetCachedStormDateData(dateStr, cachedDateData);
 
-          var _prevPolys = mapsState.swathPolygons[dateStr];
-          var _prevCount = _prevPolys ? _prevPolys.length : 0;
           mapsRemoveAiSwathForDate(dateStr);
           mapsRemoveHailFieldForDate(dateStr);
           mapsRemoveHailBandsForDate(dateStr);
@@ -15575,20 +16671,19 @@
           mapsRemoveTornadoBandsForDate(dateStr);
           mapsRemovePointsForDate(dateStr);
           mapsRemoveRefSwathForDate(dateStr);
-          console.log('[perf] date=' + dateStr + ' removed-prev-polygons=' + _prevCount);
 
-          var _t_drawStart = performance.now();
           var drew = mapsDrawSavedStormPolygonForDate(dateStr, rows);
-          var _t_drawEnd = performance.now();
-          console.log('[perf] date=' + dateStr + ' step=add-polygons-to-map ms=' + (_t_drawEnd - _t_drawStart).toFixed(1));
+          var _drawStats = (mapsState._savedDrawQuality || {})[dateStr] || {};
+          console.log('[loadStormDate] date', dateStr, {
+            polygonsLoaded: Number(_drawStats.polygonsLoaded || rows.length || 0),
+            polygonsDrawn: Number(_drawStats.polygonsDrawn || 0),
+            hailReportsLoaded: points.length,
+            windReportsLoaded: windPts.length,
+            tornadoReportsLoaded: tornadoPts.length
+          });
 
           var src = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || 'none';
           var swathN = mapsState.swathPolygons[dateStr] ? mapsState.swathPolygons[dateStr].length : 0;
-          console.log('[canonical-render] date=' + dateStr +
-            ' entry-function=mapsDrawSavedStormPolygonForDate' +
-            ' source-of-rows=' + src +
-            ' row-count=' + rows.length);
-
           var extraTypes = [];
           if (windPts.length) extraTypes.push(windPts.length + ' wind report' + (windPts.length === 1 ? '' : 's'));
           if (tornadoPts.length) extraTypes.push(tornadoPts.length + ' tornado report' + (tornadoPts.length === 1 ? '' : 's'));
@@ -15600,18 +16695,17 @@
             statusEl.textContent = dateStr + ': no storm polygons (' + points.length + ' hail + ' + windPts.length + ' wind + ' + tornadoPts.length + ' tornado reports)';
           }
           mapsState._drawComplete[dateStr] = true;
-          var _t_fitStart = performance.now();
           fitMapToStormDate(dateStr);
-          var _t_fitEnd = performance.now();
-          console.log('[perf] date=' + dateStr + ' step=fit-bounds ms=' + (_t_fitEnd - _t_fitStart).toFixed(1));
-          console.log('[perf] date=' + dateStr + ' step=TOTAL ms=' + (_t_fitEnd - _perfStart).toFixed(1));
-          console.log('[mapsDrawDate] DONE date=' + dateStr + ' src=' + src + ' polys=' + swathN + ' ms=' + (_t_fitEnd - _perfStart).toFixed(0));
+          mapsRememberVisibleStormDate(dateStr);
+          console.log('[loadStormDate] drew ' + swathN + ' polygons, ' + points.length + ' hail reports, ' + windPts.length + ' wind reports, ' + tornadoPts.length + ' tornado reports');
+          console.log('[loadStormDate] loaded ' + dateStr + ' in ' + (performance.now() - _perfStart).toFixed(1) + 'ms');
         }).catch(function(err) {
+          warnStormDateClickFailure(err);
           console.warn('[mapsDrawDate] ensureMeshRows error for ' + dateStr + ':', err && err.message || err);
           statusEl.className = 'maps-status-msg error';
-          statusEl.textContent = dateStr + ': render error – ' + (err && err.message || err);
+          statusEl.textContent = 'Could not load storm date.';
         });
-        return; // unified-renderer: old priority logic below is dead
+        // unified-renderer: old priority logic below is dead
 
         // ── Per-date debug diagnostics (guardrail logging) ──
         var _cachedReused = !!(cachedRows && cachedRows.length);
@@ -15789,7 +16883,9 @@
       }).catch(function (err) {
         console.warn('[mapsDrawDate] ' + dateStr + ' pipeline error:', err);
         statusEl.className = 'maps-status-msg error';
-        statusEl.textContent = dateStr + ': fetch failed – ' + (err.message || err);
+        statusEl.textContent = 'Could not load storm date.';
+      }).finally(function () {
+        finishCurrentStormDateLoad();
       });
     }
 
@@ -16039,6 +17135,143 @@
       });
     }
 
+    function parseSearchDate(val) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+
+      var mdy = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (mdy) return mdy[3] + '-' + mdy[1].padStart(2, '0') + '-' + mdy[2].padStart(2, '0');
+
+      var mdyShort = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+      if (mdyShort) return '20' + mdyShort[3] + '-' + mdyShort[1].padStart(2, '0') + '-' + mdyShort[2].padStart(2, '0');
+
+      return null;
+    }
+
+    function mapsSyncStormTypeButtons() {
+      var wrap = document.getElementById('stormTypeButtons');
+      if (!wrap) return;
+      var buttons = wrap.querySelectorAll('.maps-panel-storm-type-btn');
+      for (var i = 0; i < buttons.length; i++) {
+        var type = buttons[i].getAttribute('data-type');
+        buttons[i].classList.toggle('active', !!(mapsState.swathToggles && mapsState.swathToggles[type]));
+      }
+    }
+
+    function mapsWireStormTypeButtons() {
+      var wrap = document.getElementById('stormTypeButtons');
+      if (!wrap) return;
+      var buttons = wrap.querySelectorAll('.maps-panel-storm-type-btn');
+      for (var i = 0; i < buttons.length; i++) {
+        (function (btn) {
+          btn.addEventListener('click', function () {
+            var type = btn.getAttribute('data-type');
+            var existingBtn = document.getElementById('maps-toggle-' + type);
+            if (existingBtn) {
+              existingBtn.click();
+            } else if (mapsState.swathToggles) {
+              mapsState.swathToggles[type] = !mapsState.swathToggles[type];
+              applySwathToggles();
+            }
+            mapsSyncStormTypeButtons();
+          });
+        })(buttons[i]);
+      }
+      mapsSyncStormTypeButtons();
+    }
+
+    function mapsWireStormSearch() {
+      var input = document.getElementById('stormSearchInput');
+      var errorEl = document.getElementById('stormSearchError');
+      if (!input || !errorEl) return;
+
+      function setError(message) {
+        errorEl.textContent = message || '';
+        errorEl.className = message ? 'maps-storm-search-error error' : 'maps-storm-search-error';
+      }
+
+      input.addEventListener('input', function () {
+        setError('');
+      });
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        var val = (input.value || '').trim();
+        if (!val) return;
+
+        setError('');
+        var normalized = parseSearchDate(val);
+        if (normalized) {
+          loadStormDate(normalized);
+          input.value = '';
+          return;
+        }
+
+        if (!(window.google && google.maps && google.maps.Geocoder && mapsState.map)) {
+          setError('Search is not available right now.');
+          return;
+        }
+
+        var geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: val }, function (results, status) {
+          if (status === 'OK' && results && results[0]) {
+            var location = results[0].geometry && results[0].geometry.location;
+            if (!location) {
+              setError('No matching property or storm date found.');
+              return;
+            }
+
+            mapsState.map.setCenter(location);
+            mapsState.map.setZoom(18);
+
+            if (!window._mapsSearchMarker) {
+              window._mapsSearchMarker = new google.maps.Marker({
+                map: mapsState.map,
+                icon: {
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 8,
+                  fillColor: '#D4952E',
+                  fillOpacity: 1,
+                  strokeColor: '#fff',
+                  strokeWeight: 2
+                },
+                zIndex: 320
+              });
+            }
+            window._mapsSearchMarker.setPosition(location);
+            window._mapsSearchMarker.setMap(mapsState.map);
+
+            mapsState.selectedProperty = {
+              lat: location.lat(),
+              lng: location.lng(),
+              address: results[0].formatted_address || val,
+              title: (results[0].formatted_address || val).split(',')[0] || 'Selected Property'
+            };
+            ppOpen(mapsState.selectedProperty);
+            input.value = results[0].formatted_address || val;
+            setError('');
+          } else {
+            console.warn('[stormSearch] geocode failed:', status);
+            setError('No matching property or storm date found.');
+          }
+        });
+      });
+    }
+
+    function mapsWireMapStyleCtrl() {
+      var select = document.getElementById('mapStyleSelect');
+      if (!select) return;
+      if (mapsState.map && typeof mapsState.map.getMapTypeId === 'function') {
+        select.value = mapsState.map.getMapTypeId() || 'hybrid';
+        mapsState.map.addListener('maptypeid_changed', function () {
+          select.value = mapsState.map.getMapTypeId() || 'hybrid';
+        });
+      }
+      select.addEventListener('change', function () {
+        if (!mapsState.map) return;
+        mapsState.map.setMapTypeId(select.value);
+      });
+    }
+
     function mapsUpdateDownloadBtn() {
       var btn = document.getElementById('maps-download-btn');
       var n = mapsState.pinnedDates.length;
@@ -16082,11 +17315,21 @@
 
     // ── Swath Opacity Control ──
     function mapsWireOpacityCtrl() {
+      var App = mapsGetAppState();
       var btn = document.getElementById('maps-opacity-btn');
       var wrap = document.getElementById('maps-opacity-slider-wrap');
       var slider = document.getElementById('maps-opacity-slider');
       var valEl = document.getElementById('maps-opacity-val');
       if (!btn || !slider) return;
+
+      // Inverse of power curve: slider = opacity^(1/2.2) * 100
+      slider.value = Math.round(Math.pow(mapsState.swathOpacity, 1 / 2.2) * 100);
+      valEl.textContent = slider.value + '%';
+
+      if (App.mapsOpacityCtrlBound) {
+        return;
+      }
+      App.mapsOpacityCtrlBound = true;
 
       btn.addEventListener('click', function () {
         wrap.classList.toggle('open');
@@ -16096,68 +17339,17 @@
         locBtn.addEventListener('click', mapsHandleMyLocation);
       }
 
-      // Inverse of power curve: slider = opacity^(1/2.2) * 100
-      slider.value = Math.round(Math.pow(mapsState.swathOpacity, 1 / 2.2) * 100);
-      valEl.textContent = slider.value + '%';
+      var opacityRaf = null;
 
       slider.addEventListener('input', function () {
         // Power-curve remap: slider 50% → visual ~25%, avoids "almost full" in the middle
         var raw = Number(slider.value) / 100;
         var opacity = Math.pow(raw, 2.2);
-        mapsState.swathOpacity = opacity;
         valEl.textContent = slider.value + '%';
-        // Live-update all visible saved swath polygons
-        Object.keys(mapsState.swathPolygons).forEach(function (dateStr) {
-          var polys = mapsState.swathPolygons[dateStr];
-          if (!polys) return;
-          polys.forEach(function (p) {
-            try { p.setOptions({ fillOpacity: opacity, strokeOpacity: Math.min(1, opacity + 0.4) }); } catch (_) {}
-          });
-        });
-        // Live-update all visible AI swath canvas overlays
-        Object.keys(mapsState.aiSwathOverlays).forEach(function (dateStr) {
-          var overlay = mapsState.aiSwathOverlays[dateStr];
-          if (overlay && overlay.canvas_) {
-            try { overlay.draw(); } catch (_) {}
-          }
-        });
-        // Live-update all reference swath map overlays
-        Object.keys(mapsState.refSwathOverlays).forEach(function (dateStr) {
-          var overlay = mapsState.refSwathOverlays[dateStr];
-          if (overlay) {
-            try { overlay.setOpacity(Math.min(1, opacity + 0.3)); } catch (_) {}
-          }
-        });
-        // Live-update all hail field overlays
-        Object.keys(mapsState.hailFieldOverlays).forEach(function (dateStr) {
-          var overlay = mapsState.hailFieldOverlays[dateStr];
-          if (overlay && overlay.canvas_) {
-            try { overlay.draw(); } catch (_) {}
-          }
-        });
-        // Live-update all hail band polygons
-        Object.keys(mapsState.hailBandPolygons).forEach(function (dateStr) {
-          var polys = mapsState.hailBandPolygons[dateStr];
-          if (!polys) return;
-          polys.forEach(function (p, bi) {
-            try { p.setOptions({ fillOpacity: opacity * (0.28 + bi * 0.03) }); } catch (_) {}
-          });
-        });
-        // Live-update all wind band polygons
-        Object.keys(mapsState.windBandPolygons).forEach(function (dateStr) {
-          var polys = mapsState.windBandPolygons[dateStr];
-          if (!polys) return;
-          polys.forEach(function (p, bi) {
-            try { p.setOptions({ fillOpacity: opacity * (0.28 + bi * 0.03) }); } catch (_) {}
-          });
-        });
-        // Live-update all tornado band polygons
-        Object.keys(mapsState.tornadoBandPolygons).forEach(function (dateStr) {
-          var polys = mapsState.tornadoBandPolygons[dateStr];
-          if (!polys) return;
-          polys.forEach(function (p, bi) {
-            try { p.setOptions({ fillOpacity: opacity * (0.28 + bi * 0.03) }); } catch (_) {}
-          });
+        if (opacityRaf) cancelAnimationFrame(opacityRaf);
+        opacityRaf = requestAnimationFrame(function () {
+          mapsApplySwathOpacity(opacity);
+          opacityRaf = null;
         });
       });
     }
@@ -16217,6 +17409,7 @@
           mapsState.swathToggles[type] = !mapsState.swathToggles[type];
           btn.classList.toggle('active', !!mapsState.swathToggles[type]);
           applySwathToggles();
+          mapsSyncStormTypeButtons();
         });
       });
     }
