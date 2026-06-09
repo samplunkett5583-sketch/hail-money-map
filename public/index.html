@@ -17,6 +17,8 @@
       --input: #ffffff;
       --error: #d93025;
       --maps-panel-width: 320px;
+      --maps-panel-max-width: min(var(--maps-panel-width), calc(100vw - 24px));
+      --maps-topbar-h: 52px;
     }
 
     * {
@@ -133,12 +135,32 @@
       right: 0;
       margin: 0;
       z-index: 30;
-      clip-path: inset(0 0 0 var(--maps-panel-width));
-      transition: clip-path 0.2s ease;
+      clip-path: none;
+      min-height: var(--maps-topbar-h);
+      height: var(--maps-topbar-h);
+      padding: 4px 14px;
     }
 
     body.map-page-active .map-header-brand {
-      left: calc(50% + var(--maps-panel-width) / 2);
+      left: 50%;
+    }
+
+    body.map-page-active .app-top-hail-logo {
+      height: 36px;
+      max-width: min(160px, 36vw);
+    }
+
+    body.map-page-active .map-header-title {
+      display: none;
+    }
+
+    body.map-page-active .topbar-left-spacer {
+      min-width: 80px;
+      height: 36px;
+    }
+
+    body.map-page-active .company-logo-slot {
+      height: 36px;
     }
 
     @media (max-width: 700px) {
@@ -154,6 +176,12 @@
       header.topbar {
         min-height: 78px;
         padding: 10px 12px 8px;
+      }
+
+      body.map-page-active header.topbar {
+        min-height: var(--maps-topbar-h);
+        height: var(--maps-topbar-h);
+        padding: 4px 10px;
       }
 
       .topbar-left-spacer {
@@ -1678,16 +1706,63 @@
     }
     .maps-panel {
       position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 36px;
-      width:var(--maps-panel-width); min-width:260px; max-width:min(var(--maps-panel-width), 100vw);
-      background:var(--panel);
-      border-right:1px solid var(--border); display:flex; flex-direction:column;
-      overflow-y:auto; padding:0;
+      top: calc(var(--maps-topbar-h) + 12px);
+      left: 12px;
+      bottom: 48px;
+      width: var(--maps-panel-max-width);
+      min-width: 260px;
+      max-width: var(--maps-panel-max-width);
+      background: rgba(255,255,255,0.94);
+      border: 1px solid rgba(214,219,227,0.96);
+      border-radius: 18px;
+      box-shadow: 0 18px 40px rgba(15,23,42,0.16);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      display:flex; flex-direction:column;
+      overflow-y:auto; overflow-x:hidden; padding:0;
       margin-top: 0;
       z-index:100;
       pointer-events:auto;
+      transition: transform 0.24s ease, box-shadow 0.24s ease;
+    }
+    .maps-panel.is-collapsed {
+      transform: translateX(calc(-100% - 24px));
+      box-shadow: none;
+    }
+    .maps-panel-collapse-tab {
+      position: fixed;
+      top: calc(var(--maps-topbar-h) + 24px);
+      left: calc(12px + var(--maps-panel-max-width) - 6px);
+      width: 34px;
+      height: 56px;
+      border: 1px solid rgba(214,219,227,0.96);
+      border-left: none;
+      border-radius: 0 14px 14px 0;
+      background: rgba(255,255,255,0.96);
+      color: var(--text);
+      font-size: 24px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 101;
+      box-shadow: 0 12px 28px rgba(15,23,42,0.14);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      transition: left 0.24s ease, background 0.15s ease, box-shadow 0.24s ease;
+      pointer-events: auto;
+    }
+    .maps-panel-collapse-tab:hover {
+      background: var(--panel);
+    }
+    .maps-panel.is-collapsed + .maps-panel-collapse-tab {
+      left: 12px;
+      box-shadow: 0 10px 24px rgba(15,23,42,0.12);
+    }
+    .maps-panel.hidden-by-prop + .maps-panel-collapse-tab {
+      opacity: 0;
+      pointer-events: none;
     }
     .maps-panel-header {
       margin-top: 0;
@@ -1897,8 +1972,12 @@
       }
     }
     #page-map .maps-style-ctrl {
-      position:fixed; top:calc(88px + 12px); right:12px; z-index:20;
+      position:fixed; top:calc(var(--maps-topbar-h) + 12px); right:12px; z-index:20;
       pointer-events:auto;
+    }
+    #page-map #stormMap .gm-style-mtc,
+    #page-map #stormMap .gm-style-mtc-bbw {
+      margin-top: calc(var(--maps-topbar-h) + 12px) !important;
     }
     #page-map .maps-style-select {
       min-width:124px; height:36px; padding:0 10px;
@@ -1913,7 +1992,7 @@
       pointer-events:auto;
     }
     #page-map .maps-opacity-ctrl {
-      top:calc(88px + 56px); right:12px; left:auto; z-index:20;
+      top:calc(var(--maps-topbar-h) + 56px); right:12px; left:auto; z-index:20;
       pointer-events:auto;
     }
     .maps-hurricane-ticker {
@@ -2044,14 +2123,18 @@
     .maps-prop-panel {
       display:none;
       position:fixed;
-      top:0;
-      left:0;
-      bottom:36px;
-      width:var(--maps-panel-width);
+      top: calc(var(--maps-topbar-h) + 12px);
+      left: 12px;
+      bottom: 48px;
+      width: var(--maps-panel-max-width);
       min-width:260px;
-      max-width:min(var(--maps-panel-width), 100vw);
-      background:var(--panel);
-      border-right:1px solid var(--border);
+      max-width: var(--maps-panel-max-width);
+      background: rgba(255,255,255,0.94);
+      border: 1px solid rgba(214,219,227,0.96);
+      border-radius: 18px;
+      box-shadow: 0 18px 40px rgba(15,23,42,0.16);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
       flex-direction:column;
       overflow-y:auto;
       margin-top: 0;
@@ -2143,6 +2226,7 @@
 
       .maps-layout { flex-direction:column; height:100vh; overflow:hidden; }
       .maps-panel { display:none; }
+      .maps-panel-collapse-tab { display:none; }
       .maps-map-area { order:-1; flex:1; min-height:0; height:100vh; }
       .maps-mobile-bar {
         display:flex; gap:8px; padding:8px 12px;
@@ -2159,8 +2243,10 @@
       .maps-mobile-drawer .maps-panel-section { padding:10px 14px; border-bottom:1px solid var(--border); }
       .maps-mobile-drawer .maps-panel-section:last-child { border-bottom:none; }
       .maps-prop-card { bottom:100px; top:auto; right:10px; left:10px; width:auto; }
-      #page-map .maps-style-ctrl { top:calc(78px + 10px); right:10px; }
-      #page-map .maps-opacity-ctrl { top:calc(78px + 54px); right:10px; left:auto; }
+      #page-map .maps-style-ctrl { top:calc(var(--maps-topbar-h) + 10px); right:10px; }
+      #page-map #stormMap .gm-style-mtc,
+      #page-map #stormMap .gm-style-mtc-bbw { margin-top: calc(var(--maps-topbar-h) + 10px) !important; }
+      #page-map .maps-opacity-ctrl { top:calc(var(--maps-topbar-h) + 54px); right:10px; left:auto; }
       /* Bottom panel collapse handle */
       .maps-mobile-bar::before {
         content:''; position:absolute; top:-12px; left:50%; transform:translateX(-50%);
@@ -5471,7 +5557,7 @@
       <section id="page-map" class="page">
         <div class="maps-layout">
           <!-- Left Panel -->
-          <div class="maps-panel">
+          <div class="maps-panel" id="maps-storm-panel">
             <div class="maps-panel-header">
               <h1 class="page-title">Map</h1>
               <p>View storms, properties, and inspections.</p>
@@ -5535,6 +5621,7 @@
               <button class="btn" type="button" id="maps-open-campaign" style="margin-top:6px;background:var(--accent-2);color:var(--text);">Open Campaign</button>
             </div>
           </div>
+          <button type="button" id="maps-panel-toggle" class="maps-panel-collapse-tab" aria-controls="maps-storm-panel" aria-expanded="true" title="Collapse storm panel">&#8249;</button>
 
           <!-- Property Panel (replaces left panel when a property is selected) -->
           <div class="maps-prop-panel" id="maps-prop-panel">
@@ -5615,10 +5702,9 @@
             <div id="stormMap" class="maps-map-container"></div>
             <div class="maps-style-ctrl">
               <select id="mapStyleSelect" class="maps-style-select" style="position:relative;z-index:20;pointer-events:auto;">
-                <option value="roadmap">Roadmap</option>
+                <option value="roadmap">Map</option>
                 <option value="satellite">Satellite</option>
                 <option value="hybrid">Hybrid</option>
-                <option value="terrain">Terrain</option>
               </select>
             </div>
             <div class="maps-swath-toggle-ctrl">
@@ -9989,6 +10075,7 @@
       if (!mapsState.ready) {
         mapsInitMap();
         if (!App.mapControlsBound) {
+          mapsWireStormPanelToggle();
           mapsWirePaging();
           mapsWireDatePicker();
           mapsWireDownload();
@@ -10034,6 +10121,49 @@
         mapsState.map.setZoom(sharedViewport.zoom);
         setTimeout(function() { _svSetting = false; }, 300);
       }
+    }
+
+    var MAPS_STORM_PANEL_COLLAPSE_KEY = 'hailMoneyStormPanelCollapsed';
+
+    function mapsWireStormPanelToggle() {
+      var panel = document.getElementById('maps-storm-panel');
+      var toggleBtn = document.getElementById('maps-panel-toggle');
+      if (!panel || !toggleBtn) return;
+
+      function readCollapsedState() {
+        try {
+          var raw = localStorage.getItem(MAPS_STORM_PANEL_COLLAPSE_KEY);
+          return raw === '1' || raw === 'true';
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function writeCollapsedState(collapsed) {
+        try {
+          localStorage.setItem(MAPS_STORM_PANEL_COLLAPSE_KEY, collapsed ? '1' : '0');
+        } catch (_) {}
+      }
+
+      function applyCollapsedState(collapsed, persist) {
+        var isDesktop = window.innerWidth > 768;
+        var useCollapsed = !!collapsed && isDesktop;
+        panel.classList.toggle('is-collapsed', useCollapsed);
+        toggleBtn.innerHTML = useCollapsed ? '&#8250;' : '&#8249;';
+        toggleBtn.title = useCollapsed ? 'Expand storm panel' : 'Collapse storm panel';
+        toggleBtn.setAttribute('aria-expanded', useCollapsed ? 'false' : 'true');
+        if (persist !== false) writeCollapsedState(!!collapsed);
+      }
+
+      applyCollapsedState(readCollapsedState(), false);
+
+      toggleBtn.addEventListener('click', function () {
+        applyCollapsedState(!panel.classList.contains('is-collapsed'), true);
+      });
+
+      window.addEventListener('resize', function () {
+        applyCollapsedState(readCollapsedState(), false);
+      });
     }
 
     // ── Fetch hail band summaries from storm_polygons for all dates ──
@@ -10441,14 +10571,20 @@
       }
     }
 
-    // ── Bright-Hybrid map style (satellite base, enhanced contrast for property work) ──
-    var brightHybridStyles = [
-      { elementType: 'geometry', stylers: [{ lightness: 55 }, { contrast: -15 }, { saturation: 30 }] },
-      { elementType: 'labels.text.fill', stylers: [{ lightness: 40 }] },
-      { elementType: 'labels.text.stroke', stylers: [{ lightness: -5 }] },
-      { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#89ccff' }, { lightness: 50 }, { saturation: 35 }] },
-      { featureType: 'road', elementType: 'geometry', stylers: [{ lightness: 45 }, { saturation: 15 }] },
-      { featureType: 'landscape', elementType: 'geometry', stylers: [{ lightness: 50 }, { saturation: 25 }] }
+    // ── Custom roadmap style for the "Map" base layer; satellite and hybrid stay unstyled ──
+    var hailMoneyRoadmapStyle = [
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#73d7e6" }] },
+      { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#e9f4ea" }] },
+      { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#d7f0df" }] },
+      { featureType: "poi", elementType: "geometry", stylers: [{ color: "#dcefdc" }] },
+      { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#5f6f63" }] },
+      { featureType: "road", elementType: "geometry", stylers: [{ color: "#f5f3e8" }] },
+      { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#d7d2bf" }] },
+      { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#606060" }] },
+      { featureType: "administrative.province", elementType: "geometry.stroke", stylers: [{ color: "#4f5754" }, { weight: 1.1 }] },
+      { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ color: "#3f4b49" }, { weight: 1.3 }] },
+      { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#4d4d4d" }] },
+      { featureType: "transit", stylers: [{ visibility: "off" }] }
     ];
 
     function mapsInitMap() {
@@ -10457,13 +10593,18 @@
       if (!mapEl) return;
 
       mapsState.map = new google.maps.Map(mapEl, {
-        center: { lat: 39.5, lng: -98.35 },
-        zoom: 6,
+        center: { lat: 39.2, lng: -96.0 },
+        zoom: 5,
         mapTypeId: google.maps.MapTypeId.HYBRID,
-        styles: brightHybridStyles,
+        styles: [],
         zoomControl: false,
         streetViewControl: false,
-        mapTypeControl: false,
+        mapTypeControl: true,
+        mapTypeControlOptions: {
+          style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+          position: google.maps.ControlPosition.TOP_CENTER,
+          mapTypeIds: ['roadmap', 'satellite', 'hybrid']
+        },
         fullscreenControl: false,
         rotateControl: false,
         clickableIcons: false,
@@ -10474,6 +10615,14 @@
       var map = mapsState.map;
       App.map = map;
       hmDebugLog('[HMM] native map wheel zoom restored');
+
+      function applyBaseMapStyle() {
+        if (map.getMapTypeId() === 'roadmap') {
+          map.setOptions({ styles: hailMoneyRoadmapStyle });
+        } else {
+          map.setOptions({ styles: [] });
+        }
+      }
 
       var wheelZoomTimeout = null;
       var wheelTargetZoom = null;
@@ -10546,14 +10695,14 @@
         sharedViewport.zoom = map.getZoom();
       });
 
-      // ── Brightness filter (exact old logic) ──
+      // Keep base maps unfiltered so roadmap styling and satellite imagery render normally.
       function applyMapBrightness() {
         try {
           var root = document.getElementById('stormMap');
           if (!root) return;
           var tileLayer = root.querySelector('.gm-style > div > div');
           if (!tileLayer) return;
-          tileLayer.style.filter = 'brightness(1.4) contrast(0.9) saturate(1.1)';
+          tileLayer.style.filter = '';
         } catch (_) {}
       }
 
@@ -10564,42 +10713,8 @@
       google.maps.event.addListener(map, 'maptypeid_changed', applyMapBrightness);
       google.maps.event.addListener(map, 'zoom_changed', function () { setTimeout(applyMapBrightness, 150); });
 
-      // ── Suppress MapType UI ──
-      map.setOptions({ mapTypeControl: false });
-
-      var killMapTypeUI = function () {
-        try {
-          var pos = google.maps.ControlPosition;
-          if (map.controls[pos.TOP_LEFT] && map.controls[pos.TOP_LEFT].clear) map.controls[pos.TOP_LEFT].clear();
-          if (map.controls[pos.LEFT_TOP] && map.controls[pos.LEFT_TOP].clear) map.controls[pos.LEFT_TOP].clear();
-          if (map.controls[pos.TOP_RIGHT] && map.controls[pos.TOP_RIGHT].clear) map.controls[pos.TOP_RIGHT].clear();
-          var mtcs = document.querySelectorAll('.gm-style-mtc');
-          for (var i = 0; i < mtcs.length; i++) mtcs[i].remove();
-        } catch (e) {}
-      };
-
-      killMapTypeUI();
-      google.maps.event.addListenerOnce(map, 'idle', killMapTypeUI);
-      google.maps.event.addListenerOnce(map, 'tilesloaded', killMapTypeUI);
-
-      // Re-apply bright HYBRID on first idle
-      google.maps.event.addListenerOnce(map, 'idle', function () {
-        try {
-          map.setOptions({ mapTypeId: google.maps.MapTypeId.HYBRID, styles: brightHybridStyles });
-        } catch (e) {}
-      });
-
-      // Hard-kill MapType control that reappears
-      (function hardKillMapTypeControl(container) {
-        if (!container) return;
-        var kill = function () {
-          var els = container.querySelectorAll('.gm-style-mtc, .gm-style .gm-style-mtc');
-          for (var i = 0; i < els.length; i++) els[i].remove();
-        };
-        kill();
-        var observer = new MutationObserver(function () { kill(); });
-        observer.observe(container, { childList: true, subtree: true });
-      })(mapEl);
+      map.addListener('maptypeid_changed', applyBaseMapStyle);
+      applyBaseMapStyle();
 
       // ── Map click → property left panel only (no InfoWindow, no bottom-right card) ──
       var _mapClickInfoWindow = null; // kept for backward compat close calls
@@ -10942,7 +11057,8 @@
       if (hailIn >= 2.25) return [229,  57,  53, 0.80]; // #e53935 red
       if (hailIn >= 1.75) return [255, 143,   0, 0.75]; // #ff8f00 orange
       if (hailIn >= 1.25) return [255, 202,  40, 0.70]; // #ffca28 yellow-orange
-      return                     [255, 241, 118, 0.65]; // #fff176 pale yellow (outer/light)
+      if (hailIn >= 1.00) return [255, 228,  50, 0.65]; // #ffe432 yellow (1.00"–1.25" outer)
+      return                     [239, 233, 140, 0.35]; // #efe98c pale yellow, 35% opacity
     }
 
     // ── Wind severity → soft blue ramp ──
@@ -11364,9 +11480,286 @@
       return left.concat(right);
     }
 
-    // ── Corridor fallback — stubbed: all rendering now unified through mapsDrawSavedStormPolygonForDate ──
+    // ── Hail envelope: wide polyline stripes drawn over all saved polygon cells ──
+    // Uses screen-pixel strokeWeight so it's always visible regardless of zoom.
+    // Draws above saved polygon cells (z=500+) to produce broad storm-track swaths.
+    function _drawHailEnvelope(dateStr, rows, hailPts) {
+      if (!mapsState.map) return;
+
+      // Build point cloud. Priority: computed bbox centers from polygon_geojson (always present),
+      // then stored centroid_lat/lon, then raw LSR hail reports.
+      var rawPts = [];
+
+      (rows || []).forEach(function(r) {
+        var clat = NaN, clon = NaN;
+
+        // 1. Try stored centroid
+        var sc = +r.centroid_lat, sn = +r.centroid_lon;
+        if (isFinite(sc) && isFinite(sn)) { clat = sc; clon = sn; }
+
+        // 2. Fall back: compute bbox midpoint from polygon_geojson
+        if (!isFinite(clat)) {
+          try {
+            var gj = r.polygon_geojson || r.geometry;
+            if (gj) {
+              var ring = null;
+              if (gj.type === 'Polygon' && gj.coordinates && gj.coordinates[0]) {
+                ring = gj.coordinates[0];
+              } else if (gj.type === 'MultiPolygon' && gj.coordinates && gj.coordinates[0] && gj.coordinates[0][0]) {
+                ring = gj.coordinates[0][0];
+              }
+              if (ring && ring.length) {
+                var minLa = Infinity, maxLa = -Infinity, minLo = Infinity, maxLo = -Infinity;
+                for (var ri = 0; ri < ring.length; ri++) {
+                  var lo = ring[ri][0], la = ring[ri][1];
+                  if (la < minLa) minLa = la; if (la > maxLa) maxLa = la;
+                  if (lo < minLo) minLo = lo; if (lo > maxLo) maxLo = lo;
+                }
+                if (isFinite(minLa)) { clat = (minLa + maxLa) / 2; clon = (minLo + maxLo) / 2; }
+              }
+            }
+          } catch (e) {}
+        }
+
+        if (isFinite(clat) && isFinite(clon)) {
+          rawPts.push({ lat: clat, lon: clon, hail_in: +(r.band_min || 0) });
+        }
+      });
+
+      // 3. LSR hail reports supplement (and sole source when no rows)
+      (hailPts || []).forEach(function(p) {
+        var la = +p.lat, lo = +p.lon;
+        if (isFinite(la) && isFinite(lo)) {
+          rawPts.push({ lat: la, lon: lo, hail_in: +(p.hail_in || 0) });
+        }
+      });
+
+      if (!rawPts.length) return;
+      mapsState.swathPolygons[dateStr] = mapsState.swathPolygons[dateStr] || [];
+
+      // Cluster into storm tracks (0.20° ≈ 14 mi chain-link — dense centroid data chains well)
+      var clusters = _clusterByDistance(rawPts, 0.20);
+
+      clusters.forEach(function(cluster) {
+        if (!cluster.length) return;
+
+        // PCA: fit storm axis
+        var n = cluster.length, cx = 0, cy = 0;
+        cluster.forEach(function(p) { cx += p.lon; cy += p.lat; });
+        cx /= n; cy /= n;
+        var axCos = 1, axSin = 0;
+        if (n >= 2) {
+          var sxx = 0, sxy = 0, syy = 0;
+          cluster.forEach(function(p) {
+            var dx = p.lon - cx, dy = p.lat - cy;
+            sxx += dx*dx; sxy += dx*dy; syy += dy*dy;
+          });
+          var ang = 0.5 * Math.atan2(2*sxy, sxx-syy);
+          axCos = Math.cos(ang); axSin = Math.sin(ang);
+          if (axCos < 0) { axCos = -axCos; axSin = -axSin; }
+        }
+
+        // Sort along axis, deduplicate points < 0.008° apart
+        var sorted = cluster.slice().sort(function(a, b) {
+          return ((a.lat-cy)*axSin+(a.lon-cx)*axCos) - ((b.lat-cy)*axSin+(b.lon-cx)*axCos);
+        });
+        var path = [];
+        sorted.forEach(function(p) {
+          if (path.length) {
+            var prev = path[path.length - 1];
+            if (Math.sqrt(Math.pow(p.lat-prev.lat,2)+Math.pow(p.lon-prev.lon,2)) < 0.008) return;
+          }
+          path.push(p);
+        });
+        if (!path.length) return;
+        if (path.length > 400) path = path.slice(0, 400);
+
+        var maxHail = cluster.reduce(function(m, p) { return Math.max(m, p.hail_in||0); }, 0);
+
+        // Add a Google Maps Polyline and track it for show/hide
+        var addLine = function(pts, weight, color, opacity, z) {
+          if (!pts || !pts.length) return;
+          var gmPath = pts.map(function(p) { return { lat: p.lat, lng: p.lon }; });
+          if (gmPath.length === 1) gmPath.push({ lat: gmPath[0].lat + 0.01, lng: gmPath[0].lng + 0.01 });
+          var line = new google.maps.Polyline({
+            path: gmPath, geodesic: true,
+            strokeColor: color, strokeOpacity: opacity, strokeWeight: weight,
+            zIndex: z, clickable: false, map: mapsState.map
+          });
+          line._stormType = 'hail'; line._dateStr = dateStr;
+          mapsState.swathPolygons[dateStr].push(line);
+        };
+
+        // Layer 1: broad pale-yellow base stripe — 120 px wide (always, all clusters)
+        addLine(path, 120, '#d8d67a', 0.40, 500);
+
+        // Layer 2: moderate yellow — 65 px, where hail ≥ 1.0"
+        if (maxHail >= 1.0) {
+          var m1 = path.filter(function(p) { return (p.hail_in||0) >= 1.0; });
+          if (!m1.length) m1 = path; // fallback: use full path if all band_min < 1
+          addLine(m1, 65, '#e6c63b', 0.62, 505);
+        }
+
+        // Layer 3: orange strong core — 35 px, where hail ≥ 1.75"
+        if (maxHail >= 1.75) {
+          var m2 = path.filter(function(p) { return (p.hail_in||0) >= 1.75; });
+          addLine(m2, 35, '#f28c22', 0.75, 510);
+        }
+      });
+    }
+
+    // ── Small-hail pale-yellow underlayer ──
+    // Two passes, both at z<150 (below storm polygon fills) and z<500 (below envelope polylines):
+    //
+    // PASS 1 (z=75): Expands every band_min >= 0.5" polygon outward 2.5x. Uses same geometry
+    //   extraction as mapsDrawSavedStormPolygonForDate so every visible colored polygon also gets
+    //   a pale-yellow fringe outside it.
+    //
+    // PASS 2 (z=70): Clusters ALL 0.5"+ hail data (row centroids + LSR point reports) into
+    //   storm-track corridors using _bufferPolyline. This covers areas that have LSR reports but
+    //   no storm_polygons data — e.g. the Kansas→Missouri→Iowa and Iowa/Cedar Rapids corridors.
+    function _drawSmallHailLayer(dateStr, rows, hailPts) {
+      if (!mapsState.map) return;
+      mapsState.swathPolygons[dateStr] = mapsState.swathPolygons[dateStr] || [];
+
+      // ── PASS 1: polygon expansion ──
+      (rows || []).forEach(function(r) {
+        var bmin = +(r.band_min || 0);
+        if (bmin < 0.5) return;
+
+        var gj = r.polygon_geojson || r.geometry;
+        if (!gj) return;
+        if (typeof gj === 'string') {
+          try { gj = JSON.parse(gj); } catch(e) { return; }
+        }
+        if (!gj || !gj.type) return;
+
+        var geometries = [];
+        if (gj.type === 'FeatureCollection' && Array.isArray(gj.features)) {
+          gj.features.forEach(function(f) {
+            if (f && f.type === 'Feature' && f.geometry) geometries.push(f.geometry);
+            else if (f && f.coordinates) geometries.push(f);
+          });
+        } else if (gj.type === 'Feature' && gj.geometry) {
+          geometries.push(gj.geometry);
+        } else if (gj.coordinates) {
+          geometries.push(gj);
+        }
+        if (!geometries.length) return;
+
+        var ringArrays = [];
+        geometries.forEach(function(geom) {
+          if (geom.type === 'Polygon' && Array.isArray(geom.coordinates)) {
+            if (geom.coordinates[0]) ringArrays.push(geom.coordinates[0]);
+          } else if (geom.type === 'MultiPolygon' && Array.isArray(geom.coordinates)) {
+            geom.coordinates.forEach(function(poly) {
+              if (Array.isArray(poly) && Array.isArray(poly[0])) ringArrays.push(poly[0]);
+            });
+          }
+        });
+
+        ringArrays.forEach(function(ring) {
+          if (!ring || ring.length < 3) return;
+          var cLat = 0, cLon = 0, n = ring.length;
+          for (var i = 0; i < n; i++) { cLon += ring[i][0]; cLat += ring[i][1]; }
+          cLat /= n; cLon /= n;
+
+          var expanded = ring.map(function(coord) {
+            var dLat = coord[1] - cLat, dLon = coord[0] - cLon;
+            var dist = Math.sqrt(dLat * dLat + dLon * dLon) || 0.001;
+            return {
+              lat: cLat + dLat * 2.5 + (dLat / dist) * 0.08,
+              lng: cLon + dLon * 2.5 + (dLon / dist) * 0.08
+            };
+          });
+
+          var poly = new google.maps.Polygon({
+            paths: expanded,
+            strokeWeight: 0, strokeOpacity: 0,
+            fillColor: '#d8d67a', fillOpacity: 0.38,
+            zIndex: 75, clickable: false, map: mapsState.map
+          });
+          poly._stormType = 'hail'; poly._dateStr = dateStr;
+          mapsState.swathPolygons[dateStr].push(poly);
+        });
+      });
+
+      // ── PASS 2: LSR-point + centroid corridor polygons ──
+      // Produces elongated _bufferPolyline corridors in areas that may have no storm_polygons rows.
+      var seedPts = [];
+
+      (rows || []).forEach(function(r) {
+        if (+(r.band_min || 0) < 0.5) return;
+        var clat = NaN, clon = NaN;
+        var sc = +r.centroid_lat, sn = +r.centroid_lon;
+        if (isFinite(sc) && isFinite(sn)) { clat = sc; clon = sn; }
+        if (!isFinite(clat)) {
+          try {
+            var gj2 = r.polygon_geojson || r.geometry;
+            if (gj2 && typeof gj2 === 'string') gj2 = JSON.parse(gj2);
+            var ring2 = null;
+            if (gj2 && gj2.type === 'Polygon' && gj2.coordinates && gj2.coordinates[0]) ring2 = gj2.coordinates[0];
+            else if (gj2 && gj2.type === 'MultiPolygon' && gj2.coordinates && gj2.coordinates[0] && gj2.coordinates[0][0]) ring2 = gj2.coordinates[0][0];
+            else if (gj2 && gj2.type === 'Feature' && gj2.geometry && gj2.geometry.coordinates && gj2.geometry.coordinates[0]) ring2 = gj2.geometry.coordinates[0];
+            if (ring2) {
+              var mxLa = -Infinity, mnLa = Infinity, mxLo = -Infinity, mnLo = Infinity;
+              for (var ri = 0; ri < ring2.length; ri++) { var rla = ring2[ri][1], rlo = ring2[ri][0]; if (rla < mnLa) mnLa = rla; if (rla > mxLa) mxLa = rla; if (rlo < mnLo) mnLo = rlo; if (rlo > mxLo) mxLo = rlo; }
+              if (isFinite(mnLa)) { clat = (mnLa + mxLa) / 2; clon = (mnLo + mxLo) / 2; }
+            }
+          } catch(e2) {}
+        }
+        if (isFinite(clat) && isFinite(clon)) seedPts.push({ lat: clat, lon: clon });
+      });
+
+      (hailPts || []).forEach(function(p) {
+        if (+(p.hail_in || 0) < 0.5) return;
+        var la = +p.lat, lo = +p.lon;
+        if (isFinite(la) && isFinite(lo)) seedPts.push({ lat: la, lon: lo });
+      });
+
+      if (!seedPts.length) return;
+
+      // 0.25° cluster radius chains nearby reports/centroids into one storm track per cluster
+      _clusterByDistance(seedPts, 0.25).forEach(function(cluster) {
+        if (cluster.length < 2) return;
+
+        var n = cluster.length, cx = 0, cy = 0;
+        cluster.forEach(function(p) { cx += p.lon; cy += p.lat; });
+        cx /= n; cy /= n;
+        var sxx = 0, sxy = 0, syy = 0;
+        cluster.forEach(function(p) { var dx = p.lon - cx, dy = p.lat - cy; sxx += dx*dx; sxy += dx*dy; syy += dy*dy; });
+        var ang = 0.5 * Math.atan2(2*sxy, sxx-syy);
+        var axCos = Math.cos(ang), axSin = Math.sin(ang);
+        if (axCos < 0) { axCos = -axCos; axSin = -axSin; }
+
+        var sorted = cluster.slice().sort(function(a, b) {
+          return ((a.lat-cy)*axSin+(a.lon-cx)*axCos) - ((b.lat-cy)*axSin+(b.lon-cx)*axCos);
+        });
+        var path = [];
+        sorted.forEach(function(p) {
+          if (path.length) { var prev = path[path.length-1]; if (Math.sqrt(Math.pow(p.lat-prev.lat,2)+Math.pow(p.lon-prev.lon,2)) < 0.010) return; }
+          path.push(p);
+        });
+        if (path.length < 2) return;
+        if (path.length > 300) path = path.slice(0, 300);
+
+        // Buffer the PCA-sorted centerline into a 0.20°-wide (≈14 mi) corridor polygon
+        var corridorRing = _bufferPolyline(path, 0.20);
+        if (!corridorRing || corridorRing.length < 3) return;
+
+        var poly = new google.maps.Polygon({
+          paths: corridorRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
+          strokeWeight: 0, strokeOpacity: 0,
+          fillColor: '#d8d67a', fillOpacity: 0.32,
+          zIndex: 70, clickable: false, map: mapsState.map
+        });
+        poly._stormType = 'hail'; poly._dateStr = dateStr;
+        mapsState.swathPolygons[dateStr].push(poly);
+      });
+    }
+
+    // ── Corridor fallback — generates rotated-rect cell polygons from LSR hail/wind/tornado points ──
     function mapsDrawWeakFallbackCorridors(dateStr, hailPts, windPts, tornadoPts) {
-      return { hail: false, wind: false, tornado: false }; // unified-renderer: stub
       var result = { hail: false, wind: false };
       if (!mapsState.map) return result;
 
@@ -11682,37 +12075,39 @@
           //   0.065° ≈ 3.6 mi half-width → ~7 mi corridor, matching Hail Recon outer halo.
           // CELL_HS_INNER: tighter base for nested higher-intensity bands.
           //   0.032° ≈ 1.8 mi half-width. Fractions (0.90, 0.75, 0.58, 0.44) nest inside.
-          var GRID = 0.012, CELL_HL = 0.013;
-          var CELL_HS_OUTER = 0.065, CELL_HS_INNER = 0.032;
+          var GRID = 0.018, CELL_HL = 0.022;
+          var CELL_HS_OUTER = 0.130, CELL_HS_INNER = 0.065;
 
           hailClusters.forEach(function(cluster, ci) {
             var n = cluster.length;
             var maxHail = cluster.reduce(function(m,p){return Math.max(m,p.hail_in||0);},0);
-            if (n <= 1 && maxHail < 1.0) { return; }
+            if (n <= 1 && maxHail < 0.5) { return; }
             var ax = _fitStormAxis(cluster);
             // Interpolate densely along storm axis → continuous overlapping streak
             var yInterp = _snapDedup(_interpAxis(cluster, ax, GRID), GRID);
             // Outer halo: all points at full CELL_HS_OUTER width (broad light yellow)
+            // z=600: above storm polygon fills (z=150+) and below envelope polylines (z=500+)
+            // Wait — z=600 is above z=500 envelope, which is correct: corridors are the top detail layer
             yInterp.slice(0, 400).forEach(function(p) {
-              if (_addRawPoly(_makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_OUTER, ax.sin, ax.cos), swathSeverityColor(1.0), 4, 'hail'))
+              if (_addRawPoly(_makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_OUTER, ax.sin, ax.cos), swathSeverityColor(0.5), 600, 'hail'))
                 { result.hail = true; totalCells++; }
             });
             // Inner bands use CELL_HS_INNER so cores sit tight inside the outer halo
             var mPts = cluster.filter(function(p){return (p.hail_in||0)>=1.25;});
             if (mPts.length) _snapDedup(_interpAxis(mPts, ax, GRID), GRID).forEach(function(p) {
-              _addRawPoly(_makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.90, ax.sin, ax.cos), swathSeverityColor(1.35), 5, 'hail');
+              _addRawPoly(_makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.90, ax.sin, ax.cos), swathSeverityColor(1.35), 601, 'hail');
             });
             var oPts = cluster.filter(function(p){return (p.hail_in||0)>=1.75;});
             if (oPts.length) _snapDedup(_interpAxis(oPts, ax, GRID), GRID).forEach(function(p) {
-              _addRawPoly(_makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.75, ax.sin, ax.cos), swathSeverityColor(1.85), 6, 'hail');
+              _addRawPoly(_makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.75, ax.sin, ax.cos), swathSeverityColor(1.85), 602, 'hail');
             });
             var rPts = cluster.filter(function(p){return (p.hail_in||0)>=2.25;});
             if (rPts.length) _snapDedup(_interpAxis(rPts, ax, GRID), GRID).forEach(function(p) {
-              _addRawPoly(_makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.58, ax.sin, ax.cos), swathSeverityColor(2.50), 7, 'hail');
+              _addRawPoly(_makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.58, ax.sin, ax.cos), swathSeverityColor(2.50), 603, 'hail');
             });
             var pPts = cluster.filter(function(p){return (p.hail_in||0)>3.00;});
             if (pPts.length) _snapDedup(_interpAxis(pPts, ax, GRID), GRID).forEach(function(p) {
-              _addRawPoly(_makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.44, ax.sin, ax.cos), swathSeverityColor(3.5), 8, 'hail');
+              _addRawPoly(_makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.44, ax.sin, ax.cos), swathSeverityColor(3.5), 604, 'hail');
             });
             var hlats = cluster.map(function(p){return p.lat;}), hlons = cluster.map(function(p){return p.lon;});
             var hDiagMi = Math.sqrt(Math.pow((Math.max.apply(null,hlats)-Math.min.apply(null,hlats))*69,2)+Math.pow((Math.max.apply(null,hlons)-Math.min.apply(null,hlons))*55,2));
@@ -12546,18 +12941,6 @@
           }
 
           // Apply blur on offscreen — scale with corridor width for consistent soft edges
-          try {
-            if (typeof offCtx.filter !== 'undefined') {
-              // Use median corridor width to scale blur proportionally
-              var medW = widthPx.slice().sort(function(a,b){return a-b;})[Math.floor(widthPx.length/2)] || 20;
-              var blurPx = Math.max(1, Math.min(12, medW * 0.04));
-              var imgD = offCtx.getImageData(0, 0, cW, cH);
-              offCtx.clearRect(0, 0, cW, cH);
-              offCtx.filter = 'blur(' + blurPx.toFixed(1) + 'px)';
-              offCtx.putImageData(imgD, 0, 0);
-              offCtx.filter = 'none';
-            }
-          } catch (e) {}
 
           // ── Composite offscreen onto main canvas at swathOpacity ──
           // Single alpha for the entire corridor — no layered stacking
@@ -12708,7 +13091,7 @@
           console.log('[swathHitTest] hail size chosen from band containment: ' + highestHailBand + '" for ' + d);
           return;
         }
-        // Only fall back to LSR/rawStormRows if we had a hail polygon hit (no _bandMin)
+        // Polygon hit but no _bandMin — use nearby LSR only (tight 8 km radius), no date-max
         if (highestHailBand === 0) {
           var fallbackHail = 0;
           var pts = mapsState.lsrPointsByDate[d] || [];
@@ -12718,20 +13101,13 @@
             var dLat2 = (lat - pLat) * 111.1;
             var dLon2 = (lng - pLon) * 111.1 * Math.cos(lat * Math.PI / 180);
             var dKm2 = Math.sqrt(dLat2 * dLat2 + dLon2 * dLon2);
-            if (dKm2 <= 50) {
+            if (dKm2 <= 8) {
               var h2 = Number(pts[li].hail_in) || 0;
               if (h2 > fallbackHail) fallbackHail = h2;
             }
           }
-          (mapsState.rawStormRows[d] || []).forEach(function (row) {
-            if ((row.storm_type || '').toLowerCase() === 'wind') return; // skip wind rows
-            var bMin = Number(row.band_min);
-            var h = bMin > 0 ? bMin : 0;
-            if (h > fallbackHail) fallbackHail = h;
-          });
-          if (fallbackHail <= 0) fallbackHail = 1.0;
           console.log('[swathHitTest] inside polygon ' + d + ' fallbackHail=' + fallbackHail + ' (no _bandMin on polygons)');
-          if (0 < bestDist) {
+          if (fallbackHail > 0 && 0 < bestDist) {
             bestDist = 0;
             best = { hailIn: fallbackHail, dateStr: d };
           }
@@ -12876,22 +13252,6 @@
               bestIdx = bi; break;
             }
           } catch (_) {}
-        }
-        // Edge tolerance
-        if (bestIdx === -1) {
-          var tol = 0.09;
-          for (var bi = bandPolys.length - 1; bi >= 0; bi--) {
-            try {
-              var path = bandPolys[bi].getPath();
-              if (!path) continue;
-              var near = false;
-              path.forEach(function (v) {
-                if (near) return;
-                if (Math.abs(lat - v.lat()) < tol && Math.abs(lng - v.lng()) < tol) near = true;
-              });
-              if (near) { bestIdx = bi; break; }
-            } catch (_) {}
-          }
         }
         if (bestIdx >= 0 && bestIdx < WIND_SPEED_BANDS.length) {
           var band = WIND_SPEED_BANDS[bestIdx];
@@ -16245,6 +16605,41 @@
             points = Array.isArray(points) ? points : [];
             windPts = Array.isArray(windPts) ? windPts : [];
             tornadoPts = Array.isArray(tornadoPts) ? tornadoPts : [];
+
+            // Additive layers: draw pale-yellow base, envelope, and corridor cells
+            // even on cached/fast-restore paths (which only called mapsDrawSavedStormPolygonForDate)
+            _drawSmallHailLayer(dateStr, rows, points);
+            _drawHailEnvelope(dateStr, rows, points);
+            var _corridorHailPts = (points || []).slice();
+            (rows || []).forEach(function(row) {
+              if (_corridorHailPts.length >= 300) return;
+              if ((row.storm_type || 'hail').toLowerCase() !== 'hail') return;
+              var bmin = Number(row.band_min) || 0;
+              if (bmin < 0.5) return;
+              var clat = Number(row.centroid_lat), clon = Number(row.centroid_lon);
+              if (!isFinite(clat) || !isFinite(clon)) {
+                try {
+                  var gjr = row.polygon_geojson;
+                  if (gjr && typeof gjr === 'string') gjr = JSON.parse(gjr);
+                  if (gjr) {
+                    var ring0 = null;
+                    if (gjr.type === 'Polygon' && gjr.coordinates && gjr.coordinates[0]) ring0 = gjr.coordinates[0];
+                    else if (gjr.type === 'MultiPolygon' && gjr.coordinates && gjr.coordinates[0] && gjr.coordinates[0][0]) ring0 = gjr.coordinates[0][0];
+                    else if (gjr.type === 'Feature' && gjr.geometry && gjr.geometry.coordinates && gjr.geometry.coordinates[0]) ring0 = gjr.geometry.coordinates[0];
+                    else if (gjr.type === 'FeatureCollection' && gjr.features && gjr.features[0] && gjr.features[0].geometry && gjr.features[0].geometry.coordinates && gjr.features[0].geometry.coordinates[0]) ring0 = gjr.features[0].geometry.coordinates[0];
+                    if (ring0 && ring0.length >= 3) {
+                      var sla = 0, slo = 0;
+                      for (var ri = 0; ri < ring0.length; ri++) { sla += ring0[ri][1]; slo += ring0[ri][0]; }
+                      clat = sla / ring0.length; clon = slo / ring0.length;
+                    }
+                  }
+                } catch(e2) {}
+              }
+              if (!isFinite(clat) || !isFinite(clon)) return;
+              _corridorHailPts.push({ lat: clat, lon: clon, hail_in: bmin });
+            });
+            mapsDrawWeakFallbackCorridors(dateStr, _corridorHailPts, windPts, tornadoPts);
+
             mapsState.lsrPointsByDate[dateStr] = points;
             mapsState.windPointsByDate[dateStr] = windPts;
             mapsState.tornadoPointsByDate[dateStr] = tornadoPts;
@@ -16645,6 +17040,43 @@
           mapsRemoveRefSwathForDate(dateStr);
 
           var drew = mapsDrawSavedStormPolygonForDate(dateStr, rows);
+          // Layer 1 (z=70-75): pale-yellow broad base from polygon expansion + LSR corridors
+          _drawSmallHailLayer(dateStr, rows, points);
+          // Layer 1b (z=500): wide polyline envelopes from centroids + LSR
+          _drawHailEnvelope(dateStr, rows, points);
+          // Layer 2: broad hail fills already drawn above (z=150-400)
+          // Layer 3 (z=600-604): corridor cells for ALL dates.
+          // Supplement sparse LSR points with synthetic hail locations from polygon centroids
+          // so MRMS-rich dates (e.g. 2026-05-03) also render yellow/orange core streaks.
+          var corridorHailPts = (points || []).slice();
+          (rows || []).forEach(function(row) {
+            if (corridorHailPts.length >= 300) return;
+            if ((row.storm_type || 'hail').toLowerCase() !== 'hail') return;
+            var bmin = Number(row.band_min) || 0;
+            if (bmin < 0.5) return;
+            var clat = Number(row.centroid_lat), clon = Number(row.centroid_lon);
+            if (!isFinite(clat) || !isFinite(clon)) {
+              try {
+                var gjr = row.polygon_geojson;
+                if (gjr && typeof gjr === 'string') gjr = JSON.parse(gjr);
+                if (gjr) {
+                  var ring0 = null;
+                  if (gjr.type === 'Polygon' && gjr.coordinates && gjr.coordinates[0]) ring0 = gjr.coordinates[0];
+                  else if (gjr.type === 'MultiPolygon' && gjr.coordinates && gjr.coordinates[0] && gjr.coordinates[0][0]) ring0 = gjr.coordinates[0][0];
+                  else if (gjr.type === 'Feature' && gjr.geometry && gjr.geometry.coordinates && gjr.geometry.coordinates[0]) ring0 = gjr.geometry.coordinates[0];
+                  else if (gjr.type === 'FeatureCollection' && gjr.features && gjr.features[0] && gjr.features[0].geometry && gjr.features[0].geometry.coordinates && gjr.features[0].geometry.coordinates[0]) ring0 = gjr.features[0].geometry.coordinates[0];
+                  if (ring0 && ring0.length >= 3) {
+                    var sla = 0, slo = 0;
+                    for (var ri = 0; ri < ring0.length; ri++) { sla += ring0[ri][1]; slo += ring0[ri][0]; }
+                    clat = sla / ring0.length; clon = slo / ring0.length;
+                  }
+                }
+              } catch(e2) {}
+            }
+            if (!isFinite(clat) || !isFinite(clon)) return;
+            corridorHailPts.push({ lat: clat, lon: clon, hail_in: bmin });
+          });
+          mapsDrawWeakFallbackCorridors(dateStr, corridorHailPts, windPts, tornadoPts);
           var _drawStats = (mapsState._savedDrawQuality || {})[dateStr] || {};
           hmDebugLog('[loadStormDate] date', dateStr, {
             polygonsLoaded: Number(_drawStats.polygonsLoaded || rows.length || 0),
@@ -16933,7 +17365,7 @@
       // polygons from ANY source create giant multi-state wedges / blob artifacts
       var savedSrc = (mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr]._sourceClass) || '';
       var skipBands = (!!result.drewSaved || !!result.hasSavedRows) && !_useFallbackCorridors;
-      if ((_useFallbackCorridors || (USE_SAFE_CELL_FALLBACK_ONLY && !skipBands)) && !result.drewBands && points.length >= 1) {
+      if ((_useFallbackCorridors || USE_SAFE_CELL_FALLBACK_ONLY) && !result.drewBands && points.length >= 1) {
         console.log('[SAFE-CELL-ONLY] date=' + dateStr + ' enabled=true useFallbackCorridors=' + _useFallbackCorridors);
         var _wfcHail = mapsDrawWeakFallbackCorridors(dateStr, points, [], []);
         if (_wfcHail.hail) result.drewBands = true;
@@ -17888,17 +18320,15 @@
         var directHits = [];
         var DAMAGING_WIND_MPH = 58;
 
-        // Helper: extract max hail from row — use band_max (upper bound of hail band), fallback to threshold_value or band_min
+        // Helper: extract hail size from row — use band_min (confirmed lower bound), fallback to threshold_value or band_max
         function extractMaxHail(row) {
-          var bMax = Number(row.band_max);
           var bMin = Number(row.band_min);
           var tv = Number(row.threshold_value);
-          // band_max is the upper hail size for the band (e.g., 1.5 for 1-1.5" band)
-          if (bMax > 0) return bMax;
-          // threshold_value may hold a legacy value
-          if (tv > 0) return tv;
-          // band_min is the lower bound (e.g., 0.5 for 0.5-1")
+          var bMax = Number(row.band_max);
+          // band_min is the confirmed lower bound at location (e.g., 1.5 for a 1.5–2.0" band)
           if (bMin > 0) return bMin;
+          if (tv > 0) return tv;
+          if (bMax > 0) return bMax;
           return 0;
         }
 
@@ -17958,6 +18388,7 @@
             hailVal = extractMaxHail(row);
           }
           if (hailVal <= 0 && windVal < DAMAGING_WIND_MPH) return;
+          console.log('[PROP-DEBUG] polygon hit date=' + dateStr + ' type=' + stormType + ' band_min=' + row.band_min + ' band_max=' + row.band_max + ' hailVal=' + hailVal + ' windVal=' + windVal);
           if (!polygonDirectHits[dateStr]) {
             polygonDirectHits[dateStr] = { date: dateStr, dist: 0, source: 'saved_polygon', direct: true, hailVal: 0, windVal: 0 };
           }
@@ -17965,6 +18396,7 @@
           polygonDirectHits[dateStr].windVal = Math.max(polygonDirectHits[dateStr].windVal, windVal);
         });
         Object.keys(polygonDirectHits).forEach(function (dateStr) {
+          console.log({date: dateStr, clickedLatLng: {lat: prop.lat, lng: prop.lng}, hailMatches: 'saved_polygon', selectedHailValue: polygonDirectHits[dateStr].hailVal, windMatches: 'saved_polygon', selectedWindValue: polygonDirectHits[dateStr].windVal});
           directHits.push(polygonDirectHits[dateStr]);
         });
 
@@ -17996,34 +18428,30 @@
           else if (dist <= 10) within10.push(entry);
         });
 
-        // Also merge any locally-cached rawStormRows + LSR points
+        // Merge locally-cached rawStormRows using polygon containment (not centroid distance)
         Object.keys(mapsState.rawStormRows).forEach(function (dateStr) {
           (mapsState.rawStormRows[dateStr] || []).forEach(function (row) {
-            var cLat = Number(row.centroid_lat);
-            var cLon = Number(row.centroid_lon);
-            if (!isFinite(cLat) || !isFinite(cLon)) return;
-            var dist = _haversineMi(prop.lat, prop.lng, cLat, cLon);
+            if (!row.polygon_geojson) return;
+            if (!geoJsonContains(prop.lat, prop.lng, row.polygon_geojson)) return;
             var stormType = String(row.storm_type || 'hail').toLowerCase();
             if (stormType === 'tornado') return;
-            var maxVal = extractMaxHail(row);
-            var entry = {
-              date: dateStr,
-              dist: dist,
-              source: row.source || '',
-              stormType: stormType,
-              hailVal: 0,
-              windVal: 0,
-            };
+            var hailVal = 0, windVal = 0;
             if (stormType === 'wind') {
-              entry.windVal = maxVal;
+              windVal = _windBandToMph(Number(row.band_min) || 0);
+              if (windVal < DAMAGING_WIND_MPH) return;
             } else {
-              entry.hailVal = maxVal;
+              hailVal = extractMaxHail(row);
+              if (hailVal <= 0) return;
             }
-            if (dist <= 1) within1.push(entry);
-            else if (dist <= 5) within5.push(entry);
-            else if (dist <= 10) within10.push(entry);
-            else if (dist <= 25) within25.push(entry);
-            else if (dist <= 50) within50.push(entry);
+            directHits.push({
+              date: dateStr,
+              dist: 0,
+              source: 'cached_polygon',
+              stormType: stormType,
+              hailVal: hailVal,
+              windVal: windVal,
+              direct: true,
+            });
           });
         });
         Object.keys(mapsState.lsrPointsByDate).forEach(function (dateStr) {
@@ -18125,10 +18553,12 @@
               } catch (_) {}
             }
           }
-          // Fallback: rawStormRows (skip wind rows)
+          // Fallback: rawStormRows — only rows that CONTAIN the clicked point
           if (maxH <= 0) {
             (mapsState.rawStormRows[dateStr] || []).forEach(function (row) {
               if ((row.storm_type || '').toLowerCase() === 'wind') return;
+              if (!row.polygon_geojson) return;
+              if (!geoJsonContains(prop.lat, prop.lng, row.polygon_geojson)) return;
               var h = extractMaxHail(row);
               if (h > maxH) maxH = h;
             });
@@ -18150,6 +18580,7 @@
             return;
           }
           console.log('[PROP-DEBUG] direct hit ' + dateStr + ' highestBandAtPoint=' + maxH + ' maxWindMph=' + maxW);
+          console.log({date: dateStr, clickedLatLng: {lat: prop.lat, lng: prop.lng}, selectedHailValue: maxH, selectedWindValue: maxW});
           directHits.push({ date: dateStr, dist: 0, source: 'direct_hit', direct: true, hailVal: maxH, windVal: maxW >= DAMAGING_WIND_MPH ? maxW : 0 });
         });
 

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx supabase *)",
+      "Bash(curl -s \"https://ehegjhlkadtpnkborlbz.supabase.co/functions/v1/mrms-mesh-ingest?date=2026-04-14\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZWdqaGxrYWR0cG5rYm9ybGJ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjcwNTY2NiwiZXhwIjoyMDgyMjgxNjY2fQ.KbEohwp-boV53yY31Ut3epMtN564STGsl9T9KtFeGLQ\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZWdqaGxrYWR0cG5rYm9ybGJ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjcwNTY2NiwiZXhwIjoyMDgyMjgxNjY2fQ.KbEohwp-boV53yY31Ut3epMtN564STGsl9T9KtFeGLQ\")",
+      "Bash(curl -s \"https://mesonet.agron.iastate.edu/cgi-bin/request/raster2geojson.py?pid=mrms_mesh_max_24h&valid=2026-04-14T12%3A00%3A00Z&threshold=19.05&epsg=4326\" -o -)"
+    ]
+  }
+}
