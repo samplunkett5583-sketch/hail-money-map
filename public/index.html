@@ -8534,6 +8534,7 @@
           for (var i = 0; i < data.length; i++) {
             var job = data[i].data || {};
             job.id = data[i].id;
+            _propertyDataEnsureJob(job);
             result.push(job);
           }
         }
@@ -8551,6 +8552,7 @@
     async function saveJobToSupabase(job) {
       if (!job || !job.id) return;
       try {
+        _propertyDataEnsureJob(job);
         var row = { id: job.id, data: job };
         var { error } = await sb.from(JOBS_TABLE).upsert(row, { onConflict: 'id' });
         if (error) console.error('[saveJobToSupabase]', error);
@@ -8567,6 +8569,7 @@
         if (error || !data) return null;
         var job = data.data || {};
         job.id = data.id;
+        _propertyDataEnsureJob(job);
         return job;
       } catch (err) {
         console.error('[loadJobFromSupabase]', err);
@@ -8737,7 +8740,10 @@
 
     function getJobs() {
       try {
-        return JSON.parse(localStorage.getItem('hmm_clean_jobs_v1') || '[]');
+        var jobs = JSON.parse(localStorage.getItem('hmm_clean_jobs_v1') || '[]');
+        if (!Array.isArray(jobs)) return [];
+        jobs.forEach(function (job) { _propertyDataEnsureJob(job); });
+        return jobs;
       } catch (e) {
         return [];
       }
@@ -8763,11 +8769,355 @@
 
     function saveJobs(jobs) {
       try {
+        if (Array.isArray(jobs)) jobs.forEach(function (job) { _propertyDataEnsureJob(job); });
         localStorage.setItem('hmm_clean_jobs_v1', JSON.stringify(jobs));
         return true;
       } catch (e) {
         showUploadToast('Save failed — storage full or file too large');
         return false;
+      }
+    }
+
+    var PROPERTY_RECORDS_STORAGE_KEY = 'hmm_property_records_v1';
+    var PROPERTY_DATA_NOT_FOUND_TEXT = 'Not found yet';
+    var PROPERTY_DATA_PHONE_FALLBACK = 'Not available from free public records';
+    var PROPERTY_DATA_DEFAULT_SOURCE = 'Manual / free public records foundation';
+    var PROPERTY_DATA_FIELDS = [
+      { key: 'ownerName', label: 'Owner Name', inputType: 'text' },
+      { key: 'propertyAddress', label: 'Property Address', inputType: 'text' },
+      { key: 'parcelNumber', label: 'Parcel Number', inputType: 'text' },
+      { key: 'county', label: 'County', inputType: 'text' },
+      { key: 'lastSaleDate', label: 'Last Sale Date', inputType: 'date' },
+      { key: 'yearsOwned', label: 'Years Owned', inputType: 'text' },
+      { key: 'squareFeet', label: 'Square Feet', inputType: 'text' },
+      { key: 'yearBuilt', label: 'Year Built', inputType: 'text' },
+      { key: 'lotSize', label: 'Lot Size', inputType: 'text' },
+      { key: 'assessedValue', label: 'Assessed Value', inputType: 'text' },
+      { key: 'estimatedValue', label: 'Estimated Value', inputType: 'text' },
+      { key: 'neighborhoodMedianIncome', label: 'Neighborhood Median Income', inputType: 'text' },
+      { key: 'censusTract', label: 'Census Tract', inputType: 'text' },
+      { key: 'censusBlockGroup', label: 'Census Block Group', inputType: 'text' },
+      { key: 'propertyDataSource', label: 'Property Data Source', inputType: 'text' },
+      { key: 'propertyDataLastUpdated', label: 'Property Data Last Updated', inputType: 'text' },
+      { key: 'homeownerPhone', label: 'Homeowner Phone', inputType: 'tel' }
+    ];
+
+    // Keep property enrichment isolated so it can become an optional add-on later.
+    // TODO(property-data): plug in a paid property data provider as an optional add-on.
+    // TODO(property-data): add homeowner phone append / skip trace enrichment.
+    // TODO(property-data): add automated home value estimate enrichment.
+    // TODO(property-data): add bulk property enrichment workflows for canvassing lists.
+    function _propertyDataEmpty() {
+      var out = {};
+      PROPERTY_DATA_FIELDS.forEach(function (field) {
+        out[field.key] = '';
+      });
+      return out;
+    }
+
+    function _propertyDataNormalizeAddress(address) {
+      return String(address || '').trim();
+    }
+
+    function _propertyDataAddressFromJob(job) {
+      if (!job) return '';
+      return [
+        String(job.street || '').trim(),
+        [job.city, job.state, job.zip].filter(Boolean).join(' ').trim()
+      ].filter(Boolean).join(', ');
+    }
+
+    function _propertyDataKeyFromSource(lat, lng, address) {
+      var nLat = Number(lat);
+      var nLng = Number(lng);
+      if (isFinite(nLat) && isFinite(nLng)) return nLat.toFixed(5) + ',' + nLng.toFixed(5);
+      var addr = _propertyDataNormalizeAddress(address).toLowerCase();
+      return addr ? 'addr|' + addr : '';
+    }
+
+    function _propertyDataSeedFromProperty(prop) {
+      return {
+        ownerName: prop && prop.ownerName ? prop.ownerName : '',
+        propertyAddress: _propertyDataNormalizeAddress(prop && prop.address)
+      };
+    }
+
+    function _propertyDataSeedFromJob(job) {
+      return {
+        ownerName: job && job.homeownerName ? job.homeownerName : '',
+        propertyAddress: _propertyDataAddressFromJob(job)
+      };
+    }
+
+    function _propertyDataNumberish(value) {
+      if (value == null || value === '') return null;
+      if (typeof value === 'number') return isFinite(value) ? value : null;
+      var cleaned = String(value).replace(/[^0-9.-]/g, '');
+      if (!cleaned) return null;
+      var num = Number(cleaned);
+      return isFinite(num) ? num : null;
+    }
+
+    function _propertyDataComputedYearsOwned(lastSaleDate) {
+      if (!lastSaleDate) return '';
+      var dt = new Date(lastSaleDate);
+      if (isNaN(dt.getTime())) return '';
+      var years = (Date.now() - dt.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+      if (!isFinite(years) || years < 0) return '';
+      return years >= 10 ? String(Math.round(years)) : String(Math.round(years * 10) / 10);
+    }
+
+    function _propertyDataNormalize(data, seed) {
+      var out = _propertyDataEmpty();
+      if (data && typeof data === 'object') {
+        PROPERTY_DATA_FIELDS.forEach(function (field) {
+          if (data[field.key] != null) out[field.key] = data[field.key];
+        });
+      }
+      if (seed && typeof seed === 'object') {
+        if (!out.ownerName && seed.ownerName) out.ownerName = seed.ownerName;
+        if (!out.propertyAddress && seed.propertyAddress) out.propertyAddress = seed.propertyAddress;
+      }
+      if (!out.yearsOwned && out.lastSaleDate) {
+        out.yearsOwned = _propertyDataComputedYearsOwned(out.lastSaleDate);
+      }
+      return out;
+    }
+
+    function _propertyDataRecordsGet() {
+      try {
+        var records = JSON.parse(localStorage.getItem(PROPERTY_RECORDS_STORAGE_KEY) || '{}');
+        return records && typeof records === 'object' ? records : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function _propertyDataRecordsSave(records) {
+      try {
+        localStorage.setItem(PROPERTY_RECORDS_STORAGE_KEY, JSON.stringify(records || {}));
+        return true;
+      } catch (e) {
+        showUploadToast('Save failed — property data storage is full');
+        return false;
+      }
+    }
+
+    function _propertyDataHtmlEscape(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function _propertyDataRecordForKey(key) {
+      if (!key) return null;
+      var records = _propertyDataRecordsGet();
+      return records[key] || null;
+    }
+
+    function _propertyDataUpsertRecord(key, payload) {
+      if (!key) return null;
+      var records = _propertyDataRecordsGet();
+      records[key] = payload;
+      _propertyDataRecordsSave(records);
+      return records[key];
+    }
+
+    function _propertyDataForProperty(prop) {
+      var key = _propertyDataKeyFromSource(prop && prop.lat, prop && prop.lng, prop && prop.address);
+      var record = _propertyDataRecordForKey(key);
+      var merged = _propertyDataNormalize(
+        Object.assign({}, record && record.propertyData ? record.propertyData : {}, prop && prop.propertyData ? prop.propertyData : {}),
+        _propertyDataSeedFromProperty(prop)
+      );
+      if (prop) prop.propertyData = merged;
+      return { key: key, record: record, propertyData: merged };
+    }
+
+    function _propertyDataForJob(job) {
+      var key = _propertyDataKeyFromSource(job && job.lat, job && job.lng, _propertyDataAddressFromJob(job));
+      var record = _propertyDataRecordForKey(key);
+      var merged = _propertyDataNormalize(
+        Object.assign({}, record && record.propertyData ? record.propertyData : {}, job && job.propertyData ? job.propertyData : {}),
+        _propertyDataSeedFromJob(job)
+      );
+      if (job) job.propertyData = merged;
+      return { key: key, record: record, propertyData: merged };
+    }
+
+    function _propertyDataEnsureJob(job) {
+      if (!job || typeof job !== 'object') return job;
+      _propertyDataForJob(job);
+      return job;
+    }
+
+    function _propertyDataSaveForProperty(prop, propertyData) {
+      var key = _propertyDataKeyFromSource(prop && prop.lat, prop && prop.lng, prop && prop.address);
+      var normalized = _propertyDataNormalize(propertyData, _propertyDataSeedFromProperty(prop));
+      if (!normalized.propertyAddress && prop && prop.address) normalized.propertyAddress = prop.address;
+      if (!normalized.propertyDataSource) normalized.propertyDataSource = PROPERTY_DATA_DEFAULT_SOURCE;
+      if (!normalized.propertyDataLastUpdated) normalized.propertyDataLastUpdated = new Date().toISOString();
+      var payload = {
+        key: key,
+        lat: prop && prop.lat,
+        lng: prop && prop.lng,
+        address: prop && prop.address ? prop.address : '',
+        title: prop && prop.title ? prop.title : '',
+        propertyData: normalized
+      };
+      _propertyDataUpsertRecord(key, payload);
+      if (prop) prop.propertyData = normalized;
+      _ppPropertyDataCache[key] = Promise.resolve(normalized);
+      return normalized;
+    }
+
+    function _propertyDataSaveForJob(job, propertyData) {
+      var normalized = _propertyDataNormalize(propertyData, _propertyDataSeedFromJob(job));
+      if (!normalized.propertyAddress) normalized.propertyAddress = _propertyDataAddressFromJob(job);
+      if (!normalized.propertyDataSource) normalized.propertyDataSource = PROPERTY_DATA_DEFAULT_SOURCE;
+      if (!normalized.propertyDataLastUpdated) normalized.propertyDataLastUpdated = new Date().toISOString();
+      job.propertyData = normalized;
+      var key = _propertyDataKeyFromSource(job && job.lat, job && job.lng, _propertyDataAddressFromJob(job));
+      _propertyDataUpsertRecord(key, {
+        key: key,
+        lat: job && job.lat,
+        lng: job && job.lng,
+        address: _propertyDataAddressFromJob(job),
+        title: job && job.homeownerName ? job.homeownerName : '',
+        propertyData: normalized
+      });
+      _ppPropertyDataCache[key] = Promise.resolve(normalized);
+      return normalized;
+    }
+
+    function _propertyDataDisplayValue(fieldKey, rawValue, allData) {
+      var value = rawValue;
+      if ((value == null || value === '') && fieldKey === 'yearsOwned' && allData && allData.lastSaleDate) {
+        value = _propertyDataComputedYearsOwned(allData.lastSaleDate);
+      }
+      if (value == null || value === '') {
+        return fieldKey === 'homeownerPhone' ? PROPERTY_DATA_PHONE_FALLBACK : PROPERTY_DATA_NOT_FOUND_TEXT;
+      }
+      if (fieldKey === 'lastSaleDate') {
+        var saleDt = new Date(value);
+        return isNaN(saleDt.getTime()) ? String(value) : saleDt.toLocaleDateString();
+      }
+      if (fieldKey === 'propertyDataLastUpdated') {
+        var updDt = new Date(value);
+        return isNaN(updDt.getTime()) ? String(value) : updDt.toLocaleString();
+      }
+      if (fieldKey === 'assessedValue' || fieldKey === 'estimatedValue' || fieldKey === 'neighborhoodMedianIncome') {
+        var money = _propertyDataNumberish(value);
+        return money == null ? String(value) : '$' + Math.round(money).toLocaleString();
+      }
+      if (fieldKey === 'squareFeet' || fieldKey === 'yearBuilt') {
+        var count = _propertyDataNumberish(value);
+        return count == null ? String(value) : Math.round(count).toLocaleString();
+      }
+      if (fieldKey === 'yearsOwned') {
+        var years = _propertyDataNumberish(value);
+        return years == null ? String(value) : (Math.round(years * 10) / 10).toString();
+      }
+      return String(value);
+    }
+
+    function _propertyDataSectionHtml(prefix, propertyData, options) {
+      options = options || {};
+      var subtitle = options.subtitle || '';
+      var titleHtml = options.hideSectionTitle ? '' : '<div style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px;">Property Data</div>';
+      var rowsHtml = PROPERTY_DATA_FIELDS.map(function (field) {
+        return '<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--border);">' +
+          '<span style="color:var(--muted);font-size:12px;">' + _propertyDataHtmlEscape(field.label) + '</span>' +
+          '<span style="font-size:13px;font-weight:600;text-align:right;max-width:60%;word-break:break-word;">' +
+            _propertyDataHtmlEscape(_propertyDataDisplayValue(field.key, propertyData[field.key], propertyData)) +
+          '</span></div>';
+      }).join('');
+
+      var inputsHtml = PROPERTY_DATA_FIELDS.map(function (field) {
+        var value = propertyData[field.key] == null ? '' : propertyData[field.key];
+        if (field.inputType === 'date' && value) {
+          var rawDate = String(value);
+          var parsedDate = new Date(rawDate);
+          value = isNaN(parsedDate.getTime()) ? rawDate.slice(0, 10) : parsedDate.toISOString().slice(0, 10);
+        }
+        return '<label style="display:block;">' +
+          '<span style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px;">' + _propertyDataHtmlEscape(field.label) + '</span>' +
+          '<input id="' + prefix + '-field-' + field.key + '" type="' + field.inputType + '" value="' + _propertyDataHtmlEscape(value) + '" ' +
+            'style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);font-size:13px;box-sizing:border-box;">' +
+        '</label>';
+      }).join('');
+
+      var extraButtons = '';
+      if (options.includeMapActions) {
+        extraButtons =
+          '<button type="button" id="' + prefix + '-campaign" style="flex:1;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;text-align:center;background:var(--panel-2);color:var(--text);border:1px solid var(--border);">Go to Campaign</button>' +
+          '<button type="button" id="' + prefix + '-draw" style="flex:1;padding:8px 10px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;text-align:center;background:var(--accent-2);color:var(--text);">Draw Area &amp; Get Report</button>';
+      }
+
+      return '' +
+        titleHtml +
+        (subtitle ? '<div style="color:var(--muted);font-size:11px;margin-bottom:8px;">' + _propertyDataHtmlEscape(subtitle) + '</div>' : '') +
+        '<div style="display:grid;gap:0;">' + rowsHtml + '</div>' +
+        '<div style="font-size:10px;text-transform:uppercase;color:var(--muted);font-weight:700;letter-spacing:0.08em;margin:14px 0 8px;padding-top:10px;border-top:1px solid var(--border);">Edit Property Data</div>' +
+        '<div style="display:grid;grid-template-columns:minmax(0,1fr);gap:10px;">' + inputsHtml + '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">' +
+          '<button type="button" id="' + prefix + '-refresh" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;">Refresh Free Property Data</button>' +
+          '<button type="button" id="' + prefix + '-save" style="padding:8px 12px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Save Property Data</button>' +
+        '</div>' +
+        (extraButtons ? '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">' + extraButtons + '</div>' : '') +
+        '<div id="' + prefix + '-status" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,0.04);font-size:12px;color:var(--muted);"></div>';
+    }
+
+    function _propertyDataCollectForm(prefix) {
+      var out = _propertyDataEmpty();
+      PROPERTY_DATA_FIELDS.forEach(function (field) {
+        var el = document.getElementById(prefix + '-field-' + field.key);
+        out[field.key] = el ? String(el.value || '').trim() : '';
+      });
+      if (!out.propertyDataLastUpdated) out.propertyDataLastUpdated = new Date().toISOString();
+      if (!out.propertyDataSource) out.propertyDataSource = PROPERTY_DATA_DEFAULT_SOURCE;
+      if (!out.yearsOwned && out.lastSaleDate) out.yearsOwned = _propertyDataComputedYearsOwned(out.lastSaleDate);
+      return out;
+    }
+
+    function _propertyDataSetStatus(prefix, message) {
+      var statusEl = document.getElementById(prefix + '-status');
+      if (!statusEl) return;
+      statusEl.style.display = message ? 'block' : 'none';
+      statusEl.textContent = message || '';
+    }
+
+    function _propertyDataBindSection(prefix, options) {
+      options = options || {};
+      var refreshBtn = document.getElementById(prefix + '-refresh');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', function () {
+          _propertyDataSetStatus(prefix, 'Free property lookup not connected yet. This property can still be saved manually.');
+        });
+      }
+
+      var saveBtn = document.getElementById(prefix + '-save');
+      if (saveBtn && typeof options.onSave === 'function') {
+        saveBtn.addEventListener('click', function () {
+          options.onSave(_propertyDataCollectForm(prefix));
+        });
+      }
+
+      if (options.includeMapActions) {
+        var campaignBtn = document.getElementById(prefix + '-campaign');
+        if (campaignBtn) {
+          campaignBtn.addEventListener('click', function () {
+            openCampaignFromMapContext();
+          });
+        }
+        var drawBtn = document.getElementById(prefix + '-draw');
+        if (drawBtn) {
+          drawBtn.addEventListener('click', function () {
+            if (window.cmpStartPolygonReportDraw) window.cmpStartPolygonReportDraw();
+          });
+        }
       }
     }
 
@@ -9135,6 +9485,7 @@
   if (typeof job.estimate === 'undefined') job.estimate = null;
   if (typeof job.invoice === 'undefined') job.invoice = null;
   if (!Array.isArray(job.history)) job.history = [];
+  var jobPropertyData = _propertyDataForJob(job).propertyData;
 
   var name = job.homeownerName || ((job.firstName || '') + ' ' + (job.lastName || '')).trim() || 'Unnamed';
   var jnDisplay = job.jobNumber ? '#' + formatJobNumber(job.jobNumber) + ' — ' : '';
@@ -9309,6 +9660,13 @@
   html += '</div>';
 
   html += '<div class="job-detail-section">';
+  html += '<div class="job-detail-section-header">PROPERTY DATA</div>';
+  html += _propertyDataSectionHtml('job-propdata', jobPropertyData, {
+    hideSectionTitle: true
+  });
+  html += '</div>';
+
+  html += '<div class="job-detail-section">';
   html += '<div class="job-detail-section-header">CLAIM</div>';
   html += '<div class="job-detail-grid">';
   html += detailField('Insurance Company', job.insuranceCompany);
@@ -9348,6 +9706,16 @@
 
   document.getElementById('job-detail-content').innerHTML = html;
   showPage('page-job-detail');
+
+  _propertyDataBindSection('job-propdata', {
+    onSave: function (formData) {
+      _propertyDataSaveForJob(job, formData);
+      saveJobs(jobs);
+      saveJobToSupabase(job);
+      showUploadToast('Property data saved');
+      openJobDetail(job.id);
+    }
+  });
 
   var docuSignBtn = document.getElementById('open-docusign');
   if (docuSignBtn) {
@@ -10026,7 +10394,47 @@
         var polys = mapsState.swathPolygons[dateStr];
         if (!polys) return;
         polys.forEach(function (p) {
-          try { p.setOptions({ fillOpacity: opacity, strokeOpacity: Math.min(1, opacity + 0.4) }); } catch (_) {}
+          try {
+            var _isPolygon = typeof p.getPaths === 'function';
+            var _isPolyline = !_isPolygon && typeof p.getPath === 'function';
+            var _stormType = (p._stormType || 'hail').toLowerCase();
+            var _bandMin = Number(p._bandMin);
+            if (!isFinite(_bandMin)) _bandMin = (_stormType === 'hail') ? 0.5 : 1.0;
+
+            if (_isPolygon) {
+              if (p._baseFillOpacity == null) {
+                var _fill0 = Number(typeof p.get === 'function' ? p.get('fillOpacity') : NaN);
+                p._baseFillOpacity = isFinite(_fill0) ? _fill0 : 0.3;
+              }
+              if (p._baseStrokeOpacity == null) {
+                var _stroke0 = Number(typeof p.get === 'function' ? p.get('strokeOpacity') : NaN);
+                p._baseStrokeOpacity = isFinite(_stroke0) ? _stroke0 : 0;
+              }
+              if (p._baseStrokeWeight == null) {
+                var _weight0 = Number(typeof p.get === 'function' ? p.get('strokeWeight') : NaN);
+                p._baseStrokeWeight = isFinite(_weight0) ? _weight0 : 0;
+              }
+              var _fillOpacity = _swathScaledDisplayOpacity(opacity, p._baseFillOpacity, _bandMin, _stormType);
+              var _strokeOpacity = _swathScaledStrokeOpacity(opacity, p._baseStrokeOpacity, _bandMin, _stormType, _fillOpacity);
+              var _strokeWeight = _swathScaledStrokeWeight(p._baseStrokeWeight, _bandMin, _stormType);
+              var _fillColor = (typeof p.get === 'function' ? p.get('fillColor') : null) || (typeof p.get === 'function' ? p.get('strokeColor') : null);
+              p.setOptions({
+                fillOpacity: _fillOpacity,
+                strokeColor: _fillColor || undefined,
+                strokeOpacity: _strokeOpacity,
+                strokeWeight: _strokeWeight
+              });
+            } else if (_isPolyline) {
+              if (p._baseStrokeOpacity == null) {
+                var _lineStroke0 = Number(typeof p.get === 'function' ? p.get('strokeOpacity') : NaN);
+                p._baseStrokeOpacity = isFinite(_lineStroke0) ? _lineStroke0 : 0.4;
+              }
+              var _lineOpacity = (_stormType === 'hail')
+                ? _swathScaledDisplayOpacity(opacity, Math.max(p._baseStrokeOpacity, 0.28), _bandMin, _stormType)
+                : Math.min(0.92, Math.max(0.10, p._baseStrokeOpacity * (opacity / 0.55)));
+              p.setOptions({ strokeOpacity: _lineOpacity });
+            }
+          } catch (_) {}
         });
       });
       Object.keys(mapsState.aiSwathOverlays).forEach(function (dateStr) {
@@ -10050,8 +10458,29 @@
       Object.keys(mapsState.hailBandPolygons).forEach(function (dateStr) {
         var polys = mapsState.hailBandPolygons[dateStr];
         if (!polys) return;
-        polys.forEach(function (p, bi) {
-          try { p.setOptions({ fillOpacity: opacity * (0.28 + bi * 0.03) }); } catch (_) {}
+        polys.forEach(function (p) {
+          try {
+            var _bandMin = Number(p._bandThreshold);
+            if (!isFinite(_bandMin)) _bandMin = 0.5;
+            if (p._baseFillOpacity == null) {
+              var _fill0 = Number(typeof p.get === 'function' ? p.get('fillOpacity') : NaN);
+              p._baseFillOpacity = isFinite(_fill0) ? _fill0 : 0.55;
+            }
+            if (p._baseStrokeOpacity == null) {
+              var _stroke0 = Number(typeof p.get === 'function' ? p.get('strokeOpacity') : NaN);
+              p._baseStrokeOpacity = isFinite(_stroke0) ? _stroke0 : 0.18;
+            }
+            if (p._baseStrokeWeight == null) {
+              var _weight0 = Number(typeof p.get === 'function' ? p.get('strokeWeight') : NaN);
+              p._baseStrokeWeight = isFinite(_weight0) ? _weight0 : 1;
+            }
+            var _fillOpacity = _swathScaledDisplayOpacity(opacity, p._baseFillOpacity, _bandMin, 'hail');
+            p.setOptions({
+              fillOpacity: _fillOpacity,
+              strokeOpacity: _swathScaledStrokeOpacity(opacity, p._baseStrokeOpacity, _bandMin, 'hail', _fillOpacity),
+              strokeWeight: _swathScaledStrokeWeight(p._baseStrokeWeight, _bandMin, 'hail')
+            });
+          } catch (_) {}
         });
       });
       Object.keys(mapsState.windBandPolygons).forEach(function (dateStr) {
@@ -11053,14 +11482,62 @@
     // ── Severity → color (hail: pale-yellow → orange → red → magenta/purple) ──
     // Nested-swath ramp matches HailTrace: outer/light=yellow, inner/core=purple
     function swathSeverityColor(hailIn) {
-      if (hailIn >= 3.00) return [142,  36, 170, 0.50]; // #8e24aa purple
-      if (hailIn >= 2.50) return [216,  67,  21, 0.52]; // #d84315 deep orange-red
-      if (hailIn >= 2.00) return [244,  81,  30, 0.48]; // #f4511e orange-red
-      if (hailIn >= 1.75) return [251, 140,   0, 0.45]; // #fb8c00 orange
-      if (hailIn >= 1.50) return [249, 168,  37, 0.40]; // #f9a825 amber
-      if (hailIn >= 1.25) return [253, 216,  53, 0.34]; // #fdd835 yellow
-      if (hailIn >= 1.00) return [255, 241, 118, 0.28]; // #fff176 light yellow
-      return                     [255, 245, 157, 0.22]; // #fff59d pale yellow (< 1.0")
+      if (hailIn >= 3.00) return [142,  36, 170, 0.52]; // #8e24aa purple
+      if (hailIn >= 2.50) return [198,  40,  40, 0.50]; // #c62828 deep red
+      if (hailIn >= 2.00) return [229,  57,  53, 0.48]; // #e53935 red-orange
+      if (hailIn >= 1.75) return [245, 124,   0, 0.45]; // #f57c00 orange
+      if (hailIn >= 1.50) return [255, 152,   0, 0.40]; // #ff9800 amber
+      if (hailIn >= 1.25) return [255, 193,   7, 0.34]; // #ffc107 gold
+      if (hailIn >= 1.00) return [255, 235,  59, 0.30]; // #ffeb3b yellow
+      return                     [255, 245, 157, 0.24]; // #fff59d pale yellow (< 1.0")
+    }
+
+    function _swathHailOpacityFloor(hailIn) {
+      if (hailIn >= 3.00) return 0.34;
+      if (hailIn >= 2.00) return 0.34;
+      if (hailIn >= 1.75) return 0.30;
+      if (hailIn >= 1.50) return 0.26;
+      if (hailIn >= 1.25) return 0.22;
+      if (hailIn >= 1.00) return 0.18;
+      return 0.14;
+    }
+
+    function _swathScaledDisplayOpacity(globalOpacity, baseOpacity, bandMin, stormType) {
+      var clampedOpacity = Math.max(0, Math.min(1, Number(globalOpacity) || 0));
+      var anchor = 0.55;
+      var base = isFinite(baseOpacity) ? baseOpacity : 0.30;
+      if (clampedOpacity <= 0) return 0;
+      if ((stormType || 'hail').toLowerCase() !== 'hail') {
+        if (clampedOpacity >= 1) return 1;
+        return Math.min(1, Math.max(0.02, base * (clampedOpacity / anchor)));
+      }
+      if (clampedOpacity >= 1) return 1;
+      var floor = _swathHailOpacityFloor(bandMin);
+      base = Math.max(base, floor);
+      if (clampedOpacity <= anchor) {
+        var tLow = Math.max(0, Math.min(1, clampedOpacity / anchor));
+        return floor + (base - floor) * Math.pow(tLow, 0.92);
+      }
+      var tHigh = Math.max(0, Math.min(1, (clampedOpacity - anchor) / (1 - anchor)));
+      return base + (1 - base) * Math.pow(tHigh, 0.88);
+    }
+
+    function _swathScaledStrokeOpacity(globalOpacity, baseStrokeOpacity, bandMin, stormType, fillOpacity) {
+      if ((stormType || 'hail').toLowerCase() !== 'hail') {
+        var base = isFinite(baseStrokeOpacity) ? baseStrokeOpacity : 0.12;
+        return Math.min(0.85, Math.max(0, base * (globalOpacity / 0.55)));
+      }
+      if (bandMin < 1.50) return 0;
+      var floor = bandMin >= 2.00 ? 0.20 : bandMin >= 1.75 ? 0.18 : 0.15;
+      return Math.max(floor, Math.min(0.25, fillOpacity * 0.48));
+    }
+
+    function _swathScaledStrokeWeight(baseStrokeWeight, bandMin, stormType) {
+      if ((stormType || 'hail').toLowerCase() !== 'hail') {
+        return isFinite(baseStrokeWeight) ? baseStrokeWeight : 0;
+      }
+      if (bandMin < 1.50) return 0;
+      return Math.max(1, isFinite(baseStrokeWeight) ? baseStrokeWeight : 1);
     }
 
     // ── Wind severity → soft blue ramp ──
@@ -11482,10 +11959,78 @@
       return left.concat(right);
     }
 
-    // ── Core ribbon renderer: narrow LSR-driven pale-yellow outer + orange core corridors ──
-    // Called for every date (including mrms_mesh dates) to fill radar gaps with NWS ground truth.
-    // Outer pale-yellow (z=88): below all mrms_mesh cells (z=150+) — shows only in uncovered areas.
-    // Orange core (z=305): above mrms_mesh cells — narrow visible ribbon where 1.5"+ hail confirmed.
+    // Buffer a polyline with thinner tapered ends so MRMS-heavy ribbons stay streak-like.
+    function _bufferPolylineTapered(pts, halfWidth, endFactor, minHalfWidth) {
+      if (!pts || pts.length < 2) return [];
+      var left = [], right = [];
+      var tailFactor = Math.max(0.15, Math.min(0.95, endFactor == null ? 0.40 : endFactor));
+      var minWidth = Math.max(0.004, minHalfWidth == null ? halfWidth * tailFactor : minHalfWidth);
+      for (var i = 0; i < pts.length; i++) {
+        var prev = pts[Math.max(0, i - 1)];
+        var next = pts[Math.min(pts.length - 1, i + 1)];
+        var dx = next.lon - prev.lon;
+        var dy = next.lat - prev.lat;
+        var len = Math.sqrt(dx * dx + dy * dy) || 0.001;
+        var nx = -dy / len;
+        var ny = dx / len;
+        var t = pts.length === 1 ? 0.5 : (i / (pts.length - 1));
+        var widthScale = tailFactor + (1 - tailFactor) * Math.sin(Math.PI * t);
+        var width = Math.max(minWidth, halfWidth * widthScale);
+        left.push({ lat: pts[i].lat + ny * width, lon: pts[i].lon + nx * width });
+        right.push({ lat: pts[i].lat - ny * width, lon: pts[i].lon - nx * width });
+      }
+      right.reverse();
+      return left.concat(right);
+    }
+
+    function _smoothClosedRing(pts, iters) {
+      if (!pts || pts.length < 3) return pts || [];
+      var poly = pts.slice();
+      for (var k = 0; k < (iters || 2); k++) {
+        var next = [];
+        for (var i = 0; i < poly.length; i++) {
+          var a = poly[i];
+          var b = poly[(i + 1) % poly.length];
+          next.push({ lat: 0.75 * a.lat + 0.25 * b.lat, lng: 0.75 * a.lng + 0.25 * b.lng });
+          next.push({ lat: 0.25 * a.lat + 0.75 * b.lat, lng: 0.25 * a.lng + 0.75 * b.lng });
+        }
+        poly = next;
+      }
+      return poly;
+    }
+
+    // Detect dates dominated by mrms_mesh ingest: ≥150 rows, ≥80% mrms_mesh, ≥60 strong cells.
+    // Drives wider corridor rendering in _drawHailCoreRibbons for those dates.
+    function _isMrmsHeavyDate(rows) {
+      if (!rows || rows.length < 150) return false;
+      var mrms = rows.filter(function(r) { return (r.source || '').toLowerCase() === 'mrms_mesh'; });
+      if (mrms.length < 150 || mrms.length < rows.length * 0.80) return false;
+      var strong = mrms.filter(function(r) { return (+(r.band_min || 0)) >= 1.25; });
+      return strong.length >= 60;
+    }
+
+    // Weighted moving average smoother for lat/lon centerline arrays.
+    function _smoothCenterlinePts(pts, passes) {
+      if (!pts || pts.length <= 2) return pts;
+      var cur = pts;
+      for (var _sp = 0; _sp < (passes || 4); _sp++) {
+        var next = [cur[0]];
+        for (var _si = 1; _si < cur.length - 1; _si++) {
+          next.push({
+            lat: (cur[_si - 1].lat + 2 * cur[_si].lat + cur[_si + 1].lat) / 4,
+            lon: (cur[_si - 1].lon + 2 * cur[_si].lon + cur[_si + 1].lon) / 4,
+            hail_in: cur[_si].hail_in
+          });
+        }
+        next.push(cur[cur.length - 1]);
+        cur = next;
+      }
+      return cur;
+    }
+
+    // ── Core ribbon renderer: LSR-driven pale-yellow outer + orange core corridors ──
+    // For MRMS-heavy dates: wide filled swath bodies (outer 0.20°, core 0.06°) with smoothing.
+    // For other dates: narrow ribbons (outer 0.10°, core 0.025°) supplementing ground truth.
     function _drawHailCoreRibbons(dateStr, hailPts, rows) {
       var map = mapsState.map;
       if (!map) return;
@@ -11523,69 +12068,114 @@
 
       if (!seeds.length) return;
 
-      var clusters = _clusterByDistance(seeds, 0.25);
+      var _mrmsHeavy = _isMrmsHeavyDate(rows);
+      var _outerHalfWidth = _mrmsHeavy ? 0.17 : 0.10;
+      var _coreHalfWidth = _mrmsHeavy ? 0.045 : 0.025;
+      // MRMS-heavy: tighter radius keeps parallel tracks separate; others use 0.25° default.
+      var clusters = _clusterByDistance(seeds, _mrmsHeavy ? 0.20 : 0.25);
 
-      // Bridge-merge: join clusters on the same storm-track axis that have a short data gap.
-      // Repeats until no more merges are possible.
-      var _bChanged = true;
-      while (_bChanged) {
-        _bChanged = false;
-        for (var _ba = 0; _ba < clusters.length && !_bChanged; _ba++) {
-          var _na = clusters[_ba].length, _cxa = 0, _cya = 0;
-          clusters[_ba].forEach(function(p) { _cxa += p.lon; _cya += p.lat; });
-          _cxa /= _na; _cya /= _na;
-          var _sxxa = 0, _sxya = 0, _syya = 0;
-          clusters[_ba].forEach(function(p) {
-            var dx = p.lon - _cxa, dy = p.lat - _cya;
-            _sxxa += dx*dx; _sxya += dx*dy; _syya += dy*dy;
-          });
-          var _angA = 0.5 * Math.atan2(2*_sxya, _sxxa - _syya);
-          var _acA = Math.cos(_angA), _asA = Math.sin(_angA);
-          if (_acA < 0) { _acA = -_acA; _asA = -_asA; }
-
-          for (var _bb = _ba + 1; _bb < clusters.length && !_bChanged; _bb++) {
-            // Minimum point-to-point distance between cluster A and cluster B
-            var _minD = Infinity;
-            for (var _ai = 0; _ai < clusters[_ba].length; _ai++) {
-              for (var _bi = 0; _bi < clusters[_bb].length; _bi++) {
-                var _dd = Math.sqrt(
-                  Math.pow(clusters[_ba][_ai].lat - clusters[_bb][_bi].lat, 2) +
-                  Math.pow(clusters[_ba][_ai].lon - clusters[_bb][_bi].lon, 2)
-                );
-                if (_dd < _minD) _minD = _dd;
+      // MRMS-heavy: bridge-merge clusters that share the same storm-track axis across short data gaps.
+      if (_mrmsHeavy) {
+        var _bm = true;
+        while (_bm) {
+          _bm = false;
+          for (var _bi = 0; _bi < clusters.length && !_bm; _bi++) {
+            var _ni = clusters[_bi].length, _cxi = 0, _cyi = 0;
+            clusters[_bi].forEach(function(p) { _cxi += p.lon; _cyi += p.lat; });
+            _cxi /= _ni; _cyi /= _ni;
+            var _sxi = 0, _sxyi = 0, _syi = 0;
+            clusters[_bi].forEach(function(p) { var dx = p.lon - _cxi, dy = p.lat - _cyi; _sxi += dx*dx; _sxyi += dx*dy; _syi += dy*dy; });
+            var _angi = 0.5 * Math.atan2(2 * _sxyi, _sxi - _syi);
+            var _aci = Math.cos(_angi), _asi = Math.sin(_angi);
+            if (_aci < 0) { _aci = -_aci; _asi = -_asi; }
+            for (var _bj = _bi + 1; _bj < clusters.length && !_bm; _bj++) {
+              var _minG = Infinity;
+              for (var _ai2 = 0; _ai2 < clusters[_bi].length; _ai2++) {
+                for (var _aj2 = 0; _aj2 < clusters[_bj].length; _aj2++) {
+                  var _dg = Math.sqrt(
+                    Math.pow(clusters[_bi][_ai2].lat - clusters[_bj][_aj2].lat, 2) +
+                    Math.pow(clusters[_bi][_ai2].lon - clusters[_bj][_aj2].lon, 2));
+                  if (_dg < _minG) _minG = _dg;
+                }
               }
+              if (_minG > 0.60) continue;
+              var _nj = clusters[_bj].length, _cxj = 0, _cyj = 0;
+              clusters[_bj].forEach(function(p) { _cxj += p.lon; _cyj += p.lat; });
+              _cxj /= _nj; _cyj /= _nj;
+              var _sxj = 0, _sxyj = 0, _syj = 0;
+              clusters[_bj].forEach(function(p) { var dx = p.lon - _cxj, dy = p.lat - _cyj; _sxj += dx*dx; _sxyj += dx*dy; _syj += dy*dy; });
+              var _angj = 0.5 * Math.atan2(2 * _sxyj, _sxj - _syj);
+              var _acj = Math.cos(_angj), _asj = Math.sin(_angj);
+              if (_acj < 0) { _acj = -_acj; _asj = -_asj; }
+              if (Math.abs(_aci * _acj + _asi * _asj) < 0.72) continue;
+              var _ddx = _cxj - _cxi, _ddy = _cyj - _cyi;
+              var _cdd = Math.sqrt(_ddx * _ddx + _ddy * _ddy);
+              if (_cdd > 0.001) {
+                var _crs = Math.abs(_aci * _ddy - _asi * _ddx) / _cdd;
+                if (_crs > 0.30) continue;
+                if ((_crs * _cdd) > 0.20) continue;
+              }
+              clusters[_bi] = clusters[_bi].concat(clusters[_bj]);
+              clusters.splice(_bj, 1);
+              _bm = true;
             }
-            if (_minD > 0.70) continue; // gap too wide to bridge (~49 mi)
+          }
+        }
+      }
 
-            // PCA for cluster B
-            var _nb = clusters[_bb].length, _cxb = 0, _cyb = 0;
-            clusters[_bb].forEach(function(p) { _cxb += p.lon; _cyb += p.lat; });
-            _cxb /= _nb; _cyb /= _nb;
-            var _sxxb = 0, _sxyb = 0, _syyb = 0;
-            clusters[_bb].forEach(function(p) {
-              var dx = p.lon - _cxb, dy = p.lat - _cyb;
-              _sxxb += dx*dx; _sxyb += dx*dy; _syyb += dy*dy;
+      // Non-MRMS-heavy dates: bridge-merge with looser parameters (MRMS-heavy already merged above).
+      if (!_mrmsHeavy) {
+        var _bChanged = true;
+        while (_bChanged) {
+          _bChanged = false;
+          for (var _ba = 0; _ba < clusters.length && !_bChanged; _ba++) {
+            var _na = clusters[_ba].length, _cxa = 0, _cya = 0;
+            clusters[_ba].forEach(function(p) { _cxa += p.lon; _cya += p.lat; });
+            _cxa /= _na; _cya /= _na;
+            var _sxxa = 0, _sxya = 0, _syya = 0;
+            clusters[_ba].forEach(function(p) {
+              var dx = p.lon - _cxa, dy = p.lat - _cya;
+              _sxxa += dx*dx; _sxya += dx*dy; _syya += dy*dy;
             });
-            var _angB = 0.5 * Math.atan2(2*_sxyb, _sxxb - _syyb);
-            var _acB = Math.cos(_angB), _asB = Math.sin(_angB);
-            if (_acB < 0) { _acB = -_acB; _asB = -_asB; }
+            var _angA = 0.5 * Math.atan2(2*_sxya, _sxxa - _syya);
+            var _acA = Math.cos(_angA), _asA = Math.sin(_angA);
+            if (_acA < 0) { _acA = -_acA; _asA = -_asA; }
 
-            // Skip if axes are not aligned (dot product < 0.70 ≈ within ~46°)
-            var _dot = Math.abs(_acA * _acB + _asA * _asB);
-            if (_dot < 0.70) continue;
-
-            // Skip if the centroid-to-centroid line is too far off the shared axis (cross > 0.55)
-            var _dcx = _cxb - _cxa, _dcy = _cyb - _cya;
-            var _cdist = Math.sqrt(_dcx * _dcx + _dcy * _dcy);
-            if (_cdist > 0.001) {
-              var _cross = Math.abs(_acA * _dcy - _asA * _dcx) / _cdist;
-              if (_cross > 0.55) continue;
+            for (var _bb = _ba + 1; _bb < clusters.length && !_bChanged; _bb++) {
+              var _minD = Infinity;
+              for (var _ai = 0; _ai < clusters[_ba].length; _ai++) {
+                for (var _bi = 0; _bi < clusters[_bb].length; _bi++) {
+                  var _dd = Math.sqrt(
+                    Math.pow(clusters[_ba][_ai].lat - clusters[_bb][_bi].lat, 2) +
+                    Math.pow(clusters[_ba][_ai].lon - clusters[_bb][_bi].lon, 2)
+                  );
+                  if (_dd < _minD) _minD = _dd;
+                }
+              }
+              if (_minD > 0.70) continue;
+              var _nb = clusters[_bb].length, _cxb = 0, _cyb = 0;
+              clusters[_bb].forEach(function(p) { _cxb += p.lon; _cyb += p.lat; });
+              _cxb /= _nb; _cyb /= _nb;
+              var _sxxb = 0, _sxyb = 0, _syyb = 0;
+              clusters[_bb].forEach(function(p) {
+                var dx = p.lon - _cxb, dy = p.lat - _cyb;
+                _sxxb += dx*dx; _sxyb += dx*dy; _syyb += dy*dy;
+              });
+              var _angB = 0.5 * Math.atan2(2*_sxyb, _sxxb - _syyb);
+              var _acB = Math.cos(_angB), _asB = Math.sin(_angB);
+              if (_acB < 0) { _acB = -_acB; _asB = -_asB; }
+              var _dot = Math.abs(_acA * _acB + _asA * _asB);
+              if (_dot < 0.70) continue;
+              var _dcx = _cxb - _cxa, _dcy = _cyb - _cya;
+              var _cdist = Math.sqrt(_dcx * _dcx + _dcy * _dcy);
+              if (_cdist > 0.001) {
+                var _cross = Math.abs(_acA * _dcy - _asA * _dcx) / _cdist;
+                if (_cross > 0.55) continue;
+              }
+              clusters[_ba] = clusters[_ba].concat(clusters[_bb]);
+              clusters.splice(_bb, 1);
+              _bChanged = true;
             }
-
-            // Merge B into A and restart scan
-            clusters[_ba] = clusters[_ba].concat(clusters[_bb]);
-            clusters.splice(_bb, 1);
-            _bChanged = true;
           }
         }
       }
@@ -11610,6 +12200,16 @@
           if (axCos < 0) { axCos = -axCos; axSin = -axSin; }
         }
 
+        // MRMS-heavy: skip tiny isolated vertical clusters (N-S MRMS cell extent, not storm tracks).
+        if (_mrmsHeavy) {
+          var _ewSp = 0, _nsSp = 0;
+          cluster.forEach(function(p) {
+            _ewSp = Math.max(_ewSp, Math.abs(p.lon - cx));
+            _nsSp = Math.max(_nsSp, Math.abs(p.lat - cy));
+          });
+          if (_ewSp * 2 < 0.08 && _nsSp > _ewSp) return;
+        }
+
         // Sort cluster along axis, deduplicate to clean centerline (min 0.010° gap)
         var sorted = cluster.slice().sort(function(a, b) {
           return ((a.lat - cy)*axSin + (a.lon - cx)*axCos) -
@@ -11631,10 +12231,16 @@
             { lat: cl[0].lat + ext*axSin, lon: cl[0].lon + ext*axCos, hail_in: cl[0].hail_in }
           ];
         }
+        // MRMS-heavy: smooth centerline to remove MRMS grid zig-zags before buffering.
+        if (_mrmsHeavy && cl.length > 2) {
+          cl = _smoothCenterlinePts(cl, 6);
+        }
 
-        // Outer pale-yellow corridor (~0.10° half-width ≈ 7 mi), z=88: hides under mrms_mesh cells
+        // Outer pale-yellow corridor: 0.20° half-width for MRMS-heavy (≈14 mi), 0.10° otherwise.
         var oc = swathSeverityColor(0.5);
-        var outerRing = _bufferPolyline(cl, 0.10);
+        var outerRing = _mrmsHeavy
+          ? _bufferPolylineTapered(cl, _outerHalfWidth, 0.38, 0.028)
+          : _bufferPolyline(cl, _outerHalfWidth);
         if (outerRing && outerRing.length >= 3) {
           var outerPoly = new google.maps.Polygon({
             paths: outerRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
@@ -11643,7 +12249,7 @@
             fillOpacity: oc[3],
             zIndex: 88, clickable: false, map: map
           });
-          outerPoly._stormType = 'hail'; outerPoly._dateStr = dateStr;
+          outerPoly._stormType = 'hail'; outerPoly._dateStr = dateStr; outerPoly._bandMin = 0.5;
           mapsState.swathPolygons[dateStr].push(outerPoly);
         }
 
@@ -11671,9 +12277,15 @@
               { lat: cl15[0].lat + ext2*axSin, lon: cl15[0].lon + ext2*axCos }
             ];
           }
-          // Half-width 0.025° ≈ 1.7 mi — narrow enough not to overpower
+          // MRMS-heavy: smooth core centerline to remove grid zig-zags.
+          if (_mrmsHeavy && cl15.length > 2) {
+            cl15 = _smoothCenterlinePts(cl15, 6);
+          }
+          // Half-width: 0.06° (≈4 mi) for MRMS-heavy — visible filled ribbon; 0.025° otherwise.
           var cc = swathSeverityColor(1.75);
-          var coreRing = _bufferPolyline(cl15, 0.025);
+          var coreRing = _mrmsHeavy
+            ? _bufferPolylineTapered(cl15, _coreHalfWidth, 0.30, 0.012)
+            : _bufferPolyline(cl15, _coreHalfWidth);
           if (coreRing && coreRing.length >= 3) {
             var corePoly = new google.maps.Polygon({
               paths: coreRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
@@ -11682,7 +12294,7 @@
               fillOpacity: cc[3],
               zIndex: 305, clickable: false, map: map
             });
-            corePoly._stormType = 'hail'; corePoly._dateStr = dateStr;
+            corePoly._stormType = 'hail'; corePoly._dateStr = dateStr; corePoly._bandMin = 1.75;
             mapsState.swathPolygons[dateStr].push(corePoly);
           }
         }
@@ -11796,6 +12408,7 @@
             zIndex: z, clickable: false, map: mapsState.map
           });
           line._stormType = 'hail'; line._dateStr = dateStr;
+          line._bandMin = weight >= 120 ? 0.5 : (weight >= 65 ? 1.0 : 1.75);
           mapsState.swathPolygons[dateStr].push(line);
         };
 
@@ -11830,9 +12443,13 @@
     function _drawSmallHailLayer(dateStr, rows, hailPts) {
       if (!mapsState.map) return;
       mapsState.swathPolygons[dateStr] = mapsState.swathPolygons[dateStr] || [];
+      var _mrmsHeavy = _isMrmsHeavyDate(rows);
+      var _lowColor = swathSeverityColor(0.5);
+      var _lowFill = 'rgb(' + _lowColor[0] + ',' + _lowColor[1] + ',' + _lowColor[2] + ')';
+      var _outerSeedThreshold = _mrmsHeavy ? 0.35 : 0.5;
 
       // ── PASS 1: polygon expansion ──
-      (rows || []).forEach(function(r) {
+      if (!_mrmsHeavy) (rows || []).forEach(function(r) {
         var bmin = +(r.band_min || 0);
         if (bmin < 0.5) return;
 
@@ -11877,18 +12494,19 @@
             var dLat = coord[1] - cLat, dLon = coord[0] - cLon;
             var dist = Math.sqrt(dLat * dLat + dLon * dLon) || 0.001;
             return {
-              lat: cLat + dLat * 2.5 + (dLat / dist) * 0.08,
-              lng: cLon + dLon * 2.5 + (dLon / dist) * 0.08
+              lat: cLat + dLat * (_mrmsHeavy ? 2.15 : 2.5) + (dLat / dist) * (_mrmsHeavy ? 0.06 : 0.08),
+              lng: cLon + dLon * (_mrmsHeavy ? 2.15 : 2.5) + (dLon / dist) * (_mrmsHeavy ? 0.06 : 0.08)
             };
           });
+          if (_mrmsHeavy) expanded = _smoothClosedRing(expanded, 2);
 
           var poly = new google.maps.Polygon({
             paths: expanded,
             strokeWeight: 0, strokeOpacity: 0,
-            fillColor: '#d8d67a', fillOpacity: 0.38,
+            fillColor: _mrmsHeavy ? _lowFill : '#d8d67a', fillOpacity: _mrmsHeavy ? 0.24 : 0.38,
             zIndex: 75, clickable: false, map: mapsState.map
           });
-          poly._stormType = 'hail'; poly._dateStr = dateStr;
+          poly._stormType = 'hail'; poly._dateStr = dateStr; poly._bandMin = 0.5;
           mapsState.swathPolygons[dateStr].push(poly);
         });
       });
@@ -11898,7 +12516,7 @@
       var seedPts = [];
 
       (rows || []).forEach(function(r) {
-        if (+(r.band_min || 0) < 0.5) return;
+        if (+(r.band_min || 0) < _outerSeedThreshold) return;
         var clat = NaN, clon = NaN;
         var sc = +r.centroid_lat, sn = +r.centroid_lon;
         if (isFinite(sc) && isFinite(sn)) { clat = sc; clon = sn; }
@@ -11917,19 +12535,19 @@
             }
           } catch(e2) {}
         }
-        if (isFinite(clat) && isFinite(clon)) seedPts.push({ lat: clat, lon: clon });
+        if (isFinite(clat) && isFinite(clon)) seedPts.push({ lat: clat, lon: clon, hail_in: +(r.band_min || 0) });
       });
 
       (hailPts || []).forEach(function(p) {
-        if (+(p.hail_in || 0) < 0.5) return;
+        if (+(p.hail_in || 0) < _outerSeedThreshold) return;
         var la = +p.lat, lo = +p.lon;
-        if (isFinite(la) && isFinite(lo)) seedPts.push({ lat: la, lon: lo });
+        if (isFinite(la) && isFinite(lo)) seedPts.push({ lat: la, lon: lo, hail_in: +(p.hail_in || 0) });
       });
 
       if (!seedPts.length) return;
 
       // 0.25° cluster radius chains nearby reports/centroids into one storm track per cluster
-      _clusterByDistance(seedPts, 0.25).forEach(function(cluster) {
+      if (!_mrmsHeavy) _clusterByDistance(seedPts, 0.25).forEach(function(cluster) {
         if (cluster.length < 2) return;
 
         var n = cluster.length, cx = 0, cy = 0;
@@ -11951,20 +12569,124 @@
         });
         if (path.length < 2) return;
         if (path.length > 300) path = path.slice(0, 300);
+        if (_mrmsHeavy && path.length > 2) path = _smoothCenterlinePts(path, 4);
 
-        // Buffer the PCA-sorted centerline into a 0.20°-wide (≈14 mi) corridor polygon
-        var corridorRing = _bufferPolyline(path, 0.20);
+        // Buffer the PCA-sorted centerline into a tapered corridor so parallel streaks stay separate.
+        var corridorRing = _mrmsHeavy
+          ? _bufferPolylineTapered(path, 0.17, 0.42, 0.034)
+          : _bufferPolyline(path, 0.20);
         if (!corridorRing || corridorRing.length < 3) return;
 
         var poly = new google.maps.Polygon({
           paths: corridorRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
           strokeWeight: 0, strokeOpacity: 0,
-          fillColor: '#d8d67a', fillOpacity: 0.32,
+          fillColor: _mrmsHeavy ? _lowFill : '#d8d67a', fillOpacity: _mrmsHeavy ? 0.24 : 0.32,
           zIndex: 70, clickable: false, map: mapsState.map
         });
-        poly._stormType = 'hail'; poly._dateStr = dateStr;
+        poly._stormType = 'hail'; poly._dateStr = dateStr; poly._bandMin = 0.5;
         mapsState.swathPolygons[dateStr].push(poly);
       });
+
+      if (_mrmsHeavy) {
+        function _weakClusterMeta(cluster) {
+          var n = cluster.length, cx = 0, cy = 0;
+          cluster.forEach(function(p) { cx += p.lon; cy += p.lat; });
+          cx /= Math.max(1, n); cy /= Math.max(1, n);
+          var sxx = 0, sxy = 0, syy = 0;
+          var minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
+          cluster.forEach(function(p) {
+            var dx = p.lon - cx, dy = p.lat - cy;
+            sxx += dx * dx; sxy += dx * dy; syy += dy * dy;
+            if (p.lat < minLat) minLat = p.lat;
+            if (p.lat > maxLat) maxLat = p.lat;
+            if (p.lon < minLon) minLon = p.lon;
+            if (p.lon > maxLon) maxLon = p.lon;
+          });
+          var ang = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+          var axCos = Math.cos(ang), axSin = Math.sin(ang);
+          if (axCos < 0) { axCos = -axCos; axSin = -axSin; }
+          return {
+            cx: cx,
+            cy: cy,
+            axCos: axCos,
+            axSin: axSin,
+            lonSpan: isFinite(minLon) ? (maxLon - minLon) : 0,
+            latSpan: isFinite(minLat) ? (maxLat - minLat) : 0
+          };
+        }
+
+        var weakSeedPts = seedPts.filter(function(p) {
+          var h = (p.hail_in || 0);
+          return h >= _outerSeedThreshold && h <= 1.05;
+        });
+        var weakClusters = _clusterByDistance(weakSeedPts, 0.33);
+        var weakChanged = true;
+        while (weakChanged) {
+          weakChanged = false;
+          for (var wi = 0; wi < weakClusters.length && !weakChanged; wi++) {
+            var wa = _weakClusterMeta(weakClusters[wi]);
+            for (var wj = wi + 1; wj < weakClusters.length && !weakChanged; wj++) {
+              var wb = _weakClusterMeta(weakClusters[wj]);
+              var dot = Math.abs(wa.axCos * wb.axCos + wa.axSin * wb.axSin);
+              if (dot < 0.72) continue;
+              var minGap = Infinity;
+              for (var wai = 0; wai < weakClusters[wi].length; wai++) {
+                for (var waj = 0; waj < weakClusters[wj].length; waj++) {
+                  var dg = Math.sqrt(
+                    Math.pow(weakClusters[wi][wai].lat - weakClusters[wj][waj].lat, 2) +
+                    Math.pow(weakClusters[wi][wai].lon - weakClusters[wj][waj].lon, 2)
+                  );
+                  if (dg < minGap) minGap = dg;
+                }
+              }
+              if (minGap > 0.62) continue;
+              var dcx = wb.cx - wa.cx, dcy = wb.cy - wa.cy;
+              var cdist = Math.sqrt(dcx * dcx + dcy * dcy);
+              if (cdist > 0.001) {
+                var cross = Math.abs(wa.axCos * dcy - wa.axSin * dcx) / cdist;
+                if (cross > 0.34) continue;
+                if ((cross * cdist) > 0.21) continue;
+              }
+              var mergedMeta = _weakClusterMeta(weakClusters[wi].concat(weakClusters[wj]));
+              if (mergedMeta.latSpan > mergedMeta.lonSpan * 1.25 && Math.abs(mergedMeta.axCos) < 0.55) continue;
+              weakClusters[wi] = weakClusters[wi].concat(weakClusters[wj]);
+              weakClusters.splice(wj, 1);
+              weakChanged = true;
+            }
+          }
+        }
+
+        weakClusters.forEach(function(cluster) {
+          if (cluster.length < 2) return;
+          var meta = _weakClusterMeta(cluster);
+          var cx = meta.cx, cy = meta.cy, axCos = meta.axCos, axSin = meta.axSin;
+          var sorted = cluster.slice().sort(function(a, b) {
+            return ((a.lat - cy) * axSin + (a.lon - cx) * axCos) -
+                   ((b.lat - cy) * axSin + (b.lon - cx) * axCos);
+          });
+          var path = [];
+          sorted.forEach(function(p) {
+            if (path.length) {
+              var prev = path[path.length - 1];
+              if (Math.sqrt(Math.pow(p.lat - prev.lat, 2) + Math.pow(p.lon - prev.lon, 2)) < 0.010) return;
+            }
+            path.push({ lat: p.lat, lon: p.lon });
+          });
+          if (path.length < 2) return;
+          if (path.length > 2) path = _smoothCenterlinePts(path, 6);
+          var weakRing = _bufferPolylineTapered(path, 0.155, 0.34, 0.016);
+          if (!weakRing || weakRing.length < 3) return;
+
+          var weakPoly = new google.maps.Polygon({
+            paths: weakRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
+            strokeWeight: 0, strokeOpacity: 0,
+            fillColor: _lowFill, fillOpacity: 0.24,
+            zIndex: 69, clickable: false, map: mapsState.map
+          });
+          weakPoly._stormType = 'hail'; weakPoly._dateStr = dateStr; weakPoly._bandMin = 0.5;
+          mapsState.swathPolygons[dateStr].push(weakPoly);
+        });
+      }
     }
 
     // ── Corridor fallback — generates rotated-rect cell polygons from LSR hail/wind/tornado points ──
@@ -16822,9 +17544,15 @@
             // When rows has mrms_mesh data, mapsDrawSavedStormPolygonForDate already drew the
             // HailRecon-style swaths — adding blobs/envelopes/corridors on top duplicates them.
             var _hasMrmsRows = !!(rows && rows.length);
+            var _mrmsHeavyDate = _isMrmsHeavyDate(rows);
             if (!_hasMrmsRows) {
               _drawSmallHailLayer(dateStr, rows, points);
               _drawHailEnvelope(dateStr, rows, points);
+            } else if (_mrmsHeavyDate) {
+              // MRMS-heavy: draw expanded cell coverage for broad pale-yellow background wash.
+              _drawSmallHailLayer(dateStr, rows, points);
+            }
+            if (!_hasMrmsRows) {
               var _corridorHailPts = (points || []).slice();
               (rows || []).forEach(function(row) {
                 if (_corridorHailPts.length >= 300) return;
@@ -16860,6 +17588,7 @@
             // Outer pale-yellow (z=88) fills gaps in radar coverage.
             // Orange core (z=305) adds narrow visible ribbons where 1.5"+ hail confirmed.
             _drawHailCoreRibbons(dateStr, points, rows);
+            mapsApplySwathOpacity(mapsState.swathOpacity != null ? mapsState.swathOpacity : 0.55);
 
             mapsState.lsrPointsByDate[dateStr] = points;
             mapsState.windPointsByDate[dateStr] = windPts;
@@ -18829,35 +19558,15 @@
 
     function _ppPropertyCacheKey(prop) {
       if (!prop) return '';
-      var addr = (prop.address || '').trim().toLowerCase();
-      return prop.lat.toFixed(5) + ',' + prop.lng.toFixed(5) + '|' + addr;
+      return _propertyDataKeyFromSource(prop.lat, prop.lng, prop.address);
     }
 
     function _ppFetchPropertyData(prop) {
       if (!prop) return Promise.resolve(null);
       var key = _ppPropertyCacheKey(prop);
       if (_ppPropertyDataCache[key]) return _ppPropertyDataCache[key];
-
-      var addr = (prop.address || '').trim();
-      if (!addr) return Promise.resolve(null);
-
-      console.log('[propertyData] lookup started address=' + addr);
-      var prom = (async function () {
-        try {
-          var resp = await sb.functions.invoke('zillow-property', {
-            body: { property_address: addr }
-          });
-          var data = resp && resp.data;
-          var error = resp && resp.error;
-          if (error) throw error;
-          if (!data) throw new Error('response data is null');
-          return data;
-        } catch (err) {
-          delete _ppPropertyDataCache[key];
-          throw err;
-        }
-      })();
-
+      var propData = _propertyDataForProperty(prop).propertyData;
+      var prom = Promise.resolve(propData);
       _ppPropertyDataCache[key] = prom;
       return prom;
     }
@@ -19190,217 +19899,30 @@
 
       } else if (tabName === 'propdata') {
         console.log('[propDataTab] tab loaded');
-        var prop = mapsState.selectedProperty;
-        var addr = (prop && prop.address) ? prop.address : '';
-
-        body.innerHTML =
-          '<div style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px;">Property Data</div>' +
-          '<div style="display:flex;align-items:center;gap:8px;margin-top:12px;">' +
-            '<div class="pp-spinner" style="width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;"></div>' +
-            '<span style="color:var(--muted);font-size:13px;">Looking up property data…</span>' +
-          '</div>';
-
-        if (!addr) {
+        var panelProp = mapsState.selectedProperty;
+        if (!panelProp) {
           body.innerHTML =
             '<div style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px;">Property Data</div>' +
-            '<div style="color:var(--muted);font-size:13px;margin-top:12px;">Address not available for lookup</div>';
+            '<div style="color:var(--muted);font-size:13px;margin-top:12px;">No property selected.</div>';
           return;
         }
 
-        try {
-          var d = await _ppFetchPropertyData(prop);
-          var activePropTab = document.querySelector('.maps-prop-tab.active');
-          if (!activePropTab || activePropTab.getAttribute('data-pp-tab') !== 'propdata') return;
+        var d = await _ppFetchPropertyData(panelProp);
+        var activePropTab = document.querySelector('.maps-prop-tab.active');
+        if (!activePropTab || activePropTab.getAttribute('data-pp-tab') !== 'propdata') return;
 
-          if (!d || d.success === false) {
-            body.innerHTML =
-              '<div style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px;">Property Data</div>' +
-              '<div style="color:var(--muted);font-size:13px;margin-top:12px;">Property data unavailable for this address.</div>' +
-              '<div style="margin-top:10px;font-size:10px;color:var(--muted);text-align:right;">Source: RentCast</div>';
-            return;
+        body.innerHTML = _propertyDataSectionHtml('pp-propdata', d || _propertyDataNormalize(null, _propertyDataSeedFromProperty(panelProp)), {
+          subtitle: _propertyDataNormalizeAddress((d && d.propertyAddress) || panelProp.address),
+          includeMapActions: true
+        });
+        _propertyDataBindSection('pp-propdata', {
+          includeMapActions: true,
+          onSave: function (formData) {
+            _propertyDataSaveForProperty(panelProp, formData);
+            showUploadToast('Property data saved');
+            ppActivateTab('propdata');
           }
-
-          function _fmtDollars(v) { return (v != null && v !== '' && !isNaN(Number(v))) ? '$' + Number(v).toLocaleString() : null; }
-          function _fmtNum(v) { return (v != null && v !== '' && !isNaN(Number(v))) ? Number(v).toLocaleString() : null; }
-          function _fmtVal(v) { return (v != null && v !== '') ? String(v) : null; }
-          function _fmtDate(v) {
-            if (v == null || v === '') return null;
-            var dt = new Date(v);
-            if (isNaN(dt.getTime())) return _fmtVal(v);
-            return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-          }
-          function _fmtOcc(v) {
-            if (v === true) return 'Yes';
-            if (v === false) return 'No';
-            return _fmtVal(v);
-          }
-          function _firstNonEmpty() {
-            for (var i = 0; i < arguments.length; i++) {
-              var v = arguments[i];
-              if (v != null && v !== '') return v;
-            }
-            return null;
-          }
-          function _getPath(obj, path) {
-            if (!obj || !path) return null;
-            var cur = obj;
-            var parts = path.split('.');
-            for (var i = 0; i < parts.length; i++) {
-              var key = parts[i];
-              if (cur == null || typeof cur !== 'object' || !(key in cur)) return null;
-              cur = cur[key];
-            }
-            return cur;
-          }
-          function _latestByYear(src, valueKeys) {
-            if (!src) return null;
-            var rows = [];
-            if (Array.isArray(src)) {
-              src.forEach(function (item) { rows.push(item); });
-            } else if (typeof src === 'object') {
-              Object.keys(src).forEach(function (k) {
-                var v = src[k];
-                if (v && typeof v === 'object') {
-                  if (v.year == null && v.taxYear == null) v.year = Number(k);
-                  rows.push(v);
-                }
-              });
-            }
-            var best = null;
-            var bestYear = -Infinity;
-            rows.forEach(function (row) {
-              if (!row || typeof row !== 'object') return;
-              var y = Number(row.year != null ? row.year : row.taxYear);
-              var val = null;
-              for (var i = 0; i < valueKeys.length; i++) {
-                var candidate = row[valueKeys[i]];
-                if (candidate != null && candidate !== '') { val = candidate; break; }
-              }
-              if (val == null) return;
-              if (isNaN(y)) y = -Infinity;
-              if (best == null || y > bestYear) {
-                best = val;
-                bestYear = y;
-              }
-            });
-            return best;
-          }
-
-          function _sectionHeader(label) {
-            return '<div style="font-size:10px;text-transform:uppercase;color:var(--muted);font-weight:700;letter-spacing:0.08em;margin:12px 0 4px;padding-top:8px;border-top:1px solid var(--border);">' + label + '</div>';
-          }
-
-          function _row(label, val) {
-            if (val == null || val === '') return '';
-            return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);">' +
-              '<span style="color:var(--muted);font-size:12px;">' + label + '</span>' +
-              '<span style="font-size:13px;font-weight:600;text-align:right;max-width:60%;word-break:break-word;">' + val + '</span></div>';
-          }
-
-          var rawProp0 = null;
-          if (Array.isArray(d.raw_property) && d.raw_property.length) rawProp0 = d.raw_property[0] || null;
-          else if (d.raw_property && typeof d.raw_property === 'object') rawProp0 = d.raw_property;
-          else rawProp0 = {};
-          var rawAvm = (d.raw_avm && typeof d.raw_avm === 'object') ? d.raw_avm : {};
-
-          var ownerName = _firstNonEmpty(
-            d.ownerName,
-            rawProp0.ownerName,
-            _getPath(rawProp0, 'owner.names.0')
-          );
-          var ownerOccupied = _firstNonEmpty(d.ownerOccupied, rawProp0.ownerOccupied);
-
-          var mailingAddress = _firstNonEmpty(d.mailingAddress, rawProp0.mailingAddress);
-          if (!mailingAddress) {
-            var m1 = _fmtVal(_getPath(rawProp0, 'owner.mailingAddress.addressLine1'));
-            var mc = _fmtVal(_getPath(rawProp0, 'owner.mailingAddress.city'));
-            var ms = _fmtVal(_getPath(rawProp0, 'owner.mailingAddress.state'));
-            var mz = _fmtVal(_getPath(rawProp0, 'owner.mailingAddress.zipCode'));
-            var line1 = [m1].filter(Boolean).join(' ').trim();
-            var cityStateZip = [mc, ms, mz].filter(Boolean).join(' ').trim();
-            mailingAddress = [line1, cityStateZip].filter(Boolean).join(', ');
-          }
-
-          var propertyType = _firstNonEmpty(d.propertyType, rawProp0.propertyType, rawProp0.property_type, _getPath(rawProp0, 'property.type'));
-          var bedrooms = _firstNonEmpty(d.bedrooms, rawProp0.bedrooms, rawProp0.beds, _getPath(rawProp0, 'building.bedrooms'));
-          var bathrooms = _firstNonEmpty(d.bathrooms, rawProp0.bathrooms, rawProp0.baths, _getPath(rawProp0, 'building.bathrooms'));
-          var squareFootage = _firstNonEmpty(d.squareFootage, rawProp0.squareFootage, rawProp0.square_footage, rawProp0.livingArea, rawProp0.living_area, rawProp0.sqft, _getPath(rawProp0, 'building.livingArea'));
-          var lotSize = _firstNonEmpty(d.lotSize, rawProp0.lotSize, rawProp0.lot_size, rawProp0.lotArea, rawProp0.lot_area, _getPath(rawProp0, 'lot.size'));
-          var yearBuilt = _firstNonEmpty(d.yearBuilt, rawProp0.yearBuilt, rawProp0.year_built, _getPath(rawProp0, 'building.yearBuilt'));
-
-          var latestAssessed = _latestByYear(_firstNonEmpty(rawProp0.taxAssessments, _getPath(rawProp0, 'taxAssessments')), ['assessedValue', 'value', 'assessed_value']);
-          var latestTax = _latestByYear(_firstNonEmpty(rawProp0.propertyTaxes, _getPath(rawProp0, 'propertyTaxes')), ['total', 'taxAmount', 'amount', 'tax_amount']);
-
-          var estimatedValue = _firstNonEmpty(d.estimatedValue, rawAvm.estimatedValue, rawAvm.estimated_value, rawAvm.value, rawProp0.estimatedValue, rawProp0.estimated_value, _getPath(rawAvm, 'avm.value'));
-          var assessedValue = _firstNonEmpty(latestAssessed, d.assessedValue, rawProp0.assessedValue, rawProp0.assessed_value, _getPath(rawProp0, 'tax.assessedValue'));
-          var lastSalePrice = _firstNonEmpty(d.lastSalePrice, rawProp0.lastSalePrice, rawProp0.last_sale_price, _getPath(rawProp0, 'sale.lastPrice'));
-          var lastSaleDate = _firstNonEmpty(d.lastSaleDate, rawProp0.lastSaleDate, rawProp0.last_sale_date, _getPath(rawProp0, 'sale.lastDate'));
-          var taxAmount = _firstNonEmpty(latestTax, d.taxAmount, rawProp0.taxAmount, rawProp0.tax_amount, _getPath(rawProp0, 'tax.amount'));
-
-          var html = '';
-
-          // Owner section
-          var ownerRows = _row('Owner Name', _fmtVal(ownerName)) +
-            _row('Mailing', _fmtVal(mailingAddress)) +
-            _row('Owner Occupied', _fmtOcc(ownerOccupied));
-          if (ownerRows) html += _sectionHeader('Owner') + ownerRows;
-
-          // Property section
-          var propRows = _row('Property Type', _fmtVal(propertyType)) +
-            _row('Bedrooms', _fmtNum(bedrooms)) +
-            _row('Bathrooms', _fmtNum(bathrooms)) +
-            _row('Square Footage', _fmtNum(squareFootage)) +
-            _row('Lot Size', _fmtVal(lotSize)) +
-            _row('Year Built', _fmtNum(yearBuilt));
-          if (propRows) html += _sectionHeader('Property') + propRows;
-
-          // Value section
-          var valueRows = _row('Estimated Value', _fmtDollars(estimatedValue)) +
-            _row('Assessed Value', _fmtDollars(assessedValue)) +
-            _row('Last Sale Price', _fmtDollars(lastSalePrice)) +
-            _row('Last Sale Date', _fmtDate(lastSaleDate)) +
-            _row('Tax Amount', _fmtDollars(taxAmount));
-          if (valueRows) html += _sectionHeader('Value') + valueRows;
-
-          body.innerHTML =
-            '<div style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px;">Property Data</div>' +
-            '<div style="color:var(--muted);font-size:11px;margin-bottom:4px;">' + _fmtVal(d.address) + '</div>' +
-            html +
-            '<div style="display:flex;gap:6px;margin-top:10px;">' +
-              '<button type="button" id="pp-propdata-campaign" class="pp-directions" style="flex:1;padding:8px 8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;text-align:center;background:var(--panel-2);color:var(--text);border:1px solid var(--border);">Go to Campaign</button>' +
-              '<button type="button" id="pp-propdata-draw" class="pp-inspect" style="flex:1;padding:8px 8px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;text-align:center;background:var(--accent-2);color:var(--text);">Draw Area &amp; Get Report</button>' +
-            '</div>' +
-            '<div style="margin-top:10px;font-size:10px;color:var(--muted);text-align:right;">Source: RentCast</div>';
-
-          var ppCampaignBtn = document.getElementById('pp-propdata-campaign');
-          if (ppCampaignBtn) {
-            ppCampaignBtn.addEventListener('click', function () {
-              openCampaignFromMapContext();
-            });
-          }
-
-          var ppDrawBtn = document.getElementById('pp-propdata-draw');
-          if (ppDrawBtn) {
-            ppDrawBtn.addEventListener('click', function () {
-              if (window.cmpStartPolygonReportDraw) window.cmpStartPolygonReportDraw();
-            });
-          }
-        } catch (err) {
-          console.warn('[propDataTab] property lookup unavailable', err);
-          var activePropTab2 = document.querySelector('.maps-prop-tab.active');
-          if (!activePropTab2 || activePropTab2.getAttribute('data-pp-tab') !== 'propdata') return;
-          body.innerHTML =
-            '<div style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px;">Property Data</div>' +
-            '<div style="color:var(--muted);font-size:13px;margin-top:12px;">Property data is temporarily unavailable.</div>' +
-            '<button type="button" id="pp-propdata-retry" style="margin-top:12px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;">Retry</button>' +
-            '<div style="margin-top:10px;font-size:10px;color:var(--muted);text-align:right;">Source: RentCast</div>';
-          var retryBtn = document.getElementById('pp-propdata-retry');
-          if (retryBtn) {
-            retryBtn.addEventListener('click', function () {
-              if (_ppActiveTab === 'propdata') ppActivateTab('propdata');
-            });
-          }
-        }
+        });
       }
     }
 
@@ -19492,6 +20014,7 @@
       btn.textContent = 'Creating…';
 
       getNextJobNumber().then(function (num) {
+        var selectedPropertyData = _propertyDataForProperty(prop).propertyData;
         var addrParts = (prop.address || '').split(',');
         var street = (addrParts[0] || '').trim();
         var city = (addrParts[1] || '').trim();
@@ -19527,6 +20050,7 @@
           photosCount: 0,
           contingencySigned: false,
           claimFiled: false,
+          propertyData: _propertyDataNormalize(selectedPropertyData, _propertyDataSeedFromProperty(prop)),
           photos: [],
           documents: { contingency: [], contract: [], checks: [], summaryOfLoss: [] },
           estimate: null,
