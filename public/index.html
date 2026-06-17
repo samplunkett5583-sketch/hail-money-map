@@ -2011,7 +2011,7 @@
     }
     .maps-hurricane-ticker-scroll {
       display:inline-block; white-space:nowrap; padding-left:100%;
-      animation:hmmticker 60s linear infinite;
+      animation:hmmticker 58s linear infinite;
     }
     .maps-hurricane-ticker:hover .maps-hurricane-ticker-scroll {
       animation-play-state:paused;
@@ -2196,6 +2196,97 @@
     .maps-prop-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
     .maps-prop-tab:hover { color:var(--text); }
     .maps-prop-tab-body { flex:1; overflow-y:auto; padding:12px 16px; font-size:13px; color:var(--text); }
+
+    /* ── Storm panel Recent/Impact/Pinned tabs ── */
+    .maps-storm-tabs {
+      display:flex; gap:4px; margin-bottom:8px;
+    }
+    .maps-storm-tab-btn {
+      flex:1; padding:6px 4px; border:1px solid var(--border); border-radius:8px;
+      font-size:12px; font-weight:600; cursor:pointer; text-align:center;
+      background:var(--panel-2); color:var(--muted); transition:background .15s, color .15s;
+    }
+    .maps-storm-tab-btn.active { background:var(--accent-2); color:var(--text); border-color:var(--accent); }
+    .maps-storm-tab-panel { animation:fadeInPanel .15s ease; }
+    @keyframes fadeInPanel { from { opacity:0; } to { opacity:1; } }
+    .maps-impact-tab-body, .maps-pinned-tab-body { font-size:12px; color:var(--text); }
+
+    /* ── Layer opacity panel rows ── */
+    .maps-layer-panel { flex-direction:column !important; min-width:200px; gap:8px !important; }
+    .maps-layer-row {
+      display:flex; align-items:center; gap:8px;
+    }
+    .maps-layer-label {
+      font-size:11px; font-weight:700; color:var(--text); min-width:50px;
+    }
+
+    /* ── Property Modal (centered overlay) ── */
+    .prop-modal-box {
+      background:var(--panel); border:1px solid var(--border); border-radius:16px;
+      box-shadow:0 24px 64px rgba(0,0,0,0.6); width:100%; max-width:680px;
+      max-height:90vh; overflow-y:auto; padding:20px;
+      display:flex; flex-direction:column; gap:14px;
+    }
+    .prop-modal-top-bar {
+      display:flex; gap:14px; align-items:flex-start;
+    }
+    .prop-modal-img-wrap {
+      flex:0 0 130px;
+    }
+    .prop-modal-img {
+      width:130px; height:90px; object-fit:cover; border-radius:10px;
+      border:1px solid var(--border); background:var(--panel-2);
+    }
+    .prop-modal-info {
+      flex:1; display:flex; flex-direction:column; gap:6px;
+    }
+    .prop-modal-address {
+      font-size:15px; font-weight:700; color:var(--text);
+    }
+    .prop-modal-hail-wind {
+      font-size:12px; font-weight:600; color:var(--muted);
+    }
+    .prop-modal-demo-grid {
+      display:grid; grid-template-columns:1fr 1fr; gap:4px 12px;
+    }
+    .prop-modal-demo-item {
+      display:flex; flex-direction:column; gap:1px;
+    }
+    .prop-modal-demo-label {
+      font-size:10px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;
+    }
+    .prop-modal-demo-val {
+      font-size:12px; color:var(--text);
+    }
+    .prop-modal-close-btn {
+      flex:0 0 auto; background:none; border:1px solid var(--border); color:var(--muted);
+      font-size:18px; line-height:1; cursor:pointer; border-radius:8px;
+      padding:2px 9px; transition:background .15s;
+    }
+    .prop-modal-close-btn:hover { background:var(--panel-2); color:var(--text); }
+    .prop-modal-action-row {
+      display:flex; gap:8px; flex-wrap:wrap;
+    }
+    .prop-modal-action-btn {
+      flex:1; min-width:140px; padding:9px 14px; border-radius:10px;
+      font-size:13px; font-weight:700; cursor:pointer; border:1px solid var(--border);
+      background:var(--panel-2); color:var(--text); transition:background .15s;
+    }
+    .prop-modal-action-btn:hover { background:var(--accent-2); }
+    .prop-modal-action-btn.primary { background:var(--accent-2); border-color:var(--accent); }
+    .prop-modal-action-btn.primary:hover { filter:brightness(1.1); }
+
+    /* ── Hail Verification modal fields ── */
+    .hail-verify-grid { display:flex; flex-direction:column; gap:8px; }
+    .hail-verify-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); }
+    .hail-verify-label { font-size:12px; font-weight:600; color:var(--muted); }
+    .hail-verify-val { font-size:13px; font-weight:600; color:var(--text); }
+
+    /* ── Impact dates table ── */
+    .impact-dates-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .impact-dates-table th { font-size:11px; font-weight:700; color:var(--muted); text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
+    .impact-dates-table td { padding:7px 8px; border-bottom:1px solid var(--border); color:var(--text); }
+    .impact-dates-table tr:last-child td { border-bottom:none; }
 
     /* ── Mobile Maps Toggle Bar ── */
     .maps-mobile-bar {
@@ -5566,25 +5657,45 @@
             <!-- Most Recent Storms -->
             <div class="maps-panel-section">
               <div class="maps-panel-section-title">Most Recent Storms</div>
-              <div id="stormTypeButtons" class="maps-panel-storm-types" style="pointer-events:auto;">
-                <button type="button" data-type="hail" class="maps-panel-storm-type-btn active">Hail</button>
-                <button type="button" data-type="wind" class="maps-panel-storm-type-btn active">Wind</button>
-                <button type="button" data-type="tornado" class="maps-panel-storm-type-btn active">Tornado</button>
+              <!-- Recent / Impact / Pinned tabs -->
+              <div id="stormTypeButtons" class="maps-storm-tabs" style="pointer-events:auto;">
+                <button type="button" class="maps-storm-tab-btn active" data-storm-tab="recent">Recent</button>
+                <button type="button" class="maps-storm-tab-btn" data-storm-tab="impact">Impact</button>
+                <button type="button" class="maps-storm-tab-btn" data-storm-tab="pinned">Pinned</button>
               </div>
-              <div id="stormSearchRow" class="maps-storm-search-row" style="pointer-events:auto;">
-                <input type="text" id="stormSearchInput" class="maps-storm-search-input" placeholder="Search property or date" />
-                <div id="stormSearchError" class="maps-storm-search-error" aria-live="polite"></div>
+
+              <!-- Recent tab -->
+              <div id="storm-tab-recent" class="maps-storm-tab-panel">
+                <div id="stormSearchRow" class="maps-storm-search-row" style="pointer-events:auto;">
+                  <input type="text" id="stormSearchInput" class="maps-storm-search-input" placeholder="Search property or date" />
+                  <div id="stormSearchError" class="maps-storm-search-error" aria-live="polite"></div>
+                </div>
+                <ul id="maps-storm-list" class="maps-storm-list"></ul>
+                <div class="maps-paging">
+                  <button type="button" id="maps-page-prev" class="maps-paging-btn" disabled>&laquo; Prev</button>
+                  <span id="maps-page-info"></span>
+                  <button type="button" id="maps-page-next" class="maps-paging-btn" disabled>Next &raquo;</button>
+                </div>
+                <div style="display:flex;align-items:center;margin-top:6px;">
+                  <div id="maps-storm-status" class="maps-status-msg" style="flex:1;margin-top:0;"></div>
+                  <button type="button" id="maps-refresh-dates-btn" class="maps-refresh-btn" title="Reload storm dates from database">🔄 Refresh</button>
+                </div>
               </div>
-              <ul id="maps-storm-list" class="maps-storm-list"></ul>
-              <div class="maps-paging">
-                <button type="button" id="maps-page-prev" class="maps-paging-btn" disabled>&laquo; Prev</button>
-                <span id="maps-page-info"></span>
-                <button type="button" id="maps-page-next" class="maps-paging-btn" disabled>Next &raquo;</button>
+
+              <!-- Impact tab -->
+              <div id="storm-tab-impact" class="maps-storm-tab-panel" style="display:none;">
+                <div id="maps-impact-content" class="maps-impact-tab-body">
+                  <div style="color:var(--muted);font-size:12px;padding:12px 0;">No impacted regions calculated yet.</div>
+                </div>
               </div>
-              <div style="display:flex;align-items:center;margin-top:6px;">
-                <div id="maps-storm-status" class="maps-status-msg" style="flex:1;margin-top:0;"></div>
-                <button type="button" id="maps-refresh-dates-btn" class="maps-refresh-btn" title="Reload storm dates from database">🔄 Refresh</button>
+
+              <!-- Pinned tab -->
+              <div id="storm-tab-pinned" class="maps-storm-tab-panel" style="display:none;">
+                <div id="maps-pinned-content" class="maps-pinned-tab-body">
+                  <div style="color:var(--muted);font-size:12px;padding:12px 0;">No pinned storm dates yet.</div>
+                </div>
               </div>
+
               <div id="maps-storm-actions" class="storm-panel-actions"></div>
               <!-- Admin debug panel (hidden for non-admin) -->
               <details id="maps-debug-panel" class="maps-debug-panel" style="display:none;">
@@ -5650,6 +5761,92 @@
             </div>
           </div>
 
+          <!-- Property Modal (centered overlay, Tasks 5-9) -->
+          <div id="prop-modal-overlay" style="display:none;position:fixed;inset:0;z-index:99000;background:rgba(0,0,0,0.72);align-items:center;justify-content:center;padding:16px;">
+            <div class="prop-modal-box">
+              <div class="prop-modal-top-bar">
+                <div class="prop-modal-img-wrap">
+                  <img id="prop-modal-img" src="" alt="Property" class="prop-modal-img" />
+                </div>
+                <div class="prop-modal-info">
+                  <div id="prop-modal-address" class="prop-modal-address">Selected Property</div>
+                  <div id="prop-modal-hail-wind" class="prop-modal-hail-wind"></div>
+                  <div class="prop-modal-demo-grid">
+                    <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Population Density</span><span id="pmd-pop-density" class="prop-modal-demo-val">Not found yet.</span></div>
+                    <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Median Age</span><span id="pmd-median-age" class="prop-modal-demo-val">Not found yet.</span></div>
+                    <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Avg Household Income</span><span id="pmd-hh-income" class="prop-modal-demo-val">Not found yet.</span></div>
+                    <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Average Income</span><span id="pmd-avg-income" class="prop-modal-demo-val">Not found yet.</span></div>
+                    <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Avg Households / Sq Mi</span><span id="pmd-hh-density" class="prop-modal-demo-val">Not found yet.</span></div>
+                  </div>
+                </div>
+                <button type="button" id="prop-modal-close" class="prop-modal-close-btn">&times;</button>
+              </div>
+              <div class="prop-modal-action-row prop-modal-action-top">
+                <button type="button" id="prop-modal-hail-verify-btn" class="prop-modal-action-btn primary">Hail Verification</button>
+                <button type="button" id="prop-modal-wind-obs-btn" class="prop-modal-action-btn">Wind Observation</button>
+              </div>
+              <div class="prop-modal-action-row prop-modal-action-bottom">
+                <button type="button" id="prop-modal-campaign-btn" class="prop-modal-action-btn">Add Marker to Campaign</button>
+                <button type="button" id="prop-modal-impact-dates-btn" class="prop-modal-action-btn">Show Impact Dates</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hail Verification Modal (Task 6) -->
+          <div id="hail-verify-modal-overlay" style="display:none;position:fixed;inset:0;z-index:99100;background:rgba(0,0,0,0.78);align-items:center;justify-content:center;padding:16px;">
+            <div class="prop-modal-box" style="max-width:520px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                <h2 style="margin:0;font-size:16px;font-weight:700;">Hail Verification Assistant <span style="font-size:11px;font-weight:500;background:var(--accent-2);color:var(--text);padding:2px 7px;border-radius:12px;vertical-align:middle;">BETA</span></h2>
+                <button type="button" id="hail-verify-close" class="prop-modal-close-btn">&times;</button>
+              </div>
+              <div id="hail-verify-location" style="font-size:12px;color:var(--muted);margin-bottom:12px;"></div>
+              <div class="hail-verify-grid">
+                <div class="hail-verify-row"><span class="hail-verify-label">Verified Hail Size</span><span id="hv-size" class="hail-verify-val">Not found yet.</span></div>
+                <div class="hail-verify-row"><span class="hail-verify-label">Time of Impact</span><span id="hv-time" class="hail-verify-val">Not found yet.</span></div>
+                <div class="hail-verify-row"><span class="hail-verify-label">Wind Gusts</span><span id="hv-wind" class="hail-verify-val">Not found yet.</span></div>
+                <div class="hail-verify-row"><span class="hail-verify-label">Spotter Volume</span><span id="hv-spotter-vol" class="hail-verify-val">Not found yet.</span></div>
+                <div class="hail-verify-row"><span class="hail-verify-label">Spotter Consensus</span><span id="hv-spotter-con" class="hail-verify-val">Not found yet.</span></div>
+                <div class="hail-verify-row"><span class="hail-verify-label">NWS Warning</span><span id="hv-nws" class="hail-verify-val">Not found yet.</span></div>
+              </div>
+              <div class="prop-modal-action-row" style="margin-top:16px;">
+                <button type="button" id="hv-add-marker-btn" class="prop-modal-action-btn primary">Add Address Marker</button>
+                <button type="button" id="hv-zip-btn" class="prop-modal-action-btn">Show Zip Code</button>
+                <button type="button" id="hv-impact-dates-btn" class="prop-modal-action-btn">Show Impact Dates</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wind Observation Modal (Task 7) -->
+          <div id="wind-obs-modal-overlay" style="display:none;position:fixed;inset:0;z-index:99100;background:rgba(0,0,0,0.78);align-items:center;justify-content:center;padding:16px;">
+            <div class="prop-modal-box" style="max-width:520px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                <h2 style="margin:0;font-size:16px;font-weight:700;">Wind Observation Analysis <span style="font-size:11px;font-weight:500;background:var(--accent-2);color:var(--text);padding:2px 7px;border-radius:12px;vertical-align:middle;">BETA</span></h2>
+                <button type="button" id="wind-obs-close" class="prop-modal-close-btn">&times;</button>
+              </div>
+              <div id="wind-obs-location" style="font-size:12px;color:var(--muted);margin-bottom:12px;"></div>
+              <div id="wind-obs-content">
+                <div style="color:var(--muted);font-size:12px;padding:16px 0;text-align:center;">Wind observation data not connected yet.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Impact Dates Modal (Task 8) -->
+          <div id="impact-dates-modal-overlay" style="display:none;position:fixed;inset:0;z-index:99100;background:rgba(0,0,0,0.78);align-items:center;justify-content:center;padding:16px;">
+            <div class="prop-modal-box" style="max-width:620px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                <h2 style="margin:0;font-size:16px;font-weight:700;">Impact Dates</h2>
+                <button type="button" id="impact-dates-close" class="prop-modal-close-btn">&times;</button>
+              </div>
+              <div id="impact-dates-location" style="font-size:12px;color:var(--muted);margin-bottom:12px;"></div>
+              <div id="impact-dates-content">
+                <table class="impact-dates-table">
+                  <thead><tr><th>Date</th><th>At Location</th><th>1 mi</th><th>3 mi</th><th>10 mi</th></tr></thead>
+                  <tbody id="impact-dates-tbody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:12px;">No impact dates found yet.</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
           <!-- Street View Panorama Modal -->
           <div id="pp-lightbox" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.92);flex-direction:column;align-items:center;justify-content:center;">
             <div id="pp-sv-container" style="width:90vw;height:80vh;border-radius:10px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.6);background:#1a1a2e;"></div>
@@ -5707,11 +5904,7 @@
                 <option value="hybrid">Hybrid</option>
               </select>
             </div>
-            <div class="maps-swath-toggle-ctrl">
-              <button type="button" id="maps-toggle-hail" class="maps-swath-toggle-btn active" data-type="hail" title="Toggle hail swaths">Hail</button>
-              <button type="button" id="maps-toggle-wind" class="maps-swath-toggle-btn active" data-type="wind" title="Toggle wind swaths">Wind</button>
-              <button type="button" id="maps-toggle-tornado" class="maps-swath-toggle-btn active" data-type="tornado" title="Toggle tornado swaths">Tornado</button>
-            </div>
+            <!-- Hail/Wind/Tornado controls moved to opacity panel -->
             <!-- Hail Size Band Legend -->
             <div id="hail-band-legend" class="hail-band-legend" style="display:none;">
               <div class="hail-band-legend-title">Hail Size</div>
@@ -5721,13 +5914,26 @@
               <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#DC1E1E;border-color:#A01616;"></span>2&ndash; 2&frac12;&Prime;</div>
               <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#9419B4;border-color:#6B1080;"></span>2&frac12;&Prime; +</div>
             </div>
-            <!-- Swath Opacity Control -->
+            <!-- Layer Opacity + Visibility Control -->
             <div class="maps-opacity-ctrl">
-              <button type="button" id="maps-opacity-btn" class="maps-opacity-btn" title="Swath Opacity">&#9681;</button>
-            <button type="button" id="maps-my-location-btn" class="maps-location-btn" title="Go to my current location">My Location</button>
-              <div id="maps-opacity-slider-wrap" class="maps-opacity-slider-wrap">
-                <input type="range" id="maps-opacity-slider" class="maps-opacity-slider" min="0" max="100" value="30" />
-                <span id="maps-opacity-val" class="maps-opacity-val">30%</span>
+              <button type="button" id="maps-opacity-btn" class="maps-opacity-btn" title="Layer Controls">&#9681;</button>
+              <button type="button" id="maps-my-location-btn" class="maps-location-btn" title="Go to my current location">My Location</button>
+              <div id="maps-opacity-slider-wrap" class="maps-opacity-slider-wrap maps-layer-panel">
+                <div class="maps-layer-row">
+                  <span class="maps-layer-label">Hail</span>
+                  <input type="range" id="maps-opacity-hail" class="maps-opacity-slider" min="0" max="100" value="30" />
+                  <span id="maps-opacity-hail-val" class="maps-opacity-val">30%</span>
+                </div>
+                <div class="maps-layer-row">
+                  <span class="maps-layer-label">Wind</span>
+                  <input type="range" id="maps-opacity-wind" class="maps-opacity-slider" min="0" max="100" value="0" />
+                  <span id="maps-opacity-wind-val" class="maps-opacity-val">0%</span>
+                </div>
+                <div class="maps-layer-row">
+                  <span class="maps-layer-label">Tornado</span>
+                  <input type="range" id="maps-opacity-tornado" class="maps-opacity-slider" min="0" max="100" value="30" />
+                  <span id="maps-opacity-tornado-val" class="maps-opacity-val">30%</span>
+                </div>
               </div>
             </div>
             <!-- Street Color Overlay Control -->
@@ -5760,7 +5966,7 @@
         <div class="maps-hurricane-ticker" id="maps-hurricane-ticker">
           <div class="maps-hurricane-ticker-label">🌀 HURRICANE CENTER</div>
           <div class="maps-hurricane-ticker-body">
-            <div id="maps-hurricane-ticker-text" class="maps-hurricane-ticker-scroll">Loading Atlantic hurricane status…</div>
+            <div id="maps-hurricane-ticker-text" class="maps-hurricane-ticker-scroll">Loading hurricane and severe weather status…</div>
           </div>
           <a class="maps-hurricane-ticker-link" href="https://www.nhc.noaa.gov" target="_blank" rel="noopener noreferrer">nhc.noaa.gov ↗</a>
         </div>
@@ -8689,24 +8895,121 @@
       }
     }
 
-    function renderHurricaneTicker(items) {
+    // The bottom tracker shows two independently-refreshed segments (NHC
+    // hurricane status + NWS severe weather alerts) joined into one line.
+    // Both writers go through applyTickerText() so there's only ever one
+    // DOM update path, one animation restart, and one duration calculation.
+    var hmmTickerSegments = { nhc: '', severe: '' };
+
+    function applyTickerText() {
       var textEl = document.getElementById('maps-hurricane-ticker-text');
+      if (!textEl) return;
+      var text = [hmmTickerSegments.nhc, hmmTickerSegments.severe].filter(function (value) { return !!value; }).join(' • ');
+      if (!text) return;
+      textEl.textContent = text;
+      // translateX(-100%) is relative to the element's own width (text width
+      // plus the 100%-of-container left padding), so a fixed CSS duration
+      // makes short messages crawl and long ones race. Derive the duration
+      // from that same width so on-screen speed stays constant, then clamp
+      // to a medium-readable band so it never goes too fast or too slow.
+      var travelPx = textEl.offsetWidth;
+      var hmmTickerDuration = Math.min(65, Math.max(50, travelPx / 55));
+      textEl.style.animation = 'none';
+      void textEl.offsetWidth;
+      textEl.style.animation = '';
+      textEl.style.animationDuration = hmmTickerDuration.toFixed(1) + 's';
+    }
+
+    function extractHurricaneFields(title, description) {
+      var fields = {};
+      var nameMatch = title.match(/^(Tropical Depression|Tropical Storm|Hurricane|Post-Tropical Cyclone|Potential Tropical Cyclone)\s+([A-Za-z0-9\-]+)/i);
+      if (nameMatch) {
+        fields.type = nameMatch[1];
+        fields.name = nameMatch[2];
+      }
+      var catMatch = description.match(/category\s*(\d)/i);
+      if (catMatch) fields.category = catMatch[1];
+      var windMatch = description.match(/maximum sustained wind[s]?\s*(?:is|are|near|remains? near|of)?\s*(\d{2,3})\s*mph/i);
+      if (windMatch) fields.maxWind = windMatch[1] + ' mph';
+      var gustMatch = description.match(/gusts?\s*(?:to|of|near)?\s*(\d{2,3})\s*mph/i);
+      if (gustMatch) fields.gusts = gustMatch[1] + ' mph';
+      var pressureMatch = description.match(/(?:minimum central pressure|estimated minimum central pressure)\s*(?:is|was)?\s*(\d{3,4})\s*mb/i);
+      if (pressureMatch) fields.pressure = pressureMatch[1] + ' mb';
+      var moveMatch = description.match(/moving\s+(?:toward the\s+)?([a-z\-]+)\s*(?:or\s+\d+\s+degrees)?\s*(?:at|near)\s*(\d{1,2})\s*mph/i);
+      if (moveMatch) fields.movement = moveMatch[1].toUpperCase() + ' at ' + moveMatch[2] + ' mph';
+      var locMatch = description.match(/latitude\s*([\d.]+)\s*north.*?longitude\s*([\d.]+)\s*west/i);
+      if (locMatch) fields.location = locMatch[1] + 'N, ' + locMatch[2] + 'W';
+      var warnMatch = description.match(/((?:A |An )?(?:Hurricane|Tropical Storm|Storm Surge)\s+(?:Warning|Watch)[^.]*\.)/i);
+      if (warnMatch) fields.watches = warnMatch[1].trim();
+      return fields;
+    }
+
+    function formatHurricaneItem(item) {
+      var title = item.title ? item.title.trim() : '';
+      var description = item.description ? item.description.trim() : '';
+      var advisory = '';
+      if (item.pubDate) {
+        var d = new Date(item.pubDate);
+        if (!isNaN(d.getTime())) {
+          advisory = '[Advisory ' + d.toLocaleString('en-US', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '] ';
+        }
+      }
+      var fields = extractHurricaneFields(title, description);
+      var parts = [];
+      var nameLabel = ((fields.type ? fields.type.toUpperCase() : '') + (fields.name ? ' ' + fields.name.toUpperCase() : '')).trim();
+      parts.push(nameLabel || title);
+      if (fields.category) parts.push('Category ' + fields.category);
+      if (fields.maxWind) parts.push('Max sustained winds ' + fields.maxWind);
+      if (fields.gusts) parts.push('Gusts ' + fields.gusts);
+      if (fields.pressure) parts.push('Pressure ' + fields.pressure);
+      if (fields.movement) parts.push('Moving ' + fields.movement);
+      if (fields.location) parts.push('Location ' + fields.location);
+      if (fields.watches) parts.push(fields.watches);
+      // Only enough structured fields were found to be worth a labeled summary
+      // when we extracted more than just the name; otherwise fall back to the
+      // full raw advisory text so no detail is lost.
+      if (parts.length > 1) {
+        return advisory + parts.join(' • ');
+      }
+      return advisory + (title || '') + (title && description ? ' - ' : '') + description;
+    }
+
+    function renderHurricaneTicker(items) {
       var itemsCount = Array.isArray(items) ? items.length : 0;
       var text = '';
       if (itemsCount) {
-        text = items.map(function (item) {
-          var title = item.title ? item.title.trim() : '';
-          var description = item.description ? item.description.trim() : '';
-          return (title || '') + (title && description ? ' - ' : '') + description;
-        }).filter(function (value) { return !!value; }).join(' • ');
+        var countLabel = itemsCount + ' ACTIVE SYSTEM' + (itemsCount === 1 ? '' : 'S') + ': ';
+        text = countLabel + items.map(formatHurricaneItem).filter(function (value) { return !!value; }).join(' • ');
       }
       if (!text) {
         text = 'No active tropical cyclones in the Atlantic basin at this time • Check nhc.noaa.gov for Pacific activity';
       }
-      if (textEl) {
-        textEl.textContent = text;
-      }
+      hmmTickerSegments.nhc = 'NHC: ' + text;
+      applyTickerText();
       hmDebugLog('[HMM] hurricane ticker updated', itemsCount, 'items');
+    }
+
+    function dedupeHurricaneItemsByStorm(items) {
+      // NHC publishes several items per storm (Public Advisory, Forecast/Advisory,
+      // Forecast Discussion, Wind Speed Probabilities) that repeat the same
+      // location/distance boilerplate (e.g. "...FROM..." phrases). Keep only one
+      // item per storm, preferring the Public Advisory since it's the most
+      // detailed human-readable version (location, wind, pressure, movement).
+      var byStorm = {};
+      var order = [];
+      items.forEach(function (item) {
+        var title = item.title || '';
+        var m = title.match(/^(.*?)\s+(Public Advisory|Forecast\/Advisory|Forecast Discussion|Wind Speed Probabilities|Advisory Number|Intermediate Advisory)\b/i);
+        var key = (m ? m[1] : title).trim().toUpperCase() || title;
+        var isPublicAdvisory = /Public Advisory/i.test(title);
+        if (!byStorm[key]) {
+          byStorm[key] = item;
+          order.push(key);
+        } else if (isPublicAdvisory && !/Public Advisory/i.test(byStorm[key].title || '')) {
+          byStorm[key] = item;
+        }
+      });
+      return order.map(function (key) { return byStorm[key]; });
     }
 
     async function refreshHurricaneTicker() {
@@ -8720,22 +9023,112 @@
         var items = itemEls.map(function (itemEl) {
           var titleEl = itemEl.getElementsByTagName('title')[0];
           var descEl = itemEl.getElementsByTagName('description')[0];
+          var pubDateEl = itemEl.getElementsByTagName('pubDate')[0];
           return {
             title: titleEl ? titleEl.textContent || '' : '',
-            description: stripHtmlTags(descEl ? descEl.textContent || '' : '')
+            description: stripHtmlTags(descEl ? descEl.textContent || '' : ''),
+            pubDate: pubDateEl ? pubDateEl.textContent || '' : ''
           };
         }).filter(function (item) {
           return item.title || item.description;
         });
+        items = dedupeHurricaneItemsByStorm(items);
         renderHurricaneTicker(items);
       } catch (err) {
         renderHurricaneTicker([]);
       }
     }
 
+    var SEVERE_WEATHER_EVENT_LABELS = {
+      'Severe Thunderstorm Warning': 'SEVERE',
+      'Severe Thunderstorm Watch': 'SEVERE',
+      'Tornado Warning': 'TORNADO',
+      'Tornado Watch': 'TORNADO',
+      'Flash Flood Warning': 'FLASH FLOOD',
+      'Flood Warning': 'FLOOD',
+      'Severe Weather Statement': 'SEVERE',
+      'Marine Thunderstorm Warning': 'MARINE',
+      'Special Weather Statement': 'ALERT'
+    };
+
+    function isSevereWeatherAlert(props) {
+      var event = (props.event || '').trim();
+      if (!event) return false;
+      if (Object.prototype.hasOwnProperty.call(SEVERE_WEATHER_EVENT_LABELS, event) && event !== 'Special Weather Statement') {
+        return true;
+      }
+      if (/special weather statement/i.test(event)) {
+        var text = (props.headline || '') + ' ' + (props.description || '');
+        return /thunderstorm|severe/i.test(text);
+      }
+      return false;
+    }
+
+    function formatSevereWeatherItem(props) {
+      var event = (props.event || '').trim();
+      if (!event) return '';
+      var label = SEVERE_WEATHER_EVENT_LABELS[event] || 'ALERT';
+      if (props.severity === 'Extreme') label += ' (EXTREME)';
+      var segments = [label + ': ' + event];
+      var area = (props.areaDesc || '').trim();
+      if (area) {
+        var areaParts = area.split(';').map(function (s) { return s.trim(); }).filter(Boolean);
+        var shortArea = areaParts.slice(0, 2).join(', ');
+        if (areaParts.length > 2) shortArea += ' + ' + (areaParts.length - 2) + ' more';
+        segments.push(shortArea);
+      }
+      var expiresSrc = props.expires || props.ends || '';
+      var expiresDate = expiresSrc ? new Date(expiresSrc) : null;
+      if (expiresDate && !isNaN(expiresDate.getTime())) {
+        segments.push('until ' + expiresDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
+      }
+      return segments.join(' — ');
+    }
+
+    async function fetchSevereWeatherAlerts() {
+      var url = 'https://api.weather.gov/alerts/active';
+      var response = await fetch(url, { headers: { 'Accept': 'application/geo+json' } });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      var data = await response.json();
+      var features = Array.isArray(data.features) ? data.features : [];
+      return features
+        .map(function (f) { return (f && f.properties) ? f.properties : {}; })
+        .filter(isSevereWeatherAlert);
+    }
+
+    function renderSevereWeatherTicker(alerts, opts) {
+      opts = opts || {};
+      var itemsCount = Array.isArray(alerts) ? alerts.length : 0;
+      var text = '';
+      if (opts.unavailable) {
+        text = 'Severe weather alerts temporarily unavailable';
+      } else if (itemsCount) {
+        var countLabel = itemsCount + ' ACTIVE SEVERE WEATHER ALERT' + (itemsCount === 1 ? '' : 'S') + ': ';
+        text = countLabel + alerts.map(formatSevereWeatherItem).filter(function (value) { return !!value; }).join(' • ');
+      } else {
+        text = 'No active severe thunderstorm alerts at this time';
+      }
+      hmmTickerSegments.severe = text;
+      applyTickerText();
+      hmDebugLog('[HMM] severe weather ticker updated', itemsCount, 'items');
+    }
+
+    async function refreshSevereWeatherTicker() {
+      try {
+        var alerts = await fetchSevereWeatherAlerts();
+        renderSevereWeatherTicker(alerts.slice(0, 8));
+      } catch (err) {
+        renderSevereWeatherTicker([], { unavailable: true });
+      }
+    }
+
     function initHurricaneTicker() {
+      if (initHurricaneTicker._started) return;
+      initHurricaneTicker._started = true;
       refreshHurricaneTicker();
+      refreshSevereWeatherTicker();
       setInterval(refreshHurricaneTicker, 15 * 60 * 1000);
+      setInterval(refreshSevereWeatherTicker, 5 * 60 * 1000);
     }
 
     function getJobs() {
@@ -10204,15 +10597,12 @@
           sharedViewport.zoom = window.cMap.getZoom();
         }
       }
-      mapsState.selectedProperty = {
-        lat: lat,
-        lng: lng,
-        address: address || '',
-        title: (address ? address.split(',')[0] : 'Selected Property') || 'Selected Property'
-      };
       mapsInit();
       showPage('page-map');
-      ppOpen(mapsState.selectedProperty);
+      mapsSelectPropertyAtLocation(lat, lng, {
+        address: address || '',
+        title: (address ? address.split(',')[0] : 'Selected Property') || 'Selected Property'
+      });
       ppActivateTab('propdata');
     }
 
@@ -10265,11 +10655,19 @@
         lastError: null, lastFetchAt: null, aprilDates: []
       },
       swathToggles: { hail: true, wind: false, tornado: true },
+      typeOpacityScale: { hail: 0.30, wind: 0.00, tornado: 0.30 },
       stormPage: 0,              // current page index
       selectedProperty: null,    // { lat, lng, address, title }
       rawStormRows: {},          // dateStr -> raw row[] from storm_polygons (for nearby-storm search)
       _drawComplete: {},          // dateStr -> true after finishDraw completes (perf cache)
       _fitBoundsCache: {},       // dateStr -> {center:{lat,lng}, zoom} — cached map position
+      impactRegionsByDate: {},      // dateStr -> { dateStr, states:[{name,stateShort,cities:[...],center}] }
+      _impactRegionsPromises: {},   // dateStr -> in-flight Promise for mapsBuildImpactRegions
+      impactGeocodeCache: {},       // 'lat,lng' (rounded) -> Promise<{city,state,stateShort}|null>
+      impactRegionMarkersByState: {}, // stateName -> google.maps.Marker[] (impact-tab map pins, cleared on date change)
+      _impactMarkersDate: null,     // dateStr the current impactRegionMarkersByState belongs to
+      expandedImpactStates: {},     // stateName -> true while expanded in Impact tab
+      _impactCityPopupInfoWindow: null,
       map: null,
       ready: false,
       fetching: false
@@ -10287,6 +10685,384 @@
         all.push(mapsState.previewDate);
       }
       mapsState.selectedDates = all;
+    }
+
+    var MAPS_PINNED_DATES_KEY = 'hmm_maps_pinned_dates_v1';
+    var MAPS_CAMPAIGN_MARKERS_KEY = 'hmm_campaign_markers_v2';
+    var _mapsApiKeyCache = null;
+
+    function mapsReadPinnedDates() {
+      try {
+        var raw = JSON.parse(localStorage.getItem(MAPS_PINNED_DATES_KEY) || '[]');
+        return Array.isArray(raw) ? raw.map(mapsNormalizeDate).filter(Boolean) : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function mapsPersistPinnedDates() {
+      try {
+        localStorage.setItem(MAPS_PINNED_DATES_KEY, JSON.stringify((mapsState.pinnedDates || []).slice(0, MAPS_MAX_SELECT)));
+      } catch (_) {}
+    }
+
+    function mapsEnsurePinnedDatesLoaded() {
+      if (mapsState._pinnedDatesLoaded) return;
+      mapsState._pinnedDatesLoaded = true;
+      mapsState.pinnedDates = mapsReadPinnedDates().slice(0, MAPS_MAX_SELECT);
+      mapsSyncSelectedDates();
+    }
+
+    function mapsPointInRing(lon, lat, ring) {
+      var inside = false;
+      for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        var xi = ring[i][0], yi = ring[i][1];
+        var xj = ring[j][0], yj = ring[j][1];
+        var intersect = ((yi > lat) !== (yj > lat)) &&
+          (lon < (xj - xi) * (lat - yi) / (yj - yi + 0.0) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    function mapsGeoJsonContains(lat, lon, gj) {
+      if (!gj) return false;
+      if (typeof gj === 'string') {
+        try { gj = JSON.parse(gj); } catch (_) { return false; }
+      }
+      if (!gj) return false;
+      if (gj.type === 'FeatureCollection' && Array.isArray(gj.features)) {
+        return gj.features.some(function (feature) { return mapsGeoJsonContains(lat, lon, feature); });
+      }
+      if (gj.type === 'Feature') {
+        return mapsGeoJsonContains(lat, lon, gj.geometry);
+      }
+      if (!gj.coordinates || !gj.type) return false;
+      if (gj.type === 'Polygon') {
+        var outer = gj.coordinates[0] || [];
+        if (!mapsPointInRing(lon, lat, outer)) return false;
+        for (var hi = 1; hi < gj.coordinates.length; hi++) {
+          if (mapsPointInRing(lon, lat, gj.coordinates[hi])) return false;
+        }
+        return true;
+      }
+      if (gj.type === 'MultiPolygon' && Array.isArray(gj.coordinates)) {
+        for (var pi = 0; pi < gj.coordinates.length; pi++) {
+          if (mapsGeoJsonContains(lat, lon, { type: 'Polygon', coordinates: gj.coordinates[pi] })) return true;
+        }
+      }
+      return false;
+    }
+
+    function mapsExtractHailValue(row) {
+      var bMin = Number(row && row.band_min);
+      var threshold = Number(row && row.threshold_value);
+      var bMax = Number(row && row.band_max);
+      if (bMin > 0) return bMin;
+      if (threshold > 0) return threshold;
+      if (bMax > 0) return bMax;
+      return 0;
+    }
+
+    function mapsFindAddressComponent(components, type, useShortName) {
+      components = Array.isArray(components) ? components : [];
+      for (var i = 0; i < components.length; i++) {
+        var component = components[i] || {};
+        if (Array.isArray(component.types) && component.types.indexOf(type) !== -1) {
+          return useShortName ? (component.short_name || '') : (component.long_name || component.short_name || '');
+        }
+      }
+      return '';
+    }
+
+    function mapsBuildStreetFromComponents(components) {
+      var number = mapsFindAddressComponent(components, 'street_number', false);
+      var route = mapsFindAddressComponent(components, 'route', false);
+      return [number, route].filter(Boolean).join(' ').trim();
+    }
+
+    function mapsBuildPropertyDisplayTitle(prop) {
+      if (!prop) return 'Selected Property';
+      var title = String(prop.title || '').trim();
+      if (title) return title;
+      var street = String(prop.street || '').trim();
+      if (street) return street;
+      var address = String(prop.address || '').trim();
+      return address ? address.split(',')[0].trim() : 'Selected Property';
+    }
+
+    function mapsBuildPropertySubtitle(prop) {
+      if (!prop) return '';
+      var locality = [prop.city, [prop.state, prop.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+      if (locality) return locality;
+      return 'Lat: ' + Number(prop.lat || 0).toFixed(5) + '  Lng: ' + Number(prop.lng || 0).toFixed(5);
+    }
+
+    function mapsRefreshSelectedPropertyText(prop) {
+      if (!prop) return;
+      var displayAddress = String(prop.address || '').trim();
+      if (!displayAddress) {
+        // Show coordinates as placeholder while reverse geocode is in flight
+        var _lat = isFinite(Number(prop.lat)) ? Number(prop.lat).toFixed(5) : '';
+        var _lng = isFinite(Number(prop.lng)) ? Number(prop.lng).toFixed(5) : '';
+        displayAddress = (_lat && _lng) ? _lat + ', ' + _lng : mapsBuildPropertyDisplayTitle(prop);
+      }
+      var addrEl = document.getElementById('prop-modal-address');
+      var titleEl = document.getElementById('pp-title');
+      var subEl = document.getElementById('pp-sub');
+      if (addrEl) addrEl.textContent = displayAddress;
+      if (titleEl) titleEl.textContent = mapsBuildPropertyDisplayTitle(prop);
+      if (subEl) subEl.textContent = mapsBuildPropertySubtitle(prop);
+    }
+
+    function mapsApplyGeocodeResultToProperty(prop, result) {
+      if (!prop || !result) return prop;
+      var components = Array.isArray(result.address_components) ? result.address_components : [];
+      var street = mapsBuildStreetFromComponents(components);
+      var city =
+        mapsFindAddressComponent(components, 'locality', false) ||
+        mapsFindAddressComponent(components, 'postal_town', false) ||
+        mapsFindAddressComponent(components, 'sublocality', false) ||
+        mapsFindAddressComponent(components, 'administrative_area_level_3', false) ||
+        mapsFindAddressComponent(components, 'administrative_area_level_2', false);
+      var state = mapsFindAddressComponent(components, 'administrative_area_level_1', true);
+      var zip = mapsFindAddressComponent(components, 'postal_code', false);
+      var zipSuffix = mapsFindAddressComponent(components, 'postal_code_suffix', false);
+      var county = mapsFindAddressComponent(components, 'administrative_area_level_2', false);
+      if (zip && zipSuffix) zip += '-' + zipSuffix;
+      prop.street = street || prop.street || '';
+      prop.address = String(result.formatted_address || prop.address || '').trim();
+      prop.title = street || (prop.address ? prop.address.split(',')[0].trim() : prop.title) || 'Selected Property';
+      prop.city = city || prop.city || '';
+      prop.state = state || prop.state || '';
+      prop.zip = zip || prop.zip || '';
+      prop.county = county || prop.county || '';
+      return prop;
+    }
+
+    function mapsReverseGeocodeProperty(prop) {
+      if (!prop || !(window.google && google.maps && google.maps.Geocoder)) return Promise.resolve(prop);
+      return new Promise(function (resolve) {
+        try {
+          new google.maps.Geocoder().geocode({ location: { lat: Number(prop.lat), lng: Number(prop.lng) } }, function (results, status) {
+            if (status === 'OK' && results && results[0] && mapsState.selectedProperty === prop) {
+              mapsApplyGeocodeResultToProperty(prop, results[0]);
+              mapsRefreshSelectedPropertyText(prop);
+              ppPopulateDemographics(prop);
+            }
+            resolve(prop);
+          });
+        } catch (_) {
+          resolve(prop);
+        }
+      });
+    }
+
+    function mapsBuildSelectedProperty(lat, lng, options) {
+      options = options || {};
+      var prop = {
+        lat: Number(lat),
+        lng: Number(lng),
+        address: String(options.address || '').trim(),
+        title: String(options.title || '').trim() || 'Selected Property',
+        street: String(options.street || '').trim(),
+        city: String(options.city || '').trim(),
+        state: String(options.state || '').trim(),
+        zip: String(options.zip || '').trim(),
+        county: String(options.county || '').trim()
+      };
+      if (options.geocodeResult) mapsApplyGeocodeResultToProperty(prop, options.geocodeResult);
+      if (!prop.title) prop.title = mapsBuildPropertyDisplayTitle(prop);
+      return prop;
+    }
+
+    function mapsSelectPropertyAtLocation(lat, lng, options) {
+      options = options || {};
+      var prop = mapsBuildSelectedProperty(lat, lng, options);
+      mapsState.selectedProperty = prop;
+      ppOpen(prop);
+      if (!options.skipReverseGeocode && (!options.geocodeResult || !prop.address || !prop.city || !prop.state || !prop.zip || !prop.county)) {
+        mapsReverseGeocodeProperty(prop);
+      }
+      return prop;
+    }
+
+    function mapsGetGoogleMapsApiKey() {
+      if (_mapsApiKeyCache !== null) return _mapsApiKeyCache;
+      _mapsApiKeyCache = '';
+      try {
+        var scripts = document.querySelectorAll('script[src*="maps.googleapis.com"]');
+        for (var i = 0; i < scripts.length; i++) {
+          var match = scripts[i].src.match(/key=([^&]+)/);
+          if (match) {
+            _mapsApiKeyCache = match[1];
+            break;
+          }
+        }
+      } catch (_) {}
+      return _mapsApiKeyCache;
+    }
+
+    function ppNoImageSvg(prop, message) {
+      var lat = prop && isFinite(Number(prop.lat)) ? Number(prop.lat).toFixed(5) : '';
+      var lng = prop && isFinite(Number(prop.lng)) ? Number(prop.lng).toFixed(5) : '';
+      return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400">' +
+          '<rect fill="#dbe4d1" width="600" height="400"/>' +
+          '<rect x="20" y="20" width="560" height="360" rx="18" fill="#eef3e8" stroke="#b7c4aa" stroke-width="2"/>' +
+          '<text x="300" y="188" text-anchor="middle" fill="#3f4e3e" font-family="system-ui,sans-serif" font-size="20" font-weight="700">' + (message || 'No Image Available') + '</text>' +
+          '<text x="300" y="222" text-anchor="middle" fill="#667362" font-family="system-ui,sans-serif" font-size="13">' + [lat, lng].filter(Boolean).join(', ') + '</text>' +
+        '</svg>'
+      );
+    }
+
+    function mapsGetPropertyImageCandidate(prop) {
+      if (!prop) return '';
+      var key = _propertyDataKeyFromSource(prop.lat, prop.lng, prop.address);
+      var record = key ? _propertyDataRecordForKey(key) : null;
+      var sources = [
+        prop,
+        prop && prop.propertyData,
+        record,
+        record && record.propertyData
+      ];
+      var keys = ['imageUrl', 'propertyImageUrl', 'photoUrl', 'thumbnailUrl', 'streetViewUrl', 'image', 'photo', 'thumbnail'];
+      for (var si = 0; si < sources.length; si++) {
+        var source = sources[si];
+        if (!source || typeof source !== 'object') continue;
+        if (Array.isArray(source.photos) && source.photos[0]) return String(source.photos[0]);
+        for (var ki = 0; ki < keys.length; ki++) {
+          var candidate = source[keys[ki]];
+          if (!candidate) continue;
+          candidate = String(candidate).trim();
+          if (/^(https?:)?\/\//i.test(candidate) || /^data:image\//i.test(candidate)) {
+            return candidate.indexOf('//') === 0 ? ('https:' + candidate) : candidate;
+          }
+        }
+      }
+      return '';
+    }
+
+    function ppLoadPropertyImage(prop) {
+      var imgEl = document.getElementById('prop-modal-img') || document.getElementById('pp-img');
+      if (!imgEl || !prop) return;
+      var requestKey = Number(prop.lat).toFixed(5) + ',' + Number(prop.lng).toFixed(5) + '|' + String(prop.address || '');
+      imgEl._ppRequestKey = requestKey;
+      imgEl._ppFullUrl = '';
+
+      function stillCurrent() {
+        return mapsState.selectedProperty === prop && imgEl._ppRequestKey === requestKey;
+      }
+
+      function setImage(url, fullUrl) {
+        if (!stillCurrent()) return;
+        imgEl._ppFullUrl = fullUrl || '';
+        imgEl.src = url;
+      }
+
+      function setPlaceholder(message) {
+        setImage(ppNoImageSvg(prop, message), '');
+      }
+
+      function loadStreetViewFallback() {
+        var svKey = mapsGetGoogleMapsApiKey();
+        if (!svKey) {
+          setPlaceholder('No Image Available');
+          return;
+        }
+        var baseUrl = 'https://maps.googleapis.com/maps/api/streetview?size=600x400&location=' + Number(prop.lat) + ',' + Number(prop.lng) + '&key=' + svKey;
+        var metaUrl = 'https://maps.googleapis.com/maps/api/streetview/metadata?location=' + Number(prop.lat) + ',' + Number(prop.lng) + '&key=' + svKey;
+        setPlaceholder('Loading Street View...');
+        fetch(metaUrl)
+          .then(function (resp) { return resp.json(); })
+          .then(function (meta) {
+            if (!stillCurrent()) return;
+            if (meta && meta.status === 'OK') {
+              imgEl.onerror = function () {
+                if (!stillCurrent()) return;
+                setPlaceholder('No Street View');
+              };
+              imgEl.onload = null;
+              setImage(baseUrl, baseUrl);
+            } else {
+              setPlaceholder('No Street View');
+            }
+          })
+          .catch(function () {
+            if (!stillCurrent()) return;
+            imgEl.onerror = function () {
+              if (!stillCurrent()) return;
+              setPlaceholder('No Street View');
+            };
+            imgEl.onload = null;
+            setImage(baseUrl, baseUrl);
+          });
+      }
+
+      var existingImage = mapsGetPropertyImageCandidate(prop);
+      if (existingImage) {
+        imgEl.onload = null;
+        imgEl.onerror = function () {
+          if (!stillCurrent()) return;
+          loadStreetViewFallback();
+        };
+        setImage(existingImage, existingImage);
+        return;
+      }
+
+      loadStreetViewFallback();
+    }
+
+    function ppModalNotFoundText() {
+      return 'Not found yet.';
+    }
+
+    function ppSetDemographicField(id, value) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = value || ppModalNotFoundText();
+    }
+
+    function ppFormatDemographicCount(value, suffix) {
+      if (value == null || value === '') return '';
+      var num = _propertyDataNumberish(value);
+      if (num == null) return String(value);
+      var text = Math.round(num).toLocaleString();
+      return suffix ? (text + suffix) : text;
+    }
+
+    function ppFormatDemographicMoney(value, suffix) {
+      if (value == null || value === '') return '';
+      var num = _propertyDataNumberish(value);
+      if (num == null) return String(value);
+      var moneyText = '$' + Math.round(num).toLocaleString();
+      return suffix ? (moneyText + suffix) : moneyText;
+    }
+
+    function ppPopulateDemographics(prop) {
+      var key = _propertyDataKeyFromSource(prop && prop.lat, prop && prop.lng, prop && prop.address);
+      var record = key ? _propertyDataRecordForKey(key) : null;
+      var rawData = Object.assign({}, record && record.propertyData ? record.propertyData : {}, prop && prop.propertyData ? prop.propertyData : {});
+
+      // TODO(acs-demographics): populate modal demographic fields from Census ACS once tract/block-group enrichment is wired.
+      // TODO(acs-demographics): persist ACS-derived values into property records so the modal can stay instant offline.
+      var popDensity = rawData.populationDensity || rawData.populationDensityPerSqMi || rawData.popDensity || '';
+      var medianAge = rawData.medianAge || rawData.ageMedian || '';
+      var hhIncome = rawData.averageHouseholdIncome || rawData.avgHouseholdIncome || rawData.householdIncome || '';
+      var avgIncome = rawData.averageIncome || rawData.avgIncome || rawData.incomePerCapita || '';
+      var hhDensity = rawData.householdsPerSqMi || rawData.householdDensity || rawData.avgHouseholdsPerSqMi || '';
+
+      if (!hhIncome && rawData.neighborhoodMedianIncome) {
+        hhIncome = ppFormatDemographicMoney(rawData.neighborhoodMedianIncome, ' (median)');
+      } else {
+        hhIncome = ppFormatDemographicMoney(hhIncome, '');
+      }
+      avgIncome = ppFormatDemographicMoney(avgIncome, '');
+
+      ppSetDemographicField('pmd-pop-density', ppFormatDemographicCount(popDensity, ' / sq mi'));
+      ppSetDemographicField('pmd-median-age', medianAge ? String(medianAge) : '');
+      ppSetDemographicField('pmd-hh-income', hhIncome);
+      ppSetDemographicField('pmd-avg-income', avgIncome);
+      ppSetDemographicField('pmd-hh-density', ppFormatDemographicCount(hhDensity, ' / sq mi'));
     }
 
     function mapsGetAppState() {
@@ -10414,8 +11190,10 @@
                 var _weight0 = Number(typeof p.get === 'function' ? p.get('strokeWeight') : NaN);
                 p._baseStrokeWeight = isFinite(_weight0) ? _weight0 : 0;
               }
-              var _fillOpacity = _swathScaledDisplayOpacity(opacity, p._baseFillOpacity, _bandMin, _stormType);
-              var _strokeOpacity = _swathScaledStrokeOpacity(opacity, p._baseStrokeOpacity, _bandMin, _stormType, _fillOpacity);
+              var _typeScale = (mapsState.typeOpacityScale && mapsState.typeOpacityScale[_stormType] != null) ? mapsState.typeOpacityScale[_stormType] : 1.0;
+              var _effectiveOpacity = opacity * _typeScale;
+              var _fillOpacity = _swathScaledDisplayOpacity(_effectiveOpacity, p._baseFillOpacity, _bandMin, _stormType);
+              var _strokeOpacity = _swathScaledStrokeOpacity(_effectiveOpacity, p._baseStrokeOpacity, _bandMin, _stormType, _fillOpacity);
               var _strokeWeight = _swathScaledStrokeWeight(p._baseStrokeWeight, _bandMin, _stormType);
               var _fillColor = (typeof p.get === 'function' ? p.get('fillColor') : null) || (typeof p.get === 'function' ? p.get('strokeColor') : null);
               p.setOptions({
@@ -10429,9 +11207,11 @@
                 var _lineStroke0 = Number(typeof p.get === 'function' ? p.get('strokeOpacity') : NaN);
                 p._baseStrokeOpacity = isFinite(_lineStroke0) ? _lineStroke0 : 0.4;
               }
+              var _polyTypeScale = (mapsState.typeOpacityScale && mapsState.typeOpacityScale[_stormType] != null) ? mapsState.typeOpacityScale[_stormType] : 1.0;
+              var _polyEffective = opacity * _polyTypeScale;
               var _lineOpacity = (_stormType === 'hail')
-                ? _swathScaledDisplayOpacity(opacity, Math.max(p._baseStrokeOpacity, 0.28), _bandMin, _stormType)
-                : Math.min(0.92, Math.max(0.10, p._baseStrokeOpacity * (opacity / 0.55)));
+                ? _swathScaledDisplayOpacity(_polyEffective, Math.max(p._baseStrokeOpacity, 0.28), _bandMin, _stormType)
+                : Math.min(0.92, Math.max(0.10, p._baseStrokeOpacity * (_polyEffective / 0.55)));
               p.setOptions({ strokeOpacity: _lineOpacity });
             }
           } catch (_) {}
@@ -10474,33 +11254,38 @@
               var _weight0 = Number(typeof p.get === 'function' ? p.get('strokeWeight') : NaN);
               p._baseStrokeWeight = isFinite(_weight0) ? _weight0 : 1;
             }
-            var _fillOpacity = _swathScaledDisplayOpacity(opacity, p._baseFillOpacity, _bandMin, 'hail');
+            var _hailScale = (mapsState.typeOpacityScale && mapsState.typeOpacityScale.hail != null) ? mapsState.typeOpacityScale.hail : 1.0;
+            var _hailEffective = opacity * _hailScale;
+            var _fillOpacity = _swathScaledDisplayOpacity(_hailEffective, p._baseFillOpacity, _bandMin, 'hail');
             p.setOptions({
               fillOpacity: _fillOpacity,
-              strokeOpacity: _swathScaledStrokeOpacity(opacity, p._baseStrokeOpacity, _bandMin, 'hail', _fillOpacity),
+              strokeOpacity: _swathScaledStrokeOpacity(_hailEffective, p._baseStrokeOpacity, _bandMin, 'hail', _fillOpacity),
               strokeWeight: _swathScaledStrokeWeight(p._baseStrokeWeight, _bandMin, 'hail')
             });
           } catch (_) {}
         });
       });
+      var _windScale = (mapsState.typeOpacityScale && mapsState.typeOpacityScale.wind != null) ? mapsState.typeOpacityScale.wind : 1.0;
       Object.keys(mapsState.windBandPolygons).forEach(function (dateStr) {
         var polys = mapsState.windBandPolygons[dateStr];
         if (!polys) return;
         polys.forEach(function (p, bi) {
-          try { p.setOptions({ fillOpacity: opacity * (0.28 + bi * 0.03) }); } catch (_) {}
+          try { p.setOptions({ fillOpacity: opacity * _windScale * (0.28 + bi * 0.03) }); } catch (_) {}
         });
       });
+      var _tornScale = (mapsState.typeOpacityScale && mapsState.typeOpacityScale.tornado != null) ? mapsState.typeOpacityScale.tornado : 1.0;
       Object.keys(mapsState.tornadoBandPolygons).forEach(function (dateStr) {
         var polys = mapsState.tornadoBandPolygons[dateStr];
         if (!polys) return;
         polys.forEach(function (p, bi) {
-          try { p.setOptions({ fillOpacity: opacity * (0.28 + bi * 0.03) }); } catch (_) {}
+          try { p.setOptions({ fillOpacity: opacity * _tornScale * (0.28 + bi * 0.03) }); } catch (_) {}
         });
       });
     }
 
     function mapsInit() {
       var App = mapsGetAppState();
+      mapsEnsurePinnedDatesLoaded();
       if (!mapsState.ready) {
         mapsInitMap();
         if (!App.mapControlsBound) {
@@ -10935,6 +11720,8 @@
         }
 
         mapsRenderStormList();
+        mapsRenderSavedList();
+        mapsUpdateDownloadBtn();
         mapsUpdateDebugPanel();
       }
 
@@ -11002,17 +11789,33 @@
 
     // ── Custom roadmap style for the "Map" base layer; satellite and hybrid stay unstyled ──
     var hailMoneyRoadmapStyle = [
-      { featureType: "water", elementType: "geometry", stylers: [{ color: "#73d7e6" }] },
-      { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#e9f4ea" }] },
-      { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#d7f0df" }] },
-      { featureType: "poi", elementType: "geometry", stylers: [{ color: "#dcefdc" }] },
-      { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#5f6f63" }] },
-      { featureType: "road", elementType: "geometry", stylers: [{ color: "#f5f3e8" }] },
-      { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#d7d2bf" }] },
-      { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#606060" }] },
-      { featureType: "administrative.province", elementType: "geometry.stroke", stylers: [{ color: "#4f5754" }, { weight: 1.1 }] },
-      { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ color: "#3f4b49" }, { weight: 1.3 }] },
-      { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#4d4d4d" }] },
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#6fcfe0" }] },
+      { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#92aa85" }] },
+      { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#7e996f" }] },
+      { featureType: "poi", elementType: "geometry", stylers: [{ color: "#88a177" }] },
+      { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#6f8e60" }] },
+      { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#2f3d30" }] },
+      { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#264029" }] },
+      // Highways — prominent amber/yellow fill with visible shields
+      { featureType: "road.highway", elementType: "geometry.fill", stylers: [{ color: "#f0c56b" }] },
+      { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#cf9732" }, { weight: 1.1 }] },
+      { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#2f2f2b" }] },
+      { featureType: "road.highway", elementType: "labels.icon", stylers: [{ visibility: "on" }] },
+      // Arterial roads — light tan fill, clearly outlined
+      { featureType: "road.arterial", elementType: "geometry.fill", stylers: [{ color: "#efe6d7" }] },
+      { featureType: "road.arterial", elementType: "geometry.stroke", stylers: [{ color: "#b8ad92" }, { weight: 0.9 }] },
+      { featureType: "road.arterial", elementType: "labels.text.fill", stylers: [{ color: "#3f413b" }] },
+      { featureType: "road.arterial", elementType: "labels.icon", stylers: [{ visibility: "on" }] },
+      // Local streets — soft off-white with a light tan outline
+      { featureType: "road.local", elementType: "geometry.fill", stylers: [{ color: "#f4efe4" }] },
+      { featureType: "road.local", elementType: "geometry.stroke", stylers: [{ color: "#cbc2b0" }, { weight: 0.65 }] },
+      { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#56574f" }] },
+      { featureType: "administrative.province", elementType: "geometry.stroke", stylers: [{ color: "#556253" }, { weight: 1.1 }] },
+      { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ color: "#445144" }, { weight: 1.3 }] },
+      { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#283228" }] },
+      { featureType: "administrative.locality", elementType: "labels.text.stroke", stylers: [{ color: "#d9e2d4" }] },
+      { featureType: "administrative.neighborhood", elementType: "labels.text.fill", stylers: [{ color: "#40503f" }] },
+      { featureType: "administrative.neighborhood", elementType: "labels.text.stroke", stylers: [{ color: "#dce4d7" }] },
       { featureType: "transit", stylers: [{ visibility: "off" }] }
     ];
 
@@ -11028,12 +11831,7 @@
         styles: [],
         zoomControl: false,
         streetViewControl: false,
-        mapTypeControl: true,
-        mapTypeControlOptions: {
-          style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-          position: google.maps.ControlPosition.TOP_CENTER,
-          mapTypeIds: ['roadmap', 'satellite', 'hybrid']
-        },
+        mapTypeControl: false,
         fullscreenControl: false,
         rotateControl: false,
         clickableIcons: false,
@@ -11162,31 +11960,11 @@
 
         var lat = e.latLng.lat();
         var lng = e.latLng.lng();
-        mapsState.selectedProperty = { lat: lat, lng: lng, address: '', title: 'Selected Property' };
         console.log('[PROP-DEBUG] property click fired — selected lat=' + lat.toFixed(5) + ' lng=' + lng.toFixed(5));
 
         // Single UI: left property panel only
         console.log('[PROP-DEBUG] duplicate popup/card suppressed (InfoWindow + prop card)');
-        ppOpen(mapsState.selectedProperty);
-
-        // Reverse-geocode to update address, then lightweight-update title/sub
-        try {
-          if (window.google && google.maps.Geocoder) {
-            var geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
-              if (status === 'OK' && results && results[0]) {
-                mapsState.selectedProperty.address = results[0].formatted_address;
-                mapsState.selectedProperty.title = results[0].formatted_address.split(',')[0] || 'Selected Property';
-                // Lightweight update — only refresh title/sub, don't re-trigger tabs or hail summary
-                var _titleEl = document.getElementById('pp-title');
-                var _subEl = document.getElementById('pp-sub');
-                if (_titleEl) _titleEl.textContent = mapsState.selectedProperty.title;
-                if (_subEl) _subEl.textContent = mapsState.selectedProperty.lat.toFixed(5) + ', ' + mapsState.selectedProperty.lng.toFixed(5);
-                console.log('[PROP-DEBUG] geocode updated title/sub (no full ppOpen re-trigger)');
-              }
-            });
-          }
-        } catch (_) {}
+        mapsSelectPropertyAtLocation(lat, lng, { title: 'Selected Property' });
       });
 
       // Global handlers for InfoWindow inline onclick
@@ -11864,11 +12642,11 @@
       { threshold: 2.50, label: '2\u00BD\u2033 +',          fill: '#9419B4', stroke: '#6B1080' }   // deep purple
     ];
 
-    // ── Wind speed bands (blue palette) ──
+    // ── Wind speed bands (blue palette) — z-index below hail (45-47 < 70) ──
     var WIND_SPEED_BANDS = [
-      { threshold: 58,  label: '58-74 mph',  fill: '#90CAF9', stroke: '#1565C0', zIndex: 2100 },
-      { threshold: 75,  label: '75-94 mph',  fill: '#42A5F5', stroke: '#0D47A1', zIndex: 2101 },
-      { threshold: 95,  label: '95+ mph', fill: '#1E88E5', stroke: '#0A2472', zIndex: 2102 },
+      { threshold: 58,  label: '58-74 mph',  fill: '#90CAF9', stroke: '#1565C0', zIndex: 45 },
+      { threshold: 75,  label: '75-94 mph',  fill: '#42A5F5', stroke: '#0D47A1', zIndex: 46 },
+      { threshold: 95,  label: '95+ mph', fill: '#1E88E5', stroke: '#0A2472', zIndex: 47 },
     ];
 
 
@@ -13248,23 +14026,8 @@
             }
             // Open property panel via map click path
             var lat = e.latLng.lat(), lng = e.latLng.lng();
-            mapsState.selectedProperty = { lat: lat, lng: lng, address: '', title: 'Selected Property' };
             console.log('[PROP-DEBUG] property click fired through hail band — selected lat=' + lat.toFixed(5) + ' lng=' + lng.toFixed(5));
-            ppOpen(mapsState.selectedProperty);
-            try {
-              if (window.google && google.maps.Geocoder) {
-                new google.maps.Geocoder().geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
-                  if (status === 'OK' && results && results[0]) {
-                    mapsState.selectedProperty.address = results[0].formatted_address;
-                    mapsState.selectedProperty.title = results[0].formatted_address.split(',')[0] || 'Selected Property';
-                    var _t = document.getElementById('pp-title');
-                    var _s = document.getElementById('pp-sub');
-                    if (_t) _t.textContent = mapsState.selectedProperty.title;
-                    if (_s) _s.textContent = lat.toFixed(5) + ', ' + lng.toFixed(5);
-                  }
-                });
-              }
-            } catch (_) {}
+            mapsSelectPropertyAtLocation(lat, lng, { title: 'Selected Property' });
           });
         })(poly, band, bPts.length);
 
@@ -13379,12 +14142,12 @@
           var poly = new google.maps.Polygon({
             paths: path,
             strokeColor: band.stroke || band.fill,
-            strokeOpacity: 0.85,
-            strokeWeight: 1.2,
+            strokeOpacity: 0.35,
+            strokeWeight: 0.8,
             fillColor: band.fill,
-            fillOpacity: 0.55,
+            fillOpacity: 0.28,
             map: mapsState.map,
-            zIndex: band.zIndex || 2100,
+            zIndex: band.zIndex || 45,
             clickable: true
           });
 
@@ -13394,22 +14157,7 @@
               var ppPanel = document.getElementById('maps-prop-panel');
               if (ppPanel && ppPanel.classList.contains('open')) return;
               var lat = e.latLng.lat(), lng = e.latLng.lng();
-              mapsState.selectedProperty = { lat: lat, lng: lng, address: '', title: 'Selected Property' };
-              ppOpen(mapsState.selectedProperty);
-              try {
-                if (window.google && google.maps.Geocoder) {
-                  new google.maps.Geocoder().geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
-                    if (status === 'OK' && results && results[0]) {
-                      mapsState.selectedProperty.address = results[0].formatted_address;
-                      mapsState.selectedProperty.title = results[0].formatted_address.split(',')[0] || 'Selected Property';
-                      var _t = document.getElementById('pp-title');
-                      var _s = document.getElementById('pp-sub');
-                      if (_t) _t.textContent = mapsState.selectedProperty.title;
-                      if (_s) _s.textContent = lat.toFixed(5) + ', ' + lng.toFixed(5);
-                    }
-                  });
-                }
-              } catch (_) {}
+              mapsSelectPropertyAtLocation(lat, lng, { title: 'Selected Property' });
             });
           })(poly, band);
 
@@ -13498,22 +14246,7 @@
             var ppPanel = document.getElementById('maps-prop-panel');
             if (ppPanel && ppPanel.classList.contains('open')) return;
             var lat = e.latLng.lat(), lng = e.latLng.lng();
-            mapsState.selectedProperty = { lat: lat, lng: lng, address: '', title: 'Selected Property' };
-            ppOpen(mapsState.selectedProperty);
-            try {
-              if (window.google && google.maps.Geocoder) {
-                new google.maps.Geocoder().geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
-                  if (status === 'OK' && results && results[0]) {
-                    mapsState.selectedProperty.address = results[0].formatted_address;
-                    mapsState.selectedProperty.title = results[0].formatted_address.split(',')[0] || 'Selected Property';
-                    var _t = document.getElementById('pp-title');
-                    var _s = document.getElementById('pp-sub');
-                    if (_t) _t.textContent = mapsState.selectedProperty.title;
-                    if (_s) _s.textContent = lat.toFixed(5) + ', ' + lng.toFixed(5);
-                  }
-                });
-              }
-            } catch (_) {}
+            mapsSelectPropertyAtLocation(lat, lng, { title: 'Selected Property' });
           });
         })(poly, band);
 
@@ -15916,6 +16649,8 @@
         } else if (hasHail || hasWind) {
           badgeHtml = '<span class="storm-source-badge reports" title="Raw LSR reports — no swath saved yet">Reports only</span>';
         }
+        var impactSummary = mapsGetStormImpactSummarySync(dateStr);
+        var impactLabel = mapsFormatHousingUnitLabel(impactSummary || null);
         li.innerHTML =
           '<button type="button" class="maps-pin-btn' + (isPinned ? ' pinned' : '') +
           '" data-pin-date="' + dateStr + '" title="' + (isPinned ? 'Unpin' : 'Pin to saved') + '">&#x1F4CC;</button>' +
@@ -15923,6 +16658,7 @@
           '<div class="storm-label-group">' +
             '<span class="storm-label">' + dateStr + ' ' + badgeHtml + '</span>' +
             '<span class="storm-size">' + summaryHtml + '</span>' +
+            '<span class="storm-home-count" data-impact-date="' + dateStr + '" style="font-size:11px;color:var(--muted);">' + impactLabel + '</span>' +
           '</div>';
         // Click row → preview this date
         li.addEventListener('click', function (e) {
@@ -15937,6 +16673,9 @@
         ul.appendChild(li);
       });
       mapsUpdatePagingButtons(page, maxPage);
+      mapsPrimeStormImpactSummaries(pageDates);
+      mapsRenderImpactTab();
+      mapsRenderPinnedTab();
       if (typeof mapsMobSyncStorms === 'function') mapsMobSyncStorms();
     }
 
@@ -16153,6 +16892,7 @@
       }
 
       mapsState.previewDate = dateStr;
+      if (mapsState.selectedProperty) mapsState.selectedProperty._selectedStormDate = dateStr;
       mapsSyncSelectedDates();
       mapsDrawDate(dateStr);
       console.log("[PREVIEW_FAST_PATH] draw called", {
@@ -16191,6 +16931,7 @@
         mapsDrawDate(dateStr);
       }
 
+      mapsPersistPinnedDates();
       mapsSyncSelectedDates();
       mapsRenderStormList();
       mapsRenderSavedList();
@@ -16207,6 +16948,7 @@
             mapsState.pinnedDates.push(dateStr);
           }
         }
+        mapsPersistPinnedDates();
         mapsPreviewDate(dateStr);
         mapsSyncSelectedDates();
         mapsRenderSavedList();
@@ -16215,6 +16957,7 @@
         // Unpin if pinned
         var idx = mapsState.pinnedDates.indexOf(dateStr);
         if (idx !== -1) mapsState.pinnedDates.splice(idx, 1);
+        mapsPersistPinnedDates();
         // Clear preview if it's the preview
         if (mapsState.previewDate === dateStr) mapsState.previewDate = null;
         hideStormDate(dateStr);
@@ -16237,6 +16980,806 @@
       var dt = new Date(d);
       if (!isNaN(dt.getTime())) return dt.toISOString().slice(0, 10);
       return d;
+    }
+
+    function mapsPointWindMph(point) {
+      return Number(point && (point.magnitude != null ? point.magnitude :
+        point.speed != null ? point.speed :
+        point.mag_mph != null ? point.mag_mph :
+        point.wind_speed != null ? point.wind_speed : 0)) || 0;
+    }
+
+    function mapsPointTimeText(point) {
+      return String(point && (
+        point.event_time ||
+        point.time ||
+        point.obs_time ||
+        point.observation_time ||
+        point.report_time ||
+        point.timestamp ||
+        point.event_start_utc ||
+        point.observed_at ||
+        ''
+      ) || '').trim();
+    }
+
+    function mapsFormatObservationTime(value) {
+      value = String(value || '').trim();
+      if (!value) return '';
+      if (/^\d{2}:\d{2}(:\d{2})?$/.test(value)) return value.length > 5 ? value.slice(0, 5) : value;
+      var dt = new Date(value);
+      if (!isNaN(dt.getTime())) return dt.toLocaleString();
+      return value.replace('T', ' ').replace('Z', '').trim();
+    }
+
+    function mapsPointLabelText(point) {
+      return String(point && (
+        point.station_name ||
+        point.station ||
+        point.station_id ||
+        point.label ||
+        point.location_name ||
+        point.location ||
+        point.city ||
+        point.county ||
+        point.source ||
+        point.remark ||
+        ''
+      ) || '').trim();
+    }
+
+    function mapsPointWarningText(point) {
+      return String(point && (
+        point.nws_warning ||
+        point.warning ||
+        point.warning_text ||
+        point.warning_label ||
+        point.product ||
+        ''
+      ) || '').trim();
+    }
+
+    function mapsBearingDegrees(lat1, lng1, lat2, lng2) {
+      var phi1 = lat1 * Math.PI / 180;
+      var phi2 = lat2 * Math.PI / 180;
+      var dLng = (lng2 - lng1) * Math.PI / 180;
+      var y = Math.sin(dLng) * Math.cos(phi2);
+      var x = Math.cos(phi1) * Math.sin(phi2) -
+        Math.sin(phi1) * Math.cos(phi2) * Math.cos(dLng);
+      var brng = Math.atan2(y, x) * 180 / Math.PI;
+      return (brng + 360) % 360;
+    }
+
+    function mapsBearingToCardinal(bearing) {
+      var dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+      var normalized = ((Number(bearing) || 0) % 360 + 360) % 360;
+      return dirs[Math.round(normalized / 45) % 8];
+    }
+
+    function mapsFindNearestStormPoint(prop, points, predicate) {
+      if (!prop || !Array.isArray(points) || !points.length) return null;
+      var best = null;
+      points.forEach(function (point) {
+        if (predicate && !predicate(point)) return;
+        var lat = Number(point && point.lat);
+        var lng = Number(point && (point.lon != null ? point.lon : point.lng));
+        if (!isFinite(lat) || !isFinite(lng)) return;
+        var distMi = _haversineMi(Number(prop.lat), Number(prop.lng), lat, lng);
+        if (!best || distMi < best.distMi) {
+          best = {
+            point: point,
+            lat: lat,
+            lng: lng,
+            distMi: distMi,
+            direction: mapsBearingToCardinal(mapsBearingDegrees(Number(prop.lat), Number(prop.lng), lat, lng)),
+            hailIn: Number(point && point.hail_in) || 0,
+            mph: mapsPointWindMph(point)
+          };
+        }
+      });
+      return best;
+    }
+
+    function mapsNearbyStormPoints(prop, points, maxMiles, predicate) {
+      if (!prop || !Array.isArray(points) || !points.length) return [];
+      var out = [];
+      points.forEach(function (point) {
+        if (predicate && !predicate(point)) return;
+        var lat = Number(point && point.lat);
+        var lng = Number(point && (point.lon != null ? point.lon : point.lng));
+        if (!isFinite(lat) || !isFinite(lng)) return;
+        var distMi = _haversineMi(Number(prop.lat), Number(prop.lng), lat, lng);
+        if (distMi <= maxMiles) {
+          out.push({
+            point: point,
+            lat: lat,
+            lng: lng,
+            distMi: distMi,
+            direction: mapsBearingToCardinal(mapsBearingDegrees(Number(prop.lat), Number(prop.lng), lat, lng)),
+            hailIn: Number(point && point.hail_in) || 0,
+            mph: mapsPointWindMph(point)
+          });
+        }
+      });
+      return out.sort(function (a, b) { return a.distMi - b.distMi; });
+    }
+
+    function mapsDistanceDirectionText(nearest) {
+      if (!nearest || !isFinite(nearest.distMi)) return '';
+      if (nearest.distMi < 0.15) return 'At the property';
+      return nearest.distMi.toFixed(nearest.distMi < 10 ? 1 : 0) + ' mi ' + (nearest.direction || '') + ' of the property';
+    }
+
+    function mapsTrackedPropertyNormalize(raw, source) {
+      raw = raw || {};
+      var lat = Number(raw.lat != null ? raw.lat : raw.latitude);
+      var lng = Number(raw.lng != null ? raw.lng : (raw.lon != null ? raw.lon : raw.longitude));
+      if (!isFinite(lat) || !isFinite(lng)) return null;
+      var address = String(raw.address || '').trim();
+      if (!address) {
+        address = [
+          String(raw.street || '').trim(),
+          [raw.city, raw.state, raw.zip].filter(Boolean).join(' ').trim()
+        ].filter(Boolean).join(', ');
+      }
+      var parsed = parseAddressBestEffort(address || '');
+      return {
+        lat: lat,
+        lng: lng,
+        address: address,
+        title: String(raw.title || raw.label || parsed.street || 'Tracked Property').trim(),
+        city: String(raw.city || parsed.city || '').trim(),
+        state: String(raw.state || parsed.state || '').trim(),
+        zip: String(raw.zip || parsed.zip || '').trim(),
+        source: source || ''
+      };
+    }
+
+    function mapsReadCampaignMarkers() {
+      try {
+        var raw = JSON.parse(localStorage.getItem(MAPS_CAMPAIGN_MARKERS_KEY) || '[]');
+        return Array.isArray(raw) ? raw : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function mapsGetTrackedProperties() {
+      var seen = {};
+      var out = [];
+
+      function push(raw, source) {
+        var normalized = mapsTrackedPropertyNormalize(raw, source);
+        if (!normalized) return;
+        var key = normalized.lat.toFixed(5) + ',' + normalized.lng.toFixed(5);
+        if (seen[key]) return;
+        seen[key] = true;
+        out.push(normalized);
+      }
+
+      (getJobs() || []).forEach(function (job) {
+        push({
+          lat: job && job.lat,
+          lng: job && job.lng,
+          address: _propertyDataAddressFromJob(job),
+          title: job && (job.homeownerName || job.street),
+          city: job && job.city,
+          state: job && job.state,
+          zip: job && job.zip
+        }, 'job');
+      });
+
+      var records = _propertyDataRecordsGet();
+      Object.keys(records || {}).forEach(function (key) {
+        push(records[key], 'property-record');
+      });
+
+      mapsReadCampaignMarkers().forEach(function (marker) {
+        push({
+          lat: marker && marker.lat,
+          lng: marker && marker.lng,
+          address: marker && marker.address,
+          title: marker && marker.label
+        }, 'campaign-marker');
+      });
+
+      try {
+        (crmGetLeads() || []).forEach(function (lead) {
+          push({
+            lat: lead && lead.lat,
+            lng: lead && lead.lng,
+            address: [
+              String(lead && lead.street || '').trim(),
+              [lead && lead.city, lead && lead.state, lead && lead.zip].filter(Boolean).join(' ').trim()
+            ].filter(Boolean).join(', '),
+            title: [lead && lead.firstName, lead && lead.lastName].filter(Boolean).join(' ').trim(),
+            city: lead && lead.city,
+            state: lead && lead.state,
+            zip: lead && lead.zip
+          }, 'lead');
+        });
+      } catch (_) {}
+
+      return out;
+    }
+
+    function mapsGetStormImpactData(dateStr) {
+      dateStr = mapsNormalizeDate(dateStr);
+      mapsState._stormImpactDataPromises = mapsState._stormImpactDataPromises || {};
+      if (mapsState._stormImpactDataPromises[dateStr]) return mapsState._stormImpactDataPromises[dateStr];
+
+      var polygonsPromise = Array.isArray(mapsState.rawStormRows[dateStr])
+        ? Promise.resolve(mapsState.rawStormRows[dateStr])
+        : fetchStormPolygonsByDate(dateStr);
+
+      var hailPromise = Array.isArray(mapsState.lsrPointsByDate[dateStr])
+        ? Promise.resolve(mapsState.lsrPointsByDate[dateStr])
+        : fetchHailReportsByDate(dateStr).then(function (points) {
+            mapsState.lsrPointsByDate[dateStr] = Array.isArray(points) ? points : [];
+            return mapsState.lsrPointsByDate[dateStr];
+          });
+
+      var windPromise = Array.isArray(mapsState.windPointsByDate[dateStr])
+        ? Promise.resolve(mapsState.windPointsByDate[dateStr])
+        : fetchStormLsrByDate(dateStr, 'wind').then(function (points) {
+            mapsState.windPointsByDate[dateStr] = Array.isArray(points) ? points : [];
+            return mapsState.windPointsByDate[dateStr];
+          });
+
+      mapsState._stormImpactDataPromises[dateStr] = Promise.all([polygonsPromise, hailPromise, windPromise])
+        .then(function (results) {
+          return {
+            rows: Array.isArray(results[0]) ? results[0] : [],
+            hailPoints: Array.isArray(results[1]) ? results[1] : [],
+            windPoints: Array.isArray(results[2]) ? results[2] : []
+          };
+        })
+        .catch(function () {
+          return { rows: [], hailPoints: [], windPoints: [] };
+        });
+
+      return mapsState._stormImpactDataPromises[dateStr];
+    }
+
+    function mapsGetPropertyImpactForDate(prop, dataset) {
+      dataset = dataset || {};
+      var atLocationHail = 0;
+      var atLocationWind = 0;
+      var tornadoHit = false;
+      (dataset.rows || []).forEach(function (row) {
+        if (!row || !row.polygon_geojson) return;
+        if (!mapsGeoJsonContains(Number(prop.lat), Number(prop.lng), row.polygon_geojson)) return;
+        var stormType = String(row.storm_type || 'hail').toLowerCase();
+        if (stormType === 'wind') {
+          atLocationWind = Math.max(atLocationWind, _windBandToMph(Number(row.band_min) || 0));
+        } else if (stormType === 'tornado') {
+          tornadoHit = true;
+        } else {
+          atLocationHail = Math.max(atLocationHail, mapsExtractHailValue(row));
+        }
+      });
+
+      var nearestHail = mapsFindNearestStormPoint(prop, dataset.hailPoints || [], function (point) {
+        return (Number(point && point.hail_in) || 0) >= 0.75;
+      });
+      var nearestWind = mapsFindNearestStormPoint(prop, dataset.windPoints || [], function (point) {
+        return mapsPointWindMph(point) >= 58;
+      });
+
+      var impacted = atLocationHail > 0 || atLocationWind >= 58 || tornadoHit ||
+        (!!nearestHail && nearestHail.distMi <= 1) ||
+        (!!nearestWind && nearestWind.distMi <= 1);
+
+      return {
+        impacted: impacted,
+        atLocationHail: atLocationHail,
+        atLocationWind: atLocationWind,
+        tornadoHit: tornadoHit,
+        nearestHail: nearestHail,
+        nearestWind: nearestWind
+      };
+    }
+
+    function mapsFormatImpactedHomes(count) {
+      return count + ' impacted home' + (count === 1 ? '' : 's');
+    }
+
+    // Abbreviates large counts for the Recent/Pinned tab label, e.g. 423600 -> "423.6k".
+    // Dormant until a real housing-unit source sets housingEstimateConnected = true.
+    function mapsAbbreviateCount(n) {
+      n = Number(n) || 0;
+      if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+      return String(n);
+    }
+
+    // Returns the label shown in Recent / Pinned tabs for a date's housing-unit impact.
+    // housingEstimateConnected is false until a real Census / parcel data source is wired.
+    function mapsFormatHousingUnitLabel(summary) {
+      if (!summary) return 'Checking...';
+      // TODO(housing-units): replace placeholder once one of the following is wired:
+      //   - Census ACS block-group housing unit counts intersected with swath polygons
+      //   - City/county boundary × swath overlap with Census housing density
+      //   - Parcel count API or paid property-data provider
+      //   - FEMA / HUD housing unit raster for swath footprint
+      if (!summary.housingEstimateConnected) return 'Impact estimate not calculated yet';
+      return mapsAbbreviateCount(summary.impactedHomesCount) + ' homes impacted';
+    }
+
+    function mapsGetStormImpactSummarySync(dateStr) {
+      return mapsState.stormImpactSummaries && mapsState.stormImpactSummaries[dateStr] || null;
+    }
+
+    function mapsSetStormImpactSummaryText(dateStr, text) {
+      document.querySelectorAll('.storm-home-count[data-impact-date="' + dateStr + '"]').forEach(function (el) {
+        el.textContent = text;
+      });
+    }
+
+    function mapsGetStormImpactSummary(dateStr) {
+      dateStr = mapsNormalizeDate(dateStr);
+      mapsState.stormImpactSummaries = mapsState.stormImpactSummaries || {};
+      mapsState._stormImpactSummaryPromises = mapsState._stormImpactSummaryPromises || {};
+      if (mapsState.stormImpactSummaries[dateStr]) return Promise.resolve(mapsState.stormImpactSummaries[dateStr]);
+      if (mapsState._stormImpactSummaryPromises[dateStr]) return mapsState._stormImpactSummaryPromises[dateStr];
+
+      mapsState._stormImpactSummaryPromises[dateStr] = mapsGetStormImpactData(dateStr).then(function (dataset) {
+        // Track which of my saved properties/leads are impacted — separate from overall storm estimate.
+        // This is NOT the overall storm impact; it is only "my saved properties that were hit."
+        var myImpactedProperties = [];
+        mapsGetTrackedProperties().forEach(function (prop) {
+          var impact = mapsGetPropertyImpactForDate(prop, dataset);
+          if (!impact.impacted) return;
+          myImpactedProperties.push({ prop: prop, impact: impact });
+        });
+
+        // TODO(housing-units): set housingEstimateConnected = true and impactedHomesCount = real number
+        //   once Census block-group housing units × swath polygon intersection is implemented.
+        //   City/region breakdown for the Impact tab comes from mapsBuildImpactRegions (report-point
+        //   clusters + reverse geocoding), not from this summary or from saved properties.
+        var summary = {
+          dateStr: dateStr,
+          housingEstimateConnected: false,  // flip to true once real estimate is wired
+          impactedHomesCount: 0,            // unused for display until housingEstimateConnected = true
+          myImpactedCount: myImpactedProperties.length,
+          myImpactedProperties: myImpactedProperties,
+          impactedHomes: myImpactedProperties  // kept for backward-compat references
+        };
+        mapsState.stormImpactSummaries[dateStr] = summary;
+        delete mapsState._stormImpactSummaryPromises[dateStr];
+        return summary;
+      }).catch(function () {
+        delete mapsState._stormImpactSummaryPromises[dateStr];
+        var summary = {
+          dateStr: dateStr,
+          housingEstimateConnected: false,
+          impactedHomesCount: 0,
+          myImpactedCount: 0,
+          myImpactedProperties: [],
+          impactedHomes: []
+        };
+        mapsState.stormImpactSummaries[dateStr] = summary;
+        return summary;
+      });
+
+      return mapsState._stormImpactSummaryPromises[dateStr];
+    }
+
+    function mapsPrimeStormImpactSummaries(dateList) {
+      (dateList || []).forEach(function (dateStr) {
+        var cached = mapsGetStormImpactSummarySync(dateStr);
+        if (cached) {
+          mapsSetStormImpactSummaryText(dateStr, mapsFormatHousingUnitLabel(cached));
+          return;
+        }
+        mapsGetStormImpactSummary(dateStr).then(function (summary) {
+          mapsSetStormImpactSummaryText(dateStr, mapsFormatHousingUnitLabel(summary));
+          mapsRenderImpactTab();
+          mapsRenderPinnedTab();
+        });
+      });
+    }
+
+    function mapsGetActiveImpactDate() {
+      var propDate = mapsState.selectedProperty && mapsState.selectedProperty._selectedStormDate;
+      return mapsNormalizeDate(propDate || mapsState.previewDate || (mapsState.pinnedDates && mapsState.pinnedDates[0]) || '');
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // Impact tab: state → city region grouping (HailRecon-style)
+    // Built strictly from existing storm report points (hail/wind LSR) for
+    // the selected date — NEVER from saved properties/leads/campaign markers.
+    // City/state names are derived via reverse geocoding of report-point
+    // clusters, since hail_lsr_raw / storm-lsr-by-date rows carry only
+    // lat/lon (no city/state fields) as of this writing.
+    // ══════════════════════════════════════════════════════════════
+
+    var MAPS_IMPACT_HAIL_BUCKETS = [0.50, 1.00, 1.25, 1.50, 1.75, 2.00, 2.50];
+    var MAPS_IMPACT_CLUSTER_DEGREES = 0.3;  // ~20mi grid cell used to group report points into "cities"
+    var MAPS_IMPACT_MAX_CLUSTERS = 50;      // cap reverse-geocode calls per date
+
+    function mapsImpactHailBucketLabel(idx) {
+      if (idx === MAPS_IMPACT_HAIL_BUCKETS.length - 1) return '2.50"+';
+      return MAPS_IMPACT_HAIL_BUCKETS[idx].toFixed(2) + '"';
+    }
+
+    // Buckets raw hail_in values into the MAPS_IMPACT_HAIL_BUCKETS scale —
+    // each value counts toward the highest threshold it meets or exceeds.
+    function mapsImpactBucketHailValues(values) {
+      var counts = MAPS_IMPACT_HAIL_BUCKETS.map(function () { return 0; });
+      (values || []).forEach(function (v) {
+        v = Number(v);
+        if (!isFinite(v) || v <= 0) return;
+        var idx = 0;
+        for (var i = 0; i < MAPS_IMPACT_HAIL_BUCKETS.length; i++) {
+          if (v >= MAPS_IMPACT_HAIL_BUCKETS[i] - 0.001) idx = i;
+        }
+        counts[idx]++;
+      });
+      return counts;
+    }
+
+    // Grid-clusters raw hail/wind report points into coarse "city" cells so
+    // we don't reverse-geocode every single LSR point.
+    function mapsClusterStormPoints(hailPoints, windPoints) {
+      var grid = {};
+      var cellSize = MAPS_IMPACT_CLUSTER_DEGREES;
+      function addPoint(lat, lon, hailIn) {
+        if (!isFinite(lat) || !isFinite(lon)) return;
+        var key = Math.round(lat / cellSize) + ',' + Math.round(lon / cellSize);
+        if (!grid[key]) grid[key] = { latSum: 0, lngSum: 0, count: 0, maxHailIn: 0, hailValues: [] };
+        var cell = grid[key];
+        cell.latSum += lat;
+        cell.lngSum += lon;
+        cell.count++;
+        if (isFinite(hailIn) && hailIn > 0) {
+          cell.maxHailIn = Math.max(cell.maxHailIn, hailIn);
+          cell.hailValues.push(hailIn);
+        }
+      }
+      (hailPoints || []).forEach(function (p) {
+        addPoint(Number(p && p.lat), Number(p && (p.lon != null ? p.lon : p.lng)), Number(p && p.hail_in));
+      });
+      (windPoints || []).forEach(function (p) {
+        addPoint(Number(p && p.lat), Number(p && (p.lon != null ? p.lon : p.lng)), NaN);
+      });
+      return Object.keys(grid).map(function (key) {
+        var c = grid[key];
+        return {
+          lat: c.latSum / c.count,
+          lng: c.lngSum / c.count,
+          count: c.count,
+          maxHailIn: c.maxHailIn,
+          hailValues: c.hailValues
+        };
+      }).sort(function (a, b) { return b.count - a.count; });
+    }
+
+    // Reverse-geocodes one lat/lng to {city, state, stateShort} using the same
+    // Geocoder already used elsewhere in Maps (e.g. property modal). Cached by
+    // rounded lat/lng so repeated renders/dates don't re-query the same area.
+    function mapsGeocodeLatLng(lat, lng) {
+      mapsState.impactGeocodeCache = mapsState.impactGeocodeCache || {};
+      var key = lat.toFixed(2) + ',' + lng.toFixed(2);
+      if (mapsState.impactGeocodeCache[key]) return mapsState.impactGeocodeCache[key];
+      var promise = new Promise(function (resolve) {
+        if (!window.google || !google.maps || !google.maps.Geocoder) { resolve(null); return; }
+        try {
+          new google.maps.Geocoder().geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
+            if (status !== 'OK' || !results || !results.length) { resolve(null); return; }
+            var city = null, state = null, stateShort = null;
+            for (var i = 0; i < results.length && !(city && state); i++) {
+              var comps = results[i].address_components || [];
+              if (!state) {
+                var stateLong = mapsFindAddressComponent(comps, 'administrative_area_level_1', false);
+                var stateAbbr = mapsFindAddressComponent(comps, 'administrative_area_level_1', true);
+                if (stateLong) { state = stateLong; stateShort = stateAbbr || stateLong; }
+              }
+              if (!city) {
+                city = mapsFindAddressComponent(comps, 'locality', false) ||
+                  mapsFindAddressComponent(comps, 'postal_town', false) ||
+                  mapsFindAddressComponent(comps, 'sublocality', false) ||
+                  mapsFindAddressComponent(comps, 'administrative_area_level_3', false) || null;
+              }
+            }
+            if (!state) { resolve(null); return; }
+            resolve({ city: city || null, state: state, stateShort: stateShort || state });
+          });
+        } catch (e) { resolve(null); }
+      }).catch(function () { return null; });
+      mapsState.impactGeocodeCache[key] = promise;
+      return promise;
+    }
+
+    // Builds { dateStr, states:[{name, stateShort, cities:[...], center}] } for
+    // the given storm date from raw hail/wind report points only — never from
+    // saved properties/leads/campaign markers. Cached per date.
+    function mapsBuildImpactRegions(dateStr) {
+      dateStr = mapsNormalizeDate(dateStr);
+      mapsState.impactRegionsByDate = mapsState.impactRegionsByDate || {};
+      mapsState._impactRegionsPromises = mapsState._impactRegionsPromises || {};
+      if (mapsState.impactRegionsByDate[dateStr]) return Promise.resolve(mapsState.impactRegionsByDate[dateStr]);
+      if (mapsState._impactRegionsPromises[dateStr]) return mapsState._impactRegionsPromises[dateStr];
+
+      mapsState._impactRegionsPromises[dateStr] = mapsGetStormImpactData(dateStr).then(function (dataset) {
+        var clusters = mapsClusterStormPoints(dataset.hailPoints, dataset.windPoints);
+        // TODO(impact-regions): once real city-boundary × swath intersection data exists, prefer it
+        // over reverse-geocoded report clusters and drop the MAX_CLUSTERS cap below.
+        var toGeocode = clusters.slice(0, MAPS_IMPACT_MAX_CLUSTERS);
+        return Promise.all(toGeocode.map(function (cluster) {
+          return mapsGeocodeLatLng(cluster.lat, cluster.lng).then(function (place) {
+            return place ? Object.assign({}, cluster, place) : null;
+          });
+        })).then(function (geocoded) {
+          var statesMap = {};
+          geocoded.filter(Boolean).forEach(function (c) {
+            if (!statesMap[c.state]) statesMap[c.state] = { name: c.state, stateShort: c.stateShort, cities: {} };
+            var cityKey = c.city || (c.lat.toFixed(2) + ',' + c.lng.toFixed(2));
+            var bucket = statesMap[c.state].cities[cityKey];
+            if (!bucket) {
+              bucket = statesMap[c.state].cities[cityKey] = {
+                name: c.city || null, state: c.state, stateShort: c.stateShort,
+                lat: c.lat, lng: c.lng, count: 0, maxHailIn: 0, hailValues: [], _marker: null
+              };
+            } else {
+              bucket.lat = (bucket.lat + c.lat) / 2;
+              bucket.lng = (bucket.lng + c.lng) / 2;
+            }
+            bucket.count += c.count;
+            bucket.maxHailIn = Math.max(bucket.maxHailIn, c.maxHailIn);
+            bucket.hailValues = bucket.hailValues.concat(c.hailValues || []);
+          });
+          var states = Object.keys(statesMap).map(function (name) {
+            var s = statesMap[name];
+            var cities = Object.keys(s.cities).map(function (k) { return s.cities[k]; })
+              .sort(function (a, b) { return b.count - a.count; });
+            var latSum = 0, lngSum = 0;
+            cities.forEach(function (c) { latSum += c.lat; lngSum += c.lng; });
+            return {
+              name: name,
+              stateShort: s.stateShort,
+              cities: cities,
+              center: cities.length ? { lat: latSum / cities.length, lng: lngSum / cities.length } : null
+            };
+          }).sort(function (a, b) { return b.cities.length - a.cities.length || a.name.localeCompare(b.name); });
+
+          var result = { dateStr: dateStr, states: states, builtAt: Date.now() };
+          mapsState.impactRegionsByDate[dateStr] = result;
+          delete mapsState._impactRegionsPromises[dateStr];
+          return result;
+        });
+      }).catch(function () {
+        var result = { dateStr: dateStr, states: [], builtAt: Date.now() };
+        mapsState.impactRegionsByDate[dateStr] = result;
+        delete mapsState._impactRegionsPromises[dateStr];
+        return result;
+      });
+
+      return mapsState._impactRegionsPromises[dateStr];
+    }
+
+    // Marker icon for impact-region pins — visually distinct (violet teardrop)
+    // from property pins (colored circles) and LSR report circles.
+    function mapsImpactMarkerIcon() {
+      return {
+        path: 'M12 2C7.58 2 4 5.58 4 10c0 5.25 7.05 11.39 7.35 11.65a1 1 0 0 0 1.3 0C13 21.39 20 15.25 20 10c0-4.42-3.58-8-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z',
+        fillColor: '#7c3aed',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 1.5,
+        scale: 1.4,
+        anchor: new google.maps.Point(12, 22)
+      };
+    }
+
+    function mapsClearImpactRegionMarkers() {
+      Object.keys(mapsState.impactRegionMarkersByState || {}).forEach(function (stateName) {
+        (mapsState.impactRegionMarkersByState[stateName] || []).forEach(function (m) {
+          try { m.setMap(null); } catch (_) {}
+        });
+      });
+      mapsState.impactRegionMarkersByState = {};
+      if (mapsState._impactCityPopupInfoWindow) {
+        try { mapsState._impactCityPopupInfoWindow.close(); } catch (_) {}
+        mapsState._impactCityPopupInfoWindow = null;
+      }
+    }
+
+    function mapsRemoveImpactRegionMarkersForState(state) {
+      var markers = mapsState.impactRegionMarkersByState && mapsState.impactRegionMarkersByState[state.name];
+      if (!markers) return;
+      markers.forEach(function (m) { try { m.setMap(null); } catch (_) {} });
+      delete mapsState.impactRegionMarkersByState[state.name];
+    }
+
+    function mapsAddImpactRegionMarkersForState(state) {
+      var map = mapsState.map;
+      if (!map) return;
+      mapsState.impactRegionMarkersByState = mapsState.impactRegionMarkersByState || {};
+      var markers = (state.cities || []).map(function (city) {
+        var marker = new google.maps.Marker({
+          map: map,
+          position: { lat: city.lat, lng: city.lng },
+          icon: mapsImpactMarkerIcon(),
+          title: (city.name ? city.name + ', ' : '') + (city.stateShort || city.state),
+          zIndex: 999998
+        });
+        marker.addListener('click', function () { mapsOpenCityImpactPopup(city, marker); });
+        city._marker = marker;
+        return marker;
+      });
+      mapsState.impactRegionMarkersByState[state.name] = markers;
+      if (state.center) map.panTo(state.center);
+    }
+
+    // Builds the "Size of Hail | Possible Housing Impact" popup table for one city.
+    // Possible Housing Impact stays as a placeholder until real parcel/Census
+    // housing-unit data is intersected with hail-size bands (TODO below).
+    function mapsBuildCityPopupHtml(city) {
+      var title = city.name
+        ? (city.name + ', ' + (city.stateShort || city.state))
+        : ('Near ' + city.lat.toFixed(2) + ', ' + city.lng.toFixed(2) + ', ' + (city.stateShort || city.state));
+      var counts = mapsImpactBucketHailValues(city.hailValues);
+      // TODO(housing-units): replace the placeholder cell below once parcel/Census
+      // housing-unit counts are intersected with hail-size bands for this city.
+      var rows = '';
+      for (var i = 0; i < MAPS_IMPACT_HAIL_BUCKETS.length; i++) {
+        if (!counts[i]) continue;
+        rows += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + mapsImpactHailBucketLabel(i) + ' hail</td>' +
+          '<td style="padding:4px 8px;border-bottom:1px solid #eee;color:#888;">Housing impact estimate not calculated yet</td></tr>';
+      }
+      if (!rows) {
+        rows = '<tr><td colspan="2" style="padding:6px 8px;color:#888;">Housing impact estimate not calculated yet</td></tr>';
+      }
+      return '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:13px;color:#1a1a1a;min-width:230px;">' +
+        '<div style="font-weight:700;font-size:14px;margin-bottom:6px;">' + title + '</div>' +
+        '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+        '<thead><tr>' +
+          '<th style="text-align:left;padding:4px 8px;border-bottom:2px solid #ccc;">Size of Hail</th>' +
+          '<th style="text-align:left;padding:4px 8px;border-bottom:2px solid #ccc;">Possible Housing Impact</th>' +
+        '</tr></thead>' +
+        '<tbody>' + rows + '</tbody></table></div>';
+    }
+
+    function mapsOpenCityImpactPopup(city, marker) {
+      var map = mapsState.map;
+      if (!map) return;
+      if (mapsState._impactCityPopupInfoWindow) {
+        try { mapsState._impactCityPopupInfoWindow.close(); } catch (_) {}
+      }
+      var iw = new google.maps.InfoWindow({ content: mapsBuildCityPopupHtml(city) });
+      mapsState._impactCityPopupInfoWindow = iw;
+      map.panTo({ lat: city.lat, lng: city.lng });
+      if (map.getZoom() < 10) map.setZoom(10);
+      if (marker) iw.open(map, marker);
+      else { iw.setPosition({ lat: city.lat, lng: city.lng }); iw.open(map); }
+    }
+
+    function mapsRenderImpactTab() {
+      var container = document.getElementById('maps-impact-content');
+      if (!container) return;
+      var activeDate = mapsGetActiveImpactDate();
+      if (!activeDate) {
+        mapsClearImpactRegionMarkers();
+        mapsState._impactMarkersDate = null;
+        container.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0;">Select a storm date to see impacted regions.</div>';
+        return;
+      }
+
+      if (mapsState._impactMarkersDate !== activeDate) {
+        mapsClearImpactRegionMarkers();
+        mapsState._impactMarkersDate = activeDate;
+        mapsState.expandedImpactStates = {};
+      }
+
+      var cachedRegions = mapsState.impactRegionsByDate && mapsState.impactRegionsByDate[activeDate];
+      if (!cachedRegions) {
+        container.innerHTML = '<div style="font-weight:700;font-size:13px;margin-bottom:4px;">' + activeDate + '</div>' +
+          '<div style="color:var(--muted);font-size:12px;padding:12px 0;">Loading impacted regions...</div>';
+        mapsBuildImpactRegions(activeDate).then(function () {
+          if (mapsGetActiveImpactDate() === activeDate) mapsRenderImpactTab();
+        });
+        return;
+      }
+
+      var html = '<div style="font-weight:700;font-size:13px;margin-bottom:8px;">' + activeDate + '</div>';
+
+      if (!cachedRegions.states.length) {
+        html += '<div style="color:var(--muted);font-size:12px;padding:2px 0;">No impacted regions calculated yet.</div>';
+        container.innerHTML = html;
+        return;
+      }
+
+      cachedRegions.states.forEach(function (state) {
+        var isExpanded = !!mapsState.expandedImpactStates[state.name];
+        var safeName = state.name.replace(/"/g, '&quot;');
+        html += '<div class="maps-impact-state-row" style="border-bottom:1px solid var(--border);">' +
+          '<div class="maps-impact-state-header" data-impact-state-toggle="' + safeName + '" style="display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;">' +
+            '<span style="display:inline-block;width:10px;transition:transform .15s;' + (isExpanded ? 'transform:rotate(90deg);' : '') + '">&#9656;</span>' +
+            '<span style="flex:1;font-weight:600;">' + state.name + '</span>' +
+            '<span style="font-size:11px;background:var(--border);border-radius:10px;padding:2px 8px;color:var(--text);">' + state.cities.length + '</span>' +
+          '</div>';
+        if (isExpanded) {
+          html += '<div class="maps-impact-city-list" style="padding:0 0 8px 18px;display:flex;flex-direction:column;gap:4px;">';
+          state.cities.forEach(function (city, idx) {
+            var label = city.name ? city.name : ('Near ' + city.lat.toFixed(2) + ', ' + city.lng.toFixed(2));
+            html += '<div class="maps-impact-city-row" data-impact-state="' + safeName + '" data-impact-city-index="' + idx + '" style="font-size:12px;cursor:pointer;padding:3px 0;color:var(--text);">' + label + '</div>';
+          });
+          html += '</div>';
+        }
+        html += '</div>';
+      });
+
+      container.innerHTML = html;
+
+      container.querySelectorAll('[data-impact-state-toggle]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var stateName = el.getAttribute('data-impact-state-toggle');
+          var state = cachedRegions.states.find(function (s) { return s.name === stateName; });
+          if (!state) return;
+          var wasExpanded = !!mapsState.expandedImpactStates[stateName];
+          if (wasExpanded) {
+            mapsState.expandedImpactStates[stateName] = false;
+            mapsRemoveImpactRegionMarkersForState(state);
+          } else {
+            mapsState.expandedImpactStates[stateName] = true;
+            mapsAddImpactRegionMarkersForState(state);
+          }
+          mapsRenderImpactTab();
+        });
+      });
+
+      container.querySelectorAll('[data-impact-city-index]').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var stateName = el.getAttribute('data-impact-state');
+          var idx = Number(el.getAttribute('data-impact-city-index'));
+          var state = cachedRegions.states.find(function (s) { return s.name === stateName; });
+          if (!state || !state.cities[idx]) return;
+          var city = state.cities[idx];
+          mapsOpenCityImpactPopup(city, city._marker);
+        });
+      });
+    }
+
+    function mapsRenderPinnedTab() {
+      var container = document.getElementById('maps-pinned-content');
+      if (!container) return;
+      if (!mapsState.pinnedDates || !mapsState.pinnedDates.length) {
+        container.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0;">No pinned storm dates yet.</div>';
+        return;
+      }
+
+      var html = '';
+      mapsState.pinnedDates.forEach(function (dateStr) {
+        var summary = mapsGetStormImpactSummarySync(dateStr);
+        var impactLabel = mapsFormatHousingUnitLabel(summary || null);
+        html += '<div class="maps-pinned-tab-row" data-pinned-tab-date="' + dateStr + '" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">' +
+          '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
+            '<span style="font-weight:600;">' + dateStr + '</span>' +
+            '<span style="font-size:11px;color:var(--muted);">' + impactLabel + '</span>' +
+          '</div>' +
+          '<button type="button" class="saved-unpin" data-pinned-remove="' + dateStr + '" title="Remove">&times;</button>' +
+        '</div>';
+      });
+      container.innerHTML = html;
+      container.querySelectorAll('[data-pinned-tab-date]').forEach(function (row) {
+        row.addEventListener('click', function (e) {
+          if (e.target.closest('.saved-unpin')) return;
+          var dateStr = row.getAttribute('data-pinned-tab-date');
+          if (!dateStr) return;
+          mapsPreviewDate(dateStr);
+        });
+      });
+      container.querySelectorAll('[data-pinned-remove]').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var dateStr = btn.getAttribute('data-pinned-remove');
+          if (!dateStr) return;
+          mapsTogglePin(dateStr);
+        });
+      });
+      mapsPrimeStormImpactSummaries(mapsState.pinnedDates.slice());
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -18502,35 +20045,25 @@
     }
 
     function mapsSyncStormTypeButtons() {
-      var wrap = document.getElementById('stormTypeButtons');
-      if (!wrap) return;
-      var buttons = wrap.querySelectorAll('.maps-panel-storm-type-btn');
-      for (var i = 0; i < buttons.length; i++) {
-        var type = buttons[i].getAttribute('data-type');
-        buttons[i].classList.toggle('active', !!(mapsState.swathToggles && mapsState.swathToggles[type]));
-      }
+      // No-op: hail/wind/tornado toggle buttons replaced by per-type opacity sliders.
     }
 
     function mapsWireStormTypeButtons() {
       var wrap = document.getElementById('stormTypeButtons');
       if (!wrap) return;
-      var buttons = wrap.querySelectorAll('.maps-panel-storm-type-btn');
-      for (var i = 0; i < buttons.length; i++) {
-        (function (btn) {
-          btn.addEventListener('click', function () {
-            var type = btn.getAttribute('data-type');
-            var existingBtn = document.getElementById('maps-toggle-' + type);
-            if (existingBtn) {
-              existingBtn.click();
-            } else if (mapsState.swathToggles) {
-              mapsState.swathToggles[type] = !mapsState.swathToggles[type];
-              applySwathToggles();
-            }
-            mapsSyncStormTypeButtons();
-          });
-        })(buttons[i]);
-      }
-      mapsSyncStormTypeButtons();
+      var tabs = wrap.querySelectorAll('.maps-storm-tab-btn');
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          var target = tab.getAttribute('data-storm-tab');
+          wrap.querySelectorAll('.maps-storm-tab-btn').forEach(function (t) { t.classList.remove('active'); });
+          document.querySelectorAll('.maps-storm-tab-panel').forEach(function (p) { p.style.display = 'none'; });
+          tab.classList.add('active');
+          var panel = document.getElementById('storm-tab-' + target);
+          if (panel) panel.style.display = '';
+          if (target === 'impact') mapsRenderImpactTab();
+          if (target === 'pinned') mapsRenderPinnedTab();
+        });
+      });
     }
 
     function mapsWireStormSearch() {
@@ -18594,13 +20127,11 @@
             window._mapsSearchMarker.setPosition(location);
             window._mapsSearchMarker.setMap(mapsState.map);
 
-            mapsState.selectedProperty = {
-              lat: location.lat(),
-              lng: location.lng(),
+            mapsSelectPropertyAtLocation(location.lat(), location.lng(), {
               address: results[0].formatted_address || val,
-              title: (results[0].formatted_address || val).split(',')[0] || 'Selected Property'
-            };
-            ppOpen(mapsState.selectedProperty);
+              title: (results[0].formatted_address || val).split(',')[0] || 'Selected Property',
+              geocodeResult: results[0]
+            });
             input.value = results[0].formatted_address || val;
             setError('');
           } else {
@@ -18672,17 +20203,9 @@
       var App = mapsGetAppState();
       var btn = document.getElementById('maps-opacity-btn');
       var wrap = document.getElementById('maps-opacity-slider-wrap');
-      var slider = document.getElementById('maps-opacity-slider');
-      var valEl = document.getElementById('maps-opacity-val');
-      if (!btn || !slider) return;
+      if (!btn || !wrap) return;
 
-      // Inverse of power curve: slider = opacity^(1/2.2) * 100
-      slider.value = Math.round(Math.pow(mapsState.swathOpacity, 1 / 2.2) * 100);
-      valEl.textContent = slider.value + '%';
-
-      if (App.mapsOpacityCtrlBound) {
-        return;
-      }
+      if (App.mapsOpacityCtrlBound) return;
       App.mapsOpacityCtrlBound = true;
 
       btn.addEventListener('click', function () {
@@ -18693,17 +20216,24 @@
         locBtn.addEventListener('click', mapsHandleMyLocation);
       }
 
-      var opacityRaf = null;
-
-      slider.addEventListener('input', function () {
-        // Power-curve remap: slider 50% → visual ~25%, avoids "almost full" in the middle
-        var raw = Number(slider.value) / 100;
-        var opacity = Math.pow(raw, 2.2);
-        valEl.textContent = slider.value + '%';
-        if (opacityRaf) cancelAnimationFrame(opacityRaf);
-        opacityRaf = requestAnimationFrame(function () {
-          mapsApplySwathOpacity(opacity);
-          opacityRaf = null;
+      ['hail', 'wind', 'tornado'].forEach(function (type) {
+        var slider = document.getElementById('maps-opacity-' + type);
+        var valEl = document.getElementById('maps-opacity-' + type + '-val');
+        if (!slider) return;
+        var raf = null;
+        slider.addEventListener('input', function () {
+          var pct = Number(slider.value);
+          if (valEl) valEl.textContent = pct + '%';
+          var scale = pct / 100;
+          if (!mapsState.typeOpacityScale) mapsState.typeOpacityScale = {};
+          mapsState.typeOpacityScale[type] = scale;
+          mapsState.swathToggles[type] = pct > 0;
+          applySwathToggles();
+          if (raf) cancelAnimationFrame(raf);
+          raf = requestAnimationFrame(function () {
+            mapsApplySwathOpacity(mapsState.swathOpacity != null ? mapsState.swathOpacity : 0.55);
+            raf = null;
+          });
         });
       });
     }
@@ -18755,17 +20285,7 @@
     }
 
     function mapsWireSwathToggleCtrl() {
-      ['hail', 'wind', 'tornado'].forEach(function (type) {
-        var btn = document.getElementById('maps-toggle-' + type);
-        if (!btn) return;
-        btn.classList.toggle('active', !!mapsState.swathToggles[type]);
-        btn.addEventListener('click', function () {
-          mapsState.swathToggles[type] = !mapsState.swathToggles[type];
-          btn.classList.toggle('active', !!mapsState.swathToggles[type]);
-          applySwathToggles();
-          mapsSyncStormTypeButtons();
-        });
-      });
+      // Swath type visibility is now controlled by per-type opacity sliders wired in mapsWireOpacityCtrl.
     }
 
     function mapsHandleMyLocation() {
@@ -18805,27 +20325,7 @@
           window._mapsMyLocationMarker.setPosition({ lat: lat, lng: lng });
           window._mapsMyLocationMarker.setMap(mapsState.map);
         }
-        mapsState.selectedProperty = {
-          lat: lat,
-          lng: lng,
-          address: '',
-          title: 'My Location'
-        };
-        ppOpen(mapsState.selectedProperty);
-        if (window.google && google.maps.Geocoder) {
-          try {
-            new google.maps.Geocoder().geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
-              if (status === 'OK' && results && results[0]) {
-                mapsState.selectedProperty.address = results[0].formatted_address;
-                mapsState.selectedProperty.title = results[0].formatted_address.split(',')[0] || 'My Location';
-                var _titleEl = document.getElementById('pp-title');
-                var _subEl = document.getElementById('pp-sub');
-                if (_titleEl) _titleEl.textContent = mapsState.selectedProperty.title;
-                if (_subEl) _subEl.textContent = mapsState.selectedProperty.lat.toFixed(5) + ', ' + mapsState.selectedProperty.lng.toFixed(5);
-              }
-            });
-          } catch (_) {}
-        }
+        mapsSelectPropertyAtLocation(lat, lng, { title: 'My Location' });
       }, function (err) {
         hmDebugWarn('[HMM] my location failed', err);
         var statusEl = document.getElementById('maps-storm-status');
@@ -18997,96 +20497,40 @@
 
     function ppOpen(prop) {
       console.log('[PROP-DEBUG] ppOpen lat=' + prop.lat.toFixed(5) + ' lng=' + prop.lng.toFixed(5));
-      var panel = document.getElementById('maps-prop-panel');
-      var mapsPanel = document.querySelector('.maps-panel');
-      if (!panel || !mapsPanel) return;
+      mapsState.selectedProperty = prop;
 
-      // Hide default left panel, show property panel
-      mapsPanel.classList.add('hidden-by-prop');
-      panel.classList.add('open');
-      console.log('[PROP-DEBUG] property panel opened');
+      // Show centered property modal — left panel stays visible
+      var modalOverlay = document.getElementById('prop-modal-overlay');
+      if (!modalOverlay) return;
+      modalOverlay.style.display = 'flex';
 
-      // Title / sub
-      document.getElementById('pp-title').textContent = prop.title || prop.address || 'Selected Property';
-      document.getElementById('pp-sub').textContent = prop.address
-        ? prop.lat.toFixed(5) + ', ' + prop.lng.toFixed(5)
-        : 'Lat: ' + prop.lat.toFixed(5) + '  Lng: ' + prop.lng.toFixed(5);
-
-      // Street View static image — use key from Maps API script tag
-      var imgEl = document.getElementById('pp-img');
-      var _svKey = '';
-      try {
-        var scripts = document.querySelectorAll('script[src*="maps.googleapis.com"]');
-        for (var si = 0; si < scripts.length; si++) {
-          var m = scripts[si].src.match(/key=([^&]+)/);
-          if (m) { _svKey = m[1]; break; }
-        }
-        console.log('[IMG-DEBUG] API key extraction: found ' + scripts.length + ' maps script tag(s), key=' + (_svKey ? _svKey.substring(0, 8) + '...' : '(none)'));
-      } catch (_) {}
-
-      var _noImageSvg = function (msg) {
-        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
-          '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400">' +
-          '<rect fill="#2a2a3e" width="600" height="400"/>' +
-          '<text x="300" y="190" text-anchor="middle" fill="#888" font-family="system-ui,sans-serif" font-size="16">' + (msg || 'No Street View') + '</text>' +
-          '<text x="300" y="216" text-anchor="middle" fill="#666" font-family="system-ui,sans-serif" font-size="12">' +
-          prop.lat.toFixed(5) + ', ' + prop.lng.toFixed(5) + '</text></svg>');
-      };
-
-      // Check Street View availability via metadata API, then load image
-      if (_svKey) {
-        var metaUrl = 'https://maps.googleapis.com/maps/api/streetview/metadata?location=' + prop.lat + ',' + prop.lng + '&key=' + _svKey;
-        imgEl.src = _noImageSvg('Loading\u2026');
-        imgEl._ppFullUrl = '';
-        fetch(metaUrl).then(function (resp) { return resp.json(); }).then(function (meta) {
-          console.log('[IMG-DEBUG] streetview metadata status=' + (meta && meta.status));
-          if (meta && meta.status === 'OK') {
-            var svUrl = 'https://maps.googleapis.com/maps/api/streetview?size=600x400&location=' + prop.lat + ',' + prop.lng + '&key=' + _svKey;
-            console.log('[IMG-DEBUG] property image URL resolved: ' + svUrl.substring(0, 80) + '...');
-            imgEl._ppFullUrl = svUrl;
-            imgEl.onload = function () {
-              console.log('[IMG-DEBUG] property image loaded successfully');
-            };
-            imgEl.onerror = function () {
-              console.log('[IMG-DEBUG] property image failed to load');
-              imgEl.src = _noImageSvg('No Street View');
-              imgEl._ppFullUrl = '';
-            };
-            imgEl.src = svUrl;
-          } else {
-            console.log('[IMG-DEBUG] no street view coverage at this location (status=' + (meta && meta.status) + ')');
-            imgEl.src = _noImageSvg('No Street View');
-            imgEl._ppFullUrl = '';
-          }
-        }).catch(function () {
-          // Metadata fetch failed — try direct load as fallback
-          var svUrl = 'https://maps.googleapis.com/maps/api/streetview?size=600x400&location=' + prop.lat + ',' + prop.lng + '&key=' + _svKey;
-          console.log('[IMG-DEBUG] metadata fetch failed, trying direct image load');
-          imgEl._ppFullUrl = svUrl;
-          imgEl.onload = function () { console.log('[IMG-DEBUG] property image loaded (fallback)'); };
-          imgEl.onerror = function () { imgEl.src = _noImageSvg('No Street View'); imgEl._ppFullUrl = ''; };
-          imgEl.src = svUrl;
-        });
-      } else {
-        console.log('[IMG-DEBUG] property image URL resolved: (no API key found)');
-        imgEl.src = _noImageSvg('No Image Available');
-        imgEl._ppFullUrl = '';
+      // Use #pp-hail-summary redirect to modal's hail-wind element
+      var summaryRedir = document.getElementById('prop-modal-hail-wind');
+      // Swap pp-hail-summary to point into the modal for downstream code
+      var _ppSummaryPlaceholder = document.getElementById('pp-hail-summary');
+      if (_ppSummaryPlaceholder && summaryRedir) {
+        _ppSummaryPlaceholder._modalRedir = summaryRedir;
       }
 
-      // Load default tab
-      _ppActiveTab = 'storms';
-      ppActivateTab('storms');
+      mapsRefreshSelectedPropertyText(prop);
+      ppLoadPropertyImage(prop);
+      ppPopulateDemographics(prop);
 
       // Bust nearby-storm cache so direct polygon containment is re-checked with current overlays
       _ppNearbyCache = {};
 
       // Populate hail summary in header (async)
-      var summaryEl = document.getElementById('pp-hail-summary');
+      // summaryEl \u2192 redirect to the modal's hail/wind line
+      var summaryEl = document.getElementById('prop-modal-hail-wind') || document.getElementById('pp-hail-summary');
       if (summaryEl) summaryEl.textContent = 'Loading storm impact\u2026';
       _ppFetchNearbyStorms(prop).then(function (result) {
         if (!summaryEl) return;
         var curProp = mapsState.selectedProperty;
         if (!curProp || curProp.lat !== prop.lat || curProp.lng !== prop.lng) return;
+        prop._nearbyStorms = result;
+        prop._stormHistoryRows = ppBuildPropertyStormHistoryRows(prop, result, { limit: 25 });
+        prop._stormHistoryAllRows = ppBuildPropertyStormHistoryRows(prop, result, { limit: Infinity, includeAllCandidates: true });
+        prop._nearestStorm = (prop._stormHistoryAllRows && prop._stormHistoryAllRows[0]) || null;
 
         console.log('[PROP-DEBUG] === PROPERTY STORM LOOKUP ===');
         console.log('[PROP-DEBUG] property clicked lat=' + prop.lat.toFixed(5) + ' lng=' + prop.lng.toFixed(5));
@@ -19131,14 +20575,15 @@
         if (result.within1.length) {
           var best = result.within1[0];
           for (var i = 1; i < result.within1.length; i++) {
-            if (result.within1[i].maxHail > best.maxHail) best = result.within1[i];
+            if ((result.within1[i].hailVal || result.within1[i].maxHail || 0) > (best.hailVal || best.maxHail || 0)) best = result.within1[i];
           }
-          if (best.maxHail > 0) {
-            var rgba2 = swathSeverityColor(best.maxHail);
+          var bestHail = best.hailVal || best.maxHail || 0;
+          if (bestHail > 0) {
+            var rgba2 = swathSeverityColor(bestHail);
             summaryEl.style.color = 'rgb(' + rgba2[0] + ',' + rgba2[1] + ',' + rgba2[2] + ')';
-            summaryEl.textContent = best.maxHail.toFixed(2) + '" hail';
-            console.log('[PROP-DEBUG] best property hit selected: within 1mi ' + best.maxHail + '" on ' + best.date + ' dist=' + best.dist);
-            console.log('[PROP-DEBUG] hail size chosen for summary: ' + best.maxHail);
+            summaryEl.textContent = bestHail.toFixed(2) + '" hail';
+            console.log('[PROP-DEBUG] best property hit selected: within 1mi ' + bestHail + '" on ' + best.date + ' dist=' + best.dist);
+            console.log('[PROP-DEBUG] hail size chosen for summary: ' + bestHail);
             return;
           }
         }
@@ -19146,14 +20591,15 @@
         if (result.within5.length) {
           var best5 = result.within5[0];
           for (var j = 1; j < result.within5.length; j++) {
-            if (result.within5[j].maxHail > best5.maxHail) best5 = result.within5[j];
+            if ((result.within5[j].hailVal || result.within5[j].maxHail || 0) > (best5.hailVal || best5.maxHail || 0)) best5 = result.within5[j];
           }
-          if (best5.maxHail > 0) {
-            var rgba3 = swathSeverityColor(best5.maxHail);
+          var best5Hail = best5.hailVal || best5.maxHail || 0;
+          if (best5Hail > 0) {
+            var rgba3 = swathSeverityColor(best5Hail);
             summaryEl.style.color = 'rgb(' + rgba3[0] + ',' + rgba3[1] + ',' + rgba3[2] + ')';
-            summaryEl.textContent = best5.maxHail.toFixed(2) + '" hail';
-            console.log('[PROP-DEBUG] best property hit selected: within 5mi ' + best5.maxHail + '" on ' + best5.date);
-            console.log('[PROP-DEBUG] hail size chosen for summary: ' + best5.maxHail);
+            summaryEl.textContent = best5Hail.toFixed(2) + '" hail';
+            console.log('[PROP-DEBUG] best property hit selected: within 5mi ' + best5Hail + '" on ' + best5.date);
+            console.log('[PROP-DEBUG] hail size chosen for summary: ' + best5Hail);
             return;
           }
         }
@@ -19167,14 +20613,16 @@
     }
 
     function ppClose() {
+      var modalOverlay = document.getElementById('prop-modal-overlay');
+      if (modalOverlay) modalOverlay.style.display = 'none';
+      // Also keep legacy panel closed
       var panel = document.getElementById('maps-prop-panel');
       var mapsPanel = document.querySelector('.maps-panel');
       if (panel) panel.classList.remove('open');
       if (mapsPanel) mapsPanel.classList.remove('hidden-by-prop');
-      // Also hide the bottom-right prop card if it was open
       try { document.getElementById('maps-prop-card').classList.remove('open'); } catch (_) {}
       mapsState.selectedProperty = null;
-      console.log('[PROP-DEBUG] property panel closed');
+      console.log('[PROP-DEBUG] property modal closed');
     }
 
     // ── Fetch storm data from Supabase for direct-hit evaluation ──
@@ -19267,6 +20715,7 @@
         var within10 = [];
         var within25 = [];
         var within50 = [];
+        var allNearby = [];
         var directHits = [];
         var DAMAGING_WIND_MPH = 58;
 
@@ -19359,6 +20808,7 @@
           var dateStr = row.event_date || '';
           var hailIn = Number(row.hail_in) || 0;
           var entry = { date: dateStr, dist: dist, source: 'lsr_db', stormType: 'hail', hailVal: hailIn, windVal: 0 };
+          allNearby.push(entry);
           if (dist <= 1) within1.push(entry);
           else if (dist <= 5) within5.push(entry);
           else if (dist <= 10) within10.push(entry);
@@ -19373,6 +20823,7 @@
           var windVal = Number(row.magnitude || row.speed || row.mag_mph || row.wind_speed || 0) || 0;
           if (windVal < DAMAGING_WIND_MPH) return;
           var entry = { date: dateStr, dist: dist, source: 'storm_lsr_db', stormType: 'wind', hailVal: 0, windVal: windVal };
+          allNearby.push(entry);
           if (dist <= 1) within1.push(entry);
           else if (dist <= 5) within5.push(entry);
           else if (dist <= 10) within10.push(entry);
@@ -19417,6 +20868,7 @@
               hailVal: Number(p.hail_in) || 0,
               windVal: 0,
             };
+            allNearby.push(entry);
             if (dist <= 1) within1.push(entry);
             else if (dist <= 5) within5.push(entry);
             else if (dist <= 10) within10.push(entry);
@@ -19540,7 +20992,16 @@
         function dedupeByDate(arr) {
           var best = {};
           arr.forEach(function (e) {
-            if (!best[e.date] || e.maxHail > best[e.date].maxHail) best[e.date] = e;
+            var current = best[e.date];
+            var nextHail = e.hailVal || e.maxHail || 0;
+            var nextWind = e.windVal || 0;
+            if (!current) {
+              best[e.date] = e;
+              return;
+            }
+            var curHail = current.hailVal || current.maxHail || 0;
+            var curWind = current.windVal || 0;
+            if (nextHail > curHail || (nextHail === curHail && nextWind > curWind)) best[e.date] = e;
           });
           return Object.keys(best).sort().reverse().map(function (d) { return best[d]; });
         }
@@ -19548,8 +21009,17 @@
         within5 = dedupeByDate(within5);
         within10 = dedupeByDate(within10);
         within25 = dedupeByDate(within25);
+        within50 = dedupeByDate(within50);
 
-        return { within1: within1, within5: within5, within10: within10, within25: within25, within50: within50, directHits: directHits };
+        return {
+          within1: within1,
+          within5: within5,
+          within10: within10,
+          within25: within25,
+          within50: within50,
+          allNearby: allNearby,
+          directHits: directHits
+        };
       });
 
       _ppNearbyCache[cacheKey] = prom;
@@ -19569,6 +21039,286 @@
       var prom = Promise.resolve(propData);
       _ppPropertyDataCache[key] = prom;
       return prom;
+    }
+
+    function ppNormalizeStormDate(value) {
+      return value && typeof value === 'string' ? value.slice(0, 10) : '';
+    }
+
+    function ppBuildPropertyStormHistoryRows(prop, result, options) {
+      options = options || {};
+      var limit = options.limit == null ? 25 : options.limit;
+      var includeAllCandidates = !!options.includeAllCandidates;
+      var DAMAGING_WIND_MPH = 58;
+      var hits = stormHitTest(prop.lat, prop.lng);
+      var directRows = [];
+
+      if (hits.hail && hits.hail.hailIn > 0) {
+        directRows.push({
+          date: ppNormalizeStormDate(hits.hail.dateStr),
+          dist: 0,
+          hailVal: hits.hail.hailIn,
+          windVal: 0,
+          source: 'direct_hit',
+          direct: true
+        });
+      }
+      if (hits.wind && hits.wind.mph >= DAMAGING_WIND_MPH) {
+        directRows.push({
+          date: ppNormalizeStormDate(hits.wind.dateStr),
+          dist: 0,
+          hailVal: 0,
+          windVal: hits.wind.mph,
+          source: 'direct_hit',
+          direct: true
+        });
+      }
+
+      directRows = directRows.concat(result && result.directHits || []);
+
+      var byDate = {};
+      directRows.forEach(function (item) {
+        if (!item || !item.date) return;
+        var key = ppNormalizeStormDate(item.date);
+        if (!key) return;
+        if (!byDate[key]) {
+          byDate[key] = {
+            date: key,
+            dist: item.dist,
+            hailVal: item.hailVal || item.maxHail || 0,
+            windVal: item.windVal || 0,
+            source: item.source || '',
+            direct: item.source === 'direct_hit' || item.dist === 0
+          };
+        }
+        var row = byDate[key];
+        if (typeof item.dist === 'number' && (!row.dist || item.dist < row.dist)) row.dist = item.dist;
+        row.hailVal = Math.max(row.hailVal, item.hailVal || item.maxHail || 0);
+        row.windVal = Math.max(row.windVal, item.windVal || 0);
+        if (item.source === 'direct_hit' || item.dist === 0) row.direct = true;
+      });
+
+      var directDates = Object.keys(byDate);
+      var shouldFillCandidates = includeAllCandidates || directDates.length < 3;
+      if (shouldFillCandidates) {
+        var candidateMap = {};
+        var candidates = Array.isArray(result && result.allNearby) && result.allNearby.length
+          ? result.allNearby.slice()
+          : [].concat(result && result.within1 || [], result && result.within5 || [], result && result.within10 || []);
+        candidates.forEach(function (item) {
+          if (!item || !item.date) return;
+          var date = ppNormalizeStormDate(item.date);
+          if (!date) return;
+          var hailVal = item.hailVal || item.maxHail || 0;
+          var windVal = item.windVal || 0;
+          if (windVal < DAMAGING_WIND_MPH) windVal = 0;
+          if (hailVal <= 0 && windVal <= 0) return;
+          if (!candidateMap[date]) {
+            candidateMap[date] = {
+              date: date,
+              dist: item.dist,
+              hailVal: hailVal,
+              windVal: windVal,
+              source: item.source || '',
+              direct: false
+            };
+          }
+          var row = candidateMap[date];
+          if (typeof item.dist === 'number' && (!row.dist || item.dist < row.dist)) row.dist = item.dist;
+          row.hailVal = Math.max(row.hailVal, hailVal);
+          row.windVal = Math.max(row.windVal, windVal);
+        });
+        var fillDates = Object.keys(candidateMap).sort(function (a, b) { return b.localeCompare(a); }).filter(function (date) {
+          return !byDate[date];
+        });
+        if (isFinite(limit)) {
+          fillDates = fillDates.slice(0, Math.max(0, limit - directDates.length));
+        }
+        fillDates.forEach(function (date) {
+          byDate[date] = candidateMap[date];
+        });
+      }
+
+      var rows = Object.keys(byDate).map(function (date) { return byDate[date]; });
+      rows.sort(function (a, b) {
+        if (a.direct && !b.direct) return -1;
+        if (!a.direct && b.direct) return 1;
+        return b.date.localeCompare(a.date);
+      });
+      if (isFinite(limit)) rows = rows.slice(0, Math.min(limit, rows.length));
+      return rows;
+    }
+
+    function ppGetStormHistoryRows(prop, options) {
+      if (!prop) return Promise.resolve([]);
+      return _ppFetchNearbyStorms(prop).then(function (result) {
+        prop._nearbyStorms = result;
+        return ppBuildPropertyStormHistoryRows(prop, result, options);
+      });
+    }
+
+    function ppFormatStormMetricText(hailVal, windVal) {
+      var parts = [];
+      if (hailVal > 0) parts.push(hailVal.toFixed(2) + '" hail');
+      if (windVal > 0) parts.push(Math.round(windVal) + ' mph wind');
+      return parts.join(' • ');
+    }
+
+    function ppMergeImpactMetric(target, entry) {
+      if (!target) target = { hailVal: 0, windVal: 0, dist: null };
+      target.hailVal = Math.max(target.hailVal || 0, entry && (entry.hailVal || entry.maxHail || 0) || 0);
+      target.windVal = Math.max(target.windVal || 0, entry && entry.windVal || 0);
+      if (entry && typeof entry.dist === 'number' && (target.dist == null || entry.dist < target.dist)) target.dist = entry.dist;
+      return target;
+    }
+
+    function ppImpactMetricText(metric) {
+      if (!metric || ((metric.hailVal || 0) <= 0 && (metric.windVal || 0) <= 0)) return '—';
+      return ppFormatStormMetricText(metric.hailVal || 0, metric.windVal || 0) || '—';
+    }
+
+    function ppBuildImpactDateRows(prop, result) {
+      var historyRows = ppBuildPropertyStormHistoryRows(prop, result, {
+        limit: Infinity,
+        includeAllCandidates: true
+      });
+      var byDate = {};
+      historyRows.forEach(function (row) {
+        if (!row || !row.date) return;
+        byDate[row.date] = {
+          date: row.date,
+          atLocation: row.direct ? { hailVal: row.hailVal || 0, windVal: row.windVal || 0, dist: 0 } : null,
+          within1: null,
+          within3: null,
+          within10: null
+        };
+      });
+      (result && result.allNearby || []).forEach(function (entry) {
+        if (!entry || !entry.date) return;
+        var date = ppNormalizeStormDate(entry.date);
+        if (!date) return;
+        if (!byDate[date]) {
+          byDate[date] = {
+            date: date,
+            atLocation: null,
+            within1: null,
+            within3: null,
+            within10: null
+          };
+        }
+        if (entry.dist <= 1) byDate[date].within1 = ppMergeImpactMetric(byDate[date].within1, entry);
+        if (entry.dist <= 3) byDate[date].within3 = ppMergeImpactMetric(byDate[date].within3, entry);
+        if (entry.dist <= 10) byDate[date].within10 = ppMergeImpactMetric(byDate[date].within10, entry);
+      });
+      return Object.keys(byDate).sort(function (a, b) { return b.localeCompare(a); }).map(function (date) {
+        return byDate[date];
+      });
+    }
+
+    function ppGetActiveStormDateForProperty(prop, historyRows) {
+      historyRows = Array.isArray(historyRows) ? historyRows : [];
+      var preferredDate = mapsNormalizeDate(prop && prop._selectedStormDate || mapsState.previewDate || '');
+      if (preferredDate && historyRows.some(function (row) { return row.date === preferredDate; })) return preferredDate;
+      return historyRows.length ? historyRows[0].date : preferredDate;
+    }
+
+    function ppBuildSelectedStormContext(prop) {
+      if (!prop) return Promise.resolve(null);
+      return ppGetStormHistoryRows(prop, { limit: Infinity, includeAllCandidates: true }).then(function (historyRows) {
+        var dateStr = ppGetActiveStormDateForProperty(prop, historyRows);
+        var row = historyRows.find(function (item) { return item.date === dateStr; }) || null;
+        if (!dateStr) {
+          return {
+            prop: prop,
+            dateStr: '',
+            row: row,
+            historyRows: historyRows,
+            atLocation: { hailVal: 0, windVal: 0 },
+            nearestHail: null,
+            nearestWind: null,
+            timeText: '',
+            locationText: 'No storm date selected.',
+            spotterVolumeText: '',
+            consensusText: '',
+            warningText: '',
+            directRows: []
+          };
+        }
+        return mapsGetStormImpactData(dateStr).then(function (dataset) {
+          var atLocation = {
+            hailVal: row && row.direct ? row.hailVal || 0 : 0,
+            windVal: row && row.direct ? row.windVal || 0 : 0
+          };
+          var directRows = [];
+          (dataset.rows || []).forEach(function (stormRow) {
+            if (!stormRow || !stormRow.polygon_geojson) return;
+            if (ppNormalizeStormDate(stormRow.event_date) !== dateStr) return;
+            if (!mapsGeoJsonContains(Number(prop.lat), Number(prop.lng), stormRow.polygon_geojson)) return;
+            directRows.push(stormRow);
+            var stormType = String(stormRow.storm_type || 'hail').toLowerCase();
+            if (stormType === 'wind') {
+              atLocation.windVal = Math.max(atLocation.windVal, _windBandToMph(Number(stormRow.band_min) || 0));
+            } else if (stormType !== 'tornado') {
+              atLocation.hailVal = Math.max(atLocation.hailVal, mapsExtractHailValue(stormRow));
+            }
+          });
+
+          var nearestHail = mapsFindNearestStormPoint(prop, dataset.hailPoints || [], function (point) {
+            return (Number(point && point.hail_in) || 0) >= 0.75;
+          });
+          var nearestWind = mapsFindNearestStormPoint(prop, dataset.windPoints || [], function (point) {
+            return mapsPointWindMph(point) >= 58;
+          });
+          var nearbyHail = mapsNearbyStormPoints(prop, dataset.hailPoints || [], 10, function (point) {
+            return (Number(point && point.hail_in) || 0) >= 0.75;
+          });
+          var nearbyWind = mapsNearbyStormPoints(prop, dataset.windPoints || [], 10, function (point) {
+            return mapsPointWindMph(point) >= 58;
+          });
+
+          var locationText = dateStr + ' - no nearby verified reports found.';
+          var nearestPoint = nearestHail;
+          if (nearestWind && (!nearestPoint || nearestWind.distMi < nearestPoint.distMi)) nearestPoint = nearestWind;
+          if (atLocation.hailVal > 0 || atLocation.windVal >= 58 || (row && row.direct)) {
+            locationText = dateStr + ' - impact detected at this property';
+          } else if (nearestPoint) {
+            locationText = dateStr + ' - nearest verified report ' + mapsDistanceDirectionText(nearestPoint);
+          } else if (row && typeof row.dist === 'number') {
+            locationText = dateStr + ' - closest mapped impact ' + row.dist.toFixed(1) + ' mi away';
+          }
+
+          var timeValue = mapsPointTimeText(nearestHail && nearestHail.point) ||
+            (directRows[0] && (directRows[0].event_start_utc || directRows[0].event_end_utc)) ||
+            mapsPointTimeText(nearestWind && nearestWind.point);
+          var spotterVolume = nearbyHail.length + nearbyWind.length;
+          var maxNearbyHail = nearbyHail.reduce(function (max, item) { return Math.max(max, item.hailIn || 0); }, 0);
+          var maxNearbyWind = nearbyWind.reduce(function (max, item) { return Math.max(max, item.mph || 0); }, 0);
+          var consensusText = '';
+          if (maxNearbyHail > 0 && maxNearbyWind > 0) {
+            consensusText = maxNearbyHail.toFixed(2) + '" hail / ' + Math.round(maxNearbyWind) + ' mph nearby';
+          } else if (maxNearbyHail > 0) {
+            consensusText = 'Nearby hail reports up to ' + maxNearbyHail.toFixed(2) + '"';
+          } else if (maxNearbyWind > 0) {
+            consensusText = 'Nearby wind reports up to ' + Math.round(maxNearbyWind) + ' mph';
+          }
+
+          return {
+            prop: prop,
+            dateStr: dateStr,
+            row: row,
+            historyRows: historyRows,
+            atLocation: atLocation,
+            nearestHail: nearestHail,
+            nearestWind: nearestWind,
+            timeText: mapsFormatObservationTime(timeValue),
+            locationText: locationText,
+            spotterVolumeText: spotterVolume ? (spotterVolume + ' nearby report' + (spotterVolume === 1 ? '' : 's')) : '',
+            consensusText: consensusText,
+            warningText: mapsPointWarningText(nearestHail && nearestHail.point) || mapsPointWarningText(nearestWind && nearestWind.point) || '',
+            directRows: directRows
+          };
+        });
+      });
     }
 
     function renderStormPanelActionButtons(container) {
@@ -19621,271 +21371,36 @@
         console.log('[PROP-DEBUG] property selected lat=' + prop.lat.toFixed(5) + ' lng=' + prop.lng.toFixed(5));
 
         // ── Async: fetch storm data for direct-hit history ──
-        _ppFetchNearbyStorms(prop).then(function (result) {
-          // Guard: tab may have changed while fetch was in-flight
+        ppGetStormHistoryRows(prop, { limit: 25 }).then(function (rows) {
           if (_ppActiveTab !== 'storms') return;
           var curProp = mapsState.selectedProperty;
           if (!curProp || curProp.lat !== prop.lat || curProp.lng !== prop.lng) return;
 
+          prop._stormHistoryRows = rows;
           var html = '';
-
-          // Direct hit data rows are merged into the same storm history list.
-          var hits = stormHitTest(prop.lat, prop.lng);
-          console.log('[PROP-DEBUG] exact swath hits found: hail=' + !!(hits.hail && hits.hail.hailIn > 0) + ' wind=' + !!hits.wind + ' tornado=' + !!hits.tornado);
-
-          function verifyDateSwathHit(dateStr, lat, lng) {
-            if (!dateStr) return null;
-            var clickLL = new google.maps.LatLng(lat, lng);
-            var hasPoly = window.google && google.maps.geometry && google.maps.geometry.poly;
-            var hailVal = 0;
-            var windVal = 0;
-
-            var refOv = mapsState.refSwathOverlays && mapsState.refSwathOverlays[dateStr];
-            if (refOv && refOv.bounds_) {
-              try {
-                if (refOv.bounds_.contains(clickLL) && typeof _sampleRefSwathPixel === 'function') {
-                  var sampled = _sampleRefSwathPixel(refOv, lat, lng);
-                  if (sampled !== null && sampled > hailVal) hailVal = sampled;
-                }
-              } catch (_) {}
-            }
-
-            var aiOv = mapsState.aiSwathOverlays && mapsState.aiSwathOverlays[dateStr];
-            if (aiOv && aiOv.descriptor_) {
-              var corridors = aiOv.descriptor_.corridors || [];
-              for (var ci = 0; ci < corridors.length; ci++) {
-                var c = corridors[ci];
-                if (!c.centerline || c.centerline.length < 2) continue;
-                for (var si = 0; si < c.centerline.length - 1; si++) {
-                  var ax = c.centerline[si][0], ay = c.centerline[si][1];
-                  var bx = c.centerline[si + 1][0], by = c.centerline[si + 1][1];
-                  var dx = bx - ax, dy = by - ay;
-                  var segLen2 = dx * dx + dy * dy;
-                  if (segLen2 === 0) continue;
-                  var t = ((lng - ax) * dx + (lat - ay) * dy) / segLen2;
-                  t = Math.max(0, Math.min(1, t));
-                  var projLon = ax + t * dx;
-                  var projLat = ay + t * dy;
-                  var dLat = (lat - projLat) * 111.1;
-                  var dLon = (lng - projLon) * 111.1 * Math.cos(lat * Math.PI / 180);
-                  var distKm = Math.sqrt(dLat * dLat + dLon * dLon);
-                  var wp = c.widthProfile || [];
-                  var wA = wp[si] || 0;
-                  var wB = wp[Math.min(si + 1, wp.length - 1)] || 0;
-                  var localWidth = wA + t * (wB - wA);
-                  var halfWidth = localWidth / 2;
-                  if (distKm <= halfWidth) {
-                    var sp = c.severityProfile || [];
-                    var sevA = sp[si] || 0;
-                    var sevB = sp[Math.min(si + 1, sp.length - 1)] || 0;
-                    var localSev = sevA + t * (sevB - sevA);
-                    var edgeFrac = halfWidth > 0 ? (distKm / halfWidth) : 0;
-                    var sevScale = edgeFrac <= 0.25 ? 1.0 : (edgeFrac <= 0.55 ? 0.78 : 0.50);
-                    var reportedSev = Math.round((localSev * sevScale) * 100) / 100;
-                    if (reportedSev > hailVal) hailVal = reportedSev;
-                  }
-                }
-              }
-            }
-
-            var polys = mapsState.swathPolygons && mapsState.swathPolygons[dateStr];
-            if (polys) {
-              for (var pi = 0; pi < polys.length; pi++) {
-                try {
-                  if (hasPoly && google.maps.geometry.poly.containsLocation(clickLL, polys[pi])) {
-                    var pType = polys[pi]._stormType || 'hail';
-                    var bm = polys[pi]._bandMin || 0;
-                    if (pType === 'wind') {
-                      var mph = _windBandToMph(bm);
-                      if (mph > windVal) windVal = mph;
-                    } else if (pType !== 'tornado') {
-                      if (bm > hailVal) hailVal = bm;
-                    }
-                  }
-                } catch (_) {}
-              }
-            }
-
-            var hailPolys = mapsState.hailBandPolygons && mapsState.hailBandPolygons[dateStr];
-            if (hailPolys && hasPoly) {
-              for (var hi = hailPolys.length - 1; hi >= 0; hi--) {
-                try {
-                  if (google.maps.geometry.poly.containsLocation(clickLL, hailPolys[hi])) {
-                    var bt = hailPolys[hi]._bandThreshold || 0;
-                    if (bt > hailVal) hailVal = bt;
-                    break;
-                  }
-                } catch (_) {}
-              }
-            }
-
-            var windPolys = mapsState.windBandPolygons && mapsState.windBandPolygons[dateStr];
-            if (windPolys && hasPoly) {
-              for (var wi = 0; wi < windPolys.length; wi++) {
-                try {
-                  if (google.maps.geometry.poly.containsLocation(clickLL, windPolys[wi])) {
-                    var bandMin = windPolys[wi]._bandMin || 0;
-                    var mph2 = _windBandToMph(bandMin);
-                    if (mph2 > windVal) windVal = mph2;
-                  }
-                } catch (_) {}
-              }
-            }
-
-            if (hailVal <= 0 && windVal < DAMAGING_WIND_MPH) return null;
-            return { hailVal: hailVal, windVal: windVal };
-          }
-
-          function normalizeStormDate(value) {
-            if (!value || typeof value !== 'string') return '';
-            return value.slice(0, 10);
-          }
-
-          // Direct storm hits from existing hit data
-          var directRows = [];
-          if (hits.hail && hits.hail.hailIn > 0) {
-            directRows.push({
-              date: normalizeStormDate(hits.hail.dateStr),
-              dist: 0,
-              hailVal: hits.hail.hailIn,
-              windVal: 0,
-              source: 'direct_hit',
-              direct: true,
-            });
-          }
-          if (hits.wind && hits.wind.mph >= 58) {
-            directRows.push({
-              date: normalizeStormDate(hits.wind.dateStr),
-              dist: 0,
-              hailVal: 0,
-              windVal: hits.wind.mph,
-              source: 'direct_hit',
-              direct: true,
-            });
-          }
-          directRows = directRows.concat(result.directHits || []);
-          console.log('[PROP-DEBUG] direct storm rows returned: ' + directRows.length);
-
-          var byDate = {};
-          directRows.forEach(function (item) {
-            if (!item || !item.date) return;
-            var key = normalizeStormDate(item.date);
-            if (!key) return;
-            if (!byDate[key]) {
-              byDate[key] = {
-                date: key,
-                dist: item.dist,
-                hailVal: item.hailVal || item.maxHail || 0,
-                windVal: item.windVal || 0,
-                source: item.source || '',
-                direct: item.source === 'direct_hit' || item.dist === 0,
-              };
-            }
-            var row = byDate[key];
-            if (typeof item.dist === 'number' && (!row.dist || item.dist < row.dist)) {
-              row.dist = item.dist;
-            }
-            row.hailVal = Math.max(row.hailVal, item.hailVal || item.maxHail || 0);
-            row.windVal = Math.max(row.windVal, item.windVal || 0);
-            if (item.source === 'direct_hit' || item.dist === 0) row.direct = true;
+          (rows || []).forEach(function (item) {
+            var detailText = ppFormatStormMetricText(item.hailVal || 0, item.windVal || 0);
+            if (!detailText) return;
+            html += '<div class="pp-storm-row" data-storm-date="' + item.date + '" style="background:rgba(120,120,120,0.10);border-left:3px solid rgba(120,120,120,0.7);padding:5px 10px;border-radius:6px;margin-bottom:4px;font-size:12px;cursor:pointer;transition:background 0.15s;">' +
+              '<span style="font-weight:600;">' + item.date + '</span><br>' +
+              '<span style="color:var(--muted);font-size:11px;">' + detailText + '</span></div>';
           });
 
-          var directDates = Object.keys(byDate);
-          var fillRows = [];
-          var STORM_HISTORY_TARGET_ROWS = 25;
-          var DAMAGING_WIND_MPH = 58;
-          if (directDates.length < 3) {
-            var candidateMap = {};
-            var candidates = [].concat(result.within1 || [], result.within5 || [], result.within10 || []);
-            hmDebugLog('[HMM] storm history raw candidates', candidates.length);
-            hmDebugLog('[HMM] storm history fallback LSR search: within 10 miles only');
-            hmDebugLog('[HMM] storm history valid damaging wind threshold', DAMAGING_WIND_MPH);
-            candidates.forEach(function (item) {
-              if (!item || !item.date) return;
-              var date = normalizeStormDate(item.date);
-              if (!date) return;
-              var hailVal = item.hailVal || item.maxHail || 0;
-              var windVal = item.windVal || 0;
-              if (windVal < DAMAGING_WIND_MPH) windVal = 0;
-              if (hailVal <= 0 && windVal <= 0) return;
-              if (!candidateMap[date]) {
-                candidateMap[date] = {
-                  date: date,
-                  dist: item.dist,
-                  hailVal: hailVal,
-                  windVal: windVal,
-                  source: item.source || '',
-                  direct: false,
-                };
-              }
-              var row = candidateMap[date];
-              if (typeof item.dist === 'number' && (!row.dist || item.dist < row.dist)) {
-                row.dist = item.dist;
-              }
-              row.hailVal = Math.max(row.hailVal, hailVal);
-              row.windVal = Math.max(row.windVal, windVal);
-            });
-            fillRows = Object.keys(candidateMap).sort(function (a, b) { return b.localeCompare(a); });
-            hmDebugLog('[HMM] storm history candidate dates', fillRows.length);
-            fillRows = fillRows.filter(function (date) { return !byDate[date]; });
-            fillRows = fillRows.slice(0, Math.max(0, STORM_HISTORY_TARGET_ROWS - directDates.length));
-            fillRows.forEach(function (date) {
-              if (!byDate[date]) {
-                byDate[date] = candidateMap[date];
-              }
-            });
-          }
-          var rows = Object.keys(byDate).map(function (d) { return byDate[d]; });
-          rows.sort(function (a, b) {
-            if (a.direct && !b.direct) return -1;
-            if (!a.direct && b.direct) return 1;
-            return b.date.localeCompare(a.date);
-          });
-          rows = rows.slice(0, Math.min(STORM_HISTORY_TARGET_ROWS, rows.length));
-          var finalDirectCount = rows.filter(function (r) { return r.direct; }).length;
-          hmDebugLog('[HMM] storm history direct hit rows', finalDirectCount);
-          hmDebugLog('[HMM] storm history historical fill rows', rows.length - finalDirectCount);
-          hmDebugLog('[HMM] storm history final unique rows', rows.length, rows.map(function (r) { return r.dateStr || r.event_date || r.date; }));
-          hmDebugLog('[HMM] property storm history final rows', rows.length);
-
-          function renderStormRows(items) {
-            if (!items.length) return '';
-            var out = '';
-            items.forEach(function (item) {
-              var detailParts = [];
-              if (item.hailVal > 0) detailParts.push(item.hailVal.toFixed(2) + '" hail');
-              if (item.windVal > 0) detailParts.push(item.windVal.toFixed(0) + ' mph wind');
-              if (!detailParts.length) return;
-              out += '<div class="pp-storm-row" data-storm-date="' + item.date + '" style="background:rgba(120,120,120,0.10);border-left:3px solid rgba(120,120,120,0.7);padding:5px 10px;border-radius:6px;margin-bottom:4px;font-size:12px;cursor:pointer;transition:background 0.15s;">' +
-                '<span style="font-weight:600;">' + item.date + '</span><br>' +
-                '<span style="color:var(--muted);font-size:11px;">' + detailParts.join(' • ') + '</span></div>';
-            });
-            return out;
-          }
-          html += renderStormRows(rows);
-
-          var totalCount = rows.length;
-          console.log('[PROP-DEBUG] recent storms rendered count: ' + totalCount);
           if (!html) html = '<div style="color:var(--muted);font-size:12px;">No verified hail or damaging-wind swath hits for this property.</div>';
           body.innerHTML = html;
           renderStormPanelActionButtons(body);
 
-          // Wire clickable storm rows
-          body.querySelectorAll('.pp-storm-row').forEach(function (row) {
-            row.addEventListener('mouseenter', function () { row.style.background = 'rgba(202,168,92,0.18)'; });
-            row.addEventListener('mouseleave', function () { row.style.background = ''; });
-            row.addEventListener('click', function () {
-              var dateStr = row.getAttribute('data-storm-date');
+          body.querySelectorAll('.pp-storm-row').forEach(function (rowEl) {
+            rowEl.addEventListener('mouseenter', function () { rowEl.style.background = 'rgba(202,168,92,0.18)'; });
+            rowEl.addEventListener('mouseleave', function () { rowEl.style.background = ''; });
+            rowEl.addEventListener('click', function () {
+              var dateStr = rowEl.getAttribute('data-storm-date');
               if (!dateStr) return;
-              console.log('[PROP-DEBUG] storm row clicked');
-              console.log('[PROP-DEBUG] clicked storm date: ' + dateStr);
-              console.log('[PROP-DEBUG] mapsDrawDate called from property panel row click');
+              prop._selectedStormDate = dateStr;
               mapsPreviewDate(dateStr);
-              // After draw completes, refresh the storms tab to show updated direct-hit info
               setTimeout(function () {
-                console.log('[PROP-DEBUG] swath load complete from property row click');
                 if (_ppActiveTab === 'storms') {
-                  _ppNearbyCache = {}; // bust cache so direct-hit re-checks
+                  _ppNearbyCache = {};
                   ppActivateTab('storms');
                 }
               }, 2500);
@@ -19936,6 +21451,255 @@
         ppClose();
       });
 
+      // ── Property modal ──
+      var propModalClose = document.getElementById('prop-modal-close');
+      if (propModalClose) propModalClose.addEventListener('click', ppClose);
+
+      var propModalOverlay = document.getElementById('prop-modal-overlay');
+      if (propModalOverlay) {
+        propModalOverlay.addEventListener('click', function (e) {
+          if (e.target === propModalOverlay) ppClose();
+        });
+      }
+
+      function setModalValue(id, value, fallback) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = value || fallback || ppModalNotFoundText();
+      }
+
+      async function openHailVerificationModal() {
+        var overlay = document.getElementById('hail-verify-modal-overlay');
+        var locationEl = document.getElementById('hail-verify-location');
+        if (overlay) overlay.style.display = 'flex';
+        setModalValue('hv-size', 'Loading...', 'Loading...');
+        setModalValue('hv-time', 'Loading...', 'Loading...');
+        setModalValue('hv-wind', 'Loading...', 'Loading...');
+        setModalValue('hv-spotter-vol', 'Loading...', 'Loading...');
+        setModalValue('hv-spotter-con', 'Loading...', 'Loading...');
+        setModalValue('hv-nws', 'Loading...', 'Loading...');
+
+        var prop = mapsState.selectedProperty;
+        if (!prop) {
+          if (locationEl) locationEl.textContent = 'No property selected.';
+          return;
+        }
+        if (locationEl) locationEl.textContent = prop.address || mapsBuildPropertyDisplayTitle(prop);
+
+        var context = await ppBuildSelectedStormContext(prop);
+        if (mapsState.selectedProperty !== prop) return;
+        var hailValue = context && context.atLocation && context.atLocation.hailVal > 0
+          ? context.atLocation.hailVal
+          : context && context.nearestHail ? context.nearestHail.hailIn : 0;
+        var windValue = Math.max(
+          context && context.atLocation ? context.atLocation.windVal || 0 : 0,
+          context && context.nearestWind ? context.nearestWind.mph || 0 : 0
+        );
+        if (locationEl) {
+          locationEl.textContent = (prop.address || mapsBuildPropertyDisplayTitle(prop)) +
+            (context && context.locationText ? ' • ' + context.locationText : '');
+        }
+        setModalValue('hv-size', hailValue > 0 ? hailValue.toFixed(2) + '"' : '', ppModalNotFoundText());
+        setModalValue('hv-time', context && context.timeText || '', ppModalNotFoundText());
+        setModalValue('hv-wind', windValue > 0 ? Math.round(windValue) + ' mph' : '', ppModalNotFoundText());
+        setModalValue('hv-spotter-vol', context && context.spotterVolumeText || '', ppModalNotFoundText());
+        setModalValue('hv-spotter-con', context && context.consensusText || '', ppModalNotFoundText());
+        setModalValue('hv-nws', context && context.warningText || '', ppModalNotFoundText());
+      }
+
+      async function openWindObservationModal() {
+        var overlay = document.getElementById('wind-obs-modal-overlay');
+        var locationEl = document.getElementById('wind-obs-location');
+        var contentEl = document.getElementById('wind-obs-content');
+        if (overlay) overlay.style.display = 'flex';
+        if (contentEl) {
+          contentEl.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:16px 0;text-align:center;">Loading wind observation data...</div>';
+        }
+
+        var prop = mapsState.selectedProperty;
+        if (!prop) {
+          if (locationEl) locationEl.textContent = 'No property selected.';
+          return;
+        }
+
+        var context = await ppBuildSelectedStormContext(prop);
+        if (mapsState.selectedProperty !== prop) return;
+        if (locationEl) {
+          locationEl.textContent = (prop.address || mapsBuildPropertyDisplayTitle(prop)) +
+            (context && context.dateStr ? ' • ' + context.dateStr : '');
+        }
+        if (!contentEl) return;
+
+        if (!context || !context.nearestWind) {
+          contentEl.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:16px 0;text-align:center;">' +
+            ((context && context.atLocation && context.atLocation.windVal >= 58)
+              ? 'Mapped wind impact found at the property, but no nearby wind report label is available.'
+              : 'Wind observation data not connected yet.') +
+          '</div>';
+          return;
+        }
+
+        var nearestWind = context.nearestWind;
+        var label = mapsPointLabelText(nearestWind.point) || 'Wind report';
+        var timeText = mapsFormatObservationTime(mapsPointTimeText(nearestWind.point));
+        var distanceText = mapsDistanceDirectionText(nearestWind);
+        contentEl.innerHTML =
+          '<div class="hail-verify-grid">' +
+            '<div class="hail-verify-row"><span class="hail-verify-label">Nearest Report</span><span class="hail-verify-val">' + label + '</span></div>' +
+            '<div class="hail-verify-row"><span class="hail-verify-label">Wind Gust</span><span class="hail-verify-val">' + Math.round(nearestWind.mph || 0) + ' mph</span></div>' +
+            '<div class="hail-verify-row"><span class="hail-verify-label">Observed At</span><span class="hail-verify-val">' + (timeText || ppModalNotFoundText()) + '</span></div>' +
+            '<div class="hail-verify-row"><span class="hail-verify-label">Distance / Direction</span><span class="hail-verify-val">' + (distanceText || ppModalNotFoundText()) + '</span></div>' +
+            '<div class="hail-verify-row"><span class="hail-verify-label">Station / Label</span><span class="hail-verify-val">' + label + '</span></div>' +
+          '</div>';
+      }
+
+      async function openImpactDatesModal() {
+        var overlay = document.getElementById('impact-dates-modal-overlay');
+        var locationEl = document.getElementById('impact-dates-location');
+        var tbody = document.getElementById('impact-dates-tbody');
+        if (!overlay) return;
+        overlay.style.display = 'flex';
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:12px;color:var(--muted);">Loading impact dates...</td></tr>';
+
+        var prop = mapsState.selectedProperty;
+        if (!prop) {
+          if (locationEl) locationEl.textContent = 'No property selected.';
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:12px;color:var(--muted);">No impact dates available.</td></tr>';
+          return;
+        }
+
+        if (locationEl) locationEl.textContent = prop.address || mapsBuildPropertyDisplayTitle(prop);
+        try {
+          var result = await _ppFetchNearbyStorms(prop);
+          if (mapsState.selectedProperty !== prop) return;
+          var rows = ppBuildImpactDateRows(prop, result);
+          if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:12px;color:var(--muted);">No impact dates available.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = rows.map(function (row) {
+            return '<tr>' +
+              '<td>' + row.date + '</td>' +
+              '<td>' + ppImpactMetricText(row.atLocation) + '</td>' +
+              '<td>' + ppImpactMetricText(row.within1) + '</td>' +
+              '<td>' + ppImpactMetricText(row.within3) + '</td>' +
+              '<td>' + ppImpactMetricText(row.within10) + '</td>' +
+            '</tr>';
+          }).join('');
+        } catch (_) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:12px;color:var(--muted);">Error loading impact dates.</td></tr>';
+        }
+      }
+
+      // ── Hail Verification sub-modal ──
+      var hailVerifyBtn = document.getElementById('prop-modal-hail-verify-btn');
+      if (hailVerifyBtn) {
+        hailVerifyBtn.addEventListener('click', function () {
+          openHailVerificationModal();
+        });
+      }
+      var hailVerifyClose = document.getElementById('hail-verify-close');
+      if (hailVerifyClose) {
+        hailVerifyClose.addEventListener('click', function () {
+          var overlay = document.getElementById('hail-verify-modal-overlay');
+          if (overlay) overlay.style.display = 'none';
+        });
+      }
+      var hailVerifyOverlay = document.getElementById('hail-verify-modal-overlay');
+      if (hailVerifyOverlay) {
+        hailVerifyOverlay.addEventListener('click', function (e) {
+          if (e.target === hailVerifyOverlay) hailVerifyOverlay.style.display = 'none';
+        });
+      }
+
+      // ── Wind Observation sub-modal ──
+      var windObsBtn = document.getElementById('prop-modal-wind-obs-btn');
+      if (windObsBtn) {
+        windObsBtn.addEventListener('click', function () {
+          openWindObservationModal();
+        });
+      }
+      var windObsClose = document.getElementById('wind-obs-close');
+      if (windObsClose) {
+        windObsClose.addEventListener('click', function () {
+          var overlay = document.getElementById('wind-obs-modal-overlay');
+          if (overlay) overlay.style.display = 'none';
+        });
+      }
+      var windObsOverlay = document.getElementById('wind-obs-modal-overlay');
+      if (windObsOverlay) {
+        windObsOverlay.addEventListener('click', function (e) {
+          if (e.target === windObsOverlay) windObsOverlay.style.display = 'none';
+        });
+      }
+
+      // ── Impact Dates sub-modal ──
+      var impactDatesBtn = document.getElementById('prop-modal-impact-dates-btn');
+      if (impactDatesBtn) impactDatesBtn.addEventListener('click', openImpactDatesModal);
+      var hvImpactBtn = document.getElementById('hv-impact-dates-btn');
+      if (hvImpactBtn) hvImpactBtn.addEventListener('click', openImpactDatesModal);
+      var hvZipBtn = document.getElementById('hv-zip-btn');
+      if (hvZipBtn) {
+        hvZipBtn.addEventListener('click', function () {
+          var prop = mapsState.selectedProperty;
+          var locationEl = document.getElementById('hail-verify-location');
+          if (!locationEl || !prop) return;
+          locationEl.textContent = (prop.address || mapsBuildPropertyDisplayTitle(prop)) +
+            (prop.zip ? ' • ZIP ' + prop.zip : ' • ZIP not found yet.');
+        });
+      }
+      var impactDatesClose = document.getElementById('impact-dates-close');
+      if (impactDatesClose) {
+        impactDatesClose.addEventListener('click', function () {
+          var overlay = document.getElementById('impact-dates-modal-overlay');
+          if (overlay) overlay.style.display = 'none';
+        });
+      }
+      var impactDatesOverlay = document.getElementById('impact-dates-modal-overlay');
+      if (impactDatesOverlay) {
+        impactDatesOverlay.addEventListener('click', function (e) {
+          if (e.target === impactDatesOverlay) impactDatesOverlay.style.display = 'none';
+        });
+      }
+
+      // ── Add Marker to Campaign ──
+      var campaignBtn = document.getElementById('prop-modal-campaign-btn');
+      if (campaignBtn) {
+        campaignBtn.addEventListener('click', function () {
+          var prop = mapsState.selectedProperty;
+          ppClose();
+          showPage('page-campaigns');
+          campaignInit();
+          if (prop && prop.lat && prop.lng) {
+            setTimeout(function () {
+              if (typeof campaignAddPropertyMarker === 'function') {
+                campaignAddPropertyMarker(prop);
+              }
+            }, 600);
+          }
+        });
+      }
+
+      // ── Add Address Marker (from hail verify modal) ──
+      var hvAddMarkerBtn = document.getElementById('hv-add-marker-btn');
+      if (hvAddMarkerBtn) {
+        hvAddMarkerBtn.addEventListener('click', function () {
+          var hvOverlay = document.getElementById('hail-verify-modal-overlay');
+          if (hvOverlay) hvOverlay.style.display = 'none';
+          var prop = mapsState.selectedProperty;
+          ppClose();
+          showPage('page-campaigns');
+          campaignInit();
+          if (prop && prop.lat && prop.lng) {
+            setTimeout(function () {
+              if (typeof campaignAddPropertyMarker === 'function') {
+                campaignAddPropertyMarker(prop);
+              }
+            }, 600);
+          }
+        });
+      }
+
       var dirBtn = document.getElementById('pp-directions');
       if (dirBtn) dirBtn.addEventListener('click', function () {
         var prop = mapsState.selectedProperty;
@@ -19960,12 +21724,13 @@
 
       // Image click → interactive Street View
       var ppImg = document.getElementById('pp-img');
+      var propModalImg = document.getElementById('prop-modal-img');
       var lightbox = document.getElementById('pp-lightbox');
       var svContainer = document.getElementById('pp-sv-container');
       var svUnavail = document.getElementById('pp-sv-unavailable');
       var svCloseBtn = document.getElementById('pp-sv-close');
-      if (ppImg && lightbox && svContainer) {
-        ppImg.addEventListener('click', function () {
+      if (lightbox && svContainer) {
+        function launchStreetView() {
           console.log('[SV-DEBUG] property image clicked');
           var sp = mapsState.selectedProperty;
           if (!sp) { console.log('[SV-DEBUG] no selected property'); return; }
@@ -19996,6 +21761,10 @@
               svUnavail.style.display = 'block';
             }
           });
+        }
+        [ppImg, propModalImg].forEach(function (imgEl) {
+          if (!imgEl) return;
+          imgEl.addEventListener('click', launchStreetView);
         });
         // Close button
         if (svCloseBtn) {
@@ -20061,6 +21830,8 @@
         var jobs = getJobs();
         jobs.push(job);
         saveJobs(jobs);
+        mapsState.stormImpactSummaries = {};
+        mapsState._stormImpactSummaryPromises = {};
         saveJobToSupabase(job);
         addJobHistory(job.id, 'job_created', 'Job created from Maps');
 
@@ -24866,6 +26637,39 @@
           }
         }
       }
+
+      window.campaignAddPropertyMarker = function (prop) {
+        if (!prop) return;
+        var lat = Number(prop.lat);
+        var lng = Number(prop.lng);
+        if (!isFinite(lat) || !isFinite(lng)) return;
+        window._campaignMapContext = {
+          stormDate: mapsNormalizeDate(prop._selectedStormDate || mapsState.previewDate || ''),
+          selectedDates: (mapsState.selectedDates || []).slice(),
+          property: {
+            lat: lat,
+            lng: lng,
+            address: prop.address || '',
+            title: mapsBuildPropertyDisplayTitle(prop),
+            city: prop.city || '',
+            state: prop.state || '',
+            zip: prop.zip || '',
+            county: prop.county || ''
+          }
+        };
+        var existing = cmpSavedMarkers.some(function (marker) {
+          return Math.abs(Number(marker.lat) - lat) < 0.000001 && Math.abs(Number(marker.lng) - lng) < 0.000001;
+        });
+        if (!existing) {
+          cmpPlaceMarker(lat, lng, 'note', mapsBuildPropertyDisplayTitle(prop), prop.address || '', true);
+        }
+        mapsState.stormImpactSummaries = {};
+        mapsState._stormImpactSummaryPromises = {};
+        if (window.cMap) {
+          window.cMap.setCenter({ lat: lat, lng: lng });
+          if ((window.cMap.getZoom() || 0) < 18) window.cMap.setZoom(18);
+        }
+      };
 
       window._cmpRemovePin = function(lat, lng) {
         var idx = cmpLiveMarkers.findIndex(function(m) { return m.lat===lat && m.lng===lng; });
