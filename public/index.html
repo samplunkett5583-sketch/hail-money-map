@@ -62,25 +62,18 @@
       z-index: 40;
     }
 
-    .topbar-left-spacer {
-      min-width: 120px;
-      height: 48px;
+    .map-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      z-index: 20;
       flex: 0 0 auto;
     }
 
-    .map-header-brand {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 2px;
-      pointer-events: none;
-      user-select: none;
-      z-index: 20;
+    .map-header-brand:hover {
+      opacity: 0.85;
     }
 
     .app-top-hail-logo {
@@ -99,6 +92,109 @@
       letter-spacing: 0.02em;
     }
 
+    /* Maps header date picker: lives in the true global topbar (not the left
+       panel), so it stays visible regardless of which Maps tab is active and
+       never overlaps the company logo (left) or map controls (on the map
+       itself). Only shown while the Maps page is active. */
+    .maps-header-date-row {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      flex: 0 1 auto;
+      min-width: 0;
+    }
+    body.map-page-active .maps-header-date-row {
+      display: flex;
+    }
+    .maps-header-date-row .maps-date-input {
+      width: 134px;
+      padding: 5px 8px;
+      font-size: 12px;
+    }
+    .maps-header-date-row .maps-header-load-btn {
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+    .maps-header-date-row .maps-status-msg {
+      margin-top: 0;
+      min-height: 0;
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 130px;
+    }
+    @media (max-width: 700px) {
+      .maps-header-date-row .maps-date-input {
+        width: 108px;
+      }
+      .maps-header-date-row .maps-status-msg {
+        display: none;
+      }
+    }
+
+    /* Back to Main Menu: lives in the true global topbar (between the date
+       finder and the centered Hail Money brand) only while the Maps page is
+       active — the floating storm panel no longer carries this button. */
+    .btn.maps-header-back-btn {
+      display: none;
+      flex: 0 0 auto;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      align-items: center;
+    }
+    body.map-page-active .btn.maps-header-back-btn {
+      display: inline-flex;
+    }
+    @media (max-width: 768px) {
+      .btn.maps-header-back-btn { display: none !important; }
+    }
+
+    /* Hail Money brand restored to the true center of the topbar (Maps page
+       only — the mobile bar already has its own Back control below 768px).
+       Decorative only (pointer-events:none) so it never steals clicks from
+       the date finder or Back button it sits between. */
+    .map-header-center-brand {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 5;
+    }
+    body.map-page-active .map-header-center-brand {
+      display: flex;
+    }
+    .map-header-center-brand img {
+      height: 28px;
+      width: auto;
+      object-fit: contain;
+    }
+    .map-header-center-brand span {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    @media (max-width: 768px) {
+      .map-header-center-brand { display: none !important; }
+    }
+
     .topbar-right {
       display: flex;
       gap: 12px;
@@ -107,15 +203,6 @@
       margin-left: auto;
       position: relative;
       z-index: 30;
-    }
-
-    .company-logo-slot {
-      min-width: 120px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      flex: 0 0 auto;
     }
 
     .topbar-controls {
@@ -141,10 +228,6 @@
       padding: 4px 14px;
     }
 
-    body.map-page-active .map-header-brand {
-      left: 50%;
-    }
-
     body.map-page-active .app-top-hail-logo {
       height: 36px;
       max-width: min(160px, 36vw);
@@ -154,23 +237,10 @@
       display: none;
     }
 
-    body.map-page-active .topbar-left-spacer {
-      min-width: 80px;
-      height: 36px;
-    }
-
-    body.map-page-active .company-logo-slot {
-      height: 36px;
-    }
-
     @media (max-width: 700px) {
       body.map-page-active .topbar {
         left: 0;
         clip-path: none;
-      }
-
-      body.map-page-active .map-header-brand {
-        left: 50%;
       }
 
       header.topbar {
@@ -184,23 +254,12 @@
         padding: 4px 10px;
       }
 
-      .topbar-left-spacer {
-        min-width: 24px;
-        height: 40px;
-      }
-
-      .company-logo-slot {
-        min-width: 0;
-        width: 0;
-        height: 40px;
-      }
-
       .topbar-controls {
         gap: 8px;
       }
 
       .map-header-brand {
-        gap: 1px;
+        gap: 6px;
       }
 
       img.app-top-hail-logo {
@@ -1704,6 +1763,11 @@
     .maps-layout {
       display:flex; gap:0;
     }
+    /* Layered layout — the panel itself is just a positioning/collapse
+       container with no background of its own; the header and each card
+       below are their own separate floating boxes (see .maps-panel-sticky-top
+       and .maps-storm-row / .maps-impact-state-card), so the map shows
+       through the gaps instead of one big solid panel. */
     .maps-panel {
       position: fixed;
       top: calc(var(--maps-topbar-h) + 12px);
@@ -1712,22 +1776,62 @@
       width: var(--maps-panel-max-width);
       min-width: 260px;
       max-width: var(--maps-panel-max-width);
-      background: rgba(255,255,255,0.94);
-      border: 1px solid rgba(214,219,227,0.96);
-      border-radius: 18px;
-      box-shadow: 0 18px 40px rgba(15,23,42,0.16);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      display:flex; flex-direction:column;
-      overflow-y:auto; overflow-x:hidden; padding:0;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      display:flex; flex-direction:column; gap:12px;
+      overflow: hidden; padding:0 2px 0 0;
       margin-top: 0;
       z-index:100;
       pointer-events:auto;
-      transition: transform 0.24s ease, box-shadow 0.24s ease;
+      transition: transform 0.24s ease;
     }
     .maps-panel.is-collapsed {
       transform: translateX(calc(-100% - 24px));
-      box-shadow: none;
+    }
+    /* Anchored top box: title/subtitle + "Most Recent Storms" + tabs. Fixed
+       in the flex column (not scrolling) so the card list below it scrolls
+       on its own and visually disappears underneath this box. */
+    .maps-panel-sticky-top {
+      flex: 0 0 auto;
+      background: rgba(255,255,255,0.96);
+      border: 1px solid rgba(214,219,227,0.96);
+      border-radius: 18px;
+      box-shadow: 0 18px 36px rgba(15,23,42,0.16);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      overflow: hidden;
+      position: relative;
+      z-index: 3;
+    }
+    .maps-panel-sticky-top::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 26px;
+      background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.84) 48%, rgba(255,255,255,1) 100%);
+      pointer-events: none;
+    }
+    .maps-panel-section-tabs {
+      padding-top: 0;
+      border-bottom: none;
+    }
+    /* Scrollable card list — the ONLY part of the panel that scrolls. Sits
+       below the anchored header in normal flex flow, so the page behind it
+       never moves and cards are naturally clipped at the header's edge. */
+    .maps-panel-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      margin-top: -22px;
+      padding: 28px 4px 8px;
+      position: relative;
+      z-index: 1;
+      scrollbar-gutter: stable;
     }
     .maps-panel-collapse-tab {
       position: fixed;
@@ -1766,16 +1870,28 @@
     }
     .maps-panel-header {
       margin-top: 0;
-      padding:16px; border-bottom:1px solid var(--border);
+      padding:18px 18px 12px;
+      border-bottom:none;
     }
-    .maps-panel-header h1 { font-size:20px; margin:0 0 2px; }
-    .maps-panel-header p { font-size:13px; color:var(--muted); margin:0; }
+    .maps-panel-header h1 {
+      font-size:24px;
+      line-height:1.1;
+      margin:0 0 4px;
+    }
+    .maps-panel-header p {
+      font-size:13px;
+      line-height:1.45;
+      color:var(--muted);
+      margin:0;
+      max-width:26ch;
+    }
     .maps-panel-section {
-      padding:12px 16px; border-bottom:1px solid var(--border);
+      padding:0 18px 18px;
+      border-bottom:none;
     }
     .maps-panel-section-title {
-      font-size:12px; text-transform:uppercase; letter-spacing:.6px;
-      color:var(--muted); margin:0 0 8px; font-weight:600;
+      font-size:10px; text-transform:uppercase; letter-spacing:.16em;
+      color:#6b7280; margin:0 0 10px; font-weight:700;
     }
     .maps-panel-storm-types {
       display:flex; gap:6px; padding:0 0 10px;
@@ -1807,44 +1923,162 @@
     }
     .maps-storm-search-error.error { color:var(--error); }
     .maps-storm-list {
-      list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px;
+      list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px;
     }
-    .maps-paging {
-      display:flex; align-items:center; justify-content:space-between;
-      margin-top:8px; font-size:12px; color:var(--muted);
-    }
-    .maps-paging-btn {
-      padding:4px 10px; border:1px solid var(--border); border-radius:6px;
-      background:var(--panel-2); color:var(--text); font-size:12px;
-      cursor:pointer;
-    }
-    .maps-paging-btn:hover:not(:disabled) { background:var(--accent-2); }
-    .maps-paging-btn:disabled { opacity:.35; cursor:not-allowed; }
+    /* Recent-tab rows as floating cards (HailRecon-style "Recent Hail Events" list) */
     .maps-storm-row {
-      display:flex; align-items:flex-start; gap:6px; padding:7px 8px;
-      border-radius:8px; cursor:pointer; font-size:13px; color:var(--text);
-      transition:background .15s;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding:11px 13px 12px;
+      border-radius:16px;
+      cursor:pointer;
+      font-size:13px;
+      color:var(--text);
+      background:rgba(255,255,255,0.96);
+      border:1px solid rgba(214,219,227,0.96);
+      box-shadow:0 14px 28px rgba(15,23,42,0.11);
+      transition:background .15s, box-shadow .15s, border-color .15s, transform .1s;
+      position:relative;
+      overflow:hidden;
     }
-    .maps-storm-row:hover { background:var(--panel-2); }
-    .maps-storm-row.is-preview { background:rgba(202,168,92,.12); }
-    .maps-storm-row.is-pinned .storm-label { font-weight:600; }
-    .maps-storm-row .storm-color-dot {
-      width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-top:4px;
+    .maps-storm-row::before {
+      content:"";
+      position:absolute;
+      inset:12px auto 12px 0;
+      width:4px;
+      border-radius:999px;
+      background:transparent;
+      transition:background .15s ease;
     }
-    .maps-storm-row .storm-label-group { flex:1; min-width:0; }
-    .maps-storm-row .storm-label { display:block; }
-    .maps-storm-row .storm-size {
-      font-size:11px; color:var(--muted); line-height:1.4;
+    .maps-storm-row:hover {
+      border-color:rgba(202,168,92,0.92);
+      box-shadow:0 18px 30px rgba(15,23,42,0.14);
+      transform:translateY(-1px);
+    }
+    .maps-storm-row.is-preview {
+      background:linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,243,226,0.96) 100%);
+      border-color:rgba(202,168,92,0.96);
+      box-shadow:0 20px 36px rgba(15,23,42,0.16);
+    }
+    .maps-storm-row.is-preview::before {
+      background:linear-gradient(180deg, #d8aa4b 0%, #8b5a16 100%);
+    }
+    .maps-storm-row.is-pinned:not(.is-preview) {
+      border-color:rgba(202,168,92,0.48);
+    }
+    .maps-storm-card-top {
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .maps-storm-card-date-wrap {
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .maps-storm-card-date {
+      display:block;
+      font-size:16px;
+      line-height:1.2;
+      font-weight:700;
+      color:var(--text);
+    }
+    .maps-storm-card-date-meta {
+      display:block;
+      font-size:10px;
+      line-height:1.2;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      color:#6b7280;
+      font-weight:700;
+    }
+    /* Compact bottom row: rating badge (left) + units text + optional source badge */
+    .maps-storm-card-bottom-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+    }
+    .storm-home-count {
+      font-size:12px;
+      line-height:1.3;
+      color:var(--text);
+      font-weight:600;
+    }
+    .maps-impact-rating-badge {
+      min-height:22px;
+      height:22px;
+      min-width:22px;
+      width:22px;
+      padding:0;
+      border-radius:7px;
+      font-size:12px;
+      flex:0 0 auto;
+    }
+    .maps-storm-impact-pill {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:26px;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.01em;
+      white-space:nowrap;
+      background:#eef2f7;
+      color:#334155;
+    }
+    .maps-storm-impact-pill.severity-light {
+      background:#eff6ff;
+      color:#1d4ed8;
+    }
+    .maps-storm-impact-pill.severity-moderate {
+      background:#e9f7ef;
+      color:#166534;
+    }
+    .maps-storm-impact-pill.severity-elevated {
+      background:#fff4de;
+      color:#9a6700;
+    }
+    .maps-storm-impact-pill.severity-severe {
+      background:#fee2e2;
+      color:#b42318;
+    }
+    .maps-storm-impact-pill.severity-extreme {
+      background:#4c1d2f;
+      color:#fff7f7;
     }
     .maps-pin-btn {
-      background:none; border:1px solid var(--border); border-radius:6px;
-      color:var(--muted); font-size:15px; width:26px; height:26px;
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; flex-shrink:0; padding:0; transition:all .15s;
+      align-self:flex-start;
+      min-width:68px;
+      background:#fff;
+      border:1px solid rgba(214,219,227,0.96);
+      border-radius:999px;
+      color:#5f6673;
+      font-size:11px;
+      line-height:1;
+      font-weight:700;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      flex-shrink:0;
+      padding:8px 12px;
+      transition:all .15s;
     }
-    .maps-pin-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .maps-pin-btn:hover {
+      border-color:rgba(202,168,92,0.96);
+      color:#8b5a16;
+      background:#fffaf0;
+    }
     .maps-pin-btn.pinned {
-      background:var(--accent-2); border-color:var(--accent-2); color:var(--text);
+      background:#f7e7bf;
+      border-color:#d4ad67;
+      color:#7c4a10;
     }
     /* Saved Maps panel section */
     .maps-saved-list {
@@ -1866,17 +2100,31 @@
       font-family:inherit; outline:none;
     }
     .maps-date-input:focus { border-color:var(--accent-2); }
+    .maps-recent-status-row {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-top:2px;
+      padding:0 4px 2px;
+    }
     .maps-status-msg {
-      font-size:12px; color:var(--muted); min-height:18px; margin-top:6px;
+      font-size:11px; color:var(--muted); min-height:16px; margin-top:0;
     }
     .maps-status-msg.error { color:var(--error); }
     /* Storm source badges */
     .storm-source-badge {
-      display:inline-block; font-size:10px; font-weight:700; padding:1px 5px;
-      border-radius:4px; margin-left:4px; vertical-align:middle; line-height:1.5;
+      display:inline-flex;
+      align-items:center;
+      font-size:10px;
+      font-weight:700;
+      padding:4px 8px;
+      border-radius:999px;
+      margin:0;
+      vertical-align:middle;
+      line-height:1.2;
     }
-    .storm-source-badge.swath { background:rgba(202,168,92,.2); color:#b88722; }
-    .storm-source-badge.reports { background:rgba(66,165,245,.15); color:#1976d2; }
+    .storm-source-badge.swath { background:rgba(202,168,92,.18); color:#9a6700; }
+    .storm-source-badge.reports { background:rgba(66,165,245,.14); color:#0f5db8; }
     /* Storm debug panel */
     .maps-debug-panel {
       background:var(--panel-2); border:1px solid var(--border); border-radius:8px;
@@ -1887,10 +2135,23 @@
     .maps-debug-panel dt { font-weight:600; white-space:nowrap; }
     .maps-debug-panel dd { margin:0; word-break:break-all; }
     .maps-refresh-btn {
-      font-size:11px; padding:3px 8px; border:1px solid var(--border); border-radius:6px;
-      background:none; color:var(--muted); cursor:pointer; margin-left:6px;
+      flex:0 0 auto;
+      min-height:30px;
+      font-size:11px;
+      font-weight:700;
+      padding:0 12px;
+      border:1px solid rgba(214,219,227,0.96);
+      border-radius:999px;
+      background:rgba(255,255,255,0.92);
+      color:#5f6673;
+      cursor:pointer;
+      margin-left:0;
     }
-    .maps-refresh-btn:hover { border-color:var(--accent-2); color:var(--text); }
+    .maps-refresh-btn:hover {
+      border-color:rgba(202,168,92,0.96);
+      color:var(--text);
+      background:#fffaf0;
+    }
     .maps-download-btn {
       width:100%; padding:10px; border:none; border-radius:10px;
       background:var(--accent-2); color:var(--text); font-size:14px;
@@ -1927,8 +2188,37 @@
     .ref-swath-panel img {
       display:block; width:100%; height:auto;
     }
-    .maps-back-row {
-      padding:12px 16px;
+    /* Go to Campaign / Draw Area Report: moved out of the left storm panel
+       onto the map itself, stacked under the map-type (Hybrid) + layer
+       control cluster on the right so they read as map controls instead of
+       panel content. Sized to match that control cluster, not the wide
+       storm-panel-actions buttons used elsewhere (property panel). */
+    #page-map .maps-side-actions {
+      position: fixed;
+      top: calc(var(--maps-topbar-h) + 100px);
+      right: 12px;
+      z-index: 20;
+      width: 124px;
+      pointer-events: auto;
+    }
+    #page-map .maps-side-actions .storm-panel-actions {
+      padding: 0;
+      gap: 6px;
+      background: none;
+    }
+    #page-map .maps-side-actions .storm-action {
+      width: 100%;
+      min-height: 30px;
+      padding: 6px 4px;
+      font-size: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.16);
+      line-height: 1.15;
+      text-align: center;
+      white-space: nowrap;
+    }
+    @media (max-width:768px) {
+      #page-map .maps-side-actions { top:calc(var(--maps-topbar-h) + 98px); right:10px; }
     }
     /* ── Hail Size Band Legend ── */
     .hail-band-legend {
@@ -2011,7 +2301,7 @@
     }
     .maps-hurricane-ticker-scroll {
       display:inline-block; white-space:nowrap; padding-left:100%;
-      animation:hmmticker 58s linear infinite;
+      animation:hmmticker 70s linear infinite;
     }
     .maps-hurricane-ticker:hover .maps-hurricane-ticker-scroll {
       animation-play-state:paused;
@@ -2168,19 +2458,34 @@
     .maps-prop-panel-actions .pp-inspect { background:var(--accent-2); color:var(--text); }
     .maps-prop-panel-actions .pp-inspect:hover { background:var(--accent); }
     .storm-panel-actions {
-      display:flex; gap:8px; padding:12px 16px 16px; background:var(--panel); position:sticky; bottom:0; z-index:1;
-      border-top:1px solid var(--border);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      padding:14px;
+      background:none;
+      border-top:none;
     }
     .storm-panel-actions .storm-action {
-      flex:1; padding:10px 12px; border:none; border-radius:10px; font-size:13px; font-weight:700;
-      cursor:pointer; color:var(--text); transition:background .15s, transform .1s;
+      width:100%;
+      padding:12px 14px;
+      border:none;
+      border-radius:12px;
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+      color:var(--text);
+      transition:background .15s, transform .1s, box-shadow .15s;
     }
     .storm-panel-actions .storm-action:hover:not(:disabled) { transform:translateY(-1px); }
     .storm-panel-actions .storm-action-campaign {
-      background:linear-gradient(135deg,#D4952E,#8B4A0A); color:#fff; box-shadow:0 2px 10px rgba(212,149,46,0.2);
+      background:linear-gradient(135deg,#D4952E,#8B4A0A);
+      color:#fff;
+      box-shadow:0 12px 20px rgba(212,149,46,0.22);
     }
     .storm-panel-actions .storm-action-draw {
-      background:var(--accent-2); color:var(--text); border:1px solid var(--border);
+      background:#f8fafc;
+      color:var(--text);
+      border:1px solid rgba(214,219,227,0.96);
     }
     .storm-panel-actions .storm-action-draw:disabled {
       opacity:.45; cursor:not-allowed;
@@ -2199,17 +2504,141 @@
 
     /* ── Storm panel Recent/Impact/Pinned tabs ── */
     .maps-storm-tabs {
-      display:flex; gap:4px; margin-bottom:8px;
+      display:flex;
+      gap:6px;
+      margin-bottom:0;
     }
     .maps-storm-tab-btn {
-      flex:1; padding:6px 4px; border:1px solid var(--border); border-radius:8px;
-      font-size:12px; font-weight:600; cursor:pointer; text-align:center;
-      background:var(--panel-2); color:var(--muted); transition:background .15s, color .15s;
+      flex:1;
+      min-height:26px;
+      padding:5px 8px;
+      border:1px solid transparent;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      cursor:pointer;
+      text-align:center;
+      background:#f4f6f8;
+      color:#5f6673;
+      box-shadow:inset 0 0 0 1px rgba(214,219,227,0.96);
+      transition:background .15s, color .15s, border-color .15s, box-shadow .15s;
     }
-    .maps-storm-tab-btn.active { background:var(--accent-2); color:var(--text); border-color:var(--accent); }
+    .maps-storm-tab-btn:hover {
+      color:var(--text);
+      background:#f8fafc;
+    }
+    .maps-storm-tab-btn.active {
+      background:linear-gradient(180deg, #f8e8be 0%, #efd593 100%);
+      color:#6b410c;
+      border-color:rgba(202,168,92,0.92);
+      box-shadow:none;
+    }
     .maps-storm-tab-panel { animation:fadeInPanel .15s ease; }
     @keyframes fadeInPanel { from { opacity:0; } to { opacity:1; } }
-    .maps-impact-tab-body, .maps-pinned-tab-body { font-size:12px; color:var(--text); }
+    .maps-impact-tab-body, .maps-pinned-tab-body {
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      font-size:12px;
+      color:var(--text);
+    }
+    .maps-tab-context-card {
+      background:rgba(255,255,255,0.96);
+      border:1px solid rgba(214,219,227,0.96);
+      border-radius:16px;
+      box-shadow:0 12px 24px rgba(15,23,42,0.1);
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .maps-tab-context-card.is-muted {
+      color:var(--muted);
+    }
+    .maps-tab-context-label {
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      font-weight:700;
+      color:#6b7280;
+    }
+    .maps-tab-context-top {
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .maps-tab-context-date {
+      font-size:16px;
+      line-height:1.3;
+      font-weight:700;
+      color:var(--text);
+    }
+    .maps-tab-context-detail {
+      font-size:12px;
+      line-height:1.5;
+      color:#4b5563;
+    }
+    .maps-pinned-card-list {
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    /* ── Impact tab: state/city cards (HailRecon-style expandable list) ── */
+    .maps-impact-state-list { display:flex; flex-direction:column; gap:12px; }
+    .maps-impact-state-card {
+      background:rgba(255,255,255,0.96);
+      border:1px solid rgba(214,219,227,0.96);
+      border-radius:16px;
+      box-shadow:0 12px 24px rgba(15,23,42,0.1);
+      overflow:hidden;
+    }
+    .maps-impact-state-card.is-expanded { border-color:rgba(202,168,92,0.96); }
+    .maps-impact-state-header {
+      display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer;
+    }
+    .maps-impact-state-header:hover { background:#faf7ef; }
+    .maps-impact-caret { display:inline-block; width:10px; transition:transform .15s; color:var(--muted); }
+    .maps-impact-caret.is-open { transform:rotate(90deg); }
+    .maps-impact-state-name { flex:1; font-weight:600; }
+    .maps-impact-count-badge {
+      font-size:10px;
+      font-weight:700;
+      background:#f4f6f8;
+      border-radius:999px;
+      padding:4px 8px;
+      color:#374151;
+    }
+    .maps-impact-city-list {
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      padding:0 10px 10px;
+      border-top:none;
+    }
+    .maps-impact-city-row {
+      font-size:12px;
+      cursor:pointer;
+      padding:8px 10px;
+      margin-top:0;
+      border-radius:12px;
+      color:var(--text);
+      background:#f8fafc;
+      border:1px solid rgba(214,219,227,0.96);
+      transition:background .15s, border-color .15s;
+    }
+    .maps-impact-city-row:hover {
+      background:#faf7ef;
+      border-color:rgba(202,168,92,0.96);
+    }
+    .maps-impact-city-row.is-expanded {
+      background:#faf3e2;
+      border-color:rgba(202,168,92,0.96);
+      font-weight:600;
+    }
+    .maps-impact-city-detail { padding:2px 2px 0; }
+    .maps-impact-empty-note { font-size:12px; color:var(--muted); padding:6px 2px; }
 
     /* ── Layer opacity panel rows ── */
     .maps-layer-panel { flex-direction:column !important; min-width:200px; gap:8px !important; }
@@ -5243,13 +5672,24 @@
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <div class="topbar-left-spacer" aria-hidden="true"></div>
-      <div class="map-header-brand">
+      <div class="map-header-brand" id="map-header-brand" role="button" tabindex="0" aria-label="Go to Main Menu">
         <img class="app-top-hail-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
         <div class="map-header-title">Hail Money</div>
       </div>
+      <!-- Maps date picker: true top minibar, visible only on the Maps page, controls Recent/Impact/Pinned + swath loading -->
+      <div class="maps-header-date-row" id="maps-header-date-row">
+        <input type="date" id="maps-date-picker" class="maps-date-input" />
+        <button type="button" id="maps-load-date-btn" class="maps-header-load-btn">Load Date</button>
+        <div id="maps-date-status" class="maps-status-msg"></div>
+      </div>
+      <!-- Back to Main Menu: Maps page only, sits between the date finder and the centered brand -->
+      <button type="button" class="btn back-to-menu maps-header-back-btn" id="maps-header-back-btn">Back to Main Menu</button>
+      <!-- Hail Money brand, restored to the true center of the header (Maps page only) -->
+      <div class="map-header-center-brand" id="map-header-center-brand" aria-hidden="true">
+        <img src="./assets/hailmoney-logo.png?v=2" alt="" draggable="false" />
+        <span>Hail Money</span>
+      </div>
       <div class="topbar-right">
-        <div class="company-logo-slot"></div>
         <div class="topbar-controls">
           <button class="jf-notif-btn" type="button" id="jf-notif-btn" title="Notifications" aria-label="Notifications" style="display:none;">
             🔔<span class="jf-notif-badge" id="jf-notif-badge"></span>
@@ -5649,35 +6089,32 @@
         <div class="maps-layout">
           <!-- Left Panel -->
           <div class="maps-panel" id="maps-storm-panel">
-            <div class="maps-panel-header">
-              <h1 class="page-title">Map</h1>
-              <p>View storms, properties, and inspections.</p>
+            <!-- Anchored top box: Map title/subtitle + section label + Recent/Impact/Pinned
+                 tabs. Stays fixed in place while the card list below scrolls underneath it. -->
+            <div class="maps-panel-sticky-top">
+              <div class="maps-panel-header">
+                <h1 class="page-title">Map</h1>
+                <p>View storms, properties, and inspections.</p>
+              </div>
+              <div class="maps-panel-section maps-panel-section-tabs">
+                <div class="maps-panel-section-title">Most Recent Storms</div>
+                <!-- Recent / Impact / Pinned tabs -->
+                <div id="stormTypeButtons" class="maps-storm-tabs" style="pointer-events:auto;">
+                  <button type="button" class="maps-storm-tab-btn active" data-storm-tab="recent">Recent</button>
+                  <button type="button" class="maps-storm-tab-btn" data-storm-tab="impact">Impact</button>
+                  <button type="button" class="maps-storm-tab-btn" data-storm-tab="pinned">Pinned</button>
+                </div>
+              </div>
             </div>
 
-            <!-- Most Recent Storms -->
-            <div class="maps-panel-section">
-              <div class="maps-panel-section-title">Most Recent Storms</div>
-              <!-- Recent / Impact / Pinned tabs -->
-              <div id="stormTypeButtons" class="maps-storm-tabs" style="pointer-events:auto;">
-                <button type="button" class="maps-storm-tab-btn active" data-storm-tab="recent">Recent</button>
-                <button type="button" class="maps-storm-tab-btn" data-storm-tab="impact">Impact</button>
-                <button type="button" class="maps-storm-tab-btn" data-storm-tab="pinned">Pinned</button>
-              </div>
-
+            <!-- Scrollable card list — the only part of the panel that scrolls;
+                 it slides underneath the anchored header above as the user scrolls. -->
+            <div class="maps-panel-scroll">
               <!-- Recent tab -->
               <div id="storm-tab-recent" class="maps-storm-tab-panel">
-                <div id="stormSearchRow" class="maps-storm-search-row" style="pointer-events:auto;">
-                  <input type="text" id="stormSearchInput" class="maps-storm-search-input" placeholder="Search property or date" />
-                  <div id="stormSearchError" class="maps-storm-search-error" aria-live="polite"></div>
-                </div>
                 <ul id="maps-storm-list" class="maps-storm-list"></ul>
-                <div class="maps-paging">
-                  <button type="button" id="maps-page-prev" class="maps-paging-btn" disabled>&laquo; Prev</button>
-                  <span id="maps-page-info"></span>
-                  <button type="button" id="maps-page-next" class="maps-paging-btn" disabled>Next &raquo;</button>
-                </div>
-                <div style="display:flex;align-items:center;margin-top:6px;">
-                  <div id="maps-storm-status" class="maps-status-msg" style="flex:1;margin-top:0;"></div>
+                <div class="maps-recent-status-row">
+                  <div id="maps-storm-status" class="maps-status-msg" style="flex:1;"></div>
                   <button type="button" id="maps-refresh-dates-btn" class="maps-refresh-btn" title="Reload storm dates from database">🔄 Refresh</button>
                 </div>
               </div>
@@ -5685,7 +6122,7 @@
               <!-- Impact tab -->
               <div id="storm-tab-impact" class="maps-storm-tab-panel" style="display:none;">
                 <div id="maps-impact-content" class="maps-impact-tab-body">
-                  <div style="color:var(--muted);font-size:12px;padding:12px 0;">No impacted regions calculated yet.</div>
+                  <div style="color:var(--muted);font-size:12px;padding:12px 0;">No impacted states calculated yet.</div>
                 </div>
               </div>
 
@@ -5695,42 +6132,18 @@
                   <div style="color:var(--muted);font-size:12px;padding:12px 0;">No pinned storm dates yet.</div>
                 </div>
               </div>
-
-              <div id="maps-storm-actions" class="storm-panel-actions"></div>
-              <!-- Admin debug panel (hidden for non-admin) -->
-              <details id="maps-debug-panel" class="maps-debug-panel" style="display:none;">
-                <summary>Debug: Storm Dates</summary>
-                <dl id="maps-debug-dl"></dl>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
-                  <button type="button" id="maps-check-april-btn" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;">Check April 2026 Dates</button>
-                  <button type="button" id="maps-check-date-btn" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;">Check 2026-04-14</button>
-                </div>
-                <div id="maps-april-debug" style="margin-top:6px;font-size:11px;color:var(--muted);white-space:pre-wrap;max-height:200px;overflow-y:auto;font-family:monospace;"></div>
-              </details>
             </div>
 
-            <!-- View Storm Date -->
-            <div class="maps-panel-section">
-              <div class="maps-panel-section-title">View Storm Date</div>
-              <div style="display:flex;gap:6px;align-items:center;">
-                <input type="date" id="maps-date-picker" class="maps-date-input" style="flex:1;" />
-                <button type="button" id="maps-load-date-btn" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Load Date</button>
-              </div>
-              <div id="maps-date-status" class="maps-status-msg"></div>
-            </div>
-
-            <!-- My Saved Maps -->
-            <div class="maps-panel-section">
+            <!-- My Saved Maps: superseded by the Pinned tab; kept in the DOM (hidden) so
+                 existing save/download wiring and the mobile drawer's proxy-click into
+                 #maps-download-btn keep working without changes. -->
+            <div class="maps-panel-section" style="display:none;">
               <div class="maps-panel-section-title">My Saved Maps</div>
               <ul id="maps-saved-list" class="maps-saved-list"></ul>
               <div id="maps-saved-empty" style="font-size:12px;color:var(--muted);padding:4px 0;">Click a date to preview, then pin &#x1F4CC; to save (up to 10).</div>
               <button type="button" id="maps-download-btn" class="maps-download-btn" disabled style="margin-top:8px;">Download Saved</button>
             </div>
 
-            <div class="maps-back-row">
-              <button class="btn back-to-menu" type="button">Back to Main Menu</button>
-              <button class="btn" type="button" id="maps-open-campaign" style="margin-top:6px;background:var(--accent-2);color:var(--text);">Open Campaign</button>
-            </div>
           </div>
           <button type="button" id="maps-panel-toggle" class="maps-panel-collapse-tab" aria-controls="maps-storm-panel" aria-expanded="true" title="Collapse storm panel">&#8249;</button>
 
@@ -5867,11 +6280,6 @@
             <div class="maps-panel-section">
               <div class="maps-panel-section-title">Most Recent Storms</div>
               <ul id="maps-storm-list-mob" class="maps-storm-list"></ul>
-              <div class="maps-paging">
-                <button type="button" id="maps-page-prev-mob" class="maps-paging-btn" disabled>&laquo; Prev</button>
-                <span id="maps-page-info-mob"></span>
-                <button type="button" id="maps-page-next-mob" class="maps-paging-btn" disabled>Next &raquo;</button>
-              </div>
               <div id="maps-storm-status-mob" class="maps-status-msg"></div>
             </div>
             <div class="maps-panel-section">
@@ -5936,6 +6344,8 @@
                 </div>
               </div>
             </div>
+            <!-- Go to Campaign / Draw Area Report: map controls, not storm-panel content -->
+            <div id="maps-storm-actions" class="maps-side-actions"></div>
             <!-- Street Color Overlay Control -->
             <div class="maps-street-ctrl">
               <button type="button" id="maps-street-btn" class="maps-street-toggle-btn" title="Street Value Colors">&#127968;</button>
@@ -8627,7 +9037,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly&callback=mapsGoogleReady" async defer></script>
   <script src="demo_swaths.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -8900,12 +9310,29 @@
     // Both writers go through applyTickerText() so there's only ever one
     // DOM update path, one animation restart, and one duration calculation.
     var hmmTickerSegments = { nhc: '', severe: '' };
+    var hmmTickerHovering = false;
+    var hmmTickerDirty = false;
 
     function applyTickerText() {
+      // While the user is hovering (and the ticker is CSS-paused), defer the
+      // DOM/content update instead of restarting mid-hover — restarting would
+      // reset the scroll to frame 0 (mostly off-screen, per the padding-left
+      // marquee trick) and make the paused ticker appear to blank out, then
+      // jump/accelerate once the mouse leaves. Apply it once, cleanly, on
+      // mouseleave instead (see hmmTickerWireHover below).
+      if (hmmTickerHovering) {
+        hmmTickerDirty = true;
+        return;
+      }
+      applyTickerTextNow();
+    }
+
+    function applyTickerTextNow() {
       var textEl = document.getElementById('maps-hurricane-ticker-text');
       if (!textEl) return;
       var text = [hmmTickerSegments.nhc, hmmTickerSegments.severe].filter(function (value) { return !!value; }).join(' • ');
       if (!text) return;
+      hmmTickerDirty = false;
       textEl.textContent = text;
       // translateX(-100%) is relative to the element's own width (text width
       // plus the 100%-of-container left padding), so a fixed CSS duration
@@ -8913,11 +9340,26 @@
       // from that same width so on-screen speed stays constant, then clamp
       // to a medium-readable band so it never goes too fast or too slow.
       var travelPx = textEl.offsetWidth;
-      var hmmTickerDuration = Math.min(65, Math.max(50, travelPx / 55));
+      var hmmTickerDuration = Math.min(78, Math.max(60, travelPx / 46));
       textEl.style.animation = 'none';
       void textEl.offsetWidth;
       textEl.style.animation = '';
       textEl.style.animationDuration = hmmTickerDuration.toFixed(1) + 's';
+    }
+
+    // Pure CSS animation-play-state already pauses/resumes at the exact same
+    // position and rate (no JS needed for that). This listener only exists to
+    // flush a content update that arrived while hovering — applied once, the
+    // instant the mouse leaves, so the resumed scroll is never mid-restart.
+    function hmmTickerWireHover() {
+      var ticker = document.getElementById('maps-hurricane-ticker');
+      if (!ticker || ticker._hmmHoverWired) return;
+      ticker._hmmHoverWired = true;
+      ticker.addEventListener('mouseenter', function () { hmmTickerHovering = true; });
+      ticker.addEventListener('mouseleave', function () {
+        hmmTickerHovering = false;
+        if (hmmTickerDirty) applyTickerTextNow();
+      });
     }
 
     function extractHurricaneFields(title, description) {
@@ -9125,6 +9567,7 @@
     function initHurricaneTicker() {
       if (initHurricaneTicker._started) return;
       initHurricaneTicker._started = true;
+      hmmTickerWireHover();
       refreshHurricaneTicker();
       refreshSevereWeatherTicker();
       setInterval(refreshHurricaneTicker, 15 * 60 * 1000);
@@ -10610,7 +11053,11 @@
     const ENABLE_UNIFIED_INGEST_ON_RENDER = false;
     const ENABLE_MRMS_INGEST_ON_RENDER = false;
     const ENABLE_SYNTHESIZE_ON_RENDER = false;
-    const MAX_SELECTED_DATE_SWATH_OVERLAYS = 1500;
+    // Raised from 1500: large multi-state outbreak dates can have enough individual ring
+    // overlays that the old cap stopped mid-list (in row-priority order, not geographic
+    // order) and silently dropped whichever segments sorted past the cutoff — e.g. a
+    // smaller detached corridor far from the first rows processed.
+    const MAX_SELECTED_DATE_SWATH_OVERLAYS = 3000;
 
     function hmDebugLog() {
       if (HM_DEBUG_LOGS) console.log.apply(console, arguments);
@@ -10656,14 +11103,15 @@
       },
       swathToggles: { hail: true, wind: false, tornado: true },
       typeOpacityScale: { hail: 0.30, wind: 0.00, tornado: 0.30 },
-      stormPage: 0,              // current page index
       selectedProperty: null,    // { lat, lng, address, title }
       rawStormRows: {},          // dateStr -> raw row[] from storm_polygons (for nearby-storm search)
       _drawComplete: {},          // dateStr -> true after finishDraw completes (perf cache)
       _fitBoundsCache: {},       // dateStr -> {center:{lat,lng}, zoom} — cached map position
-      impactRegionsByDate: {},      // dateStr -> { dateStr, states:[{name,stateShort,cities:[...],center}] }
-      _impactRegionsPromises: {},   // dateStr -> in-flight Promise for mapsBuildImpactRegions
-      impactGeocodeCache: {},       // 'lat,lng' (rounded) -> Promise<{city,state,stateShort}|null>
+      impactStatesByDate: {},        // dateStr -> impact_state_summary rows
+      _impactStatesPromises: {},     // dateStr -> in-flight Promise while fetching state summary
+      impactCitiesByDateState: {},   // "dateStr|state" -> impact_city_summary rows
+      _impactCitiesPromises: {},     // "dateStr|state" -> in-flight Promise while fetching city summary
+      impactCityHailByKey: {},       // "dateStr|state|city" -> impact_city_hail_summary rows (popup cache)
       impactRegionMarkersByState: {}, // stateName -> google.maps.Marker[] (impact-tab map pins, cleared on date change)
       _impactMarkersDate: null,     // dateStr the current impactRegionMarkersByState belongs to
       expandedImpactStates: {},     // stateName -> true while expanded in Impact tab
@@ -10673,7 +11121,6 @@
       fetching: false
     };
     var MAPS_MAX_SELECT = 10;
-    var MAPS_PAGE_SIZE = 7;
     var STORM_DATE_CACHE_MS = 10 * 60 * 1000;
     var STORM_SWATH_CACHE_MS = 10 * 60 * 1000;
     var MAPS_VERBOSE_DATE_LOGS = false;
@@ -11290,7 +11737,6 @@
         mapsInitMap();
         if (!App.mapControlsBound) {
           mapsWireStormPanelToggle();
-          mapsWirePaging();
           mapsWireDatePicker();
           mapsWireDownload();
           mapsWirePropCard();
@@ -11308,6 +11754,12 @@
         initHurricaneTicker();
         mapsState.ready = true;
         renderStormPanelActionButtons(document.getElementById('maps-storm-actions'));
+        // Default the selected storm date to today on first open of the Maps page.
+        // mapsPreviewDate() draws whatever data exists for that date (or nothing,
+        // if today has no storm data yet) — same pipeline as clicking a date row.
+        if (!mapsState.previewDate) {
+          mapsPreviewDate(mapsLocalTodayDateStr());
+        }
         mapsFetchRecentDates();
         if (!App.mapsRefreshIntervalBound) {
           // Auto-refresh storm dates every 5 min to pick up newly ingested dates.
@@ -11696,7 +12148,6 @@
         mapsState.stormDates         = sortedDates;
         mapsState.dateEventTypes     = dateEventTypes;
         mapsState.dateSummaries      = dateSummaries;
-        mapsState.stormPage          = 0;
 
         var aprilDates = sortedDates.filter(function (d) {
           return d && d.slice(0, 7) === new Date().getFullYear() + '-04';
@@ -11789,37 +12240,58 @@
 
     // ── Custom roadmap style for the "Map" base layer; satellite and hybrid stay unstyled ──
     var hailMoneyRoadmapStyle = [
-      { featureType: "water", elementType: "geometry", stylers: [{ color: "#6fcfe0" }] },
-      { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#92aa85" }] },
-      { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#7e996f" }] },
-      { featureType: "poi", elementType: "geometry", stylers: [{ color: "#88a177" }] },
-      { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#6f8e60" }] },
-      { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#2f3d30" }] },
-      { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#264029" }] },
-      // Highways — prominent amber/yellow fill with visible shields
+      // Water — deeper blue/cyan contrast against the darker land
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#3596b5" }] },
+      // Land/background — darker, more muted olive-green (closer to HailRecon) so swath overlays stand out more
+      { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#4a6640" }] },
+      { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#3f5936" }] },
+      { featureType: "poi", elementType: "geometry", stylers: [{ color: "#496339" }] },
+      { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#34492c" }] },
+      { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#1a211a" }] },
+      { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#101f12" }] },
+      // Highways — prominent amber/yellow fill with visible shields, stronger outline for definition
       { featureType: "road.highway", elementType: "geometry.fill", stylers: [{ color: "#f0c56b" }] },
-      { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#cf9732" }, { weight: 1.1 }] },
+      { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#a8711e" }, { weight: 1.5 }] },
       { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#2f2f2b" }] },
       { featureType: "road.highway", elementType: "labels.icon", stylers: [{ visibility: "on" }] },
       // Arterial roads — light tan fill, clearly outlined
       { featureType: "road.arterial", elementType: "geometry.fill", stylers: [{ color: "#efe6d7" }] },
-      { featureType: "road.arterial", elementType: "geometry.stroke", stylers: [{ color: "#b8ad92" }, { weight: 0.9 }] },
+      { featureType: "road.arterial", elementType: "geometry.stroke", stylers: [{ color: "#988c6e" }, { weight: 1.2 }] },
       { featureType: "road.arterial", elementType: "labels.text.fill", stylers: [{ color: "#3f413b" }] },
       { featureType: "road.arterial", elementType: "labels.icon", stylers: [{ visibility: "on" }] },
       // Local streets — soft off-white with a light tan outline
       { featureType: "road.local", elementType: "geometry.fill", stylers: [{ color: "#f4efe4" }] },
-      { featureType: "road.local", elementType: "geometry.stroke", stylers: [{ color: "#cbc2b0" }, { weight: 0.65 }] },
+      { featureType: "road.local", elementType: "geometry.stroke", stylers: [{ color: "#aea284" }, { weight: 0.9 }] },
       { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#56574f" }] },
-      { featureType: "administrative.province", elementType: "geometry.stroke", stylers: [{ color: "#556253" }, { weight: 1.1 }] },
-      { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ color: "#445144" }, { weight: 1.3 }] },
-      { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#283228" }] },
-      { featureType: "administrative.locality", elementType: "labels.text.stroke", stylers: [{ color: "#d9e2d4" }] },
-      { featureType: "administrative.neighborhood", elementType: "labels.text.fill", stylers: [{ color: "#40503f" }] },
-      { featureType: "administrative.neighborhood", elementType: "labels.text.stroke", stylers: [{ color: "#dce4d7" }] },
+      // Boundaries — stronger state/country lines
+      { featureType: "administrative.province", elementType: "geometry.stroke", stylers: [{ color: "#37422f" }, { weight: 1.5 }] },
+      { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ color: "#262f22" }, { weight: 1.8 }] },
+      // City/state labels — darker fill with a brighter halo so they stay crisp against the darker land
+      { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#1c241c" }] },
+      { featureType: "administrative.locality", elementType: "labels.text.stroke", stylers: [{ color: "#f2f6ee" }] },
+      { featureType: "administrative.neighborhood", elementType: "labels.text.fill", stylers: [{ color: "#2e3a2e" }] },
+      { featureType: "administrative.neighborhood", elementType: "labels.text.stroke", stylers: [{ color: "#f2f6ee" }] },
       { featureType: "transit", stylers: [{ visibility: "off" }] }
     ];
 
+    function mapsGoogleReady() {
+  window.HM_GOOGLE_MAPS_READY = true;
+  try {
+    if (window.mapsState && mapsState.pendingInit && typeof mapsInitMap === 'function') {
+      mapsState.pendingInit = false;
+      mapsInitMap();
+    }
+  } catch (e) {
+    console.error('[HMM] mapsGoogleReady failed', e);
+  }
+}
+
     function mapsInitMap() {
+      if (!window.google || !google.maps || !window.HM_GOOGLE_MAPS_READY) {
+        mapsState.pendingInit = true;
+        console.warn('[HMM] Google Maps not ready yet; delaying mapsInitMap');
+        return;
+      }
       var App = mapsGetAppState();
       var mapEl = document.getElementById('stormMap');
       if (!mapEl) return;
@@ -12109,7 +12581,10 @@
       return fetch(url, {
         headers: {
           apikey: SUPABASE_ANON_KEY,
-          Authorization: 'Bearer ' + SUPABASE_ANON_KEY
+          Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+          // Avoid PostgREST's default page-size cap silently dropping reports for dates with lots of rows.
+          'Range-Unit': 'items',
+          Range: '0-9999'
         }
       })
         .then(function (resp) {
@@ -12216,7 +12691,15 @@
       return fetch(url, {
         headers: {
           apikey: SUPABASE_ANON_KEY,
-          Authorization: 'Bearer ' + SUPABASE_ANON_KEY
+          Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+          // PostgREST caps unranged requests at its configured default page size
+          // (commonly 1000 rows) with no error or warning — a date with more
+          // storm_polygons rows than that (a big multi-state outbreak day) would
+          // silently lose whichever rows sort past the cutoff, e.g. a smaller
+          // detached corridor segment. Explicitly request a much larger range so
+          // every row for the date actually comes back.
+          'Range-Unit': 'items',
+          Range: '0-9999'
         }
       })
         .then(function (resp) {
@@ -12260,24 +12743,27 @@
     // ── Severity → color (hail: pale-yellow → orange → red → magenta/purple) ──
     // Nested-swath ramp matches HailTrace: outer/light=yellow, inner/core=purple
     function swathSeverityColor(hailIn) {
-      if (hailIn >= 3.00) return [142,  36, 170, 0.52]; // #8e24aa purple
-      if (hailIn >= 2.50) return [198,  40,  40, 0.50]; // #c62828 deep red
-      if (hailIn >= 2.00) return [229,  57,  53, 0.48]; // #e53935 red-orange
-      if (hailIn >= 1.75) return [245, 124,   0, 0.45]; // #f57c00 orange
-      if (hailIn >= 1.50) return [255, 152,   0, 0.40]; // #ff9800 amber
-      if (hailIn >= 1.25) return [255, 193,   7, 0.34]; // #ffc107 gold
-      if (hailIn >= 1.00) return [255, 235,  59, 0.30]; // #ffeb3b yellow
-      return                     [255, 245, 157, 0.24]; // #fff59d pale yellow (< 1.0")
+      // Severity ramp: low end (pale yellow/yellow/gold) uses a pale HailRecon-style
+      // yellow hue (not dark gold/brown) but at a higher opacity so it stays clearly
+      // visible at 100%; orange/red/purple keep their existing stronger hues.
+      if (hailIn >= 3.00) return [123,  31, 162, 0.65]; // #7b1fa2 purple
+      if (hailIn >= 2.50) return [179,  38,  31, 0.62]; // #b3261f deep red
+      if (hailIn >= 2.00) return [224,  57,  44, 0.60]; // #e0392c red-orange
+      if (hailIn >= 1.75) return [242, 112,  10, 0.58]; // #f2700a orange
+      if (hailIn >= 1.50) return [255, 195,  77, 0.57]; // #ffc34d amber
+      if (hailIn >= 1.25) return [255, 215,  64, 0.55]; // #ffd740 gold
+      if (hailIn >= 1.00) return [255, 236,  92, 0.50]; // #ffec5c yellow
+      return                     [255, 241, 118, 0.40]; // #fff176 pale yellow (< 1.0")
     }
 
     function _swathHailOpacityFloor(hailIn) {
-      if (hailIn >= 3.00) return 0.34;
-      if (hailIn >= 2.00) return 0.34;
-      if (hailIn >= 1.75) return 0.30;
-      if (hailIn >= 1.50) return 0.26;
-      if (hailIn >= 1.25) return 0.22;
-      if (hailIn >= 1.00) return 0.18;
-      return 0.14;
+      if (hailIn >= 3.00) return 0.42;
+      if (hailIn >= 2.00) return 0.42;
+      if (hailIn >= 1.75) return 0.38;
+      if (hailIn >= 1.50) return 0.36;
+      if (hailIn >= 1.25) return 0.34;
+      if (hailIn >= 1.00) return 0.30;
+      return 0.26;
     }
 
     function _swathScaledDisplayOpacity(globalOpacity, baseOpacity, bandMin, stormType) {
@@ -12979,7 +13465,10 @@
         }
 
         // MRMS-heavy: skip tiny isolated vertical clusters (N-S MRMS cell extent, not storm tracks).
-        if (_mrmsHeavy) {
+        // Gated to very small point counts only — a genuine smaller/detached corridor segment
+        // (e.g. a short IA/NE/KS-style track) can also be narrow EW with more north-south lean,
+        // so requiring few points keeps this catching scan-line artifacts without dropping real data.
+        if (_mrmsHeavy && n <= 3) {
           var _ewSp = 0, _nsSp = 0;
           cluster.forEach(function(p) {
             _ewSp = Math.max(_ewSp, Math.abs(p.lon - cx));
@@ -13324,18 +13813,24 @@
 
       if (!seedPts.length) return;
 
-      // 0.25° cluster radius chains nearby reports/centroids into one storm track per cluster
+      // 0.25° cluster radius chains nearby reports/centroids into one storm track per cluster.
+      // Isolated single-point clusters are no longer dropped here — they're extended into a
+      // short corridor below (same fallback _drawHailCoreRibbons already uses), so a smaller
+      // detached segment with sparse reports still renders instead of vanishing.
       if (!_mrmsHeavy) _clusterByDistance(seedPts, 0.25).forEach(function(cluster) {
-        if (cluster.length < 2) return;
+        if (!cluster.length) return;
 
         var n = cluster.length, cx = 0, cy = 0;
         cluster.forEach(function(p) { cx += p.lon; cy += p.lat; });
         cx /= n; cy /= n;
-        var sxx = 0, sxy = 0, syy = 0;
-        cluster.forEach(function(p) { var dx = p.lon - cx, dy = p.lat - cy; sxx += dx*dx; sxy += dx*dy; syy += dy*dy; });
-        var ang = 0.5 * Math.atan2(2*sxy, sxx-syy);
-        var axCos = Math.cos(ang), axSin = Math.sin(ang);
-        if (axCos < 0) { axCos = -axCos; axSin = -axSin; }
+        var axCos = 1, axSin = 0;
+        if (n >= 2) {
+          var sxx = 0, sxy = 0, syy = 0;
+          cluster.forEach(function(p) { var dx = p.lon - cx, dy = p.lat - cy; sxx += dx*dx; sxy += dx*dy; syy += dy*dy; });
+          var ang = 0.5 * Math.atan2(2*sxy, sxx-syy);
+          axCos = Math.cos(ang); axSin = Math.sin(ang);
+          if (axCos < 0) { axCos = -axCos; axSin = -axSin; }
+        }
 
         var sorted = cluster.slice().sort(function(a, b) {
           return ((a.lat-cy)*axSin+(a.lon-cx)*axCos) - ((b.lat-cy)*axSin+(b.lon-cx)*axCos);
@@ -13345,7 +13840,14 @@
           if (path.length) { var prev = path[path.length-1]; if (Math.sqrt(Math.pow(p.lat-prev.lat,2)+Math.pow(p.lon-prev.lon,2)) < 0.010) return; }
           path.push(p);
         });
-        if (path.length < 2) return;
+        if (path.length < 2) {
+          var ext = 0.04;
+          path = [
+            { lat: path[0].lat - ext*axSin, lon: path[0].lon - ext*axCos, hail_in: path[0].hail_in },
+            path[0],
+            { lat: path[0].lat + ext*axSin, lon: path[0].lon + ext*axCos, hail_in: path[0].hail_in }
+          ];
+        }
         if (path.length > 300) path = path.slice(0, 300);
         if (_mrmsHeavy && path.length > 2) path = _smoothCenterlinePts(path, 4);
 
@@ -16568,141 +17070,148 @@
       return types.join(', ');
     }
 
-    // Build multi-line summary HTML for a date's storm types
-    function mapsStormSummaryHtml(dateStr) {
-      // Prefer polygon-based hail summary if available, fall back to LSR-based
-      var polyHail = mapsState.polyHailSummaries && mapsState.polyHailSummaries[dateStr];
-      var summary = mapsState.dateSummaries[dateStr];
-      var types = mapsState.dateEventTypes[dateStr] || ['hail'];
-      var lines = [];
-      for (var i = 0; i < types.length; i++) {
-        var t = types[i];
-        if (t === 'hail') {
-          var hs = polyHail || (summary && summary.hail);
-          if (hs && hs.min != null && hs.max != null) {
-            var hMin = Number(hs.min).toFixed(2), hMax = Number(hs.max).toFixed(2);
-            lines.push('<span style="color:#FFD700;">&#x1F9CA;</span> ' + (hMin === hMax ? hMin + '\u2033 hail' : hMin + '\u2033\u2013' + hMax + '\u2033 hail'));
-          } else {
-            lines.push('<span style="color:#FFD700;">&#x1F9CA;</span> hail');
-          }
-        } else if (t === 'wind') {
-          var ws = summary && summary.wind;
-          if (ws && ws.min != null && ws.max != null) {
-            var wMin = Math.round(Number(ws.min)), wMax = Math.round(Number(ws.max));
-            lines.push('<span style="color:#42A5F5;">&#x1F4A8;</span> Wind: ' + (wMin === wMax ? wMin + ' mph' : wMin + '\u2013' + wMax + ' mph'));
-          } else {
-            lines.push('<span style="color:#42A5F5;">&#x1F4A8;</span> Wind');
-          }
-        } else if (t === 'tornado') {
-          var ts = summary && summary.tornado;
-          if (ts && ts.min != null && ts.max != null) {
-            var tMin = Math.round(Number(ts.min)), tMax = Math.round(Number(ts.max));
-            lines.push('<span style="color:#AB47BC;">&#x1F32A;</span> Tornado: ' + (tMin === tMax ? 'EF' + tMin : 'EF' + tMin + '\u2013EF' + tMax));
-          } else {
-            lines.push('<span style="color:#AB47BC;">&#x1F32A;</span> Tornado');
-          }
-        }
-      }
-      return lines.join('<br>');
+    function mapsGetStormCardDateInfo(dateStr) {
+      var m = String(dateStr || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return { display: dateStr || '', meta: '' };
+      var dt = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return {
+        display: dt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        meta: dt.toLocaleDateString('en-US', { weekday: 'long' })
+      };
     }
 
+    function mapsGetStormImpactTone(dateStr) {
+      var polyHail = mapsState.polyHailSummaries && mapsState.polyHailSummaries[dateStr];
+      var summary = mapsState.dateSummaries[dateStr] || {};
+      var types = mapsState.dateEventTypes[dateStr] || [];
+      var hailMax = Number(polyHail && polyHail.max != null ? polyHail.max : summary.hail && summary.hail.max != null ? summary.hail.max : 0) || 0;
+      var windMax = Number(summary.wind && summary.wind.max != null ? summary.wind.max : 0) || 0;
+      var tornadoMax = Number(summary.tornado && summary.tornado.max != null ? summary.tornado.max : 0) || 0;
+
+      // rating: simple 1-5 frontend impact score derived from the same
+      // hail/wind/tornado thresholds used for the severity label/color —
+      // no backend rating exists yet, so this is computed client-side only.
+      if (types.indexOf('tornado') !== -1 || tornadoMax > 0) {
+        return { label: 'Extreme', className: 'severity-extreme', rating: 5 };
+      }
+      if (hailMax >= 2.5 || windMax >= 110) {
+        return { label: 'Extreme', className: 'severity-extreme', rating: 5 };
+      }
+      if (hailMax >= 2 || windMax >= 90) {
+        return { label: 'Severe', className: 'severity-severe', rating: 4 };
+      }
+      if (hailMax >= 1.5 || windMax >= 73) {
+        return { label: 'Elevated', className: 'severity-elevated', rating: 3 };
+      }
+      if (hailMax >= 1 || windMax >= 58) {
+        return { label: 'Moderate', className: 'severity-moderate', rating: 2 };
+      }
+      if (types.length) {
+        return { label: 'Light', className: 'severity-light', rating: 1 };
+      }
+      return { label: 'Pending', className: 'severity-light', rating: null };
+    }
+
+    function mapsBuildStormSourceBadgeHtml(dateStr) {
+      var hasPoly = !!mapsState.dateHasPolygon[dateStr];
+      var types = mapsState.dateEventTypes[dateStr] || [];
+      var hasHail = !!mapsState.dateHasHailReports[dateStr] || types.indexOf('hail') !== -1;
+      var hasWind = !!mapsState.dateHasWindReports[dateStr] || types.indexOf('wind') !== -1 || types.indexOf('tornado') !== -1;
+      if (hasPoly) {
+        return '<span class="storm-source-badge swath" title="Swath polygon saved">Swath</span>';
+      }
+      if (hasHail || hasWind) {
+        return '<span class="storm-source-badge reports" title="Raw LSR reports — no swath saved yet">Reports only</span>';
+      }
+      return '';
+    }
+
+    function mapsBuildStormCardHtml(dateStr, options) {
+      options = options || {};
+      var dateInfo = mapsGetStormCardDateInfo(dateStr);
+      var impactSummary = mapsGetStormImpactSummarySync(dateStr);
+      var unitsLabel = mapsFormatHousingUnitLabel(impactSummary || null);
+      var tone = mapsGetStormImpactTone(dateStr);
+      var isPinned = mapsState.pinnedDates.indexOf(dateStr) !== -1;
+      var pinLabel = isPinned ? (options.pinnedLabel || 'Pinned') : (options.pinLabel || 'Pin');
+      var sourceBadge = mapsBuildStormSourceBadgeHtml(dateStr);
+      var pinButtonHtml = options.showPin === false
+        ? ''
+        : '<button type="button" class="maps-pin-btn' + (isPinned ? ' pinned' : '') + '" data-pin-date="' + dateStr + '">' + pinLabel + '</button>';
+      var ratingHtml = '<span class="maps-storm-impact-pill maps-impact-rating-badge ' + tone.className + '" title="Impact rating: ' + tone.label + '">' + (tone.rating || '–') + '</span>';
+
+      return '' +
+        '<div class="maps-storm-card-top">' +
+          '<div class="maps-storm-card-date-wrap">' +
+            '<span class="maps-storm-card-date">' + dateInfo.display + '</span>' +
+            '<span class="maps-storm-card-date-meta">' + (dateInfo.meta || dateStr) + '</span>' +
+          '</div>' +
+          pinButtonHtml +
+        '</div>' +
+        '<div class="maps-storm-card-bottom-row">' +
+          ratingHtml +
+          '<span class="storm-home-count" data-impact-date="' + dateStr + '">' + unitsLabel + '</span>' +
+          sourceBadge +
+        '</div>';
+    }
+
+    function mapsBuildImpactContextCardHtml(dateStr) {
+      var dateInfo = mapsGetStormCardDateInfo(dateStr);
+      var impactSummary = mapsGetStormImpactSummarySync(dateStr);
+      var tone = mapsGetStormImpactTone(dateStr);
+      return '' +
+        '<div class="maps-tab-context-card">' +
+          '<div class="maps-tab-context-label">Impact Overview</div>' +
+          '<div class="maps-tab-context-top">' +
+            '<div class="maps-tab-context-date">' + dateInfo.display + '</div>' +
+            '<span class="maps-storm-impact-pill ' + tone.className + '">' + tone.label + '</span>' +
+          '</div>' +
+          '<div class="maps-tab-context-detail">' + mapsFormatHousingUnitLabel(impactSummary || null) + '</div>' +
+        '</div>';
+    }
+
+    // Continuous scroll list — no pagination. Every selected-date storm shows
+    // as its own floating card; the card list scrolls inside its own
+    // container (see .maps-panel-scroll), independent of the sticky header.
     function mapsRenderStormList() {
       var ul = document.getElementById('maps-storm-list');
       var dates = mapsState.stormDates;
-      var total = dates.length;
-      var maxPage = Math.max(0, Math.ceil(total / MAPS_PAGE_SIZE) - 1);
-      if (mapsState.stormPage > maxPage) mapsState.stormPage = maxPage;
-      var page = mapsState.stormPage;
-      var start = page * MAPS_PAGE_SIZE;
-      var pageDates = dates.slice(start, start + MAPS_PAGE_SIZE);
 
-      if (!total) {
+      if (!dates.length) {
         ul.innerHTML = '<li style="color:var(--muted);font-size:13px;padding:6px 0;">No storm dates available.</li>';
-        mapsUpdatePagingButtons(0, 0);
+        mapsRenderImpactTab();
+        mapsRenderPinnedTab();
+        if (typeof mapsMobSyncStorms === 'function') mapsMobSyncStorms();
         return;
       }
       ul.innerHTML = '';
-      pageDates.forEach(function (dateStr) {
+      dates.forEach(function (dateStr) {
         var li = document.createElement('li');
         var isPinned = mapsState.pinnedDates.indexOf(dateStr) !== -1;
         var isPreview = mapsState.previewDate === dateStr;
+        li.setAttribute('data-storm-date', dateStr);
         li.className = 'maps-storm-row' + (isPreview ? ' is-preview' : '') + (isPinned ? ' is-pinned' : '');
-        var summaryHtml = mapsStormSummaryHtml(dateStr);
-        var dotColor = isPinned ? '#caa85c' : (isPreview ? '#00c2ff' : '#6b7080');
-        /* Source badge: swath polygon vs reports-only.
-           hasPoly   — only true if storm_polygons has a row (direct query).
-           hasReport — true if hail_lsr_raw or storm_lsr_raw has a row (direct
-                       query), OR if the edge function reports this date as a
-                       hail/wind/tornado event via dateEventTypes. The edge fn
-                       queries LSR tables server-side and is authoritative when
-                       direct anon queries hit RLS. */
-        var hasPoly  = !!mapsState.dateHasPolygon[dateStr];
-        var _types   = mapsState.dateEventTypes[dateStr] || [];
-        var hasHail  = !!mapsState.dateHasHailReports[dateStr] ||
-                       _types.indexOf('hail') !== -1;
-        var hasWind  = !!mapsState.dateHasWindReports[dateStr] ||
-                       _types.indexOf('wind') !== -1 ||
-                       _types.indexOf('tornado') !== -1;
-        var badgeHtml = '';
-        if (hasPoly) {
-          badgeHtml = '<span class="storm-source-badge swath" title="Swath polygon saved">Swath</span>';
-        } else if (hasHail || hasWind) {
-          badgeHtml = '<span class="storm-source-badge reports" title="Raw LSR reports — no swath saved yet">Reports only</span>';
+        li.innerHTML = mapsBuildStormCardHtml(dateStr);
+        // Click card → preview this date
+        li.addEventListener('click', function () { mapsPreviewDate(dateStr); });
+        var pinBtn = li.querySelector('.maps-pin-btn');
+        if (pinBtn) {
+          pinBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            mapsTogglePin(dateStr);
+          });
         }
-        var impactSummary = mapsGetStormImpactSummarySync(dateStr);
-        var impactLabel = mapsFormatHousingUnitLabel(impactSummary || null);
-        li.innerHTML =
-          '<button type="button" class="maps-pin-btn' + (isPinned ? ' pinned' : '') +
-          '" data-pin-date="' + dateStr + '" title="' + (isPinned ? 'Unpin' : 'Pin to saved') + '">&#x1F4CC;</button>' +
-          '<span class="storm-color-dot" style="background:' + dotColor + ';"></span>' +
-          '<div class="storm-label-group">' +
-            '<span class="storm-label">' + dateStr + ' ' + badgeHtml + '</span>' +
-            '<span class="storm-size">' + summaryHtml + '</span>' +
-            '<span class="storm-home-count" data-impact-date="' + dateStr + '" style="font-size:11px;color:var(--muted);">' + impactLabel + '</span>' +
-          '</div>';
-        // Click row → preview this date
-        li.addEventListener('click', function (e) {
-          if (e.target.closest('.maps-pin-btn')) return;
-          mapsPreviewDate(dateStr);
-        });
-        // Click pin button → toggle pin
-        li.querySelector('.maps-pin-btn').addEventListener('click', function (e) {
-          e.stopPropagation();
-          mapsTogglePin(dateStr);
-        });
         ul.appendChild(li);
       });
-      mapsUpdatePagingButtons(page, maxPage);
-      mapsPrimeStormImpactSummaries(pageDates);
+      mapsPrimeStormImpactSummaries(dates);
       mapsRenderImpactTab();
       mapsRenderPinnedTab();
+      // No more pages to "jump" to — keep the selected card in view instead.
+      var activeRow = ul.querySelector('.maps-storm-row.is-preview');
+      if (activeRow && typeof activeRow.scrollIntoView === 'function') {
+        activeRow.scrollIntoView({ block: 'nearest' });
+      }
       if (typeof mapsMobSyncStorms === 'function') mapsMobSyncStorms();
-    }
-
-    function mapsUpdatePagingButtons(page, maxPage) {
-      var prev = document.getElementById('maps-page-prev');
-      var next = document.getElementById('maps-page-next');
-      var info = document.getElementById('maps-page-info');
-      prev.disabled = page <= 0;
-      next.disabled = page >= maxPage;
-      var totalPages = maxPage + 1;
-      info.textContent = totalPages > 1 ? (page + 1) + ' / ' + totalPages : '';
-    }
-
-    function mapsWirePaging() {
-      document.getElementById('maps-page-prev').addEventListener('click', function () {
-        if (mapsState.stormPage > 0) {
-          mapsState.stormPage--;
-          mapsRenderStormList();
-        }
-      });
-      document.getElementById('maps-page-next').addEventListener('click', function () {
-        var maxPage = Math.max(0, Math.ceil(mapsState.stormDates.length / MAPS_PAGE_SIZE) - 1);
-        if (mapsState.stormPage < maxPage) {
-          mapsState.stormPage++;
-          mapsRenderStormList();
-        }
-      });
     }
 
     /* ── Admin debug panel for storm dates ── */
@@ -16884,6 +17393,11 @@
         statusEl.className = 'maps-status-msg';
         statusEl.textContent = '';
       }
+      // Keep the header date picker in sync no matter how the date was
+      // selected (Recent row, Pinned row, search, or the default-to-today
+      // call on Maps init) — single source of truth for "selected date".
+      var headerDatePicker = document.getElementById('maps-date-picker');
+      if (headerDatePicker) headerDatePicker.value = dateStr;
 
       if (mapsState.previewDate === dateStr) return;
 
@@ -16900,6 +17414,8 @@
         ms: Math.round(performance.now() - previewT0)
       });
 
+      // Continuous scroll list (no pagination) — mapsRenderStormList()
+      // itself scrolls the newly selected card into view after rendering.
       mapsRenderStormList();
       mapsRenderSavedList();
       mapsUpdateDownloadBtn();
@@ -16969,6 +17485,15 @@
     }
 
     // Normalize date string to YYYY-MM-DD (backend requires this exact format)
+    // Today's date as YYYY-MM-DD using LOCAL calendar day (not UTC), so the
+    // default storm date matches what the user actually considers "today".
+    function mapsLocalTodayDateStr() {
+      var d = new Date();
+      var m = ('0' + (d.getMonth() + 1)).slice(-2);
+      var day = ('0' + d.getDate()).slice(-2);
+      return d.getFullYear() + '-' + m + '-' + day;
+    }
+
     function mapsNormalizeDate(d) {
       if (!d) return d;
       // Already YYYY-MM-DD
@@ -17296,14 +17821,13 @@
     // Returns the label shown in Recent / Pinned tabs for a date's housing-unit impact.
     // housingEstimateConnected is false until a real Census / parcel data source is wired.
     function mapsFormatHousingUnitLabel(summary) {
-      if (!summary) return 'Checking...';
       // TODO(housing-units): replace placeholder once one of the following is wired:
       //   - Census ACS block-group housing unit counts intersected with swath polygons
       //   - City/county boundary × swath overlap with Census housing density
       //   - Parcel count API or paid property-data provider
       //   - FEMA / HUD housing unit raster for swath footprint
-      if (!summary.housingEstimateConnected) return 'Impact estimate not calculated yet';
-      return mapsAbbreviateCount(summary.impactedHomesCount) + ' homes impacted';
+      if (!summary || !summary.housingEstimateConnected) return 'Estimate pending';
+      return mapsAbbreviateCount(summary.impactedHomesCount) + ' units';
     }
 
     function mapsGetStormImpactSummarySync(dateStr) {
@@ -17334,9 +17858,10 @@
         });
 
         // TODO(housing-units): set housingEstimateConnected = true and impactedHomesCount = real number
-        //   once Census block-group housing units × swath polygon intersection is implemented.
-        //   City/region breakdown for the Impact tab comes from mapsBuildImpactRegions (report-point
-        //   clusters + reverse geocoding), not from this summary or from saved properties.
+        //   once this per-date Recent/Pinned label is wired to impact_state_summary too.
+        //   The Impact tab's own state/city/hail breakdown already reads real Census-derived
+        //   estimates from impact_state_summary / impact_city_summary / impact_city_hail_summary
+        //   (see mapsFetchImpactStateSummary etc.) — not from this summary or from saved properties.
         var summary = {
           dateStr: dateStr,
           housingEstimateConnected: false,  // flip to true once real estimate is wired
@@ -17386,176 +17911,203 @@
     }
 
     // ══════════════════════════════════════════════════════════════
-    // Impact tab: state → city region grouping (HailRecon-style)
-    // Built strictly from existing storm report points (hail/wind LSR) for
-    // the selected date — NEVER from saved properties/leads/campaign markers.
-    // City/state names are derived via reverse geocoding of report-point
-    // clusters, since hail_lsr_raw / storm-lsr-by-date rows carry only
-    // lat/lon (no city/state fields) as of this writing.
+    // Impact tab: state → city → hail-size breakdown, backed by the
+    // impact_state_summary / impact_city_summary / impact_city_hail_summary
+    // Supabase tables. Those tables are populated OFFLINE by
+    // scripts/generate_impact_summary.mjs from free Census data (TIGERweb
+    // place boundaries + ACS housing-unit counts) area-weighted against the
+    // date's storm swath/report footprint — NEVER from saved
+    // properties/leads/campaign markers, and never faked client-side.
     // ══════════════════════════════════════════════════════════════
 
-    var MAPS_IMPACT_HAIL_BUCKETS = [0.50, 1.00, 1.25, 1.50, 1.75, 2.00, 2.50];
-    var MAPS_IMPACT_CLUSTER_DEGREES = 0.3;  // ~20mi grid cell used to group report points into "cities"
-    var MAPS_IMPACT_MAX_CLUSTERS = 50;      // cap reverse-geocode calls per date
+    var MAPS_IMPACT_HAIL_BANDS = [0.50, 1.00, 1.25, 1.50, 1.75, 2.00, 2.50, 3.00];
 
-    function mapsImpactHailBucketLabel(idx) {
-      if (idx === MAPS_IMPACT_HAIL_BUCKETS.length - 1) return '2.50"+';
-      return MAPS_IMPACT_HAIL_BUCKETS[idx].toFixed(2) + '"';
+    function mapsImpactHailBandLabel(band) {
+      return Number(band).toFixed(2) + '"';
     }
 
-    // Buckets raw hail_in values into the MAPS_IMPACT_HAIL_BUCKETS scale —
-    // each value counts toward the highest threshold it meets or exceeds.
-    function mapsImpactBucketHailValues(values) {
-      var counts = MAPS_IMPACT_HAIL_BUCKETS.map(function () { return 0; });
-      (values || []).forEach(function (v) {
-        v = Number(v);
-        if (!isFinite(v) || v <= 0) return;
-        var idx = 0;
-        for (var i = 0; i < MAPS_IMPACT_HAIL_BUCKETS.length; i++) {
-          if (v >= MAPS_IMPACT_HAIL_BUCKETS[i] - 0.001) idx = i;
-        }
-        counts[idx]++;
-      });
-      return counts;
-    }
+    // Full state name -> 2-letter abbreviation, for "City, ST" display only
+    // (impact_* tables store the full state name in their shared "state" column).
+    var MAPS_STATE_ABBR = {
+      'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+      'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'District of Columbia': 'DC',
+      'Florida': 'FL', 'Georgia': 'GA', 'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL',
+      'Indiana': 'IN', 'Iowa': 'IA', 'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA',
+      'Maine': 'ME', 'Maryland': 'MD', 'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN',
+      'Mississippi': 'MS', 'Missouri': 'MO', 'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV',
+      'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY',
+      'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH', 'Oklahoma': 'OK', 'Oregon': 'OR',
+      'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC', 'South Dakota': 'SD',
+      'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT', 'Virginia': 'VA',
+      'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY', 'Puerto Rico': 'PR'
+    };
+    function mapsStateAbbr(name) { return MAPS_STATE_ABBR[name] || name; }
 
-    // Grid-clusters raw hail/wind report points into coarse "city" cells so
-    // we don't reverse-geocode every single LSR point.
-    function mapsClusterStormPoints(hailPoints, windPoints) {
-      var grid = {};
-      var cellSize = MAPS_IMPACT_CLUSTER_DEGREES;
-      function addPoint(lat, lon, hailIn) {
-        if (!isFinite(lat) || !isFinite(lon)) return;
-        var key = Math.round(lat / cellSize) + ',' + Math.round(lon / cellSize);
-        if (!grid[key]) grid[key] = { latSum: 0, lngSum: 0, count: 0, maxHailIn: 0, hailValues: [] };
-        var cell = grid[key];
-        cell.latSum += lat;
-        cell.lngSum += lon;
-        cell.count++;
-        if (isFinite(hailIn) && hailIn > 0) {
-          cell.maxHailIn = Math.max(cell.maxHailIn, hailIn);
-          cell.hailValues.push(hailIn);
-        }
+    var MAPS_STATE_FULL_BY_ABBR = null;
+    // hail_lsr_raw.state is stored as the 2-letter abbreviation; the impact_*
+    // tables (and this tab's top level) use the full name, so the fallback
+    // path needs the reverse lookup too.
+    function mapsStateFullName(abbr) {
+      if (!MAPS_STATE_FULL_BY_ABBR) {
+        MAPS_STATE_FULL_BY_ABBR = {};
+        Object.keys(MAPS_STATE_ABBR).forEach(function (name) { MAPS_STATE_FULL_BY_ABBR[MAPS_STATE_ABBR[name]] = name; });
       }
-      (hailPoints || []).forEach(function (p) {
-        addPoint(Number(p && p.lat), Number(p && (p.lon != null ? p.lon : p.lng)), Number(p && p.hail_in));
+      return MAPS_STATE_FULL_BY_ABBR[abbr] || abbr;
+    }
+
+    async function mapsFetchImpactStateSummary(dateStr) {
+      var url = SUPABASE_URL + '/rest/v1/impact_state_summary?event_date=eq.' + encodeURIComponent(dateStr) +
+        '&select=state,impacted_cities,impacted_housing_units,center_lat,center_lon&order=impacted_housing_units.desc';
+      var resp = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } });
+      if (!resp.ok) throw new Error('impact_state_summary HTTP ' + resp.status);
+      return resp.json();
+    }
+
+    async function mapsFetchImpactCitySummary(dateStr, state) {
+      var url = SUPABASE_URL + '/rest/v1/impact_city_summary?event_date=eq.' + encodeURIComponent(dateStr) +
+        '&state=eq.' + encodeURIComponent(state) +
+        '&select=city,county,max_hail_size,impacted_housing_units,center_lat,center_lon&order=impacted_housing_units.desc';
+      var resp = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } });
+      if (!resp.ok) throw new Error('impact_city_summary HTTP ' + resp.status);
+      return resp.json();
+    }
+
+    async function mapsFetchImpactCityHailSummary(dateStr, state, city) {
+      var url = SUPABASE_URL + '/rest/v1/impact_city_hail_summary?event_date=eq.' + encodeURIComponent(dateStr) +
+        '&state=eq.' + encodeURIComponent(state) + '&city=eq.' + encodeURIComponent(city) +
+        '&select=hail_size,impacted_housing_units&order=hail_size.asc';
+      var resp = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } });
+      if (!resp.ok) throw new Error('impact_city_hail_summary HTTP ' + resp.status);
+      return resp.json();
+    }
+
+    // ── Fallback path: when the impact_* summary tables have no rows yet for a
+    // date, derive a temporary state/city/hail-size view directly from
+    // selected-date hail_lsr_raw rows. Each NWS Local Storm Report already
+    // carries a real "CITY" field (e.g. "4 N Mason", "Alma") in its raw JSON
+    // blob — select it directly via PostgREST's JSON path syntax so the
+    // fallback groups by actual town, not just the (broader) county column.
+    // Never used to fabricate housing-unit numbers — only to show real
+    // city/county names and which hail sizes were actually reported.
+    async function mapsFetchFallbackHailReports(dateStr) {
+      var url = SUPABASE_URL + '/rest/v1/hail_lsr_raw?event_date=eq.' + encodeURIComponent(dateStr) +
+        '&select=lat,lon,hail_in,state,county,city:raw->>CITY&order=event_time.asc';
+      var resp = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } });
+      if (!resp.ok) throw new Error('hail_lsr_raw HTTP ' + resp.status);
+      return resp.json();
+    }
+
+    // NWS LSR location text is either a bare town name ("Alma") or a
+    // directional offset from one ("4 N Mason" = 4 miles north of Mason).
+    // Strip the offset prefix so the displayed name is the real town only.
+    function mapsParseLsrCityName(rawCity) {
+      var s = (rawCity == null ? '' : String(rawCity)).trim();
+      if (!s) return null;
+      var m = s.match(/^\d+(?:\.\d+)?\s+(?:N|NNE|NE|ENE|E|ESE|SE|SSE|S|SSW|SW|WSW|W|WNW|NW|NNW)\s+(.+)$/i);
+      return (m ? m[1] : s).trim() || null;
+    }
+
+    function mapsBuildFallbackStateList(reports) {
+      var byState = {};
+      (reports || []).forEach(function (r) {
+        var abbr = (r.state || '').trim();
+        if (!abbr) return;
+        var label = mapsParseLsrCityName(r.city) || (r.county || '').trim();
+        if (!byState[abbr]) byState[abbr] = {};
+        if (label) byState[abbr][label.toLowerCase()] = true;
       });
-      (windPoints || []).forEach(function (p) {
-        addPoint(Number(p && p.lat), Number(p && (p.lon != null ? p.lon : p.lng)), NaN);
-      });
-      return Object.keys(grid).map(function (key) {
-        var c = grid[key];
+      return Object.keys(byState).map(function (abbr) {
         return {
-          lat: c.latSum / c.count,
-          lng: c.lngSum / c.count,
-          count: c.count,
-          maxHailIn: c.maxHailIn,
-          hailValues: c.hailValues
+          state: mapsStateFullName(abbr),
+          impacted_cities: Object.keys(byState[abbr]).length,
+          impacted_housing_units: null,
+          center_lat: null, center_lon: null,
+          _fallback: true
         };
-      }).sort(function (a, b) { return b.count - a.count; });
+      }).sort(function (a, b) { return a.state.localeCompare(b.state); });
     }
 
-    // Reverse-geocodes one lat/lng to {city, state, stateShort} using the same
-    // Geocoder already used elsewhere in Maps (e.g. property modal). Cached by
-    // rounded lat/lng so repeated renders/dates don't re-query the same area.
-    function mapsGeocodeLatLng(lat, lng) {
-      mapsState.impactGeocodeCache = mapsState.impactGeocodeCache || {};
-      var key = lat.toFixed(2) + ',' + lng.toFixed(2);
-      if (mapsState.impactGeocodeCache[key]) return mapsState.impactGeocodeCache[key];
-      var promise = new Promise(function (resolve) {
-        if (!window.google || !google.maps || !google.maps.Geocoder) { resolve(null); return; }
-        try {
-          new google.maps.Geocoder().geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
-            if (status !== 'OK' || !results || !results.length) { resolve(null); return; }
-            var city = null, state = null, stateShort = null;
-            for (var i = 0; i < results.length && !(city && state); i++) {
-              var comps = results[i].address_components || [];
-              if (!state) {
-                var stateLong = mapsFindAddressComponent(comps, 'administrative_area_level_1', false);
-                var stateAbbr = mapsFindAddressComponent(comps, 'administrative_area_level_1', true);
-                if (stateLong) { state = stateLong; stateShort = stateAbbr || stateLong; }
-              }
-              if (!city) {
-                city = mapsFindAddressComponent(comps, 'locality', false) ||
-                  mapsFindAddressComponent(comps, 'postal_town', false) ||
-                  mapsFindAddressComponent(comps, 'sublocality', false) ||
-                  mapsFindAddressComponent(comps, 'administrative_area_level_3', false) || null;
-              }
-            }
-            if (!state) { resolve(null); return; }
-            resolve({ city: city || null, state: state, stateShort: stateShort || state });
-          });
-        } catch (e) { resolve(null); }
-      }).catch(function () { return null; });
-      mapsState.impactGeocodeCache[key] = promise;
-      return promise;
-    }
-
-    // Builds { dateStr, states:[{name, stateShort, cities:[...], center}] } for
-    // the given storm date from raw hail/wind report points only — never from
-    // saved properties/leads/campaign markers. Cached per date.
-    function mapsBuildImpactRegions(dateStr) {
-      dateStr = mapsNormalizeDate(dateStr);
-      mapsState.impactRegionsByDate = mapsState.impactRegionsByDate || {};
-      mapsState._impactRegionsPromises = mapsState._impactRegionsPromises || {};
-      if (mapsState.impactRegionsByDate[dateStr]) return Promise.resolve(mapsState.impactRegionsByDate[dateStr]);
-      if (mapsState._impactRegionsPromises[dateStr]) return mapsState._impactRegionsPromises[dateStr];
-
-      mapsState._impactRegionsPromises[dateStr] = mapsGetStormImpactData(dateStr).then(function (dataset) {
-        var clusters = mapsClusterStormPoints(dataset.hailPoints, dataset.windPoints);
-        // TODO(impact-regions): once real city-boundary × swath intersection data exists, prefer it
-        // over reverse-geocoded report clusters and drop the MAX_CLUSTERS cap below.
-        var toGeocode = clusters.slice(0, MAPS_IMPACT_MAX_CLUSTERS);
-        return Promise.all(toGeocode.map(function (cluster) {
-          return mapsGeocodeLatLng(cluster.lat, cluster.lng).then(function (place) {
-            return place ? Object.assign({}, cluster, place) : null;
-          });
-        })).then(function (geocoded) {
-          var statesMap = {};
-          geocoded.filter(Boolean).forEach(function (c) {
-            if (!statesMap[c.state]) statesMap[c.state] = { name: c.state, stateShort: c.stateShort, cities: {} };
-            var cityKey = c.city || (c.lat.toFixed(2) + ',' + c.lng.toFixed(2));
-            var bucket = statesMap[c.state].cities[cityKey];
-            if (!bucket) {
-              bucket = statesMap[c.state].cities[cityKey] = {
-                name: c.city || null, state: c.state, stateShort: c.stateShort,
-                lat: c.lat, lng: c.lng, count: 0, maxHailIn: 0, hailValues: [], _marker: null
-              };
-            } else {
-              bucket.lat = (bucket.lat + c.lat) / 2;
-              bucket.lng = (bucket.lng + c.lng) / 2;
-            }
-            bucket.count += c.count;
-            bucket.maxHailIn = Math.max(bucket.maxHailIn, c.maxHailIn);
-            bucket.hailValues = bucket.hailValues.concat(c.hailValues || []);
-          });
-          var states = Object.keys(statesMap).map(function (name) {
-            var s = statesMap[name];
-            var cities = Object.keys(s.cities).map(function (k) { return s.cities[k]; })
-              .sort(function (a, b) { return b.count - a.count; });
-            var latSum = 0, lngSum = 0;
-            cities.forEach(function (c) { latSum += c.lat; lngSum += c.lng; });
-            return {
-              name: name,
-              stateShort: s.stateShort,
-              cities: cities,
-              center: cities.length ? { lat: latSum / cities.length, lng: lngSum / cities.length } : null
-            };
-          }).sort(function (a, b) { return b.cities.length - a.cities.length || a.name.localeCompare(b.name); });
-
-          var result = { dateStr: dateStr, states: states, builtAt: Date.now() };
-          mapsState.impactRegionsByDate[dateStr] = result;
-          delete mapsState._impactRegionsPromises[dateStr];
-          return result;
-        });
-      }).catch(function () {
-        var result = { dateStr: dateStr, states: [], builtAt: Date.now() };
-        mapsState.impactRegionsByDate[dateStr] = result;
-        delete mapsState._impactRegionsPromises[dateStr];
-        return result;
+    // Groups reports by real city/town name first (never by county when a
+    // city name is resolvable); only falls back to county when the LSR row
+    // has no usable CITY text at all.
+    function mapsBuildFallbackCityList(reports, stateName) {
+      var stateAbbr = mapsStateAbbr(stateName);
+      var byPlace = {};
+      (reports || []).forEach(function (r) {
+        if ((r.state || '').trim() !== stateAbbr) return;
+        var lat = Number(r.lat), lon = Number(r.lon);
+        if (!isFinite(lat) || !isFinite(lon)) return;
+        var cityName = mapsParseLsrCityName(r.city);
+        var county = (r.county || '').trim();
+        var key = cityName ? ('c:' + cityName.toLowerCase()) : (county ? ('o:' + county.toLowerCase()) : ('p:' + lat.toFixed(2) + ',' + lon.toFixed(2)));
+        if (!byPlace[key]) byPlace[key] = { city: cityName || null, county: (!cityName && county) ? county : null, latSum: 0, lonSum: 0, n: 0, hailValues: [] };
+        var b = byPlace[key];
+        b.latSum += lat; b.lonSum += lon; b.n++;
+        var hailIn = Number(r.hail_in);
+        if (isFinite(hailIn) && hailIn > 0) b.hailValues.push(hailIn);
       });
+      return Object.keys(byPlace).map(function (key) {
+        var b = byPlace[key];
+        return {
+          city: b.city,
+          county: b.county ? (/county$/i.test(b.county) ? b.county : b.county + ' County') : null,
+          max_hail_size: b.hailValues.length ? Math.max.apply(null, b.hailValues) : null,
+          impacted_housing_units: null,
+          center_lat: b.latSum / b.n,
+          center_lon: b.lonSum / b.n,
+          _fallback: true
+        };
+      }).sort(function (a, b) {
+        return (a.city || a.county || '').localeCompare(b.city || b.county || '');
+      });
+    }
 
-      return mapsState._impactRegionsPromises[dateStr];
+    function mapsGetImpactFallbackReports(dateStr) {
+      mapsState.impactFallbackReportsByDate = mapsState.impactFallbackReportsByDate || {};
+      mapsState._impactFallbackReportsPromises = mapsState._impactFallbackReportsPromises || {};
+      if (mapsState.impactFallbackReportsByDate[dateStr]) return Promise.resolve(mapsState.impactFallbackReportsByDate[dateStr]);
+      if (mapsState._impactFallbackReportsPromises[dateStr]) return mapsState._impactFallbackReportsPromises[dateStr];
+      mapsState._impactFallbackReportsPromises[dateStr] = mapsFetchFallbackHailReports(dateStr)
+        .catch(function () { return []; })
+        .then(function (reports) {
+          mapsState.impactFallbackReportsByDate[dateStr] = reports;
+          delete mapsState._impactFallbackReportsPromises[dateStr];
+          return reports;
+        });
+      return mapsState._impactFallbackReportsPromises[dateStr];
+    }
+
+    // Loads the state list: real impact_state_summary rows when they exist,
+    // otherwise a temporary list derived from selected-date hail reports.
+    async function mapsLoadImpactStates(dateStr) {
+      var rows = await mapsFetchImpactStateSummary(dateStr).catch(function () { return []; });
+      if (rows && rows.length) return rows;
+      var reports = await mapsGetImpactFallbackReports(dateStr);
+      if (!reports.length) return [];
+      return mapsBuildFallbackStateList(reports);
+    }
+
+    // Loads the city list for one state: real impact_city_summary rows when
+    // they exist, otherwise real city/town names (falling back to county
+    // only when no city name is resolvable) derived from that state's hail reports.
+    async function mapsLoadImpactCities(dateStr, stateName) {
+      var rows = await mapsFetchImpactCitySummary(dateStr, stateName).catch(function () { return []; });
+      if (rows && rows.length) return rows;
+      var reports = await mapsGetImpactFallbackReports(dateStr);
+      if (!reports.length) return [];
+      return mapsBuildFallbackCityList(reports, stateName);
+    }
+
+    // Loads hail-size rows for one city's popup/panel breakdown — strictly
+    // from impact_city_hail_summary (the only source of real
+    // impacted_housing_units numbers). A city without a resolvable name
+    // (county-only fallback) can't be looked up this way and always shows
+    // the clean fallback. Returns [] (never fabricated rows) when nothing
+    // is calculated yet, so the renderer shows ONE fallback line, not a
+    // table of repeated fallback text.
+    async function mapsLoadCityHailRows(dateStr, stateName, city) {
+      if (!city.city) return [];
+      return mapsFetchImpactCityHailSummary(dateStr, stateName, city.city).catch(function () { return []; });
     }
 
     // Marker icon for impact-region pins — visually distinct (violet teardrop)
@@ -17585,74 +18137,141 @@
       }
     }
 
-    function mapsRemoveImpactRegionMarkersForState(state) {
-      var markers = mapsState.impactRegionMarkersByState && mapsState.impactRegionMarkersByState[state.name];
+    function mapsRemoveImpactRegionMarkersForState(stateName) {
+      var markers = mapsState.impactRegionMarkersByState && mapsState.impactRegionMarkersByState[stateName];
       if (!markers) return;
       markers.forEach(function (m) { try { m.setMap(null); } catch (_) {} });
-      delete mapsState.impactRegionMarkersByState[state.name];
+      delete mapsState.impactRegionMarkersByState[stateName];
     }
 
-    function mapsAddImpactRegionMarkersForState(state) {
+    function mapsAddImpactRegionMarkersForState(dateStr, stateName, cities) {
       var map = mapsState.map;
       if (!map) return;
       mapsState.impactRegionMarkersByState = mapsState.impactRegionMarkersByState || {};
-      var markers = (state.cities || []).map(function (city) {
+      var latSum = 0, lngSum = 0, centerN = 0;
+      var markers = [];
+      (cities || []).forEach(function (city, idx) {
+        var lat = Number(city.center_lat), lng = Number(city.center_lon);
+        if (!isFinite(lat) || !isFinite(lng)) return;
+        latSum += lat; lngSum += lng; centerN++;
         var marker = new google.maps.Marker({
           map: map,
-          position: { lat: city.lat, lng: city.lng },
+          position: { lat: lat, lng: lng },
           icon: mapsImpactMarkerIcon(),
-          title: (city.name ? city.name + ', ' : '') + (city.stateShort || city.state),
+          title: mapsCityDisplayName(stateName, city),
           zIndex: 999998
         });
-        marker.addListener('click', function () { mapsOpenCityImpactPopup(city, marker); });
+        marker.addListener('click', function () { mapsHandleImpactCityClick(dateStr, stateName, city, idx, marker); });
         city._marker = marker;
-        return marker;
+        markers.push(marker);
       });
-      mapsState.impactRegionMarkersByState[state.name] = markers;
-      if (state.center) map.panTo(state.center);
+      mapsState.impactRegionMarkersByState[stateName] = markers;
+      if (centerN) map.panTo({ lat: latSum / centerN, lng: lngSum / centerN });
     }
 
-    // Builds the "Size of Hail | Possible Housing Impact" popup table for one city.
-    // Possible Housing Impact stays as a placeholder until real parcel/Census
-    // housing-unit data is intersected with hail-size bands (TODO below).
-    function mapsBuildCityPopupHtml(city) {
-      var title = city.name
-        ? (city.name + ', ' + (city.stateShort || city.state))
-        : ('Near ' + city.lat.toFixed(2) + ', ' + city.lng.toFixed(2) + ', ' + (city.stateShort || city.state));
-      var counts = mapsImpactBucketHailValues(city.hailValues);
-      // TODO(housing-units): replace the placeholder cell below once parcel/Census
-      // housing-unit counts are intersected with hail-size bands for this city.
+    function mapsCityDisplayName(stateName, city) {
+      return city.city
+        ? (city.city + ', ' + mapsStateAbbr(stateName))
+        : (city.county ? (city.county + ', ' + mapsStateAbbr(stateName)) : 'Unknown impacted area');
+    }
+
+    // Shared "Size of Hail" row builder for both the map popup and the left
+    // panel's inline city dropdown, so they always show identical data.
+    // hailRows only ever contains real impact_city_hail_summary rows (see
+    // mapsLoadCityHailRows) — every row here has a real impacted_housing_units
+    // number, never a fabricated one.
+    function mapsBuildHailRowsHtml(hailRows) {
       var rows = '';
-      for (var i = 0; i < MAPS_IMPACT_HAIL_BUCKETS.length; i++) {
-        if (!counts[i]) continue;
-        rows += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + mapsImpactHailBucketLabel(i) + ' hail</td>' +
-          '<td style="padding:4px 8px;border-bottom:1px solid #eee;color:#888;">Housing impact estimate not calculated yet</td></tr>';
-      }
-      if (!rows) {
-        rows = '<tr><td colspan="2" style="padding:6px 8px;color:#888;">Housing impact estimate not calculated yet</td></tr>';
-      }
-      return '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:13px;color:#1a1a1a;min-width:230px;">' +
-        '<div style="font-weight:700;font-size:14px;margin-bottom:6px;">' + title + '</div>' +
-        '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
-        '<thead><tr>' +
-          '<th style="text-align:left;padding:4px 8px;border-bottom:2px solid #ccc;">Size of Hail</th>' +
-          '<th style="text-align:left;padding:4px 8px;border-bottom:2px solid #ccc;">Possible Housing Impact</th>' +
-        '</tr></thead>' +
-        '<tbody>' + rows + '</tbody></table></div>';
+      var byBand = {};
+      (hailRows || []).forEach(function (r) {
+        byBand[Number(r.hail_size).toFixed(2)] = r.impacted_housing_units;
+      });
+      MAPS_IMPACT_HAIL_BANDS.forEach(function (band) {
+        var key = band.toFixed(2);
+        if (!(key in byBand)) return;
+        rows += '<tr><td style="padding:3px 8px;border-bottom:1px solid #eee;">' + mapsImpactHailBandLabel(band) + '</td>' +
+          '<td style="padding:3px 8px;border-bottom:1px solid #eee;">' + Number(byBand[key]).toLocaleString() + '</td></tr>';
+      });
+      return rows;
     }
 
-    function mapsOpenCityImpactPopup(city, marker) {
+    // Builds the compact "Size | Homes" detail block shared by the map popup
+    // and the left panel's inline city dropdown. When there's no real data
+    // yet, shows ONE compact fallback line — never a table with the same
+    // fallback text repeated on every row.
+    function mapsBuildHailDetailHtml(hailRows, fontSize) {
+      fontSize = fontSize || 12;
+      if (!hailRows || !hailRows.length) {
+        return '<div style="color:#888;font-size:' + fontSize + 'px;">Estimate pending</div>';
+      }
+      return '<table style="width:100%;border-collapse:collapse;font-size:' + fontSize + 'px;">' +
+        '<thead><tr>' +
+          '<th style="text-align:left;padding:3px 8px;border-bottom:2px solid #ccc;">Size</th>' +
+          '<th style="text-align:left;padding:3px 8px;border-bottom:2px solid #ccc;">Homes</th>' +
+        '</tr></thead>' +
+        '<tbody>' + mapsBuildHailRowsHtml(hailRows) + '</tbody></table>';
+    }
+
+    // Builds the full popup HTML for one city — real Census-derived
+    // estimates when available (see scripts/generate_impact_summary.mjs),
+    // one clean fallback line otherwise. Never fabricates a number.
+    function mapsBuildCityPopupHtml(stateName, city, hailRows) {
+      var title = mapsCityDisplayName(stateName, city);
+      return '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:13px;color:#1a1a1a;min-width:220px;">' +
+        '<div style="font-weight:700;font-size:14px;margin-bottom:6px;">' + title + '</div>' +
+        mapsBuildHailDetailHtml(hailRows, 12) +
+        '</div>';
+    }
+
+    // Fetches (and caches) a city's hail-size rows, keyed by index within its
+    // state's city list rather than name — fallback cities are grouped by
+    // county and may share an empty city name, so the name alone isn't a safe key.
+    function mapsGetCityHailRows(dateStr, stateName, city, idx) {
+      mapsState.impactCityHailByKey = mapsState.impactCityHailByKey || {};
+      mapsState._impactCityHailPromises = mapsState._impactCityHailPromises || {};
+      var cacheKey = dateStr + '|' + stateName + '|' + idx;
+      if (mapsState.impactCityHailByKey[cacheKey]) return Promise.resolve(mapsState.impactCityHailByKey[cacheKey]);
+      if (mapsState._impactCityHailPromises[cacheKey]) return mapsState._impactCityHailPromises[cacheKey];
+      mapsState._impactCityHailPromises[cacheKey] = mapsLoadCityHailRows(dateStr, stateName, city).then(function (rows) {
+        mapsState.impactCityHailByKey[cacheKey] = rows;
+        delete mapsState._impactCityHailPromises[cacheKey];
+        return rows;
+      });
+      return mapsState._impactCityHailPromises[cacheKey];
+    }
+
+    function mapsOpenCityImpactPopup(dateStr, stateName, city, idx, marker) {
       var map = mapsState.map;
       if (!map) return;
       if (mapsState._impactCityPopupInfoWindow) {
         try { mapsState._impactCityPopupInfoWindow.close(); } catch (_) {}
       }
-      var iw = new google.maps.InfoWindow({ content: mapsBuildCityPopupHtml(city) });
+      var lat = Number(city.center_lat), lng = Number(city.center_lon);
+      var hasCoords = isFinite(lat) && isFinite(lng);
+      if (hasCoords) {
+        map.panTo({ lat: lat, lng: lng });
+        if (map.getZoom() < 10) map.setZoom(10);
+      }
+      var iw = new google.maps.InfoWindow({ content: mapsBuildCityPopupHtml(stateName, city, null) });
       mapsState._impactCityPopupInfoWindow = iw;
-      map.panTo({ lat: city.lat, lng: city.lng });
-      if (map.getZoom() < 10) map.setZoom(10);
       if (marker) iw.open(map, marker);
-      else { iw.setPosition({ lat: city.lat, lng: city.lng }); iw.open(map); }
+      else if (hasCoords) { iw.setPosition({ lat: lat, lng: lng }); iw.open(map); }
+
+      mapsGetCityHailRows(dateStr, stateName, city, idx).then(function (rows) {
+        if (mapsState._impactCityPopupInfoWindow !== iw) return; // a newer popup opened meanwhile
+        iw.setContent(mapsBuildCityPopupHtml(stateName, city, rows));
+      });
+    }
+
+    // Shared handler for both "click the city row in the panel" and "click
+    // its map marker" — both must pan/zoom + open the popup AND expand the
+    // city's inline dropdown in the left panel (single city expanded at a
+    // time, mirroring the state accordion behavior).
+    function mapsHandleImpactCityClick(dateStr, stateName, city, idx, marker) {
+      mapsOpenCityImpactPopup(dateStr, stateName, city, idx, marker || city._marker);
+      mapsState.expandedImpactCities = {};
+      mapsState.expandedImpactCities[dateStr + '|' + stateName + '|' + idx] = true;
+      mapsRenderImpactTab();
     }
 
     function mapsRenderImpactTab() {
@@ -17665,67 +18284,132 @@
         container.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0;">Select a storm date to see impacted regions.</div>';
         return;
       }
+      var contextHtml = mapsBuildImpactContextCardHtml(activeDate);
 
+      // Date changed: drop old markers/popup and any expanded state/city UI —
+      // they belong to a different date's data.
       if (mapsState._impactMarkersDate !== activeDate) {
         mapsClearImpactRegionMarkers();
         mapsState._impactMarkersDate = activeDate;
         mapsState.expandedImpactStates = {};
+        mapsState.expandedImpactCities = {};
       }
+      mapsState.expandedImpactCities = mapsState.expandedImpactCities || {};
 
-      var cachedRegions = mapsState.impactRegionsByDate && mapsState.impactRegionsByDate[activeDate];
-      if (!cachedRegions) {
-        container.innerHTML = '<div style="font-weight:700;font-size:13px;margin-bottom:4px;">' + activeDate + '</div>' +
-          '<div style="color:var(--muted);font-size:12px;padding:12px 0;">Loading impacted regions...</div>';
-        mapsBuildImpactRegions(activeDate).then(function () {
-          if (mapsGetActiveImpactDate() === activeDate) mapsRenderImpactTab();
-        });
+      mapsState.impactStatesByDate = mapsState.impactStatesByDate || {};
+      mapsState._impactStatesPromises = mapsState._impactStatesPromises || {};
+      var states = mapsState.impactStatesByDate[activeDate];
+
+      if (!states) {
+        container.innerHTML = contextHtml + '<div class="maps-tab-context-card is-muted">Loading impacted regions...</div>';
+        if (!mapsState._impactStatesPromises[activeDate]) {
+          mapsState._impactStatesPromises[activeDate] = mapsLoadImpactStates(activeDate)
+            .catch(function () { return []; })
+            .then(function (rows) {
+              mapsState.impactStatesByDate[activeDate] = rows;
+              delete mapsState._impactStatesPromises[activeDate];
+              if (mapsGetActiveImpactDate() === activeDate) mapsRenderImpactTab();
+            });
+        }
         return;
       }
 
-      var html = '<div style="font-weight:700;font-size:13px;margin-bottom:8px;">' + activeDate + '</div>';
-
-      if (!cachedRegions.states.length) {
-        html += '<div style="color:var(--muted);font-size:12px;padding:2px 0;">No impacted regions calculated yet.</div>';
-        container.innerHTML = html;
+      // mapsLoadImpactStates() already falls back to selected-date hail
+      // reports when impact_state_summary is empty, so an empty array here
+      // means there's truly no data for this date either way.
+      if (!states.length) {
+        container.innerHTML = contextHtml + '<div class="maps-tab-context-card is-muted">No impacted states calculated yet.</div>';
         return;
       }
 
-      cachedRegions.states.forEach(function (state) {
-        var isExpanded = !!mapsState.expandedImpactStates[state.name];
-        var safeName = state.name.replace(/"/g, '&quot;');
-        html += '<div class="maps-impact-state-row" style="border-bottom:1px solid var(--border);">' +
-          '<div class="maps-impact-state-header" data-impact-state-toggle="' + safeName + '" style="display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;">' +
-            '<span style="display:inline-block;width:10px;transition:transform .15s;' + (isExpanded ? 'transform:rotate(90deg);' : '') + '">&#9656;</span>' +
-            '<span style="flex:1;font-weight:600;">' + state.name + '</span>' +
-            '<span style="font-size:11px;background:var(--border);border-radius:10px;padding:2px 8px;color:var(--text);">' + state.cities.length + '</span>' +
+      mapsState.impactCitiesByDateState = mapsState.impactCitiesByDateState || {};
+      mapsState._impactCitiesPromises = mapsState._impactCitiesPromises || {};
+
+      var html = contextHtml + '<div class="maps-impact-state-list">';
+
+      states.forEach(function (state) {
+        var isExpanded = !!mapsState.expandedImpactStates[state.state];
+        var safeName = state.state.replace(/"/g, '&quot;');
+        html += '<div class="maps-impact-state-card' + (isExpanded ? ' is-expanded' : '') + '">' +
+          '<div class="maps-impact-state-header" data-impact-state-toggle="' + safeName + '">' +
+            '<span class="maps-impact-caret' + (isExpanded ? ' is-open' : '') + '">&#9656;</span>' +
+            '<span class="maps-impact-state-name">' + state.state + '</span>' +
+            '<span class="maps-impact-count-badge">' + (state.impacted_cities || 0) + '</span>' +
           '</div>';
         if (isExpanded) {
-          html += '<div class="maps-impact-city-list" style="padding:0 0 8px 18px;display:flex;flex-direction:column;gap:4px;">';
-          state.cities.forEach(function (city, idx) {
-            var label = city.name ? city.name : ('Near ' + city.lat.toFixed(2) + ', ' + city.lng.toFixed(2));
-            html += '<div class="maps-impact-city-row" data-impact-state="' + safeName + '" data-impact-city-index="' + idx + '" style="font-size:12px;cursor:pointer;padding:3px 0;color:var(--text);">' + label + '</div>';
-          });
+          var cacheKey = activeDate + '|' + state.state;
+          var cities = mapsState.impactCitiesByDateState[cacheKey];
+          html += '<div class="maps-impact-city-list">';
+          if (!cities) {
+            html += '<div class="maps-impact-empty-note">Loading cities...</div>';
+          } else if (!cities.length) {
+            html += '<div class="maps-impact-empty-note">No impacted cities calculated yet.</div>';
+          } else {
+            cities.forEach(function (city, idx) {
+              var cityKey = activeDate + '|' + state.state + '|' + idx;
+              var cityExpanded = !!mapsState.expandedImpactCities[cityKey];
+              html += '<div class="maps-impact-city-row' + (cityExpanded ? ' is-expanded' : '') +
+                '" data-impact-state="' + safeName + '" data-impact-city-index="' + idx + '">' + mapsCityDisplayName(state.state, city) + '</div>';
+              if (cityExpanded) {
+                var hailRows = mapsState.impactCityHailByKey && mapsState.impactCityHailByKey[cityKey];
+                html += '<div class="maps-impact-city-detail">';
+                html += (hailRows === undefined)
+                  ? '<div class="maps-impact-empty-note">Loading hail impact...</div>'
+                  : mapsBuildHailDetailHtml(hailRows, 11);
+                html += '</div>';
+              }
+            });
+          }
           html += '</div>';
         }
         html += '</div>';
       });
+
+      html += '</div>';
 
       container.innerHTML = html;
 
       container.querySelectorAll('[data-impact-state-toggle]').forEach(function (el) {
         el.addEventListener('click', function () {
           var stateName = el.getAttribute('data-impact-state-toggle');
-          var state = cachedRegions.states.find(function (s) { return s.name === stateName; });
-          if (!state) return;
           var wasExpanded = !!mapsState.expandedImpactStates[stateName];
+
+          // Accordion: only one state's cities/markers are shown at a time —
+          // collapse whichever other state was expanded before opening a new one.
+          Object.keys(mapsState.expandedImpactStates).forEach(function (other) {
+            if (other !== stateName && mapsState.expandedImpactStates[other]) {
+              mapsState.expandedImpactStates[other] = false;
+              mapsRemoveImpactRegionMarkersForState(other);
+            }
+          });
+          mapsState.expandedImpactCities = {};
+
           if (wasExpanded) {
             mapsState.expandedImpactStates[stateName] = false;
-            mapsRemoveImpactRegionMarkersForState(state);
-          } else {
-            mapsState.expandedImpactStates[stateName] = true;
-            mapsAddImpactRegionMarkersForState(state);
+            mapsRemoveImpactRegionMarkersForState(stateName);
+            mapsRenderImpactTab();
+            return;
           }
-          mapsRenderImpactTab();
+          mapsState.expandedImpactStates[stateName] = true;
+          var cacheKey = activeDate + '|' + stateName;
+          if (mapsState.impactCitiesByDateState[cacheKey]) {
+            mapsAddImpactRegionMarkersForState(activeDate, stateName, mapsState.impactCitiesByDateState[cacheKey]);
+            mapsRenderImpactTab();
+            return;
+          }
+          mapsRenderImpactTab(); // shows "Loading cities..." while the fetch is in flight
+          if (!mapsState._impactCitiesPromises[cacheKey]) {
+            mapsState._impactCitiesPromises[cacheKey] = mapsLoadImpactCities(activeDate, stateName)
+              .catch(function () { return []; })
+              .then(function (cities) {
+                mapsState.impactCitiesByDateState[cacheKey] = cities;
+                delete mapsState._impactCitiesPromises[cacheKey];
+                if (mapsGetActiveImpactDate() === activeDate && mapsState.expandedImpactStates[stateName]) {
+                  mapsAddImpactRegionMarkersForState(activeDate, stateName, cities);
+                  mapsRenderImpactTab();
+                }
+              });
+          }
         });
       });
 
@@ -17734,10 +18418,24 @@
           e.stopPropagation();
           var stateName = el.getAttribute('data-impact-state');
           var idx = Number(el.getAttribute('data-impact-city-index'));
-          var state = cachedRegions.states.find(function (s) { return s.name === stateName; });
-          if (!state || !state.cities[idx]) return;
-          var city = state.cities[idx];
-          mapsOpenCityImpactPopup(city, city._marker);
+          var cacheKey = activeDate + '|' + stateName;
+          var cities = mapsState.impactCitiesByDateState[cacheKey];
+          if (!cities || !cities[idx]) return;
+          mapsHandleImpactCityClick(activeDate, stateName, cities[idx], idx, cities[idx]._marker);
+        });
+      });
+
+      // Fetch hail rows for whichever city is currently expanded in the panel
+      // (mirrors the popup's own lazy fetch+cache via mapsGetCityHailRows).
+      Object.keys(mapsState.expandedImpactCities).forEach(function (cityKey) {
+        if (!mapsState.expandedImpactCities[cityKey]) return;
+        if (mapsState.impactCityHailByKey && mapsState.impactCityHailByKey[cityKey]) return;
+        var parts = cityKey.split('|');
+        var kDate = parts[0], kState = parts[1], kIdx = Number(parts[2]);
+        var kCities = mapsState.impactCitiesByDateState[kDate + '|' + kState];
+        if (!kCities || !kCities[kIdx]) return;
+        mapsGetCityHailRows(kDate, kState, kCities[kIdx], kIdx).then(function () {
+          if (mapsGetActiveImpactDate() === activeDate && mapsState.expandedImpactCities[cityKey]) mapsRenderImpactTab();
         });
       });
     }
@@ -17750,31 +18448,27 @@
         return;
       }
 
-      var html = '';
+      var html = '<div class="maps-pinned-card-list">';
       mapsState.pinnedDates.forEach(function (dateStr) {
-        var summary = mapsGetStormImpactSummarySync(dateStr);
-        var impactLabel = mapsFormatHousingUnitLabel(summary || null);
-        html += '<div class="maps-pinned-tab-row" data-pinned-tab-date="' + dateStr + '" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">' +
-          '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
-            '<span style="font-weight:600;">' + dateStr + '</span>' +
-            '<span style="font-size:11px;color:var(--muted);">' + impactLabel + '</span>' +
-          '</div>' +
-          '<button type="button" class="saved-unpin" data-pinned-remove="' + dateStr + '" title="Remove">&times;</button>' +
+        var isPreview = mapsState.previewDate === dateStr;
+        html += '<div class="maps-storm-row maps-pinned-tab-row' + (isPreview ? ' is-preview' : ' is-pinned') + '" data-pinned-tab-date="' + dateStr + '" data-storm-date="' + dateStr + '">' +
+          mapsBuildStormCardHtml(dateStr, { pinLabel: 'Unpin', pinnedLabel: 'Unpin' }) +
         '</div>';
       });
+      html += '</div>';
       container.innerHTML = html;
       container.querySelectorAll('[data-pinned-tab-date]').forEach(function (row) {
         row.addEventListener('click', function (e) {
-          if (e.target.closest('.saved-unpin')) return;
+          if (e.target.closest('.maps-pin-btn')) return;
           var dateStr = row.getAttribute('data-pinned-tab-date');
           if (!dateStr) return;
           mapsPreviewDate(dateStr);
         });
       });
-      container.querySelectorAll('[data-pinned-remove]').forEach(function (btn) {
+      container.querySelectorAll('.maps-pin-btn').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
-          var dateStr = btn.getAttribute('data-pinned-remove');
+          var dateStr = btn.getAttribute('data-pin-date');
           if (!dateStr) return;
           mapsTogglePin(dateStr);
         });
@@ -20021,7 +20715,9 @@
         }
         loadStormDate(val);
         statusEl.textContent = 'Loading ' + val + '…';
-        picker.value = '';
+        // Keep the picked date visible in the field (loadStormDate ->
+        // mapsPreviewDate already re-syncs it to the same value) instead of
+        // blanking it back to the empty mm/dd/yyyy placeholder state.
       }
 
       if (loadBtn) loadBtn.addEventListener('click', doLoadDate);
@@ -20029,6 +20725,17 @@
       // Pressing Enter in the date field also triggers load
       picker.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') doLoadDate();
+      });
+
+      // Native <input type="date"> already focuses on any click and accepts
+      // typed digits anywhere in the field — no overlay/wrapper needed. The
+      // only gap is that some browsers only pop the calendar dropdown when
+      // the small icon is clicked. Open it on any click too (best-effort;
+      // showPicker() doesn't block focus/typing, so manual entry still works).
+      picker.addEventListener('click', function () {
+        if (typeof picker.showPicker === 'function') {
+          try { picker.showPicker(); } catch (e) { /* ignore: not user-activated, already open, or unsupported context */ }
+        }
       });
     }
 
@@ -21944,7 +22651,7 @@
       for (var i = 0; i < rows.length; i++) {
         (function (row) {
           var pinBtn = row.querySelector('.maps-pin-btn');
-          var dt = pinBtn ? pinBtn.getAttribute('data-pin-date') : '';
+          var dt = row.getAttribute('data-storm-date') || (pinBtn ? pinBtn.getAttribute('data-pin-date') : '');
           // Row click → preview
           row.addEventListener('click', function (e) {
             if (!dt) return;
@@ -21961,19 +22668,6 @@
           }
         })(rows[i]);
       }
-      // Sync paging info
-      var infoSrc = document.getElementById('maps-page-info');
-      var infoDst = document.getElementById('maps-page-info-mob');
-      if (infoSrc && infoDst) infoDst.textContent = infoSrc.textContent;
-      // Sync paging buttons
-      var prevSrc = document.getElementById('maps-page-prev');
-      var nextSrc = document.getElementById('maps-page-next');
-      var prevMob = document.getElementById('maps-page-prev-mob');
-      var nextMob = document.getElementById('maps-page-next-mob');
-      if (prevSrc && prevMob) prevMob.disabled = prevSrc.disabled;
-      if (nextSrc && nextMob) nextMob.disabled = nextSrc.disabled;
-      prevMob.onclick = function () { prevSrc.click(); setTimeout(mapsMobSyncStorms, 50); };
-      nextMob.onclick = function () { nextSrc.click(); setTimeout(mapsMobSyncStorms, 50); };
       // Sync download button state
       var dlSrc = document.getElementById('maps-download-btn');
       var dlMob = document.getElementById('maps-download-btn-mob');
@@ -23916,10 +24610,6 @@
       campaignInit();
     });
 
-    document.getElementById('maps-open-campaign').addEventListener('click', function () {
-      openCampaignFromMapContext();
-    });
-
     document.getElementById('open-start-inspection-menu').addEventListener('click', function () {
       if (crmGetRole() === 'Canvasser') {
         showUploadToast('You do not have permission to access this section.');
@@ -23933,6 +24623,16 @@
         showPage('page-main-menu');
       });
     });
+
+    /* Upper-left logo (company logo or Hail Money fallback) also returns to Main Menu */
+    (function () {
+      var brand = document.getElementById('map-header-brand');
+      if (!brand) return;
+      brand.addEventListener('click', function () { showPage('page-main-menu'); });
+      brand.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showPage('page-main-menu'); }
+      });
+    }());
 
     document.getElementById('create-sample-assigned').addEventListener('click', function () {
       createSampleAssignedLeads();
@@ -24276,7 +24976,7 @@
         getPhotoBlob(file.imageKey).then(function (blob) {
           if (blob) {
             var url = URL.createObjectURL(blob);
-            contentEl.innerHTML = '<div class="file-viewer-card"><img class="file-viewer-image" src="' + url + '" alt="' + (file.name || 'Photo') + '" /></div>';
+            contentEl.innerHTML = '<div class="file-viewer-card"><img class="file-viewer-image" src="" alt="' + (file.name || 'Photo') + '" /></div>';
           } else {
             contentEl.innerHTML = '<div class="file-viewer-card"><div class="file-viewer-meta"><div>Photo blob not found in storage.</div></div></div>';
           }
@@ -25317,7 +26017,7 @@
       var w = window.open('', '_blank');
       w.document.write('<html><head><title>Print Document</title><style>body{margin:0;} img{max-width:100%;} div{position:absolute;}</style></head><body>');
       w.document.write(previewEl.innerHTML);
-      w.document.write('</body></html>');
+      w.document.write('<' + '/body><' + '/html>');
       w.document.close();
       w.print();
     });
@@ -27217,7 +27917,7 @@
         var url = URL.createObjectURL(file);
         var card = document.createElement('div');
         card.className = 'photo-card';
-        card.innerHTML = '<img class="photo-card-img" src="' + url + '" alt="' + entry.name + '" /><div class="photo-card-name">' + entry.name + '</div>';
+        card.innerHTML = '<img class="photo-card-img" src="" alt="' + entry.name + '" /><div class="photo-card-name">' + entry.name + '</div>';
         grid.appendChild(card);
         _updateInspCaptureCount();
       });
@@ -27385,7 +28085,7 @@
         card.className = 'photo-card';
 
         if (photo.fullUrl) {
-          card.innerHTML = '<img class="photo-card-img" src="' + photo.fullUrl + '" alt="' + (photo.name || '') + '" /><div class="photo-card-name">' + (photo.name || 'Photo') + '</div>';
+          card.innerHTML = '<img class="photo-card-img" src="" alt="' + (photo.name || '') + '" /><div class="photo-card-name">' + (photo.name || 'Photo') + '</div>';
           grid.appendChild(card);
         } else if (photo.imageKey) {
           var nameText = photo.name || 'Photo';
@@ -27394,7 +28094,7 @@
           getPhotoBlob(photo.imageKey).then(function (blob) {
             if (blob) {
               var url = URL.createObjectURL(blob);
-              card.querySelector('.photo-card-img').outerHTML = '<img class="photo-card-img" src="' + url + '" alt="' + nameText + '" />';
+              card.querySelector('.photo-card-img').outerHTML = '<img class="photo-card-img" src="" alt="' + nameText + '" />';
             }
           });
         } else {
@@ -30251,11 +30951,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           var mime = meta.mimeType || '';
           if (mime.indexOf('image/') === 0) {
             contentEl.innerHTML =
-              '<img src="' + url + '" alt="' + (meta.fileName || 'Image') +
+              '<img src="" alt="' + (meta.fileName || 'Image') +
               '" style="max-width:100%;border-radius:8px;display:block;margin:0 auto;" />';
           } else if (mime === 'application/pdf') {
             contentEl.innerHTML =
-              '<iframe src="' + url + '" title="' + (meta.fileName || 'PDF') +
+              '<iframe src="" title="' + (meta.fileName || 'PDF') +
               '" style="width:100%;min-height:70vh;border:1px solid var(--border);' +
               'border-radius:8px;background:#fff;display:block;"></iframe>';
           } else {
@@ -38294,7 +38994,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!p.companyName && !p.logoDataUrl) return '';
       var h = '<div class="crm-co-header-inner">';
       if (p.logoDataUrl) {
-        h += '<img class="crm-co-logo" src="' + p.logoDataUrl + '" alt="Logo" />';
+        h += '<img class="crm-co-logo" src="" alt="Logo" />';
       }
       h += '<div>';
       if (p.companyName) h += '<div class="crm-co-name">' + p.companyName + '</div>';
@@ -38333,6 +39033,24 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       document.querySelectorAll('.crm-co-header').forEach(function (el) {
         el.innerHTML = html;
       });
+    }
+
+    /* Upper-left header brand (every page, including Maps): shows the saved
+       company logo when one exists, otherwise falls back to the Hail Money
+       logo/text. Reuses the same crmGetCompanyProfile() storage as the
+       Main Menu / Settings company header — never a hardcoded logo. */
+    function renderTopBrand() {
+      var brand = document.getElementById('map-header-brand');
+      if (!brand) return;
+      var profile = (typeof crmGetCompanyProfile === 'function') ? crmGetCompanyProfile() : {};
+      if (profile && profile.logoDataUrl) {
+        var alt = (profile.companyName || 'Company Logo').replace(/"/g, '&quot;');
+        brand.innerHTML = '<img class="app-top-hail-logo" src="" alt="' + alt + '" draggable="false" />';
+      } else {
+        brand.innerHTML =
+          '<img class="app-top-hail-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />' +
+          '<div class="map-header-title">Hail Money</div>';
+      }
     }
 
     /* ── Logo canvas compression ── */
@@ -38439,6 +39157,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var msg = document.getElementById('co-profile-msg');
       if (msg) { msg.style.display = 'block'; setTimeout(function () { msg.style.display = 'none'; }, 2000); }
       crmRenderAllCompanyHeaders();
+      renderTopBrand();
     });
 
     /* Patch crmRenderSettings to also render company profile and account section */
@@ -40715,6 +41434,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     crmRenderMainMenu();
     crmInjectCompanyHeaderSlots();
     crmRenderAllCompanyHeaders();
+    renderTopBrand();
     /* Restore session if already logged in, otherwise leave login page active */
     (function () {
       var savedRole = localStorage.getItem(CRM_ROLE_KEY);
@@ -41196,3 +41916,4 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   </script>
 </body>
 </html>
+
