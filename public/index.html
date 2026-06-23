@@ -6076,7 +6076,7 @@
 
       <section id="page-my-jobs" class="page">
         <div class="placeholder-wrap" style="max-width:100%;">
-          <h1 class="page-title">My Jobs</h1>
+          <h1 class="page-title">My Completed Jobs</h1>
           <p class="page-subtitle">Review active jobs and continue work.</p>
           <div class="page-actions">
             <button class="btn back-to-menu" type="button">Back to Main Menu</button>
@@ -8142,7 +8142,7 @@
         <div class="crm-layout">
           <div class="crm-main-column">
             <div class="crm-wrap">
-              <h1 class="page-title">Inspections</h1>
+              <h1 class="page-title">Start Inspections</h1>
               <p class="page-subtitle">Open inspected leads and finish insurance, claim, and contingency details later.</p>
               <div class="page-actions">
                 <button class="btn back-to-menu" type="button">Back to Main Menu</button>
@@ -8686,7 +8686,7 @@
       <!-- ═══════════════════ CRM: FIELD LEAD FORM ═══════════════════ -->
       <section id="page-field-lead" class="page">
         <div class="new-lead-wrap">
-          <h1 class="page-title">Add Field Lead</h1>
+          <h1 class="page-title">Create New Lead</h1>
           <p class="page-subtitle">Enter lead details after completing your field visit. Includes inspection, contingency, and claim info.</p>
           <div class="page-actions">
             <button class="btn back-to-menu" type="button">Back to Main Menu</button>
@@ -8780,7 +8780,7 @@
             </section>
 
             <div style="margin-top:20px;display:flex;justify-content:flex-end;">
-              <button class="btn btn-primary" type="button" id="fl-save-btn">Save Field Lead</button>
+              <button class="btn btn-primary" type="button" id="fl-save-btn">Save New Lead</button>
             </div>
             <div id="fl-validation-msg" class="validation-msg" style="display:none;">Please fill in all required fields (First Name, Last Name, Phone, Street, City, State, Claim Number, Insurance Company).</div>
             <div id="fl-saved-msg" class="save-confirmation" style="display:none;"></div>
@@ -38047,12 +38047,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         h += makeRow('settings',     'Settings',          'Team roster and pipeline settings');
       } else if (role === 'Sales Rep') {
         h += makeRow('my-assigned-leads', 'My Assigned Leads',      'Leads assigned to you from the office', true);
-        h += makeRow('field-lead',        'Add Field Lead',          'Create a new lead from the field');
+        h += makeRow('field-lead',        'Create New Lead',        'Create a new lead from the field');
         h += makeRow('my-pipeline',       'My Pipeline',             'Your leads by stage');
-        h += makeRow('inspections',       'Inspections',             'Finish insurance and contingency details later');
+        h += makeRow('inspections',       'Start Inspections',       'Start or finish inspection details');
         h += makeRow('calendar',          'Calendar' + calendarBadgeHtml, 'Your appointments, reminders, and follow-ups');
         h += makeRow('payroll',           'Payroll',                 'Your draw, deductions, and payroll status');
-        h += makeRow('my-jobs',           'My Jobs',                 'Your active and completed jobs');
+        h += makeRow('my-jobs',           'My Completed Jobs',       'Your completed jobs');
         h += makeRow('tasks',             'Tasks' + taskBadgeHtml,   'Your open tasks');
         h += makeRow('settings',          'Settings',                'Role, pipeline, and admin settings');
       } else if (role === 'Canvasser') {
