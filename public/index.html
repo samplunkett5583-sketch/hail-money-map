@@ -237,6 +237,59 @@
       display: none;
     }
 
+    body.main-menu-page-active .topbar {
+      min-height: 120px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 16px;
+      align-items: center;
+      padding: 14px 20px 12px;
+    }
+
+    body.main-menu-page-active .screen {
+      padding-top: 12px;
+    }
+
+    body.main-menu-page-active .map-header-brand {
+      grid-column: 1;
+      justify-self: start;
+      min-width: 0;
+    }
+
+    body.main-menu-page-active .map-header-brand .map-header-title {
+      display: none;
+    }
+
+    body.main-menu-page-active .app-top-hail-logo {
+      height: 68px;
+      max-width: min(240px, 26vw);
+    }
+
+    body.main-menu-page-active .map-header-center-brand {
+      display: flex;
+      position: static;
+      left: auto;
+      top: auto;
+      transform: none;
+      justify-self: center;
+      pointer-events: none;
+    }
+
+    body.main-menu-page-active .map-header-center-brand img {
+      display: none;
+    }
+
+    body.main-menu-page-active .map-header-center-brand span {
+      font-size: 30px;
+      letter-spacing: 0.01em;
+    }
+
+    body.main-menu-page-active .topbar-right {
+      grid-column: 3;
+      justify-self: end;
+      margin-left: 0;
+    }
+
     @media (max-width: 700px) {
       body.map-page-active .topbar {
         left: 0;
@@ -252,6 +305,22 @@
         min-height: var(--maps-topbar-h);
         height: var(--maps-topbar-h);
         padding: 4px 10px;
+      }
+
+      body.main-menu-page-active header.topbar {
+        min-height: 98px;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        gap: 10px;
+        padding: 10px 12px;
+      }
+
+      body.main-menu-page-active .app-top-hail-logo {
+        height: 52px;
+        max-width: min(168px, 38vw);
+      }
+
+      body.main-menu-page-active .map-header-center-brand span {
+        font-size: 22px;
       }
 
       .topbar-controls {
@@ -5566,10 +5635,13 @@
     .crm-activity-divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
     .crm-activity-feed-list { display: flex; flex-direction: column; }
     .crm-activity-empty { color: var(--muted); font-size: 13px; padding: 8px 0; }
+    body.main-menu-page-active #page-main-menu .crm-co-header { display: none; }
+    body.main-menu-page-active #page-main-menu .crm-activity-column { padding-top: 78px; }
     @media (max-width: 980px) {
       .crm-layout { grid-template-columns: 1fr; }
       .crm-activity-column { min-width: 0; }
       .crm-activity-panel { position: static; max-height: none; }
+      body.main-menu-page-active #page-main-menu .crm-activity-column { padding-top: 0; }
     }
     /* ── Activity panel: item rows ── */
     .crm-ap-item {
@@ -9282,6 +9354,7 @@
         target.classList.add('active');
       }
       document.body.classList.toggle('map-page-active', pageId === 'page-map');
+      document.body.classList.toggle('main-menu-page-active', pageId === 'page-main-menu');
       if (pageId === 'page-map' && window.google && mapsState && mapsState.map) {
         var center = mapsState.map.getCenter();
         google.maps.event.trigger(mapsState.map, 'resize');
