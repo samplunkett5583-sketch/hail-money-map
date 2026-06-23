@@ -238,12 +238,12 @@
     }
 
     body.main-menu-page-active .topbar {
-      min-height: 120px;
+      min-height: 138px;
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       gap: 16px;
       align-items: center;
-      padding: 14px 20px 12px;
+      padding: 14px 20px 10px;
     }
 
     body.main-menu-page-active .screen {
@@ -267,20 +267,30 @@
 
     body.main-menu-page-active .map-header-center-brand {
       display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
       position: static;
       left: auto;
       top: auto;
       transform: none;
+      grid-column: 2;
       justify-self: center;
       pointer-events: none;
+      text-align: center;
     }
 
     body.main-menu-page-active .map-header-center-brand img {
-      display: none;
+      display: block;
+      height: 60px;
+      width: auto;
+      max-width: min(220px, 18vw);
+      object-fit: contain;
     }
 
     body.main-menu-page-active .map-header-center-brand span {
-      font-size: 30px;
+      font-size: 20px;
+      line-height: 1.05;
       letter-spacing: 0.01em;
     }
 
@@ -308,10 +318,10 @@
       }
 
       body.main-menu-page-active header.topbar {
-        min-height: 98px;
+        min-height: 116px;
         grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         gap: 10px;
-        padding: 10px 12px;
+        padding: 10px 12px 8px;
       }
 
       body.main-menu-page-active .app-top-hail-logo {
@@ -319,8 +329,13 @@
         max-width: min(168px, 38vw);
       }
 
+      body.main-menu-page-active .map-header-center-brand img {
+        height: 42px;
+        max-width: min(150px, 28vw);
+      }
+
       body.main-menu-page-active .map-header-center-brand span {
-        font-size: 22px;
+        font-size: 16px;
       }
 
       .topbar-controls {
@@ -39067,7 +39082,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!p.companyName && !p.logoDataUrl) return '';
       var h = '<div class="crm-co-header-inner">';
       if (p.logoDataUrl) {
-        h += '<img class="crm-co-logo" src="" alt="Logo" />';
+        var logoSrc = String(p.logoDataUrl).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        h += '<img class="crm-co-logo" src="' + logoSrc + '" alt="Logo" />';
       }
       h += '<div>';
       if (p.companyName) h += '<div class="crm-co-name">' + p.companyName + '</div>';
@@ -39118,7 +39134,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var profile = (typeof crmGetCompanyProfile === 'function') ? crmGetCompanyProfile() : {};
       if (profile && profile.logoDataUrl) {
         var alt = (profile.companyName || 'Company Logo').replace(/"/g, '&quot;');
-        brand.innerHTML = '<img class="app-top-hail-logo" src="" alt="' + alt + '" draggable="false" />';
+        var logoSrc = String(profile.logoDataUrl).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        brand.innerHTML = '<img class="app-top-hail-logo" src="' + logoSrc + '" alt="' + alt + '" draggable="false" />';
       } else {
         brand.innerHTML =
           '<img class="app-top-hail-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />' +
