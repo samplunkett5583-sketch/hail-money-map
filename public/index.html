@@ -3075,6 +3075,268 @@
     .crm-pipeline-empty {
       font-size: 12px; color: var(--muted); opacity: 0.5; padding: 4px;
     }
+    #page-crm-pipeline .crm-pipeline-outer {
+      overflow: visible;
+      padding-bottom: 0;
+    }
+    #page-crm-pipeline .crm-kanban {
+      display: grid;
+      grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+      gap: 18px;
+      min-width: 0;
+      align-items: start;
+    }
+    #page-crm-pipeline .crm-pipeline-list-panel,
+    #page-crm-pipeline .crm-pipeline-preview-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    #page-crm-pipeline .crm-pipeline-list-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 640px;
+      max-height: calc(100vh - 250px);
+    }
+    #page-crm-pipeline .crm-pipeline-preview-panel {
+      min-height: 640px;
+    }
+    #page-crm-pipeline .crm-pipeline-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #fcfcfd 0%, #f7f9fb 100%);
+    }
+    #page-crm-pipeline .crm-pipeline-panel-title {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    #page-crm-pipeline .crm-pipeline-panel-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    #page-crm-pipeline .crm-pipeline-search-wrap {
+      position: relative;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--border);
+      background: #f9fbf5;
+    }
+    #page-crm-pipeline .crm-pipeline-search-icon {
+      position: absolute;
+      left: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 14px;
+      pointer-events: none;
+    }
+    #page-crm-pipeline #crm-pipeline-search {
+      width: 100%;
+      padding: 10px 14px 10px 38px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    #page-crm-pipeline #crm-pipeline-search:focus {
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 3px rgba(202,168,92,0.12);
+    }
+    #page-crm-pipeline .crm-pipeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      overflow-y: auto;
+      min-height: 0;
+      flex: 1;
+      background: #fcfcfd;
+    }
+    #page-crm-pipeline .crm-pipeline-list-item {
+      display: block;
+      width: 100%;
+      padding: 12px 13px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fff;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+    }
+    #page-crm-pipeline .crm-pipeline-list-item:hover {
+      border-color: var(--accent-2);
+      box-shadow: 0 6px 18px rgba(17,24,39,0.06);
+      transform: translateY(-1px);
+    }
+    #page-crm-pipeline .crm-pipeline-list-item.active {
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 1px rgba(184,135,34,0.22);
+      background: #fffaf0;
+    }
+    #page-crm-pipeline .crm-pipeline-list-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    #page-crm-pipeline .crm-pipeline-list-address {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+    #page-crm-pipeline .crm-pipeline-list-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    #page-crm-pipeline .crm-pipeline-count-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 26px;
+      height: 26px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: rgba(202,168,92,0.14);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-inner {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-empty {
+      min-height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px;
+      color: var(--muted);
+      background:
+        linear-gradient(135deg, rgba(202,168,92,0.06), rgba(255,255,255,0) 38%),
+        linear-gradient(180deg, #fdfdfd 0%, #f7f9fb 100%);
+      border-radius: 16px;
+      border: 1px dashed var(--border);
+    }
+    #page-crm-pipeline .crm-pipeline-preview-empty strong {
+      display: block;
+      color: var(--text);
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    #page-crm-pipeline .crm-pipeline-preview-name {
+      font-size: 28px;
+      line-height: 1.08;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-address {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-stage {
+      flex-shrink: 0;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(202,168,92,0.12);
+      border: 1px solid var(--accent-2);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-field {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fff;
+      min-width: 0;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-field.full {
+      grid-column: 1 / -1;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-value {
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--text);
+      word-break: break-word;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-notes {
+      white-space: pre-wrap;
+    }
+    #page-crm-pipeline .crm-pipeline-list-empty {
+      padding: 28px 18px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      background: #fff;
+    }
+    @media (max-width: 980px) {
+      #page-crm-pipeline .crm-kanban {
+        grid-template-columns: 1fr;
+      }
+      #page-crm-pipeline .crm-pipeline-list-panel,
+      #page-crm-pipeline .crm-pipeline-preview-panel {
+        min-height: 0;
+        max-height: none;
+      }
+      #page-crm-pipeline .crm-pipeline-preview-grid {
+        grid-template-columns: 1fr;
+      }
+      #page-crm-pipeline .crm-pipeline-preview-top {
+        flex-direction: column;
+      }
+      #page-crm-pipeline .crm-pipeline-preview-empty {
+        min-height: 260px;
+      }
+    }
     /* Lead detail */
     .crm-detail-card {
       background: var(--panel); border: 1px solid var(--border);
@@ -8009,12 +8271,12 @@
         <div style="width:100%;max-width:100%;">
           <h1 class="page-title" style="margin-bottom:4px;">Pipeline</h1>
           <p class="page-subtitle">Leads by stage. Click a card to open the lead.</p>
-          <div class="page-actions" style="margin-bottom:12px;">
+          <div id="crm-pipeline-stage-filter" class="crm-pipe-filter-bar"></div>
+          <div class="page-actions crm-pipeline-actions" style="margin-bottom:12px;">
             <button class="btn back-to-menu" type="button">Back to Main Menu</button>
             <button class="btn btn-primary" type="button" id="pipeline-new-lead-btn">+ New Lead</button>
             <button class="btn" type="button" id="pipeline-assigned-leads-btn">My Assigned Leads</button>
           </div>
-          <div id="crm-pipeline-stage-filter" class="crm-pipe-filter-bar"></div>
           <div class="crm-pipeline-outer">
             <div id="crm-kanban-board" class="crm-kanban"></div>
           </div>
@@ -31507,11 +31769,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     /* ── Pipeline Kanban ── */
     var _pipelineScopeFilter = null;
     var _pipelineStageFilter = 'all';
+    var _pipelineSelectedLeadId = '';
+    var _pipelineSearchQuery = '';
+    var _pipelineClickTimer = null;
 
     function crmRenderPipelineFilterBar() {
       var el = document.getElementById('crm-pipeline-stage-filter');
       if (!el) return;
-      var stages = crmGetVisiblePipelineStagesForRole(crmGetRole());
+      var stages = crmGetSalesRepPipelineStages();
       var all = ['all'].concat(stages);
       el.innerHTML = all.map(function (s) {
         var label = s === 'all' ? 'All' : s;
@@ -31520,57 +31785,163 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }).join('');
     }
 
+    function crmGetPipelineScope(filter) {
+      return filter === 'rep' ? 'self'
+        : (filter === 'team' ? 'team'
+        : (crmGetRole() === 'Manager' ? 'team'
+        : (crmGetRole() === 'Sales Rep' ? 'self' : 'all')));
+    }
+
+    function crmPipelineLeadMatchesSearch(lead, query) {
+      query = String(query || '').trim().toLowerCase();
+      if (!query) return true;
+      var haystack = [
+        crmGetLeadDisplayName(lead),
+        lead && lead.phone,
+        lead && lead.street,
+        lead && lead.city,
+        lead && lead.email,
+        crmGetLeadClaimNumber(lead),
+        crmGetLeadInsuranceCompany(lead)
+      ].join(' ').toLowerCase();
+      return haystack.indexOf(query) !== -1;
+    }
+
+    function crmGetPipelineEntries(scope) {
+      var leads = scope === 'all' ? crmGetLeads() : crmGetScopedLeads(scope);
+      return leads.map(function (lead) {
+        return {
+          lead: lead,
+          repStage: crmMapToRepStage(lead.stage || 'Lead')
+        };
+      }).filter(function (entry) {
+        return REP_PIPELINE_STAGES.indexOf(entry.repStage) !== -1;
+      }).filter(function (entry) {
+        return _pipelineStageFilter === 'all' || entry.repStage === _pipelineStageFilter;
+      }).filter(function (entry) {
+        return crmPipelineLeadMatchesSearch(entry.lead, _pipelineSearchQuery);
+      }).sort(function (a, b) {
+        var aTs = String(a.lead.lastActivityAt || a.lead.updatedAt || a.lead.createdAt || '');
+        var bTs = String(b.lead.lastActivityAt || b.lead.updatedAt || b.lead.createdAt || '');
+        return bTs.localeCompare(aTs) || crmGetLeadDisplayName(a.lead).localeCompare(crmGetLeadDisplayName(b.lead));
+      });
+    }
+
+    function crmRenderPipelinePreviewField(label, value, fullWidth, allowBreaks) {
+      var safeValue = allowBreaks ? crmEscapeHtmlWithBreaks(value || '-') : crmEscapeHtml(value || '-');
+      return '<div class="crm-pipeline-preview-field' + (fullWidth ? ' full' : '') + '">' +
+        '<div class="crm-pipeline-preview-label">' + crmEscapeHtml(label) + '</div>' +
+        '<div class="crm-pipeline-preview-value' + (allowBreaks ? ' crm-pipeline-preview-notes' : '') + '">' + safeValue + '</div>' +
+      '</div>';
+    }
+
+    function crmRenderPipelinePreviewEmpty(title, message) {
+      return '<div class="crm-pipeline-preview-inner">' +
+        '<div class="crm-pipeline-preview-empty"><div>' +
+          '<strong>' + crmEscapeHtml(title) + '</strong>' +
+          '<div>' + crmEscapeHtml(message) + '</div>' +
+        '</div></div>' +
+      '</div>';
+    }
+
+    function crmRenderPipelinePreviewHtml(entry) {
+      if (!entry || !entry.lead) {
+        return crmRenderPipelinePreviewEmpty('Select a homeowner', 'Single-click a homeowner or job name on the left to load the preview here.');
+      }
+      var lead = entry.lead;
+      var displayName = crmGetLeadDisplayName(lead);
+      var displayStage = entry.repStage || crmMapToRepStage(lead.stage || 'Lead');
+      var address = crmBuildLeadAddress(lead) || crmGetLeadDisplayAddress(lead) || 'No property address saved yet.';
+      var notes = String(lead.notes || '').trim();
+      var html = '<div class="crm-pipeline-preview-inner">';
+      html += '<div class="crm-pipeline-preview-top">';
+      html += '<div><div class="crm-pipeline-preview-name">' + crmEscapeHtml(displayName) + '</div>';
+      html += '<div class="crm-pipeline-preview-address">' + crmEscapeHtml(address) + '</div></div>';
+      html += '<div class="crm-pipeline-preview-stage">' + crmEscapeHtml(displayStage) + '</div>';
+      html += '</div>';
+      html += '<div class="crm-pipeline-preview-grid">';
+      html += crmRenderPipelinePreviewField('Homeowner', displayName);
+      html += crmRenderPipelinePreviewField('Stage', displayStage);
+      html += crmRenderPipelinePreviewField('Address', address, true);
+      html += crmRenderPipelinePreviewField('Phone', lead.phone || '-');
+      html += crmRenderPipelinePreviewField('Email', lead.email || '-');
+      html += crmRenderPipelinePreviewField('Insurance Company', crmGetLeadInsuranceCompany(lead) || '-');
+      html += crmRenderPipelinePreviewField('Claim Number', crmGetLeadClaimNumber(lead) || '-');
+      html += crmRenderPipelinePreviewField('Source', lead.leadSource || '-');
+      html += crmRenderPipelinePreviewField('Created', crmFormatDateTimeLabel(lead.createdAt || ''));
+      html += crmRenderPipelinePreviewField('Created By', lead.createdByName || '-');
+      html += crmRenderPipelinePreviewField('Created By Role', lead.createdByRole || '-');
+      if (notes) html += crmRenderPipelinePreviewField('Notes', notes, true, true);
+      html += '</div></div>';
+      return html;
+    }
+
     function crmRenderPipeline(filter) {
       /* Save scope so stage-filter re-renders can reuse it */
       if (filter !== undefined) _pipelineScopeFilter = filter || null;
       var activeFilter = _pipelineScopeFilter;
       var board = document.getElementById('crm-kanban-board');
-      var scope = activeFilter === 'rep' ? 'self' : (activeFilter === 'team' ? 'team' : (crmGetRole() === 'Manager' ? 'team' : (crmGetRole() === 'Sales Rep' ? 'self' : 'all')));
-      var leads = scope === 'all' ? crmGetLeads() : crmGetScopedLeads(scope);
-      var visibleStages = crmGetVisiblePipelineStagesForRole(crmGetRole());
-      var isRepView = crmGetRole() === 'Sales Rep';
-      var byStage = {};
-      visibleStages.forEach(function (s) { byStage[s] = []; });
-      leads.forEach(function (l) {
-        var s = l.stage || 'New Lead';
-        if (isRepView) s = crmMapToRepStage(s);
-        if (!byStage[s]) return;
-        byStage[s].push(l);
-      });
-
-      /* Apply stage filter */
-      var stagesToRender = (_pipelineStageFilter && _pipelineStageFilter !== 'all')
-        ? visibleStages.filter(function (s) { return s === _pipelineStageFilter; })
-        : visibleStages;
-
-      var html = '';
-      stagesToRender.forEach(function (stage) {
-        var cards = byStage[stage] || [];
-        html += '<div class="crm-col">';
-        html += '<div class="crm-col-header">' + crmGetStageLabel(stage) + ' <span style="font-weight:400;opacity:.6;">(' + cards.length + ')</span></div>';
-        html += '<div class="crm-col-body">';
-        if (!cards.length) {
-          html += '<div class="crm-pipeline-empty">Empty</div>';
-        } else {
-          cards.forEach(function (l) {
-            html += '<div class="crm-pipeline-card" data-crm-lead-id="' + l.id + '">';
-            html += '<div class="crm-pipeline-card-name">' + crmEscapeHtml(crmGetLeadDisplayName(l)) + '</div>';
-            html += '<div class="crm-pipeline-card-addr">' + crmEscapeHtml(crmGetLeadDisplayAddress(l) || 'No property address saved yet.') + '</div>';
-            html += '<div class="crm-pipeline-card-source">' +
-              crmEscapeHtml([l.phone || 'No phone', l.assignedRep || 'Unassigned', crmGetLeadStatusLabel(l)].join(' · ')) +
-              '</div>';
-            html += '</div>';
-          });
+      if (!board) return;
+      var activeEl = document.activeElement;
+      var restoreSearchFocus = !!(activeEl && activeEl.id === 'crm-pipeline-search');
+      var restoreSelStart = restoreSearchFocus ? activeEl.selectionStart : null;
+      var restoreSelEnd = restoreSearchFocus ? activeEl.selectionEnd : null;
+      var scope = crmGetPipelineScope(activeFilter);
+      var entries = crmGetPipelineEntries(scope);
+      var selectedEntry = null;
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].lead.id === _pipelineSelectedLeadId) {
+          selectedEntry = entries[i];
+          break;
         }
-        html += '</div></div>';
-      });
+      }
+      if (!selectedEntry) _pipelineSelectedLeadId = '';
+
+      var listHtml = '';
+      if (!entries.length) {
+        listHtml = '<div class="crm-pipeline-list-empty">No matching leads or jobs for the current stage and search.</div>';
+      } else {
+        entries.forEach(function (entry) {
+          var lead = entry.lead;
+          var isActive = lead.id === _pipelineSelectedLeadId;
+          var meta = [
+            lead.phone || 'No phone',
+            crmGetLeadInsuranceCompany(lead) || '',
+            crmGetLeadClaimNumber(lead) ? ('Claim #' + crmGetLeadClaimNumber(lead)) : ''
+          ].filter(Boolean).join(' · ');
+          listHtml += '<button class="crm-pipeline-list-item' + (isActive ? ' active' : '') + '" type="button" data-pipeline-lead-id="' + crmEscapeHtml(lead.id) + '">';
+          listHtml += '<div class="crm-pipeline-list-name">' + crmEscapeHtml(crmGetLeadDisplayName(lead)) + '</div>';
+          listHtml += '<div class="crm-pipeline-list-address">' + crmEscapeHtml(crmBuildLeadAddress(lead) || 'No property address saved yet.') + '</div>';
+          listHtml += '<div class="crm-pipeline-list-meta"><span class="crm-stage-pill">' + crmEscapeHtml(entry.repStage) + '</span>';
+          if (meta) listHtml += '<span>' + crmEscapeHtml(meta) + '</span>';
+          listHtml += '</div></button>';
+        });
+      }
+
+      var previewHtml = !entries.length
+        ? crmRenderPipelinePreviewEmpty('No matching leads', 'Adjust the stage filter or search to see more pipeline records.')
+        : crmRenderPipelinePreviewHtml(selectedEntry);
+
+      var stageLabel = _pipelineStageFilter === 'all' ? 'All Stages' : _pipelineStageFilter;
+      var html = '';
+      html += '<div class="crm-pipeline-list-panel">';
+      html += '<div class="crm-pipeline-panel-header"><div class="crm-pipeline-panel-title">Homeowners</div><div class="crm-pipeline-count-pill">' + entries.length + '</div></div>';
+      html += '<div class="crm-pipeline-search-wrap"><span class="crm-pipeline-search-icon">&#128269;</span><input id="crm-pipeline-search" type="search" placeholder="Search homeowner, phone, address, email, claim, insurance..." value="' + crmEscapeHtml(_pipelineSearchQuery) + '" autocomplete="off" /></div>';
+      html += '<div class="crm-pipeline-list">' + listHtml + '</div>';
+      html += '</div>';
+      html += '<div class="crm-pipeline-preview-panel">';
+      html += '<div class="crm-pipeline-panel-header"><div class="crm-pipeline-panel-title">Job Preview</div><div class="crm-pipeline-panel-subtitle">' + crmEscapeHtml(stageLabel) + ' · Double-click a row to open folder</div></div>';
+      html += previewHtml;
+      html += '</div>';
       board.innerHTML = html;
 
-      board.querySelectorAll('.crm-pipeline-card[data-crm-lead-id]').forEach(function (card) {
-        card.addEventListener('click', function () {
-          crmOpenPrimaryLeadRecord(this.getAttribute('data-crm-lead-id'), crmGetActivePageId());
-        });
-      });
+      if (restoreSearchFocus) {
+        var searchInput = document.getElementById('crm-pipeline-search');
+        if (searchInput) {
+          searchInput.focus();
+          try { searchInput.setSelectionRange(restoreSelStart, restoreSelEnd); } catch (_) {}
+        }
+      }
 
       /* Render / update filter bar */
       crmRenderPipelineFilterBar();
@@ -41716,6 +42087,36 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!filterBtn) return;
       _pipelineStageFilter = filterBtn.getAttribute('data-pipe-filter') || 'all';
       crmRenderPipeline(); /* re-render kanban with new stage filter (reuses saved scope) */
+    });
+
+    document.addEventListener('input', function (e) {
+      if (!e.target || e.target.id !== 'crm-pipeline-search') return;
+      _pipelineSearchQuery = String(e.target.value || '');
+      crmRenderPipeline();
+    });
+
+    document.addEventListener('click', function (e) {
+      var leadBtn = e.target.closest('[data-pipeline-lead-id]');
+      if (!leadBtn) return;
+      var leadId = leadBtn.getAttribute('data-pipeline-lead-id') || '';
+      if (_pipelineClickTimer) clearTimeout(_pipelineClickTimer);
+      _pipelineClickTimer = setTimeout(function () {
+        _pipelineSelectedLeadId = leadId;
+        crmRenderPipeline();
+        _pipelineClickTimer = null;
+      }, 220);
+    });
+
+    document.addEventListener('dblclick', function (e) {
+      var leadBtn = e.target.closest('[data-pipeline-lead-id]');
+      if (!leadBtn) return;
+      var leadId = leadBtn.getAttribute('data-pipeline-lead-id') || '';
+      if (_pipelineClickTimer) {
+        clearTimeout(_pipelineClickTimer);
+        _pipelineClickTimer = null;
+      }
+      _pipelineSelectedLeadId = leadId;
+      crmOpenJobFile(leadId, 'overview', 'page', 'page-crm-pipeline');
     });
 
     /* ── Job File Message send delegation ── */
