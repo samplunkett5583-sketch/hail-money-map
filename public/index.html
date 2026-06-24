@@ -62,6 +62,27 @@
       z-index: 40;
     }
 
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 0 1 auto;
+      position: relative;
+      z-index: 20;
+    }
+
+    .global-header-back-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
     .map-header-brand {
       display: flex;
       align-items: center;
@@ -141,46 +162,20 @@
       }
     }
 
-    /* Back to Main Menu: lives in the true global topbar (between the date
-       finder and the centered Hail Money brand) only while the Maps page is
-       active — the floating storm panel no longer carries this button. */
-    .btn.maps-header-back-btn {
-      display: none;
-      flex: 0 0 auto;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 700;
-      white-space: nowrap;
-      align-items: center;
-    }
-    body.map-page-active .btn.maps-header-back-btn {
-      display: inline-flex;
-    }
-    @media (max-width: 768px) {
-      .btn.maps-header-back-btn { display: none !important; }
-    }
-
-    /* Hail Money brand restored to the true center of the topbar (Maps page
-       only — the mobile bar already has its own Back control below 768px).
-       Decorative only (pointer-events:none) so it never steals clicks from
-       the date finder or Back button it sits between. */
+    /* Shared centered Main Menu brand for all app pages after login. */
     .map-header-center-brand {
       display: none;
       align-items: center;
-      gap: 6px;
+      gap: 3px;
       position: absolute;
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      pointer-events: none;
-      z-index: 5;
-    }
-    body.map-page-active .map-header-center-brand {
-      display: flex;
+      z-index: 15;
+      text-align: center;
     }
     .map-header-center-brand img {
-      height: 28px;
+      height: 34px;
       width: auto;
       object-fit: contain;
     }
@@ -191,8 +186,24 @@
       letter-spacing: 0.02em;
       white-space: nowrap;
     }
-    @media (max-width: 768px) {
-      .map-header-center-brand { display: none !important; }
+
+    .global-header-back-btn.is-visible {
+      display: inline-flex;
+    }
+
+    body.app-page-active .map-header-brand {
+      display: none;
+    }
+
+    body.app-page-active .map-header-center-brand {
+      display: flex;
+      flex-direction: column;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    body.app-page-active .map-header-title {
+      display: none;
     }
 
     .topbar-right {
@@ -233,8 +244,13 @@
       max-width: min(160px, 36vw);
     }
 
-    body.map-page-active .map-header-title {
-      display: none;
+    body.map-page-active .map-header-center-brand img {
+      height: 22px;
+    }
+
+    body.map-page-active .map-header-center-brand span {
+      font-size: 10px;
+      letter-spacing: 0.04em;
     }
 
     body.main-menu-page-active .topbar {
@@ -250,14 +266,14 @@
       padding-top: 12px;
     }
 
-    body.main-menu-page-active .map-header-brand {
+    body.main-menu-page-active .topbar-left {
       grid-column: 1;
       justify-self: start;
       min-width: 0;
     }
 
-    body.main-menu-page-active .map-header-brand .map-header-title {
-      display: none;
+    body.main-menu-page-active .map-header-brand {
+      min-width: 0;
     }
 
     body.main-menu-page-active .app-top-hail-logo {
@@ -276,7 +292,8 @@
       transform: none;
       grid-column: 2;
       justify-self: center;
-      pointer-events: none;
+      pointer-events: auto;
+      cursor: pointer;
       text-align: center;
     }
 
@@ -324,9 +341,26 @@
         padding: 10px 12px 8px;
       }
 
+      .topbar-left {
+        gap: 8px;
+      }
+
+      .global-header-back-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+
       body.main-menu-page-active .app-top-hail-logo {
         height: 52px;
         max-width: min(168px, 38vw);
+      }
+
+      .map-header-center-brand img {
+        height: 28px;
+      }
+
+      .map-header-center-brand span {
+        font-size: 11px;
       }
 
       body.main-menu-page-active .map-header-center-brand img {
@@ -5683,6 +5717,11 @@
     #page-crm-pipeline .crm-activity-panel { display: none !important; }
     #page-crm-pipeline .crm-main-column { width: 100% !important; min-width: 0; }
     #page-crm-pipeline .crm-pipeline-outer { overflow-x: auto; }
+    body.app-page-active .page-actions > .back-to-menu,
+    body.app-page-active .page-actions > #back-to-menu,
+    body.app-page-active .crm-calendar-topbar-left > .back-to-menu {
+      display: none !important;
+    }
     /* ── Pipeline stage filter bar ── */
     .crm-pipe-filter-bar {
       display: flex; flex-wrap: wrap; gap: 6px;
@@ -5759,9 +5798,12 @@
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <div class="map-header-brand" id="map-header-brand" role="button" tabindex="0" aria-label="Go to Main Menu">
-        <img class="app-top-hail-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
-        <div class="map-header-title">Hail Money</div>
+      <div class="topbar-left">
+        <button type="button" class="btn global-header-back-btn" id="global-header-back-btn">Back</button>
+        <div class="map-header-brand" id="map-header-brand" role="button" tabindex="0" aria-label="Go to Main Menu">
+          <img class="app-top-hail-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
+          <div class="map-header-title">Hail Money</div>
+        </div>
       </div>
       <!-- Maps date picker: true top minibar, visible only on the Maps page, controls Recent/Impact/Pinned + swath loading -->
       <div class="maps-header-date-row" id="maps-header-date-row">
@@ -5769,12 +5811,9 @@
         <button type="button" id="maps-load-date-btn" class="maps-header-load-btn">Load Date</button>
         <div id="maps-date-status" class="maps-status-msg"></div>
       </div>
-      <!-- Back to Main Menu: Maps page only, sits between the date finder and the centered brand -->
-      <button type="button" class="btn back-to-menu maps-header-back-btn" id="maps-header-back-btn">Back to Main Menu</button>
-      <!-- Hail Money brand, restored to the true center of the header (Maps page only) -->
-      <div class="map-header-center-brand" id="map-header-center-brand" aria-hidden="true">
+      <div class="map-header-center-brand" id="map-header-center-brand" role="button" tabindex="0" aria-label="Go to Main Menu">
         <img src="./assets/hailmoney-logo.png?v=2" alt="" draggable="false" />
-        <span>Hail Money</span>
+        <span>Main Menu</span>
       </div>
       <div class="topbar-right">
         <div class="topbar-controls">
@@ -9355,11 +9394,74 @@
       return CANVASSER_ALLOWED_PAGES.indexOf(pageId) === -1;
     }
 
+    var _appPageHistory = [];
+    var _appCurrentPageId = '';
+    var _appPageHistoryLocked = false;
+
+    function isTrackedAppPage(pageId) {
+      return !!pageId && pageId !== 'page-login';
+    }
+
+    function peekAppHeaderBackTarget() {
+      for (var i = _appPageHistory.length - 1; i >= 0; i--) {
+        var candidate = _appPageHistory[i];
+        if (candidate && candidate !== _appCurrentPageId) return candidate;
+      }
+      return '';
+    }
+
+    function getAppHeaderBackTarget() {
+      while (_appPageHistory.length) {
+        var candidate = _appPageHistory.pop();
+        if (candidate && candidate !== _appCurrentPageId) return candidate;
+      }
+      return 'page-main-menu';
+    }
+
+    function shouldShowGlobalHeaderBack() {
+      var previousPageId = peekAppHeaderBackTarget();
+      return _appCurrentPageId !== 'page-login'
+        && _appCurrentPageId !== 'page-main-menu'
+        && !!previousPageId
+        && previousPageId !== 'page-main-menu';
+    }
+
+    function updateGlobalHeaderBackButton() {
+      var backBtn = document.getElementById('global-header-back-btn');
+      if (!backBtn) return;
+      backBtn.classList.toggle('is-visible', shouldShowGlobalHeaderBack());
+    }
+
+    function goToPreviousAppPage() {
+      _appPageHistoryLocked = true;
+      try {
+        showPage(getAppHeaderBackTarget());
+      } finally {
+        _appPageHistoryLocked = false;
+      }
+    }
+
+    function goToMainMenuFromHeader() {
+      _appPageHistory = [];
+      showPage('page-main-menu');
+    }
+
     function showPage(pageId) {
       /* Route-level access guard for Canvasser role */
       if (crmGetRole && crmGetRole() === 'Canvasser' && crmIsPageRestrictedForCanvasser(pageId)) {
         showUploadToast('You do not have permission to access this section.');
         return;
+      }
+      if (pageId === 'page-login') {
+        _appPageHistory = [];
+      } else if (
+        !_appPageHistoryLocked &&
+        isTrackedAppPage(_appCurrentPageId) &&
+        _appCurrentPageId !== pageId &&
+        _appPageHistory[_appPageHistory.length - 1] !== _appCurrentPageId
+      ) {
+        _appPageHistory.push(_appCurrentPageId);
+        if (_appPageHistory.length > 60) _appPageHistory.shift();
       }
       allPages.forEach(function (page) {
         page.classList.remove('active');
@@ -9368,8 +9470,11 @@
       if (target) {
         target.classList.add('active');
       }
+      _appCurrentPageId = pageId;
+      document.body.classList.toggle('app-page-active', pageId !== 'page-login');
       document.body.classList.toggle('map-page-active', pageId === 'page-map');
       document.body.classList.toggle('main-menu-page-active', pageId === 'page-main-menu');
+      updateGlobalHeaderBackButton();
       if (pageId === 'page-map' && window.google && mapsState && mapsState.map) {
         var center = mapsState.map.getCenter();
         google.maps.event.trigger(mapsState.map, 'resize');
@@ -24712,6 +24817,12 @@
       });
     });
 
+    (function () {
+      var backBtn = document.getElementById('global-header-back-btn');
+      if (!backBtn) return;
+      backBtn.addEventListener('click', goToPreviousAppPage);
+    }());
+
     /* Upper-left logo (company logo or Hail Money fallback) also returns to Main Menu */
     (function () {
       var brand = document.getElementById('map-header-brand');
@@ -24719,6 +24830,15 @@
       brand.addEventListener('click', function () { showPage('page-main-menu'); });
       brand.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showPage('page-main-menu'); }
+      });
+    }());
+
+    (function () {
+      var centerBrand = document.getElementById('map-header-center-brand');
+      if (!centerBrand) return;
+      centerBrand.addEventListener('click', goToMainMenuFromHeader);
+      centerBrand.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToMainMenuFromHeader(); }
       });
     }());
 
