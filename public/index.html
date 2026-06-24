@@ -222,6 +222,14 @@
       align-items: center;
     }
 
+    .pipeline-header-actions {
+      display: none;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .topbar-pill {
       padding: 8px 12px;
     }
@@ -317,6 +325,36 @@
       margin-left: 0;
     }
 
+    body.pipeline-page-active .topbar {
+      min-height: 110px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+
+    body.pipeline-page-active .screen {
+      padding-top: 10px;
+    }
+
+    body.pipeline-page-active .topbar-right {
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    body.pipeline-page-active .topbar-controls {
+      justify-content: flex-end;
+    }
+
+    body.pipeline-page-active .pipeline-header-actions {
+      display: flex;
+    }
+
+    body.pipeline-page-active .pipeline-header-actions .btn {
+      white-space: nowrap;
+      padding-top: 7px;
+      padding-bottom: 7px;
+    }
+
     @media (max-width: 700px) {
       body.map-page-active .topbar {
         left: 0;
@@ -339,6 +377,12 @@
         grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         gap: 10px;
         padding: 10px 12px 8px;
+      }
+
+      body.pipeline-page-active header.topbar {
+        min-height: 122px;
+        padding-top: 10px;
+        padding-bottom: 10px;
       }
 
       .topbar-left {
@@ -3079,6 +3123,37 @@
       overflow: visible;
       padding-bottom: 0;
     }
+    #page-crm-pipeline .crm-pipeline-page-shell {
+      width: 100%;
+      max-width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #page-crm-pipeline .crm-pipeline-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 16px;
+    }
+    #page-crm-pipeline .crm-pipeline-toolbar-spacer {
+      min-height: 1px;
+    }
+    #page-crm-pipeline .crm-pipe-filter-bar {
+      justify-content: center;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    #page-crm-pipeline .crm-pipeline-toolbar-title {
+      justify-self: center;
+      text-align: center;
+      white-space: nowrap;
+      font-size: 30px;
+      line-height: 1.05;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
     #page-crm-pipeline .crm-kanban {
       display: grid;
       grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
@@ -3319,6 +3394,17 @@
       background: #fff;
     }
     @media (max-width: 980px) {
+      #page-crm-pipeline .crm-pipeline-toolbar {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        gap: 10px;
+      }
+      #page-crm-pipeline .crm-pipeline-toolbar-spacer {
+        display: none;
+      }
+      #page-crm-pipeline .crm-pipeline-toolbar-title {
+        white-space: normal;
+      }
       #page-crm-pipeline .crm-kanban {
         grid-template-columns: 1fr;
       }
@@ -6084,6 +6170,10 @@
           </button>
           <div class="crm-role-pill" id="crm-topbar-role">Rep</div>
         </div>
+        <div class="pipeline-header-actions" aria-label="Pipeline actions">
+          <button class="btn btn-primary" type="button" id="pipeline-new-lead-btn">+ New Lead</button>
+          <button class="btn" type="button" id="pipeline-assigned-leads-btn">My Assigned Leads</button>
+        </div>
       </div>
     </header>
 
@@ -8268,14 +8358,11 @@
 
       <!-- ═══════════════════ CRM: PIPELINE ═══════════════════ -->
       <section id="page-crm-pipeline" class="page">
-        <div style="width:100%;max-width:100%;">
-          <h1 class="page-title" style="margin-bottom:4px;">Pipeline</h1>
-          <p class="page-subtitle">Leads by stage. Click a card to open the lead.</p>
-          <div id="crm-pipeline-stage-filter" class="crm-pipe-filter-bar"></div>
-          <div class="page-actions crm-pipeline-actions" style="margin-bottom:12px;">
-            <button class="btn back-to-menu" type="button">Back to Main Menu</button>
-            <button class="btn btn-primary" type="button" id="pipeline-new-lead-btn">+ New Lead</button>
-            <button class="btn" type="button" id="pipeline-assigned-leads-btn">My Assigned Leads</button>
+        <div class="crm-pipeline-page-shell">
+          <div class="crm-pipeline-toolbar">
+            <div class="crm-pipeline-toolbar-spacer" aria-hidden="true"></div>
+            <div id="crm-pipeline-stage-filter" class="crm-pipe-filter-bar"></div>
+            <div class="crm-pipeline-toolbar-title">Pipeline</div>
           </div>
           <div class="crm-pipeline-outer">
             <div id="crm-kanban-board" class="crm-kanban"></div>
@@ -9736,6 +9823,7 @@
       document.body.classList.toggle('app-page-active', pageId !== 'page-login');
       document.body.classList.toggle('map-page-active', pageId === 'page-map');
       document.body.classList.toggle('main-menu-page-active', pageId === 'page-main-menu');
+      document.body.classList.toggle('pipeline-page-active', pageId === 'page-crm-pipeline');
       updateGlobalHeaderBackButton();
       if (pageId === 'page-map' && window.google && mapsState && mapsState.map) {
         var center = mapsState.map.getCenter();
