@@ -430,11 +430,27 @@
       text-overflow: ellipsis;
     }
 
+    .crm-header-inline-title {
+      display: none;
+      min-width: 0;
+      font-size: 26px;
+      line-height: 1.08;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .crm-shared-header-hidden {
       display: none !important;
     }
 
     body.crm-standard-header-active .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
       margin-bottom: 0;
     }
 
@@ -447,19 +463,37 @@
     }
 
     body.crm-standard-header-active .topbar-left {
+      grid-column: 1;
+      justify-self: start;
       position: relative;
       display: flex;
       flex-direction: row;
+      justify-content: flex-start;
       align-items: center;
       gap: 18px;
       min-width: 0;
       overflow: visible;
+      margin-left: 0;
+      padding-left: 0;
     }
 
     body.crm-standard-header-active .map-header-brand {
       order: 1;
       gap: 0;
       flex: 0 0 auto;
+      justify-content: flex-start;
+      margin-left: 0;
+    }
+
+    body.crm-standard-header-active .pipeline-header-center {
+      grid-column: 2;
+      justify-self: center;
+    }
+
+    body.crm-standard-header-active .topbar-right {
+      grid-column: 3;
+      justify-self: end;
+      margin-left: 0;
     }
 
     body.crm-standard-header-active .map-header-title {
@@ -474,6 +508,28 @@
 
     body.crm-standard-header-active .crm-header-page-title[hidden] {
       display: none;
+    }
+
+    body.crm-standard-header-active.crm-job-file-header-active .topbar-left {
+      gap: 14px;
+    }
+
+    body.crm-standard-header-active.crm-job-file-header-active .map-header-brand {
+      gap: 0;
+      min-width: auto;
+      flex: 0 0 auto;
+      overflow: visible;
+    }
+
+    body.crm-standard-header-active.crm-job-file-header-active .crm-header-inline-title:not([hidden]) {
+      display: block;
+      order: 2;
+      flex: 1 1 auto;
+      align-self: center;
+    }
+
+    body.crm-standard-header-active.crm-job-file-header-active .crm-header-page-title {
+      display: none !important;
     }
 
     body.crm-standard-header-active .app-top-hail-logo {
@@ -544,6 +600,10 @@
         font-size: 18px;
       }
 
+      .crm-header-inline-title {
+        font-size: 18px;
+      }
+
       body.crm-standard-header-active.crm-standard-header-back-visible .topbar {
         margin-bottom: 40px;
       }
@@ -559,6 +619,10 @@
 
       body.crm-standard-header-active .topbar-left {
         gap: 12px;
+      }
+
+      body.crm-standard-header-active.crm-job-file-header-active .map-header-brand {
+        gap: 0;
       }
 
       body.crm-standard-header-active #global-header-back-btn {
@@ -767,6 +831,915 @@
       font-size: 12px;
       font-weight: 700;
       line-height: 1;
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow {
+      --menu-tone: #4f83ff;
+      --menu-tone-deep: #315ed0;
+      --menu-tone-soft: rgba(79, 131, 255, 0.16);
+      --menu-tone-border: rgba(79, 131, 255, 0.28);
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 15px 16px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)),
+        var(--panel-2);
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow:hover {
+      border-color: var(--menu-tone-border);
+      box-shadow:
+        0 14px 26px rgba(15, 23, 42, 0.16),
+        inset 0 0 0 1px var(--menu-tone-soft);
+      transform: translateY(-1px);
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow:focus-visible {
+      outline: none;
+      border-color: var(--menu-tone);
+      box-shadow:
+        0 0 0 3px var(--menu-tone-soft),
+        inset 0 0 0 1px var(--menu-tone-soft);
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow.menu-row-primary {
+      border-color: var(--menu-tone-border);
+      box-shadow: inset 0 0 0 1px var(--menu-tone-soft);
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow.menu-row-disabled {
+      opacity: 0.68;
+      box-shadow: none;
+      transform: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(145deg, var(--menu-tone), var(--menu-tone-deep));
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.18),
+        0 12px 18px rgba(15, 23, 42, 0.16);
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow .menu-row-title,
+    body.main-menu-page-active #page-main-menu .menu-row-workflow .menu-row-desc {
+      display: block;
+      margin: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow .menu-row-title {
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow .menu-row-desc {
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-aside {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: 8px;
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-arrow {
+      color: var(--menu-tone);
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1;
+      opacity: 0.9;
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow .menu-row-badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow .open-tasks-badge {
+      margin-left: 8px !important;
+      vertical-align: middle;
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow.menu-row-tone-blue {
+      --menu-tone: #4f83ff;
+      --menu-tone-deep: #315ed0;
+      --menu-tone-soft: rgba(79, 131, 255, 0.16);
+      --menu-tone-border: rgba(79, 131, 255, 0.28);
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow.menu-row-tone-green {
+      --menu-tone: #32b36f;
+      --menu-tone-deep: #1f8a54;
+      --menu-tone-soft: rgba(50, 179, 111, 0.16);
+      --menu-tone-border: rgba(50, 179, 111, 0.28);
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow.menu-row-tone-purple {
+      --menu-tone: #8a63ff;
+      --menu-tone-deep: #6543cb;
+      --menu-tone-soft: rgba(138, 99, 255, 0.16);
+      --menu-tone-border: rgba(138, 99, 255, 0.28);
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow.menu-row-tone-orange {
+      --menu-tone: #f28a34;
+      --menu-tone-deep: #cf6420;
+      --menu-tone-soft: rgba(242, 138, 52, 0.16);
+      --menu-tone-border: rgba(242, 138, 52, 0.28);
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow.menu-row-tone-teal {
+      --menu-tone: #1fb6aa;
+      --menu-tone-deep: #148477;
+      --menu-tone-soft: rgba(31, 182, 170, 0.16);
+      --menu-tone-border: rgba(31, 182, 170, 0.28);
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow.menu-row-tone-red {
+      --menu-tone: #e15b64;
+      --menu-tone-deep: #b63b46;
+      --menu-tone-soft: rgba(225, 91, 100, 0.16);
+      --menu-tone-border: rgba(225, 91, 100, 0.28);
+    }
+
+    body.main-menu-page-active #page-main-menu .menu-row-workflow.menu-row-tone-gold {
+      --menu-tone: #d4a63b;
+      --menu-tone-deep: #ab7f1d;
+      --menu-tone-soft: rgba(212, 166, 59, 0.16);
+      --menu-tone-border: rgba(212, 166, 59, 0.28);
+    }
+
+    body.main-menu-page-active .topbar {
+      min-height: 76px;
+      padding: 8px 18px;
+    }
+
+    body.main-menu-page-active .app-top-hail-logo {
+      height: 48px;
+      max-width: min(180px, 36vw);
+    }
+
+    body.main-menu-page-active .map-header-center-brand img {
+      height: 34px;
+      max-width: min(132px, 22vw);
+    }
+
+    body.main-menu-page-active .screen {
+      padding-top: 18px;
+    }
+
+    body.main-menu-page-active #page-main-menu .main-menu-title,
+    body.main-menu-page-active #page-main-menu .page-subtitle {
+      display: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-shell {
+      padding: 0;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-legacy-action-cache[hidden] {
+      display: none !important;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-layout {
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 22px;
+      max-width: 1600px;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-main-column,
+    body.main-menu-page-active #page-main-menu .main-menu-wrap {
+      min-width: 0;
+      max-width: none;
+      width: 100%;
+      margin: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-command-center {
+      display: grid;
+      grid-template-columns: 196px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-side-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: sticky;
+      top: 92px;
+      background: #102845;
+      border: 1px solid #163559;
+      border-radius: 24px;
+      padding: 14px 12px;
+      min-height: calc(100vh - 126px);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-side-tab {
+      appearance: none;
+      display: grid;
+      grid-template-columns: 26px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      background: transparent;
+      color: rgba(238, 245, 252, 0.84);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.15;
+      text-align: left;
+      cursor: pointer;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-side-tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      transform: translateX(1px);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-side-tab:focus-visible {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.38);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.14);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-side-tab.active,
+    body.main-menu-page-active #page-main-menu .dashboard-side-tab[aria-current="page"] {
+      background: #f9fbff;
+      border-color: #d7dfea;
+      color: #102845;
+      transform: none;
+      box-shadow: 0 8px 18px rgba(11, 33, 58, 0.18);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-side-tab-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.08);
+      color: currentColor;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-side-tab.active .dashboard-side-tab-icon,
+    body.main-menu-page-active #page-main-menu .dashboard-side-tab[aria-current="page"] .dashboard-side-tab-icon {
+      background: rgba(16, 40, 69, 0.08);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-side-tab-icon svg,
+    body.main-menu-page-active #page-main-menu .dashboard-action-icon svg,
+    body.main-menu-page-active #page-main-menu .dashboard-measurement-icon svg {
+      width: 15px;
+      height: 15px;
+      display: block;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-side-tab-label {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-workspace {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-overview-card,
+    body.main-menu-page-active #page-main-menu .dashboard-surface {
+      background: #ffffff;
+      border: 1px solid #d8dee8;
+      border-radius: 22px;
+      min-width: 0;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-overview-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(420px, 1fr);
+      gap: 18px;
+      padding: 18px 20px;
+      background:
+        linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(243, 246, 251, 0.96)),
+        #ffffff;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-panel-kicker {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #6d7684;
+      margin-bottom: 8px;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-workspace-title {
+      font-size: 20px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: #162133;
+      margin: 0 0 8px;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-workspace-copy {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #667282;
+      max-width: 560px;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-overview-meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      min-width: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-overview-meta-item {
+      background: #ffffff;
+      border: 1px solid #d8dee8;
+      border-radius: 16px;
+      padding: 12px 14px;
+      min-width: 0;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-overview-meta-item span {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #6d7684;
+      margin-bottom: 9px;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-overview-meta-item strong {
+      display: block;
+      font-size: 17px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: #152233;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-surface,
+    body.main-menu-page-active #page-main-menu .dashboard-stage-board {
+      padding: 16px 18px;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-top-grid,
+    body.main-menu-page-active #page-main-menu .dashboard-detail-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.24fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #6d7684;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-job-action-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-action-item {
+      appearance: none;
+      width: 100%;
+      border: 1px solid #d8dee8;
+      border-radius: 16px;
+      background: #fbfcfe;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      color: #162133;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-action-item:hover {
+      border-color: #c5cfdd;
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+      transform: translateY(-1px);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-action-item:focus-visible {
+      outline: none;
+      border-color: #9caabd;
+      box-shadow: 0 0 0 3px rgba(16, 40, 69, 0.12);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-action-icon,
+    body.main-menu-page-active #page-main-menu .dashboard-measurement-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eef3fb;
+      color: #26486f;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-action-title,
+    body.main-menu-page-active #page-main-menu .dashboard-measurement-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #162133;
+      line-height: 1.2;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-action-detail,
+    body.main-menu-page-active #page-main-menu .dashboard-measurement-detail,
+    body.main-menu-page-active #page-main-menu .dashboard-muted-note {
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #6d7684;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-action-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 34px;
+      padding: 0 10px;
+      height: 30px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 1px solid #d8dee8;
+      color: #162133;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-stage-board {
+      background: #ffffff;
+      border: 1px solid #d8dee8;
+      border-radius: 22px;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-stage-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-stage-card {
+      --dashboard-tone: #d4a63b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      text-align: center;
+      padding: 2px 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-stage-card-top {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-stage-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      min-width: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-stage-name {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: #6d7684;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-stage-subtext {
+      display: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-stage-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--dashboard-tone);
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 800;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-stage-count {
+      font-size: 17px;
+      line-height: 1;
+      font-weight: 800;
+      color: #152233;
+      margin-top: 2px;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-stage-money {
+      font-size: 12px;
+      font-weight: 700;
+      color: #9aa5b5;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-measurements-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-measurement-btn {
+      appearance: none;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      border: 1px solid #d8dee8;
+      border-radius: 16px;
+      background: #fbfcfe;
+      padding: 12px 14px;
+      width: 100%;
+      cursor: pointer;
+      text-align: left;
+      color: #162133;
+      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-measurement-btn:hover {
+      border-color: #c5cfdd;
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+      transform: translateY(-1px);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-measurement-btn:focus-visible {
+      outline: none;
+      border-color: #9caabd;
+      box-shadow: 0 0 0 3px rgba(16, 40, 69, 0.12);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-mini-stat-grid,
+    body.main-menu-page-active #page-main-menu .dashboard-activity-count-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-activity-count-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin-bottom: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-mini-stat,
+    body.main-menu-page-active #page-main-menu .dashboard-activity-count-item {
+      background: #fbfcfe;
+      border: 1px solid #d8dee8;
+      border-radius: 16px;
+      padding: 12px;
+      min-width: 0;
+      text-align: center;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-mini-stat-label,
+    body.main-menu-page-active #page-main-menu .dashboard-activity-count-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: #6d7684;
+      margin-bottom: 6px;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-mini-stat-value,
+    body.main-menu-page-active #page-main-menu .dashboard-activity-count-value {
+      display: block;
+      font-size: 26px;
+      line-height: 1;
+      font-weight: 800;
+      color: #162133;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-list-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      border-top: 1px solid #e3e8f0;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-list-item:first-child {
+      padding-top: 0;
+      border-top: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-list-primary {
+      font-size: 14px;
+      font-weight: 700;
+      color: #162133;
+      line-height: 1.35;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-list-secondary {
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #6d7684;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-list-value {
+      flex: 0 0 auto;
+      font-size: 13px;
+      font-weight: 700;
+      color: #243f63;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-list-empty {
+      padding: 6px 0 2px;
+      font-size: 13px;
+      color: #6d7684;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-leaderboard-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-top: 1px solid #e3e8f0;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-leaderboard-row:first-child {
+      padding-top: 0;
+      border-top: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-leaderboard-rank {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eef3fb;
+      color: #1f3d61;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-leaderboard-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #162133;
+      line-height: 1.3;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-leaderboard-meta {
+      margin-top: 4px;
+      font-size: 12px;
+      color: #6d7684;
+      line-height: 1.4;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-leaderboard-bar {
+      margin-top: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #edf2f8;
+      overflow: hidden;
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-leaderboard-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #8ec1ff, #507cb2);
+    }
+
+    body.main-menu-page-active #page-main-menu .dashboard-leaderboard-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: #243f63;
+      white-space: nowrap;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-activity-column {
+      min-width: 320px;
+      max-width: 320px;
+      padding-top: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-activity-panel {
+      background: #fbfcfe;
+      border: 1px solid #d8dee8;
+      border-radius: 22px;
+      padding: 14px;
+      top: 92px;
+      max-height: calc(100vh - 120px);
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-activity-panel-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #162133;
+      margin-bottom: 12px;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-activity-quick-actions {
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-activity-quick-btn {
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #ffffff;
+      border-color: #d8dee8;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-activity-divider {
+      margin: 12px 0;
+      border-top-color: #e3e8f0;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-ap-filter-bar {
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-ap-filter-btn {
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #6d7684;
+      background: #ffffff;
+      border-color: #d8dee8;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-ap-filter-btn.active,
+    body.main-menu-page-active #page-main-menu .crm-ap-filter-btn:hover {
+      background: #d4a63b;
+      border-color: #d4a63b;
+      color: #ffffff;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-ap-item {
+      padding: 11px 4px;
+      border-bottom-color: #e3e8f0;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-ap-item:hover {
+      background: #f3f6fb;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-ap-item-msg {
+      font-size: 13px;
+      font-weight: 600;
+      color: #162133;
+    }
+
+    body.main-menu-page-active #page-main-menu .crm-ap-item-meta,
+    body.main-menu-page-active #page-main-menu .crm-activity-empty {
+      font-size: 11px;
+      color: #6d7684;
+    }
+
+    @media (max-width: 1380px) {
+      body.main-menu-page-active #page-main-menu .dashboard-overview-card {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      body.main-menu-page-active #page-main-menu .dashboard-overview-meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      body.main-menu-page-active #page-main-menu .dashboard-top-grid,
+      body.main-menu-page-active #page-main-menu .dashboard-detail-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 1180px) {
+      body.main-menu-page-active #page-main-menu .crm-layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      body.main-menu-page-active #page-main-menu .crm-activity-column {
+        min-width: 0;
+        max-width: none;
+      }
+
+      body.main-menu-page-active #page-main-menu .crm-activity-panel {
+        position: static;
+        max-height: none;
+      }
+
+      body.main-menu-page-active #page-main-menu .dashboard-command-center {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      body.main-menu-page-active #page-main-menu .dashboard-side-nav {
+        position: static;
+        min-height: 0;
+      }
+
+      body.main-menu-page-active #page-main-menu .dashboard-stage-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      body.main-menu-page-active #page-main-menu .dashboard-measurements-row,
+      body.main-menu-page-active #page-main-menu .dashboard-activity-count-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     .menu-today-summary {
@@ -1036,6 +2009,1260 @@
       .menu-row {
         padding: 13px 14px;
       }
+
+      body.main-menu-page-active #page-main-menu .menu-row-workflow {
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+        gap: 12px;
+        padding: 13px 14px;
+      }
+
+      body.main-menu-page-active #page-main-menu .menu-row-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        font-size: 10px;
+      }
+
+      body.main-menu-page-active #page-main-menu .menu-row-aside {
+        gap: 8px;
+        margin-left: 2px;
+      }
+
+      body.main-menu-page-active #page-main-menu .dashboard-shell {
+        padding: 0;
+      }
+
+      body.main-menu-page-active #page-main-menu .dashboard-command-center {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+      }
+
+      body.main-menu-page-active #page-main-menu .dashboard-side-nav {
+        position: static;
+      }
+
+      body.main-menu-page-active #page-main-menu .dashboard-overview-card {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      body.main-menu-page-active #page-main-menu .dashboard-top-grid,
+      body.main-menu-page-active #page-main-menu .dashboard-overview-meta,
+      body.main-menu-page-active #page-main-menu .dashboard-stage-grid,
+      body.main-menu-page-active #page-main-menu .dashboard-detail-grid,
+      body.main-menu-page-active #page-main-menu .dashboard-mini-stat-grid,
+      body.main-menu-page-active #page-main-menu .dashboard-measurements-row,
+      body.main-menu-page-active #page-main-menu .dashboard-activity-count-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .content {
+        flex-direction: column;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .right-panel {
+        width: 100%;
+      }
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    body.main-menu-page-active header.topbar {
+      display: none !important;
+    }
+
+    body.main-menu-page-active .screen {
+      padding: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu {
+      min-height: 100vh;
+    }
+
+    body.main-menu-page-active #page-main-menu .main-menu-wrap {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref {
+      --font-sans: "Times New Roman", Times, serif;
+      --surface-0: #f4f6f8;
+      --surface-1: #f8fafc;
+      --surface-2: #ffffff;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --text-accent: #e8a020;
+      --bg-accent: rgba(232, 160, 32, 0.14);
+      --border-accent: rgba(232, 160, 32, 0.32);
+      --border: #dde2ea;
+      width: 100%;
+      min-height: 100vh;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref button {
+      font: inherit;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .wrap {
+      display: flex;
+      height: auto;
+      min-height: 600px;
+      background: var(--surface-0);
+      align-items: stretch;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .sidebar {
+      width: 125px;
+      background: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      padding: 10px 8px;
+      gap: 6px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .logo {
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      margin-bottom: 2px;
+      border: 1px solid rgba(223, 188, 95, 0.18);
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .dash-sidebar-company-logo {
+      width: 68px;
+      height: 68px;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      flex: 0 0 auto;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-item {
+      width: 100%;
+      min-height: 58px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      gap: 4px;
+      border: none;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 6px 4px;
+      color: #ffffff;
+      text-align: center;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-item:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-item.active {
+      color: #e4a51b;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-item.active .nav-label {
+      color: #ffffff;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-item.active .dash-icon {
+      color: #ffffff;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .dash-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: inherit;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-item .dash-icon svg {
+      width: 27px;
+      height: 27px;
+      stroke: currentColor;
+      stroke-width: 1.85;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      display: block;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-label {
+      color: currentColor;
+      font-size: 11px;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: visible;
+      min-width: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .topbar {
+      background: #1a1a2e;
+      padding: 6px 16px 8px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      min-height: 76px;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 2;
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.88);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .brand {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      color: #fff;
+      font-size: 28px;
+      font-weight: 500;
+      flex: 0 0 auto;
+      min-width: 180px;
+      line-height: 1;
+      justify-self: start;
+      padding-left: 2px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .brand-title {
+      display: inline-block;
+      letter-spacing: 0.01em;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .brand .dash-icon {
+      display: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .brand .dash-icon svg,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .hm-brand .dash-icon svg,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .action-card .dash-icon svg,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .meas-item .dash-icon svg,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .metric-item .dash-icon svg,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .activity-btn .dash-icon svg,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .act-count-item .dash-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 1.85;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      display: block;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .dash-header-company-logo {
+      display: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .topbar-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .hm-brand {
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      color: #fff;
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .hm-brand .dash-icon {
+      display: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .hm-brand-logo {
+      width: 54px;
+      height: 54px;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      flex: 0 0 auto;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .hm-brand-wordmark {
+      letter-spacing: 0.02em;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .stage-pills {
+      display: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill {
+      text-align: center;
+      padding: 0;
+      border-radius: 4px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      min-width: 46px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill .label {
+      font-size: 7px;
+      color: rgba(255, 255, 255, 0.6);
+      letter-spacing: 0.8px;
+      line-height: 1;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill .letter {
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1;
+      margin-top: 1px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill .amount {
+      font-size: 7px;
+      color: rgba(255, 255, 255, 0.7);
+      white-space: nowrap;
+      line-height: 1;
+      margin-top: 1px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill.lead .letter {
+      color: #d4a63b;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill.prospect .letter {
+      color: #f28a34;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill.approved .letter {
+      color: #32b36f;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill.completed .letter {
+      color: #4f83ff;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill.invoiced .letter {
+      color: #e15b64;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill.closed .letter {
+      color: #34d399;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill.closed {
+      display: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .user-info {
+      color: #1b1b2f;
+      font-size: 11px;
+      min-width: 102px;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(212, 166, 59, 0.38);
+      border-radius: 14px;
+      padding: 6px 10px;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
+      align-self: center;
+      white-space: nowrap;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .user-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #f5e5a6;
+      color: #b7891c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .user-copy {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.05;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .user-name {
+      color: #1b1b2f;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .user-role {
+      color: #7f6a2d;
+      font-size: 10px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .content {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 408px;
+      align-items: start;
+      overflow: visible;
+      min-height: auto;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .center {
+      flex: 1;
+      overflow: visible;
+      padding: 12px 0 12px 8px;
+      min-width: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .right-panel {
+      width: auto;
+      min-width: 0;
+      min-height: 100%;
+      height: auto;
+      background: linear-gradient(180deg, #f6e6a8 0%, #eccb63 100%);
+      border-left: 1px solid rgba(170, 128, 18, 0.28);
+      overflow: visible;
+      padding: 10px 12px 12px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.4);
+      position: relative;
+      top: auto;
+      align-self: stretch;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-card {
+      background: var(--surface-2);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px 12px;
+      margin-bottom: 10px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.02em;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-active {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-active span {
+      color: var(--text-accent);
+      font-weight: 700;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr);
+      align-items: center;
+      gap: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 4px;
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      text-align: center;
+      color: var(--text-primary);
+      cursor: pointer;
+      min-width: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      letter-spacing: 0.08em;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage-count {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage-amount {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-connector {
+      height: 6px;
+      border-radius: 999px;
+      margin: 0 2px;
+      align-self: center;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage.lead .current-pipeline-stage-circle {
+      background: #d4a63b;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage.prospect .current-pipeline-stage-circle {
+      background: #f28a34;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage.approved .current-pipeline-stage-circle {
+      background: #32b36f;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage.completed .current-pipeline-stage-circle {
+      background: #4f83ff;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage.invoiced .current-pipeline-stage-circle {
+      background: #e15b64;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-connector.lead {
+      background: linear-gradient(90deg, #d4a63b 0%, #f28a34 100%);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-connector.prospect {
+      background: linear-gradient(90deg, #f28a34 0%, #32b36f 100%);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-connector.approved {
+      background: linear-gradient(90deg, #32b36f 0%, #4f83ff 100%);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-connector.completed {
+      background: linear-gradient(90deg, #4f83ff 0%, #e15b64 100%);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .job-actions-header {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .section-title {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+      margin-top: 12px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .section-title:first-child {
+      margin-top: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .action-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .fin-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .action-card {
+      background: var(--surface-2);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+      cursor: pointer;
+      width: 100%;
+      min-height: 86px;
+      border-left-width: 0.5px;
+      border-right-width: 0.5px;
+      border-top-width: 0.5px;
+      border-bottom-width: 0.5px;
+      appearance: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .action-card:hover {
+      background: var(--surface-1);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .action-card .num {
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--text-muted);
+      line-height: 1.1;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .action-card .dash-icon {
+      display: flex;
+      justify-content: center;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .action-card .lbl {
+      font-size: 9px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .leaderboard {
+      background: var(--surface-2);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      width: 100%;
+      margin-right: 0;
+      margin-bottom: 4px;
+      margin-top: 4px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 12px;
+      background: var(--surface-1);
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-header span {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.6px;
+      line-height: 1;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-header span:first-child {
+      font-size: 13.5px;
+      font-weight: 700;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-header .lb-period {
+      color: var(--text-accent);
+      font-size: 11px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-row {
+      display: grid;
+      grid-template-columns: 22px minmax(96px, 1.1fr) minmax(72px, 1.45fr) max-content;
+      gap: 8px;
+      align-items: center;
+      padding: 3px 10px;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-row:last-child {
+      border-bottom: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-row .rank {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-row .name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.05;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .bar-wrap {
+      height: 11px;
+      background: var(--surface-0);
+      border-radius: 5px;
+      overflow: hidden;
+      min-width: 72px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .bar {
+      height: 100%;
+      background: #e8a020;
+      border-radius: 5px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-row .stats {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: right;
+      white-space: nowrap;
+      min-width: 74px;
+      line-height: 1;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .metrics-card {
+      background: var(--surface-2);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .metrics-card .mh {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .metric-item {
+      text-align: center;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .metric-item .dash-icon {
+      display: flex;
+      justify-content: center;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .metric-item .mv {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.1;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .metric-item .mv.accent {
+      color: var(--text-accent);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .metric-item .ml {
+      font-size: 9px;
+      color: var(--text-muted);
+      line-height: 1.25;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .activity-feed-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: #6f5712;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-activity-panel {
+      background: rgba(255, 248, 219, 0.28);
+      border: 1px solid rgba(170, 128, 18, 0.18);
+      border-radius: 12px;
+      padding: 10px;
+      position: relative;
+      top: auto;
+      height: 100%;
+      min-height: 100%;
+      max-height: none;
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .activity-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 4px;
+      border: 0.5px solid rgba(170, 128, 18, 0.24);
+      background: rgba(255, 252, 243, 0.92);
+      width: 100%;
+      text-align: left;
+      appearance: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .activity-btn:hover {
+      background: #fff8e4;
+      border-color: rgba(170, 128, 18, 0.4);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .activity-btn .dash-icon {
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .activity-btn.log-comm .dash-icon {
+      color: #fb923c;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .activity-btn.add-task .dash-icon {
+      color: #4ade80;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .activity-btn span:last-child {
+      font-size: 12px;
+      color: var(--text-primary);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .feed-tabs {
+      display: flex;
+      gap: 4px;
+      margin: 8px 0;
+      flex-wrap: wrap;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .ftab {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      border: 0.5px solid rgba(170, 128, 18, 0.24);
+      cursor: pointer;
+      color: #705a18;
+      background: rgba(255, 251, 237, 0.68);
+      appearance: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .ftab.active {
+      background: #fff2bf;
+      color: #9c6f00;
+      border-color: rgba(170, 128, 18, 0.38);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-activity-feed-list {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding-right: 2px;
+      background: transparent;
+      outline: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-activity-feed-list::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-activity-panel:hover .crm-activity-feed-list,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-activity-panel:focus-within .crm-activity-feed-list {
+      scrollbar-width: thin;
+      -ms-overflow-style: auto;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-activity-panel:hover .crm-activity-feed-list::-webkit-scrollbar,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-activity-panel:focus-within .crm-activity-feed-list::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-activity-panel:hover .crm-activity-feed-list::-webkit-scrollbar-thumb,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-activity-panel:focus-within .crm-activity-feed-list::-webkit-scrollbar-thumb {
+      background: rgba(143, 105, 0, 0.42);
+      border-radius: 999px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-ap-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      border-bottom: 0.5px solid rgba(170, 128, 18, 0.16);
+      padding: 7px 0;
+      cursor: pointer;
+      color: var(--text-primary);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-ap-item:last-child {
+      border-bottom: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-ap-item:hover {
+      background: transparent;
+      border-radius: 0;
+      padding-left: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-ap-item-msg {
+      font-size: 11px;
+      color: var(--text-primary);
+      line-height: 1.4;
+      font-weight: 400;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-ap-item-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-activity-empty {
+      padding: 7px 0;
+      font-size: 11px;
+      color: #8b7333;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .view-all {
+      font-size: 11px;
+      color: #8f6900;
+      text-align: center;
+      margin-top: 8px;
+      flex: 0 0 auto;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .meas-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
+      padding: 0;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      margin-bottom: 8px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .meas-item {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      border: 0.5px solid var(--border);
+      background: var(--surface-2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      color: var(--text-primary);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .meas-item:hover,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .material-item:hover {
+      background: var(--surface-1);
+      border-color: rgba(170, 128, 18, 0.32);
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .meas-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+      font-size: 11px;
+      color: #fff;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .meas-logo .dash-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 1.85;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      display: block;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .meas-item span:last-child {
+      font-size: 10px;
+      color: var(--text-primary);
+      line-height: 1.2;
+      text-align: left;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .material-row {
+      margin-bottom: 8px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .material-item {
+      width: 100%;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-2);
+      padding: 10px 12px;
+      cursor: pointer;
+      color: var(--text-primary);
+      appearance: none;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .material-logo {
+      background: #1f4c8f;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .material-copy {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .material-title {
+      font-size: 10px;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .material-subtitle {
+      font-size: 9px;
+      color: var(--text-secondary);
+      line-height: 1.2;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .act-count-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .act-count-item {
+      text-align: center;
+      background: var(--surface-2);
+      border: 0.5px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 4px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .act-count-item .dash-icon {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2px;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .act-count-item .dash-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 1.85;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      display: block;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .act-count-item .acv {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.1;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .act-count-item .acl {
+      font-size: 8px;
+      color: var(--text-muted);
+      line-height: 1.25;
+    }
+
+    @media (max-width: 720px) {
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .stage-pills {
+        gap: 2px;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill {
+        min-width: 62px;
+        padding: 4px 6px;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .right-panel {
+        width: 100%;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        row-gap: 10px;
+        column-gap: 8px;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-connector {
+        display: none;
+      }
+    }
+
+    @media (max-width: 720px) {
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .wrap {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .sidebar {
+        width: 100%;
+        flex-direction: row;
+        justify-content: center;
+        flex-wrap: wrap;
+        padding: 8px;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .main {
+        overflow: visible;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .topbar {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .topbar-center {
+        order: 2;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .hm-brand,
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .stage-pills {
+        position: static;
+        left: auto;
+        top: auto;
+        transform: none;
+        grid-column: 1;
+        justify-self: center;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .stage-pills {
+        margin-left: 0;
+        padding-top: 0;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .content {
+        flex-direction: column;
+        grid-template-columns: 1fr;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .right-panel {
+        width: 100%;
+        display: block;
+        border-left: none;
+        border-top: 0.5px solid var(--border);
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .action-grid,
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .fin-grid,
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .meas-row,
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .act-count-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .bottom-grid {
+        grid-template-columns: 1fr;
+      }
+    }
 
       .field-grid,
       .job-detail-grid {
@@ -3982,6 +6209,245 @@
     .crm-job-file-inline-note {
       font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.45;
     }
+    .crm-job-file-tab-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .crm-job-folder-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .crm-job-folder-action-row {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0,1fr));
+      gap: 10px;
+    }
+    .crm-job-folder-action-tile {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 12px;
+      min-width: 0;
+    }
+    .crm-job-folder-action-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .crm-job-folder-action-meta {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .crm-job-folder-action-meta.coming-soon {
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .crm-job-folder-workflow-card {
+      background: linear-gradient(135deg, rgba(202,168,92,0.10), rgba(17,24,39,0.03));
+      border: 1px solid rgba(202,168,92,0.28);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+    .crm-job-folder-workflow-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+    .crm-job-folder-workflow-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 10px;
+    }
+    .crm-job-folder-workflow-meta-item {
+      background: rgba(255,255,255,0.56);
+      border: 1px solid rgba(17,24,39,0.08);
+      border-radius: 12px;
+      padding: 12px;
+      min-width: 0;
+    }
+    .crm-job-folder-workflow-meta-item .crm-job-folder-detail-label {
+      margin-bottom: 4px;
+    }
+    .crm-job-folder-workflow-soon {
+      margin-top: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .crm-job-folder-kicker {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .crm-job-folder-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.08;
+      margin-bottom: 6px;
+    }
+    .crm-job-folder-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .crm-job-folder-badge-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .crm-job-folder-overview-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 12px;
+    }
+    .crm-job-folder-field {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      min-width: 0;
+    }
+    .crm-job-folder-field-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .crm-job-folder-field-value {
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .crm-job-folder-field-value.empty {
+      color: var(--muted);
+      opacity: 0.7;
+      font-style: italic;
+    }
+    .crm-job-folder-body-grid,
+    .crm-job-folder-card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 12px;
+    }
+    .crm-job-folder-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      min-width: 0;
+    }
+    .crm-job-folder-card.full {
+      grid-column: 1 / -1;
+    }
+    .crm-job-folder-section-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      margin-bottom: 12px;
+    }
+    .crm-job-folder-detail-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .crm-job-folder-detail-item {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 13px;
+    }
+    .crm-job-folder-detail-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .crm-job-folder-detail-value {
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .crm-job-folder-detail-value.empty {
+      color: var(--muted);
+      opacity: 0.7;
+      font-style: italic;
+    }
+    .crm-job-folder-progress-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .crm-job-folder-progress-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 13px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+    }
+    .crm-job-folder-progress-step.is-complete {
+      border-color: rgba(10,122,75,0.26);
+      background: rgba(10,122,75,0.08);
+    }
+    .crm-job-folder-progress-step.is-active {
+      border-color: var(--accent-2);
+      background: rgba(202,168,92,0.12);
+    }
+    .crm-job-folder-progress-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: #c7ccd5;
+      flex: 0 0 auto;
+    }
+    .crm-job-folder-progress-step.is-complete .crm-job-folder-progress-dot {
+      background: #0a7a4b;
+    }
+    .crm-job-folder-progress-step.is-active .crm-job-folder-progress-dot {
+      background: var(--accent);
+    }
+    .crm-job-folder-progress-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .crm-job-folder-progress-state {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      flex: 0 0 auto;
+    }
     .crm-job-fin-summary-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0,1fr));
@@ -4120,22 +6586,34 @@
     @media (max-width: 900px) {
       .crm-job-file-header-grid,
       .crm-job-file-stat-grid,
+      .crm-job-folder-overview-grid,
+      .crm-job-folder-body-grid,
+      .crm-job-folder-card-grid,
       .crm-job-fin-summary-grid,
       .crm-job-file-quick-grid,
       .crm-job-file-doc-grid,
       .crm-job-file-photo-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .crm-job-folder-action-row { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .crm-job-folder-workflow-meta { grid-template-columns: repeat(3, minmax(0,1fr)); }
     }
     @media (max-width: 720px) {
       .crm-job-file-header-grid,
       .crm-job-file-stat-grid,
+      .crm-job-folder-overview-grid,
       .crm-job-fin-summary-grid,
+      .crm-job-folder-body-grid,
+      .crm-job-folder-card-grid,
       .crm-job-file-grid-2,
       .crm-job-file-kv-list,
       .crm-job-file-form-grid,
       .crm-job-file-doc-grid,
       .crm-job-file-photo-grid,
       .crm-job-file-quick-grid { grid-template-columns: minmax(0,1fr); }
+      .crm-job-folder-action-row { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .crm-job-folder-workflow-meta { grid-template-columns: minmax(0,1fr); }
       .crm-job-file-title { font-size: 24px; }
+      .crm-job-folder-title { font-size: 22px; }
+      .crm-job-folder-workflow-title { font-size: 20px; }
     }
     .crm-add-form { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
     .crm-add-form textarea {
@@ -5946,6 +8424,17 @@
     .settings-team-helper-text {
       margin-top:12px; font-size:12px; color:var(--muted);
     }
+    .settings-inline-error {
+      margin-top:6px;
+      font-size:12px;
+      font-weight:600;
+      color:var(--error);
+      line-height:1.4;
+    }
+    .settings-team-modal-actions .btn[disabled] {
+      opacity:.48;
+      cursor:not-allowed;
+    }
     .settings-team-modal-stats {
       margin-top:16px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;
     }
@@ -6983,6 +9472,7 @@
           <img class="app-top-hail-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
           <div class="map-header-title">Hail Money</div>
         </div>
+        <div class="crm-header-inline-title" id="crm-header-inline-title" hidden></div>
         <div class="crm-header-page-title" id="crm-header-page-title" hidden></div>
       </div>
       <!-- Maps date picker: true top minibar, visible only on the Maps page, controls Recent/Impact/Pinned + swath loading -->
@@ -7067,122 +9557,260 @@
       </section>
 
       <section id="page-main-menu" class="page">
-        <div class="crm-layout">
-          <div class="crm-main-column">
-            <div class="main-menu-wrap">
-          <h1 class="main-menu-title">Main Menu</h1>
-          <p class="page-subtitle">Choose the next task.</p>
+        <!-- Hidden stubs: preserve IDs wired by existing event listeners -->
+        <button type="button" id="open-new-lead" style="display:none;" aria-hidden="true"></button>
+        <button type="button" id="open-all-leads" style="display:none;" aria-hidden="true"></button>
+        <button type="button" id="open-crm-pipeline" style="display:none;" aria-hidden="true"></button>
+        <button type="button" id="open-crm-jobs" style="display:none;" aria-hidden="true"></button>
+        <button type="button" id="open-tasks" style="display:none;" aria-hidden="true"><span id="open-tasks-count"></span></button>
+        <button type="button" id="open-company-docs" style="display:none;" aria-hidden="true"></button>
+        <button type="button" id="open-crm-settings" style="display:none;" aria-hidden="true"></button>
+        <button type="button" id="open-my-jobs" style="display:none;" aria-hidden="true"></button>
+        <button type="button" id="open-assigned-leads" style="display:none;" aria-hidden="true"><span id="assigned-leads-count"></span></button>
 
-          <section class="main-menu-card">
-            <!-- Hidden stubs: preserve IDs wired by existing event listeners -->
-            <button type="button" id="open-new-lead"      style="display:none;" aria-hidden="true"></button>
-            <button type="button" id="open-all-leads"     style="display:none;" aria-hidden="true"></button>
-            <button type="button" id="open-crm-pipeline"  style="display:none;" aria-hidden="true"></button>
-            <button type="button" id="open-crm-jobs"      style="display:none;" aria-hidden="true"></button>
-            <button type="button" id="open-tasks"         style="display:none;" aria-hidden="true"><span id="open-tasks-count"></span></button>
-            <button type="button" id="open-company-docs"  style="display:none;" aria-hidden="true"></button>
-            <button type="button" id="open-crm-settings"  style="display:none;" aria-hidden="true"></button>
-            <button type="button" id="open-my-jobs"       style="display:none;" aria-hidden="true"></button>
-            <button type="button" id="open-assigned-leads" style="display:none;" aria-hidden="true"><span id="assigned-leads-count"></span></button>
-
-            <!-- Dynamic CRM section — populated by crmRenderMainMenu() based on role -->
-            <section class="menu-section" id="crm-menu-section-container">
-              <div id="crm-main-menu-section"></div>
-            </section>
-
-            <section class="menu-section" id="main-menu-field-section">
-              <div class="menu-section-header">FIELD</div>
-              <div class="menu-list">
-                <button class="menu-row" type="button" id="open-map">
-                  <div class="menu-row-title">Map</div>
-                  <div class="menu-row-desc">View storms, properties, and start inspections</div>
-                </button>
-
-                <button class="menu-row" type="button" id="open-campaigns">
-                  <div class="menu-row-title">Campaigns</div>
-                  <div class="menu-row-desc">Target streets and work selected areas</div>
-                </button>
-
-                <button class="menu-row" type="button" id="open-start-inspection-menu">
-                  <div class="menu-row-header">
-                    <div class="menu-row-title">Start Inspection</div>
-                  </div>
-                  <div class="menu-row-desc">Open the camera and capture inspection photos</div>
-                </button>
-
-                <button class="menu-row" type="button" id="open-photo-files">
-                  <div class="menu-row-header">
-                    <div class="menu-row-title">Photo Files</div>
-                  </div>
-                  <div class="menu-row-desc">View saved inspection photo sessions by job</div>
-                </button>
-              </div>
-            </section>
-
-            <section class="menu-section" id="main-menu-company-section">
-              <div class="menu-section-header">COMPANY</div>
-              <div class="menu-list">
-                <button class="menu-row" type="button" id="open-company">
-                  <div class="menu-row-title">Company</div>
-                  <div class="menu-row-desc">Payroll, announcements, meetings, and company tools</div>
-                </button>
-              </div>
-            </section>
-
-            <section class="menu-section" id="main-menu-ai-section">
-              <div class="menu-section-header">AI</div>
-              <div class="menu-list">
-                <button class="menu-row menu-row-primary" type="button" id="open-ai">
-                  <div class="menu-row-title">Roofer AI</div>
-                  <div class="menu-row-desc">Chat with AI about codes, damage, claims, objections, estimates, and job questions</div>
-                </button>
-              </div>
-            </section>
-
-            <section class="menu-section" id="main-menu-office-section">
-              <div class="menu-section-header">OFFICE</div>
-              <div class="menu-list">
-                <button class="menu-row" type="button" id="open-estimates">
-                  <div class="menu-row-title">Estimates</div>
-                  <div class="menu-row-desc">Measurements, pricing, and estimate generation</div>
-                </button>
-
-                <button class="menu-row menu-row-disabled" type="button" disabled>
-                  <div class="menu-row-header">
-                    <div class="menu-row-title">Documents</div>
-                    <span class="menu-row-badge">Coming soon</span>
-                  </div>
-                  <div class="menu-row-desc">Open job paperwork and uploads</div>
-                </button>
-              </div>
-            </section>
-
-            <section class="menu-section" id="main-menu-today-section">
-              <div class="menu-section-header">TODAY</div>
-              <div class="menu-today-summary">
-                <div class="menu-today-item">Active jobs</div>
-                <div class="menu-today-item">New leads</div>
-                <div class="menu-today-item">Inspections to schedule</div>
-                <div class="menu-today-item">Adjuster meetings</div>
-                <div class="menu-today-item">Production starts</div>
-              </div>
-            </section>
+        <div class="dashboard-legacy-action-cache" hidden aria-hidden="true">
+          <section class="menu-section" id="crm-menu-section-container">
+            <div id="crm-main-menu-section"></div>
           </section>
-            </div><!-- /main-menu-wrap -->
-          </div><!-- /crm-main-column -->
-          <div class="crm-activity-column">
-            <div class="crm-activity-panel">
-              <div class="crm-activity-panel-title">Activity Feed</div>
-              <div class="crm-activity-quick-actions">
-                <button class="crm-activity-quick-btn" type="button" data-ap-action="add-note">📝 Add Note</button>
-                <button class="crm-activity-quick-btn" type="button" data-ap-action="log-comm">📋 Log Communication</button>
-                <button class="crm-activity-quick-btn" type="button" data-ap-action="add-task">✅ Add Task</button>
+          <button type="button" id="open-map"></button>
+          <button type="button" id="open-campaigns"></button>
+          <button type="button" id="open-start-inspection-menu"></button>
+          <button type="button" id="open-photo-files"></button>
+          <button type="button" id="open-company"></button>
+          <button type="button" id="open-ai"></button>
+          <button type="button" id="open-estimates"></button>
+        </div>
+
+        <div class="hm-dashboard-ref">
+          <h2 class="sr-only">Hail Money CRM dashboard showing pipeline stages, job action items, leaderboard, and activity feed</h2>
+          <div class="wrap">
+            <nav class="sidebar" aria-label="Dashboard navigation">
+              <div class="logo">
+                <img id="dash-sidebar-company-logo" class="dash-sidebar-company-logo" src="./assets/hailmoney-logo.png?v=2" alt="Company Logo" draggable="false" />
+                <span class="sr-only" id="dash-company-initials">YP</span>
               </div>
-              <hr class="crm-activity-divider" />
-              <div class="crm-activity-feed-list"><div class="crm-activity-empty">No activity yet.</div></div>
+              <button class="nav-item active" type="button" data-dashboard-action="new-lead" aria-label="New Lead">
+                <span class="dash-icon" data-dash-icon="layout-dashboard" aria-hidden="true"></span><span class="nav-label">New</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="recent" aria-label="Recent">
+                <span class="dash-icon" data-dash-icon="clock" aria-hidden="true"></span><span class="nav-label">Recent</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="pipeline" aria-label="Pipeline">
+                <span class="dash-icon" data-dash-icon="list-check" aria-hidden="true"></span><span class="nav-label">Pipeline</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="inspections" aria-label="Inspections">
+                <span class="dash-icon" data-dash-icon="clipboard-check" aria-hidden="true"></span><span class="nav-label">Inspect</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="calendar" aria-label="Calendar">
+                <span class="dash-icon" data-dash-icon="calendar" aria-hidden="true"></span><span class="nav-label">Calendar</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="payroll" aria-label="Payroll">
+                <span class="dash-icon" data-dash-icon="cash" aria-hidden="true"></span><span class="nav-label">Payroll</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="production" aria-label="Production">
+                <span class="dash-icon" data-dash-icon="factory" aria-hidden="true"></span><span class="nav-label">Production</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="map" aria-label="Map">
+                <span class="dash-icon" data-dash-icon="map" aria-hidden="true"></span><span class="nav-label">Map</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="campaigns" aria-label="Campaigns">
+                <span class="dash-icon" data-dash-icon="speakerphone" aria-hidden="true"></span><span class="nav-label">Campaign</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="start-inspection" aria-label="Start Inspection">
+                <span class="dash-icon" data-dash-icon="play" aria-hidden="true"></span><span class="nav-label">Start</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="photo-files" aria-label="Photo Files">
+                <span class="dash-icon" data-dash-icon="camera" aria-hidden="true"></span><span class="nav-label">Photos</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="roofer-ai" aria-label="Roofer AI">
+                <span class="dash-icon" data-dash-icon="robot" aria-hidden="true"></span><span class="nav-label">AI</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="estimates" aria-label="Estimates">
+                <span class="dash-icon" data-dash-icon="file-dollar" aria-hidden="true"></span><span class="nav-label">Estimate</span>
+              </button>
+            </nav>
+
+            <div class="main">
+              <div class="topbar">
+                <div class="brand">
+                  <img id="dash-header-company-logo" class="dash-header-company-logo" src="./assets/hailmoney-logo.png?v=2" alt="Company Logo" draggable="false" />
+                  <span class="brand-title">Dashboard</span>
+                </div>
+                <div class="topbar-center">
+                  <div class="hm-brand">
+                    <img class="hm-brand-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
+                    <span class="hm-brand-wordmark">Hail Money</span>
+                  </div>
+                  <div class="stage-pills" aria-label="Pipeline stage totals">
+                    <button class="pill lead" type="button" data-dashboard-action="pipeline"><div class="label">LEAD</div><div class="letter">L</div><div class="amount" id="dash-stage-lead-amount">$0</div></button>
+                    <button class="pill prospect" type="button" data-dashboard-action="pipeline"><div class="label">PROSPECT</div><div class="letter">P</div><div class="amount" id="dash-stage-prospect-amount">$0</div></button>
+                    <button class="pill approved" type="button" data-dashboard-action="pipeline"><div class="label">APPROVED</div><div class="letter">A</div><div class="amount" id="dash-stage-approved-amount">$0</div></button>
+                    <button class="pill completed" type="button" data-dashboard-action="pipeline"><div class="label">COMPLETED</div><div class="letter">C</div><div class="amount" id="dash-stage-completed-amount">$0</div></button>
+                    <button class="pill invoiced" type="button" data-dashboard-action="pipeline"><div class="label">INVOICED</div><div class="letter">I</div><div class="amount" id="dash-stage-invoiced-amount">$0</div></button>
+                    <button class="pill closed" type="button" data-dashboard-action="pipeline"><div class="label">CLOSED</div><div class="letter">C</div><div class="amount" id="dash-stage-closed-amount">$0</div></button>
+                  </div>
+                </div>
+                <div class="user-info">
+                  <div class="user-badge" id="dash-user-badge">HM</div>
+                  <div class="user-copy">
+                    <div class="user-name" id="dash-user-name">User</div>
+                    <div class="user-role" id="dash-user-role">Sales Rep</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="content">
+                <div class="center">
+                  <div class="current-pipeline-card">
+                    <div class="current-pipeline-header">
+                      <div class="current-pipeline-title">Current Pipeline</div>
+                      <div class="current-pipeline-active">Active Jobs: <span id="dash-current-pipeline-active-jobs">0</span></div>
+                    </div>
+                    <div class="current-pipeline-grid" aria-label="Current pipeline overview">
+                      <button class="current-pipeline-stage lead" type="button" data-dashboard-action="pipeline">
+                        <div class="current-pipeline-stage-label">LEAD</div>
+                        <div class="current-pipeline-stage-circle">L</div>
+                        <div class="current-pipeline-stage-count" id="dash-current-pipeline-lead-count">0</div>
+                        <div class="current-pipeline-stage-amount" id="dash-current-pipeline-lead-amount">$0</div>
+                      </button>
+                      <div class="current-pipeline-connector lead" aria-hidden="true"></div>
+                      <button class="current-pipeline-stage prospect" type="button" data-dashboard-action="pipeline">
+                        <div class="current-pipeline-stage-label">PROSPECT</div>
+                        <div class="current-pipeline-stage-circle">P</div>
+                        <div class="current-pipeline-stage-count" id="dash-current-pipeline-prospect-count">0</div>
+                        <div class="current-pipeline-stage-amount" id="dash-current-pipeline-prospect-amount">$0</div>
+                      </button>
+                      <div class="current-pipeline-connector prospect" aria-hidden="true"></div>
+                      <button class="current-pipeline-stage approved" type="button" data-dashboard-action="pipeline">
+                        <div class="current-pipeline-stage-label">APPROVED</div>
+                        <div class="current-pipeline-stage-circle">A</div>
+                        <div class="current-pipeline-stage-count" id="dash-current-pipeline-approved-count">0</div>
+                        <div class="current-pipeline-stage-amount" id="dash-current-pipeline-approved-amount">$0</div>
+                      </button>
+                      <div class="current-pipeline-connector approved" aria-hidden="true"></div>
+                      <button class="current-pipeline-stage completed" type="button" data-dashboard-action="pipeline">
+                        <div class="current-pipeline-stage-label">COMPLETED</div>
+                        <div class="current-pipeline-stage-circle">C</div>
+                        <div class="current-pipeline-stage-count" id="dash-current-pipeline-completed-count">0</div>
+                        <div class="current-pipeline-stage-amount" id="dash-current-pipeline-completed-amount">$0</div>
+                      </button>
+                      <div class="current-pipeline-connector completed" aria-hidden="true"></div>
+                      <button class="current-pipeline-stage invoiced" type="button" data-dashboard-action="pipeline">
+                        <div class="current-pipeline-stage-label">INVOICED</div>
+                        <div class="current-pipeline-stage-circle">I</div>
+                        <div class="current-pipeline-stage-count" id="dash-current-pipeline-invoiced-count">0</div>
+                        <div class="current-pipeline-stage-amount" id="dash-current-pipeline-invoiced-amount">$0</div>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="job-actions-header">JOB ACTION ITEMS (<span id="dash-job-actions-total">0</span>)</div>
+
+                  <div class="section-title">PROGRESS</div>
+                  <div class="action-grid" style="grid-template-columns:repeat(5,1fr);">
+                    <button class="action-card" type="button" data-dashboard-action="pipeline"><div class="num" id="dash-unassigned-leads">0</div><span class="dash-icon" data-dash-icon="user-plus" aria-hidden="true"></span><div class="lbl">Unassigned leads</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="pipeline"><div class="num" id="dash-prospect-submitted">0</div><span class="dash-icon" data-dash-icon="chart-arrows" aria-hidden="true"></span><div class="lbl">Leads submitted as prospect</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="pipeline"><div class="num" id="dash-approved-submitted">0</div><span class="dash-icon" data-dash-icon="circle-check" aria-hidden="true"></span><div class="lbl">Jobs submitted for approval</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="pipeline"><div class="num" id="dash-completed-submitted">0</div><span class="dash-icon" data-dash-icon="checks" aria-hidden="true"></span><div class="lbl">Jobs submitted for completed</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="pipeline"><div class="num" id="dash-invoiced-submitted">0</div><span class="dash-icon" data-dash-icon="file-invoice" aria-hidden="true"></span><div class="lbl">Jobs submitted for invoicing</div></button>
+                  </div>
+                  <div class="action-grid" style="grid-template-columns:repeat(3,1fr);margin-top:4px;">
+                    <button class="action-card" type="button" data-dashboard-action="pipeline"><div class="num" id="dash-closed-submitted">0</div><span class="dash-icon" data-dash-icon="lock" aria-hidden="true"></span><div class="lbl">Jobs submitted as closed</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="pipeline"><div class="num" id="dash-status-approval">0</div><span class="dash-icon" data-dash-icon="refresh" aria-hidden="true"></span><div class="lbl">Jobs submitted for status approval</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="pipeline"><div class="num" id="dash-wash-list">0</div><span class="dash-icon" data-dash-icon="eye" aria-hidden="true"></span><div class="lbl">Wash list</div></button>
+                  </div>
+
+                  <div class="section-title">FINANCIAL</div>
+                  <div class="fin-grid">
+                    <button class="action-card" type="button" data-dashboard-action="production"><div class="num" id="dash-submitted-worksheets">0</div><span class="dash-icon" data-dash-icon="file-text" aria-hidden="true"></span><div class="lbl">Submitted worksheets</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="production"><div class="num" id="dash-overdue-invoices">0</div><span class="dash-icon" data-dash-icon="clock-exclamation" aria-hidden="true"></span><div class="lbl">Overdue invoices</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="production"><div class="num" id="dash-invoices-not-recorded">0</div><span class="dash-icon" data-dash-icon="file-off" aria-hidden="true"></span><div class="lbl">Invoices not recorded</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="production"><div class="num" id="dash-canceled-balance">0</div><span class="dash-icon" data-dash-icon="currency-dollar" aria-hidden="true"></span><div class="lbl">Canceled jobs with balance due</div></button>
+                  </div>
+
+                  <div class="section-title">MANAGEMENT</div>
+                  <div class="fin-grid">
+                    <button class="action-card" type="button" data-dashboard-action="production"><div class="num" id="dash-submitted-orders">0</div><span class="dash-icon" data-dash-icon="shopping-cart" aria-hidden="true"></span><div class="lbl">Submitted orders</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="estimates"><div class="num" id="dash-measurement-order-requests">0</div><span class="dash-icon" data-dash-icon="ruler" aria-hidden="true"></span><div class="lbl">Measurement order requests</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="production"><div class="num" id="dash-pending-signatures">0</div><span class="dash-icon" data-dash-icon="signature" aria-hidden="true"></span><div class="lbl">Pending signatures</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="photo-files"><div class="num" id="dash-photos-uploaded-today">0</div><span class="dash-icon" data-dash-icon="photo" aria-hidden="true"></span><div class="lbl">Photos uploaded today</div></button>
+                  </div>
+
+                  <div class="section-title">ORDER MEASUREMENTS</div>
+                  <div class="meas-row">
+                    <button class="meas-item" type="button" data-dashboard-action="estimates"><div class="meas-logo" style="background:#1a3a5c;"><span class="dash-icon" data-dash-icon="drone" aria-hidden="true"></span></div><span>EagleView</span></button>
+                    <button class="meas-item" type="button" data-dashboard-action="estimates"><div class="meas-logo" style="background:#c0392b;"><span style="font-size:10px;font-weight:700;letter-spacing:0.04em;" aria-hidden="true">GAF</span></div><span>GAF QuickMeasure</span></button>
+                    <button class="meas-item" type="button" data-dashboard-action="estimates"><div class="meas-logo" style="background:#6c3483;"><span class="dash-icon" data-dash-icon="planet" aria-hidden="true"></span></div><span>Geospan</span></button>
+                  </div>
+
+                  <div class="section-title">ORDER MATERIALS</div>
+                  <div class="material-row">
+                    <button class="material-item" type="button" data-dashboard-action="production">
+                      <div class="meas-logo material-logo"><span style="font-size:10px;font-weight:700;letter-spacing:0.04em;" aria-hidden="true">ABC</span></div>
+                      <div class="material-copy">
+                        <span class="material-title">Material Quick Order</span>
+                        <span class="material-subtitle">ABC Supply</span>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div class="leaderboard">
+                    <div class="lb-header"><span>LEADERBOARD &#8212; TOP SALES REPS</span><span class="lb-period">This month</span></div>
+                    <div id="dash-leaderboard-rows"></div>
+                  </div>
+
+                  <div class="bottom-grid">
+                    <div class="metrics-card">
+                      <div class="mh">WORK SCHEDULE &#8212; TODAY</div>
+                      <div class="metrics-row">
+                        <div class="metric-item"><span class="dash-icon" data-dash-icon="calendar-event" aria-hidden="true"></span><div class="mv" id="dash-work-appointments">0</div><div class="ml">Appointments</div></div>
+                        <div class="metric-item"><span class="dash-icon" data-dash-icon="clipboard-list" aria-hidden="true"></span><div class="mv" id="dash-work-inspections">0</div><div class="ml">Inspections</div></div>
+                        <div class="metric-item"><span class="dash-icon" data-dash-icon="users" aria-hidden="true"></span><div class="mv" id="dash-work-followups">0</div><div class="ml">Follow-ups</div></div>
+                      </div>
+                    </div>
+                    <div class="metrics-card">
+                      <div class="mh">ACCOUNTS RECEIVABLE</div>
+                      <div class="metrics-row">
+                        <div class="metric-item"><span class="dash-icon" data-dash-icon="report-money" aria-hidden="true"></span><div class="mv accent" id="dash-ar-outstanding">$0.00</div><div class="ml">Outstanding</div></div>
+                        <div class="metric-item"><span class="dash-icon" data-dash-icon="file-invoice-dollar" aria-hidden="true"></span><div class="mv" id="dash-ar-open-balance">0</div><div class="ml">Open balance</div></div>
+                        <div class="metric-item"><span class="dash-icon" data-dash-icon="chart-line" aria-hidden="true"></span><div class="mv accent" id="dash-ar-average-balance">$0.00</div><div class="ml">Avg balance</div></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="section-title" style="margin-top:12px;">ACTIVITY COUNT &#8212; LAST 30 DAYS</div>
+                  <div class="act-count-grid">
+                    <div class="act-count-item"><span class="dash-icon" data-dash-icon="user-plus" aria-hidden="true" style="color:#4ade80;"></span><div class="acv" id="dash-activity-new-leads">0</div><div class="acl">New leads</div></div>
+                    <div class="act-count-item"><span class="dash-icon" data-dash-icon="thumb-up" aria-hidden="true" style="color:#38bdf8;"></span><div class="acv" id="dash-activity-jobs-approved">0</div><div class="acl">Jobs approved</div></div>
+                    <div class="act-count-item"><span class="dash-icon" data-dash-icon="circle-check" aria-hidden="true" style="color:#a78bfa;"></span><div class="acv" id="dash-activity-jobs-completed">0</div><div class="acl">Jobs completed</div></div>
+                    <div class="act-count-item"><span class="dash-icon" data-dash-icon="cash" aria-hidden="true" style="color:#4ade80;"></span><div class="acv" id="dash-activity-money-collected">$0.00</div><div class="acl">Money collected</div></div>
+                    <div class="act-count-item"><span class="dash-icon" data-dash-icon="file-invoice" aria-hidden="true" style="color:#fb923c;"></span><div class="acv" id="dash-activity-jobs-invoiced">0</div><div class="acl">Jobs invoiced</div></div>
+                    <div class="act-count-item"><span class="dash-icon" data-dash-icon="lock" aria-hidden="true" style="color:#f472b6;"></span><div class="acv" id="dash-activity-jobs-closed">0</div><div class="acl">Jobs closed</div></div>
+                  </div>
+                </div>
+
+                <div class="right-panel">
+                  <div class="crm-activity-panel">
+                    <div class="activity-feed-title">ACTIVITY FEED</div>
+                    <button class="activity-btn add-note crm-activity-quick-btn" type="button" data-ap-action="add-note"><span class="dash-icon" data-dash-icon="note" aria-hidden="true"></span><span>Add note</span></button>
+                    <button class="activity-btn log-comm crm-activity-quick-btn" type="button" data-ap-action="log-comm"><span class="dash-icon" data-dash-icon="message" aria-hidden="true"></span><span>Log communication</span></button>
+                    <button class="activity-btn add-task crm-activity-quick-btn" type="button" data-ap-action="add-task"><span class="dash-icon" data-dash-icon="circle-check" aria-hidden="true"></span><span>Add task</span></button>
+                    <div class="feed-tabs crm-ap-filter-bar">
+                      <button class="ftab crm-ap-filter-btn active" type="button" data-ap-filter="all">All</button>
+                      <button class="ftab crm-ap-filter-btn" type="button" data-ap-filter="leads">Leads</button>
+                      <button class="ftab crm-ap-filter-btn" type="button" data-ap-filter="tasks">Tasks</button>
+                      <button class="ftab crm-ap-filter-btn" type="button" data-ap-filter="notes">Notes</button>
+                      <button class="ftab crm-ap-filter-btn" type="button" data-ap-filter="payroll">Payroll</button>
+                      <button class="ftab crm-ap-filter-btn" type="button" data-ap-filter="calendar">Calendar</button>
+                    </div>
+                    <div class="crm-activity-feed-list" tabindex="0"><div class="crm-activity-empty">No activity yet.</div></div>
+                    <div class="view-all">View all activity...</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div><!-- /crm-layout -->
+        </div>
       </section>
 
       <section id="page-admin-placeholder" class="page">
@@ -9569,22 +12197,18 @@
             <button class="btn" type="button" id="jf-back-btn">Back</button>
             <button class="btn" type="button" id="jf-open-lead-btn">Open Lead Detail</button>
           </div>
-          <div id="jf-header-card" class="crm-detail-card crm-job-file-header-card"></div>
-          <div id="jf-quick-actions-card" class="crm-detail-card crm-job-file-quick-card"></div>
           <div id="jf-tabs" class="crm-job-file-tabs">
-            <button class="crm-job-file-tab-btn active" type="button" data-jf-tab="overview">Overview</button>
-            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="activity">Activity</button>
-            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="photos">Photos</button>
+            <button class="crm-job-file-tab-btn active" type="button" data-jf-tab="overview">Job Folder</button>
+            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="contacts">Contacts</button>
             <button class="crm-job-file-tab-btn" type="button" data-jf-tab="documents">Documents</button>
-            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="estimate">Estimate</button>
-            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="insurance">Insurance</button>
-            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="calendar">Calendar</button>
-            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="tasks">Tasks</button>
-            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="production">Production</button>
-            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="payments">Payments</button>
-            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="messages">Messages</button>
+            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="photos">Photos</button>
+            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="reports">Reports</button>
+            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="notes">Notes</button>
+            <button class="crm-job-file-tab-btn" type="button" data-jf-tab="activity">Activity</button>
           </div>
-          <div id="jf-tab-content" class="crm-detail-card"></div>
+          <div id="jf-header-card" class="crm-detail-card crm-job-file-header-card"></div>
+          <div id="jf-quick-actions-card" class="crm-detail-card crm-job-file-quick-card" hidden></div>
+          <div id="jf-tab-content" class="crm-job-file-tab-shell"></div>
           <input type="file" id="jf-photo-upload-input" accept="image/*" multiple style="display:none;" />
           <input type="file" id="jf-doc-upload-input" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none;" />
             </div><!-- /crm-job-file-wrap -->
@@ -9950,6 +12574,7 @@
             <div class="field">
               <label for="settings-team-member-temp-password-confirm">Confirm Temporary Password</label>
               <input id="settings-team-member-temp-password-confirm" type="password" autocomplete="new-password" />
+              <div id="settings-team-password-match-msg" class="settings-inline-error" style="display:none;">Passwords must match</div>
             </div>
             <div class="field">
               <label for="settings-team-member-role">Role</label>
@@ -10958,6 +13583,7 @@
       document.body.classList.toggle('map-page-active', pageId === 'page-map');
       document.body.classList.toggle('crm-page-active', pageId !== 'page-login' && pageId !== 'page-map');
       document.body.classList.toggle('crm-standard-header-active', crmUsesStandardHeaderLayout(pageId));
+      document.body.classList.toggle('crm-job-file-header-active', pageId === 'page-crm-job-file');
       document.body.classList.toggle('main-menu-page-active', pageId === 'page-main-menu');
       document.body.classList.toggle('pipeline-page-active', pageId === 'page-crm-pipeline');
       document.body.classList.toggle('settings-page-active', pageId === 'page-crm-settings');
@@ -32228,6 +34854,568 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmOpenSettingsPage('menu');
     });
 
+    function crmGetDashboardNewLeadAction() {
+      var role = crmGetWorkspaceMenuRole();
+      if (role === 'Canvasser') return 'canvass-lead';
+      if (role === 'Sales Rep') return 'field-lead';
+      if (role === 'Viewer') return '';
+      return 'call-in-leads';
+    }
+
+    function crmGetDashboardPipelineAction() {
+      var role = crmGetWorkspaceMenuRole();
+      if (role === 'Sales Rep') return 'my-pipeline';
+      if (role === 'Canvasser' || role === 'Viewer') return '';
+      return 'pipeline';
+    }
+
+    function crmGetDashboardProductionAction() {
+      var role = crmGetWorkspaceMenuRole();
+      if (role === 'Sales Rep') return 'my-jobs';
+      if (role === 'Viewer') return '';
+      return 'jobs';
+    }
+
+    function crmGetDashboardStageDefinitions() {
+      return [
+        { key: 'lead', label: 'Lead', icon: 'L', color: '#d4a63b' },
+        { key: 'prospect', label: 'Prospect', icon: 'P', color: '#f28a34' },
+        { key: 'approved', label: 'Approved', icon: 'A', color: '#32b36f' },
+        { key: 'completed', label: 'Completed', icon: 'C', color: '#4f83ff' },
+        { key: 'invoiced', label: 'Invoiced', icon: 'I', color: '#e15b64' },
+        { key: 'closed', label: 'Closed', icon: 'C', color: '#1fb6aa' }
+      ];
+    }
+
+    function crmGetDashboardStageBucket(lead, jobFile) {
+      var stage = String(lead && (lead.jobStage || lead.stage) || 'New Lead').trim() || 'New Lead';
+      var status = String(jobFile && jobFile.status || '').trim();
+      if (stage === 'Paid / Closed' || stage === 'Complete' || status === 'Closed') return 'closed';
+      if (stage === 'Invoiced') return 'invoiced';
+      if (['Production', 'Production Start', 'Built', 'Completed'].indexOf(stage) !== -1) return 'completed';
+      if (['Approved', 'Contract Signed'].indexOf(stage) !== -1) return 'approved';
+      if (['Inspected', 'Claim Filed', 'Adjuster Appointment'].indexOf(stage) !== -1) return 'prospect';
+      return 'lead';
+    }
+
+    function crmGetDashboardLeadAmount(lead, jobFile) {
+      jobFile = jobFile || crmGetLeadJobFileData(lead);
+      var contractAmount = crmParseMoneyNumber(jobFile && jobFile.paymentsSummary && jobFile.paymentsSummary.contractAmount || 0);
+      if (contractAmount > 0) return contractAmount;
+      var profitability = crmGetJobProfitabilityMetrics(jobFile && jobFile.jobProfitability || {});
+      if (profitability.totalRevenue > 0) return profitability.totalRevenue;
+      var worksheet = crmGetFinancialWorksheetMetrics(jobFile && jobFile.financialWorksheet || {});
+      if (worksheet.completedWorkInvoice > 0) return worksheet.completedWorkInvoice;
+      var approvedAmount = crmParseMoneyNumber(jobFile && jobFile.insurance && jobFile.insurance.approvedAmount || 0);
+      if (approvedAmount > 0) return approvedAmount;
+      var estimateAmount = crmParseMoneyNumber(jobFile && jobFile.estimate && jobFile.estimate.amount || 0);
+      if (estimateAmount > 0) return estimateAmount;
+      return 0;
+    }
+
+    function crmGetDashboardReceivableBalance(lead, jobFile) {
+      jobFile = jobFile || crmGetLeadJobFileData(lead);
+      var paymentsSummary = jobFile && jobFile.paymentsSummary || {};
+      var contractAmount = crmParseMoneyNumber(paymentsSummary.contractAmount || 0);
+      var insurancePaid = crmParseMoneyNumber(paymentsSummary.insurancePaid || 0);
+      var customerPaid = crmParseMoneyNumber(paymentsSummary.customerPaid || 0);
+      var supplements = crmParseMoneyNumber(paymentsSummary.supplements || 0);
+      var explicitBalance = crmParseMoneyNumber(paymentsSummary.balanceDue || 0);
+      var derivedBalance = contractAmount > 0
+        ? Math.max(contractAmount - insurancePaid - customerPaid - supplements, 0)
+        : 0;
+      var worksheet = crmGetFinancialWorksheetMetrics(jobFile && jobFile.financialWorksheet || {});
+      return Math.max(explicitBalance, derivedBalance, Math.max(worksheet.amountDue || 0, 0), 0);
+    }
+
+    function crmFormatDashboardDateTime(dt) {
+      if (!(dt instanceof Date) || isNaN(dt.getTime())) return '';
+      return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ' +
+        dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function crmFormatDashboardMoneyCompact(amount) {
+      return crmFormatMoney(amount).replace(/\.00\b/, '');
+    }
+
+    function crmParseDashboardTimestamp(value) {
+      var raw = String(value || '').trim();
+      if (!raw) return null;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return crmParseYmd(raw);
+      var dt = new Date(raw);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+
+    function crmGetDashboardCompanyInitials() {
+      var profile = typeof crmGetCompanyProfile === 'function' ? crmGetCompanyProfile() : {};
+      var companyName = String(profile && profile.companyName || '').trim();
+      if (companyName) return crmGetTopbarProfileInitials(companyName);
+      return crmGetTopbarProfileInitials((typeof crmGetCurrentUserName === 'function' ? crmGetCurrentUserName() : '') || 'Hail Money');
+    }
+
+    function crmGetDashboardIconSvg(iconKey) {
+      switch (String(iconKey || '').trim()) {
+        case 'layout-dashboard':
+        case 'dashboard':
+          return '<svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 13h7v7H4z"></path></svg>';
+        case 'list-check':
+          return '<svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"></path><path d="M4 6l1.5 1.5L7.5 5.5M4 12l1.5 1.5L7.5 11.5M4 18l1.5 1.5L7.5 17.5"></path></svg>';
+        case 'clipboard-check':
+          return '<svg viewBox="0 0 24 24"><path d="M9 4h6M9 3h6a1 1 0 0 1 1 1v1h2v15H6V5h2V4a1 1 0 0 1 1-1z"></path><path d="M9 12l2 2 4-4"></path></svg>';
+        case 'calendar':
+        case 'calendar-event':
+          return '<svg viewBox="0 0 24 24"><path d="M7 3v4M17 3v4M4 9h16M5 5h14v15H5z"></path><path d="M12 13h.01"></path></svg>';
+        case 'cash':
+        case 'report-money':
+        case 'currency-dollar':
+          return '<svg viewBox="0 0 24 24"><path d="M12 3v18"></path><path d="M16 7.5c0-1.7-1.8-3-4-3s-4 1.3-4 3 1.8 3 4 3 4 1.3 4 3-1.8 3-4 3-4-1.3-4-3"></path></svg>';
+        case 'clock':
+          return '<svg viewBox="0 0 24 24"><path d="M12 7v5l3 3"></path><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"></path></svg>';
+        case 'factory':
+          return '<svg viewBox="0 0 24 24"><path d="M3 20V8l6 4V8l6 4V5l6 3v12z"></path><path d="M6 20v-4M10 20v-2M14 20v-4M18 20v-2"></path></svg>';
+        case 'map':
+          return '<svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>';
+        case 'speakerphone':
+          return '<svg viewBox="0 0 24 24"><path d="M4 11h4l7-4v10l-7-4H4z"></path><path d="M17 9a4 4 0 0 1 0 6M19 7a7 7 0 0 1 0 10"></path></svg>';
+        case 'play':
+          return '<svg viewBox="0 0 24 24"><path d="m9 8 8 4-8 4z"></path><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"></path></svg>';
+        case 'camera':
+        case 'photo':
+          return '<svg viewBox="0 0 24 24"><path d="M4 8h4l2-2h4l2 2h4v10H4z"></path><path d="M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path></svg>';
+        case 'robot':
+          return '<svg viewBox="0 0 24 24"><path d="M9 3h6M12 3v3"></path><rect x="5" y="8" width="14" height="10" rx="2"></rect><path d="M9 12h.01M15 12h.01M9 16h6"></path></svg>';
+        case 'file-dollar':
+        case 'estimate':
+          return '<svg viewBox="0 0 24 24"><path d="M14 3H7v18h10V7z"></path><path d="M14 3v4h4"></path><path d="M12 9v7"></path><path d="M14.5 10.5c0-1-1.1-1.8-2.5-1.8s-2.5.8-2.5 1.8 1.1 1.8 2.5 1.8 2.5.8 2.5 1.8-1.1 1.8-2.5 1.8-2.5-.8-2.5-1.8"></path></svg>';
+        case 'coin':
+          return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v10"></path><path d="M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.5 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"></path></svg>';
+        case 'user-plus':
+          return '<svg viewBox="0 0 24 24"><path d="M8 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path><path d="M2 20a6 6 0 0 1 12 0"></path><path d="M19 8v6M16 11h6"></path></svg>';
+        case 'chart-arrows':
+          return '<svg viewBox="0 0 24 24"><path d="M4 18h16"></path><path d="m6 15 4-4 3 3 5-6"></path><path d="M18 8h3v3"></path></svg>';
+        case 'circle-check':
+          return '<svg viewBox="0 0 24 24"><path d="m9 12 2 2 4-4"></path><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"></path></svg>';
+        case 'checks':
+          return '<svg viewBox="0 0 24 24"><path d="m7 12 2 2 4-4"></path><path d="m13 12 2 2 4-4"></path></svg>';
+        case 'file-invoice':
+        case 'file-invoice-dollar':
+          return '<svg viewBox="0 0 24 24"><path d="M14 3H7v18h10V7z"></path><path d="M14 3v4h4"></path><path d="M9 11h6M9 15h6"></path><path d="M11 18h2"></path></svg>';
+        case 'lock':
+          return '<svg viewBox="0 0 24 24"><rect x="6" y="11" width="12" height="9" rx="2"></rect><path d="M9 11V8a3 3 0 0 1 6 0v3"></path></svg>';
+        case 'refresh':
+          return '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14-4"></path><path d="M4 4v5h5"></path><path d="M4 13a8 8 0 0 0 14 4"></path><path d="M20 20v-5h-5"></path></svg>';
+        case 'eye':
+          return '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"></path><circle cx="12" cy="12" r="2.5"></circle></svg>';
+        case 'file-text':
+          return '<svg viewBox="0 0 24 24"><path d="M14 3H7v18h10V7z"></path><path d="M14 3v4h4"></path><path d="M9 11h6M9 15h6M9 19h4"></path></svg>';
+        case 'clock-exclamation':
+          return '<svg viewBox="0 0 24 24"><path d="M12 7v5l3 2"></path><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"></path><path d="M19 4v5"></path><path d="M19 11h.01"></path></svg>';
+        case 'file-off':
+          return '<svg viewBox="0 0 24 24"><path d="M14 3H7v18h10V9"></path><path d="M14 3v4h4"></path><path d="M3 3l18 18"></path></svg>';
+        case 'shopping-cart':
+          return '<svg viewBox="0 0 24 24"><path d="M4 5h2l2 10h9l2-7H7"></path><circle cx="10" cy="19" r="1.5"></circle><circle cx="17" cy="19" r="1.5"></circle></svg>';
+        case 'ruler':
+          return '<svg viewBox="0 0 24 24"><path d="m4 16 8-8 8 8-8 8z"></path><path d="M9 11l1.5 1.5M12 8l1.5 1.5M12 14l1.5 1.5M15 11l1.5 1.5"></path></svg>';
+        case 'signature':
+          return '<svg viewBox="0 0 24 24"><path d="M4 15c2-3 4-5 6-5 1.5 0 1.5 3 3 3 1 0 2-2 3-2 1.3 0 1.3 2.5 3 2.5"></path><path d="M4 19h16"></path></svg>';
+        case 'drone':
+          return '<svg viewBox="0 0 24 24"><path d="M7 9h10M12 9v6"></path><rect x="9" y="11" width="6" height="4" rx="1"></rect><path d="M5 7h2v2H5zM17 7h2v2h-2zM5 15h2v2H5zM17 15h2v2h-2z"></path></svg>';
+        case 'planet':
+          return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><path d="M4 13c3-2 7-3 11-3 2.7 0 4.8.4 6 1"></path><path d="M5 16c2.5 1.2 5.2 2 8 2 3.2 0 5.9-.9 7-2"></path></svg>';
+        case 'clipboard-list':
+          return '<svg viewBox="0 0 24 24"><path d="M9 4h6M9 3h6a1 1 0 0 1 1 1v1h2v15H6V5h2V4a1 1 0 0 1 1-1z"></path><path d="M9 10h6M9 14h6M9 18h4"></path></svg>';
+        case 'users':
+          return '<svg viewBox="0 0 24 24"><path d="M9 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path><path d="M17 11a3 3 0 1 0 0-6"></path><path d="M2 20a6 6 0 0 1 12 0"></path><path d="M16 20a5 5 0 0 0-2.5-4.3"></path></svg>';
+        case 'chart-line':
+          return '<svg viewBox="0 0 24 24"><path d="M4 19h16"></path><path d="M6 16l4-4 3 2 5-6"></path><path d="M18 8h3v3"></path></svg>';
+        case 'note':
+          return '<svg viewBox="0 0 24 24"><path d="M7 4h10v16H7z"></path><path d="M9 8h6M9 12h6M9 16h4"></path></svg>';
+        case 'message':
+          return '<svg viewBox="0 0 24 24"><path d="M5 6h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-4 3v-3H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"></path></svg>';
+        case 'thumb-up':
+          return '<svg viewBox="0 0 24 24"><path d="M8 11v9H5v-9z"></path><path d="M10 20h6.5c1 0 1.8-.7 2-1.7l1.1-5.5c.2-1.2-.7-2.3-2-2.3H14l.7-3.2c.2-1-.4-2.1-1.4-2.4L10 11z"></path></svg>';
+        case 'tasks':
+          return '<svg viewBox="0 0 24 24"><path d="M9 5h10M9 12h10M9 19h10M4 5h1M4 12h1M4 19h1"></path></svg>';
+        case 'pipeline':
+          return '<svg viewBox="0 0 24 24"><path d="M4 7h6v4H4zM14 7h6v4h-6zM9 13h6v4H9z"></path></svg>';
+        case 'scan':
+          return '<svg viewBox="0 0 24 24"><path d="M8 4H5v3M16 4h3v3M8 20H5v-3M19 17v3h-3M7 12h10"></path></svg>';
+        case 'grid':
+          return '<svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"></path></svg>';
+        default:
+          return '<svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>';
+      }
+    }
+
+    function crmRenderDashboardCommandCenter() {
+      var root = document.querySelector('#page-main-menu .hm-dashboard-ref');
+      if (!root) return;
+
+      function setText(id, value) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = value;
+      }
+
+      root.querySelectorAll('[data-dash-icon]').forEach(function (el) {
+        el.innerHTML = crmGetDashboardIconSvg(el.getAttribute('data-dash-icon'));
+      });
+
+      root.querySelectorAll('.nav-item[data-dashboard-action]').forEach(function (btn) {
+        var isDefault = btn.getAttribute('data-dashboard-action') === 'new-lead';
+        btn.classList.toggle('active', isDefault);
+        if (isDefault) btn.setAttribute('aria-current', 'page');
+        else btn.removeAttribute('aria-current');
+      });
+
+      setText('dash-company-initials', crmGetDashboardCompanyInitials());
+      var dashboardCompanyProfile = (typeof crmGetCompanyProfile === 'function') ? crmGetCompanyProfile() : {};
+      var dashboardCompanyLogo = crmGetCompanyLogoUrl() || crmGetAppLogoUrl();
+      var dashboardHeaderLogo = document.getElementById('dash-header-company-logo');
+      if (dashboardHeaderLogo) {
+        dashboardHeaderLogo.src = dashboardCompanyLogo;
+        dashboardHeaderLogo.alt = String(dashboardCompanyProfile && dashboardCompanyProfile.companyName || 'Company Logo');
+      }
+      var dashboardSidebarLogo = document.getElementById('dash-sidebar-company-logo');
+      if (dashboardSidebarLogo) {
+        dashboardSidebarLogo.src = dashboardCompanyLogo;
+        dashboardSidebarLogo.alt = String(dashboardCompanyProfile && dashboardCompanyProfile.companyName || 'Company Logo');
+      }
+      var dashboardUserName = (typeof crmGetCurrentUserName === 'function' ? crmGetCurrentUserName() : '') || 'User';
+      var dashboardUserRole = (typeof crmGetRole === 'function' ? crmGetRole() : '') || 'Sales Rep';
+      setText('dash-user-name', dashboardUserName);
+      setText('dash-user-role', dashboardUserRole);
+      setText('dash-user-badge', crmGetTopbarProfileInitials(dashboardUserName));
+
+      var leads = Array.isArray(crmGetLeads()) ? crmGetLeads() : [];
+      var tasks = Array.isArray(crmGetTasks()) ? crmGetTasks() : [];
+      var appointments = crmSortAppointments(Array.isArray(crmGetAppointments()) ? crmGetAppointments() : []);
+      var stageDefs = crmGetDashboardStageDefinitions();
+      var stageStats = {};
+      var leaderboardByRep = {};
+      var receivables = [];
+      var now = new Date();
+      var nowMs = now.getTime();
+      var thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+      var washListAgeMs = 14 * 24 * 60 * 60 * 1000;
+      var cutoff30Ms = nowMs - thirtyDaysMs;
+      var todayStr = crmGetTodayDateStr();
+      var todayAppointments = 0;
+      var inspectionsToday = 0;
+      var followUpsToday = 0;
+      var unassignedLeads = 0;
+      var statusApprovalCount = 0;
+      var washListCount = 0;
+      var submittedWorksheets = 0;
+      var overdueInvoices = 0;
+      var invoicesNotRecorded = 0;
+      var canceledBalanceDue = 0;
+      var submittedOrders = 0;
+      var measurementOrderRequests = 0;
+      var pendingSignatures = 0;
+      var photosUploadedToday = 0;
+      var recentNewLeads = 0;
+      var recentJobsApproved = 0;
+      var recentJobsCompleted = 0;
+      var recentJobsInvoiced = 0;
+      var recentJobsClosed = 0;
+      var recentMoneyCollected = 0;
+      var recentLeadIds = {};
+      var activityLog = Array.isArray(actGlobalGetLog()) ? actGlobalGetLog() : [];
+
+      stageDefs.forEach(function (def) {
+        stageStats[def.key] = { count: 0, amount: 0 };
+      });
+
+      crmGetCompanySalesRepMembers().forEach(function (member) {
+        var repName = String(member && member.name || '').trim();
+        if (!repName || leaderboardByRep[repName]) return;
+        leaderboardByRep[repName] = {
+          name: repName,
+          count: 0,
+          amount: 0
+        };
+      });
+
+      leads.forEach(function (lead) {
+        var jobFile = crmGetLeadJobFileData(lead);
+        var bucket = crmGetDashboardStageBucket(lead, jobFile);
+        var amount = crmGetDashboardLeadAmount(lead, jobFile);
+        var balance = crmGetDashboardReceivableBalance(lead, jobFile);
+        var repName = crmGetLeadAssignedRepName(lead);
+        var stage = String(lead && (lead.jobStage || lead.stage) || '').trim();
+        var status = String(jobFile && jobFile.status || '').trim();
+        var isCanceled = /cancel/i.test(stage) || /cancel/i.test(status);
+        var hasInvoice = !!(crmHasFileType(lead.id, 'invoice_document') || crmHasFileType(lead.id, 'final_invoice_paid') || jobFile && jobFile.invoice);
+        var materialOrderStatus = String(jobFile && jobFile.production && jobFile.production.materialOrderStatus || '').trim();
+        var hasSignedContingency = !!(lead && lead.contingencySigned === true || jobFile && jobFile.contingencySigned === true);
+        var createdDt = crmParseDashboardTimestamp(lead && (lead.createdAt || lead.updatedAt));
+
+        if (!stageStats[bucket]) stageStats[bucket] = { count: 0, amount: 0 };
+        stageStats[bucket].count += 1;
+        stageStats[bucket].amount += amount;
+
+        if (createdDt && createdDt.getTime() >= cutoff30Ms && createdDt.getTime() <= nowMs) {
+          recentNewLeads += 1;
+          if (lead && lead.id) recentLeadIds[lead.id] = true;
+        }
+
+        if (!repName && bucket !== 'closed') unassignedLeads += 1;
+        if (['approved', 'completed', 'invoiced', 'closed'].indexOf(bucket) !== -1 && !String(lead && lead.approvedBy || '').trim()) {
+          statusApprovalCount += 1;
+        }
+        if (bucket === 'lead' && createdDt && (nowMs - createdDt.getTime()) >= washListAgeMs) {
+          washListCount += 1;
+        }
+        if (String(jobFile && jobFile.financialWorksheet && jobFile.financialWorksheet.updatedAt || '').trim()) {
+          submittedWorksheets += 1;
+        }
+        if (['invoiced', 'closed'].indexOf(bucket) !== -1 && balance > 0.009) {
+          overdueInvoices += 1;
+        }
+        if (['completed', 'invoiced', 'closed'].indexOf(bucket) !== -1 && !hasInvoice) {
+          invoicesNotRecorded += 1;
+        }
+        if (isCanceled && balance > 0.009) {
+          canceledBalanceDue += 1;
+        }
+        if (materialOrderStatus && materialOrderStatus.toLowerCase() !== 'not ordered') {
+          submittedOrders += 1;
+        }
+        if (['lead', 'prospect', 'approved'].indexOf(bucket) !== -1 && amount <= 0.009) {
+          measurementOrderRequests += 1;
+        }
+        if (['lead', 'prospect', 'approved', 'completed', 'invoiced'].indexOf(bucket) !== -1 && !hasSignedContingency) {
+          pendingSignatures += 1;
+        }
+
+        crmGetJobFilePhotoEntries(lead).forEach(function (entry) {
+          var uploadedDt = crmParseDashboardTimestamp(entry && entry.uploadedAt);
+          if (!uploadedDt) return;
+          if (uploadedDt.toISOString().slice(0, 10) === todayStr) {
+            photosUploadedToday += 1;
+          }
+        });
+
+        if (repName) {
+          if (!leaderboardByRep[repName]) {
+            leaderboardByRep[repName] = {
+              name: repName,
+              count: 0,
+              amount: 0
+            };
+          }
+          leaderboardByRep[repName].count += 1;
+          leaderboardByRep[repName].amount += amount;
+        }
+
+        if (balance > 0.009 && ['approved', 'completed', 'invoiced', 'closed'].indexOf(bucket) !== -1) {
+          receivables.push({
+            lead: lead,
+            repName: repName || 'Unassigned',
+            balance: balance
+          });
+        }
+
+        (Array.isArray(jobFile && jobFile.payments) ? jobFile.payments : []).forEach(function (payment) {
+          var paymentDt = crmParseDashboardTimestamp(payment && (payment.date || payment.updatedAt || payment.createdAt));
+          if (!paymentDt || paymentDt.getTime() < cutoff30Ms || paymentDt.getTime() > nowMs) return;
+          if (String(payment && payment.status || '').trim().toLowerCase() === 'pending') return;
+          recentMoneyCollected += crmParseMoneyNumber(payment && payment.amount || 0);
+        });
+      });
+
+      appointments.forEach(function (appt) {
+        var apptDate = crmGetAppointmentStartDate(appt);
+        if (apptDate !== todayStr) return;
+        todayAppointments += 1;
+        var apptType = String(appt && (appt.type || appt.title) || '').toLowerCase();
+        if (apptType.indexOf('inspection') !== -1 || apptType.indexOf('adjuster') !== -1) {
+          inspectionsToday += 1;
+        }
+      });
+
+      tasks.forEach(function (task) {
+        var taskStatus = String(task && task.status || '').trim().toLowerCase();
+        if (taskStatus === 'done') return;
+        if (String(task && task.dueDate || '').trim() && String(task.dueDate).trim() <= todayStr) {
+          followUpsToday += 1;
+        }
+      });
+
+      activityLog.forEach(function (entry) {
+        var entryDt = crmParseDashboardTimestamp(entry && entry.ts);
+        if (!entryDt || entryDt.getTime() < cutoff30Ms || entryDt.getTime() > nowMs) return;
+        var kind = String(entry && entry.kind || '').trim().toLowerCase();
+        var msg = String(entry && entry.message || '').trim().toLowerCase();
+        if (kind === 'lead_created' || msg.indexOf(' created lead') !== -1) {
+          var logLeadId = String(entry && entry.leadId || '').trim();
+          if (!logLeadId || !recentLeadIds[logLeadId]) {
+            recentNewLeads += 1;
+            if (logLeadId) recentLeadIds[logLeadId] = true;
+          }
+        }
+        if (kind === 'stage') {
+          if (msg.indexOf('approved') !== -1) recentJobsApproved += 1;
+          if (msg.indexOf('completed') !== -1 || msg.indexOf('complete') !== -1) recentJobsCompleted += 1;
+          if (msg.indexOf('invoiced') !== -1 || msg.indexOf('invoice') !== -1) recentJobsInvoiced += 1;
+          if (msg.indexOf('closed') !== -1 || msg.indexOf('paid / closed') !== -1) recentJobsClosed += 1;
+        }
+      });
+
+      var totalReceivable = receivables.reduce(function (sum, item) { return sum + item.balance; }, 0);
+      var averageReceivable = receivables.length ? (totalReceivable / receivables.length) : 0;
+      var actionCounts = [
+        unassignedLeads,
+        stageStats.prospect ? stageStats.prospect.count : 0,
+        stageStats.approved ? stageStats.approved.count : 0,
+        stageStats.completed ? stageStats.completed.count : 0,
+        stageStats.invoiced ? stageStats.invoiced.count : 0,
+        stageStats.closed ? stageStats.closed.count : 0,
+        statusApprovalCount,
+        washListCount,
+        submittedWorksheets,
+        overdueInvoices,
+        invoicesNotRecorded,
+        canceledBalanceDue,
+        submittedOrders,
+        measurementOrderRequests,
+        pendingSignatures,
+        photosUploadedToday
+      ];
+
+      stageDefs.forEach(function (def) {
+        var stat = stageStats[def.key] || { amount: 0 };
+        setText('dash-stage-' + def.key + '-amount', crmFormatDashboardMoneyCompact(stat.amount));
+      });
+
+      var activePipelineKeys = ['lead', 'prospect', 'approved', 'completed', 'invoiced'];
+      var activeJobsCount = activePipelineKeys.reduce(function (sum, key) {
+        return sum + Number(stageStats[key] && stageStats[key].count || 0);
+      }, 0);
+      setText('dash-current-pipeline-active-jobs', String(activeJobsCount));
+      activePipelineKeys.forEach(function (key) {
+        var pipelineStat = stageStats[key] || { count: 0, amount: 0 };
+        setText('dash-current-pipeline-' + key + '-count', String(pipelineStat.count || 0));
+        setText('dash-current-pipeline-' + key + '-amount', crmFormatDashboardMoneyCompact(pipelineStat.amount || 0));
+      });
+
+      setText('dash-unassigned-leads', String(unassignedLeads));
+      setText('dash-prospect-submitted', String(stageStats.prospect ? stageStats.prospect.count : 0));
+      setText('dash-approved-submitted', String(stageStats.approved ? stageStats.approved.count : 0));
+      setText('dash-completed-submitted', String(stageStats.completed ? stageStats.completed.count : 0));
+      setText('dash-invoiced-submitted', String(stageStats.invoiced ? stageStats.invoiced.count : 0));
+      setText('dash-closed-submitted', String(stageStats.closed ? stageStats.closed.count : 0));
+      setText('dash-status-approval', String(statusApprovalCount));
+      setText('dash-wash-list', String(washListCount));
+      setText('dash-submitted-worksheets', String(submittedWorksheets));
+      setText('dash-overdue-invoices', String(overdueInvoices));
+      setText('dash-invoices-not-recorded', String(invoicesNotRecorded));
+      setText('dash-canceled-balance', String(canceledBalanceDue));
+      setText('dash-submitted-orders', String(submittedOrders));
+      setText('dash-measurement-order-requests', String(measurementOrderRequests));
+      setText('dash-pending-signatures', String(pendingSignatures));
+      setText('dash-photos-uploaded-today', String(photosUploadedToday));
+      setText('dash-job-actions-total', String(actionCounts.reduce(function (sum, value) {
+        return sum + (Number(value) || 0);
+      }, 0)));
+
+      var leaderboardRows = Object.keys(leaderboardByRep).map(function (key) {
+        return leaderboardByRep[key];
+      }).sort(function (a, b) {
+        if (b.amount !== a.amount) return b.amount - a.amount;
+        if (b.count !== a.count) return b.count - a.count;
+        return a.name.localeCompare(b.name);
+      });
+      var leaderboardMaxAmount = leaderboardRows.length ? leaderboardRows[0].amount : 0;
+      var leaderboardEl = document.getElementById('dash-leaderboard-rows');
+      if (leaderboardEl) {
+        leaderboardEl.innerHTML = leaderboardRows.length
+          ? leaderboardRows.slice(0, 5).map(function (row, index) {
+              var width = leaderboardMaxAmount > 0 ? Math.max((row.amount / leaderboardMaxAmount) * 100, row.count ? 6 : 0) : 0;
+              return '<div class="lb-row">' +
+                '<span class="rank">' + (index + 1) + '</span>' +
+                '<span class="name">' + crmEscapeHtml(row.name) + '</span>' +
+                '<div class="bar-wrap"><div class="bar" style="width:' + width + '%"></div></div>' +
+                '<span class="stats">' + crmEscapeHtml(crmFormatDashboardMoneyCompact(row.amount) + ' · ' + row.count + 'L') + '</span>' +
+              '</div>';
+            }).join('')
+          : '<div class="crm-activity-empty" style="padding:8px 10px;">No sales reps available.</div>';
+      }
+
+      setText('dash-work-appointments', String(todayAppointments));
+      setText('dash-work-inspections', String(inspectionsToday));
+      setText('dash-work-followups', String(followUpsToday));
+      setText('dash-ar-outstanding', crmFormatMoney(totalReceivable));
+      setText('dash-ar-open-balance', String(receivables.length));
+      setText('dash-ar-average-balance', crmFormatMoney(averageReceivable));
+      setText('dash-activity-new-leads', String(recentNewLeads));
+      setText('dash-activity-jobs-approved', String(recentJobsApproved));
+      setText('dash-activity-jobs-completed', String(recentJobsCompleted));
+      setText('dash-activity-money-collected', crmFormatMoney(recentMoneyCollected));
+      setText('dash-activity-jobs-invoiced', String(recentJobsInvoiced));
+      setText('dash-activity-jobs-closed', String(recentJobsClosed));
+
+      if (typeof crmRefreshActivityPanel === 'function') {
+        crmRefreshActivityPanel(null);
+      }
+    }
+
+    function crmHandleDashboardTabAction(tab) {
+      tab = String(tab || '').trim();
+      if (!tab) return;
+      if (tab === 'dashboard' || tab === 'recent') {
+        crmRenderMainMenu();
+        showPage('page-main-menu');
+        return;
+      }
+      if (tab === 'new-lead') {
+        var newLeadAction = crmGetDashboardNewLeadAction();
+        if (!newLeadAction) {
+          showUploadToast('You do not have permission to access this section.');
+          return;
+        }
+        crmHandleMenuAction(newLeadAction);
+        return;
+      }
+      if (tab === 'pipeline') {
+        var pipelineAction = crmGetDashboardPipelineAction();
+        if (!pipelineAction) {
+          showUploadToast('You do not have permission to access this section.');
+          return;
+        }
+        crmHandleMenuAction(pipelineAction);
+        return;
+      }
+      if (tab === 'production') {
+        var productionAction = crmGetDashboardProductionAction();
+        if (!productionAction) {
+          showUploadToast('You do not have permission to access this section.');
+          return;
+        }
+        crmHandleMenuAction(productionAction);
+        return;
+      }
+      if (tab === 'inspections' || tab === 'calendar' || tab === 'payroll' || tab === 'tasks') {
+        crmHandleMenuAction(tab);
+        return;
+      }
+      var targetBtn = null;
+      if (tab === 'map') targetBtn = document.getElementById('open-map');
+      else if (tab === 'campaigns') targetBtn = document.getElementById('open-campaigns');
+      else if (tab === 'start-inspection') targetBtn = document.getElementById('open-start-inspection-menu');
+      else if (tab === 'photo-files' || tab === 'photos') targetBtn = document.getElementById('open-photo-files');
+      else if (tab === 'reports' || tab === 'company') targetBtn = document.getElementById('open-company');
+      else if (tab === 'roofer-ai' || tab === 'ai') targetBtn = document.getElementById('open-ai');
+      else if (tab === 'estimates') targetBtn = document.getElementById('open-estimates');
+      if (targetBtn) targetBtn.click();
+    }
+
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-dashboard-tab], [data-dashboard-action]');
+      if (!btn) return;
+      crmHandleDashboardTabAction(btn.getAttribute('data-dashboard-action') || btn.getAttribute('data-dashboard-tab'));
+    });
+
     /* New Lead from sub-pages */
     document.getElementById('al-new-lead-btn').addEventListener('click', function () {
       showPage('page-new-lead');
@@ -37293,7 +40481,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     var _crmJobFilePendingPhotoType = 'after_photo';
     var _crmJobFilePendingDocType = 'job_document';
     var _crmJobFilePendingUploadMeta = null;
-    var CRM_JOB_FILE_TABS = ['overview','activity','photos','documents','estimate','insurance','calendar','tasks','production','payments','messages'];
+    var CRM_JOB_FILE_TABS = ['overview','contacts','documents','photos','reports','notes','activity','estimate','insurance','calendar','tasks','production','payments','messages'];
     var _crmFinancialWorksheetDraft = null;
     var _crmJobProfitabilityDraft = null;
     var CRM_JOB_FILE_PHOTO_CATEGORIES = ['Front', 'Rear', 'Left Side', 'Right Side', 'Roof', 'Gutters', 'Siding', 'Windows', 'Interior', 'Other'];
@@ -38090,6 +41278,168 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return crmFormatDateTimeLabel(ts);
     }
 
+    function crmGetJobFileVisibleTab(tab) {
+      tab = String(tab || 'overview').trim();
+      if (['overview','contacts','documents','photos','reports','notes','activity'].indexOf(tab) !== -1) return tab;
+      if (['estimate','insurance','calendar','production','payments'].indexOf(tab) !== -1) return 'reports';
+      if (['tasks','messages'].indexOf(tab) !== -1) return 'activity';
+      return 'overview';
+    }
+
+    function crmGetJobFileJobTypeLabel(lead) {
+      var rawType = String(lead && (lead.jobType || lead.leadType || '') || '').trim();
+      if (rawType === 'field_lead') return 'Field Lead';
+      if (rawType === 'office_lead') return 'Office Lead';
+      if (rawType) {
+        return rawType.replace(/_/g, ' ').replace(/\b\w/g, function (m) { return m.toUpperCase(); });
+      }
+      var sourceLabel = crmGetLeadSourceDisplayLabel(lead && lead.leadSource || '');
+      return sourceLabel ? (sourceLabel + ' Job') : 'Standard Job';
+    }
+
+    function crmGetJobFileNextStepText(lead) {
+      if (!lead) return '';
+      var stage = String(lead.jobStage || lead.stage || 'New Lead').trim() || 'New Lead';
+      var config = typeof CRM_NEXT_STEP_CONFIG !== 'undefined'
+        ? (CRM_NEXT_STEP_CONFIG[stage] || CRM_NEXT_STEP_CONFIG['New Lead'])
+        : null;
+      if (config && config.nextAction) return String(config.nextAction).trim();
+
+      var nextAppt = crmGetJobFileNextAppointment(lead);
+      if (nextAppt) return 'Prepare for ' + crmGetAppointmentTitle(nextAppt);
+
+      var openTasks = crmGetTasks().filter(function (task) {
+        return task.status !== 'done' &&
+          (String(task.leadId || '').trim() === lead.id || String(task.jobId || '').trim() === crmGetJobFileId(lead));
+      });
+      if (openTasks.length) return String(openTasks[0].title || 'Finish the next open task').trim();
+
+      return 'Review the file and move it to the next stage';
+    }
+
+    function crmJobFileObjectHasContent(obj, ignoreKeys) {
+      if (!obj || typeof obj !== 'object') return false;
+      ignoreKeys = Array.isArray(ignoreKeys) ? ignoreKeys : [];
+      for (var key in obj) {
+        if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+        if (ignoreKeys.indexOf(key) !== -1) continue;
+        var value = obj[key];
+        if (value == null) continue;
+        if (typeof value === 'string' && String(value).trim()) return true;
+        if (typeof value === 'number' && !isNaN(value)) return true;
+        if (typeof value === 'boolean' && value) return true;
+      }
+      return false;
+    }
+
+    function crmGetJobFilePropertyTypeLabel(lead, propertyData) {
+      return String(
+        (lead && (lead.propertyType || lead.structureType)) ||
+        (propertyData && (propertyData.propertyType || propertyData.structureType)) ||
+        ''
+      ).trim();
+    }
+
+    function crmGetJobFileStreetAddress(lead, propertyData) {
+      return String(
+        (lead && lead.street) ||
+        (propertyData && propertyData.street) ||
+        (propertyData && propertyData.propertyAddress) ||
+        ''
+      ).trim();
+    }
+
+    function crmGetJobFileCityStateZip(lead, propertyData) {
+      var city = String((lead && lead.city) || (propertyData && propertyData.city) || '').trim();
+      var state = String((lead && lead.state) || (propertyData && propertyData.state) || '').trim();
+      var zip = String((lead && lead.zip) || (propertyData && propertyData.zip) || '').trim();
+      var cityState = [city, state].filter(Boolean).join(', ');
+      return [cityState, zip].filter(Boolean).join(' ').trim();
+    }
+
+    function crmGetJobFileStageBadgeText(lead, jobFile) {
+      var stageLabel = crmGetStageLabel(lead && (lead.stage || lead.jobStage) || 'New Lead');
+      var statusLabel = crmGetJobFileStatus(lead, jobFile);
+      if (statusLabel && String(statusLabel).toLowerCase() !== String(stageLabel || '').toLowerCase()) {
+        return [stageLabel, statusLabel].filter(Boolean).join(' · ');
+      }
+      return stageLabel || statusLabel || 'Lead';
+    }
+
+    function crmGetJobFileOverviewActionItems(lead, jobFile, feed) {
+      var appointments = crmGetAppointments().filter(function (appt) {
+        return String(appt.leadId || '').trim() === lead.id || String(appt.jobId || '').trim() === crmGetJobFileId(lead);
+      });
+      var messages = typeof jfGetMessagesFor === 'function' ? jfGetMessagesFor(lead.id) : [];
+      var photos = crmGetJobFilePhotoEntries(lead);
+      var documents = crmGetJobFileDocumentEntries(lead);
+      var orderStatus = String(jobFile && jobFile.production && jobFile.production.materialOrderStatus || '').trim();
+      return [
+        {
+          label: 'Job Activity',
+          meta: feed.length ? (feed.length + ' update' + (feed.length === 1 ? '' : 's')) : 'No updates yet',
+          comingSoon: false
+        },
+        {
+          label: 'Appointments',
+          meta: appointments.length ? (appointments.length + ' scheduled') : 'No appointments',
+          comingSoon: false
+        },
+        {
+          label: 'Messages',
+          meta: messages.length ? (messages.length + ' message' + (messages.length === 1 ? '' : 's')) : 'No messages',
+          comingSoon: false
+        },
+        {
+          label: 'Orders',
+          meta: orderStatus || 'Coming Soon',
+          comingSoon: !orderStatus
+        },
+        {
+          label: 'Photos',
+          meta: photos.length ? (photos.length + ' uploaded') : 'No photos',
+          comingSoon: false
+        },
+        {
+          label: 'Documents',
+          meta: documents.length ? (documents.length + ' uploaded') : 'No documents',
+          comingSoon: false
+        }
+      ];
+    }
+
+    function crmGetJobFileProgressSteps(lead, jobFile) {
+      var stage = String(lead && (lead.jobStage || lead.stage) || 'New Lead').trim() || 'New Lead';
+      var files = crmGetLeadFilesFor ? crmGetLeadFilesFor(lead.id) : [];
+      var hasAfterPhotos = files.some(function (file) { return file.type === 'after_photo'; });
+      var hasFinalInvoice = files.some(function (file) { return file.type === 'final_invoice_paid' || file.type === 'invoice_document'; });
+      var hasCompletedWork = ['Completed', 'Complete', 'Paid / Closed'].indexOf(stage) !== -1 ||
+        !!String(jobFile && jobFile.production && jobFile.production.completionDate || '').trim() ||
+        hasAfterPhotos;
+      var hasApprovedStage = ['Approved', 'Contract Signed', 'Production', 'Production Start', 'Built', 'Invoiced', 'Completed', 'Complete', 'Paid / Closed'].indexOf(stage) !== -1 ||
+        !!String(jobFile && jobFile.insurance && jobFile.insurance.approvedAmount || '').trim();
+      var isInvoicedStage = stage === 'Invoiced' || stage === 'Paid / Closed' || hasFinalInvoice;
+      var isClosedStage = stage === 'Paid / Closed' || crmGetJobFileStatus(lead, jobFile) === 'Closed';
+      var activeIndex = 0;
+      if (isClosedStage) activeIndex = 4;
+      else if (isInvoicedStage) activeIndex = 3;
+      else if (hasCompletedWork) activeIndex = 2;
+      else if (hasApprovedStage) activeIndex = 1;
+      var steps = [
+        'Lead',
+        'Approved',
+        'Completed',
+        'Invoiced',
+        'Closed'
+      ];
+      return steps.map(function (step, idx) {
+        return {
+          label: step,
+          className: idx < activeIndex ? 'is-complete' : (idx === activeIndex ? 'is-active' : 'is-upcoming')
+        };
+      });
+    }
+
     function crmRenderJobFileFeedHtml(feed, limit) {
       var items = Array.isArray(feed) ? feed.slice(0, limit || feed.length) : [];
       if (!items.length) return '<div class="crm-job-file-empty">No activity logged yet.</div>';
@@ -38288,7 +41638,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (filter !== 'all') log = log.filter(function(e) { return e.filterGroup === filter; });
       log = log.filter(function(e) { return actGlobalIsVisible(e, role, myName); });
       var html = log.length
-        ? log.slice(0, 50).map(actRenderPanelItem).join('')
+        ? log.map(actRenderPanelItem).join('')
         : '<div class="crm-activity-empty">No activity yet.</div>';
       feedEls.forEach(function(el) { el.innerHTML = html; });
     }
@@ -38316,34 +41666,40 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderJobFileHeaderHtml(lead, feed) {
       var jobFile = crmGetLeadJobFileData(lead);
-      var insurance = jobFile.insurance;
-      var fields = [
-        { label: 'Customer name', value: crmGetJobFileLeadName(lead) },
-        { label: 'Property address', value: crmGetJobFileLeadAddress(lead), full: true },
-        { label: 'Customer phone', value: lead.phone || '' },
-        { label: 'Customer email', value: lead.email || '' },
-        { label: 'Assigned rep', value: lead.assignedRep || '' },
-        { label: 'Pipeline stage', value: crmGetStageLabel(lead.stage || lead.jobStage || 'Contract Signed') },
-        { label: 'Insurance company', value: insurance.company || '' },
-        { label: 'Claim number', value: insurance.claimNumber || '' },
-        { label: 'Job status', value: crmGetJobFileStatus(lead, jobFile) },
-        { label: 'Date created', value: crmFormatDateTimeLabel(lead.createdAt) },
-        { label: 'Last activity date', value: crmGetJobFileLastActivityLabel(lead, feed) }
+      var actions = crmGetJobFileOverviewActionItems(lead, jobFile, feed);
+      var fullAddress = crmGetJobFileLeadAddress(lead) || 'No property address saved yet.';
+      var workflowMeta = [
+        ['Current Stage', crmGetStageLabel(lead.stage || lead.jobStage || 'New Lead')],
+        ['Job Status', crmGetJobFileStatus(lead, jobFile)],
+        ['Last Updated', crmGetJobFileLastActivityLabel(lead, feed)]
       ];
-      var html = '<div class="crm-job-file-header-top">';
-      html += '<div><div class="crm-job-file-eyebrow">JOB FILE</div>';
-      html += '<div class="crm-job-file-title">' + crmEscapeHtml(crmGetJobFileLeadName(lead)) + '</div>';
-      html += '<div class="crm-job-file-subtitle">' + crmEscapeHtml(crmGetJobFileLeadAddress(lead) || 'No property address saved yet.') + '</div></div>';
-      html += '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">';
-      html += '<div class="crm-stage-pill">' + crmEscapeHtml(crmGetStageLabel(lead.stage || lead.jobStage || 'Contract Signed')) + '</div>';
-      html += '<div class="crm-stage-pill" style="background:rgba(17,24,39,0.06);border-color:rgba(17,24,39,0.12);color:var(--text);">' + crmEscapeHtml(crmGetJobFileStatus(lead, jobFile)) + '</div>';
+      var html = '<div class="crm-job-folder-card-header">';
+      html += '<div>';
+      html += '<div class="crm-job-folder-title">' + crmEscapeHtml(crmGetJobFileLeadName(lead)) + '</div>';
+      html += '<div class="crm-job-folder-subtitle">' + crmEscapeHtml(fullAddress) + '</div>';
+      html += '</div>';
+      html += '<div class="crm-job-folder-badge-row">';
+      html += '<div class="crm-stage-pill">' + crmEscapeHtml(crmGetJobFileStageBadgeText(lead, jobFile)) + '</div>';
       html += '</div>';
       html += '</div>';
-      html += '<div class="crm-job-file-header-grid">';
-      fields.forEach(function (field) {
-        html += '<div class="crm-job-file-field' + (field.full ? ' full' : '') + '">';
-        html += '<div class="crm-job-file-label">' + crmEscapeHtml(field.label) + '</div>';
-        html += '<div class="crm-job-file-value' + (!field.value ? ' empty' : '') + '">' + crmEscapeHtml(field.value || '—') + '</div>';
+      html += '<div class="crm-job-folder-workflow-card">';
+      html += '<div class="crm-job-folder-kicker">Next Step / Workflow</div>';
+      html += '<div class="crm-job-folder-workflow-title">' + crmEscapeHtml(crmGetJobFileNextStepText(lead) || 'Review job workflow') + '</div>';
+      html += '<div class="crm-job-folder-workflow-meta">';
+      workflowMeta.forEach(function (item) {
+        html += '<div class="crm-job-folder-workflow-meta-item">';
+        html += '<div class="crm-job-folder-detail-label">' + crmEscapeHtml(item[0]) + '</div>';
+        html += '<div class="crm-job-folder-detail-value' + (!item[1] ? ' empty' : '') + '">' + crmEscapeHtml(item[1] || '—') + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '<div class="crm-job-folder-workflow-soon">Workflow actions coming soon.</div>';
+      html += '</div>';
+      html += '<div class="crm-job-folder-action-row">';
+      actions.forEach(function (item) {
+        html += '<div class="crm-job-folder-action-tile">';
+        html += '<div class="crm-job-folder-action-label">' + crmEscapeHtml(item.label) + '</div>';
+        html += '<div class="crm-job-folder-action-meta' + (item.comingSoon ? ' coming-soon' : '') + '">' + crmEscapeHtml(item.meta) + '</div>';
         html += '</div>';
       });
       html += '</div>';
@@ -38947,106 +42303,146 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmRenderJobFileOverviewHtml(lead, jobFile, feed) {
-      var photoEntries = crmGetJobFilePhotoEntries(lead);
-      var documentEntries = crmGetJobFileDocumentEntries(lead);
-      var photoCount = photoEntries.length;
-      var docCount = documentEntries.length;
-      var linkedTasks = crmGetTasks().filter(function (task) {
-        return String(task.leadId || '').trim() === lead.id || String(task.jobId || '').trim() === crmGetJobFileId(lead);
-      });
-      var openTaskItems = linkedTasks.filter(function (task) { return task.status !== 'done'; });
-      var openTasks = openTaskItems.length;
-      var nextAppt = crmGetJobFileNextAppointment(lead);
-      var paymentTotal = jobFile.payments.reduce(function (sum, payment) {
-        return sum + crmParseMoneyNumber(payment.amount || 0);
-      }, 0);
-      var recentNotes = crmGetJobFileTimelineNotes(lead).filter(function (note) {
-        return note.kind === 'note';
-      }).slice(0, 4);
-      var recentPhotos = photoEntries.slice(0, 4);
-      var html = '<div class="crm-job-file-stat-grid">';
+      var propertyData = _propertyDataForJob(lead).propertyData || {};
+      var streetAddress = crmGetJobFileStreetAddress(lead, propertyData);
+      var cityStateZip = crmGetJobFileCityStateZip(lead, propertyData);
+      var homeownerPhone = String(lead.phone || lead.primaryPhone || propertyData.homeownerPhone || '').trim();
+      var progressSteps = crmGetJobFileProgressSteps(lead, jobFile);
+      var html = '<div class="crm-job-folder-body-grid">';
+      html += '<div class="crm-job-folder-card">';
+      html += '<div class="crm-job-folder-section-title">Primary Contact</div>';
+      html += '<div class="crm-job-folder-detail-list">';
       [
-        { num: photoCount, label: 'Photos' },
-        { num: docCount, label: 'Documents' },
-        { num: openTasks, label: 'Open tasks' },
-        { num: nextAppt ? '1' : '0', label: 'Next appointment' },
-        { num: crmFormatMoney(paymentTotal), label: 'Payments logged' }
-      ].forEach(function (item) {
-        html += '<div class="crm-job-file-stat"><div class="crm-job-file-stat-num">' + crmEscapeHtml(String(item.num)) + '</div><div class="crm-job-file-stat-label">' + crmEscapeHtml(item.label) + '</div></div>';
-      });
-      html += '</div>';
-      html += '<div class="crm-job-file-grid-2">';
-      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Customer Info</div><div class="crm-job-file-kv-list">';
-      [
-        ['Customer', crmGetJobFileLeadName(lead)],
-        ['Phone', lead.phone || '—'],
-        ['Email', lead.email || '—'],
-        ['Assigned rep', lead.assignedRep || '—'],
-        ['Pipeline stage', crmGetStageLabel(lead.stage || lead.jobStage || 'New Lead')],
-        ['Job status', crmGetJobFileStatus(lead, jobFile)]
+        ['Name', crmGetJobFileLeadName(lead)],
+        ['Phone', homeownerPhone],
+        ['Email', lead.email || '']
       ].forEach(function (row) {
-        html += '<div class="crm-job-file-kv-item"><span>' + crmEscapeHtml(row[0]) + '</span><strong>' + crmEscapeHtml(row[1]) + '</strong></div>';
+        html += '<div class="crm-job-folder-detail-item"><div class="crm-job-folder-detail-label">' + crmEscapeHtml(row[0]) + '</div><div class="crm-job-folder-detail-value' + (!row[1] ? ' empty' : '') + '">' + crmEscapeHtml(row[1] || '—') + '</div></div>';
       });
       html += '</div></div>';
-      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Property & Insurance</div><div class="crm-job-file-kv-list">';
+      html += '<div class="crm-job-folder-card">';
+      html += '<div class="crm-job-folder-section-title">Location Info</div>';
+      html += '<div class="crm-job-folder-detail-list">';
       [
-        ['Property address', crmGetJobFileLeadAddress(lead) || '—'],
-        ['Insurance company', jobFile.insurance.company || '—'],
-        ['Claim number', jobFile.insurance.claimNumber || '—'],
-        ['Date of loss', jobFile.insurance.dateOfLoss ? crmFormatDateShort(jobFile.insurance.dateOfLoss) : '—'],
-        ['Adjuster', jobFile.insurance.adjusterName || '—'],
-        ['Contract status', jobFile.contract.status || 'Not Created']
+        ['Address', streetAddress],
+        ['City/State/Zip', cityStateZip],
+        ['Job Type', crmGetJobFileJobTypeLabel(lead)],
+        ['Lead Source', crmGetLeadSourceDisplayLabel(lead.leadSource || '')]
       ].forEach(function (row) {
-        html += '<div class="crm-job-file-kv-item"><span>' + crmEscapeHtml(row[0]) + '</span><strong>' + crmEscapeHtml(row[1]) + '</strong></div>';
+        html += '<div class="crm-job-folder-detail-item"><div class="crm-job-folder-detail-label">' + crmEscapeHtml(row[0]) + '</div><div class="crm-job-folder-detail-value' + (!row[1] ? ' empty' : '') + '">' + crmEscapeHtml(row[1] || '—') + '</div></div>';
       });
       html += '</div></div>';
-      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Next Appointment</div>';
-      if (!nextAppt) {
-        html += '<div class="crm-job-file-empty">No appointment scheduled yet.</div>';
-      } else {
-        html += '<div class="crm-job-file-row">';
-        html += '<div class="crm-job-file-row-top"><div class="crm-job-file-row-title">' + crmEscapeHtml(crmGetAppointmentTitle(nextAppt)) + '</div><div class="crm-job-file-row-meta">' + crmEscapeHtml(nextAppt.type || 'Appointment') + '</div></div>';
-        html += '<div class="crm-job-file-row-meta">' + crmEscapeHtml([
-          crmGetAppointmentStartDate(nextAppt) ? crmFormatDateShort(crmGetAppointmentStartDate(nextAppt)) : '',
-          nextAppt.allDay ? 'All day' : crmFormatTime12(crmGetAppointmentStartTime(nextAppt) || ''),
-          crmGetAppointmentLocation(nextAppt) || ''
-        ].filter(Boolean).join(' · ')) + '</div>';
+      html += '<div class="crm-job-folder-card">';
+      html += '<div class="crm-job-folder-section-title">Milestones / Job Progress</div>';
+      html += '<div class="crm-job-folder-progress-list">';
+      progressSteps.forEach(function (step) {
+        html += '<div class="crm-job-folder-progress-step ' + crmEscapeHtml(step.className) + '">';
+        html += '<span class="crm-job-folder-progress-dot" aria-hidden="true"></span>';
+        html += '<span class="crm-job-folder-progress-name">' + crmEscapeHtml(step.label) + '</span>';
         html += '</div>';
-      }
-      html += '<div class="crm-job-file-inline-actions"><button class="btn btn-primary" type="button" data-jf-open-calendar="inspection">Schedule Inspection</button></div>';
-      html += '</div>';
-      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Open Tasks</div>';
-      html += crmRenderJobFileCompactItems(openTaskItems.slice(0, 5), 'No open tasks for this job.', function (task) {
-        return '<div class="crm-job-file-row"><div class="crm-job-file-row-top"><div class="crm-job-file-row-title">' + crmEscapeHtml(task.title || 'Task') + '</div><div class="crm-job-file-row-meta">' + crmEscapeHtml(task.priority || 'Normal') + '</div></div><div class="crm-job-file-row-meta">' + crmEscapeHtml([task.assignedTo || '', task.dueDate ? ('Due ' + crmFormatDateShort(task.dueDate)) : '', task.status === 'done' ? 'Completed' : 'Open'].filter(Boolean).join(' · ')) + '</div></div>';
       });
-      html += '</div>';
-      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Recent Notes</div>';
-      html += crmRenderJobFileCompactItems(recentNotes, 'No notes added yet.', function (note) {
-        return '<div class="crm-job-file-row"><div class="crm-job-file-row-top"><div class="crm-job-file-row-title">' + crmEscapeHtml(note.text || 'Note') + '</div><div class="crm-job-file-row-meta">' + crmEscapeHtml(note.author || 'User') + '</div></div><div class="crm-job-file-row-meta">' + crmEscapeHtml(crmFormatDateTimeLabel(note.ts)) + '</div></div>';
-      });
-      html += '</div>';
-      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Recent Photos</div>';
-      if (!recentPhotos.length) {
-        html += '<div class="crm-job-file-empty">No recent photos.</div>';
-      } else {
-        html += '<div class="crm-job-file-file-links">';
-        recentPhotos.forEach(function (entry) { html += crmRenderJobFilePhotoEntry(entry); });
-        html += '</div>';
-      }
-      html += '</div>';
-      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Recent Activity</div>';
-      html += crmRenderJobFileFeedHtml(feed, 6);
-      html += '</div>';
+      html += '</div></div>';
       html += '</div>';
       return html;
     }
 
-    function crmRenderJobFileActivityHtml(lead, feed) {
-      var html = '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Add Note</div>';
+    function crmRenderJobFileContactsHtml(lead) {
+      var propertyData = _propertyDataForJob(lead).propertyData || {};
+      var homeownerPhone = String(lead.phone || lead.primaryPhone || propertyData.homeownerPhone || '').trim();
+      var html = '<div class="crm-job-folder-card-grid">';
+      html += '<div class="crm-job-folder-card">';
+      html += '<div class="crm-job-folder-section-title">Homeowner Contact</div>';
+      html += '<div class="crm-job-folder-detail-list">';
+      [
+        ['Homeowner', crmGetJobFileLeadName(lead)],
+        ['Phone', homeownerPhone],
+        ['Email', lead.email || ''],
+        ['Address', crmGetJobFileLeadAddress(lead)]
+      ].forEach(function (row) {
+        html += '<div class="crm-job-folder-detail-item"><div class="crm-job-folder-detail-label">' + crmEscapeHtml(row[0]) + '</div><div class="crm-job-folder-detail-value' + (!row[1] ? ' empty' : '') + '">' + crmEscapeHtml(row[1] || '—') + '</div></div>';
+      });
+      html += '</div></div>';
+      html += '<div class="crm-job-folder-card">';
+      html += '<div class="crm-job-folder-section-title">Job Contacts</div>';
+      html += '<div class="crm-job-folder-detail-list">';
+      [
+        ['Sales Rep', lead.assignedRep || ''],
+        ['Lead Source', crmGetLeadSourceDisplayLabel(lead.leadSource || '')],
+        ['Created By', lead.createdByName || lead.createdByRole || ''],
+        ['Insurance Company', crmGetLeadJobFileData(lead).insurance.company || lead.insuranceCompany || '']
+      ].forEach(function (row) {
+        html += '<div class="crm-job-folder-detail-item"><div class="crm-job-folder-detail-label">' + crmEscapeHtml(row[0]) + '</div><div class="crm-job-folder-detail-value' + (!row[1] ? ' empty' : '') + '">' + crmEscapeHtml(row[1] || '—') + '</div></div>';
+      });
+      html += '</div></div>';
+      html += '</div>';
+      return html;
+    }
+
+    function crmRenderJobFileReportsHtml(lead, jobFile) {
+      var canFinance = crmCanAccessJobFinancialPages(lead);
+      var html = '<div class="crm-job-folder-card-grid">';
+      html += '<div class="crm-job-folder-card">';
+      html += '<div class="crm-job-folder-section-title">Insurance Snapshot</div>';
+      html += '<div class="crm-job-folder-detail-list">';
+      [
+        ['Insurance Company', jobFile.insurance.company || lead.insuranceCompany || ''],
+        ['Claim Number', jobFile.insurance.claimNumber || lead.claimNumber || ''],
+        ['Approved Amount', jobFile.insurance.approvedAmount || ''],
+        ['Deductible', jobFile.insurance.deductible || '']
+      ].forEach(function (row) {
+        html += '<div class="crm-job-folder-detail-item"><div class="crm-job-folder-detail-label">' + crmEscapeHtml(row[0]) + '</div><div class="crm-job-folder-detail-value' + (!row[1] ? ' empty' : '') + '">' + crmEscapeHtml(row[1] || '—') + '</div></div>';
+      });
+      html += '</div></div>';
+      html += '<div class="crm-job-folder-card">';
+      html += '<div class="crm-job-folder-section-title">Estimate & Production</div>';
+      html += '<div class="crm-job-folder-detail-list">';
+      [
+        ['Estimate Status', jobFile.estimate.status || ''],
+        ['Estimate Amount', jobFile.estimate.amount || ''],
+        ['Production Status', jobFile.production.status || ''],
+        ['Scheduled Build Date', jobFile.production.scheduledBuildDate || jobFile.production.startDate || '']
+      ].forEach(function (row) {
+        html += '<div class="crm-job-folder-detail-item"><div class="crm-job-folder-detail-label">' + crmEscapeHtml(row[0]) + '</div><div class="crm-job-folder-detail-value' + (!row[1] ? ' empty' : '') + '">' + crmEscapeHtml(row[1] || '—') + '</div></div>';
+      });
+      html += '</div></div>';
+      html += '<div class="crm-job-folder-card full">';
+      html += '<div class="crm-job-folder-section-title">Report Actions</div>';
+      html += '<div class="crm-job-file-inline-note">Open the financial pages or supporting records for more reporting detail.</div>';
+      html += '<div class="crm-job-file-inline-actions">';
+      if (canFinance) {
+        html += '<button class="btn" type="button" data-jf-action="financial-worksheet">Financial Worksheet</button>';
+        html += '<button class="btn" type="button" data-jf-action="job-profitability">Job Profitability</button>';
+      }
+      html += '<button class="btn" type="button" data-jf-tab-shortcut="documents">Open Documents</button>';
+      html += '<button class="btn" type="button" data-jf-tab-shortcut="photos">Open Photos</button>';
+      html += '</div></div>';
+      html += '</div>';
+      return html;
+    }
+
+    function crmRenderJobFileNotesHtml(lead) {
+      var notes = crmGetJobFileTimelineNotes(lead).filter(function (note) {
+        return note.kind === 'note';
+      });
+      var html = '<div class="crm-job-folder-card-grid">';
+      html += '<div class="crm-job-folder-card">';
+      html += '<div class="crm-job-folder-section-title">Add Note</div>';
       html += '<div class="crm-job-file-form-grid">';
       html += '<div class="field full"><label for="jf-note-text">Note</label><textarea id="jf-note-text" placeholder="Add a note to the job file"></textarea></div>';
-      html += '</div><div class="crm-job-file-inline-actions"><button class="btn btn-primary" type="button" data-jf-save-note="1">Save Note</button></div></div>';
-      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Activity Feed</div>';
+      html += '</div><div class="crm-job-file-inline-actions"><button class="btn btn-primary" type="button" data-jf-save-note="1">Save Note</button></div>';
+      html += '</div>';
+      html += '<div class="crm-job-folder-card">';
+      html += '<div class="crm-job-folder-section-title">Recent Notes</div>';
+      html += crmRenderJobFileCompactItems(notes.slice(0, 8), 'No notes added yet.', function (note) {
+        return '<div class="crm-job-file-row"><div class="crm-job-file-row-top"><div class="crm-job-file-row-title">' + crmEscapeHtml(note.text || 'Note') + '</div><div class="crm-job-file-row-meta">' + crmEscapeHtml(note.author || 'User') + '</div></div><div class="crm-job-file-row-meta">' + crmEscapeHtml(crmFormatDateTimeLabel(note.ts)) + '</div></div>';
+      });
+      html += '</div></div>';
+      return html;
+    }
+
+    function crmRenderJobFileActivityHtml(lead, feed) {
+      var html = '<div class="crm-job-folder-card">';
+      html += '<div class="crm-job-folder-section-title">Activity</div>';
       html += crmRenderJobFileFeedHtml(feed);
       html += '</div>';
       return html;
@@ -39305,6 +42701,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmRenderJobFileTabContent(lead, jobFile, feed) {
+      if (_crmJobFileActiveTab === 'contacts') return crmRenderJobFileContactsHtml(lead);
+      if (_crmJobFileActiveTab === 'reports') return crmRenderJobFileReportsHtml(lead, jobFile);
+      if (_crmJobFileActiveTab === 'notes') return crmRenderJobFileNotesHtml(lead);
       if (_crmJobFileActiveTab === 'activity') return crmRenderJobFileActivityHtml(lead, feed);
       if (_crmJobFileActiveTab === 'photos') return crmRenderJobFilePhotosHtml(lead);
       if (_crmJobFileActiveTab === 'documents') return crmRenderJobFileDocumentsHubHtml(lead, jobFile);
@@ -39332,14 +42731,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var tabContent = document.getElementById('jf-tab-content');
       if (!headerCard || !quickCard || !tabContent) return false;
       headerCard.innerHTML = crmRenderJobFileHeaderHtml(lead, feed);
-      quickCard.innerHTML = crmRenderJobFileQuickActionsHtml(lead);
+      quickCard.innerHTML = '';
+      quickCard.hidden = true;
       tabContent.innerHTML = crmRenderJobFileTabContent(lead, jobFile, feed);
       document.getElementById('jf-back-btn').textContent = _crmJobFileBackMode === 'lead'
         ? 'Back to Lead'
         : (_crmJobFileBackPageId === 'page-crm-jobs' ? 'Back to Jobs' : 'Back');
       document.getElementById('jf-open-lead-btn').setAttribute('data-jf-lead-id', lead.id);
+      var visibleTab = crmGetJobFileVisibleTab(_crmJobFileActiveTab);
       document.querySelectorAll('#jf-tabs [data-jf-tab]').forEach(function (btn) {
-        btn.classList.toggle('active', btn.getAttribute('data-jf-tab') === _crmJobFileActiveTab);
+        btn.classList.toggle('active', btn.getAttribute('data-jf-tab') === visibleTab);
       });
       return true;
     }
@@ -39652,7 +43053,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         } else if (action === 'job-profitability') {
           crmOpenJobProfitabilityPage(lead.id);
         }
-        if (['call','text','email'].indexOf(action) !== -1) crmRenderJobFile();
+      if (['call','text','email'].indexOf(action) !== -1) crmRenderJobFile();
+      return;
+      }
+
+      var tabShortcutBtn = e.target.closest('[data-jf-tab-shortcut]');
+      if (tabShortcutBtn) {
+        crmSwitchJobFileTab(tabShortcutBtn.getAttribute('data-jf-tab-shortcut') || 'overview');
         return;
       }
 
@@ -40964,6 +44371,30 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       document.getElementById('settings-team-modal-save').style.display = isReadonly ? 'none' : '';
       document.getElementById('settings-team-modal-delete').style.display = isReadonly ? 'none' : '';
       document.getElementById('settings-team-modal-cancel').textContent = isReadonly ? 'Close' : 'Cancel';
+      crmUpdateSettingsTeamModalSaveState();
+    }
+
+    function crmGetSettingsTeamModalValidationState() {
+      var name = crmNormalizeTeamMemberText(document.getElementById('settings-team-member-name').value || '');
+      var role = String(document.getElementById('settings-team-member-role').value || '').trim();
+      var tempPassword = String(document.getElementById('settings-team-member-temp-password').value || '').trim();
+      var confirmTempPassword = String(document.getElementById('settings-team-member-temp-password-confirm').value || '').trim();
+      var passwordsMatch = !!tempPassword && !!confirmTempPassword && tempPassword === confirmTempPassword;
+      var hasMismatch = !!tempPassword && !!confirmTempPassword && tempPassword !== confirmTempPassword;
+      return {
+        canSave: !!name && !!role && !!tempPassword && !!confirmTempPassword && passwordsMatch,
+        hasMismatch: hasMismatch
+      };
+    }
+
+    function crmUpdateSettingsTeamModalSaveState() {
+      var saveBtn = document.getElementById('settings-team-modal-save');
+      var mismatchMsg = document.getElementById('settings-team-password-match-msg');
+      if (!saveBtn) return;
+      var state = crmGetSettingsTeamModalValidationState();
+      var isReadonly = saveBtn.style.display === 'none';
+      saveBtn.disabled = isReadonly || !state.canSave;
+      if (mismatchMsg) mismatchMsg.style.display = state.hasMismatch ? 'block' : 'none';
     }
 
     function crmRefreshSettingsTeamManagerField(forceReadonly) {
@@ -40999,6 +44430,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (overlay) overlay.style.display = 'none';
       var msg = document.getElementById('settings-team-modal-msg');
       if (msg) msg.style.display = 'none';
+      var mismatchMsg = document.getElementById('settings-team-password-match-msg');
+      if (mismatchMsg) mismatchMsg.style.display = 'none';
     }
 
     function crmOpenSettingsTeamModal(memberId, isCreate, preferredRole) {
@@ -41051,6 +44484,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (isCreate && !isReadonly) document.getElementById('settings-team-modal-delete').style.display = 'none';
       document.getElementById('settings-team-modal-calendar-btn').style.display = member.name ? '' : 'none';
       crmRefreshSettingsTeamManagerField(isReadonly);
+      crmUpdateSettingsTeamModalSaveState();
       crmRenderSettingsTeamModalRelated(member);
       overlay.style.display = 'flex';
       setTimeout(function () {
@@ -41134,9 +44568,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var calendarAccess = String(document.getElementById('settings-team-member-calendar-access').value || 'role-based').trim() || 'role-based';
       var currentUser = crmGetCurrentTeamMember();
       msg.style.display = 'none';
+      crmUpdateSettingsTeamModalSaveState();
 
-      if (!name) {
-        msg.textContent = 'Enter a name before saving.';
+      if (!name || !role || !tempPassword || !confirmTempPassword) {
+        msg.textContent = 'Complete all required fields before saving.';
         msg.style.display = 'block';
         return;
       }
@@ -41150,13 +44585,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         msg.style.display = 'block';
         return;
       }
-      if (mode === 'create' && !tempPassword) {
-        msg.textContent = 'Enter a temporary password before saving.';
-        msg.style.display = 'block';
-        return;
-      }
       if ((tempPassword || confirmTempPassword) && tempPassword !== confirmTempPassword) {
-        msg.textContent = 'Temporary passwords do not match.';
+        msg.textContent = 'Passwords must match';
         msg.style.display = 'block';
         return;
       }
@@ -41725,12 +45155,15 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     document.getElementById('settings-team-modal-delete').addEventListener('click', crmRemoveSettingsTeamMember);
     document.getElementById('settings-team-member-role').addEventListener('change', function () {
       crmRefreshSettingsTeamManagerField(document.getElementById('settings-team-modal-save').style.display === 'none');
+      crmUpdateSettingsTeamModalSaveState();
+    });
+    ['settings-team-member-name','settings-team-member-temp-password','settings-team-member-temp-password-confirm'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', crmUpdateSettingsTeamModalSaveState);
     });
     document.getElementById('settings-team-modal-calendar-btn').addEventListener('click', function () {
       crmOpenSettingsMemberCalendar(document.getElementById('settings-team-member-id').value || '');
-    });
-    document.getElementById('settings-team-modal-overlay').addEventListener('click', function (e) {
-      if (e.target === this) crmCloseSettingsTeamModal();
     });
     document.getElementById('settings-permissions-modal-close').addEventListener('click', crmCloseSettingsPermissionsModal);
     document.getElementById('settings-permissions-modal-cancel').addEventListener('click', crmCloseSettingsPermissionsModal);
@@ -42072,14 +45505,47 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var calendarBadgeHtml = calendarCount
         ? ' <span class="open-tasks-badge" style="margin-left:4px;">' + calendarCount + '</span>'
         : '';
-      var hideMenuDescriptions = ['Admin', 'Sales Rep', 'Manager', 'Office', 'Production'].indexOf(role) !== -1;
+      var workflowMenuMeta = {
+        'owner-dashboard': { icon: 'OD', tone: 'blue', desc: 'Company overview: leads, revenue, and team' },
+        'lead-inbox': { icon: 'LI', tone: 'teal', desc: 'Review new, unassigned, and flagged leads' },
+        'all-leads': { icon: 'AL', tone: 'purple', desc: 'Search and manage all leads' },
+        'pipeline': { icon: 'PL', tone: 'green', desc: 'Track jobs and leads across every stage' },
+        'inspections': { icon: 'IN', tone: 'orange', desc: 'Finish claim details and inspection progress' },
+        'calendar': { icon: 'CA', tone: 'blue', desc: 'Appointments, reminders, and key meetings' },
+        'payroll': { icon: 'PY', tone: 'gold', desc: 'Weekly payroll, deductions, and payouts' },
+        'jobs': { icon: 'JB', tone: 'red', desc: 'Review all converted jobs and active work' },
+        'rotation': { icon: 'LR', tone: 'orange', desc: 'Manage lead offers, lineups, and acceptance windows' },
+        'company-docs': { icon: 'DC', tone: 'teal', desc: 'Contracts, templates, and company files' },
+        'settings': { icon: 'ST', tone: 'gold', desc: 'Pipeline, team, role, and admin settings' },
+        'upload-leads': { icon: 'UL', tone: 'blue', desc: 'Import lead lists and route them into the workspace' },
+        'call-in-leads': { icon: 'CL', tone: 'green', desc: 'Create and route new leads received by phone' },
+        'sales-reps': { icon: 'SR', tone: 'purple', desc: 'View the rep roster, coverage, and assignments' },
+        'manager-tools': { icon: 'MG', tone: 'red', desc: 'Open manager tools, approvals, and oversight' },
+        'automations': { icon: 'AU', tone: 'orange', desc: 'Text, email, and workflow automation tools' },
+        'team-leads': { icon: 'TL', tone: 'teal', desc: 'Review all leads assigned across your team' },
+        'assign-leads': { icon: 'AS', tone: 'green', desc: 'Assign or reassign leads to team members' },
+        'team-jobs': { icon: 'TJ', tone: 'red', desc: 'Track jobs that are active across your team' },
+        'my-assigned-leads': { icon: 'ML', tone: 'blue', desc: 'Leads assigned to you from the office' },
+        'field-lead': { icon: 'NL', tone: 'green', desc: 'Create a new lead from the field' },
+        'my-pipeline': { icon: 'MP', tone: 'purple', desc: 'Your pipeline organized by stage' },
+        'my-jobs': { icon: 'MJ', tone: 'red', desc: 'Your completed jobs and closed work' },
+        'tasks': { icon: 'TK', tone: 'gold', desc: 'Your open tasks and follow-ups' },
+        'canvass-lead': { icon: 'NL', tone: 'green', desc: 'Canvass a new homeowner lead' },
+        'canvasser-leads': { icon: 'MY', tone: 'blue', desc: 'View and track your canvassed leads' },
+        'canvasser-credits': { icon: 'PY', tone: 'gold', desc: 'Track your first and second $50 credits' }
+      };
 
       function makeRow(action, title, desc, primary) {
-        desc = hideMenuDescriptions ? '' : desc;
-        return '<button class="menu-row' + (primary ? ' menu-row-primary' : '') + (!desc ? ' menu-row-title-only' : '') +
+        var meta = workflowMenuMeta[action] || {};
+        var resolvedDesc = desc || meta.desc || 'Open this workflow item.';
+        return '<button class="menu-row menu-row-workflow menu-row-tone-' + (meta.tone || 'blue') + (primary ? ' menu-row-primary' : '') +
                '" type="button" data-crm-action="' + action + '">' +
-               '<div class="menu-row-title">' + title + '</div>' +
-               (desc ? ('<div class="menu-row-desc">' + desc + '</div>') : '') +
+               '<span class="menu-row-icon" aria-hidden="true">' + (meta.icon || 'GO') + '</span>' +
+               '<span class="menu-row-copy">' +
+                 '<span class="menu-row-title">' + title + '</span>' +
+                 '<span class="menu-row-desc">' + resolvedDesc + '</span>' +
+               '</span>' +
+               '<span class="menu-row-aside"><span class="menu-row-arrow" aria-hidden="true">&rsaquo;</span></span>' +
                '</button>';
       }
 
@@ -42162,6 +45628,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var s = document.getElementById(sectionId);
         if (s) s.style.display = isCanvasser ? 'none' : '';
       });
+
+      crmRenderDashboardCommandCenter();
     }
 
     function crmOpenAdminPlaceholder(title, subtitle, message) {
@@ -43228,6 +46696,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmGetHeaderPageTitle(pageId) {
       var activePage = pageId ? document.getElementById(pageId) : null;
+      if (pageId === 'page-crm-job-file') {
+        var jobFileLead = _crmCurrentJobFileLeadId ? crmGetJobFileLeadById(_crmCurrentJobFileLeadId) : null;
+        var jobFileLeadDisplayName = jobFileLead
+          ? (String(jobFileLead.homeownerName || '').trim() || crmGetJobFileLeadName(jobFileLead))
+          : '';
+        var jobFileLeadName = crmFormatHeaderTitleText(jobFileLeadDisplayName);
+        if (jobFileLeadName) return jobFileLeadName;
+      }
       var titleEl = crmGetHeaderTitleSource(pageId);
       if (titleEl) return crmFormatHeaderTitleText(titleEl.textContent || '');
       return crmFormatHeaderTitleText(activePage && activePage.getAttribute('data-crm-header-title') || '');
@@ -43250,13 +46726,15 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function renderTopBrand() {
       var brand = document.getElementById('map-header-brand');
+      var inlineHeaderTitleEl = document.getElementById('crm-header-inline-title');
       var headerTitleEl = document.getElementById('crm-header-page-title');
       if (!brand) return;
       var pageId = typeof _appCurrentPageId !== 'undefined' ? (_appCurrentPageId || '') : '';
       var usesStandardHeader = crmUsesStandardHeaderLayout(pageId);
       var pageTitle = usesStandardHeader ? crmGetHeaderPageTitle(pageId) : '';
+      var showInlineHeaderTitle = usesStandardHeader && pageId === 'page-crm-job-file' && !!pageTitle;
       var inlineTitleText = !usesStandardHeader ? (pageTitle || 'Hail Money') : '';
-      var inlineTitle = inlineTitleText ? '<div class="map-header-title">' + inlineTitleText + '</div>' : '';
+      var inlineTitle = inlineTitleText ? '<div class="map-header-title">' + crmEscapeHtml(inlineTitleText) + '</div>' : '';
       var profile = (typeof crmGetCompanyProfile === 'function') ? crmGetCompanyProfile() : {};
       var logoSrc = crmGetAppLogoUrl();
       var logoAlt = 'Hail Money';
@@ -43266,9 +46744,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
       var safeLogoSrc = String(logoSrc).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
       brand.innerHTML = '<img class="app-top-hail-logo" src="' + safeLogoSrc + '" alt="' + logoAlt + '" draggable="false" />' + inlineTitle;
+      if (inlineHeaderTitleEl) {
+        inlineHeaderTitleEl.textContent = showInlineHeaderTitle ? pageTitle : '';
+        inlineHeaderTitleEl.hidden = !showInlineHeaderTitle;
+      }
       if (headerTitleEl) {
-        headerTitleEl.textContent = usesStandardHeader ? pageTitle : '';
-        headerTitleEl.hidden = !usesStandardHeader || !pageTitle;
+        headerTitleEl.textContent = usesStandardHeader && !showInlineHeaderTitle ? pageTitle : '';
+        headerTitleEl.hidden = !usesStandardHeader || !pageTitle || showInlineHeaderTitle;
       }
       crmSyncSharedHeaderBody(pageId);
     }
