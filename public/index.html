@@ -185,7 +185,7 @@
     }
     .map-header-center-heading,
     .map-header-center-subtitle {
-      font-size: 13px;
+      font-size: 19.5px;
       font-weight: 700;
       color: #111;
       line-height: 1.05;
@@ -792,7 +792,7 @@
     }
 
     .menu-row-desc {
-      font-size: 13px;
+      font-size: 19.5px;
       line-height: 1.45;
       color: var(--muted);
     }
@@ -811,7 +811,7 @@
     }
 
     .menu-row-badge {
-      font-size: 11px;
+      font-size: 16.5px;
       color: var(--muted);
       font-weight: 600;
       letter-spacing: 0.04em;
@@ -885,7 +885,7 @@
       justify-content: center;
       background: linear-gradient(145deg, var(--menu-tone), var(--menu-tone-deep));
       color: #fff;
-      font-size: 11px;
+      font-size: 16.5px;
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -2147,6 +2147,9 @@
       gap: 6px;
       flex-shrink: 0;
       align-self: stretch;
+      position: relative;
+      z-index: 6;
+      overflow: visible;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .logo {
@@ -2185,6 +2188,55 @@
       padding: 6px 4px;
       color: #ffffff;
       text-align: center;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-group {
+      position: relative;
+      display: block;
+      width: 100%;
+      z-index: 20;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-menu {
+      position: absolute;
+      top: 0;
+      left: 100%;
+      min-width: 188px;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(170, 128, 18, 0.26);
+      border-radius: 10px;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+      z-index: 40;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-group:hover .nav-flyout-menu,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-group:focus-within .nav-flyout-menu,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-group.is-open .nav-flyout-menu {
+      display: flex;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-option {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: #1b1b2f;
+      text-align: left;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16.5px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-option:hover,
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-option:focus-visible {
+      background: rgba(26, 26, 46, 0.08);
+      outline: none;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-item:hover {
@@ -2259,7 +2311,7 @@
       align-items: center;
       gap: 0;
       color: #fff;
-      font-size: 28px;
+      font-size: 42px;
       font-weight: 500;
       flex: 0 0 auto;
       min-width: 180px;
@@ -2314,7 +2366,7 @@
       justify-content: center;
       gap: 2px;
       color: #fff;
-      font-size: 26px;
+      font-size: 39px;
       font-weight: 700;
       line-height: 1;
       text-align: center;
@@ -2336,7 +2388,7 @@
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .hm-brand-wordmark {
       letter-spacing: 0.02em;
-      font-size: 18px;
+      font-size: 27px;
       font-weight: 700;
     }
 
@@ -2356,21 +2408,21 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill .label {
-      font-size: 7px;
+      font-size: 10.5px;
       color: rgba(255, 255, 255, 0.6);
       letter-spacing: 0.8px;
       line-height: 1;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill .letter {
-      font-size: 16px;
+      font-size: 24px;
       font-weight: 600;
       line-height: 1;
       margin-top: 1px;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .pill .amount {
-      font-size: 7px;
+      font-size: 10.5px;
       color: rgba(255, 255, 255, 0.7);
       white-space: nowrap;
       line-height: 1;
@@ -2407,7 +2459,7 @@
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .user-info {
       color: #1b1b2f;
-      font-size: 11px;
+      font-size: 16.5px;
       min-width: 102px;
       flex: 0 0 auto;
       display: flex;
@@ -2432,7 +2484,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 18px;
       font-weight: 700;
       flex: 0 0 auto;
     }
@@ -2446,13 +2498,13 @@
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .user-name {
       color: #1b1b2f;
-      font-size: 12px;
+      font-size: 18px;
       font-weight: 700;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .user-role {
       color: #7f6a2d;
-      font-size: 10px;
+      font-size: 15px;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .content {
@@ -2506,14 +2558,14 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-title {
-      font-size: 13px;
+      font-size: 19.5px;
       font-weight: 700;
       color: var(--text-primary);
       letter-spacing: 0.02em;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-active {
-      font-size: 11px;
+      font-size: 16.5px;
       font-weight: 600;
       color: var(--text-secondary);
       white-space: nowrap;
@@ -2548,7 +2600,7 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage-label {
-      font-size: 9px;
+      font-size: 13.5px;
       font-weight: 700;
       color: var(--text-secondary);
       letter-spacing: 0.08em;
@@ -2564,21 +2616,21 @@
       align-items: center;
       justify-content: center;
       color: #fff;
-      font-size: 22px;
+      font-size: 33px;
       font-weight: 700;
       line-height: 1;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage-count {
-      font-size: 18px;
+      font-size: 27px;
       font-weight: 700;
       color: var(--text-primary);
       line-height: 1;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-stage-amount {
-      font-size: 10px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--text-secondary);
       line-height: 1.15;
@@ -2629,7 +2681,7 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .job-actions-header {
-      font-size: 11px;
+      font-size: 16.5px;
       font-weight: 500;
       color: var(--text-secondary);
       letter-spacing: 0.6px;
@@ -2637,7 +2689,7 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .section-title {
-      font-size: 10px;
+      font-size: 15px;
       font-weight: 500;
       color: var(--text-secondary);
       letter-spacing: 0.8px;
@@ -2683,7 +2735,7 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .action-card .num {
-      font-size: 20px;
+      font-size: 30px;
       font-weight: 500;
       color: var(--text-muted);
       line-height: 1.1;
@@ -2697,7 +2749,7 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .action-card .lbl {
-      font-size: 9px;
+      font-size: 13.5px;
       color: var(--text-secondary);
       margin-top: 2px;
       line-height: 1.3;
@@ -2724,7 +2776,7 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-header span {
-      font-size: 12px;
+      font-size: 18px;
       font-weight: 600;
       color: var(--text-secondary);
       letter-spacing: 0.6px;
@@ -2732,13 +2784,13 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-header span:first-child {
-      font-size: 13.5px;
+      font-size: 20.25px;
       font-weight: 700;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-header .lb-period {
       color: var(--text-accent);
-      font-size: 11px;
+      font-size: 16.5px;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-row {
@@ -2755,14 +2807,14 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-row .rank {
-      font-size: 15px;
+      font-size: 22.5px;
       font-weight: 600;
       color: var(--text-muted);
       line-height: 1;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-row .name {
-      font-size: 14px;
+      font-size: 21px;
       font-weight: 600;
       color: var(--text-primary);
       overflow: hidden;
@@ -2786,7 +2838,7 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .lb-row .stats {
-      font-size: 13.5px;
+      font-size: 20.25px;
       font-weight: 600;
       color: var(--text-secondary);
       text-align: right;
@@ -2809,7 +2861,7 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .metrics-card .mh {
-      font-size: 10px;
+      font-size: 15px;
       font-weight: 500;
       color: var(--text-secondary);
       letter-spacing: 0.6px;
@@ -2834,7 +2886,7 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .metric-item .mv {
-      font-size: 15px;
+      font-size: 22.5px;
       font-weight: 500;
       color: var(--text-primary);
       line-height: 1.1;
@@ -2845,13 +2897,13 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .metric-item .ml {
-      font-size: 9px;
+      font-size: 13.5px;
       color: var(--text-muted);
       line-height: 1.25;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .activity-feed-title {
-      font-size: 11px;
+      font-size: 16.5px;
       font-weight: 500;
       color: #6f5712;
       letter-spacing: 0.6px;
@@ -2910,7 +2962,7 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .activity-btn span:last-child {
-      font-size: 12px;
+      font-size: 18px;
       color: var(--text-primary);
     }
 
@@ -2922,7 +2974,7 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .ftab {
-      font-size: 10px;
+      font-size: 15px;
       padding: 3px 8px;
       border-radius: 20px;
       border: 0.5px solid rgba(170, 128, 18, 0.24);
@@ -2997,26 +3049,26 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-ap-item-msg {
-      font-size: 11px;
+      font-size: 16.5px;
       color: var(--text-primary);
       line-height: 1.4;
       font-weight: 400;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-ap-item-meta {
-      font-size: 10px;
+      font-size: 15px;
       color: var(--text-muted);
       margin-top: 2px;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .crm-activity-empty {
       padding: 7px 0;
-      font-size: 11px;
+      font-size: 16.5px;
       color: #8b7333;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .view-all {
-      font-size: 11px;
+      font-size: 16.5px;
       color: #8f6900;
       text-align: center;
       margin-top: 8px;
@@ -3063,7 +3115,7 @@
       align-items: center;
       justify-content: center;
       font-weight: 500;
-      font-size: 11px;
+      font-size: 16.5px;
       color: #fff;
     }
 
@@ -3079,7 +3131,7 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .meas-item span:last-child {
-      font-size: 10px;
+      font-size: 15px;
       color: var(--text-primary);
       line-height: 1.2;
       text-align: left;
@@ -3117,13 +3169,13 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .material-title {
-      font-size: 10px;
+      font-size: 15px;
       color: var(--text-primary);
       line-height: 1.2;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .material-subtitle {
-      font-size: 9px;
+      font-size: 13.5px;
       color: var(--text-secondary);
       line-height: 1.2;
     }
@@ -3160,14 +3212,14 @@
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .act-count-item .acv {
-      font-size: 14px;
+      font-size: 21px;
       font-weight: 500;
       color: var(--text-primary);
       line-height: 1.1;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .act-count-item .acl {
-      font-size: 8px;
+      font-size: 12px;
       color: var(--text-muted);
       line-height: 1.25;
     }
@@ -5973,6 +6025,16 @@
     @media (max-width: 980px) {
       #page-crm-pipeline .crm-layout {
         grid-template-columns: 1fr;
+      }
+      #page-crm-pipeline .crm-activity-column {
+        min-width: 0;
+        max-width: none;
+      }
+      #page-crm-pipeline .crm-activity-panel {
+        position: static;
+        top: auto;
+        height: auto;
+        max-height: none;
       }
       #page-crm-pipeline .crm-pipeline-toolbar {
         width: 100%;
@@ -8836,6 +8898,303 @@
       white-space: nowrap;
       flex: 0 0 auto;
     }
+    /* ── Contacts pages ── */
+    body.new-contact-page-active .screen,
+    body.contacts-page-active .screen {
+      background: #eef1f4;
+    }
+    body.new-contact-page-active .map-header-center-subtitle,
+    body.contacts-page-active .map-header-center-subtitle {
+      display: none !important;
+    }
+    body.new-contact-page-active .screen {
+      padding-bottom: 134px;
+    }
+    #page-new-contact,
+    #page-crm-contacts {
+      color: #172033;
+    }
+    #page-new-contact .crm-contact-page-shell,
+    #page-crm-contacts .crm-contacts-page-shell {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+    }
+    #page-new-contact .crm-contact-page-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.95fr);
+      gap: 24px;
+      align-items: start;
+    }
+    #page-new-contact .crm-contact-card,
+    #page-crm-contacts .crm-contact-list-card {
+      background: #ffffff;
+      border: 1px solid #d8dde6;
+      border-radius: 18px;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+    }
+    #page-new-contact .crm-contact-card {
+      padding: 24px 24px 22px;
+    }
+    #page-new-contact .crm-contact-card-title,
+    #page-crm-contacts .crm-contact-list-title {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.15;
+      font-weight: 700;
+      color: #182132;
+    }
+    #page-new-contact .crm-contact-required-note {
+      margin-top: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #d97706;
+    }
+    #page-new-contact .crm-contact-required-note .req {
+      color: #d97706;
+    }
+    #page-new-contact .crm-contact-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px 16px;
+      margin-top: 22px;
+    }
+    #page-new-contact .crm-contact-form-grid .field.full {
+      grid-column: 1 / -1;
+    }
+    #page-new-contact .crm-contact-form-grid .field label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #3a4558;
+      margin-bottom: 7px;
+    }
+    #page-new-contact .crm-contact-form-grid .field input,
+    #page-new-contact .crm-contact-form-grid .field select,
+    #page-new-contact .crm-contact-form-grid .field textarea {
+      min-height: 50px;
+      border-color: #ccd4df;
+      background: #fff;
+      color: #162033;
+      font-size: 15px;
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: inset 0 1px 1px rgba(15, 23, 42, 0.03);
+    }
+    #page-new-contact .crm-contact-form-grid .field input:focus,
+    #page-new-contact .crm-contact-form-grid .field select:focus,
+    #page-new-contact .crm-contact-form-grid .field textarea:focus {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14);
+    }
+    #page-new-contact .crm-contact-phone-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) 90px 150px 124px;
+      gap: 16px;
+      align-items: end;
+    }
+    #page-new-contact .crm-contact-primary-box {
+      min-height: 50px;
+      border: 1px solid #ccd4df;
+      border-radius: 12px;
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      background: #fff;
+    }
+    #page-new-contact .crm-contact-primary-box label,
+    #page-new-contact .crm-contact-toggle-row label {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #243042;
+      cursor: pointer;
+    }
+    #page-new-contact .crm-contact-primary-box input,
+    #page-new-contact .crm-contact-toggle-row input {
+      width: 18px;
+      height: 18px;
+      accent-color: #f59e0b;
+      margin: 0;
+      flex: 0 0 auto;
+    }
+    #page-new-contact .crm-contact-toggle-row {
+      grid-column: 1 / -1;
+      padding-top: 2px;
+    }
+    #page-new-contact .crm-contact-notes-wrap {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #page-new-contact #nc-notes {
+      min-height: 352px;
+      resize: vertical;
+    }
+    #page-new-contact .crm-contact-notes-counter {
+      align-self: flex-end;
+      font-size: 14px;
+      font-weight: 600;
+      color: #7a869a;
+    }
+    #page-new-contact .validation-msg {
+      margin-top: 18px;
+      font-size: 14px;
+    }
+    #page-new-contact .crm-contact-action-bar {
+      display: block;
+    }
+    body.new-contact-page-active #page-new-contact .crm-contact-action-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      width: min(1120px, calc(100vw - 40px));
+      z-index: 44;
+    }
+    #page-new-contact .crm-contact-action-inner {
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid #d8dde6;
+      border-radius: 18px;
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12);
+      padding: 14px 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    #page-new-contact .crm-contact-action-inner .btn {
+      min-width: 172px;
+      min-height: 50px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    #page-crm-contacts .crm-contact-list-card {
+      padding: 22px 22px 18px;
+    }
+    #page-crm-contacts .crm-contact-list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    #page-crm-contacts .crm-contact-list-meta {
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b7280;
+    }
+    #page-crm-contacts .crm-contact-list-table {
+      border: 1px solid #d8dde6;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+    }
+    #page-crm-contacts .crm-contact-list-row {
+      display: grid;
+      grid-template-columns: minmax(210px, 1.45fr) minmax(130px, 0.8fr) minmax(160px, 0.95fr) minmax(170px, 1fr) minmax(160px, 0.95fr) 110px;
+      gap: 14px;
+      align-items: center;
+      padding: 16px 18px;
+      border-top: 1px solid #e5e9f0;
+    }
+    #page-crm-contacts .crm-contact-list-row:first-child {
+      border-top: 0;
+    }
+    #page-crm-contacts .crm-contact-list-row.header {
+      background: #f6f8fb;
+      padding-top: 14px;
+      padding-bottom: 14px;
+      border-top: 0;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #697386;
+    }
+    #page-crm-contacts .crm-contact-list-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1b2434;
+    }
+    #page-crm-contacts .crm-contact-list-secondary,
+    #page-crm-contacts .crm-contact-list-cell {
+      font-size: 15px;
+      color: #3f4a5e;
+    }
+    #page-crm-contacts .crm-contact-list-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    #page-crm-contacts .crm-contact-list-action {
+      min-width: 86px;
+      justify-content: center;
+      padding: 9px 12px;
+      font-size: 14px;
+    }
+    #page-crm-contacts .crm-contact-empty {
+      padding: 48px 28px;
+      text-align: center;
+      font-size: 16px;
+      color: #6b7280;
+      background: #ffffff;
+      border: 1px dashed #cfd6e2;
+      border-radius: 16px;
+    }
+    @media (max-width: 980px) {
+      #page-new-contact .crm-contact-page-grid {
+        grid-template-columns: 1fr;
+      }
+      #page-new-contact .crm-contact-phone-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      #page-crm-contacts .crm-contact-list-row,
+      #page-crm-contacts .crm-contact-list-row.header {
+        grid-template-columns: minmax(180px, 1.2fr) minmax(120px, 0.8fr) minmax(150px, 0.85fr) minmax(160px, 1fr) minmax(150px, 0.9fr);
+      }
+      #page-crm-contacts .crm-contact-list-row > :last-child,
+      #page-crm-contacts .crm-contact-list-row.header > :last-child {
+        grid-column: 1 / -1;
+        justify-self: end;
+      }
+    }
+    @media (max-width: 760px) {
+      body.new-contact-page-active #page-new-contact .crm-contact-action-bar {
+        width: calc(100vw - 24px);
+        bottom: 12px;
+      }
+      #page-new-contact .crm-contact-card,
+      #page-crm-contacts .crm-contact-list-card {
+        padding: 18px 16px;
+        border-radius: 16px;
+      }
+      #page-new-contact .crm-contact-form-grid,
+      #page-new-contact .crm-contact-phone-row {
+        grid-template-columns: 1fr;
+      }
+      #page-new-contact .crm-contact-action-inner {
+        flex-direction: column-reverse;
+      }
+      #page-new-contact .crm-contact-action-inner .btn {
+        width: 100%;
+      }
+      #page-crm-contacts .crm-contact-list-row.header {
+        display: none;
+      }
+      #page-crm-contacts .crm-contact-list-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        align-items: flex-start;
+      }
+      #page-crm-contacts .crm-contact-list-actions {
+        justify-content: flex-start;
+        padding-top: 6px;
+      }
+    }
     /* ── Lead Inbox sections ── */
     .li-section { margin-bottom: 18px; }
     .li-section-header {
@@ -9368,20 +9727,134 @@
     }
     .crm-ap-filter-btn.active, .crm-ap-filter-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
     /* ── Pipeline page: three-panel dashboard ── */
+    body.pipeline-page-active .topbar {
+      background: #1a1a2e;
+      border-bottom-color: rgba(223, 188, 95, 0.18);
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.88);
+    }
+    body.pipeline-page-active .map-header-title,
+    body.pipeline-page-active .map-header-center-heading,
+    body.pipeline-page-active .map-header-center-subtitle,
+    body.pipeline-page-active .crm-header-page-title,
+    body.pipeline-page-active .crm-header-inline-title {
+      color: #ffffff;
+    }
+    body.pipeline-page-active #global-header-back-btn {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(223, 188, 95, 0.28);
+    }
+    body.pipeline-page-active #global-header-back-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(223, 188, 95, 0.42);
+    }
+    body.pipeline-page-active .jf-notif-btn {
+      color: #f6c75f;
+    }
     #page-crm-pipeline .crm-layout {
       grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
       gap: 20px;
       max-width: 1600px;
-      align-items: start;
+      align-items: stretch;
     }
     #page-crm-pipeline .crm-main-column { min-width: 0; }
-    #page-crm-pipeline .crm-activity-column { min-width: 280px; }
+    #page-crm-pipeline .crm-activity-column {
+      min-width: 280px;
+      display: flex;
+      align-self: stretch;
+      background: rgba(255, 248, 219, 0.92);
+      border: 1px solid rgba(170, 128, 18, 0.18);
+      border-radius: 22px;
+      padding: 14px;
+      overflow: hidden;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        0 10px 26px rgba(15, 23, 42, 0.06);
+    }
     #page-crm-pipeline .crm-activity-panel {
-      display: block;
-      top: 188px;
-      max-height: calc(100vh - 220px);
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      top: 104px;
+      height: calc(100vh - 132px);
+      max-height: calc(100vh - 132px);
+      overflow: hidden;
+      box-shadow: none;
     }
     #page-crm-pipeline .crm-pipeline-outer { overflow: visible; }
+    #page-crm-pipeline .crm-activity-panel-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #6f5712;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+    #page-crm-pipeline .crm-activity-quick-actions {
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    #page-crm-pipeline .crm-activity-quick-btn {
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: rgba(255, 252, 243, 0.92);
+      border-color: rgba(170, 128, 18, 0.24);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    #page-crm-pipeline .crm-activity-quick-btn:hover {
+      background: #fff8e4;
+      border-color: rgba(170, 128, 18, 0.4);
+    }
+    #page-crm-pipeline .crm-activity-divider {
+      border-top-color: rgba(170, 128, 18, 0.16);
+      margin: 10px 0 12px;
+    }
+    #page-crm-pipeline .crm-ap-filter-btn {
+      border-color: rgba(170, 128, 18, 0.24);
+      background: rgba(255, 251, 237, 0.68);
+      color: #705a18;
+    }
+    #page-crm-pipeline .crm-ap-filter-btn.active,
+    #page-crm-pipeline .crm-ap-filter-btn:hover {
+      background: #fff2bf;
+      border-color: rgba(170, 128, 18, 0.38);
+      color: #9c6f00;
+    }
+    #page-crm-pipeline .crm-activity-feed-list {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 2px;
+      background: transparent;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(143, 105, 0, 0.42) transparent;
+    }
+    #page-crm-pipeline .crm-activity-feed-list::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    #page-crm-pipeline .crm-activity-feed-list::-webkit-scrollbar-thumb {
+      background: rgba(143, 105, 0, 0.42);
+      border-radius: 999px;
+    }
+    #page-crm-pipeline .crm-ap-item {
+      border-bottom-color: rgba(170, 128, 18, 0.16);
+    }
+    #page-crm-pipeline .crm-ap-item:hover {
+      background: rgba(255, 255, 255, 0.36);
+    }
+    #page-crm-pipeline .crm-activity-empty,
+    #page-crm-pipeline .crm-ap-item-meta {
+      color: #8b7333;
+    }
     body.app-page-active .page-actions > .back-to-menu,
     body.app-page-active .page-actions > #back-to-menu,
     body.app-page-active .crm-calendar-topbar-left > .back-to-menu {
@@ -9589,23 +10062,31 @@
                 <img id="dash-sidebar-company-logo" class="dash-sidebar-company-logo" src="./assets/hailmoney-logo.png?v=2" alt="Company Logo" draggable="false" />
                 <span class="sr-only" id="dash-company-initials">YP</span>
               </div>
-              <button class="nav-item active" type="button" data-dashboard-action="new-lead" aria-label="New Lead">
-                <span class="dash-icon" data-dash-icon="layout-dashboard" aria-hidden="true"></span><span class="nav-label">New</span>
-              </button>
+              <div class="nav-flyout-group nav-flyout-group-new">
+                <button class="nav-item active" type="button" aria-label="New" aria-haspopup="menu">
+                  <span class="dash-icon" data-dash-icon="layout-dashboard" aria-hidden="true"></span><span class="nav-label">New</span>
+                </button>
+                <div class="nav-flyout-menu" aria-label="New options">
+                  <button class="nav-flyout-option" type="button" data-dashboard-action="new-contact">Contact</button>
+                  <button class="nav-flyout-option" type="button" data-dashboard-action="new-lead">Lead</button>
+                  <button class="nav-flyout-option" type="button" data-dashboard-placeholder="reminder">Reminder</button>
+                  <button class="nav-flyout-option" type="button" data-dashboard-placeholder="task">Task</button>
+                </div>
+              </div>
               <button class="nav-item" type="button" data-dashboard-action="recent" aria-label="Recent">
                 <span class="dash-icon" data-dash-icon="clock" aria-hidden="true"></span><span class="nav-label">Recent</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="start-inspection" aria-label="Start Inspection">
+                <span class="dash-icon" data-dash-icon="play" aria-hidden="true"></span><span class="nav-label">Start</span>
               </button>
               <button class="nav-item" type="button" data-dashboard-action="pipeline" aria-label="Pipeline">
                 <span class="dash-icon" data-dash-icon="list-check" aria-hidden="true"></span><span class="nav-label">Pipeline</span>
               </button>
-              <button class="nav-item" type="button" data-dashboard-action="inspections" aria-label="Inspections">
-                <span class="dash-icon" data-dash-icon="clipboard-check" aria-hidden="true"></span><span class="nav-label">Inspect</span>
+              <button class="nav-item" type="button" data-dashboard-action="leads" aria-label="Leads">
+                <span class="dash-icon" data-dash-icon="users" aria-hidden="true"></span><span class="nav-label">Leads</span>
               </button>
-              <button class="nav-item" type="button" data-dashboard-action="calendar" aria-label="Calendar">
-                <span class="dash-icon" data-dash-icon="calendar" aria-hidden="true"></span><span class="nav-label">Calendar</span>
-              </button>
-              <button class="nav-item" type="button" data-dashboard-action="payroll" aria-label="Payroll">
-                <span class="dash-icon" data-dash-icon="cash" aria-hidden="true"></span><span class="nav-label">Payroll</span>
+              <button class="nav-item" type="button" data-dashboard-action="contacts" aria-label="Contacts">
+                <span class="dash-icon" data-dash-icon="address-book" aria-hidden="true"></span><span class="nav-label">Contacts</span>
               </button>
               <button class="nav-item" type="button" data-dashboard-action="production" aria-label="Production">
                 <span class="dash-icon" data-dash-icon="factory" aria-hidden="true"></span><span class="nav-label">Production</span>
@@ -9616,17 +10097,29 @@
               <button class="nav-item" type="button" data-dashboard-action="campaigns" aria-label="Campaigns">
                 <span class="dash-icon" data-dash-icon="speakerphone" aria-hidden="true"></span><span class="nav-label">Campaign</span>
               </button>
-              <button class="nav-item" type="button" data-dashboard-action="start-inspection" aria-label="Start Inspection">
-                <span class="dash-icon" data-dash-icon="play" aria-hidden="true"></span><span class="nav-label">Start</span>
+              <button class="nav-item" type="button" data-dashboard-action="estimates" aria-label="Tools">
+                <span class="dash-icon" data-dash-icon="file-dollar" aria-hidden="true"></span><span class="nav-label">Tools</span>
               </button>
               <button class="nav-item" type="button" data-dashboard-action="photo-files" aria-label="Photo Files">
                 <span class="dash-icon" data-dash-icon="camera" aria-hidden="true"></span><span class="nav-label">Photos</span>
               </button>
+              <button class="nav-item" type="button" data-dashboard-action="calendar" aria-label="Meetings">
+                <span class="dash-icon" data-dash-icon="calendar" aria-hidden="true"></span><span class="nav-label">Meetings</span>
+              </button>
               <button class="nav-item" type="button" data-dashboard-action="roofer-ai" aria-label="Roofer AI">
                 <span class="dash-icon" data-dash-icon="robot" aria-hidden="true"></span><span class="nav-label">AI</span>
               </button>
-              <button class="nav-item" type="button" data-dashboard-action="estimates" aria-label="Estimates">
-                <span class="dash-icon" data-dash-icon="file-dollar" aria-hidden="true"></span><span class="nav-label">Estimate</span>
+              <button class="nav-item nav-item-admin-only" type="button" data-dashboard-action="employee" aria-label="Employee">
+                <span class="dash-icon" data-dash-icon="user-plus" aria-hidden="true"></span><span class="nav-label">Employee</span>
+              </button>
+              <button class="nav-item nav-item-admin-only" type="button" data-dashboard-action="settings" aria-label="Settings">
+                <span class="dash-icon" data-dash-icon="gear" aria-hidden="true"></span><span class="nav-label">Settings</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="inspections" aria-label="Inspections" style="display:none">
+                <span class="dash-icon" data-dash-icon="clipboard-check" aria-hidden="true"></span><span class="nav-label">Inspect</span>
+              </button>
+              <button class="nav-item" type="button" data-dashboard-action="payroll" aria-label="Payroll" style="display:none">
+                <span class="dash-icon" data-dash-icon="cash" aria-hidden="true"></span><span class="nav-label">Payroll</span>
               </button>
             </nav>
 
@@ -9667,35 +10160,35 @@
                       <div class="current-pipeline-active">Active Jobs: <span id="dash-current-pipeline-active-jobs">0</span></div>
                     </div>
                     <div class="current-pipeline-grid" aria-label="Current pipeline overview">
-                      <button class="current-pipeline-stage lead" type="button" data-dashboard-action="pipeline">
+                      <button class="current-pipeline-stage lead" type="button" data-dashboard-action="pipeline" data-dashboard-pipeline-stage="lead">
                         <div class="current-pipeline-stage-label">LEAD</div>
                         <div class="current-pipeline-stage-circle">L</div>
                         <div class="current-pipeline-stage-count" id="dash-current-pipeline-lead-count">0</div>
                         <div class="current-pipeline-stage-amount" id="dash-current-pipeline-lead-amount">$0</div>
                       </button>
                       <div class="current-pipeline-connector lead" aria-hidden="true"></div>
-                      <button class="current-pipeline-stage prospect" type="button" data-dashboard-action="pipeline">
+                      <button class="current-pipeline-stage prospect" type="button" data-dashboard-action="pipeline" data-dashboard-pipeline-stage="prospect">
                         <div class="current-pipeline-stage-label">PROSPECT</div>
                         <div class="current-pipeline-stage-circle">P</div>
                         <div class="current-pipeline-stage-count" id="dash-current-pipeline-prospect-count">0</div>
                         <div class="current-pipeline-stage-amount" id="dash-current-pipeline-prospect-amount">$0</div>
                       </button>
                       <div class="current-pipeline-connector prospect" aria-hidden="true"></div>
-                      <button class="current-pipeline-stage approved" type="button" data-dashboard-action="pipeline">
+                      <button class="current-pipeline-stage approved" type="button" data-dashboard-action="pipeline" data-dashboard-pipeline-stage="approved">
                         <div class="current-pipeline-stage-label">APPROVED</div>
                         <div class="current-pipeline-stage-circle">A</div>
                         <div class="current-pipeline-stage-count" id="dash-current-pipeline-approved-count">0</div>
                         <div class="current-pipeline-stage-amount" id="dash-current-pipeline-approved-amount">$0</div>
                       </button>
                       <div class="current-pipeline-connector approved" aria-hidden="true"></div>
-                      <button class="current-pipeline-stage completed" type="button" data-dashboard-action="pipeline">
+                      <button class="current-pipeline-stage completed" type="button" data-dashboard-action="pipeline" data-dashboard-pipeline-stage="completed">
                         <div class="current-pipeline-stage-label">COMPLETED</div>
                         <div class="current-pipeline-stage-circle">C</div>
                         <div class="current-pipeline-stage-count" id="dash-current-pipeline-completed-count">0</div>
                         <div class="current-pipeline-stage-amount" id="dash-current-pipeline-completed-amount">$0</div>
                       </button>
                       <div class="current-pipeline-connector completed" aria-hidden="true"></div>
-                      <button class="current-pipeline-stage invoiced" type="button" data-dashboard-action="pipeline">
+                      <button class="current-pipeline-stage invoiced" type="button" data-dashboard-action="pipeline" data-dashboard-pipeline-stage="invoiced">
                         <div class="current-pipeline-stage-label">INVOICED</div>
                         <div class="current-pipeline-stage-circle">I</div>
                         <div class="current-pipeline-stage-count" id="dash-current-pipeline-invoiced-count">0</div>
@@ -9717,7 +10210,7 @@
                   <div class="action-grid" style="grid-template-columns:repeat(3,1fr);margin-top:4px;">
                     <button class="action-card" type="button" data-dashboard-action="pipeline"><div class="num" id="dash-closed-submitted">0</div><span class="dash-icon" data-dash-icon="lock" aria-hidden="true"></span><div class="lbl">Jobs submitted as closed</div></button>
                     <button class="action-card" type="button" data-dashboard-action="pipeline"><div class="num" id="dash-status-approval">0</div><span class="dash-icon" data-dash-icon="refresh" aria-hidden="true"></span><div class="lbl">Jobs submitted for status approval</div></button>
-                    <button class="action-card" type="button" data-dashboard-action="pipeline"><div class="num" id="dash-wash-list">0</div><span class="dash-icon" data-dash-icon="eye" aria-hidden="true"></span><div class="lbl">Wash list</div></button>
+                    <button class="action-card" type="button" data-dashboard-action="pipeline"><div class="num" id="dash-wash-list">0</div><span class="dash-icon" data-dash-icon="eye" aria-hidden="true"></span><div class="lbl">Watch list</div></button>
                   </div>
 
                   <div class="section-title">FINANCIAL</div>
@@ -11886,6 +12379,105 @@
         </div>
       </div>
 
+      <section id="page-new-contact" class="page" data-crm-header-title="New Contact">
+        <div class="crm-contact-page-shell">
+          <input id="nc-contact-id" type="hidden" />
+          <div class="crm-contact-page-grid">
+            <div class="crm-contact-card">
+              <h1 class="crm-contact-card-title">Contact Information</h1>
+              <div class="crm-contact-required-note"><span class="req">*</span> Required.</div>
+              <div class="crm-contact-form-grid">
+                <div class="field">
+                  <label for="nc-contact-type">Contact Type <span class="req">*</span></label>
+                  <select id="nc-contact-type">
+                    <option value="">Select contact type</option>
+                    <option value="Customer">Customer</option>
+                    <option value="Homeowner">Homeowner</option>
+                    <option value="Insurance Adjuster">Insurance Adjuster</option>
+                    <option value="Office Contact">Office Contact</option>
+                    <option value="Vendor">Vendor</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="nc-cross-reference">Cross Reference</label>
+                  <input id="nc-cross-reference" type="text" autocomplete="off" />
+                </div>
+                <div class="field">
+                  <label for="nc-first-name">First Name <span class="req">*</span></label>
+                  <input id="nc-first-name" type="text" autocomplete="given-name" />
+                </div>
+                <div class="field">
+                  <label for="nc-last-name">Last Name <span class="req">*</span></label>
+                  <input id="nc-last-name" type="text" autocomplete="family-name" />
+                </div>
+                <div class="field">
+                  <label for="nc-company-name">Company Name</label>
+                  <input id="nc-company-name" type="text" autocomplete="organization" />
+                </div>
+                <div class="field">
+                  <label for="nc-company-job-title">Company Job Title</label>
+                  <input id="nc-company-job-title" type="text" autocomplete="organization-title" />
+                </div>
+                <div class="crm-contact-phone-row">
+                  <div class="field">
+                    <label for="nc-phone">Phone <span class="req">*</span></label>
+                    <input id="nc-phone" type="tel" autocomplete="tel" />
+                  </div>
+                  <div class="field">
+                    <label for="nc-phone-ext">Ext</label>
+                    <input id="nc-phone-ext" type="text" inputmode="numeric" autocomplete="off" />
+                  </div>
+                  <div class="field">
+                    <label for="nc-phone-type">Type</label>
+                    <select id="nc-phone-type">
+                      <option value="Mobile" selected>Mobile</option>
+                      <option value="Home">Home</option>
+                      <option value="Work">Work</option>
+                      <option value="Office">Office</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>Primary</label>
+                    <div class="crm-contact-primary-box">
+                      <label for="nc-phone-primary"><input id="nc-phone-primary" type="radio" name="nc-primary-phone" checked />Primary</label>
+                    </div>
+                  </div>
+                </div>
+                <div class="crm-contact-toggle-row">
+                  <label for="nc-sms-optin"><input id="nc-sms-optin" type="checkbox" />Opt in Texting/SMS</label>
+                </div>
+              </div>
+              <div id="nc-validation-msg" class="validation-msg" style="display:none;"></div>
+            </div>
+            <div class="crm-contact-card">
+              <h2 class="crm-contact-card-title">Notes</h2>
+              <div class="crm-contact-notes-wrap">
+                <textarea id="nc-notes" maxlength="1000" placeholder="Add notes about this contact..."></textarea>
+                <div class="crm-contact-notes-counter" id="nc-notes-counter">1000/1000</div>
+              </div>
+            </div>
+          </div>
+          <div class="crm-contact-action-bar">
+            <div class="crm-contact-action-inner">
+              <button class="btn" type="button" id="nc-save-create-lead-btn">Save &amp; Create Lead</button>
+              <button class="btn btn-primary" type="button" id="nc-save-btn">Save</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-crm-contacts" class="page" data-crm-header-title="Contacts">
+        <div class="crm-contacts-page-shell">
+          <div class="crm-contact-list-card">
+            <div class="crm-contact-list-header">
+              <h1 class="crm-contact-list-title">Contacts</h1>
+              <div class="crm-contact-list-meta" id="crm-contacts-count">0 contacts</div>
+            </div>
+            <div id="crm-contacts-list"></div>
+          </div>
+        </div>
+      </section>
+
       <!-- ═══════════════════ CRM: PIPELINE ═══════════════════ -->
       <section id="page-crm-pipeline" class="page" data-crm-header-title="Pipeline">
         <div class="crm-layout crm-pipeline-layout">
@@ -12503,6 +13095,7 @@
               <div class="form-section-header">DATA</div>
               <div style="display:flex;gap:10px;flex-wrap:wrap;">
                 <button class="btn" type="button" id="settings-export-btn">Export Leads (JSON)</button>
+                <button class="btn" type="button" id="settings-cleanup-test-btn" style="color:#9a6700;border-color:#d4a017;">Cleanup Test Users & Data</button>
                 <button class="btn" type="button" id="settings-clear-btn" style="color:var(--error);border-color:var(--error);">Clear All CRM Data</button>
               </div>
               <div id="settings-msg" class="save-confirmation" style="display:none;margin-top:10px;"></div>
@@ -13469,6 +14062,8 @@
       'page-canvasser-leads',
       'page-canvasser-credits',   /* My Pay page */
       'page-lead-detail',         /* Read-only view of their own created leads */
+      'page-new-contact',
+      'page-crm-contacts',
       'page-crm-job-file',
       'page-crm-financial-worksheet',
       'page-crm-job-profitability',
@@ -13585,6 +14180,8 @@
       document.body.classList.toggle('crm-standard-header-active', crmUsesStandardHeaderLayout(pageId));
       document.body.classList.toggle('crm-job-file-header-active', pageId === 'page-crm-job-file');
       document.body.classList.toggle('main-menu-page-active', pageId === 'page-main-menu');
+      document.body.classList.toggle('new-contact-page-active', pageId === 'page-new-contact');
+      document.body.classList.toggle('contacts-page-active', pageId === 'page-crm-contacts');
       document.body.classList.toggle('pipeline-page-active', pageId === 'page-crm-pipeline');
       document.body.classList.toggle('settings-page-active', pageId === 'page-crm-settings');
       updateGlobalHeaderBackButton();
@@ -32496,6 +33093,7 @@
 
 var CRM_LEADS_KEY   = 'crm_leads';
 var CRM_TASKS_KEY   = 'crm_tasks';
+var CRM_CONTACTS_KEY = 'crm_contacts';
 var CRM_REPS_KEY    = 'crm_reps';
 var CRM_APPOINTMENTS_KEY = 'crm_appointments';
 var APP_LEADS_KEY           = 'app.leads';
@@ -33894,6 +34492,17 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return [];
     }
 
+    function crmReadStoredJsonArray(key) {
+      try {
+        var raw = localStorage.getItem(key);
+        if (!raw) return [];
+        var parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
     function crmNormalizeLeadRecord(lead) {
       lead = lead || {};
       var nameSlug = crmSettingsSlug(((lead.firstName || '') + '_' + (lead.lastName || '')).trim());
@@ -34261,9 +34870,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
             return Object.assign({}, user, { permissions: undefined });
           })));
         }
-        if (!localStorage.getItem(CRM_LEADS_KEY) && Array.isArray(snapshot.leads)) {
-          localStorage.setItem(CRM_LEADS_KEY, JSON.stringify(snapshot.leads));
-        }
         if (!localStorage.getItem(CRM_TASKS_KEY) && Array.isArray(snapshot.tasks)) {
           localStorage.setItem(CRM_TASKS_KEY, JSON.stringify(snapshot.tasks));
         }
@@ -34290,6 +34896,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmGetLeads() {
       var leads = crmReadJsonArray(CRM_LEADS_KEY, 'leads');
       if (!leads.length) leads = crmReadJsonArray(APP_LEADS_KEY, 'leads');
+      return leads.map(crmNormalizeLeadRecord);
+    }
+    function crmGetStoredLeads() {
+      /* Keep dashboard/pipeline totals tied to the primary saved lead store only. */
+      var leads = crmReadStoredJsonArray(CRM_LEADS_KEY);
       return leads.map(crmNormalizeLeadRecord);
     }
     function crmSaveLeads(leads) {
@@ -34357,6 +34968,302 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
       catch (e) { return false; }
     }
+    var _crmEditingContactId = '';
+    var _crmPendingContactLeadPrefill = null;
+
+    function crmFormatContactTimestamp(value) {
+      var raw = String(value || '').trim();
+      if (!raw) return '—';
+      var dt = new Date(raw);
+      if (isNaN(dt.getTime())) return raw;
+      return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' · ' +
+        dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function crmNormalizeContactRecord(contact) {
+      contact = contact || {};
+      var nameSlug = crmSettingsSlug(((contact.firstName || '') + '_' + (contact.lastName || '')).trim());
+      var companySlug = crmSettingsSlug(String(contact.companyName || '').trim());
+      var fallbackId = 'contact_' + (nameSlug || 'person') + '_' + (companySlug || 'entry');
+      var createdAt = String(contact.createdAt || contact.updatedAt || new Date().toISOString()).trim();
+      var updatedAt = String(contact.updatedAt || contact.createdAt || new Date().toISOString()).trim();
+      return {
+        id: String(contact.id || fallbackId || ('contact_' + crmGenId())).trim(),
+        contactType: String(contact.contactType || '').trim(),
+        firstName: String(contact.firstName || '').trim(),
+        lastName: String(contact.lastName || '').trim(),
+        crossReference: String(contact.crossReference || '').trim(),
+        companyName: String(contact.companyName || '').trim(),
+        companyJobTitle: String(contact.companyJobTitle || '').trim(),
+        phone: String(contact.phone || '').trim(),
+        ext: String(contact.ext || '').trim(),
+        phoneType: String(contact.phoneType || 'Mobile').trim() || 'Mobile',
+        isPrimary: contact.isPrimary !== false,
+        smsOptIn: contact.smsOptIn === true,
+        notes: String(contact.notes || '').slice(0, 1000),
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        createdByName: String(contact.createdByName || '').trim(),
+        createdByRole: String(contact.createdByRole || '').trim()
+      };
+    }
+
+    function crmGetContacts() {
+      return crmReadJsonArray(CRM_CONTACTS_KEY).map(crmNormalizeContactRecord);
+    }
+
+    function crmSaveContacts(contacts) {
+      try {
+        localStorage.setItem(CRM_CONTACTS_KEY, JSON.stringify((contacts || []).map(crmNormalizeContactRecord)));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function crmFindContactById(contactId) {
+      contactId = String(contactId || '').trim();
+      if (!contactId) return null;
+      return crmGetContacts().find(function (contact) { return contact.id === contactId; }) || null;
+    }
+
+    function crmGetContactDisplayName(contact) {
+      return [contact && contact.firstName, contact && contact.lastName].filter(Boolean).join(' ').trim() || 'Unnamed Contact';
+    }
+
+    function crmFormatContactPhone(contact) {
+      var phone = String(contact && contact.phone || '').trim();
+      var ext = String(contact && contact.ext || '').trim();
+      if (!phone) return '—';
+      return ext ? (phone + ' x' + ext) : phone;
+    }
+
+    function crmSetNewContactValidation(text) {
+      var msg = document.getElementById('nc-validation-msg');
+      if (!msg) return;
+      var value = String(text || '').trim();
+      msg.textContent = value;
+      msg.style.display = value ? 'block' : 'none';
+    }
+
+    function crmUpdateNewContactNotesCounter() {
+      var notesEl = document.getElementById('nc-notes');
+      var counterEl = document.getElementById('nc-notes-counter');
+      if (!notesEl || !counterEl) return;
+      if (String(notesEl.value || '').length > 1000) {
+        notesEl.value = String(notesEl.value || '').slice(0, 1000);
+      }
+      counterEl.textContent = (1000 - String(notesEl.value || '').length) + '/1000';
+    }
+
+    function crmCollectNewContactFormData() {
+      function fv(id) {
+        var el = document.getElementById(id);
+        return el ? String(el.value || '').trim() : '';
+      }
+      var primaryEl = document.getElementById('nc-phone-primary');
+      var smsEl = document.getElementById('nc-sms-optin');
+      return {
+        id: String(fv('nc-contact-id') || _crmEditingContactId || '').trim(),
+        contactType: fv('nc-contact-type'),
+        firstName: fv('nc-first-name'),
+        lastName: fv('nc-last-name'),
+        crossReference: fv('nc-cross-reference'),
+        companyName: fv('nc-company-name'),
+        companyJobTitle: fv('nc-company-job-title'),
+        phone: fv('nc-phone'),
+        ext: fv('nc-phone-ext'),
+        phoneType: fv('nc-phone-type') || 'Mobile',
+        isPrimary: !!(primaryEl && primaryEl.checked),
+        smsOptIn: !!(smsEl && smsEl.checked),
+        notes: String((document.getElementById('nc-notes') || {}).value || '').slice(0, 1000),
+        createdAt: '',
+        updatedAt: new Date().toISOString(),
+        createdByName: crmGetCurrentUserName() || '',
+        createdByRole: crmGetRole() || ''
+      };
+    }
+
+    function crmPopulateNewContactForm(contact) {
+      contact = contact ? crmNormalizeContactRecord(contact) : {
+        id: '',
+        contactType: '',
+        phoneType: 'Mobile',
+        isPrimary: true,
+        smsOptIn: false,
+        notes: ''
+      };
+      _crmEditingContactId = String(contact.id || '').trim();
+      var idEl = document.getElementById('nc-contact-id');
+      if (idEl) idEl.value = _crmEditingContactId;
+      var map = {
+        'nc-contact-type': contact.contactType,
+        'nc-first-name': contact.firstName,
+        'nc-last-name': contact.lastName,
+        'nc-cross-reference': contact.crossReference,
+        'nc-company-name': contact.companyName,
+        'nc-company-job-title': contact.companyJobTitle,
+        'nc-phone': contact.phone,
+        'nc-phone-ext': contact.ext,
+        'nc-phone-type': contact.phoneType || 'Mobile'
+      };
+      Object.keys(map).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.value = map[id] || '';
+      });
+      var notesEl = document.getElementById('nc-notes');
+      if (notesEl) notesEl.value = String(contact.notes || '');
+      var primaryEl = document.getElementById('nc-phone-primary');
+      if (primaryEl) primaryEl.checked = contact.isPrimary !== false;
+      var smsEl = document.getElementById('nc-sms-optin');
+      if (smsEl) smsEl.checked = contact.smsOptIn === true;
+      crmSetNewContactValidation('');
+      crmUpdateNewContactNotesCounter();
+    }
+
+    function crmOpenNewContactPage(contactId) {
+      var contact = contactId ? crmFindContactById(contactId) : null;
+      crmPopulateNewContactForm(contact);
+      showPage('page-new-contact');
+      setTimeout(function () {
+        var firstField = document.getElementById('nc-contact-type');
+        if (firstField && typeof firstField.focus === 'function') firstField.focus();
+      }, 0);
+    }
+
+    function crmRenderContactsPage() {
+      var listEl = document.getElementById('crm-contacts-list');
+      var countEl = document.getElementById('crm-contacts-count');
+      if (!listEl) return;
+      var contacts = crmGetContacts().slice().sort(function (a, b) {
+        var bt = Date.parse(String(b && b.updatedAt || '')) || 0;
+        var at = Date.parse(String(a && a.updatedAt || '')) || 0;
+        if (bt !== at) return bt - at;
+        return crmGetContactDisplayName(a).localeCompare(crmGetContactDisplayName(b));
+      });
+      if (countEl) countEl.textContent = contacts.length + ' contact' + (contacts.length === 1 ? '' : 's');
+      if (!contacts.length) {
+        listEl.innerHTML = '<div class="crm-contact-empty">No contacts yet. Use New → Contact from the dashboard to add one.</div>';
+        return;
+      }
+      var rows = contacts.map(function (contact) {
+        var companyParts = [String(contact.companyName || '').trim(), String(contact.companyJobTitle || '').trim()].filter(Boolean);
+        var companyHtml = companyParts.length
+          ? crmEscapeHtml(companyParts[0]) + (companyParts[1] ? '<div class="crm-contact-list-secondary">' + crmEscapeHtml(companyParts[1]) + '</div>' : '')
+          : '—';
+        return '<div class="crm-contact-list-row">' +
+          '<div class="crm-contact-list-name">' + crmEscapeHtml(crmGetContactDisplayName(contact)) + '</div>' +
+          '<div class="crm-contact-list-cell">' + crmEscapeHtml(contact.contactType || '—') + '</div>' +
+          '<div class="crm-contact-list-cell">' + crmEscapeHtml(crmFormatContactPhone(contact)) + '</div>' +
+          '<div class="crm-contact-list-cell">' + companyHtml + '</div>' +
+          '<div class="crm-contact-list-cell">' + crmEscapeHtml(crmFormatContactTimestamp(contact.updatedAt)) + '</div>' +
+          '<div class="crm-contact-list-actions">' +
+            '<button class="btn crm-contact-list-action" type="button" data-contact-action="edit" data-contact-id="' + crmEscapeHtml(contact.id) + '">Edit</button>' +
+            '<button class="btn crm-contact-list-action" type="button" data-contact-action="delete" data-contact-id="' + crmEscapeHtml(contact.id) + '">Delete</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      listEl.innerHTML =
+        '<div class="crm-contact-list-table">' +
+          '<div class="crm-contact-list-row header">' +
+            '<div>Name</div>' +
+            '<div>Contact Type</div>' +
+            '<div>Phone</div>' +
+            '<div>Company</div>' +
+            '<div>Last Updated</div>' +
+            '<div>Actions</div>' +
+          '</div>' +
+          rows +
+        '</div>';
+    }
+
+    function crmSaveNewContactRecord() {
+      var formData = crmCollectNewContactFormData();
+      var missing = [];
+      if (!formData.contactType) missing.push('Contact Type');
+      if (!formData.firstName) missing.push('First Name');
+      if (!formData.lastName) missing.push('Last Name');
+      if (!formData.phone) missing.push('Phone');
+      if (missing.length) {
+        crmSetNewContactValidation('Please complete: ' + missing.join(', ') + '.');
+        return null;
+      }
+      var contact = crmNormalizeContactRecord(Object.assign({}, formData, {
+        id: String(formData.id || '').trim() || ('contact_' + crmGenId())
+      }));
+      var contacts = crmGetContacts();
+      var existingIndex = -1;
+      for (var i = 0; i < contacts.length; i++) {
+        if (contacts[i].id === contact.id) {
+          existingIndex = i;
+          break;
+        }
+      }
+      if (existingIndex !== -1) {
+        contact.createdAt = contacts[existingIndex].createdAt || contact.createdAt;
+        contacts[existingIndex] = contact;
+      } else {
+        contact.id = contact.id || ('contact_' + crmGenId());
+        contact.createdAt = contact.createdAt || new Date().toISOString();
+        contacts.unshift(contact);
+      }
+      contact.updatedAt = new Date().toISOString();
+      if (!crmSaveContacts(contacts)) {
+        crmSetNewContactValidation('Contact could not be saved. Storage may be full.');
+        return null;
+      }
+      crmSetNewContactValidation('');
+      crmRenderContactsPage();
+      return contact;
+    }
+
+    function crmDeleteContact(contactId) {
+      contactId = String(contactId || '').trim();
+      if (!contactId) return false;
+      var nextContacts = crmGetContacts().filter(function (contact) {
+        return String(contact && contact.id || '').trim() !== contactId;
+      });
+      if (!crmSaveContacts(nextContacts)) return false;
+      crmRenderContactsPage();
+      return true;
+    }
+
+    function crmSetPendingContactLeadPrefill(contact) {
+      contact = contact ? crmNormalizeContactRecord(contact) : null;
+      if (!contact) {
+        _crmPendingContactLeadPrefill = null;
+        return;
+      }
+      var noteParts = [];
+      if (contact.companyName) noteParts.push('Company: ' + contact.companyName);
+      if (contact.companyJobTitle) noteParts.push('Title: ' + contact.companyJobTitle);
+      if (contact.notes) noteParts.push(contact.notes);
+      _crmPendingContactLeadPrefill = {
+        firstName: contact.firstName,
+        lastName: contact.lastName,
+        phone: contact.phone,
+        email: '',
+        notes: noteParts.join('\n')
+      };
+    }
+
+    function crmApplyPendingContactLeadPrefill(prefix) {
+      var prefill = _crmPendingContactLeadPrefill;
+      if (!prefill || !prefix) return;
+      function setIfBlank(id, value) {
+        var el = document.getElementById(id);
+        if (!el || typeof value === 'undefined') return;
+        if (String(el.value || '').trim()) return;
+        el.value = value || '';
+      }
+      setIfBlank(prefix + '-firstName', prefill.firstName);
+      setIfBlank(prefix + '-lastName', prefill.lastName);
+      setIfBlank(prefix + '-phone', prefill.phone);
+      setIfBlank(prefix + '-email', prefill.email);
+      setIfBlank(prefix + '-notes', prefill.notes);
+      _crmPendingContactLeadPrefill = null;
+    }
+
     function crmGetReps() {
       var reps = crmGetTeamMembers().filter(function (member) {
         return member.role === 'Sales Rep' && member.active;
@@ -35018,6 +35925,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           return '<svg viewBox="0 0 24 24"><path d="m4 16 8-8 8 8-8 8z"></path><path d="M9 11l1.5 1.5M12 8l1.5 1.5M12 14l1.5 1.5M15 11l1.5 1.5"></path></svg>';
         case 'signature':
           return '<svg viewBox="0 0 24 24"><path d="M4 15c2-3 4-5 6-5 1.5 0 1.5 3 3 3 1 0 2-2 3-2 1.3 0 1.3 2.5 3 2.5"></path><path d="M4 19h16"></path></svg>';
+        case 'gear':
+        case 'settings':
+          return '<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
         case 'drone':
           return '<svg viewBox="0 0 24 24"><path d="M7 9h10M12 9v6"></path><rect x="9" y="11" width="6" height="4" rx="1"></rect><path d="M5 7h2v2H5zM17 7h2v2h-2zM5 15h2v2H5zM17 15h2v2h-2z"></path></svg>';
         case 'planet':
@@ -35026,6 +35936,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           return '<svg viewBox="0 0 24 24"><path d="M9 4h6M9 3h6a1 1 0 0 1 1 1v1h2v15H6V5h2V4a1 1 0 0 1 1-1z"></path><path d="M9 10h6M9 14h6M9 18h4"></path></svg>';
         case 'users':
           return '<svg viewBox="0 0 24 24"><path d="M9 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path><path d="M17 11a3 3 0 1 0 0-6"></path><path d="M2 20a6 6 0 0 1 12 0"></path><path d="M16 20a5 5 0 0 0-2.5-4.3"></path></svg>';
+        case 'address-book':
+        case 'contact-card':
+          return '<svg viewBox="0 0 24 24"><path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6z"></path><path d="M8 4v16"></path><path d="M4 7h2M4 12h2M4 17h2"></path><circle cx="13.5" cy="10" r="2.2"></circle><path d="M10.8 16c.8-1.5 2-2.2 3.7-2.2 1.6 0 2.8.7 3.6 2.2"></path></svg>';
         case 'chart-line':
           return '<svg viewBox="0 0 24 24"><path d="M4 19h16"></path><path d="M6 16l4-4 3 2 5-6"></path><path d="M18 8h3v3"></path></svg>';
         case 'note':
@@ -35066,6 +35979,37 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         if (isDefault) btn.setAttribute('aria-current', 'page');
         else btn.removeAttribute('aria-current');
       });
+      var dashboardFlyoutGroup = root.querySelector('.nav-flyout-group-new');
+      if (dashboardFlyoutGroup && !dashboardFlyoutGroup._dashFlyoutBound) {
+        dashboardFlyoutGroup.addEventListener('mouseenter', function () {
+          dashboardFlyoutGroup.classList.add('is-open');
+        });
+        dashboardFlyoutGroup.addEventListener('mouseleave', function () {
+          dashboardFlyoutGroup.classList.remove('is-open');
+        });
+        dashboardFlyoutGroup.addEventListener('focusin', function () {
+          dashboardFlyoutGroup.classList.add('is-open');
+        });
+        dashboardFlyoutGroup.addEventListener('focusout', function (event) {
+          var nextTarget = event && event.relatedTarget;
+          if (nextTarget && dashboardFlyoutGroup.contains(nextTarget)) return;
+          dashboardFlyoutGroup.classList.remove('is-open');
+        });
+        var dashboardNavItem = dashboardFlyoutGroup.querySelector('.nav-item');
+        if (dashboardNavItem) {
+          dashboardNavItem.addEventListener('click', function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+          });
+        }
+        dashboardFlyoutGroup._dashFlyoutBound = true;
+      }
+
+      var sidebarRole = crmGetWorkspaceMenuRole();
+      var sidebarIsAdmin = (sidebarRole !== 'Sales Rep' && sidebarRole !== 'Canvasser' && sidebarRole !== 'Viewer');
+      root.querySelectorAll('.nav-item-admin-only').forEach(function (el) {
+        el.style.display = sidebarIsAdmin ? '' : 'none';
+      });
 
       setText('dash-company-initials', crmGetDashboardCompanyInitials());
       var dashboardCompanyProfile = (typeof crmGetCompanyProfile === 'function') ? crmGetCompanyProfile() : {};
@@ -35086,7 +36030,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       setText('dash-user-role', dashboardUserRole);
       setText('dash-user-badge', crmGetTopbarProfileInitials(dashboardUserName));
 
-      var leads = Array.isArray(crmGetLeads()) ? crmGetLeads() : [];
+      var leads = crmGetStoredLeads();
       var tasks = Array.isArray(crmGetTasks()) ? crmGetTasks() : [];
       var appointments = crmSortAppointments(Array.isArray(crmGetAppointments()) ? crmGetAppointments() : []);
       var stageDefs = crmGetDashboardStageDefinitions();
@@ -35360,12 +36304,22 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
     }
 
-    function crmHandleDashboardTabAction(tab) {
+    function crmHandleDashboardTabAction(tab, pipelineStage) {
       tab = String(tab || '').trim();
+      pipelineStage = String(pipelineStage || '').trim().toLowerCase();
       if (!tab) return;
       if (tab === 'dashboard' || tab === 'recent') {
         crmRenderMainMenu();
         showPage('page-main-menu');
+        return;
+      }
+      if (tab === 'new-contact') {
+        crmOpenNewContactPage('');
+        return;
+      }
+      if (tab === 'contacts') {
+        crmRenderContactsPage();
+        showPage('page-crm-contacts');
         return;
       }
       if (tab === 'new-lead') {
@@ -35383,6 +36337,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           showUploadToast('You do not have permission to access this section.');
           return;
         }
+        if (pipelineStage) {
+          crmOpenPipelinePageForStage(pipelineStage, pipelineAction === 'my-pipeline' ? 'rep' : null);
+          return;
+        }
         crmHandleMenuAction(pipelineAction);
         return;
       }
@@ -35393,6 +36351,20 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           return;
         }
         crmHandleMenuAction(productionAction);
+        return;
+      }
+      if (tab === 'leads') {
+        var leadsRole = crmGetWorkspaceMenuRole();
+        var leadsAction = (leadsRole === 'Sales Rep' || leadsRole === 'Canvasser') ? 'my-assigned-leads' : 'all-leads';
+        crmHandleMenuAction(leadsAction);
+        return;
+      }
+      if (tab === 'employee') {
+        crmOpenAdminSalesRepsPage();
+        return;
+      }
+      if (tab === 'settings') {
+        crmHandleMenuAction('settings');
         return;
       }
       if (tab === 'inspections' || tab === 'calendar' || tab === 'payroll' || tab === 'tasks') {
@@ -35411,9 +36383,59 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     document.addEventListener('click', function (e) {
+      var placeholderBtn = e.target.closest('[data-dashboard-placeholder]');
+      if (placeholderBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        var placeholderType = String(placeholderBtn.getAttribute('data-dashboard-placeholder') || '').trim();
+        var placeholderLabel = ({
+          reminder: 'Reminder',
+          task: 'Task'
+        })[placeholderType] || 'This option';
+        showUploadToast(placeholderLabel + ' is coming soon.');
+        return;
+      }
       var btn = e.target.closest('[data-dashboard-tab], [data-dashboard-action]');
       if (!btn) return;
-      crmHandleDashboardTabAction(btn.getAttribute('data-dashboard-action') || btn.getAttribute('data-dashboard-tab'));
+      crmHandleDashboardTabAction(
+        btn.getAttribute('data-dashboard-action') || btn.getAttribute('data-dashboard-tab'),
+        btn.getAttribute('data-dashboard-pipeline-stage') || ''
+      );
+    });
+
+    crmUpdateNewContactNotesCounter();
+    document.getElementById('nc-notes').addEventListener('input', crmUpdateNewContactNotesCounter);
+    document.getElementById('nc-save-btn').addEventListener('click', function () {
+      var savedContact = crmSaveNewContactRecord();
+      if (!savedContact) return;
+      crmRenderContactsPage();
+      showPage('page-crm-contacts');
+      showUploadToast('Contact saved.');
+    });
+    document.getElementById('nc-save-create-lead-btn').addEventListener('click', function () {
+      var savedContact = crmSaveNewContactRecord();
+      if (!savedContact) return;
+      var newLeadAction = crmGetDashboardNewLeadAction();
+      if (!newLeadAction) {
+        crmRenderContactsPage();
+        showPage('page-crm-contacts');
+        showUploadToast('Contact saved. Lead creation is coming soon for this role.');
+        return;
+      }
+      crmSetPendingContactLeadPrefill(savedContact);
+      showUploadToast('Contact saved.');
+      crmHandleMenuAction(newLeadAction);
+    });
+    document.getElementById('page-crm-contacts').addEventListener('click', function (e) {
+      var actionBtn = e.target.closest('[data-contact-action]');
+      if (!actionBtn) return;
+      var action = String(actionBtn.getAttribute('data-contact-action') || '').trim();
+      var contactId = String(actionBtn.getAttribute('data-contact-id') || '').trim();
+      if (action === 'edit') {
+        crmOpenNewContactPage(contactId);
+      } else if (action === 'delete') {
+        if (crmDeleteContact(contactId)) showUploadToast('Contact deleted.');
+      }
     });
 
     /* New Lead from sub-pages */
@@ -35521,6 +36543,163 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         calendarAccess: 'role-based'
       });
       crmSaveTeamMembers(members);
+    }
+
+    function crmIsCleanupTestRepName(value) {
+      var nameKey = crmNormalizeTeamMemberKey(value);
+      return !!nameKey && (nameKey.indexOf('test rep') !== -1 || nameKey.indexOf('testrep') !== -1);
+    }
+
+    function crmIsCleanupTestSalesRep(member) {
+      if (!member || String(member.role || '').trim() !== 'Sales Rep') return false;
+      var email = String(member.email || '').trim().toLowerCase();
+      if (crmIsDemoSalesRepRecord(member)) return true;
+      if (email && /@hailmoney\.test$/.test(email)) return true;
+      return crmIsCleanupTestRepName(member.name || member.email || '');
+    }
+
+    function crmCleanupTestUsersAndData() {
+      var members = crmGetTeamMembers();
+      var removedMembers = members.filter(crmIsCleanupTestSalesRep);
+      var removedMemberIds = {};
+      var removedMemberNames = {};
+      removedMembers.forEach(function (member) {
+        var id = String(member && member.id || '').trim();
+        var nameKey = crmNormalizeTeamMemberKey(member && member.name);
+        if (id) removedMemberIds[id] = true;
+        if (nameKey) removedMemberNames[nameKey] = true;
+      });
+
+      function hasRemovedMemberName(value) {
+        var nameKey = crmNormalizeTeamMemberKey(value);
+        if (!nameKey) return false;
+        return !!removedMemberNames[nameKey] || crmIsCleanupTestRepName(nameKey);
+      }
+
+      var keptMembers = members.filter(function (member) {
+        return !removedMemberIds[String(member && member.id || '').trim()];
+      });
+
+      var leads = crmGetLeads();
+      var removedLeadIds = {};
+      var keptLeads = leads.filter(function (lead) {
+        var removeLead = false;
+        if (String(lead && lead.id || '').trim() === 'lead_test_homeowner_main_st') removeLead = true;
+        if (String(lead && lead.leadSource || '').trim() === 'Test Data') removeLead = true;
+        if (String(lead && lead.notes || '').trim() === 'Sample assigned lead') removeLead = true;
+        if (removedMemberIds[String(lead && lead.assignedRepId || '').trim()]) removeLead = true;
+        if (!removeLead && hasRemovedMemberName(lead && lead.assignedRep)) removeLead = true;
+        if (!removeLead && hasRemovedMemberName(lead && lead.createdByName)) removeLead = true;
+        if (removeLead) removedLeadIds[String(lead && lead.id || '').trim()] = true;
+        return !removeLead;
+      });
+
+      function keepLeadLinkedItem(item) {
+        return !removedLeadIds[String(item && item.leadId || '').trim()];
+      }
+
+      var tasks = crmGetTasks();
+      var keptTasks = tasks.filter(function (task) {
+        if (!keepLeadLinkedItem(task)) return false;
+        if (removedMemberIds[String(task && task.assignedUserId || '').trim()]) return false;
+        if (hasRemovedMemberName(task && task.assignedTo)) return false;
+        if (hasRemovedMemberName(task && task.createdByName)) return false;
+        return true;
+      });
+
+      var appointments = crmGetAppointments();
+      var keptAppointments = appointments.filter(function (appt) {
+        if (!keepLeadLinkedItem(appt)) return false;
+        if (removedMemberIds[String(appt && appt.assignedRepId || '').trim()]) return false;
+        if (removedMemberIds[String(appt && appt.createdByUserId || '').trim()]) return false;
+        if (hasRemovedMemberName(appt && appt.assignedRep)) return false;
+        if (hasRemovedMemberName(appt && appt.createdByName)) return false;
+        if (Array.isArray(appt && appt.assignedUserNames) && appt.assignedUserNames.some(hasRemovedMemberName)) return false;
+        return true;
+      });
+
+      var payrollItems = crmGetPayrollItems();
+      var keptPayrollItems = payrollItems.filter(function (item) {
+        if (removedLeadIds[String(item && item.relatedLeadId || '').trim()]) return false;
+        if (removedMemberIds[String(item && item.employeeId || '').trim()]) return false;
+        return true;
+      });
+
+      var payrollReviews = crmGetPayrollMatchReviews();
+      var keptPayrollReviews = payrollReviews.filter(function (item) {
+        if (removedLeadIds[String(item && item.leadId || '').trim()]) return false;
+        if (removedLeadIds[String(item && item.matchedLeadId || '').trim()]) return false;
+        if (Array.isArray(item && item.possibleLeadIds) && item.possibleLeadIds.some(function (leadId) {
+          return !!removedLeadIds[String(leadId || '').trim()];
+        })) return false;
+        return true;
+      });
+
+      var leadFiles = crmGetLeadFiles();
+      var keptLeadFiles = leadFiles.filter(function (file) {
+        return !removedLeadIds[String(file && file.leadId || '').trim()];
+      });
+
+      var activityLog = Array.isArray(actGlobalGetLog()) ? actGlobalGetLog() : [];
+      var keptActivityLog = activityLog.filter(function (entry) {
+        if (removedLeadIds[String(entry && entry.leadId || '').trim()]) return false;
+        if (hasRemovedMemberName(entry && entry.userName)) return false;
+        if (hasRemovedMemberName(entry && entry.leadAssignedRep)) return false;
+        if (String(entry && entry.message || '').toLowerCase().indexOf('test rep') !== -1) return false;
+        return true;
+      });
+
+      var jobMessages = typeof jfGetMessages === 'function' ? jfGetMessages() : [];
+      var keptJobMessages = jobMessages.filter(function (msg) {
+        if (removedLeadIds[String(msg && msg.leadId || '').trim()]) return false;
+        if (hasRemovedMemberName(msg && msg.createdByName)) return false;
+        if (Array.isArray(msg && msg.mentionedNames) && msg.mentionedNames.some(hasRemovedMemberName)) return false;
+        return true;
+      });
+
+      var notifications = typeof jfGetNotifications === 'function' ? jfGetNotifications() : [];
+      var keptNotifications = notifications.filter(function (notif) {
+        if (removedLeadIds[String(notif && notif.relatedLeadId || '').trim()]) return false;
+        if (removedMemberIds[String(notif && notif.userId || '').trim()]) return false;
+        if (hasRemovedMemberName(notif && notif.userName)) return false;
+        return true;
+      });
+
+      var workspaceOwner = crmGetWorkspaceOwnerMember();
+      if (workspaceOwner && removedMemberIds[String(workspaceOwner.id || '').trim()]) {
+        crmClearWorkspaceOwner();
+      }
+
+      crmSaveTeamMembers(keptMembers);
+      crmSaveLeads(keptLeads);
+      crmSaveTasks(keptTasks);
+      crmSaveAppointments(keptAppointments);
+      crmSavePayrollItems(keptPayrollItems);
+      crmSavePayrollMatchReviews(keptPayrollReviews);
+      crmSaveLeadFiles(keptLeadFiles);
+      actGlobalSaveLog(keptActivityLog);
+      if (typeof jfSaveMessages === 'function') jfSaveMessages(keptJobMessages);
+      if (typeof jfSaveNotifications === 'function') jfSaveNotifications(keptNotifications);
+
+      crmUpdateTasksBadge();
+      crmToggleTestLeadButtons(keptLeads.length === 0);
+      crmRenderMainMenu();
+      crmRenderLeadInbox();
+      crmRenderAllLeads(document.getElementById('al-search') ? (document.getElementById('al-search').value || '') : '');
+      crmRenderPipeline();
+      crmRenderJobs();
+      crmRenderSettings();
+      crmRenderRoleSelector();
+      crmRefreshActivityPanel(_activityPanelCurrentLeadId);
+      if (typeof jfUpdateNotificationBadge === 'function') jfUpdateNotificationBadge();
+
+      return {
+        removedMembers: removedMembers.length,
+        removedLeads: leads.length - keptLeads.length,
+        removedTasks: tasks.length - keptTasks.length,
+        removedAppointments: appointments.length - keptAppointments.length,
+        removedActivity: activityLog.length - keptActivityLog.length
+      };
     }
 
     function crmCreateTestLead() {
@@ -36448,6 +37627,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     var _pipelinePreviewEditMode = false;
     var _pipelinePreviewDirty = false;
     var _pipelinePreviewSaving = false;
+    var PIPELINE_STAGE_FILTER_OPTIONS = [
+      { value: 'all', label: 'All' },
+      { value: 'lead', label: 'Lead' },
+      { value: 'prospect', label: 'Prospect' },
+      { value: 'approved', label: 'Approved' },
+      { value: 'completed', label: 'Completed' },
+      { value: 'invoiced', label: 'Invoiced' }
+    ];
 
     function crmGetPipelineSelectedLeadRecord() {
       var leadId = String(_pipelineSelectedLeadId || '').trim();
@@ -36556,13 +37743,42 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmRenderPipelineFilterBar() {
       var el = document.getElementById('crm-pipeline-stage-filter');
       if (!el) return;
-      var stages = crmGetSalesRepPipelineStages();
-      var all = ['all'].concat(stages);
-      el.innerHTML = all.map(function (s) {
-        var label = s === 'all' ? 'All' : s;
-        return '<button class="crm-pipe-filter-btn' + (_pipelineStageFilter === s ? ' active' : '') +
-          '" type="button" data-pipe-filter="' + crmEscapeHtml(s) + '"' + (_pipelinePreviewEditMode ? ' disabled aria-disabled="true"' : '') + '>' + crmEscapeHtml(label) + '</button>';
+      el.innerHTML = PIPELINE_STAGE_FILTER_OPTIONS.map(function (option) {
+        option = option || {};
+        var value = String(option.value || '').trim();
+        var label = String(option.label || value || '').trim();
+        return '<button class="crm-pipe-filter-btn' + (_pipelineStageFilter === value ? ' active' : '') +
+          '" type="button" data-pipe-filter="' + crmEscapeHtml(value) + '"' + (_pipelinePreviewEditMode ? ' disabled aria-disabled="true"' : '') + '>' + crmEscapeHtml(label) + '</button>';
       }).join('');
+    }
+
+    function crmGetPipelineStageFilterLabel(filterValue) {
+      filterValue = String(filterValue || '').trim();
+      for (var i = 0; i < PIPELINE_STAGE_FILTER_OPTIONS.length; i++) {
+        var option = PIPELINE_STAGE_FILTER_OPTIONS[i] || {};
+        if (String(option.value || '').trim() === filterValue) return String(option.label || filterValue || '').trim();
+      }
+      return filterValue || 'All';
+    }
+
+    function crmNormalizePipelineStageFilter(filterValue) {
+      filterValue = String(filterValue || '').trim().toLowerCase();
+      if (!filterValue) return 'all';
+      for (var i = 0; i < PIPELINE_STAGE_FILTER_OPTIONS.length; i++) {
+        var option = PIPELINE_STAGE_FILTER_OPTIONS[i] || {};
+        if (String(option.value || '').trim() === filterValue) return filterValue;
+      }
+      return 'all';
+    }
+
+    function crmOpenPipelinePageForStage(stageFilter, scopeFilter) {
+      _pipelineStageFilter = crmNormalizePipelineStageFilter(stageFilter);
+      _pipelineSearchQuery = '';
+      _pipelineSelectedLeadId = '';
+      _pipelinePreviewEditMode = false;
+      _pipelinePreviewDirty = false;
+      crmRenderPipeline(scopeFilter);
+      showPage('page-crm-pipeline');
     }
 
     function crmGetPipelineScope(filter) {
@@ -36588,7 +37804,15 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmGetPipelineEntries(scope) {
-      var leads = scope === 'all' ? crmGetLeads() : crmGetScopedLeads(scope);
+      var storedLeads = crmGetStoredLeads();
+      var storedLeadIds = {};
+      storedLeads.forEach(function (lead) {
+        var leadId = String(lead && lead.id || '').trim();
+        if (leadId) storedLeadIds[leadId] = true;
+      });
+      var leads = scope === 'all' ? storedLeads : crmGetScopedLeads(scope).filter(function (lead) {
+        return !!storedLeadIds[String(lead && lead.id || '').trim()];
+      });
       if (scope === 'self' && crmGetRole() === 'Sales Rep') {
         var currentName = String(crmGetCurrentUserName() || currentRep || '').trim();
         leads = leads.filter(function (lead) {
@@ -36596,14 +37820,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         });
       }
       return leads.map(function (lead) {
+        var jobFile = crmGetLeadJobFileData(lead);
         return {
           lead: lead,
-          repStage: crmMapToRepStage(lead.stage || 'Lead')
+          repStage: crmMapToRepStage(lead.stage || 'Lead'),
+          stageBucket: crmGetDashboardStageBucket(lead, jobFile)
         };
       }).filter(function (entry) {
         return REP_PIPELINE_STAGES.indexOf(entry.repStage) !== -1;
       }).filter(function (entry) {
-        return _pipelineStageFilter === 'all' || entry.repStage === _pipelineStageFilter;
+        return _pipelineStageFilter === 'all' || entry.stageBucket === _pipelineStageFilter;
       }).filter(function (entry) {
         return crmPipelineLeadMatchesSearch(entry.lead, _pipelineSearchQuery);
       }).sort(function (a, b) {
@@ -37016,9 +38242,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       _pipelineSelectedLeadId = leadId;
       _pipelinePreviewEditMode = false;
       _pipelinePreviewDirty = false;
-      if (_pipelineStageFilter === 'all' && selectedEntry && selectedEntry.repStage) {
-        _pipelineStageFilter = selectedEntry.repStage;
-      }
       crmRenderPipeline();
     }
 
@@ -37078,7 +38301,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
 
       var hasPreviewSelection = !!(selectedEntry && selectedEntry.lead);
-      var stageLabel = _pipelineStageFilter === 'all' ? 'All Stages' : _pipelineStageFilter;
+      var stageLabel = _pipelineStageFilter === 'all' ? 'All Stages' : crmGetPipelineStageFilterLabel(_pipelineStageFilter);
       var previewHeaderActions = '';
       if (hasPreviewSelection && canInlineEdit) {
         previewHeaderActions = _pipelinePreviewEditMode
@@ -44930,6 +46153,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var teamNote = document.getElementById('settings-team-note');
       var teamActions = document.getElementById('settings-team-actions');
       var exportBtn = document.getElementById('settings-export-btn');
+      var cleanupBtn = document.getElementById('settings-cleanup-test-btn');
       var clearBtn = document.getElementById('settings-clear-btn');
       var stageSettings = crmGetPipelineStageSettings();
       var rolePage = crmGetSettingsRolePageConfig(currentPage);
@@ -44949,6 +46173,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (subpageNav) subpageNav.style.display = (!isCanvasser && currentPage !== 'menu') ? '' : 'none';
 
       if (exportBtn) exportBtn.style.display = (role === 'Sales Rep' || role === 'Viewer') ? 'none' : '';
+      if (cleanupBtn) cleanupBtn.style.display = canEdit ? '' : 'none';
       if (clearBtn) clearBtn.style.display = canEdit ? '' : 'none';
 
       if (isCanvasser) {
@@ -45196,6 +46421,19 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       a.download = 'crm_leads_' + new Date().toISOString().slice(0, 10) + '.json';
       a.click();
       URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('settings-cleanup-test-btn').addEventListener('click', function () {
+      if (!crmCanEditAllData()) {
+        showUploadToast('You do not have permission to clean up test data.');
+        return;
+      }
+      if (!confirm('Remove Sales Rep test users and delete their linked test leads, activity, tasks, appointments, and payroll items? Admin and Canvasser will be kept.')) return;
+      var summary = crmCleanupTestUsersAndData();
+      var msg = document.getElementById('settings-msg');
+      msg.textContent = 'Removed ' + summary.removedMembers + ' test reps, ' + summary.removedLeads + ' leads, ' + summary.removedTasks + ' tasks, ' + summary.removedAppointments + ' appointments, and ' + summary.removedActivity + ' activity items.';
+      msg.style.display = 'block';
+      setTimeout(function () { msg.style.display = 'none'; }, 3000);
     });
 
     document.getElementById('settings-clear-btn').addEventListener('click', function () {
@@ -46342,6 +47580,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmToggleCanvasserSelectForSource('Company', 'ol-canvasser-wrap', 'ol-canvasser');
       document.getElementById('ol-validation-msg').style.display = 'none';
       document.getElementById('ol-saved-msg').style.display = 'none';
+      crmApplyPendingContactLeadPrefill('ol');
     }
 
     document.getElementById('ol-save-btn').addEventListener('click', function () {
@@ -46448,6 +47687,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       document.getElementById('fl-saved-msg').style.display = 'none';
       document.getElementById('fl-warning-msg').style.display = 'none';
       document.getElementById('fl-warning-msg').textContent = '';
+      crmApplyPendingContactLeadPrefill('fl');
     }
 
     document.getElementById('fl-save-btn').addEventListener('click', function () {
@@ -46633,7 +47873,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         'page-main-menu', 'page-office-lead', 'page-field-lead',
         'page-all-leads', 'page-lead-detail', 'page-crm-pipeline',
         'page-my-assigned-leads', 'page-crm-jobs', 'page-tasks',
-        'page-crm-calendar', 'page-crm-job-file',
+        'page-crm-calendar', 'page-new-contact', 'page-crm-contacts', 'page-crm-job-file',
         'page-crm-financial-worksheet', 'page-crm-job-profitability',
         'page-company-docs', 'page-owner-dashboard',
         'page-admin-sales-reps',
@@ -47049,6 +48289,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var msg2 = document.getElementById('cv-saved-msg');
       if (msg1) msg1.style.display = 'none';
       if (msg2) msg2.style.display = 'none';
+      crmApplyPendingContactLeadPrefill('cv');
     }
 
     document.getElementById('cv-save-btn').addEventListener('click', function() {
