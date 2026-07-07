@@ -9433,17 +9433,14 @@
     body.inspection-dashboard-shell-page-active {
       --crm-mini-shell-header-offset: 118px;
     }
-    /* ── Create New Lead header: collapse the tall stacked center column
-       (inherited from the generic crm-page-active layout) into a single
-       compact row, matching the Pipeline/Dashboard header height. ── */
-    body.field-lead-page-active .pipeline-header-center {
-      display: flex !important;
-      flex-direction: row;
-      align-items: center;
-      gap: 16px;
+    /* ── Create New Lead (AccuLynx-style rebuild): the page now renders its
+       own in-flow header/body (see .fl-acculynx below), so the shared fixed
+       global header is hidden entirely for this page only. ── */
+    body.field-lead-page-active header.topbar {
+      display: none !important;
     }
     body.field-lead-page-active {
-      --crm-mini-shell-header-offset: 118px;
+      --crm-mini-shell-header-offset: 0px;
     }
     body.new-contact-page-active .screen,
     body.new-lead-page-active .screen,
@@ -9578,6 +9575,223 @@
       padding-left: 0;
       padding-right: 0;
     }
+    /* Create New Lead overrides the shared dark new-lead-page-active theme
+       with the light AccuLynx-style background; the page has no fixed
+       header to clear, so padding collapses to zero. */
+    body.field-lead-page-active .screen {
+      background: #eef1f4;
+      padding: 0;
+    }
+    /* ══════════ Create New Lead: AccuLynx-style rebuild ══════════ */
+    .fl-acculynx { width: 100%; min-height: 100vh; display: flex; flex-direction: column; }
+    .fl-topbar {
+      background: #ffffff;
+      border-bottom: 1px solid #dfe2e7;
+      padding: 20px 32px;
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      flex: 0 0 auto;
+    }
+    .fl-topbar-title { font-size: 28px; font-weight: 500; color: #1f2530; margin: 0; line-height: 1; }
+    .fl-topbar-sub { font-size: 15px; color: #6b7280; }
+    .fl-layout {
+      flex: 1 1 auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 20px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 28px 120px;
+      box-sizing: border-box;
+    }
+    .fl-main { flex: 1 1 auto; min-width: 0; max-width: 900px; }
+    .fl-sidebar { flex: 0 0 320px; width: 320px; position: sticky; top: 24px; }
+    .fl-card {
+      background: #ffffff;
+      border: 1px solid #d8dbe0;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .fl-card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 20px;
+      background: #f6f7f9;
+      border-bottom: 1px solid #e2e5ea;
+    }
+    .fl-card-icon { display: inline-flex; width: 20px; height: 20px; color: #2f6fed; flex: 0 0 auto; }
+    .fl-card-icon svg { width: 100%; height: 100%; }
+    .fl-card-title { font-size: 15px; font-weight: 600; color: #29303d; }
+    .fl-card-req { margin-left: auto; font-size: 12px; color: #7c8494; }
+    .fl-card-req .req { color: #e07a2c; margin-right: 2px; }
+    .fl-card-body { padding: 18px 20px 20px; }
+    .fl-with-rule { padding-top: 14px; margin-top: 14px; border-top: 1px solid #e9ebef; }
+
+    .fl-grid { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .fl-grid-1 { display: flex; }
+    .fl-grid-2 > .fl-field { flex: 1 1 0; }
+    .fl-grid-citystate > .fl-field.fl-wide,
+    .fl-grid-insco > .fl-field.fl-wide,
+    .fl-grid-email > .fl-field.fl-wide { flex: 2 1 0; }
+    .fl-grid-street > .fl-field.fl-wide { flex: 2 1 0; }
+    .fl-grid-street > .fl-field:not(.fl-wide) { flex: 1 1 170px; }
+    .fl-grid-citystate > .fl-field:not(.fl-wide):not(.fl-narrow),
+    .fl-grid-2 > .fl-field { flex: 1 1 0; }
+    .fl-grid-phone, .fl-grid-adjphone { align-items: center; }
+    .fl-grid-appt > .fl-field { flex: 1 1 0; }
+
+    .fl-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .fl-field label { font-size: 12px; color: #7c8494; font-weight: 600; }
+    .fl-field input, .fl-field select, .fl-field textarea {
+      width: 100%;
+      box-sizing: border-box;
+      background: #f3f4f6;
+      border: 1px solid #d8dbe0;
+      border-radius: 5px;
+      padding: 10px 12px;
+      font-size: 14px;
+      color: #1f2530;
+    }
+    .fl-field input:focus, .fl-field select:focus, .fl-field textarea:focus {
+      outline: none;
+      border-color: #2f6fed;
+      background: #ffffff;
+    }
+    .fl-field.fl-narrow { flex: 0 0 90px; }
+    .fl-field.fl-wide { flex: 2 1 0; }
+    .fl-field.fl-req-visual input,
+    .fl-field.fl-req-visual select {
+      background: #fdece0;
+      border-color: #e0793a;
+      color: #8a4a1c;
+    }
+    .fl-field.fl-req-visual input::placeholder { color: #c98a5c; }
+    select.fl-placeholder-select { color: #8a4a1c; }
+
+    .fl-radio-inline, .fl-checkbox-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #3c4353;
+      margin: 4px 0;
+    }
+    .fl-radio-inline input[type="radio"] { accent-color: #e0793a; width: 16px; height: 16px; }
+    .fl-checkbox-inline input[type="checkbox"] { accent-color: #e0793a; width: 16px; height: 16px; }
+    .fl-opt-in { display: block; color: #9aa0ab; }
+
+    .fl-add-another {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: #2f6fed;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 0;
+      margin-bottom: 8px;
+    }
+    .fl-add-another:hover { text-decoration: underline; }
+    .fl-add-more-host:empty { display: none; }
+    .fl-add-more-host .fl-grid { margin-top: 10px; }
+
+    .fl-addr-block { padding: 10px 0; }
+    .fl-addr-label { font-size: 13px; font-weight: 700; color: #5b6270; margin-bottom: 6px; }
+
+    .fl-photo-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid #2f6fed;
+      color: #2f6fed;
+      border-radius: 5px;
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .fl-photo-btn:hover { background: #f0f5ff; }
+    .fl-btn-icon { display: inline-flex; width: 18px; height: 18px; }
+    .fl-btn-icon svg { width: 100%; height: 100%; }
+
+    .fl-help-btn {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #2f6fed; color: #fff; border: none;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      margin-left: auto; flex: 0 0 auto; line-height: 1;
+    }
+    .fl-help-btn-round { margin-left: 6px; }
+    .fl-help-popover {
+      margin: 0 20px 14px; padding: 12px 14px; background: #fff8ec;
+      border: 1px solid #f0d9a8; border-radius: 6px; font-size: 12.5px;
+      line-height: 1.5; color: #6b5a2e;
+    }
+
+    .fl-assign-row { display: flex; align-items: flex-end; gap: 8px; }
+    .fl-clear-btn {
+      flex: 0 0 auto; width: 32px; height: 38px; border-radius: 5px;
+      border: 1px solid #d8dbe0; background: #f3f4f6; color: #7c8494;
+      font-size: 16px; cursor: pointer;
+    }
+    .fl-subhead { font-size: 13px; font-weight: 700; color: #3c4353; margin: 14px 0 10px; }
+
+    .fl-sidebar-card { margin-bottom: 0; }
+    .fl-sidebar-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 20px; font-size: 14px; color: #3c4353;
+    }
+    .fl-sidebar-block { border-top: 1px solid #e9ebef; flex-direction: column; align-items: stretch; }
+    .fl-sidebar-label { font-weight: 600; color: #3c4353; }
+    .fl-sidebar-value { font-style: italic; color: #8a8f99; }
+    .fl-priority-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+    .fl-priority-dot { width: 12px; height: 12px; border-radius: 50%; background: #6fbf3c; flex: 0 0 auto; }
+    .fl-priority-row select, .fl-sidebar-block > select { flex: 1 1 auto; }
+    .fl-sidebar-block textarea.fl-sidebar-notes {
+      width: 100%; box-sizing: border-box; min-height: 160px; resize: vertical;
+      background: #f3f4f6; border: 1px solid #d8dbe0; border-radius: 5px;
+      padding: 10px 12px; font-size: 14px; color: #1f2530; margin-top: 6px;
+    }
+    .fl-notes-counter { text-align: right; font-size: 11px; color: #9aa0ab; margin-top: 4px; }
+
+    .fl-save-bar {
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 14px 28px;
+      background: linear-gradient(180deg, rgba(238,241,244,0) 0%, #eef1f4 40%);
+      pointer-events: none;
+    }
+    .fl-save-bar > * { pointer-events: auto; }
+    .fl-save-bar .validation-msg,
+    .fl-save-bar .save-confirmation { align-self: stretch; }
+    .fl-save-btn.btn.btn-primary {
+      background: #2f6fed;
+      border-color: #2f6fed;
+      padding: 12px 36px;
+      font-size: 15px;
+      border-radius: 6px;
+    }
+
+    @media (max-width: 980px) {
+      .fl-layout { flex-direction: column; }
+      .fl-sidebar { width: 100%; position: static; }
+    }
     body.inspection-workflow-page-active .map-header-center-subtitle {
       display: none !important;
     }
@@ -9672,6 +9886,10 @@
       min-height: 100%;
       padding: 14px 18px 0 14px;
       background: linear-gradient(180deg, #f2df9b 0%, #e5c05b 54%, #d0912f 100%);
+    }
+    body.field-lead-page-active .crm-dashboard-mini-body {
+      padding: 0;
+      background: #eef1f4;
     }
     .crm-dashboard-mini-layout button {
       font: inherit;
@@ -15929,107 +16147,343 @@
         <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell>
           <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
           <div class="crm-dashboard-mini-body">
-            <div class="new-lead-wrap">
-              <h1 class="page-title">Create New Lead</h1>
-              <p class="page-subtitle">Enter lead details after completing your field visit. Includes inspection, contingency, and claim info.</p>
-              <div class="page-actions">
+            <div class="new-lead-wrap fl-acculynx">
+              <div class="page-actions" style="display:none;">
                 <button class="btn back-to-menu" type="button">Back to Main Menu</button>
               </div>
-              <section class="form-card">
-
-            <section class="form-section">
-              <div class="form-section-header">HOMEOWNER</div>
-              <div class="field-grid">
-                <div class="field"><label>First Name <span class="req">*</span></label><input id="fl-firstName" type="text" placeholder="First name" autocomplete="off" /></div>
-                <div class="field"><label>Last Name <span class="req">*</span></label><input id="fl-lastName" type="text" placeholder="Last name" autocomplete="off" /></div>
-                <div class="field"><label>Phone <span class="req">*</span></label><input id="fl-phone" type="tel" placeholder="Phone number" /></div>
-                <div class="field"><label>Email</label><input id="fl-email" type="email" placeholder="Email" /></div>
+              <div class="fl-topbar">
+                <h1 class="fl-topbar-title">Create New Lead</h1>
+                <span class="fl-topbar-sub" id="fl-company-subtitle">for Hail Money</span>
               </div>
-            </section>
 
-            <section class="form-section">
-              <div class="form-section-header">PROPERTY</div>
-              <div class="field-grid">
-                <div class="field full"><label>Street Address <span class="req">*</span></label><input id="fl-street" type="text" placeholder="Street address" autocomplete="off" /></div>
-                <div class="field"><label>City <span class="req">*</span></label><input id="fl-city" type="text" placeholder="City" autocomplete="off" /></div>
-                <div class="field"><label>State <span class="req">*</span></label><input id="fl-state" type="text" placeholder="e.g. CO" autocomplete="off" maxlength="2" style="text-transform:uppercase;" /></div>
-                <div class="field"><label>ZIP</label><input id="fl-zip" type="text" placeholder="ZIP" inputmode="numeric" /></div>
-              </div>
-            </section>
+              <div class="fl-layout">
+                <div class="fl-main">
 
-            <section class="form-section">
-              <div class="form-section-header">CLAIM &amp; INSURANCE</div>
-              <div class="field-grid">
-                <div class="field"><label>Claim Number <span class="req">*</span></label><input id="fl-claimNumber" type="text" placeholder="Claim number" autocomplete="off" /></div>
-                <div class="field"><label>Insurance Company <span class="req">*</span></label><input id="fl-insuranceCompany" type="text" placeholder="e.g. State Farm" autocomplete="off" /></div>
-                <div class="field">
-                  <label>Lead Source</label>
-                  <select id="fl-leadSource">
-                    <option value="Self Generated">Door Knocking</option>
-                    <option value="Company">Company</option>
-                    <option value="Canvasser">Canvasser</option>
-                    <option value="Referral">Referral</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div class="field" id="fl-canvasser-wrap" style="display:none;">
-                  <label>Canvasser <span class="req">*</span></label>
-                  <select id="fl-canvasser">
-                    <option value="">Select canvasser</option>
-                  </select>
-                </div>
-              </div>
-            </section>
+                  <!-- ── Primary Contact ── -->
+                  <section class="fl-card">
+                    <div class="fl-card-head">
+                      <span class="fl-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.4"></circle><path d="M5 20c0-3.6 3.1-6.4 7-6.4s7 2.8 7 6.4"></path></svg></span>
+                      <span class="fl-card-title">Primary Contact</span>
+                      <span class="fl-card-req"><span class="req">*</span>Required</span>
+                    </div>
+                    <div class="fl-card-body">
+                      <div class="fl-grid fl-grid-2">
+                        <div class="fl-field fl-req-visual"><label>First Name<span class="req">*</span></label><input id="fl-firstName" type="text" placeholder="First Name" autocomplete="off" /></div>
+                        <div class="fl-field fl-req-visual"><label>Last Name<span class="req">*</span></label><input id="fl-lastName" type="text" placeholder="Last Name" autocomplete="off" /></div>
+                      </div>
+                      <div class="fl-grid fl-grid-1">
+                        <div class="fl-field"><input id="fl-companyName" type="text" placeholder="Company Name" autocomplete="off" /></div>
+                      </div>
+                      <div class="fl-grid fl-grid-1 fl-with-rule">
+                        <div class="fl-field"><input id="fl-crossReference" type="text" placeholder="Cross Reference" autocomplete="off" /></div>
+                      </div>
 
-            <section class="form-section">
-              <div class="form-section-header">PROPERTY CONCERNS</div>
-              <div class="crm-checkbox-group">
-                <label class="crm-checkbox-item"><input type="checkbox" id="fl-roof"    value="Roof" />    Roof</label>
-                <label class="crm-checkbox-item"><input type="checkbox" id="fl-gutters" value="Gutters" /> Gutters</label>
-                <label class="crm-checkbox-item"><input type="checkbox" id="fl-siding"  value="Siding" />  Siding</label>
-                <label class="crm-checkbox-item"><input type="checkbox" id="fl-windows" value="Windows" /> Windows</label>
-                <label class="crm-checkbox-item"><input type="checkbox" id="fl-fence"   value="Fence" />   Fence</label>
-                <label class="crm-checkbox-item"><input type="checkbox" id="fl-other"   value="Other" />   Other</label>
-              </div>
-            </section>
+                      <div class="fl-grid fl-grid-phone fl-with-rule" id="fl-row-phone">
+                        <div class="fl-field fl-req-visual"><label>Phone<span class="req">*</span></label><input id="fl-phone" type="tel" placeholder="Phone" /></div>
+                        <div class="fl-field fl-narrow"><label>Ext</label><input id="fl-phoneExt" type="text" placeholder="Ext" autocomplete="off" /></div>
+                        <div class="fl-field fl-narrow">
+                          <label>Type</label>
+                          <select id="fl-phoneType">
+                            <option value="Mobile">Mobile</option>
+                            <option value="Home">Home</option>
+                            <option value="Work">Work</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                        <label class="fl-radio-inline"><input type="radio" name="fl-phone-primary-radio" checked disabled /> Primary</label>
+                      </div>
+                      <label class="fl-checkbox-inline fl-opt-in"><input type="checkbox" id="fl-phoneOptInSms" /> Opt in Texting/SMS</label>
+                      <button type="button" class="fl-add-another" data-fl-clone="fl-row-phone" data-fl-host="fl-phone-more-host">+ Add Another</button>
+                      <div class="fl-add-more-host" id="fl-phone-more-host"></div>
 
-            <section class="form-section">
-              <div class="form-section-header">DETAILS</div>
-              <div class="field-grid">
-                <div class="field"><label>Storm Date</label><input id="fl-stormDate" type="date" /></div>
-                <div class="field full"><label>Notes</label><textarea id="fl-notes" placeholder="Field notes"></textarea></div>
-              </div>
-            </section>
+                      <div class="fl-grid fl-grid-email fl-with-rule" id="fl-row-email">
+                        <div class="fl-field fl-req-visual fl-wide"><label>Email<span class="req">*</span></label><input id="fl-email" type="email" placeholder="Email" /></div>
+                        <div class="fl-field fl-narrow">
+                          <label>Type</label>
+                          <select id="fl-emailType">
+                            <option value="Other">Other</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Work">Work</option>
+                          </select>
+                        </div>
+                        <label class="fl-radio-inline"><input type="radio" name="fl-email-primary-radio" checked disabled /> Primary</label>
+                      </div>
+                      <button type="button" class="fl-add-another" data-fl-clone="fl-row-email" data-fl-host="fl-email-more-host">+ Add Another</button>
+                      <div class="fl-add-more-host" id="fl-email-more-host"></div>
 
-            <section class="form-section">
-              <div class="form-section-header">INSPECTION &amp; CONTINGENCY UPLOADS</div>
-              <div class="field" style="margin-bottom:16px;">
-                <label>Inspection Photos</label>
-                <input type="file" id="fl-inspect-photos" multiple accept="image/*"
-                       style="width:100%;background:var(--input);border:1px solid var(--border);
-                              border-radius:10px;padding:10px 13px;color:var(--text);
-                              font-size:13px;cursor:pointer;" />
-              </div>
-              <div class="field" style="margin-bottom:12px;">
-                <label>Signed Contingency Agreement <span style="font-size:11px;color:var(--muted);">(PDF only)</span></label>
-                <input type="file" id="fl-contingency-pdf" accept="application/pdf,.pdf"
-                       style="width:100%;background:var(--input);border:1px solid var(--border);
-                              border-radius:10px;padding:10px 13px;color:var(--text);
-                              font-size:13px;cursor:pointer;" />
-              </div>
-              <label class="crm-checkbox-item" style="padding-top:6px;align-items:flex-start;gap:10px;font-size:14px;">
-                <input type="checkbox" id="fl-contingency-confirmed" style="margin-top:2px;flex-shrink:0;width:16px;height:16px;accent-color:var(--accent);" />
-                <span>I confirm this contingency agreement is signed.</span>
-              </label>
-            </section>
+                      <div class="fl-addr-block fl-with-rule">
+                        <div class="fl-addr-label">Mailing Address</div>
+                        <label class="fl-checkbox-inline"><input type="checkbox" id="fl-mailingSameAsLocation" checked /> Same as Location Address</label>
+                      </div>
+                      <div class="fl-addr-block">
+                        <div class="fl-addr-label">Billing Address</div>
+                        <label class="fl-checkbox-inline"><input type="checkbox" id="fl-billingSameAsMailing" checked /> Same as Mailing Address</label>
+                      </div>
 
-            <div style="margin-top:20px;display:flex;justify-content:flex-end;">
-              <button class="btn btn-primary" type="button" id="fl-save-btn">Save New Lead</button>
-            </div>
-            <div id="fl-validation-msg" class="validation-msg" style="display:none;">Please fill in all required fields (First Name, Last Name, Phone, Street, City, State, Claim Number, Insurance Company).</div>
-            <div id="fl-saved-msg" class="save-confirmation" style="display:none;"></div>
-            <div id="fl-warning-msg" style="display:none;margin-top:10px;padding:10px 14px;background:#fff8e6;border:1px solid #e4a230;border-radius:10px;color:#9a6000;font-size:13px;font-weight:600;line-height:1.5;"></div>
-              </section>
+                      <div class="fl-grid fl-grid-1 fl-with-rule">
+                        <div class="fl-field"><input id="fl-gclid" type="text" placeholder="GCLID" autocomplete="off" /></div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- ── Location Information ── -->
+                  <section class="fl-card">
+                    <div class="fl-card-head">
+                      <span class="fl-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11z"></path><circle cx="12" cy="10" r="2.3"></circle></svg></span>
+                      <span class="fl-card-title">Location Information</span>
+                      <span class="fl-card-req"><span class="req">*</span>Required</span>
+                    </div>
+                    <div class="fl-card-body">
+                      <div class="fl-grid fl-grid-street">
+                        <div class="fl-field fl-req-visual fl-wide"><label>Street<span class="req">*</span></label><input id="fl-street" type="text" placeholder="Street" autocomplete="off" /></div>
+                        <div class="fl-field"><input id="fl-suite" type="text" placeholder="Suite/Apt/Unit" autocomplete="off" /></div>
+                      </div>
+                      <div class="fl-grid fl-grid-citystate">
+                        <div class="fl-field fl-req-visual fl-wide"><label>City<span class="req">*</span></label><input id="fl-city" type="text" placeholder="City" autocomplete="off" /></div>
+                        <div class="fl-field fl-req-visual"><label>State<span class="req">*</span></label><input id="fl-state" type="text" placeholder="State" autocomplete="off" maxlength="2" style="text-transform:uppercase;" /></div>
+                        <div class="fl-field fl-req-visual"><label>Zip<span class="req">*</span></label><input id="fl-zip" type="text" placeholder="Zip" inputmode="numeric" /></div>
+                        <div class="fl-field">
+                          <label>Country<span class="req">*</span></label>
+                          <select id="fl-country">
+                            <option value="USA">USA</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="fl-grid fl-grid-2 fl-with-rule">
+                        <div class="fl-field fl-req-visual">
+                          <select id="fl-jobCategory" class="fl-placeholder-select">
+                            <option value="" disabled selected>Job Category *</option>
+                            <option value="Commercial">Commercial</option>
+                            <option value="Property Management">Property Management</option>
+                            <option value="Residential">Residential</option>
+                          </select>
+                        </div>
+                        <div class="fl-field fl-req-visual">
+                          <select id="fl-workType" class="fl-placeholder-select">
+                            <option value="" disabled selected>Work Type *</option>
+                            <option value="" disabled>Admin configured options will appear here</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="fl-grid fl-grid-2">
+                        <div class="fl-field fl-req-visual">
+                          <select id="fl-tradeType" class="fl-placeholder-select">
+                            <option value="" disabled selected>Trade Type *</option>
+                            <option value="" disabled>Admin configured options will appear here</option>
+                          </select>
+                        </div>
+                        <div class="fl-field fl-req-visual">
+                          <select id="fl-leadSource" class="fl-placeholder-select">
+                            <option value="" disabled selected>Lead Source *</option>
+                            <option value="" disabled>Admin configured options will appear here</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="fl-field" id="fl-canvasser-wrap" style="display:none;">
+                        <label>Canvasser <span class="req">*</span></label>
+                        <select id="fl-canvasser">
+                          <option value="">Select canvasser</option>
+                        </select>
+                      </div>
+
+                      <button type="button" class="fl-photo-btn" id="fl-add-location-photo-btn">
+                        <span class="fl-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h4l2-2h4l2 2h4v10H4z"></path><circle cx="12" cy="13.5" r="2.8"></circle></svg></span>
+                        Add Location Photo
+                      </button>
+                      <input type="file" id="fl-location-photo" accept="image/*" style="display:none;" />
+                    </div>
+                  </section>
+
+                  <!-- ── Insurance ── -->
+                  <section class="fl-card">
+                    <div class="fl-card-head">
+                      <span class="fl-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11a8 8 0 0 1 16 0z"></path><path d="M12 11v7a2 2 0 0 1-4 0"></path><path d="M12 3v2"></path></svg></span>
+                      <span class="fl-card-title">Insurance</span>
+                      <span class="fl-card-req"><span class="req">*</span>Required</span>
+                    </div>
+                    <div class="fl-card-body">
+                      <div class="fl-grid fl-grid-insco">
+                        <div class="fl-field fl-wide">
+                          <select id="fl-insuranceCompany">
+                            <option value="">Insurance Company</option>
+                            <option value="State Farm">State Farm</option>
+                            <option value="Allstate">Allstate</option>
+                            <option value="USAA">USAA</option>
+                            <option value="Progressive">Progressive</option>
+                            <option value="Farmers">Farmers</option>
+                            <option value="Liberty Mutual">Liberty Mutual</option>
+                            <option value="Nationwide">Nationwide</option>
+                            <option value="Travelers">Travelers</option>
+                          </select>
+                        </div>
+                        <label class="fl-checkbox-inline fl-inline-check"><input type="checkbox" id="fl-insuranceOther" /> Other</label>
+                      </div>
+                      <div class="fl-field" id="fl-insuranceOtherWrap" style="display:none;">
+                        <input id="fl-insuranceCompanyOther" type="text" placeholder="Insurance company name" autocomplete="off" />
+                      </div>
+
+                      <div class="fl-grid fl-grid-2 fl-with-rule">
+                        <div class="fl-field"><input id="fl-damageLocation" type="text" placeholder="Damage Location" autocomplete="off" /></div>
+                        <div class="fl-field"><input id="fl-dateOfLoss" type="date" placeholder="Date of Loss" /></div>
+                      </div>
+                      <label class="fl-checkbox-inline"><input type="checkbox" id="fl-claimFiled" /> Claim Filed</label>
+
+                      <div class="fl-grid fl-grid-1 fl-with-rule">
+                        <div class="fl-field fl-req-visual"><label>Claim Number<span class="req">*</span></label><input id="fl-claimNumber" type="text" placeholder="Claim Number" autocomplete="off" /></div>
+                      </div>
+
+                      <div class="fl-grid fl-grid-1 fl-with-rule">
+                        <div class="fl-field"><input id="fl-adjusterName" type="text" placeholder="Adjuster Name" autocomplete="off" /></div>
+                      </div>
+                      <div class="fl-grid fl-grid-adjphone">
+                        <div class="fl-field"><input id="fl-adjusterPhone" type="tel" placeholder="Adjuster Phone" /></div>
+                        <div class="fl-field fl-narrow"><input id="fl-adjusterExt" type="text" placeholder="Ext" autocomplete="off" /></div>
+                        <div class="fl-field fl-narrow">
+                          <select id="fl-adjusterType">
+                            <option value="Mobile">Mobile</option>
+                            <option value="Office">Office</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+                      <label class="fl-checkbox-inline fl-opt-in"><input type="checkbox" id="fl-adjusterOptInSms" /> Opt in Texting/SMS</label>
+
+                      <div class="fl-grid fl-grid-1 fl-with-rule">
+                        <div class="fl-field"><input id="fl-adjusterFax" type="text" placeholder="Adjuster Fax" autocomplete="off" /></div>
+                      </div>
+                      <div class="fl-grid fl-grid-1">
+                        <div class="fl-field"><input id="fl-adjusterEmail" type="email" placeholder="Adjuster Email" /></div>
+                      </div>
+                      <label class="fl-checkbox-inline"><input type="checkbox" id="fl-metAdjuster" /> Met Adjuster</label>
+                    </div>
+                  </section>
+
+                  <!-- ── Assign & Schedule ── -->
+                  <section class="fl-card">
+                    <div class="fl-card-head">
+                      <span class="fl-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3v4M17 3v4M4 9h16M5 5h14v15H5z"></path><path d="M9 13h2v2H9z"></path></svg></span>
+                      <span class="fl-card-title">Assign &amp; Schedule</span>
+                      <button type="button" class="fl-help-btn" id="fl-assign-help-btn" aria-label="About assignment and scheduling">?</button>
+                    </div>
+                    <div class="fl-help-popover" id="fl-assign-help-popover" hidden>Choose who this lead is assigned to and, if known, the initial appointment window. You can leave these blank and schedule later.</div>
+                    <div class="fl-card-body">
+                      <div class="fl-assign-row">
+                        <div class="fl-field fl-wide">
+                          <label>Assign to</label>
+                          <select id="fl-assignTo"></select>
+                        </div>
+                        <button type="button" class="fl-clear-btn" id="fl-assignTo-clear" aria-label="Clear assignment">&times;</button>
+                      </div>
+                      <div class="fl-subhead">Initial Appointment</div>
+                      <div class="fl-grid fl-grid-appt">
+                        <div class="fl-field"><input id="fl-appointmentDate" type="date" placeholder="Appointment Date" /></div>
+                        <div class="fl-field"><input id="fl-appointmentStart" type="time" placeholder="Start Time" /></div>
+                        <div class="fl-field"><input id="fl-appointmentEnd" type="time" placeholder="End Time" /></div>
+                      </div>
+                      <button type="button" class="fl-photo-btn" data-dashboard-action="calendar">
+                        <span class="fl-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3v4M17 3v4M4 9h16M5 5h14v15H5z"></path></svg></span>
+                        Schedule / View Calendar
+                      </button>
+                    </div>
+                  </section>
+
+                  <!-- ── Property Concerns (retained) ── -->
+                  <section class="fl-card">
+                    <div class="fl-card-head"><span class="fl-card-title">Property Concerns</span></div>
+                    <div class="fl-card-body">
+                      <div class="crm-checkbox-group">
+                        <label class="crm-checkbox-item"><input type="checkbox" id="fl-roof"    value="Roof" />    Roof</label>
+                        <label class="crm-checkbox-item"><input type="checkbox" id="fl-gutters" value="Gutters" /> Gutters</label>
+                        <label class="crm-checkbox-item"><input type="checkbox" id="fl-siding"  value="Siding" />  Siding</label>
+                        <label class="crm-checkbox-item"><input type="checkbox" id="fl-windows" value="Windows" /> Windows</label>
+                        <label class="crm-checkbox-item"><input type="checkbox" id="fl-fence"   value="Fence" />   Fence</label>
+                        <label class="crm-checkbox-item"><input type="checkbox" id="fl-other"   value="Other" />   Other</label>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- ── Inspection & Contingency Uploads (retained) ── -->
+                  <section class="fl-card">
+                    <div class="fl-card-head"><span class="fl-card-title">Inspection &amp; Contingency Uploads</span></div>
+                    <div class="fl-card-body">
+                      <div class="fl-grid fl-grid-1">
+                        <div class="fl-field"><label>Storm Date</label><input id="fl-stormDate" type="date" /></div>
+                      </div>
+                      <div class="fl-field" style="margin-bottom:16px;">
+                        <label>Inspection Photos</label>
+                        <input type="file" id="fl-inspect-photos" multiple accept="image/*"
+                               style="width:100%;background:var(--input);border:1px solid var(--border);
+                                      border-radius:10px;padding:10px 13px;color:var(--text);
+                                      font-size:13px;cursor:pointer;" />
+                      </div>
+                      <div class="fl-field" style="margin-bottom:12px;">
+                        <label>Signed Contingency Agreement <span style="font-size:11px;color:var(--muted);">(PDF only)</span></label>
+                        <input type="file" id="fl-contingency-pdf" accept="application/pdf,.pdf"
+                               style="width:100%;background:var(--input);border:1px solid var(--border);
+                                      border-radius:10px;padding:10px 13px;color:var(--text);
+                                      font-size:13px;cursor:pointer;" />
+                      </div>
+                      <label class="crm-checkbox-item" style="padding-top:6px;align-items:flex-start;gap:10px;font-size:14px;">
+                        <input type="checkbox" id="fl-contingency-confirmed" style="margin-top:2px;flex-shrink:0;width:16px;height:16px;accent-color:var(--accent);" />
+                        <span>I confirm this contingency agreement is signed.</span>
+                      </label>
+                    </div>
+                  </section>
+
+                </div><!-- /.fl-main -->
+
+                <aside class="fl-sidebar">
+                  <div class="fl-card fl-sidebar-card">
+                    <div class="fl-card-head">
+                      <span class="fl-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z"></path><path d="M14 3v5h5"></path></svg></span>
+                      <span class="fl-card-title">Notes / Tools</span>
+                    </div>
+                    <div class="fl-sidebar-row">
+                      <span class="fl-sidebar-label">Lead Rank:</span>
+                      <span class="fl-sidebar-value fl-lead-rank-value">Unavailable</span>
+                      <button type="button" class="fl-help-btn fl-help-btn-round" id="fl-lead-rank-help-btn" aria-label="About Lead Rank">?</button>
+                    </div>
+                    <div class="fl-help-popover" id="fl-lead-rank-popover" hidden>Lead Intelligence uses customer-specific conversion data and hundreds of attributes like income, duration of home ownership, credit history, and property data to estimate likelihood to convert. Rank 4 is highest and rank 1 is lowest. Unavailable means there is not enough data or the address is outside the United States.</div>
+
+                    <div class="fl-sidebar-row fl-sidebar-block">
+                      <span class="fl-sidebar-label">Priority Level:</span>
+                      <div class="fl-priority-row">
+                        <span class="fl-priority-dot" aria-hidden="true"></span>
+                        <select id="fl-priorityLevel">
+                          <option value="Low">Low</option>
+                          <option value="Normal" selected>Normal</option>
+                          <option value="High">High</option>
+                          <option value="Urgent">Urgent</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="fl-sidebar-row fl-sidebar-block">
+                      <span class="fl-sidebar-label">Lead Status:</span>
+                      <select id="fl-leadStatus">
+                        <option value="">Select status</option>
+                        <option value="New">New</option>
+                        <option value="Contacted">Contacted</option>
+                        <option value="Qualified">Qualified</option>
+                        <option value="Unqualified">Unqualified</option>
+                      </select>
+                    </div>
+
+                    <div class="fl-sidebar-block">
+                      <textarea id="fl-notes" class="fl-sidebar-notes" placeholder="Notes" maxlength="1000"></textarea>
+                      <div class="fl-notes-counter"><span id="fl-notes-count">0</span>/1000</div>
+                    </div>
+                  </div>
+                </aside>
+              </div><!-- /.fl-layout -->
+
+              <div class="fl-save-bar">
+                <div id="fl-validation-msg" class="validation-msg" style="display:none;">Please fill in all required fields (First Name, Last Name, Phone, Street, City, State, Job Category, Claim Number, Insurance Company).</div>
+                <div id="fl-saved-msg" class="save-confirmation" style="display:none;"></div>
+                <div id="fl-warning-msg" style="display:none;margin-top:10px;padding:10px 14px;background:#fff8e6;border:1px solid #e4a230;border-radius:10px;color:#9a6000;font-size:13px;font-weight:600;line-height:1.5;"></div>
+                <button class="btn btn-primary fl-save-btn" type="button" id="fl-save-btn">Save</button>
+              </div>
             </div>
           </div>
         </div>
@@ -42108,7 +42562,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var wrap = document.getElementById('crm-pipeline-header-company');
       var logoEl = document.getElementById('crm-pipeline-header-company-logo');
       if (!wrap || !logoEl) return;
-      if (!document.body || !document.body.classList.contains('pipeline-page-active')) {
+      if (!document.body || !(document.body.classList.contains('pipeline-page-active') || document.body.classList.contains('field-lead-page-active'))) {
         wrap.hidden = true;
         return;
       }
@@ -51351,17 +51805,72 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       };
     }
 
+    function crmUpdateFieldLeadCompanySubtitle() {
+      var el = document.getElementById('fl-company-subtitle');
+      if (!el) return;
+      var profile = typeof crmGetCompanyProfile === 'function' ? crmGetCompanyProfile() : {};
+      el.textContent = 'for ' + (profile && profile.companyName ? profile.companyName : 'Hail Money');
+    }
+
+    function crmPopulateFieldLeadAssignTo() {
+      var sel = document.getElementById('fl-assignTo');
+      if (!sel) return;
+      var members = (typeof crmGetTeamMembers === 'function' ? crmGetTeamMembers() : []) || [];
+      var reps = members.filter(function (m) { return m && m.active !== false; });
+      sel.innerHTML = '<option value="">Unassigned</option>' + reps.map(function (m) {
+        return '<option value="' + crmEscapeHtml(m.id || '') + '">' + crmEscapeHtml(m.name || '') + '</option>';
+      }).join('');
+      var defaultMember = reps.filter(function (m) { return String(m.name || '').trim() === 'Sam Plunkett'; })[0]
+        || reps.filter(function (m) { return String(m.name || '').trim() === (currentRep || ''); })[0];
+      sel.value = defaultMember ? defaultMember.id : '';
+    }
+
     function crmInitFieldLead() {
-      ['fl-firstName','fl-lastName','fl-phone','fl-email','fl-street','fl-city','fl-state','fl-zip','fl-claimNumber','fl-insuranceCompany','fl-notes'].forEach(function (id) {
+      [
+        'fl-firstName', 'fl-lastName', 'fl-phone', 'fl-email', 'fl-street', 'fl-city', 'fl-state', 'fl-zip',
+        'fl-claimNumber', 'fl-notes', 'fl-companyName', 'fl-crossReference', 'fl-phoneExt', 'fl-gclid', 'fl-suite',
+        'fl-damageLocation', 'fl-dateOfLoss', 'fl-adjusterName', 'fl-adjusterPhone', 'fl-adjusterExt',
+        'fl-adjusterFax', 'fl-adjusterEmail', 'fl-appointmentDate', 'fl-appointmentStart', 'fl-appointmentEnd',
+        'fl-insuranceCompanyOther'
+      ].forEach(function (id) {
         var el = document.getElementById(id); if (el) el.value = '';
       });
+      ['fl-insuranceCompany', 'fl-jobCategory', 'fl-workType', 'fl-tradeType', 'fl-leadSource'].forEach(function (id) {
+        var el = document.getElementById(id); if (el) el.value = '';
+      });
+      var phoneType = document.getElementById('fl-phoneType'); if (phoneType) phoneType.value = 'Mobile';
+      var emailType = document.getElementById('fl-emailType'); if (emailType) emailType.value = 'Other';
+      var adjusterType = document.getElementById('fl-adjusterType'); if (adjusterType) adjusterType.value = 'Mobile';
+      var country = document.getElementById('fl-country'); if (country) country.value = 'USA';
+      var priority = document.getElementById('fl-priorityLevel'); if (priority) priority.value = 'Normal';
+      var leadStatus = document.getElementById('fl-leadStatus'); if (leadStatus) leadStatus.value = '';
+
+      ['fl-phoneOptInSms', 'fl-insuranceOther', 'fl-claimFiled', 'fl-adjusterOptInSms', 'fl-metAdjuster'].forEach(function (id) {
+        var cb = document.getElementById(id); if (cb) cb.checked = false;
+      });
+      ['fl-mailingSameAsLocation', 'fl-billingSameAsMailing'].forEach(function (id) {
+        var cb = document.getElementById(id); if (cb) cb.checked = true;
+      });
+      var insOtherWrap = document.getElementById('fl-insuranceOtherWrap'); if (insOtherWrap) insOtherWrap.style.display = 'none';
+
+      var phoneMoreHost = document.getElementById('fl-phone-more-host'); if (phoneMoreHost) phoneMoreHost.innerHTML = '';
+      var emailMoreHost = document.getElementById('fl-email-more-host'); if (emailMoreHost) emailMoreHost.innerHTML = '';
+
+      var assignHelp = document.getElementById('fl-assign-help-popover'); if (assignHelp) assignHelp.hidden = true;
+      var rankHelp = document.getElementById('fl-lead-rank-popover'); if (rankHelp) rankHelp.hidden = true;
+
+      var notesCount = document.getElementById('fl-notes-count'); if (notesCount) notesCount.textContent = '0';
+
+      crmPopulateFieldLeadAssignTo();
+      crmUpdateFieldLeadCompanySubtitle();
+
       var sd = document.getElementById('fl-stormDate'); if (sd) sd.value = '';
-      var src = document.getElementById('fl-leadSource'); if (src) src.value = 'Self Generated';
       var canvasser = document.getElementById('fl-canvasser'); if (canvasser) canvasser.value = '';
-      crmToggleCanvasserSelectForSource('Self Generated', 'fl-canvasser-wrap', 'fl-canvasser');
+      crmToggleCanvasserSelectForSource('', 'fl-canvasser-wrap', 'fl-canvasser');
       var photoInput = document.getElementById('fl-inspect-photos'); if (photoInput) photoInput.value = '';
       var contingencyInput = document.getElementById('fl-contingency-pdf'); if (contingencyInput) contingencyInput.value = '';
       var contingencyConfirmed = document.getElementById('fl-contingency-confirmed'); if (contingencyConfirmed) contingencyConfirmed.checked = false;
+      var locationPhotoInput = document.getElementById('fl-location-photo'); if (locationPhotoInput) locationPhotoInput.value = '';
       ['fl-roof','fl-gutters','fl-siding','fl-windows','fl-fence','fl-other'].forEach(function (id) {
         var cb = document.getElementById(id); if (cb) cb.checked = false;
       });
@@ -51372,6 +51881,82 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmApplyPendingContactLeadPrefill('fl');
     }
 
+    function crmCapitalizeFirstLetterOnInput(e) {
+      var el = e.target;
+      var val = el.value;
+      if (!val) return;
+      var first = val.charAt(0);
+      var upper = first.toUpperCase();
+      if (first === upper) return;
+      var start = el.selectionStart;
+      var end = el.selectionEnd;
+      el.value = upper + val.slice(1);
+      if (typeof start === 'number' && typeof end === 'number') {
+        el.setSelectionRange(start, end);
+      }
+    }
+    ['fl-firstName', 'fl-lastName', 'fl-street', 'fl-city', 'fl-companyName'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('input', crmCapitalizeFirstLetterOnInput);
+    });
+
+    /* ── Create New Lead (AccuLynx rebuild): small UI-only wiring ── */
+    (function () {
+      var notesEl = document.getElementById('fl-notes');
+      var notesCountEl = document.getElementById('fl-notes-count');
+      if (notesEl && notesCountEl) {
+        notesEl.addEventListener('input', function () {
+          notesCountEl.textContent = String(notesEl.value.length);
+        });
+      }
+
+      function wireHelpToggle(btnId, popoverId) {
+        var btn = document.getElementById(btnId);
+        var pop = document.getElementById(popoverId);
+        if (!btn || !pop) return;
+        btn.addEventListener('click', function () { pop.hidden = !pop.hidden; });
+      }
+      wireHelpToggle('fl-lead-rank-help-btn', 'fl-lead-rank-popover');
+      wireHelpToggle('fl-assign-help-btn', 'fl-assign-help-popover');
+
+      var insOther = document.getElementById('fl-insuranceOther');
+      var insOtherWrap = document.getElementById('fl-insuranceOtherWrap');
+      var insSelect = document.getElementById('fl-insuranceCompany');
+      if (insOther && insOtherWrap) {
+        insOther.addEventListener('change', function () {
+          insOtherWrap.style.display = insOther.checked ? '' : 'none';
+          if (insOther.checked && insSelect) insSelect.value = '';
+          if (!insOther.checked) { var otherInput = document.getElementById('fl-insuranceCompanyOther'); if (otherInput) otherInput.value = ''; }
+        });
+      }
+
+      var assignClearBtn = document.getElementById('fl-assignTo-clear');
+      var assignSelect = document.getElementById('fl-assignTo');
+      if (assignClearBtn && assignSelect) {
+        assignClearBtn.addEventListener('click', function () { assignSelect.value = ''; });
+      }
+
+      var addPhotoBtn = document.getElementById('fl-add-location-photo-btn');
+      var addPhotoInput = document.getElementById('fl-location-photo');
+      if (addPhotoBtn && addPhotoInput) {
+        addPhotoBtn.addEventListener('click', function () { addPhotoInput.click(); });
+      }
+
+      document.querySelectorAll('#page-field-lead [data-fl-clone]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var source = document.getElementById(btn.getAttribute('data-fl-clone'));
+          var host = document.getElementById(btn.getAttribute('data-fl-host'));
+          if (!source || !host) return;
+          var clone = source.cloneNode(true);
+          clone.removeAttribute('id');
+          clone.querySelectorAll('[id]').forEach(function (el) { el.removeAttribute('id'); });
+          clone.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"]').forEach(function (el) { el.value = ''; });
+          clone.querySelectorAll('input[type="radio"]').forEach(function (el) { el.checked = false; el.removeAttribute('name'); });
+          host.appendChild(clone);
+        });
+      });
+    }());
+
     document.getElementById('fl-save-btn').addEventListener('click', function () {
       var valMsg = document.getElementById('fl-validation-msg');
       var savedMsg = document.getElementById('fl-saved-msg');
@@ -51381,8 +51966,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       warningMsg.style.display = 'none';
       warningMsg.textContent = '';
       function fv(id) { var el = document.getElementById(id); return el ? String(el.value || '').trim() : ''; }
-      var req = ['fl-firstName','fl-lastName','fl-phone','fl-street','fl-city','fl-state','fl-claimNumber','fl-insuranceCompany'];
+      function fc(id) { var el = document.getElementById(id); return !!(el && el.checked); }
+      var insuranceCompanyVal = fc('fl-insuranceOther') ? fv('fl-insuranceCompanyOther') : fv('fl-insuranceCompany');
+      var req = ['fl-firstName','fl-lastName','fl-phone','fl-street','fl-city','fl-state','fl-claimNumber','fl-jobCategory'];
       var missing = req.filter(function (id) { var el = document.getElementById(id); return !el || !String(el.value || '').trim(); });
+      if (!insuranceCompanyVal) missing.push('fl-insuranceCompany');
       if (fv('fl-leadSource') === 'Canvasser' && !fv('fl-canvasser')) missing.push('fl-canvasser');
       if (missing.length) { valMsg.style.display = 'block'; return; }
 
@@ -51395,25 +51983,37 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var contingencyFile = ((document.getElementById('fl-contingency-pdf') || {}).files || [])[0] || null;
       var contingencyConfirmed = !!((document.getElementById('fl-contingency-confirmed') || {}).checked);
       var fieldLeadState = crmGetFieldLeadSaveState(photoFiles, contingencyFile, contingencyConfirmed);
-      var repMember = crmLookupTeamMemberByName(currentRep || '');
       var canvasserMember = crmLookupTeamMemberById(fv('fl-canvasser'));
+      var assignToMember = fv('fl-assignTo') ? crmLookupTeamMemberById(fv('fl-assignTo')) : null;
+      var repMember = assignToMember || crmLookupTeamMemberByName(currentRep || '');
       var lead = {
         id: crmGenId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
         leadType: 'field_lead',
         assignmentStatus: 'Assigned',
-        assignedRep: currentRep || '',
+        assignedRep: assignToMember ? assignToMember.name : (currentRep || ''),
         assignedRepId: repMember ? repMember.id : '',
         createdByName: crmGetCurrentUserName() || currentRep || '',
         createdByRole: 'Sales Rep',
         firstName: fv('fl-firstName'), lastName: fv('fl-lastName'),
-        phone: fv('fl-phone'), email: fv('fl-email'),
-        street: fv('fl-street'), city: fv('fl-city'), state: stateVal, zip: fv('fl-zip'),
+        companyName: fv('fl-companyName'), crossReference: fv('fl-crossReference'),
+        phone: fv('fl-phone'), phoneExt: fv('fl-phoneExt'), phoneType: fv('fl-phoneType'), phoneOptInSms: fc('fl-phoneOptInSms'),
+        email: fv('fl-email'), emailType: fv('fl-emailType'),
+        mailingSameAsLocation: fc('fl-mailingSameAsLocation'), billingSameAsMailing: fc('fl-billingSameAsMailing'),
+        gclid: fv('fl-gclid'),
+        street: fv('fl-street'), suite: fv('fl-suite'), city: fv('fl-city'), state: stateVal, zip: fv('fl-zip'), country: fv('fl-country') || 'USA',
+        jobCategory: fv('fl-jobCategory'), workType: fv('fl-workType'), tradeType: fv('fl-tradeType'),
         leadSource: fv('fl-leadSource') || 'Self Generated',
         canvasserId: fv('fl-leadSource') === 'Canvasser' && canvasserMember ? canvasserMember.id : '',
         canvasserName: fv('fl-leadSource') === 'Canvasser' && canvasserMember ? canvasserMember.name : '',
         matchedLeadId: '',
         claimNumber: fv('fl-claimNumber'),
-        insuranceCompany: fv('fl-insuranceCompany'),
+        insuranceCompany: insuranceCompanyVal,
+        damageLocation: fv('fl-damageLocation'), dateOfLoss: fv('fl-dateOfLoss'), claimFiled: fc('fl-claimFiled'),
+        adjusterName: fv('fl-adjusterName'), adjusterPhone: fv('fl-adjusterPhone'), adjusterExt: fv('fl-adjusterExt'),
+        adjusterType: fv('fl-adjusterType'), adjusterOptInSms: fc('fl-adjusterOptInSms'),
+        adjusterFax: fv('fl-adjusterFax'), adjusterEmail: fv('fl-adjusterEmail'), metAdjuster: fc('fl-metAdjuster'),
+        priorityLevel: fv('fl-priorityLevel') || 'Normal', leadStatus: fv('fl-leadStatus'),
+        appointmentDate: fv('fl-appointmentDate'), appointmentStart: fv('fl-appointmentStart'), appointmentEnd: fv('fl-appointmentEnd'),
         notes: fv('fl-notes'), stormDate: fv('fl-stormDate'),
         contingencySigned: fieldLeadState.contingencyStatus === 'signed_confirmed' && contingencyConfirmed === true,
         concerns: concerns, stage: fieldLeadState.stage,
