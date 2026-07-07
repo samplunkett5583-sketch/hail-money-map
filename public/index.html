@@ -9433,6 +9433,18 @@
     body.inspection-dashboard-shell-page-active {
       --crm-mini-shell-header-offset: 118px;
     }
+    /* ── Create New Lead header: collapse the tall stacked center column
+       (inherited from the generic crm-page-active layout) into a single
+       compact row, matching the Pipeline/Dashboard header height. ── */
+    body.field-lead-page-active .pipeline-header-center {
+      display: flex !important;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+    }
+    body.field-lead-page-active {
+      --crm-mini-shell-header-offset: 118px;
+    }
     body.new-contact-page-active .screen,
     body.new-lead-page-active .screen,
     body.contacts-page-active .screen,
@@ -11825,20 +11837,21 @@
     body.pipeline-page-active .jf-notif-btn {
       color: #f6c75f;
     }
-    body.pipeline-page-active #crm-pipeline-header-company {
-      display: flex !important;
-    }
-    body.pipeline-page-active .pipeline-header-company-logo {
-      height: 56px;
-    }
     body.pipeline-page-active .topbar-left {
       flex-direction: column;
       align-items: flex-start;
-      justify-content: center;
+      justify-content: flex-start;
+    }
+    body.pipeline-page-active #crm-header-page-title {
+      margin-top: auto;
     }
     body.pipeline-page-active .map-header-center-subtitle {
       display: block !important;
       text-transform: uppercase;
+      margin-top: -6px;
+    }
+    body.pipeline-page-active .map-header-center-brand img {
+      height: 54px;
     }
     body.pipeline-page-active .pipeline-header-center {
       display: flex !important;
@@ -11851,7 +11864,7 @@
       flex-wrap: nowrap;
       gap: 6px;
       align-items: center;
-      transform: translateY(-6px);
+      margin-bottom: 0;
     }
     body.pipeline-page-active .pipeline-header-center .crm-pipe-filter-btn {
       min-height: 34px;
