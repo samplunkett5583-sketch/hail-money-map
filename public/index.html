@@ -9433,15 +9433,6 @@
     body.inspection-dashboard-shell-page-active {
       --crm-mini-shell-header-offset: 118px;
     }
-    /* ── Create New Lead (AccuLynx-style rebuild): the page now renders its
-       own in-flow header/body (see .fl-acculynx below), so the shared fixed
-       global header is hidden entirely for this page only. ── */
-    body.field-lead-page-active header.topbar {
-      display: none !important;
-    }
-    body.field-lead-page-active {
-      --crm-mini-shell-header-offset: 0px;
-    }
     body.new-contact-page-active .screen,
     body.new-lead-page-active .screen,
     body.contacts-page-active .screen,
@@ -9575,40 +9566,28 @@
       padding-left: 0;
       padding-right: 0;
     }
-    /* Create New Lead overrides the shared dark new-lead-page-active theme
-       with the light AccuLynx-style background; the page has no fixed
-       header to clear, so padding collapses to zero. */
+    /* Create New Lead keeps the standard fixed header (padding-top reserves
+       space for it, same as sibling new-lead-page-active pages) but swaps
+       the shared dark theme for the light AccuLynx-style background. */
     body.field-lead-page-active .screen {
       background: #eef1f4;
-      padding: 0;
+      padding-top: var(--crm-mini-shell-header-offset);
+      padding-bottom: 0;
     }
     /* ══════════ Create New Lead: AccuLynx-style rebuild ══════════ */
     .fl-acculynx { width: 100%; min-height: 100vh; display: flex; flex-direction: column; }
-    .fl-topbar {
-      background: #ffffff;
-      border-bottom: 1px solid #dfe2e7;
-      padding: 20px 32px;
-      display: flex;
-      align-items: baseline;
-      gap: 14px;
-      flex: 0 0 auto;
-    }
-    .fl-topbar-title { font-size: 28px; font-weight: 500; color: #1f2530; margin: 0; line-height: 1; }
-    .fl-topbar-sub { font-size: 15px; color: #6b7280; }
     .fl-layout {
       flex: 1 1 auto;
       display: flex;
       align-items: flex-start;
-      justify-content: center;
-      gap: 20px;
-      max-width: 1400px;
+      gap: 24px;
       width: 100%;
-      margin: 0 auto;
-      padding: 24px 28px 120px;
+      margin: 0;
+      padding: 24px 32px 120px;
       box-sizing: border-box;
     }
-    .fl-main { flex: 1 1 auto; min-width: 0; max-width: 900px; }
-    .fl-sidebar { flex: 0 0 320px; width: 320px; position: sticky; top: 24px; }
+    .fl-main { flex: 1 1 auto; min-width: 0; }
+    .fl-sidebar { flex: 0 0 400px; width: 400px; position: sticky; top: 24px; }
     .fl-card {
       background: #ffffff;
       border: 1px solid #d8dbe0;
@@ -10035,6 +10014,15 @@
       margin-left: auto;
       margin-right: auto;
       transform: translateX(-60.5px);
+    }
+    /* The AccuLynx-style rebuild needs the full available width, not the
+       760px cap used by the old single-column field-lead layout. */
+    #page-field-lead .new-lead-wrap.fl-acculynx {
+      max-width: none;
+      width: 100%;
+      margin-left: 0;
+      margin-right: 0;
+      transform: none;
     }
     .crm-dashboard-mini-layout .crm-contact-page-shell {
       max-width: 1120px;
@@ -16143,17 +16131,13 @@
       </section>
 
       <!-- ═══════════════════ CRM: FIELD LEAD FORM ═══════════════════ -->
-      <section id="page-field-lead" class="page">
+      <section id="page-field-lead" class="page" data-crm-header-title="Create New Lead">
         <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell>
           <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
           <div class="crm-dashboard-mini-body">
             <div class="new-lead-wrap fl-acculynx">
               <div class="page-actions" style="display:none;">
                 <button class="btn back-to-menu" type="button">Back to Main Menu</button>
-              </div>
-              <div class="fl-topbar">
-                <h1 class="fl-topbar-title">Create New Lead</h1>
-                <span class="fl-topbar-sub" id="fl-company-subtitle">for Hail Money</span>
               </div>
 
               <div class="fl-layout">
@@ -16220,8 +16204,8 @@
                         <label class="fl-checkbox-inline"><input type="checkbox" id="fl-billingSameAsMailing" checked /> Same as Mailing Address</label>
                       </div>
 
-                      <div class="fl-grid fl-grid-1 fl-with-rule">
-                        <div class="fl-field"><input id="fl-gclid" type="text" placeholder="GCLID" autocomplete="off" /></div>
+                      <div class="fl-field" style="display:none;">
+                        <input id="fl-gclid" type="text" placeholder="GCLID" autocomplete="off" />
                       </div>
                     </div>
                   </section>
@@ -16378,8 +16362,8 @@
                       <div class="fl-subhead">Initial Appointment</div>
                       <div class="fl-grid fl-grid-appt">
                         <div class="fl-field"><input id="fl-appointmentDate" type="date" placeholder="Appointment Date" /></div>
-                        <div class="fl-field"><input id="fl-appointmentStart" type="time" placeholder="Start Time" /></div>
-                        <div class="fl-field"><input id="fl-appointmentEnd" type="time" placeholder="End Time" /></div>
+                        <div class="fl-field"><label>Inspection Start Time</label><input id="fl-appointmentStart" type="time" placeholder="Inspection Start Time" /></div>
+                        <div class="fl-field"><label>Inspection End Time</label><input id="fl-appointmentEnd" type="time" placeholder="Inspection End Time" /></div>
                       </div>
                       <button type="button" class="fl-photo-btn" data-dashboard-action="calendar">
                         <span class="fl-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3v4M17 3v4M4 9h16M5 5h14v15H5z"></path></svg></span>
@@ -51805,13 +51789,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       };
     }
 
-    function crmUpdateFieldLeadCompanySubtitle() {
-      var el = document.getElementById('fl-company-subtitle');
-      if (!el) return;
-      var profile = typeof crmGetCompanyProfile === 'function' ? crmGetCompanyProfile() : {};
-      el.textContent = 'for ' + (profile && profile.companyName ? profile.companyName : 'Hail Money');
-    }
-
     function crmPopulateFieldLeadAssignTo() {
       var sel = document.getElementById('fl-assignTo');
       if (!sel) return;
@@ -51862,7 +51839,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var notesCount = document.getElementById('fl-notes-count'); if (notesCount) notesCount.textContent = '0';
 
       crmPopulateFieldLeadAssignTo();
-      crmUpdateFieldLeadCompanySubtitle();
 
       var sd = document.getElementById('fl-stormDate'); if (sd) sd.value = '';
       var canvasser = document.getElementById('fl-canvasser'); if (canvasser) canvasser.value = '';
