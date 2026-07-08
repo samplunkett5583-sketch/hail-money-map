@@ -1,0 +1,2052 @@
+diff --git a/public/index.html b/public/index.html
+index 8eec7f4..85dbbff 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -461,6 +461,14 @@
+     body.crm-standard-header-active .screen {
+       padding-top: 18px;
+     }
++    /* Calendar's sidebar/content should sit flush under the black header
++       and flush against the left/right viewport edges, not use the shared
++       .screen padding meant for simpler single-column pages (use
++       !important since a narrow-viewport media query re-applies its own
++       padding at the same specificity). */
++    body.calendar-page-active .screen {
++      padding: 0 !important;
++    }
+ 
+     body.crm-standard-header-active .topbar-left {
+       grid-column: 1;
+@@ -7469,12 +7477,12 @@
+     .crm-calendar-quick-popup {
+       position: fixed;
+       z-index: 55;
+-      width: 340px;
++      width: 448px;
+       max-width: calc(100vw - 24px);
+-      background: #fff;
++      background: #f8f9fa;
+       border: 1px solid #dadce0;
+-      border-radius: 24px;
+-      box-shadow: 0 12px 36px rgba(60, 64, 67, 0.3);
++      border-radius: 16px;
++      box-shadow: 0 4px 8px rgba(60, 64, 67, 0.15), 0 8px 24px rgba(60, 64, 67, 0.18);
+       color: #202124;
+       overflow: hidden;
+     }
+@@ -7523,7 +7531,7 @@
+     .crm-calendar-quick-tabs {
+       display: flex;
+       align-items: center;
+-      gap: 18px;
++      gap: 16px;
+       margin: 0 0 14px 40px;
+       overflow-x: auto;
+       padding-bottom: 2px;
+@@ -7562,6 +7570,34 @@
+     .crm-calendar-quick-date-copy {
+       min-width: 0;
+       flex: 1 1 auto;
++      display: flex;
++      flex-direction: column;
++      gap: 2px;
++      align-items: flex-start;
++    }
++    .crm-calendar-quick-repeat-caption {
++      border: none;
++      background: transparent;
++      padding: 0;
++      margin: 0;
++      font-size: 12.5px;
++      color: #5f6368;
++      cursor: pointer;
++      text-align: left;
++    }
++    .crm-calendar-quick-repeat-caption:hover {
++      color: #202124;
++      text-decoration: underline;
++    }
++    .crm-calendar-quick-addtime-btn {
++      flex: 0 0 auto;
++      align-self: flex-start;
++      margin-top: 2px;
++    }
++    .crm-calendar-quick-time-row-inline {
++      display: flex;
++      margin: 0;
++      flex: 0 0 auto;
+     }
+     .crm-calendar-quick-date-main,
+     .crm-calendar-quick-owner-name,
+@@ -7797,6 +7833,474 @@
+       cursor: pointer;
+       box-shadow: 0 1px 2px rgba(26, 115, 232, 0.3);
+     }
++    .crm-calendar-editor-overlay {
++      position: fixed;
++      inset: 0;
++      z-index: 60;
++      background: rgba(32, 33, 36, 0.5);
++      display: flex;
++      align-items: center;
++      justify-content: center;
++      padding: 24px;
++    }
++    .crm-calendar-editor-modal {
++      width: min(880px, 100%);
++      max-height: calc(100vh - 48px);
++      overflow-y: auto;
++      background: #fff;
++      border-radius: 8px;
++      box-shadow: 0 8px 10px -5px rgba(0,0,0,0.2), 0 16px 24px 2px rgba(0,0,0,0.14), 0 6px 30px 5px rgba(0,0,0,0.12);
++      color: #202124;
++    }
++    .crm-calendar-editor-topbar {
++      display: flex;
++      align-items: center;
++      gap: 14px;
++      padding: 14px 20px 0;
++    }
++    .crm-calendar-editor-title-wrap {
++      flex: 1 1 auto;
++      min-width: 0;
++      border-bottom: 2px solid #1a73e8;
++    }
++    .crm-calendar-editor-title-input {
++      width: 100%;
++      border: none;
++      outline: none;
++      padding: 4px 2px 10px;
++      font-size: 22px;
++      font-weight: 400;
++      color: #202124;
++      background: transparent;
++    }
++    .crm-calendar-editor-title-input::placeholder {
++      color: #5f6368;
++    }
++    .crm-calendar-editor-save-btn {
++      border-radius: 18px !important;
++      flex: 0 0 auto;
++    }
++    .crm-calendar-editor-datetime-row {
++      display: flex;
++      align-items: center;
++      flex-wrap: wrap;
++      gap: 10px;
++      padding: 14px 20px 0 58px;
++    }
++    .crm-calendar-editor-date-input {
++      min-height: 34px;
++      border: 1px solid #dadce0;
++      border-radius: 8px;
++      padding: 0 10px;
++      background: #fff;
++      color: #202124;
++      font-size: 13px;
++      outline: none;
++    }
++    .crm-calendar-editor-datetime-sep {
++      font-size: 13px;
++      color: #5f6368;
++    }
++    .crm-calendar-editor-check-label {
++      display: inline-flex;
++      align-items: center;
++      gap: 8px;
++      font-size: 13px;
++      color: #202124;
++      cursor: pointer;
++      white-space: nowrap;
++    }
++    .crm-calendar-editor-check-label input[type="checkbox"] {
++      width: 16px;
++      height: 16px;
++      accent-color: #1a73e8;
++      cursor: pointer;
++    }
++    .crm-calendar-editor-repeat-select {
++      min-height: 34px;
++      border: 1px solid #dadce0;
++      border-radius: 8px;
++      padding: 0 10px;
++      background: #fff;
++      color: #202124;
++      font-size: 13px;
++      outline: none;
++    }
++    .crm-calendar-editor-time-select {
++      min-height: 34px;
++      border: 1px solid #dadce0;
++      border-radius: 8px;
++      padding: 0 8px;
++      background: #fff;
++      color: #202124;
++      font-size: 13px;
++      outline: none;
++    }
++    .crm-calendar-editor-tz-btn {
++      border: none;
++      background: transparent;
++      color: #1a73e8;
++      font-size: 13px;
++      font-weight: 500;
++      cursor: pointer;
++      padding: 4px 2px;
++      white-space: nowrap;
++    }
++    .crm-calendar-editor-tz-btn:hover {
++      text-decoration: underline;
++    }
++    .crm-calendar-editor-body-row {
++      display: flex;
++      align-items: flex-start;
++      gap: 0;
++      margin-top: 18px;
++      border-top: 1px solid #e8eaed;
++    }
++    .crm-calendar-editor-main {
++      flex: 1 1 auto;
++      min-width: 0;
++      padding: 16px 20px 20px 58px;
++    }
++    .crm-calendar-editor-tabs {
++      display: flex;
++      align-items: center;
++      gap: 20px;
++      margin: 0 0 16px;
++      border-bottom: 1px solid #e8eaed;
++    }
++    .crm-calendar-editor-tab {
++      border: none;
++      border-bottom: 2px solid transparent;
++      background: transparent;
++      color: #5f6368;
++      font-size: 13px;
++      font-weight: 500;
++      padding: 0 0 10px;
++      cursor: pointer;
++      white-space: nowrap;
++    }
++    .crm-calendar-editor-tab.is-active {
++      color: #1a73e8;
++      border-bottom-color: #1a73e8;
++    }
++    .crm-calendar-editor-row {
++      display: flex;
++      align-items: center;
++      gap: 14px;
++      min-height: 40px;
++      margin-bottom: 4px;
++    }
++    .crm-calendar-editor-row-btn {
++      width: 100%;
++      border: none;
++      background: transparent;
++      padding: 0;
++      text-align: left;
++      cursor: pointer;
++      color: #202124;
++      font-size: 14px;
++    }
++    .crm-calendar-editor-row-btn:hover {
++      color: #1a73e8;
++    }
++    .crm-calendar-editor-row-btn:hover .crm-calendar-quick-icon {
++      stroke: #1a73e8;
++    }
++    .crm-calendar-editor-subfield {
++      margin: -2px 0 8px 34px;
++    }
++    .crm-calendar-editor-subfield input {
++      width: 100%;
++      min-height: 34px;
++      border: 1px solid #dadce0;
++      border-radius: 8px;
++      padding: 0 10px;
++      background: #fff;
++      color: #202124;
++      font-size: 13px;
++      outline: none;
++    }
++    .crm-calendar-editor-inline-select {
++      min-height: 34px;
++      border: 1px solid #dadce0;
++      border-radius: 8px;
++      padding: 0 10px;
++      background: #fff;
++      color: #202124;
++      font-size: 13px;
++      outline: none;
++    }
++    .crm-calendar-editor-owner-row {
++      margin-top: 6px;
++    }
++    .crm-calendar-editor-description {
++      margin: 12px 0 0 34px;
++      border: 1px solid #dadce0;
++      border-radius: 8px;
++      overflow: hidden;
++    }
++    .crm-calendar-editor-desc-toolbar {
++      display: flex;
++      align-items: center;
++      gap: 4px;
++      padding: 6px 8px;
++      border-bottom: 1px solid #e8eaed;
++      background: #f8f9fa;
++    }
++    .crm-calendar-editor-desc-toolbar button {
++      min-width: 26px;
++      height: 26px;
++      padding: 0 6px;
++      border: none;
++      background: transparent;
++      color: #5f6368;
++      font-size: 12px;
++      white-space: nowrap;
++      border-radius: 4px;
++      cursor: default;
++    }
++    .crm-calendar-editor-description textarea {
++      width: 100%;
++      min-height: 90px;
++      border: none;
++      outline: none;
++      padding: 10px 12px;
++      font-size: 13px;
++      color: #202124;
++      font-family: inherit;
++      resize: vertical;
++    }
++    .crm-calendar-editor-crm-fields {
++      margin: 20px 0 0 34px;
++      padding-top: 16px;
++      border-top: 1px solid #e8eaed;
++    }
++    .crm-calendar-editor-crm-fields-head {
++      font-size: 12px;
++      font-weight: 600;
++      letter-spacing: 0.04em;
++      text-transform: uppercase;
++      color: #5f6368;
++      margin-bottom: 10px;
++    }
++    .crm-findtime-toolbar {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 12px;
++      margin-bottom: 12px;
++    }
++    .crm-findtime-daylabel {
++      font-size: 15px;
++      font-weight: 500;
++      color: #202124;
++    }
++    .crm-findtime-toolbar-right {
++      display: flex;
++      align-items: center;
++      gap: 10px;
++    }
++    .crm-findtime-viewtoggle {
++      display: flex;
++      border: 1px solid #dadce0;
++      border-radius: 8px;
++      overflow: hidden;
++    }
++    .crm-findtime-viewbtn {
++      border: none;
++      background: #fff;
++      color: #5f6368;
++      font-size: 12.5px;
++      font-weight: 500;
++      padding: 6px 12px;
++      cursor: pointer;
++    }
++    .crm-findtime-viewbtn + .crm-findtime-viewbtn {
++      border-left: 1px solid #dadce0;
++    }
++    .crm-findtime-viewbtn.is-active {
++      background: #e8f0fe;
++      color: #1a73e8;
++    }
++    .crm-findtime-body {
++      display: flex;
++      width: 100%;
++      max-width: 420px;
++      height: 420px;
++      overflow-y: auto;
++      overflow-x: hidden;
++      border: 1px solid #e8eaed;
++      border-radius: 8px;
++      position: relative;
++      scrollbar-width: thin;
++      scrollbar-color: #dadce0 transparent;
++    }
++    .crm-findtime-body::-webkit-scrollbar {
++      width: 8px;
++    }
++    .crm-findtime-body::-webkit-scrollbar-track {
++      background: transparent;
++    }
++    .crm-findtime-body::-webkit-scrollbar-thumb {
++      background: #dadce0;
++      border-radius: 4px;
++    }
++    .crm-findtime-body::-webkit-scrollbar-thumb:hover {
++      background: #bdc1c6;
++    }
++    .crm-findtime-hours {
++      flex: 0 0 52px;
++      position: relative;
++      height: 1152px;
++      background: #fbfbfb;
++      border-right: 1px solid #e8eaed;
++    }
++    .crm-findtime-hour-label {
++      position: absolute;
++      left: 0;
++      right: 8px;
++      text-align: right;
++      font-size: 11px;
++      color: #70757a;
++      transform: translateY(-6px);
++    }
++    .crm-findtime-grid {
++      flex: 1 1 auto;
++      position: relative;
++      height: 1152px;
++      background-image: repeating-linear-gradient(
++        to bottom,
++        #e8eaed 0,
++        #e8eaed 1px,
++        transparent 1px,
++        transparent 48px
++      );
++      cursor: crosshair;
++      user-select: none;
++    }
++    .crm-findtime-grid.is-all-day {
++      opacity: 0.55;
++    }
++    .crm-findtime-nowline {
++      position: absolute;
++      left: 0;
++      right: 0;
++      height: 0;
++      border-top: 2px solid #ea4335;
++      z-index: 3;
++      pointer-events: none;
++    }
++    .crm-findtime-nowline::before {
++      content: '';
++      position: absolute;
++      left: -5px;
++      top: -5px;
++      width: 9px;
++      height: 9px;
++      border-radius: 50%;
++      background: #ea4335;
++    }
++    .crm-findtime-block {
++      position: absolute;
++      left: 6px;
++      right: 6px;
++      min-height: 16px;
++      background: rgba(95, 99, 104, 0.18);
++      border: 1px solid #9aa0a6;
++      border-left: 3px solid #5f6368;
++      border-radius: 4px;
++      z-index: 2;
++      cursor: grab;
++      box-sizing: border-box;
++    }
++    .crm-findtime-block.is-dragging {
++      cursor: grabbing;
++      background: rgba(95, 99, 104, 0.28);
++    }
++    .crm-findtime-block-label {
++      font-size: 11.5px;
++      font-weight: 600;
++      color: #3c4043;
++      padding: 3px 8px;
++      white-space: nowrap;
++      overflow: hidden;
++      text-overflow: ellipsis;
++      pointer-events: none;
++    }
++    .crm-findtime-block-handle {
++      position: absolute;
++      left: 0;
++      right: 0;
++      height: 8px;
++      cursor: ns-resize;
++    }
++    .crm-findtime-block-handle-top {
++      top: -4px;
++    }
++    .crm-findtime-block-handle-bottom {
++      bottom: -4px;
++    }
++    .crm-calendar-editor-guests-panel {
++      flex: 0 0 260px;
++      min-width: 0;
++      padding: 16px 20px 20px;
++      border-left: 1px solid #e8eaed;
++    }
++    .crm-calendar-editor-guests-title {
++      font-size: 14px;
++      font-weight: 600;
++      color: #202124;
++      margin-bottom: 12px;
++    }
++    .crm-calendar-editor-guests-input {
++      width: 100%;
++      min-height: 34px;
++      border: 1px solid #dadce0;
++      border-radius: 8px;
++      padding: 0 10px;
++      background: #fff;
++      color: #202124;
++      font-size: 13px;
++      outline: none;
++      margin-bottom: 10px;
++    }
++    .crm-calendar-editor-guests-chips {
++      display: flex;
++      flex-wrap: wrap;
++      gap: 6px;
++      margin-bottom: 14px;
++    }
++    .crm-calendar-editor-guests-perms-head {
++      font-size: 12px;
++      font-weight: 600;
++      letter-spacing: 0.03em;
++      text-transform: uppercase;
++      color: #5f6368;
++      margin: 4px 0 10px;
++    }
++    .crm-calendar-editor-guests-panel .crm-calendar-editor-check-label {
++      display: flex;
++      margin-bottom: 10px;
++    }
++    @media (max-width: 760px) {
++      .crm-calendar-editor-body-row {
++        flex-direction: column;
++      }
++      .crm-calendar-editor-guests-panel {
++        flex: 1 1 auto;
++        border-left: none;
++        border-top: 1px solid #e8eaed;
++      }
++      .crm-calendar-editor-main,
++      .crm-calendar-editor-datetime-row {
++        padding-left: 20px;
++      }
++      .crm-calendar-editor-subfield,
++      .crm-calendar-editor-description,
++      .crm-calendar-editor-crm-fields {
++        margin-left: 0;
++      }
++    }
+     .crm-calendar-reminder-toast-host {
+       position: fixed;
+       top: 20px;
+@@ -8166,13 +8670,230 @@
+       border-color: #1a73e8;
+       box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+     }
++    .crm-calendar-body-row {
++      display: flex;
++      align-items: flex-start;
++      gap: 20px;
++    }
++    .crm-calendar-mini-sidebar {
++      flex: 0 0 232px;
++      width: 232px;
++      display: flex;
++      flex-direction: column;
++      gap: 18px;
++    }
++    .crm-calendar-create-btn {
++      display: inline-flex;
++      align-items: center;
++      gap: 10px;
++      align-self: flex-start;
++      background: #fff;
++      border: none;
++      border-radius: 24px;
++      padding: 10px 20px 10px 14px;
++      font-size: 14px;
++      font-weight: 500;
++      color: #3c4043;
++      cursor: pointer;
++      box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 8px rgba(60, 64, 67, 0.15);
++    }
++    .crm-calendar-create-btn:hover {
++      box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 6px 10px rgba(60, 64, 67, 0.2);
++    }
++    .crm-calendar-create-icon {
++      display: inline-flex;
++      width: 32px;
++      height: 32px;
++      border-radius: 50%;
++      background: #1a73e8;
++      color: #fff;
++      align-items: center;
++      justify-content: center;
++    }
++    .crm-calendar-create-icon svg {
++      width: 18px;
++      height: 18px;
++      stroke: currentColor;
++      stroke-width: 2.4;
++      stroke-linecap: round;
++      fill: none;
++    }
++    .crm-calendar-mini-month {
++      background: #fff;
++      border-radius: 10px;
++    }
++    .crm-calendar-mini-month-head {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      padding: 2px 2px 8px;
++    }
++    .crm-calendar-mini-month-label {
++      font-size: 13px;
++      font-weight: 600;
++      color: #3c4043;
++    }
++    .crm-calendar-mini-month-nav {
++      display: flex;
++      gap: 2px;
++    }
++    .crm-calendar-mini-nav-btn {
++      width: 24px;
++      height: 24px;
++      border-radius: 50%;
++      border: none;
++      background: transparent;
++      color: #5f6368;
++      cursor: pointer;
++      display: inline-flex;
++      align-items: center;
++      justify-content: center;
++    }
++    .crm-calendar-mini-nav-btn:hover {
++      background: #f1f3f4;
++    }
++    .crm-calendar-mini-nav-btn svg {
++      width: 14px;
++      height: 14px;
++      stroke: currentColor;
++      stroke-width: 2.2;
++      stroke-linecap: round;
++      fill: none;
++    }
++    .crm-calendar-mini-weekdays {
++      display: grid;
++      grid-template-columns: repeat(7, minmax(0, 1fr));
++      text-align: center;
++      font-size: 10px;
++      font-weight: 600;
++      color: #70757a;
++      margin-bottom: 2px;
++    }
++    .crm-calendar-mini-grid {
++      display: grid;
++      grid-template-columns: repeat(7, minmax(0, 1fr));
++      row-gap: 2px;
++    }
++    .crm-calendar-mini-day {
++      border: none;
++      background: transparent;
++      width: 100%;
++      aspect-ratio: 1 / 1;
++      border-radius: 50%;
++      font-size: 11px;
++      color: #3c4043;
++      cursor: pointer;
++      display: inline-flex;
++      align-items: center;
++      justify-content: center;
++    }
++    .crm-calendar-mini-day:hover {
++      background: #f1f3f4;
++    }
++    .crm-calendar-mini-day.outside {
++      color: #bdc1c6;
++    }
++    .crm-calendar-mini-day.today {
++      color: #1a73e8;
++      font-weight: 700;
++    }
++    .crm-calendar-mini-day.selected {
++      background: #1a73e8;
++      color: #fff;
++      font-weight: 600;
++    }
++    .crm-calendar-sidebar-search {
++      display: flex;
++      align-items: center;
++      gap: 8px;
++      background: #f1f3f4;
++      border-radius: 20px;
++      padding: 8px 12px;
++    }
++    .crm-calendar-sidebar-search svg {
++      width: 16px;
++      height: 16px;
++      stroke: #5f6368;
++      stroke-width: 2;
++      fill: none;
++      flex: 0 0 auto;
++    }
++    .crm-calendar-sidebar-search input {
++      border: none;
++      background: transparent;
++      outline: none;
++      font-size: 13px;
++      color: #3c4043;
++      width: 100%;
++    }
++    .crm-calendar-sidebar-mycal-head {
++      font-size: 13px;
++      font-weight: 600;
++      color: #3c4043;
++      margin-bottom: 8px;
++    }
++    .crm-calendar-sidebar-mycal-item {
++      display: flex;
++      align-items: center;
++      gap: 10px;
++      font-size: 13px;
++      color: #3c4043;
++      cursor: pointer;
++    }
++    .crm-calendar-sidebar-mycal-item input {
++      accent-color: #1a73e8;
++      width: 16px;
++      height: 16px;
++    }
++    .crm-calendar-sidebar-mycal-dot {
++      display: none;
++    }
++    .crm-calendar-print-btn {
++      display: inline-flex;
++      align-items: center;
++      gap: 8px;
++      align-self: flex-start;
++      background: none;
++      border: 1px solid #dadce0;
++      border-radius: 18px;
++      padding: 7px 16px;
++      font-size: 13px;
++      font-weight: 500;
++      color: #3c4043;
++      cursor: pointer;
++    }
++    .crm-calendar-print-btn:hover {
++      background: #f1f3f4;
++    }
++    .crm-calendar-print-btn svg {
++      width: 15px;
++      height: 15px;
++      stroke: currentColor;
++      stroke-width: 2;
++      fill: none;
++    }
+     .crm-calendar-stage-shell {
++      flex: 1 1 auto;
++      min-width: 0;
+       background: #fff;
+       border: 1px solid #d7dfe8;
+       border-radius: 28px;
+       overflow: hidden;
+       box-shadow: 0 1px 3px rgba(60, 64, 67, 0.1);
+     }
++    @media (max-width: 1180px) {
++      .crm-calendar-body-row {
++        flex-direction: column;
++      }
++      .crm-calendar-mini-sidebar {
++        width: 100%;
++        flex-direction: row;
++        flex-wrap: wrap;
++        align-items: center;
++      }
++      .crm-calendar-mini-month { display: none; }
++      .crm-calendar-sidebar-search { flex: 1 1 220px; }
++    }
+     .crm-calendar-weekdays {
+       display: grid;
+       grid-template-columns: repeat(7, minmax(0, 1fr));
+@@ -9428,10 +10149,17 @@
+     body.new-lead-page-active,
+     body.reminder-page-active,
+     body.task-compose-page-active {
+-      --crm-mini-shell-header-offset: 118px;
++      --crm-mini-shell-header-offset: 132px;
+     }
+     body.inspection-dashboard-shell-page-active {
+-      --crm-mini-shell-header-offset: 118px;
++      --crm-mini-shell-header-offset: 132px;
++    }
++    /* Create New Lead's header is taller than its new-contact/reminder/
++       task-compose siblings because it alone shows the "Main Menu"
++       subtitle under the centered brand — its own offset must win over
++       the shared 132px value above. */
++    body.field-lead-page-active {
++      --crm-mini-shell-header-offset: 155px;
+     }
+     body.new-contact-page-active .screen,
+     body.new-lead-page-active .screen,
+@@ -9451,9 +10179,9 @@
+     body.new-lead-page-active .topbar,
+     body.reminder-page-active .topbar,
+     body.task-compose-page-active .topbar {
+-      background: #090909;
+-      border-bottom-color: #090909;
+-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
++      background: #1a1a2e;
++      border-bottom-color: #1a1a2e;
++      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.88);
+     }
+     body.new-contact-page-active .topbar,
+     body.new-lead-page-active .topbar,
+@@ -9556,6 +10284,49 @@
+       background: rgba(255, 255, 255, 0.1);
+       border-color: #f0cd7e;
+     }
++    /* Calendar uses the same navy header treatment as Dashboard/Create New
++       Lead (same .topbar component/classes) — color scheme only, since the
++       sidebar/content already start correctly under Calendar's sticky
++       header without needing position:fixed. */
++    body.calendar-page-active .topbar {
++      background: #1a1a2e;
++      border-bottom-color: #1a1a2e;
++      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.88);
++    }
++    /* "Main Menu" under the centered Hail Money brand: reuses the same
++       .map-header-center-subtitle element/text Dashboard and Pipeline
++       already show (hidden by default everywhere else). */
++    body.field-lead-page-active .map-header-center-subtitle,
++    body.calendar-page-active .map-header-center-subtitle {
++      display: block !important;
++    }
++    body.calendar-page-active .crm-header-page-title,
++    body.calendar-page-active .crm-header-inline-title,
++    body.calendar-page-active .map-header-center-heading,
++    body.calendar-page-active .map-header-center-subtitle,
++    body.calendar-page-active .crm-profile-name,
++    body.calendar-page-active .crm-profile-role,
++    body.calendar-page-active .crm-profile-caret,
++    body.calendar-page-active .jf-notif-btn {
++      color: #ffffff;
++    }
++    body.calendar-page-active .crm-profile-toggle {
++      background: rgba(255, 255, 255, 0.05);
++      border-color: rgba(232, 190, 94, 0.7);
++      color: #ffffff;
++    }
++    body.calendar-page-active .crm-profile-toggle:hover,
++    body.calendar-page-active .crm-profile-toggle:focus-visible,
++    body.calendar-page-active .crm-profile-menu.is-open .crm-profile-toggle {
++      background: rgba(255, 255, 255, 0.1);
++      border-color: #f0cd7e;
++      box-shadow: 0 0 0 3px rgba(232, 190, 94, 0.16);
++    }
++    body.calendar-page-active .crm-profile-avatar {
++      border-color: rgba(240, 205, 126, 0.62);
++      background: rgba(232, 190, 94, 0.2);
++      color: #f7de9a;
++    }
+     body.new-contact-page-active .screen,
+     body.new-lead-page-active .screen,
+     body.reminder-page-active .screen,
+@@ -10039,6 +10810,16 @@
+       margin-left: 0;
+       margin-right: 0;
+     }
++    /* Calendar always has its own left nav (Meetings), so the global
++       header's "back" button/gap (shown when arriving from another page,
++       e.g. the "Schedule / View Calendar" button on Create New Lead) is
++       redundant here and was pushing the sidebar/content down. */
++    body.calendar-page-active.crm-standard-header-back-visible .topbar {
++      margin-bottom: 0;
++    }
++    body.calendar-page-active #global-header-back-btn {
++      display: none !important;
++    }
+     @media (max-width: 960px) {
+       #page-field-lead .new-lead-wrap {
+         transform: none;
+@@ -15258,15 +16039,6 @@
+           <div class="crm-calendar-shell">
+             <div class="crm-calendar-topbar">
+               <div class="crm-calendar-topbar-left">
+-                <button class="crm-calendar-icon-btn back-to-menu" type="button" aria-label="Main menu">
+-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+-                </button>
+-                <div class="crm-calendar-brand">
+-                  <div class="crm-calendar-brand-icon" aria-hidden="true">
+-                    <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
+-                  </div>
+-                  <div class="crm-calendar-app-title">Calendar</div>
+-                </div>
+                 <button class="crm-calendar-today-btn" type="button" id="calendar-today-btn">Today</button>
+                 <div class="crm-calendar-nav-group">
+                   <button class="crm-calendar-icon-btn" type="button" id="calendar-prev-btn" aria-label="Previous">
+@@ -15290,6 +16062,9 @@
+                 <button class="crm-calendar-icon-btn" type="button" aria-label="Search calendar">
+                   <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.35-4.35"></path></svg>
+                 </button>
++                <button class="crm-calendar-icon-btn" type="button" id="calendar-settings-btn" aria-label="Calendar settings">
++                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 13a7.97 7.97 0 0 0 0-2l2.05-1.6-2-3.46-2.42.97a8 8 0 0 0-1.73-1L14.9 3h-4l-.4 2.9a8 8 0 0 0-1.73 1l-2.42-.97-2 3.46L6 11a7.97 7.97 0 0 0 0 2l-2.05 1.6 2 3.46 2.42-.97a8 8 0 0 0 1.73 1L10.9 21h4l.4-2.9a8 8 0 0 0 1.73-1l2.42.97 2-3.46z"></path></svg>
++                </button>
+                 <select id="calendar-view-select" class="crm-calendar-view-select">
+                   <option value="month">Month</option>
+                   <option value="week">Week</option>
+@@ -15321,90 +16096,239 @@
+ 
+             <div id="calendar-reminder-banner" class="crm-appt-reminder-banner" style="display:none;"></div>
+ 
+-            <div class="crm-task-form-card crm-calendar-form-card" id="calendar-form-card" style="display:none;">
+-              <div class="form-section-header" id="calendar-form-title">NEW APPOINTMENT</div>
+-              <input id="calendar-edit-id" type="hidden" />
+-              <input id="calendar-lead-id" type="hidden" />
+-              <input id="calendar-job-id" type="hidden" />
+-              <div class="field-grid" style="margin-top:10px;">
+-                <div class="field">
+-                  <label for="calendar-type">Appointment Type <span class="req">*</span></label>
+-                  <select id="calendar-type">
+-                    <option value="Event">Event</option>
+-                    <option value="Adjuster Appointment">Adjuster Appointment</option>
+-                    <option value="Homeowner Follow-Up">Homeowner Follow-Up</option>
+-                    <option value="Inspection">Inspection</option>
+-                    <option value="Contract Signing">Contract Signing</option>
+-                    <option value="Production Start">Production Start</option>
+-                    <option value="Manager Meeting">Manager Meeting</option>
+-                    <option value="Office Reminder">Office Reminder</option>
+-                  </select>
+-                </div>
+-                <div class="field">
+-                  <label for="calendar-date">Date <span class="req">*</span></label>
+-                  <input id="calendar-date" type="date" />
+-                </div>
+-                <div class="field">
+-                  <label for="calendar-time">Time <span class="req">*</span></label>
+-                  <input id="calendar-time" type="time" />
+-                </div>
+-                <div class="field">
+-                  <label for="calendar-assigned-rep">Assigned Rep <span class="req">*</span></label>
+-                  <select id="calendar-assigned-rep"></select>
+-                </div>
+-                <div class="field">
+-                  <label for="calendar-customer-name">Customer Name</label>
+-                  <input id="calendar-customer-name" type="text" placeholder="Customer name" autocomplete="off" />
+-                </div>
+-                <div class="field full">
+-                  <label for="calendar-address">Address</label>
+-                  <input id="calendar-address" type="text" placeholder="Address" autocomplete="off" />
+-                </div>
+-                <div class="field">
+-                  <label for="calendar-adjuster-name">Adjuster Name</label>
+-                  <input id="calendar-adjuster-name" type="text" placeholder="Adjuster name" autocomplete="off" />
+-                </div>
+-                <div class="field">
+-                  <label for="calendar-adjuster-phone">Adjuster Phone</label>
+-                  <input id="calendar-adjuster-phone" type="tel" placeholder="Adjuster phone" />
+-                </div>
+-                <div class="field full">
+-                  <label for="calendar-meeting-link">Meeting Link</label>
+-                  <input id="calendar-meeting-link" type="url" placeholder="https://..." />
++            <div class="crm-calendar-editor-overlay" id="calendar-form-card" style="display:none;">
++              <div class="crm-calendar-editor-modal">
++                <div class="crm-calendar-editor-topbar">
++                  <button class="crm-calendar-icon-btn" type="button" id="calendar-cancel-btn" aria-label="Close">
++                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
++                  </button>
++                  <div class="crm-calendar-editor-title-wrap">
++                    <input id="calendar-full-title" class="crm-calendar-editor-title-input" type="text" placeholder="Add title" autocomplete="off" />
++                  </div>
++                  <button class="btn btn-primary crm-calendar-editor-save-btn" type="button" id="calendar-save-btn">Save</button>
+                 </div>
+-                <div class="field">
+-                  <label for="calendar-reminder">Reminder</label>
+-                  <select id="calendar-reminder">
+-                    <option value="15">15 minutes before</option>
+-                    <option value="30">30 minutes before</option>
+-                    <option value="60" selected>1 hour before</option>
+-                    <option value="1440">1 day before</option>
++                <div class="crm-calendar-editor-datetime-row">
++                  <input id="calendar-date" type="date" class="crm-calendar-editor-date-input" />
++                  <select id="calendar-findtime-start-time" class="crm-calendar-editor-time-select"></select>
++                  <span class="crm-calendar-editor-datetime-sep">to</span>
++                  <select id="calendar-findtime-end-time" class="crm-calendar-editor-time-select"></select>
++                  <input id="calendar-date-end" type="date" class="crm-calendar-editor-date-input" />
++                  <button type="button" class="crm-calendar-editor-tz-btn" id="calendar-editor-tz-btn"></button>
++                  <label class="crm-calendar-editor-check-label">
++                    <input id="calendar-form-all-day" type="checkbox" checked /> All day
++                  </label>
++                  <select id="calendar-form-repeat" class="crm-calendar-editor-repeat-select">
++                    <option value="none" selected>Does not repeat</option>
++                    <option value="daily">Daily</option>
++                    <option value="weekly">Weekly</option>
++                    <option value="monthly">Monthly</option>
++                    <option value="yearly">Yearly</option>
+                   </select>
++                  <input id="calendar-time" type="hidden" />
++                  <input id="calendar-time-end" type="hidden" />
+                 </div>
+-                <div class="field full">
+-                  <label for="calendar-notes">Notes</label>
+-                  <textarea id="calendar-notes" placeholder="Notes..." style="min-height:88px;"></textarea>
++
++                <div class="crm-calendar-editor-body-row">
++                  <div class="crm-calendar-editor-main">
++                    <div class="crm-calendar-editor-tabs">
++                      <button type="button" class="crm-calendar-editor-tab is-active" data-crm-editor-tab="details">Event details</button>
++                      <button type="button" class="crm-calendar-editor-tab" data-crm-editor-tab="findtime">Find a time</button>
++                    </div>
++
++                    <div class="crm-calendar-editor-pane" data-crm-editor-pane="details">
++                      <button type="button" class="crm-calendar-editor-row crm-calendar-editor-row-btn" data-crm-editor-toggle="meet">
++                        <svg class="crm-calendar-quick-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H4z"></path><path d="M10 9l5 3-5 3z"></path></svg>
++                        <span id="calendar-editor-meet-label">Add Google Meet video conferencing</span>
++                      </button>
++                      <div class="crm-calendar-editor-subfield" id="calendar-meeting-link-wrap" style="display:none;">
++                        <input id="calendar-meeting-link" type="url" placeholder="https://meet.google.com/..." />
++                      </div>
++
++                      <button type="button" class="crm-calendar-editor-row crm-calendar-editor-row-btn" data-crm-editor-toggle="location">
++                        <svg class="crm-calendar-quick-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-4.35-6-10a6 6 0 1 1 12 0c0 5.65-6 10-6 10z"></path><circle cx="12" cy="11" r="2.5"></circle></svg>
++                        <span id="calendar-editor-location-label">Add location</span>
++                      </button>
++                      <div class="crm-calendar-editor-subfield" id="calendar-address-wrap" style="display:none;">
++                        <input id="calendar-address" type="text" placeholder="Address" autocomplete="off" />
++                      </div>
++
++                      <div class="crm-calendar-editor-row">
++                        <svg class="crm-calendar-quick-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5l3 2"></path><circle cx="12" cy="12" r="9"></circle></svg>
++                        <select id="calendar-reminder" class="crm-calendar-editor-inline-select">
++                          <option value="15">15 minutes before</option>
++                          <option value="30">30 minutes before</option>
++                          <option value="60" selected>1 hour before</option>
++                          <option value="1440">1 day before</option>
++                        </select>
++                        <button type="button" class="crm-calendar-quick-link-btn" id="calendar-add-notification-btn">Add notification</button>
++                      </div>
++
++                      <div class="crm-calendar-editor-row crm-calendar-editor-owner-row">
++                        <svg class="crm-calendar-quick-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 2-2z"></path></svg>
++                        <div>
++                          <div class="crm-calendar-quick-owner-name" id="calendar-editor-owner-name">Test Rep</div>
++                          <div class="crm-calendar-quick-owner-sub">Calendar owner</div>
++                        </div>
++                      </div>
++
++                      <div class="crm-calendar-editor-row">
++                        <svg class="crm-calendar-quick-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
++                        <select id="calendar-busy-status" class="crm-calendar-editor-inline-select">
++                          <option value="busy" selected>Busy</option>
++                          <option value="free">Free</option>
++                        </select>
++                        <select id="calendar-visibility-select" class="crm-calendar-editor-inline-select">
++                          <option value="default" selected>Default visibility</option>
++                          <option value="public">Public</option>
++                          <option value="private">Private</option>
++                        </select>
++                      </div>
++
++                      <div class="crm-calendar-editor-description">
++                        <div class="crm-calendar-editor-desc-toolbar" aria-hidden="true">
++                          <button type="button"><b>B</b></button>
++                          <button type="button"><i>I</i></button>
++                          <button type="button"><u>U</u></button>
++                          <button type="button">&#8226; List</button>
++                        </div>
++                        <textarea id="calendar-notes" placeholder="Add description"></textarea>
++                      </div>
++
++                      <div class="crm-calendar-editor-crm-fields">
++                        <div class="crm-calendar-editor-crm-fields-head">Job details</div>
++                        <div class="field-grid">
++                          <div class="field">
++                            <label for="calendar-type">Appointment Type <span class="req">*</span></label>
++                            <select id="calendar-type">
++                              <option value="Event">Event</option>
++                              <option value="Adjuster Appointment">Adjuster Appointment</option>
++                              <option value="Homeowner Follow-Up">Homeowner Follow-Up</option>
++                              <option value="Inspection">Inspection</option>
++                              <option value="Contract Signing">Contract Signing</option>
++                              <option value="Production Start">Production Start</option>
++                              <option value="Manager Meeting">Manager Meeting</option>
++                              <option value="Office Reminder">Office Reminder</option>
++                            </select>
++                          </div>
++                          <div class="field">
++                            <label for="calendar-assigned-rep">Assigned Rep <span class="req">*</span></label>
++                            <select id="calendar-assigned-rep"></select>
++                          </div>
++                          <div class="field">
++                            <label for="calendar-customer-name">Customer Name</label>
++                            <input id="calendar-customer-name" type="text" placeholder="Customer name" autocomplete="off" />
++                          </div>
++                          <div class="field">
++                            <label for="calendar-adjuster-name">Adjuster Name</label>
++                            <input id="calendar-adjuster-name" type="text" placeholder="Adjuster name" autocomplete="off" />
++                          </div>
++                          <div class="field">
++                            <label for="calendar-adjuster-phone">Adjuster Phone</label>
++                            <input id="calendar-adjuster-phone" type="tel" placeholder="Adjuster phone" />
++                          </div>
++                        </div>
++                      </div>
++                    </div>
++
++                    <div class="crm-calendar-editor-pane" data-crm-editor-pane="findtime" style="display:none;">
++                      <div class="crm-findtime-toolbar">
++                        <div class="crm-findtime-daylabel" id="calendar-findtime-daylabel">&nbsp;</div>
++                        <div class="crm-findtime-toolbar-right">
++                          <div class="crm-findtime-viewtoggle">
++                            <button type="button" class="crm-findtime-viewbtn is-active" data-crm-findtime-view="day">Day</button>
++                            <button type="button" class="crm-findtime-viewbtn" data-crm-findtime-view="week">Week</button>
++                          </div>
++                          <button type="button" class="crm-calendar-icon-btn" id="calendar-findtime-settings-btn" aria-label="Schedule settings">
++                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h13M21 18h-1"></path><circle cx="16" cy="6" r="2"></circle><circle cx="8" cy="12" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg>
++                          </button>
++                        </div>
++                      </div>
++                      <div class="crm-findtime-body" id="calendar-findtime-body">
++                        <div class="crm-findtime-hours" id="calendar-findtime-hours"></div>
++                        <div class="crm-findtime-grid" id="calendar-findtime-grid">
++                          <div class="crm-findtime-nowline" id="calendar-findtime-nowline" style="display:none;"></div>
++                          <div class="crm-findtime-block" id="calendar-findtime-block">
++                            <div class="crm-findtime-block-handle crm-findtime-block-handle-top" data-crm-findtime-handle="top"></div>
++                            <div class="crm-findtime-block-label" id="calendar-findtime-block-label"></div>
++                            <div class="crm-findtime-block-handle crm-findtime-block-handle-bottom" data-crm-findtime-handle="bottom"></div>
++                          </div>
++                        </div>
++                      </div>
++                    </div>
++                  </div>
++
++                  <aside class="crm-calendar-editor-guests-panel">
++                    <div class="crm-calendar-editor-guests-title">Guests</div>
++                    <input id="calendar-editor-guests-input" class="crm-calendar-editor-guests-input" type="text" placeholder="Add guests" autocomplete="off" />
++                    <div class="crm-calendar-editor-guests-chips" id="calendar-editor-guests-chips"></div>
++                    <div class="crm-calendar-editor-guests-perms-head">Guest permissions</div>
++                    <label class="crm-calendar-editor-check-label"><input id="calendar-guest-modify" type="checkbox" /> Modify event</label>
++                    <label class="crm-calendar-editor-check-label"><input id="calendar-guest-invite" type="checkbox" checked /> Invite others</label>
++                    <label class="crm-calendar-editor-check-label"><input id="calendar-guest-seelist" type="checkbox" checked /> See guest list</label>
++                  </aside>
+                 </div>
++
++                <input id="calendar-edit-id" type="hidden" />
++                <input id="calendar-lead-id" type="hidden" />
++                <input id="calendar-job-id" type="hidden" />
++                <span id="calendar-form-title" hidden>NEW APPOINTMENT</span>
++                <div id="calendar-validation-msg" class="validation-msg" style="display:none;margin:0 20px 12px;"></div>
++                <div id="calendar-save-msg" class="save-confirmation" style="display:none;margin:0 20px 12px;">Appointment saved.</div>
+               </div>
+-              <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+-                <button class="btn btn-primary" type="button" id="calendar-save-btn">Save Appointment</button>
+-                <button class="btn" type="button" id="calendar-cancel-btn">Cancel</button>
+-              </div>
+-              <div id="calendar-validation-msg" class="validation-msg" style="display:none;margin-top:10px;"></div>
+-              <div id="calendar-save-msg" class="save-confirmation" style="display:none;margin-top:10px;">Appointment saved.</div>
+             </div>
+ 
+-            <div class="crm-calendar-stage-shell">
+-              <div id="calendar-weekdays" class="crm-calendar-weekdays">
+-                <div class="crm-calendar-weekday">Sun</div>
+-                <div class="crm-calendar-weekday">Mon</div>
+-                <div class="crm-calendar-weekday">Tue</div>
+-                <div class="crm-calendar-weekday">Wed</div>
+-                <div class="crm-calendar-weekday">Thu</div>
+-                <div class="crm-calendar-weekday">Fri</div>
+-                <div class="crm-calendar-weekday">Sat</div>
++            <div class="crm-calendar-body-row">
++              <aside class="crm-calendar-mini-sidebar">
++                <button class="crm-calendar-create-btn" type="button" id="calendar-sidebar-create-btn">
++                  <span class="crm-calendar-create-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg></span>
++                  Create
++                </button>
++                <div class="crm-calendar-mini-month" id="calendar-mini-month">
++                  <div class="crm-calendar-mini-month-head">
++                    <div class="crm-calendar-mini-month-label" id="calendar-mini-month-label"></div>
++                    <div class="crm-calendar-mini-month-nav">
++                      <button class="crm-calendar-mini-nav-btn" type="button" id="calendar-mini-prev-btn" aria-label="Previous month">
++                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
++                      </button>
++                      <button class="crm-calendar-mini-nav-btn" type="button" id="calendar-mini-next-btn" aria-label="Next month">
++                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
++                      </button>
++                    </div>
++                  </div>
++                  <div class="crm-calendar-mini-weekdays">
++                    <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
++                  </div>
++                  <div class="crm-calendar-mini-grid" id="calendar-mini-grid"></div>
++                </div>
++                <div class="crm-calendar-sidebar-search">
++                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.35-4.35"></path></svg>
++                  <input type="text" placeholder="Search for people" autocomplete="off" />
++                </div>
++                <div class="crm-calendar-sidebar-mycal">
++                  <div class="crm-calendar-sidebar-mycal-head">My calendars</div>
++                  <label class="crm-calendar-sidebar-mycal-item">
++                    <input type="checkbox" checked />
++                    <span class="crm-calendar-sidebar-mycal-dot" aria-hidden="true"></span>
++                    Calendar
++                  </label>
++                </div>
++                <button class="crm-calendar-print-btn" type="button" id="calendar-print-btn">
++                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"></path><rect x="4" y="9" width="16" height="8" rx="1"></rect><path d="M6 14h12v7H6z"></path></svg>
++                  Print
++                </button>
++              </aside>
++              <div class="crm-calendar-stage-shell">
++                <div id="calendar-weekdays" class="crm-calendar-weekdays">
++                  <div class="crm-calendar-weekday">Sun</div>
++                  <div class="crm-calendar-weekday">Mon</div>
++                  <div class="crm-calendar-weekday">Tue</div>
++                  <div class="crm-calendar-weekday">Wed</div>
++                  <div class="crm-calendar-weekday">Thu</div>
++                  <div class="crm-calendar-weekday">Fri</div>
++                  <div class="crm-calendar-weekday">Sat</div>
++                </div>
++                <div id="calendar-view-content" class="crm-calendar-view-content"></div>
+               </div>
+-              <div id="calendar-view-content" class="crm-calendar-view-content"></div>
+             </div>
+             <div id="calendar-detail-card" class="crm-calendar-detail-card" style="display:none;">
+               <div id="calendar-detail-content" class="crm-calendar-detail-placeholder">
+@@ -15416,6 +16340,8 @@
+             </div>
+           </div>
+         </div>
++          </div>
++        </div>
+       </section>
+ 
+       <!-- ═══════════════════ CRM: JOBS (converted leads) ═══════════════════ -->
+@@ -15472,8 +16398,6 @@
+             </div>
+           </div>
+         </div>
+-          </div>
+-        </div>
+       </section>
+ 
+       <section id="page-crm-financial-worksheet" class="page" data-crm-header-title="Financial Worksheet">
+@@ -17091,6 +18015,7 @@
+         || pageId === 'page-field-lead'
+         || pageId === 'page-canvasser-lead');
+       document.body.classList.toggle('field-lead-page-active', pageId === 'page-field-lead');
++      document.body.classList.toggle('calendar-page-active', pageId === 'page-crm-calendar');
+       document.body.classList.toggle('contacts-page-active', pageId === 'page-crm-contacts');
+       document.body.classList.toggle('reminder-page-active', pageId === 'page-crm-reminder');
+       document.body.classList.toggle('task-compose-page-active', pageId === 'page-crm-task');
+@@ -39920,9 +40845,22 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+         el.src = dashboardCompanyLogo;
+         el.alt = String(dashboardCompanyProfile && dashboardCompanyProfile.companyName || 'Company Logo');
+       });
++      /* Sidebar logo slot: only ever shows the customer's own uploaded
++         company logo (same crmGetCompanyLogoUrl() source as the Settings
++         company header). Unlike the header logo above, it never falls back
++         to the Hail Money app logo — that branding already lives in the
++         centered Hail Money mark, so duplicating it here reads as an extra
++         logo. Hide the slot entirely until a company logo is uploaded. */
++      var dashboardUploadedCompanyLogo = crmGetCompanyLogoUrl();
+       root.querySelectorAll('[data-dashboard-sidebar-logo], #dash-sidebar-company-logo').forEach(function (el) {
+-        el.src = dashboardCompanyLogo;
+-        el.alt = String(dashboardCompanyProfile && dashboardCompanyProfile.companyName || 'Company Logo');
++        var logoBox = el.closest('.logo') || el;
++        if (dashboardUploadedCompanyLogo) {
++          el.src = dashboardUploadedCompanyLogo;
++          el.alt = String(dashboardCompanyProfile && dashboardCompanyProfile.companyName || 'Company Logo');
++          logoBox.style.display = '';
++        } else {
++          logoBox.style.display = 'none';
++        }
+       });
+ 
+       var dashboardUserName = (typeof crmGetCurrentUserName === 'function' ? crmGetCurrentUserName() : '') || 'User';
+@@ -43243,11 +44181,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+     var _crmCalendarFilterSearch = '';
+ 
+     document.getElementById('calendar-add-btn').addEventListener('click', function () {
+-      crmOpenAppointmentForm({
+-        assignedRep: crmGetCalendarDefaultAssignedRepName(),
+-        type: 'Event',
+-        date: _crmCalendarSelectedDate || crmGetTodayDateStr()
+-      });
++      crmOpenQuickEventPopup(_crmCalendarSelectedDate || crmGetTodayDateStr(), null, null);
+     });
+ 
+     document.getElementById('calendar-today-btn').addEventListener('click', function () {
+@@ -43478,11 +44412,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       var quickPopup = document.getElementById('calendar-quick-popup');
+       var insideQuick = !!(quickPopup && quickPopup.contains(e.target));
+       var clickedDateCell = e.target.closest('[data-crm-cal-date]');
++      var clickedCreateBtn = e.target.closest('#calendar-add-btn') || e.target.closest('#calendar-sidebar-create-btn');
+       if (_crmCalendarPickerOpen && !insidePicker) {
+         _crmCalendarPickerOpen = false;
+         crmRenderCalendarPicker();
+       }
+-      if (_crmCalendarQuickOpen && !insideQuick && !clickedDateCell) {
++      if (_crmCalendarQuickOpen && !insideQuick && !clickedDateCell && !clickedCreateBtn) {
+         crmCloseQuickEventPopup();
+         crmRenderCalendar();
+       }
+@@ -43746,6 +44681,92 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       crmCloseAppointmentForm();
+     });
+ 
++    document.getElementById('calendar-form-card').addEventListener('click', function (e) {
++      if (e.target === e.currentTarget) {
++        crmCloseAppointmentForm();
++        return;
++      }
++      var tabBtn = e.target.closest('[data-crm-editor-tab]');
++      if (tabBtn) {
++        crmSetAppointmentFormTab(tabBtn.getAttribute('data-crm-editor-tab'));
++        return;
++      }
++      var toggleBtn = e.target.closest('[data-crm-editor-toggle]');
++      if (toggleBtn) {
++        var which = toggleBtn.getAttribute('data-crm-editor-toggle');
++        if (which === 'meet') {
++          var meetWrap = document.getElementById('calendar-meeting-link-wrap');
++          var showMeet = meetWrap.style.display === 'none';
++          meetWrap.style.display = showMeet ? 'block' : 'none';
++          if (showMeet) document.getElementById('calendar-meeting-link').focus();
++        } else if (which === 'location') {
++          var addrWrap = document.getElementById('calendar-address-wrap');
++          var showAddr = addrWrap.style.display === 'none';
++          addrWrap.style.display = showAddr ? 'block' : 'none';
++          if (showAddr) document.getElementById('calendar-address').focus();
++        }
++        return;
++      }
++      var guestRemoveBtn = e.target.closest('[data-crm-editor-guest-remove]');
++      if (guestRemoveBtn) {
++        var gIdx = parseInt(guestRemoveBtn.getAttribute('data-crm-editor-guest-remove'), 10);
++        if (!isNaN(gIdx)) _crmAppointmentFormGuests.splice(gIdx, 1);
++        crmRenderAppointmentFormGuestChips();
++        return;
++      }
++      var findTimeViewBtn = e.target.closest('[data-crm-findtime-view]');
++      if (findTimeViewBtn) {
++        document.querySelectorAll('[data-crm-findtime-view]').forEach(function (btn) {
++          btn.classList.toggle('is-active', btn === findTimeViewBtn);
++        });
++        return;
++      }
++    });
++
++    document.getElementById('calendar-form-all-day').addEventListener('change', function (e) {
++      crmToggleFindTimeSelects(!e.target.checked);
++    });
++
++    document.getElementById('calendar-meeting-link').addEventListener('input', function (e) {
++      document.getElementById('calendar-editor-meet-label').textContent = String(e.target.value || '').trim() || 'Add Google Meet video conferencing';
++    });
++
++    document.getElementById('calendar-address').addEventListener('input', function (e) {
++      document.getElementById('calendar-editor-location-label').textContent = String(e.target.value || '').trim() || 'Add location';
++    });
++
++    document.getElementById('calendar-findtime-start-time').addEventListener('change', function (e) {
++      var startMin = crmFindTimeTimeStrToMinutes(e.target.value);
++      var endMin = crmGetFindTimeEndMinutes();
++      if (endMin <= startMin) crmSetFindTimeEndMinutes(startMin + 15, true);
++      document.getElementById('calendar-time').value = e.target.value;
++      crmSyncFindTimeBlockFromFields();
++    });
++
++    document.getElementById('calendar-findtime-end-time').addEventListener('change', function (e) {
++      var endMin = crmFindTimeTimeStrToMinutes(e.target.value);
++      var startMin = crmGetFindTimeStartMinutes();
++      if (endMin <= startMin) crmSetFindTimeStartMinutes(Math.max(0, endMin - 15), true);
++      document.getElementById('calendar-time-end').value = e.target.value;
++      crmSyncFindTimeBlockFromFields();
++    });
++
++    document.getElementById('calendar-date').addEventListener('change', function () {
++      crmUpdateFindTimeDayLabel();
++      crmUpdateFindTimeNowLine();
++    });
++
++    document.getElementById('calendar-editor-guests-input').addEventListener('keydown', function (e) {
++      if (e.key !== 'Enter') return;
++      e.preventDefault();
++      var val = String(e.target.value || '').trim();
++      if (val) {
++        _crmAppointmentFormGuests.push(val);
++        crmRenderAppointmentFormGuestChips();
++      }
++      e.target.value = '';
++    });
++
+     document.getElementById('calendar-save-btn').addEventListener('click', function () {
+       var validationMsg = document.getElementById('calendar-validation-msg');
+       var saveMsg = document.getElementById('calendar-save-msg');
+@@ -43760,6 +44781,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       var type = String(document.getElementById('calendar-type').value || '').trim();
+       var date = String(document.getElementById('calendar-date').value || '').trim();
+       var time = String(document.getElementById('calendar-time').value || '').trim();
++      var endTime = String(document.getElementById('calendar-time-end').value || '').trim();
+       var assignedRep = String(document.getElementById('calendar-assigned-rep').value || '').trim();
+       var customerName = String(document.getElementById('calendar-customer-name').value || '').trim();
+       var address = String(document.getElementById('calendar-address').value || '').trim();
+@@ -43769,10 +44791,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       var notes = String(document.getElementById('calendar-notes').value || '').trim();
+       var reminderMinutes = parseInt(document.getElementById('calendar-reminder').value || '60', 10);
+       if (isNaN(reminderMinutes)) reminderMinutes = 60;
++      var customTitle = String(document.getElementById('calendar-full-title').value || '').trim();
++      var isAllDay = !!document.getElementById('calendar-form-all-day').checked;
++      var endDate = String(document.getElementById('calendar-date-end').value || '').trim() || date;
++      var visibilitySel = String(document.getElementById('calendar-visibility-select').value || 'default').trim();
+ 
+       if (role === 'Sales Rep') assignedRep = currentName;
+ 
+-      if (!type || !date || !time || !assignedRep) {
++      if (!type || !date || (!isAllDay && !time) || !assignedRep) {
+         validationMsg.textContent = 'Please complete Appointment Type, Date, Time, and Assigned Rep.';
+         validationMsg.style.display = 'block';
+         return;
+@@ -43800,20 +44826,22 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       var nowIso = new Date().toISOString();
+       var currentUser = crmGetCalendarCurrentUser();
+       var assignedRepId = crmLookupCalendarUserIdByName(assignedRep);
+-      var title = crmBuildAppointmentTitle(type, customerName, address);
++      var title = customTitle || crmBuildAppointmentTitle(type, customerName, address);
++      var resolvedVisibility = visibilitySel === 'private' ? 'private' : (visibilitySel === 'public' ? 'team' : (existing ? (existing.visibility || (assignedRep === currentName ? 'private' : 'team')) : (assignedRep === currentName ? 'private' : 'team')));
+       var appt = {
+         id: editId || crmGenId(),
+         leadId: leadId,
+         jobId: jobId,
+         title: title,
++        customTitle: customTitle,
+         type: type,
+         startDate: date,
+-        endDate: date,
++        endDate: endDate,
+         date: date,
+-        allDay: false,
+-        startTime: time,
+-        endTime: existing ? (existing.endTime || '') : '',
+-        time: time,
++        allDay: isAllDay,
++        startTime: isAllDay ? '' : time,
++        endTime: isAllDay ? '' : endTime,
++        time: isAllDay ? '' : time,
+         assignedRep: assignedRep,
+         assignedRepId: assignedRepId,
+         assignedUserIds: assignedRepId ? [assignedRepId] : [],
+@@ -43831,8 +44859,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+         notes: notes,
+         description: notes,
+         repeat: existing ? (existing.repeat || 'none') : 'none',
+-        guests: existing && Array.isArray(existing.guests) ? existing.guests.slice() : [],
+-        visibility: existing ? (existing.visibility || (assignedRep === currentName ? 'private' : 'team')) : (assignedRep === currentName ? 'private' : 'team'),
++        guests: _crmAppointmentFormGuests.slice(),
++        guestPermissions: {
++          modify: !!document.getElementById('calendar-guest-modify').checked,
++          invite: !!document.getElementById('calendar-guest-invite').checked,
++          seeList: !!document.getElementById('calendar-guest-seelist').checked
++        },
++        visibility: resolvedVisibility,
+         reminderMinutesBefore: reminderMinutes,
+         reminderOffsetMinutes: reminderMinutes,
+         reminderEnabled: true,
+@@ -45208,10 +46241,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+ 
+     function crmPositionQuickEventPopup() {
+       var popup = document.getElementById('calendar-quick-popup');
+-      if (!popup || !_crmCalendarQuickAnchorRect) return;
+-      var rect = _crmCalendarQuickAnchorRect;
++      if (!popup) return;
+       var popupWidth = popup.offsetWidth || 340;
+       var popupHeight = popup.offsetHeight || 420;
++      if (!_crmCalendarQuickAnchorRect) {
++        var gridEl = document.querySelector('#page-crm-calendar .crm-calendar-stage-shell');
++        var gridRect = gridEl ? gridEl.getBoundingClientRect() : null;
++        var areaLeft = gridRect ? gridRect.left : 0;
++        var areaTop = gridRect ? gridRect.top : 0;
++        var areaWidth = gridRect ? gridRect.width : window.innerWidth;
++        var areaHeight = gridRect ? gridRect.height : window.innerHeight;
++        var centerLeft = areaLeft + Math.round((areaWidth - popupWidth) / 2);
++        var centerTop = areaTop + Math.round((areaHeight - popupHeight) / 3);
++        if (centerLeft < 12) centerLeft = 12;
++        if (centerLeft + popupWidth > window.innerWidth - 12) centerLeft = window.innerWidth - popupWidth - 12;
++        if (centerTop < 12) centerTop = 12;
++        if (centerTop + popupHeight > window.innerHeight - 12) centerTop = window.innerHeight - popupHeight - 12;
++        popup.style.left = centerLeft + 'px';
++        popup.style.top = centerTop + 'px';
++        return;
++      }
++      var rect = _crmCalendarQuickAnchorRect;
+       var left = rect.left + Math.min(Math.max((rect.width / 2) - 120, 0), 80);
+       var top = rect.top + 10;
+       if (left + popupWidth > window.innerWidth - 12) left = window.innerWidth - popupWidth - 12;
+@@ -45233,7 +46283,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       var state = _crmCalendarQuickState;
+       var owner = crmGetQuickEventOwnerName();
+       var dateLabel = crmFormatQuickEventDateRange(_crmCalendarQuickDate);
+-      var reminderEnabled = !!state.reminderEnabled;
+       var repeatLabel = crmGetQuickRepeatLabel(state.repeatValue);
+       var guestList = Array.isArray(state.guests) ? state.guests : [];
+       var guestSummary = guestList.length ? (guestList.length + ' guest' + (guestList.length !== 1 ? 's' : '') + ' added') : 'Add guests';
+@@ -45244,18 +46293,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       var descriptionSummary = (descriptionText || driveAttachmentLabel)
+         ? 'Description and attachments added'
+         : 'Add description or a Google Drive attachment';
+-      var reminderSummary = reminderEnabled ? crmGetAppointmentReminderSummary({
+-        reminderEnabled: true,
+-        reminderDate: state.reminderDate,
+-        reminderTime: state.reminderTime,
+-        reminderOffsetMinutes: state.reminderPreset !== 'custom' ? parseInt(state.reminderPreset, 10) : '',
+-        reminderMinutesBefore: state.reminderPreset !== 'custom' ? parseInt(state.reminderPreset, 10) : '',
+-        allDay: state.allDay,
+-        startDate: state.startDate,
+-        date: state.startDate,
+-        startTime: state.startTime,
+-        time: state.startTime
+-      }) : 'Add reminder';
+       var html = '<div class="crm-calendar-quick-shell">';
+       html += '<div class="crm-calendar-quick-head">';
+       html += '<button class="crm-calendar-icon-btn" type="button" aria-label="Event options">';
+@@ -45269,31 +46306,24 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       html += '<div class="crm-calendar-quick-tabs">';
+       html += '<button class="crm-calendar-quick-tab is-active" type="button">Event</button>';
+       html += '<button class="crm-calendar-quick-tab" type="button">Task</button>';
+-      html += '<button class="crm-calendar-quick-tab" type="button">Out of office</button>';
+-      html += '<button class="crm-calendar-quick-tab" type="button">Working location</button>';
+       html += '</div>';
+       html += '<div class="crm-calendar-quick-body">';
+       html += '<div class="crm-calendar-quick-date-row">';
+       html += '<svg class="crm-calendar-quick-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>';
+-      html += '<div class="crm-calendar-quick-date-copy"><div class="crm-calendar-quick-date-main">' + crmEscapeHtml(dateLabel) + '</div></div>';
+-      html += '</div>';
+-      html += '<div class="crm-calendar-quick-check-row">';
+-      html += '<label class="crm-calendar-quick-check-label"><input id="calendar-quick-all-day" type="checkbox"' + (state.allDay ? ' checked' : '') + ' />All day</label>';
++      html += '<div class="crm-calendar-quick-date-copy">';
++      html += '<div class="crm-calendar-quick-date-main">' + crmEscapeHtml(dateLabel) + '</div>';
++      html += '<button class="crm-calendar-quick-repeat-caption" type="button" data-crm-quick-toggle-repeat="1">' + crmEscapeHtml(repeatLabel) + '</button>';
+       html += '</div>';
+       if (state.allDay) {
+-        html += '<div class="crm-calendar-quick-sub-row"><div class="crm-calendar-quick-sub-text"></div><button class="crm-calendar-quick-link-btn" type="button" data-crm-quick-add-time="1">Add time</button></div>';
++        html += '<button class="crm-calendar-quick-link-btn crm-calendar-quick-addtime-btn" type="button" data-crm-quick-add-time="1">Add time</button>';
+       } else {
+-        html += '<div class="crm-calendar-quick-time-row is-visible" id="calendar-quick-time-row">';
++        html += '<div class="crm-calendar-quick-time-row is-visible crm-calendar-quick-time-row-inline" id="calendar-quick-time-row">';
+         html += '<input id="calendar-quick-start-time" class="crm-calendar-quick-time-input" type="time" value="' + crmEscapeHtml(state.startTime || '09:00') + '" />';
+         html += '<span class="crm-calendar-quick-time-sep">to</span>';
+         html += '<input id="calendar-quick-end-time" class="crm-calendar-quick-time-input" type="time" value="' + crmEscapeHtml(state.endTime || crmDefaultQuickEventEndTime(state.startTime || '09:00')) + '" />';
+         html += '</div>';
+       }
+-      html += '<button class="crm-calendar-quick-detail-row crm-calendar-quick-row-btn" type="button" data-crm-quick-toggle-repeat="1">';
+-      html += '<svg class="crm-calendar-quick-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>';
+-      html += '<div class="crm-calendar-quick-detail-text">' + crmEscapeHtml(repeatLabel) + '</div>';
+-      html += '<span class="crm-calendar-quick-row-caret">&#9662;</span>';
+-      html += '</button>';
++      html += '</div>';
+       if (state.repeatOpen) {
+         html += '<div class="crm-calendar-quick-inline-box is-visible">';
+         html += '<select id="calendar-quick-repeat-select" class="crm-calendar-quick-inline-select">';
+@@ -45310,36 +46340,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+         html += '</select>';
+         html += '</div>';
+       }
+-      html += '<div class="crm-calendar-quick-detail-row">';
+-      html += '<svg class="crm-calendar-quick-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5l3 2"></path><circle cx="12" cy="12" r="9"></circle></svg>';
+-      html += '<div class="crm-calendar-quick-detail-text">' + crmEscapeHtml(reminderSummary) + '</div>';
+-      if (!reminderEnabled) {
+-        html += '<button class="crm-calendar-quick-link-btn" type="button" data-crm-quick-add-reminder="1">Add reminder</button>';
+-      } else {
+-        html += '<button class="crm-calendar-quick-link-btn" type="button" data-crm-quick-remove-reminder="1">Remove</button>';
+-      }
+-      html += '</div>';
+-      html += '<div class="crm-calendar-quick-reminder-box' + (reminderEnabled ? ' is-visible' : '') + '" id="calendar-quick-reminder-box">';
+-      html += '<div class="crm-calendar-quick-reminder-row">';
+-      html += '<select id="calendar-quick-reminder-preset" class="crm-calendar-quick-reminder-select">';
+-      [
+-        ['0', 'At time of event'],
+-        ['5', '5 minutes before'],
+-        ['10', '10 minutes before'],
+-        ['30', '30 minutes before'],
+-        ['60', '1 hour before'],
+-        ['1440', '1 day before'],
+-        ['custom', 'Custom']
+-      ].forEach(function (item) {
+-        html += '<option value="' + item[0] + '"' + (state.reminderPreset === item[0] ? ' selected' : '') + '>' + item[1] + '</option>';
+-      });
+-      html += '</select></div>';
+-      html += '<div class="crm-calendar-quick-reminder-row">';
+-      html += '<input id="calendar-quick-reminder-date" class="crm-calendar-quick-reminder-input" type="date" value="' + crmEscapeHtml(state.reminderDate || state.startDate) + '" />';
+-      html += '<input id="calendar-quick-reminder-time" class="crm-calendar-quick-reminder-input" type="time" value="' + crmEscapeHtml(state.reminderTime || (state.allDay ? '09:00' : (state.startTime || '09:00'))) + '" />';
+-      html += '</div>';
+-      html += '<div class="crm-calendar-quick-reminder-note">Choose a preset or set the exact reminder date and time.</div>';
+-      html += '</div>';
+       html += '<button class="crm-calendar-quick-detail-row crm-calendar-quick-row-btn" type="button" data-crm-quick-row-guests="1"><svg class="crm-calendar-quick-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="9.5" cy="7" r="3.5"></circle><path d="M19 8v6M16 11h6"></path></svg><div class="crm-calendar-quick-detail-text">' + crmEscapeHtml(guestSummary) + '</div></button>';
+       if (state.guestsOpen || guestList.length) {
+         html += '<div class="crm-calendar-quick-inline-box is-visible">';
+@@ -45380,9 +46380,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+         html += '</div>';
+       }
+       html += '<div class="crm-calendar-quick-owner-row"><svg class="crm-calendar-quick-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 2-2z"></path></svg><span class="crm-calendar-quick-owner-dot"></span><div><div class="crm-calendar-quick-owner-name">' + crmEscapeHtml(owner) + '</div><div class="crm-calendar-quick-owner-sub">Calendar owner</div></div></div>';
+-      html += '<div class="crm-calendar-quick-meta-row"><svg class="crm-calendar-quick-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg><div class="crm-calendar-quick-meta-sub">Free \u00b7 Default visibility \u00b7 Do not notify</div></div>';
+       html += '</div>';
+-      html += crmRenderQuickAssignSection(state);
+       html += '<div class="crm-calendar-quick-foot">';
+       html += '<button class="crm-calendar-quick-more" type="button" data-crm-quick-more="1">More options</button>';
+       html += '<button class="crm-calendar-quick-save" type="button" data-crm-quick-save="1">Save</button>';
+@@ -45757,6 +46755,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       document.getElementById('calendar-type').value = 'Adjuster Appointment';
+       document.getElementById('calendar-date').value = '';
+       document.getElementById('calendar-time').value = '';
++      document.getElementById('calendar-time-end').value = '';
++      crmPopulateFindTimeTimeSelects();
++      crmSetFindTimeStartMinutes(9 * 60, true);
++      crmSetFindTimeEndMinutes(10 * 60, true);
+       document.getElementById('calendar-customer-name').value = '';
+       document.getElementById('calendar-address').value = '';
+       document.getElementById('calendar-adjuster-name').value = '';
+@@ -45764,6 +46766,18 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       document.getElementById('calendar-meeting-link').value = '';
+       document.getElementById('calendar-notes').value = '';
+       document.getElementById('calendar-reminder').value = '60';
++      document.getElementById('calendar-full-title').value = '';
++      document.getElementById('calendar-date-end').value = '';
++      document.getElementById('calendar-form-all-day').checked = false;
++      document.getElementById('calendar-form-repeat').value = 'none';
++      document.getElementById('calendar-busy-status').value = 'busy';
++      document.getElementById('calendar-visibility-select').value = 'default';
++      document.getElementById('calendar-meeting-link-wrap').style.display = 'none';
++      document.getElementById('calendar-address-wrap').style.display = 'none';
++      document.getElementById('calendar-editor-meet-label').textContent = 'Add Google Meet video conferencing';
++      document.getElementById('calendar-editor-location-label').textContent = 'Add location';
++      _crmAppointmentFormGuests = [];
++      crmRenderAppointmentFormGuestChips();
+       crmPopulateAppointmentRepSelect(crmGetCurrentUserName() || currentRep || '');
+       document.getElementById('calendar-validation-msg').style.display = 'none';
+       document.getElementById('calendar-save-msg').style.display = 'none';
+@@ -45775,7 +46789,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       crmCloseQuickEventPopup();
+       crmResetAppointmentForm();
+       prefill = prefill || {};
+-      document.getElementById('calendar-form-card').style.display = 'block';
++      document.getElementById('calendar-form-card').style.display = 'flex';
+       document.getElementById('calendar-form-title').textContent = prefill.id ? 'EDIT APPOINTMENT' : 'NEW APPOINTMENT';
+       document.getElementById('calendar-edit-id').value = prefill.id || '';
+       document.getElementById('calendar-lead-id').value = prefill.leadId || '';
+@@ -45783,7 +46797,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       crmPopulateAppointmentRepSelect(crmGetAppointmentPrimaryAssignedName(prefill) || crmGetCurrentUserName() || currentRep || '');
+       document.getElementById('calendar-type').value = prefill.type || 'Adjuster Appointment';
+       document.getElementById('calendar-date').value = prefill.startDate || prefill.date || _crmCalendarSelectedDate || crmGetTodayDateStr();
+-      document.getElementById('calendar-time').value = prefill.startTime || prefill.time || '';
++      document.getElementById('calendar-date-end').value = prefill.endDate || prefill.startDate || prefill.date || _crmCalendarSelectedDate || crmGetTodayDateStr();
++      var _ftStartMin = (prefill.startTime || prefill.time) ? crmFindTimeTimeStrToMinutes(prefill.startTime || prefill.time) : (9 * 60);
++      var _ftEndMin = prefill.endTime ? crmFindTimeTimeStrToMinutes(prefill.endTime) : (_ftStartMin + 60);
++      if (_ftEndMin <= _ftStartMin) _ftEndMin = _ftStartMin + 60;
++      crmSetFindTimeStartMinutes(_ftStartMin, true);
++      crmSetFindTimeEndMinutes(_ftEndMin, true);
+       document.getElementById('calendar-customer-name').value = prefill.customerName || '';
+       document.getElementById('calendar-address').value = prefill.address || '';
+       document.getElementById('calendar-adjuster-name').value = prefill.adjusterName || '';
+@@ -45791,10 +46810,310 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       document.getElementById('calendar-meeting-link').value = prefill.meetingLink || '';
+       document.getElementById('calendar-notes').value = prefill.notes || '';
+       document.getElementById('calendar-reminder').value = String(prefill.reminderMinutesBefore || 60);
+-      document.getElementById('calendar-date').focus();
++      document.getElementById('calendar-full-title').value = prefill.customTitle || prefill.title || '';
++      document.getElementById('calendar-editor-owner-name').textContent = crmGetCurrentUserName() || currentRep || 'Test Rep';
++      document.getElementById('calendar-guest-modify').checked = false;
++      document.getElementById('calendar-guest-invite').checked = true;
++      document.getElementById('calendar-guest-seelist').checked = true;
++      document.getElementById('calendar-editor-guests-input').value = '';
++      _crmAppointmentFormGuests = Array.isArray(prefill.guests) ? prefill.guests.slice() : [];
++      crmRenderAppointmentFormGuestChips();
++      var allDay = !(prefill.startTime || prefill.time);
++      document.getElementById('calendar-form-all-day').checked = allDay;
++      crmToggleFindTimeSelects(!allDay);
++      document.getElementById('calendar-meeting-link-wrap').style.display = prefill.meetingLink ? 'block' : 'none';
++      document.getElementById('calendar-editor-meet-label').textContent = prefill.meetingLink ? prefill.meetingLink : 'Add Google Meet video conferencing';
++      document.getElementById('calendar-address-wrap').style.display = prefill.address ? 'block' : 'none';
++      document.getElementById('calendar-editor-location-label').textContent = prefill.address ? prefill.address : 'Add location';
++      document.getElementById('calendar-visibility-select').value = prefill.visibility === 'private' ? 'private' : (prefill.visibility === 'team' ? 'public' : 'default');
++      var tzBtn = document.getElementById('calendar-editor-tz-btn');
++      if (tzBtn && !tzBtn.textContent) {
++        try {
++          tzBtn.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Chicago';
++        } catch (err) {
++          tzBtn.textContent = 'America/Chicago';
++        }
++      }
++      crmInitFindTimeTimeline();
++      crmSetAppointmentFormTab('details');
++      document.getElementById('calendar-full-title').focus();
+       if (hadQuickDraft) crmRenderCalendar();
+     }
+ 
++    var _crmAppointmentFormGuests = [];
++
++    function crmRenderAppointmentFormGuestChips() {
++      var host = document.getElementById('calendar-editor-guests-chips');
++      if (!host) return;
++      host.innerHTML = _crmAppointmentFormGuests.map(function (g, idx) {
++        return '<span class="crm-calendar-quick-chip">' + crmEscapeHtml(g) + '<button type="button" data-crm-editor-guest-remove="' + idx + '" style="border:none;background:transparent;color:inherit;cursor:pointer;padding:0;line-height:1;">&times;</button></span>';
++      }).join('');
++    }
++
++    function crmToggleFindTimeSelects(show) {
++      var s1 = document.getElementById('calendar-findtime-start-time');
++      var s2 = document.getElementById('calendar-findtime-end-time');
++      if (s1) s1.style.display = show ? 'inline-block' : 'none';
++      if (s2) s2.style.display = show ? 'inline-block' : 'none';
++      var block = document.getElementById('calendar-findtime-block');
++      if (block) block.style.display = show ? '' : 'none';
++      var grid = document.getElementById('calendar-findtime-grid');
++      if (grid) grid.classList.toggle('is-all-day', !show);
++    }
++
++    function crmSetAppointmentFormTab(tab) {
++      document.querySelectorAll('[data-crm-editor-tab]').forEach(function (btn) {
++        btn.classList.toggle('is-active', btn.getAttribute('data-crm-editor-tab') === tab);
++      });
++      document.querySelectorAll('[data-crm-editor-pane]').forEach(function (pane) {
++        pane.style.display = pane.getAttribute('data-crm-editor-pane') === tab ? 'block' : 'none';
++      });
++      if (tab === 'findtime') {
++        crmInitFindTimeTimeline();
++        crmScrollFindTimeToStart();
++      }
++    }
++
++    var CRM_FINDTIME_HOUR_PX = 48;
++    var CRM_FINDTIME_MIN_PX = CRM_FINDTIME_HOUR_PX / 60;
++    var _crmFindTimeSelectsBuilt = false;
++    var _crmFindTimeDrag = null;
++
++    function crmFindTimeMinutesToTimeStr(min) {
++      min = ((Math.round(min) % 1440) + 1440) % 1440;
++      var h = Math.floor(min / 60);
++      var m = min % 60;
++      return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
++    }
++
++    function crmFindTimeTimeStrToMinutes(str) {
++      var parts = String(str || '').split(':');
++      var h = parseInt(parts[0], 10);
++      var m = parseInt(parts[1], 10);
++      if (isNaN(h)) h = 9;
++      if (isNaN(m)) m = 0;
++      return h * 60 + m;
++    }
++
++    function crmFindTimeMinutesToDropdownLabel(min) {
++      min = ((Math.round(min) % 1440) + 1440) % 1440;
++      var h = Math.floor(min / 60);
++      var m = min % 60;
++      var ampm = h < 12 ? 'am' : 'pm';
++      var h12 = h % 12;
++      if (h12 === 0) h12 = 12;
++      return h12 + ':' + (m < 10 ? '0' : '') + m + ampm;
++    }
++
++    function crmFindTimeMinutesToHourLabel(min) {
++      var h = Math.floor(min / 60) % 24;
++      if (h === 0) return '12 AM';
++      if (h === 12) return '12 PM';
++      return (h % 12) + (h < 12 ? ' AM' : ' PM');
++    }
++
++    function crmPopulateFindTimeTimeSelects() {
++      var startSel = document.getElementById('calendar-findtime-start-time');
++      var endSel = document.getElementById('calendar-findtime-end-time');
++      if (!startSel || !endSel || _crmFindTimeSelectsBuilt) return;
++      var html = '';
++      for (var m = 0; m < 1440; m += 15) {
++        html += '<option value="' + crmFindTimeMinutesToTimeStr(m) + '">' + crmFindTimeMinutesToDropdownLabel(m) + '</option>';
++      }
++      startSel.innerHTML = html;
++      endSel.innerHTML = html;
++      _crmFindTimeSelectsBuilt = true;
++    }
++
++    function crmGetFindTimeStartMinutes() {
++      return crmFindTimeTimeStrToMinutes(document.getElementById('calendar-findtime-start-time').value);
++    }
++
++    function crmGetFindTimeEndMinutes() {
++      return crmFindTimeTimeStrToMinutes(document.getElementById('calendar-findtime-end-time').value);
++    }
++
++    function crmSetFindTimeStartMinutes(min, skipBlockSync) {
++      min = Math.max(0, Math.min(1425, Math.round(min / 15) * 15));
++      var str = crmFindTimeMinutesToTimeStr(min);
++      document.getElementById('calendar-findtime-start-time').value = str;
++      document.getElementById('calendar-time').value = str;
++      if (!skipBlockSync) crmSyncFindTimeBlockFromFields();
++    }
++
++    function crmSetFindTimeEndMinutes(min, skipBlockSync) {
++      min = Math.max(15, Math.min(1425, Math.round(min / 15) * 15));
++      var str = crmFindTimeMinutesToTimeStr(min);
++      document.getElementById('calendar-findtime-end-time').value = str;
++      document.getElementById('calendar-time-end').value = str;
++      if (!skipBlockSync) crmSyncFindTimeBlockFromFields();
++    }
++
++    function crmSyncFindTimeBlockFromFields() {
++      var block = document.getElementById('calendar-findtime-block');
++      if (!block) return;
++      var startMin = crmGetFindTimeStartMinutes();
++      var endMin = crmGetFindTimeEndMinutes();
++      if (endMin <= startMin) endMin = startMin + 15;
++      var top = startMin * CRM_FINDTIME_MIN_PX;
++      var height = Math.max(CRM_FINDTIME_MIN_PX * 15, (endMin - startMin) * CRM_FINDTIME_MIN_PX);
++      block.style.top = top + 'px';
++      block.style.height = height + 'px';
++      var label = document.getElementById('calendar-findtime-block-label');
++      if (label) label.textContent = crmFindTimeMinutesToDropdownLabel(startMin) + ' – ' + crmFindTimeMinutesToDropdownLabel(endMin);
++    }
++
++    function crmSyncFindTimeFieldsFromBlockPx(topPx, heightPx) {
++      var stepPx = CRM_FINDTIME_MIN_PX * 15;
++      var maxTop = 1425 * CRM_FINDTIME_MIN_PX;
++      topPx = Math.max(0, Math.min(maxTop, topPx));
++      heightPx = Math.max(stepPx, heightPx);
++      var startMin = Math.round(topPx / CRM_FINDTIME_MIN_PX / 15) * 15;
++      var endMin = Math.round((topPx + heightPx) / CRM_FINDTIME_MIN_PX / 15) * 15;
++      startMin = Math.max(0, Math.min(1425, startMin));
++      endMin = Math.max(startMin + 15, Math.min(1440, endMin));
++      crmSetFindTimeStartMinutes(startMin, true);
++      crmSetFindTimeEndMinutes(endMin, true);
++      crmSyncFindTimeBlockFromFields();
++    }
++
++    function crmBuildFindTimeHourLabelsOnce() {
++      var host = document.getElementById('calendar-findtime-hours');
++      if (!host || host.childElementCount) return;
++      var html = '';
++      for (var h = 0; h < 24; h++) {
++        var top = h * CRM_FINDTIME_HOUR_PX;
++        html += '<div class="crm-findtime-hour-label" style="top:' + top + 'px;">' + crmFindTimeMinutesToHourLabel(h * 60) + '</div>';
++      }
++      host.innerHTML = html;
++    }
++
++    function crmUpdateFindTimeDayLabel() {
++      var label = document.getElementById('calendar-findtime-daylabel');
++      if (!label) return;
++      var dateVal = document.getElementById('calendar-date').value;
++      var d = dateVal ? crmParseYmd(dateVal) : null;
++      label.textContent = d ? d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : '';
++    }
++
++    function crmUpdateFindTimeNowLine() {
++      var line = document.getElementById('calendar-findtime-nowline');
++      if (!line) return;
++      var dateVal = document.getElementById('calendar-date').value;
++      if (dateVal !== crmGetTodayDateStr()) {
++        line.style.display = 'none';
++        return;
++      }
++      var now = new Date();
++      var minutes = now.getHours() * 60 + now.getMinutes();
++      line.style.top = (minutes * CRM_FINDTIME_MIN_PX) + 'px';
++      line.style.display = 'block';
++    }
++
++    function crmInitFindTimeTimeline() {
++      crmPopulateFindTimeTimeSelects();
++      crmBuildFindTimeHourLabelsOnce();
++      crmUpdateFindTimeDayLabel();
++      crmUpdateFindTimeNowLine();
++      crmSyncFindTimeBlockFromFields();
++    }
++
++    function crmScrollFindTimeToStart() {
++      var body = document.getElementById('calendar-findtime-body');
++      if (!body) return;
++      var startMin = crmGetFindTimeStartMinutes();
++      body.scrollTop = Math.max(0, (startMin - 240) * CRM_FINDTIME_MIN_PX);
++    }
++
++    document.addEventListener('pointerdown', function (e) {
++      var handle = e.target.closest('[data-crm-findtime-handle]');
++      var blockHit = e.target.closest('#calendar-findtime-block');
++      var gridHit = e.target.closest('#calendar-findtime-grid');
++      if (!handle && !blockHit && !gridHit) return;
++      var blockEl = document.getElementById('calendar-findtime-block');
++      var gridEl = document.getElementById('calendar-findtime-grid');
++      if (!blockEl || !gridEl) return;
++      if (gridEl.classList.contains('is-all-day')) {
++        /* Picking a time on the grid implies a specific time, not an
++           all-day event — switch off All day (like Google Calendar) so
++           the drag the user is about to make actually takes effect,
++           instead of silently doing nothing because the grid was still
++           in its disabled all-day state. */
++        var allDayCheckbox = document.getElementById('calendar-form-all-day');
++        if (allDayCheckbox) allDayCheckbox.checked = false;
++        crmToggleFindTimeSelects(true);
++      }
++      e.preventDefault();
++      var stepPx = CRM_FINDTIME_MIN_PX * 15;
++      var maxBottom = 1440 * CRM_FINDTIME_MIN_PX;
++      if (handle || blockHit) {
++        _crmFindTimeDrag = {
++          mode: handle ? handle.getAttribute('data-crm-findtime-handle') : 'move',
++          startY: e.clientY,
++          startTop: parseFloat(blockEl.style.top) || 0,
++          startHeight: parseFloat(blockEl.style.height) || stepPx
++        };
++      } else {
++        var gridRect = gridEl.getBoundingClientRect();
++        var clickPx = Math.round((e.clientY - gridRect.top) / stepPx) * stepPx;
++        clickPx = Math.max(0, Math.min(maxBottom - stepPx, clickPx));
++        _crmFindTimeDrag = {
++          mode: 'create',
++          startY: e.clientY,
++          anchorPx: clickPx,
++          moved: false,
++          startTop: clickPx,
++          startHeight: stepPx
++        };
++        crmSyncFindTimeFieldsFromBlockPx(clickPx, stepPx);
++      }
++      blockEl.classList.add('is-dragging');
++      try { blockEl.setPointerCapture(e.pointerId); } catch (err) {}
++    });
++
++    document.addEventListener('pointermove', function (e) {
++      if (!_crmFindTimeDrag) return;
++      var stepPx = CRM_FINDTIME_MIN_PX * 15;
++      var maxBottom = 1440 * CRM_FINDTIME_MIN_PX;
++      var deltaPx = Math.round((e.clientY - _crmFindTimeDrag.startY) / stepPx) * stepPx;
++      if (_crmFindTimeDrag.mode === 'move') {
++        var newTop = Math.max(0, Math.min(maxBottom - _crmFindTimeDrag.startHeight, _crmFindTimeDrag.startTop + deltaPx));
++        crmSyncFindTimeFieldsFromBlockPx(newTop, _crmFindTimeDrag.startHeight);
++      } else if (_crmFindTimeDrag.mode === 'top') {
++        var bottomEdge = _crmFindTimeDrag.startTop + _crmFindTimeDrag.startHeight;
++        var newTop2 = Math.max(0, Math.min(bottomEdge - stepPx, _crmFindTimeDrag.startTop + deltaPx));
++        crmSyncFindTimeFieldsFromBlockPx(newTop2, bottomEdge - newTop2);
++      } else if (_crmFindTimeDrag.mode === 'bottom') {
++        var newHeight = Math.max(stepPx, Math.min(maxBottom - _crmFindTimeDrag.startTop, _crmFindTimeDrag.startHeight + deltaPx));
++        crmSyncFindTimeFieldsFromBlockPx(_crmFindTimeDrag.startTop, newHeight);
++      } else if (_crmFindTimeDrag.mode === 'create') {
++        if (deltaPx !== 0) _crmFindTimeDrag.moved = true;
++        var currentPx = _crmFindTimeDrag.anchorPx + deltaPx;
++        var createTop, createHeight;
++        if (currentPx >= _crmFindTimeDrag.anchorPx) {
++          createTop = _crmFindTimeDrag.anchorPx;
++          createHeight = Math.max(stepPx, currentPx - _crmFindTimeDrag.anchorPx);
++        } else {
++          createTop = currentPx;
++          createHeight = _crmFindTimeDrag.anchorPx - currentPx;
++        }
++        createTop = Math.max(0, Math.min(maxBottom - stepPx, createTop));
++        createHeight = Math.max(stepPx, Math.min(maxBottom - createTop, createHeight));
++        crmSyncFindTimeFieldsFromBlockPx(createTop, createHeight);
++      }
++    });
++
++    document.addEventListener('pointerup', function () {
++      if (!_crmFindTimeDrag) return;
++      if (_crmFindTimeDrag.mode === 'create' && !_crmFindTimeDrag.moved) {
++        var stepPx2 = CRM_FINDTIME_MIN_PX * 15;
++        crmSyncFindTimeFieldsFromBlockPx(_crmFindTimeDrag.anchorPx, stepPx2 * 2);
++      }
++      var blockEl = document.getElementById('calendar-findtime-block');
++      if (blockEl) blockEl.classList.remove('is-dragging');
++      _crmFindTimeDrag = null;
++    });
++
+     function crmCloseAppointmentForm() {
+       document.getElementById('calendar-form-card').style.display = 'none';
+       document.getElementById('calendar-validation-msg').style.display = 'none';
+@@ -46337,6 +47656,76 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       crmRenderMainMenu();
+     }
+ 
++    /* ── Calendar sidebar mini-month (Google Calendar-style layout) ──
++       Additive only: wraps crmRenderCalendar so the mini month stays in
++       sync, without editing the existing render/grid logic itself. */
++    var _crmCalendarMiniCursor = null;
++
++    function crmRenderCalendarSidebarMiniMonth() {
++      var grid = document.getElementById('calendar-mini-grid');
++      var label = document.getElementById('calendar-mini-month-label');
++      if (!grid || !label) return;
++      var anchor = _crmCalendarMiniCursor instanceof Date && !isNaN(_crmCalendarMiniCursor.getTime())
++        ? _crmCalendarMiniCursor
++        : crmGetCalendarHeaderDate();
++      var first = new Date(anchor.getFullYear(), anchor.getMonth(), 1, 12, 0, 0, 0);
++      var start = crmStartOfWeek(first);
++      var selectedDate = _crmCalendarSelectedDate || crmGetTodayDateStr();
++      var today = crmGetTodayDateStr();
++      label.textContent = first.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
++      var html = '';
++      for (var i = 0; i < 42; i++) {
++        var d = crmAddDays(start, i);
++        var dateStr = crmDateToLocalYmd(d);
++        var cls = 'crm-calendar-mini-day';
++        if (d.getMonth() !== first.getMonth()) cls += ' outside';
++        if (dateStr === today) cls += ' today';
++        if (dateStr === selectedDate) cls += ' selected';
++        html += '<button class="' + cls + '" type="button" data-crm-picker-date="' + dateStr + '">' + d.getDate() + '</button>';
++      }
++      grid.innerHTML = html;
++    }
++
++    var _origCrmRenderCalendarForMiniMonth = crmRenderCalendar;
++    crmRenderCalendar = function () {
++      _origCrmRenderCalendarForMiniMonth();
++      crmRenderCalendarSidebarMiniMonth();
++    };
++
++    (function () {
++      var miniPrevBtn = document.getElementById('calendar-mini-prev-btn');
++      var miniNextBtn = document.getElementById('calendar-mini-next-btn');
++      function shiftMini(step) {
++        var anchor = _crmCalendarMiniCursor instanceof Date && !isNaN(_crmCalendarMiniCursor.getTime())
++          ? _crmCalendarMiniCursor
++          : crmGetCalendarHeaderDate();
++        _crmCalendarMiniCursor = new Date(anchor.getFullYear(), anchor.getMonth() + step, 1, 12, 0, 0, 0);
++        crmRenderCalendarSidebarMiniMonth();
++      }
++      if (miniPrevBtn) miniPrevBtn.addEventListener('click', function () { shiftMini(-1); });
++      if (miniNextBtn) miniNextBtn.addEventListener('click', function () { shiftMini(1); });
++
++      var sidebarCreateBtn = document.getElementById('calendar-sidebar-create-btn');
++      if (sidebarCreateBtn) {
++        sidebarCreateBtn.addEventListener('click', function () {
++          var addBtn = document.getElementById('calendar-add-btn');
++          if (addBtn) addBtn.click();
++        });
++      }
++
++      var printBtn = document.getElementById('calendar-print-btn');
++      if (printBtn) {
++        printBtn.addEventListener('click', function () { window.print(); });
++      }
++
++      var settingsBtn = document.getElementById('calendar-settings-btn');
++      if (settingsBtn) {
++        settingsBtn.addEventListener('click', function () {
++          if (typeof showUploadToast === 'function') showUploadToast('Calendar settings coming soon.');
++        });
++      }
++    }());
++
+     function crmOpenCalendarForLead(leadId) {
+       var leads = crmGetLeads();
+       var lead = null;

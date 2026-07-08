@@ -1,0 +1,190 @@
+diff --git a/public/index.html b/public/index.html
+index cfa82f8..fb33f56 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -2143,6 +2143,24 @@
+       flex: 0 0 auto;
+     }
+ 
++    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .dash-sidebar-logo-placeholder {
++      width: 68px;
++      height: 68px;
++      display: flex;
++      align-items: center;
++      justify-content: center;
++      text-align: center;
++      flex: 0 0 auto;
++      font-size: 9px;
++      font-weight: 700;
++      line-height: 1.25;
++      letter-spacing: 0.02em;
++      text-transform: uppercase;
++      color: rgba(255, 255, 255, 0.55);
++      pointer-events: none;
++      user-select: none;
++    }
++
+     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-item {
+       width: 100%;
+       min-height: 58px;
+@@ -2271,7 +2289,7 @@
+       background: #1a1a2e;
+       padding: 6px 16px 8px;
+       display: grid;
+-      grid-template-columns: auto minmax(0, 1fr) auto;
++      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+       align-items: center;
+       gap: 16px;
+       min-height: 76px;
+@@ -2447,7 +2465,9 @@
+       padding: 6px 10px;
+       box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
+       align-self: center;
++      justify-self: end;
+       white-space: nowrap;
++      cursor: pointer;
+     }
+ 
+     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .user-badge {
+@@ -12406,7 +12426,8 @@
+           <div class="wrap">
+             <nav class="sidebar" aria-label="Dashboard navigation">
+               <div class="logo">
+-                <img id="dash-sidebar-company-logo" class="dash-sidebar-company-logo" src="./assets/hailmoney-logo.png?v=2" alt="Company Logo" draggable="false" />
++                <img id="dash-sidebar-company-logo" class="dash-sidebar-company-logo" src="./assets/hailmoney-logo.png?v=2" alt="Company Logo" draggable="false" style="display:none;" />
++                <span class="dash-sidebar-logo-placeholder" id="dash-sidebar-logo-placeholder">UPLOAD LOGO HERE</span>
+                 <span class="sr-only" id="dash-company-initials">YP</span>
+               </div>
+               <div class="nav-flyout-group nav-flyout-group-new">
+@@ -12493,12 +12514,20 @@
+                     <button class="pill closed" type="button" data-dashboard-action="pipeline" data-dashboard-pipeline-stage="closed"><div class="label">CLOSED</div><div class="letter">C</div><div class="amount" id="dash-stage-closed-amount">$0</div></button>
+                   </div>
+                 </div>
+-                <div class="user-info">
++                <div class="user-info crm-profile-menu" id="dash-profile-menu" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false">
+                   <div class="user-badge" id="dash-user-badge">HM</div>
+                   <div class="user-copy">
+                     <div class="user-name" id="dash-user-name">User</div>
+                     <div class="user-role" id="dash-user-role">Sales Rep</div>
+                   </div>
++                  <div class="crm-profile-dropdown" id="dash-profile-dropdown" role="menu" hidden>
++                    <button class="crm-profile-action" type="button" data-profile-action="profile">Profile</button>
++                    <button class="crm-profile-action" type="button" data-profile-action="change-picture">Change Picture</button>
++                    <button class="crm-profile-action" type="button" data-profile-action="account">Account Info</button>
++                    <button class="crm-profile-action" type="button" data-profile-action="username">Change Username</button>
++                    <button class="crm-profile-action" type="button" data-profile-action="password">Change Password</button>
++                    <button class="crm-profile-action danger" type="button" data-profile-action="logout">Logout</button>
++                  </div>
+                 </div>
+               </div>
+ 
+@@ -32467,6 +32496,29 @@
+       crmHandleTopbarProfileAction(btn.getAttribute('data-profile-action') || '');
+     });
+ 
++    /* Dashboard's own profile badge — see crmCloseAllTopbarProfileMenus()
++       comment for why this is a second instance rather than reusing
++       #crm-profile-toggle/#crm-profile-dropdown directly. */
++    document.getElementById('dash-profile-menu').addEventListener('click', function (e) {
++      if (e.target.closest('#dash-profile-dropdown')) return;
++      e.stopPropagation();
++      crmToggleTopbarProfileMenu(undefined, 'dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
++    });
++    document.getElementById('dash-profile-menu').addEventListener('keydown', function (e) {
++      if (e.target !== e.currentTarget) return;
++      if (e.key !== 'Enter' && e.key !== ' ') return;
++      e.preventDefault();
++      e.stopPropagation();
++      crmToggleTopbarProfileMenu(undefined, 'dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
++    });
++    document.getElementById('dash-profile-dropdown').addEventListener('click', function (e) {
++      var btn = e.target.closest('[data-profile-action]');
++      if (!btn) return;
++      e.stopPropagation();
++      crmHandleTopbarProfileAction(btn.getAttribute('data-profile-action') || '');
++      crmCloseTopbarProfileMenu('dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
++    });
++
+     document.getElementById('admin-sales-reps-list').addEventListener('click', function (e) {
+       var btn = e.target.closest('[data-sales-rep-id]');
+       if (!btn) return;
+@@ -39907,6 +39959,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+         el.src = dashboardCompanyLogo;
+         el.alt = String(dashboardCompanyProfile && dashboardCompanyProfile.companyName || 'Company Logo');
+       });
++      /* Dashboard's own sidebar logo slot only (unique #id, so this never
++         touches Pipeline's separate [data-dashboard-sidebar-logo] copy
++         above): show the uploaded company logo when one exists (still only
++         set via Admin -> Settings), otherwise show a plain, non-clickable
++         "Upload logo here" placeholder instead of the Hail Money fallback
++         the loop above just applied. */
++      var dashboardUploadedCompanyLogo = crmGetCompanyLogoUrl();
++      var dashSidebarLogoImg = root.querySelector('#dash-sidebar-company-logo');
++      var dashSidebarLogoPlaceholder = root.querySelector('#dash-sidebar-logo-placeholder');
++      if (dashSidebarLogoImg) {
++        if (dashboardUploadedCompanyLogo) {
++          dashSidebarLogoImg.src = dashboardUploadedCompanyLogo;
++          dashSidebarLogoImg.alt = String(dashboardCompanyProfile && dashboardCompanyProfile.companyName || 'Company Logo');
++          dashSidebarLogoImg.style.display = '';
++        } else {
++          dashSidebarLogoImg.style.display = 'none';
++        }
++      }
++      if (dashSidebarLogoPlaceholder) {
++        dashSidebarLogoPlaceholder.style.display = dashboardUploadedCompanyLogo ? 'none' : '';
++      }
+ 
+       var dashboardUserName = (typeof crmGetCurrentUserName === 'function' ? crmGetCurrentUserName() : '') || 'User';
+       var dashboardUserRole = (typeof crmGetRole === 'function' ? crmGetRole() : '') || 'Sales Rep';
+@@ -50734,19 +50807,29 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+     }
+ 
+-    function crmCloseTopbarProfileMenu() {
+-      var menu = document.getElementById('crm-profile-menu');
+-      var toggle = document.getElementById('crm-profile-toggle');
+-      var dropdown = document.getElementById('crm-profile-dropdown');
++    function crmCloseTopbarProfileMenu(menuId, toggleId, dropdownId) {
++      var menu = document.getElementById(menuId || 'crm-profile-menu');
++      var toggle = document.getElementById(toggleId || 'crm-profile-toggle');
++      var dropdown = document.getElementById(dropdownId || 'crm-profile-dropdown');
+       if (menu) menu.classList.remove('is-open');
+       if (toggle) toggle.setAttribute('aria-expanded', 'false');
+       if (dropdown) dropdown.hidden = true;
+     }
+ 
+-    function crmToggleTopbarProfileMenu(forceOpen) {
+-      var menu = document.getElementById('crm-profile-menu');
+-      var toggle = document.getElementById('crm-profile-toggle');
+-      var dropdown = document.getElementById('crm-profile-dropdown');
++    /* Dashboard's own profile badge (#dash-profile-menu) is a second,
++       independent instance of this same dropdown — its outer header is
++       display:none on the Dashboard page, so it can't reuse the shared
++       #crm-profile-menu instance. Closes both regardless of which page is
++       active; harmless no-op for whichever one isn't present/open. */
++    function crmCloseAllTopbarProfileMenus() {
++      crmCloseTopbarProfileMenu();
++      crmCloseTopbarProfileMenu('dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
++    }
++
++    function crmToggleTopbarProfileMenu(forceOpen, menuId, toggleId, dropdownId) {
++      var menu = document.getElementById(menuId || 'crm-profile-menu');
++      var toggle = document.getElementById(toggleId || 'crm-profile-toggle');
++      var dropdown = document.getElementById(dropdownId || 'crm-profile-dropdown');
+       if (!menu || !toggle || !dropdown) return;
+       var shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : dropdown.hidden;
+       menu.classList.toggle('is-open', shouldOpen);
+@@ -53412,10 +53495,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+     document.addEventListener('click', function (e) {
+       var menu = document.getElementById('crm-profile-menu');
+       if (menu && !menu.contains(e.target)) crmCloseTopbarProfileMenu();
++      var dashMenu = document.getElementById('dash-profile-menu');
++      if (dashMenu && !dashMenu.contains(e.target)) crmCloseTopbarProfileMenu('dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
+     });
+ 
+     document.addEventListener('keydown', function (e) {
+-      if (e.key === 'Escape') crmCloseTopbarProfileMenu();
++      if (e.key === 'Escape') crmCloseAllTopbarProfileMenus();
+     });
+ 
+     /* ═══════════════════════════════════════════════════════════

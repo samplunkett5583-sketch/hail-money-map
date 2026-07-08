@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <!-- roof surface -->
+  <rect x="4" y="58" width="72" height="14" rx="3" fill="#c8a86a" stroke="#6b7280" stroke-width="1.5"/>
+  <!-- fan housing outer ring -->
+  <circle cx="40" cy="40" r="26" fill="#9ca3af" stroke="#374151" stroke-width="1.5"/>
+  <!-- fan grill -->
+  <circle cx="40" cy="40" r="21" fill="#6b7280" stroke="#374151" stroke-width="1"/>
+  <!-- fan blades -->
+  <line x1="40" y1="20" x2="40" y2="60" stroke="#d1d5db" stroke-width="3"/>
+  <line x1="20" y1="40" x2="60" y2="40" stroke="#d1d5db" stroke-width="3"/>
+  <line x1="25" y1="25" x2="55" y2="55" stroke="#d1d5db" stroke-width="2.5"/>
+  <line x1="55" y1="25" x2="25" y2="55" stroke="#d1d5db" stroke-width="2.5"/>
+  <!-- hub -->
+  <circle cx="40" cy="40" r="5" fill="#374151"/>
+</svg>

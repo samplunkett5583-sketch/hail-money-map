@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <!-- left roof slope -->
+  <polygon points="5,72 40,24 40,72" fill="#c8a86a" stroke="#6b7280" stroke-width="1.5"/>
+  <!-- right roof slope -->
+  <polygon points="40,24 75,72 40,72" fill="#b8985a" stroke="#6b7280" stroke-width="1.5"/>
+  <!-- ridge vent strip along peak -->
+  <rect x="30" y="18" width="20" height="10" rx="3" fill="#9ca3af" stroke="#374151" stroke-width="1.5"/>
+  <!-- vent slots -->
+  <line x1="33" y1="22" x2="47" y2="22" stroke="#374151" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="32" y1="25" x2="48" y2="25" stroke="#374151" stroke-width="1" stroke-dasharray="3,3"/>
+</svg>

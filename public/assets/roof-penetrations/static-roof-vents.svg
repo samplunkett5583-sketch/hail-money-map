@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <!-- roof surface -->
+  <rect x="4" y="58" width="72" height="14" rx="3" fill="#c8a86a" stroke="#6b7280" stroke-width="1.5"/>
+  <!-- vent box body -->
+  <rect x="20" y="38" width="40" height="24" rx="3" fill="#9ca3af" stroke="#374151" stroke-width="1.5"/>
+  <!-- louver lines -->
+  <line x1="22" y1="45" x2="58" y2="45" stroke="#374151" stroke-width="1.2"/>
+  <line x1="22" y1="51" x2="58" y2="51" stroke="#374151" stroke-width="1.2"/>
+  <line x1="22" y1="57" x2="58" y2="57" stroke="#374151" stroke-width="1.2"/>
+  <!-- peaked hood -->
+  <polygon points="16,40 40,22 64,40" fill="#8c9aaa" stroke="#374151" stroke-width="1.5"/>
+</svg>

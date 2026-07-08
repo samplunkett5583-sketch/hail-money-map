@@ -1,0 +1,650 @@
+diff --git a/public/index.html b/public/index.html
+index cfa82f8..09bca05 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -66,6 +66,29 @@
+       display: none;
+     }
+ 
++    /* Leads: match the Dashboard header's width/alignment. Dashboard's own
++       header lives inside the sidebar+content row, so it only spans the
++       125px-wide icon sidebar's remaining width (starts at x:125). This
++       shared outer header instead spans the full viewport (starts at x:0)
++       on every other page, so on just this page we offset/narrow it by the
++       sidebar's width to match. Reverted at the 960px breakpoint where the
++       sidebar itself stacks to full width.
++       NOTE: Create New Lead was previously included here too, but that
++       left a blank strip on the left instead of the header/sidebar area
++       spanning edge-to-edge like Dashboard's actually does visually — its
++       header stays full-width (below) and only the placeholder box marks
++       the far-left slot. */
++    body.all-leads-page-active .topbar {
++      margin-left: 125px;
++      width: calc(100% - 125px);
++    }
++    @media (max-width: 960px) {
++      body.all-leads-page-active .topbar {
++        margin-left: 0;
++        width: 100%;
++      }
++    }
++
+     .topbar-left {
+       display: flex;
+       align-items: center;
+@@ -430,6 +453,33 @@
+       text-overflow: ellipsis;
+     }
+ 
++    /* Far-left company-logo placeholder: hidden everywhere by default,
++       shown only on Create New Lead (below). Matches the Dashboard sidebar
++       placeholder's style/size as closely as this different header allows.
++       Non-clickable, no functionality -- logo uploads still happen only
++       via Admin -> Settings. */
++    .crm-header-logo-placeholder {
++      display: none;
++    }
++    body.field-lead-page-active .crm-header-logo-placeholder,
++    body.calendar-page-active .crm-header-logo-placeholder {
++      display: flex;
++      align-items: center;
++      justify-content: center;
++      text-align: center;
++      width: 68px;
++      height: 68px;
++      flex: 0 0 auto;
++      font-size: 9px;
++      font-weight: 700;
++      line-height: 1.25;
++      letter-spacing: 0.02em;
++      text-transform: uppercase;
++      color: rgba(255, 255, 255, 0.55);
++      pointer-events: none;
++      user-select: none;
++    }
++
+     .crm-header-inline-title {
+       display: none;
+       min-width: 0;
+@@ -663,6 +713,14 @@
+       padding-top: 0;
+     }
+ 
++    /* Calendar's sidebar/content should sit flush under the header and
++       flush against the left/right viewport edges, not use the shared
++       .screen padding meant for simpler single-column pages -- otherwise
++       it leaves a blank strip between the viewport edge and the sidebar. */
++    body.calendar-page-active .screen {
++      padding: 0 !important;
++    }
++
+     .page {
+       display: none !important;
+       width: 100%;
+@@ -2143,6 +2201,24 @@
+       flex: 0 0 auto;
+     }
+ 
++    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .dash-sidebar-logo-placeholder {
++      width: 68px;
++      height: 68px;
++      display: flex;
++      align-items: center;
++      justify-content: center;
++      text-align: center;
++      flex: 0 0 auto;
++      font-size: 9px;
++      font-weight: 700;
++      line-height: 1.25;
++      letter-spacing: 0.02em;
++      text-transform: uppercase;
++      color: rgba(255, 255, 255, 0.55);
++      pointer-events: none;
++      user-select: none;
++    }
++
+     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-item {
+       width: 100%;
+       min-height: 58px;
+@@ -2271,7 +2347,7 @@
+       background: #1a1a2e;
+       padding: 6px 16px 8px;
+       display: grid;
+-      grid-template-columns: auto minmax(0, 1fr) auto;
++      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+       align-items: center;
+       gap: 16px;
+       min-height: 76px;
+@@ -2447,7 +2523,9 @@
+       padding: 6px 10px;
+       box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
+       align-self: center;
++      justify-self: end;
+       white-space: nowrap;
++      cursor: pointer;
+     }
+ 
+     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .user-badge {
+@@ -7224,6 +7302,13 @@
+     .crm-calendar-page-wrap {
+       max-width: 100%;
+     }
++    /* .crm-dashboard-mini-layout .crm-wrap (shared with other mini-shell
++       pages, e.g. Create New Lead's narrow single-column form) caps width
++       at 760px with higher specificity than the rule above, leaving a
++       large empty gap beside Calendar's grid. Override it here only. */
++    .crm-dashboard-mini-layout .crm-wrap.crm-calendar-page-wrap {
++      max-width: 100%;
++    }
+     .crm-calendar-shell {
+       position: relative;
+       background: #f8fafd;
+@@ -7973,6 +8058,25 @@
+       min-width: min(100%, 440px);
+       flex: 1 1 320px;
+     }
++    /* In the sidebar column (narrower than the scope bar's original
++       horizontal-row width), stack the label above the select instead of
++       side-by-side so it doesn't get squeezed. */
++    .crm-calendar-sidebar .crm-calendar-scope-bar {
++      margin: 0;
++    }
++    .crm-calendar-sidebar .crm-calendar-scope-group {
++      flex-direction: column;
++      align-items: stretch;
++      gap: 6px;
++      flex: 1 1 auto;
++    }
++    .crm-calendar-sidebar .crm-calendar-scope-label {
++      padding-top: 0;
++    }
++    .crm-calendar-sidebar .crm-calendar-scope-stack {
++      min-width: 0;
++      flex: 1 1 auto;
++    }
+     .crm-calendar-scope-select,
+     .crm-calendar-filter-search,
+     .crm-calendar-quick-assign-select,
+@@ -8103,37 +8207,70 @@
+       text-transform: uppercase;
+       color: #5f6368;
+     }
+-    .crm-calendar-fab {
+-      position: fixed;
+-      left: 24px;
+-      bottom: 26px;
+-      width: 58px;
+-      height: 58px;
+-      border: none;
+-      border-radius: 18px;
+-      background: #fff;
+-      box-shadow: 0 8px 24px rgba(60, 64, 67, 0.24);
++    /* Sidebar layout: Create button + Rep Calendar scope panel to the left
++       of the month grid, matching a Google Calendar-style shell. */
++    .crm-calendar-body-row {
++      display: flex;
++      align-items: flex-start;
++      gap: 14px;
++    }
++    .crm-calendar-sidebar {
++      flex: 0 0 280px;
++      width: 280px;
++      min-width: 0;
++      display: flex;
++      flex-direction: column;
++      gap: 18px;
++    }
++    .crm-calendar-main {
++      flex: 1 1 auto;
++      min-width: 0;
++    }
++    .crm-calendar-create-btn {
++      align-self: flex-start;
+       display: inline-flex;
+       align-items: center;
+-      justify-content: center;
+-      color: #1a73e8;
++      gap: 10px;
++      height: 52px;
++      padding: 0 20px 0 16px;
++      border: none;
++      border-radius: 26px;
++      background: #fff;
++      box-shadow: 0 1px 3px rgba(60, 64, 67, 0.2), 0 4px 8px rgba(60, 64, 67, 0.12);
++      color: #3c4043;
++      font-size: 14px;
++      font-weight: 600;
+       cursor: pointer;
+-      z-index: 40;
+-      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
++      transition: box-shadow 0.15s ease, background 0.15s ease;
+     }
+-    .crm-calendar-fab:hover {
+-      transform: translateY(-1px);
++    .crm-calendar-create-btn:hover {
+       background: #f8fbff;
+-      box-shadow: 0 10px 28px rgba(60, 64, 67, 0.28);
++      box-shadow: 0 1px 3px rgba(60, 64, 67, 0.24), 0 6px 10px rgba(60, 64, 67, 0.16);
+     }
+-    .crm-calendar-fab svg {
+-      width: 28px;
+-      height: 28px;
+-      stroke: currentColor;
++    .crm-calendar-create-btn svg {
++      width: 22px;
++      height: 22px;
++      stroke: #ea9d2b;
+       fill: none;
+-      stroke-width: 1.9;
++      stroke-width: 2.2;
+       stroke-linecap: round;
+       stroke-linejoin: round;
++      flex: 0 0 auto;
++    }
++    @media (max-width: 900px) {
++      .crm-calendar-body-row {
++        flex-direction: column;
++      }
++      .crm-calendar-sidebar {
++        flex: 1 1 auto;
++        width: 100%;
++        flex-direction: row;
++        align-items: center;
++        flex-wrap: wrap;
++      }
++      .crm-calendar-sidebar .crm-calendar-scope-bar {
++        flex: 1 1 240px;
++      }
+     }
+     .crm-appt-reminder-banner {
+       margin-bottom: 14px;
+@@ -8827,10 +8964,6 @@
+       .crm-calendar-day-cell:first-child {
+         border-top: none;
+       }
+-      .crm-calendar-fab {
+-        left: 16px;
+-        bottom: 20px;
+-      }
+       .crm-calendar-picker-popover {
+         min-width: 272px;
+       }
+@@ -9556,6 +9689,66 @@
+       background: rgba(255, 255, 255, 0.1);
+       border-color: #f0cd7e;
+     }
++    /* Calendar: same black header treatment as Create New Lead's family --
++       color scheme only. Calendar's header stays position:sticky (its
++       .screen padding is already zeroed above), so it doesn't need the
++       position:fixed treatment those pages use. */
++    body.calendar-page-active .topbar {
++      background: #090909;
++      border-bottom-color: #090909;
++      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
++    }
++    /* The generic back-visible state (used by many pages) reserves 46px
++       of margin-bottom on .topbar for a back button rendered inline in
++       the header. Calendar instead shows its own Back button at the
++       bottom of the sidebar (above), so cancel that margin and always
++       hide the header's own back button here -- otherwise it leaves a
++       gray gap between the black header and the sidebar/content. */
++    body.calendar-page-active.crm-standard-header-back-visible .topbar {
++      margin-bottom: 0;
++    }
++    body.calendar-page-active #global-header-back-btn {
++      display: none !important;
++    }
++    /* Pipeline's stage-filter pill bars share this same header markup and
++       are left populated in the DOM after visiting Pipeline (nothing clears
++       them on navigation away). Since #pipeline-header-center is a column
++       flexbox on every crm-page-active page (not just Pipeline), those
++       leftover pills stack above/below the centered Hail Money brand here
++       and inflate .topbar's height -- that inflation is the "gray strip"
++       gap between the header and the sidebar. Hide them for Calendar only;
++       the centered brand (.map-header-center-brand) is untouched. */
++    body.calendar-page-active #crm-pipeline-stage-filter-left,
++    body.calendar-page-active #crm-pipeline-stage-filter-right {
++      display: none !important;
++    }
++    body.calendar-page-active .crm-header-page-title,
++    body.calendar-page-active .crm-header-inline-title,
++    body.calendar-page-active .map-header-center-heading,
++    body.calendar-page-active .map-header-center-subtitle,
++    body.calendar-page-active .crm-profile-name,
++    body.calendar-page-active .crm-profile-role,
++    body.calendar-page-active .crm-profile-caret,
++    body.calendar-page-active .jf-notif-btn {
++      color: #ffffff;
++    }
++    body.calendar-page-active .crm-profile-toggle {
++      background: rgba(255, 255, 255, 0.05);
++      border-color: rgba(232, 190, 94, 0.7);
++      color: #ffffff;
++    }
++    body.calendar-page-active .crm-profile-toggle:hover,
++    body.calendar-page-active .crm-profile-toggle:focus-visible,
++    body.calendar-page-active .crm-profile-menu.is-open .crm-profile-toggle {
++      background: rgba(255, 255, 255, 0.1);
++      border-color: #f0cd7e;
++      box-shadow: 0 0 0 3px rgba(232, 190, 94, 0.16);
++    }
++    body.calendar-page-active .crm-profile-avatar {
++      border-color: rgba(240, 205, 126, 0.62);
++      background: rgba(232, 190, 94, 0.2);
++      color: #f7de9a;
++    }
+     body.new-contact-page-active .screen,
+     body.new-lead-page-active .screen,
+     body.reminder-page-active .screen,
+@@ -9873,6 +10066,13 @@
+     .crm-dashboard-mini-layout button {
+       font: inherit;
+     }
++    .crm-dashboard-mini-layout .nav-item.crm-calendar-sidebar-back {
++      display: none;
++    }
++    body.calendar-page-active.crm-standard-header-back-visible .crm-dashboard-mini-layout .nav-item.crm-calendar-sidebar-back {
++      display: flex;
++      margin-top: auto;
++    }
+     .crm-dashboard-mini-layout .sidebar {
+       width: 125px;
+       background: #1a1a2e;
+@@ -12290,6 +12490,7 @@
+           <img class="app-top-hail-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
+           <div class="map-header-title">Hail Money</div>
+         </div>
++        <div class="crm-header-logo-placeholder" id="crm-header-logo-placeholder">UPLOAD LOGO HERE</div>
+         <div class="crm-header-inline-title" id="crm-header-inline-title" hidden></div>
+         <div class="crm-header-page-title" id="crm-header-page-title" hidden></div>
+       </div>
+@@ -12406,7 +12607,8 @@
+           <div class="wrap">
+             <nav class="sidebar" aria-label="Dashboard navigation">
+               <div class="logo">
+-                <img id="dash-sidebar-company-logo" class="dash-sidebar-company-logo" src="./assets/hailmoney-logo.png?v=2" alt="Company Logo" draggable="false" />
++                <img id="dash-sidebar-company-logo" class="dash-sidebar-company-logo" src="./assets/hailmoney-logo.png?v=2" alt="Company Logo" draggable="false" style="display:none;" />
++                <span class="dash-sidebar-logo-placeholder" id="dash-sidebar-logo-placeholder">UPLOAD LOGO HERE</span>
+                 <span class="sr-only" id="dash-company-initials">YP</span>
+               </div>
+               <div class="nav-flyout-group nav-flyout-group-new">
+@@ -12493,12 +12695,20 @@
+                     <button class="pill closed" type="button" data-dashboard-action="pipeline" data-dashboard-pipeline-stage="closed"><div class="label">CLOSED</div><div class="letter">C</div><div class="amount" id="dash-stage-closed-amount">$0</div></button>
+                   </div>
+                 </div>
+-                <div class="user-info">
++                <div class="user-info crm-profile-menu" id="dash-profile-menu" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false">
+                   <div class="user-badge" id="dash-user-badge">HM</div>
+                   <div class="user-copy">
+                     <div class="user-name" id="dash-user-name">User</div>
+                     <div class="user-role" id="dash-user-role">Sales Rep</div>
+                   </div>
++                  <div class="crm-profile-dropdown" id="dash-profile-dropdown" role="menu" hidden>
++                    <button class="crm-profile-action" type="button" data-profile-action="profile">Profile</button>
++                    <button class="crm-profile-action" type="button" data-profile-action="change-picture">Change Picture</button>
++                    <button class="crm-profile-action" type="button" data-profile-action="account">Account Info</button>
++                    <button class="crm-profile-action" type="button" data-profile-action="username">Change Username</button>
++                    <button class="crm-profile-action" type="button" data-profile-action="password">Change Password</button>
++                    <button class="crm-profile-action danger" type="button" data-profile-action="logout">Logout</button>
++                  </div>
+                 </div>
+               </div>
+ 
+@@ -15239,6 +15449,9 @@
+ 
+       <!-- ------------------- CRM: CALENDAR ------------------- -->
+       <section id="page-crm-calendar" class="page" data-crm-header-title="Calendar">
++        <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell>
++          <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
++          <div class="crm-dashboard-mini-body">
+         <div class="crm-wrap crm-calendar-page-wrap">
+           <div class="crm-calendar-shell">
+             <div class="crm-calendar-topbar">
+@@ -15282,27 +15495,6 @@
+                 </select>
+               </div>
+             </div>
+-            <div class="crm-calendar-scope-bar">
+-              <div class="crm-calendar-scope-group">
+-                <div class="crm-calendar-scope-label">Rep Calendar</div>
+-                <div class="crm-calendar-scope-stack">
+-                  <select id="calendar-scope-select" class="crm-calendar-scope-select"></select>
+-                  <div id="calendar-filter-panel" class="crm-calendar-filter-panel" style="display:none;">
+-                    <input id="calendar-filter-search" class="crm-calendar-filter-search" type="text" placeholder="Search reps" />
+-                    <div class="crm-calendar-filter-actions">
+-                      <button class="crm-calendar-filter-btn" type="button" data-crm-filter-select-all="1">Select All</button>
+-                      <button class="crm-calendar-filter-btn" type="button" data-crm-filter-clear="1">Clear</button>
+-                    </div>
+-                    <div id="calendar-filter-summary" class="crm-calendar-filter-summary"></div>
+-                    <div id="calendar-filter-list" class="crm-calendar-filter-list"></div>
+-                  </div>
+-                </div>
+-              </div>
+-            </div>
+-
+-            <button class="crm-calendar-fab" type="button" id="calendar-add-btn" aria-label="Add appointment">
+-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+-            </button>
+ 
+             <div id="calendar-reminder-banner" class="crm-appt-reminder-banner" style="display:none;"></div>
+ 
+@@ -15379,17 +15571,44 @@
+               <div id="calendar-save-msg" class="save-confirmation" style="display:none;margin-top:10px;">Appointment saved.</div>
+             </div>
+ 
+-            <div class="crm-calendar-stage-shell">
+-              <div id="calendar-weekdays" class="crm-calendar-weekdays">
+-                <div class="crm-calendar-weekday">Sun</div>
+-                <div class="crm-calendar-weekday">Mon</div>
+-                <div class="crm-calendar-weekday">Tue</div>
+-                <div class="crm-calendar-weekday">Wed</div>
+-                <div class="crm-calendar-weekday">Thu</div>
+-                <div class="crm-calendar-weekday">Fri</div>
+-                <div class="crm-calendar-weekday">Sat</div>
++            <div class="crm-calendar-body-row">
++              <aside class="crm-calendar-sidebar">
++                <button class="crm-calendar-create-btn" type="button" id="calendar-add-btn" aria-label="Create appointment">
++                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
++                  <span>Create</span>
++                </button>
++                <div class="crm-calendar-scope-bar">
++                  <div class="crm-calendar-scope-group">
++                    <div class="crm-calendar-scope-label">Rep Calendar</div>
++                    <div class="crm-calendar-scope-stack">
++                      <select id="calendar-scope-select" class="crm-calendar-scope-select"></select>
++                      <div id="calendar-filter-panel" class="crm-calendar-filter-panel" style="display:none;">
++                        <input id="calendar-filter-search" class="crm-calendar-filter-search" type="text" placeholder="Search reps" />
++                        <div class="crm-calendar-filter-actions">
++                          <button class="crm-calendar-filter-btn" type="button" data-crm-filter-select-all="1">Select All</button>
++                          <button class="crm-calendar-filter-btn" type="button" data-crm-filter-clear="1">Clear</button>
++                        </div>
++                        <div id="calendar-filter-summary" class="crm-calendar-filter-summary"></div>
++                        <div id="calendar-filter-list" class="crm-calendar-filter-list"></div>
++                      </div>
++                    </div>
++                  </div>
++                </div>
++              </aside>
++              <div class="crm-calendar-main">
++                <div class="crm-calendar-stage-shell">
++                  <div id="calendar-weekdays" class="crm-calendar-weekdays">
++                    <div class="crm-calendar-weekday">Sun</div>
++                    <div class="crm-calendar-weekday">Mon</div>
++                    <div class="crm-calendar-weekday">Tue</div>
++                    <div class="crm-calendar-weekday">Wed</div>
++                    <div class="crm-calendar-weekday">Thu</div>
++                    <div class="crm-calendar-weekday">Fri</div>
++                    <div class="crm-calendar-weekday">Sat</div>
++                  </div>
++                  <div id="calendar-view-content" class="crm-calendar-view-content"></div>
++                </div>
+               </div>
+-              <div id="calendar-view-content" class="crm-calendar-view-content"></div>
+             </div>
+             <div id="calendar-detail-card" class="crm-calendar-detail-card" style="display:none;">
+               <div id="calendar-detail-content" class="crm-calendar-detail-placeholder">
+@@ -15401,6 +15620,8 @@
+             </div>
+           </div>
+         </div>
++          </div>
++        </div>
+       </section>
+ 
+       <!-- ------------------- CRM: JOBS (converted leads) ------------------- -->
+@@ -17074,6 +17295,9 @@
+         || pageId === 'page-field-lead'
+         || pageId === 'page-canvasser-lead');
+       document.body.classList.toggle('field-lead-page-active', pageId === 'page-field-lead');
++      document.body.classList.toggle('all-leads-page-active',
++        pageId === 'page-all-leads'
++        || pageId === 'page-my-assigned-leads');
+       document.body.classList.toggle('contacts-page-active', pageId === 'page-crm-contacts');
+       document.body.classList.toggle('reminder-page-active', pageId === 'page-crm-reminder');
+       document.body.classList.toggle('task-compose-page-active', pageId === 'page-crm-task');
+@@ -17085,6 +17309,7 @@
+         || pageId === 'page-start-inspection-step'
+         || pageId === 'page-docusign');
+       document.body.classList.toggle('pipeline-page-active', pageId === 'page-crm-pipeline');
++      document.body.classList.toggle('calendar-page-active', pageId === 'page-crm-calendar');
+       document.body.classList.toggle('settings-page-active', pageId === 'page-crm-settings');
+       if (pageId === 'page-main-menu' && typeof crmRenderDashboardCommandCenter === 'function') crmRenderDashboardCommandCenter();
+       updateGlobalHeaderBackButton();
+@@ -32467,6 +32692,29 @@
+       crmHandleTopbarProfileAction(btn.getAttribute('data-profile-action') || '');
+     });
+ 
++    /* Dashboard's own profile badge — see crmCloseAllTopbarProfileMenus()
++       comment for why this is a second instance rather than reusing
++       #crm-profile-toggle/#crm-profile-dropdown directly. */
++    document.getElementById('dash-profile-menu').addEventListener('click', function (e) {
++      if (e.target.closest('#dash-profile-dropdown')) return;
++      e.stopPropagation();
++      crmToggleTopbarProfileMenu(undefined, 'dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
++    });
++    document.getElementById('dash-profile-menu').addEventListener('keydown', function (e) {
++      if (e.target !== e.currentTarget) return;
++      if (e.key !== 'Enter' && e.key !== ' ') return;
++      e.preventDefault();
++      e.stopPropagation();
++      crmToggleTopbarProfileMenu(undefined, 'dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
++    });
++    document.getElementById('dash-profile-dropdown').addEventListener('click', function (e) {
++      var btn = e.target.closest('[data-profile-action]');
++      if (!btn) return;
++      e.stopPropagation();
++      crmHandleTopbarProfileAction(btn.getAttribute('data-profile-action') || '');
++      crmCloseTopbarProfileMenu('dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
++    });
++
+     document.getElementById('admin-sales-reps-list').addEventListener('click', function (e) {
+       var btn = e.target.closest('[data-sales-rep-id]');
+       if (!btn) return;
+@@ -32492,6 +32740,13 @@
+       backBtn.addEventListener('click', goToPreviousAppPage);
+     }());
+ 
++    /* Calendar's sidebar back button: markup is re-injected on every
++       navigation by crmRenderMiniDashboardShells(), so delegate from
++       document rather than binding to a specific element. */
++    document.addEventListener('click', function (e) {
++      if (e.target.closest('[data-crm-calendar-sidebar-back]')) goToPreviousAppPage();
++    });
++
+     /* Upper-left logo (company logo or Hail Money fallback) also returns to Main Menu */
+     (function () {
+       var brand = document.getElementById('map-header-brand');
+@@ -39847,6 +40102,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+           '<button class="nav-item nav-item-admin-only" type="button" data-dashboard-action="settings" aria-label="Settings">',
+             '<span class="dash-icon" data-dash-icon="gear" aria-hidden="true"></span><span class="nav-label">Settings</span>',
+           '</button>',
++          /* Calendar-only: hidden everywhere else via CSS. Pushed to the
++             bottom of the sidebar with margin-top:auto. Reuses the same
++             goToPreviousAppPage() the (now-hidden, for Calendar) header
++             back button calls. */
++          '<button class="nav-item crm-calendar-sidebar-back" type="button" data-crm-calendar-sidebar-back="1" aria-label="Back">',
++            '<span class="dash-icon" aria-hidden="true"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M15 6l-6 6 6 6"></path></svg></span><span class="nav-label">Back</span>',
++          '</button>',
+         '</nav>'
+       ].join('');
+     }
+@@ -39907,6 +40169,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+         el.src = dashboardCompanyLogo;
+         el.alt = String(dashboardCompanyProfile && dashboardCompanyProfile.companyName || 'Company Logo');
+       });
++      /* Dashboard's own sidebar logo slot only (unique #id, so this never
++         touches Pipeline's separate [data-dashboard-sidebar-logo] copy
++         above): show the uploaded company logo when one exists (still only
++         set via Admin -> Settings), otherwise show a plain, non-clickable
++         "Upload logo here" placeholder instead of the Hail Money fallback
++         the loop above just applied. */
++      var dashboardUploadedCompanyLogo = crmGetCompanyLogoUrl();
++      var dashSidebarLogoImg = root.querySelector('#dash-sidebar-company-logo');
++      var dashSidebarLogoPlaceholder = root.querySelector('#dash-sidebar-logo-placeholder');
++      if (dashSidebarLogoImg) {
++        if (dashboardUploadedCompanyLogo) {
++          dashSidebarLogoImg.src = dashboardUploadedCompanyLogo;
++          dashSidebarLogoImg.alt = String(dashboardCompanyProfile && dashboardCompanyProfile.companyName || 'Company Logo');
++          dashSidebarLogoImg.style.display = '';
++        } else {
++          dashSidebarLogoImg.style.display = 'none';
++        }
++      }
++      if (dashSidebarLogoPlaceholder) {
++        dashSidebarLogoPlaceholder.style.display = dashboardUploadedCompanyLogo ? 'none' : '';
++      }
+ 
+       var dashboardUserName = (typeof crmGetCurrentUserName === 'function' ? crmGetCurrentUserName() : '') || 'User';
+       var dashboardUserRole = (typeof crmGetRole === 'function' ? crmGetRole() : '') || 'Sales Rep';
+@@ -50734,19 +51017,29 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+       return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+     }
+ 
+-    function crmCloseTopbarProfileMenu() {
+-      var menu = document.getElementById('crm-profile-menu');
+-      var toggle = document.getElementById('crm-profile-toggle');
+-      var dropdown = document.getElementById('crm-profile-dropdown');
++    function crmCloseTopbarProfileMenu(menuId, toggleId, dropdownId) {
++      var menu = document.getElementById(menuId || 'crm-profile-menu');
++      var toggle = document.getElementById(toggleId || 'crm-profile-toggle');
++      var dropdown = document.getElementById(dropdownId || 'crm-profile-dropdown');
+       if (menu) menu.classList.remove('is-open');
+       if (toggle) toggle.setAttribute('aria-expanded', 'false');
+       if (dropdown) dropdown.hidden = true;
+     }
+ 
+-    function crmToggleTopbarProfileMenu(forceOpen) {
+-      var menu = document.getElementById('crm-profile-menu');
+-      var toggle = document.getElementById('crm-profile-toggle');
+-      var dropdown = document.getElementById('crm-profile-dropdown');
++    /* Dashboard's own profile badge (#dash-profile-menu) is a second,
++       independent instance of this same dropdown — its outer header is
++       display:none on the Dashboard page, so it can't reuse the shared
++       #crm-profile-menu instance. Closes both regardless of which page is
++       active; harmless no-op for whichever one isn't present/open. */
++    function crmCloseAllTopbarProfileMenus() {
++      crmCloseTopbarProfileMenu();
++      crmCloseTopbarProfileMenu('dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
++    }
++
++    function crmToggleTopbarProfileMenu(forceOpen, menuId, toggleId, dropdownId) {
++      var menu = document.getElementById(menuId || 'crm-profile-menu');
++      var toggle = document.getElementById(toggleId || 'crm-profile-toggle');
++      var dropdown = document.getElementById(dropdownId || 'crm-profile-dropdown');
+       if (!menu || !toggle || !dropdown) return;
+       var shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : dropdown.hidden;
+       menu.classList.toggle('is-open', shouldOpen);
+@@ -53412,10 +53705,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
+     document.addEventListener('click', function (e) {
+       var menu = document.getElementById('crm-profile-menu');
+       if (menu && !menu.contains(e.target)) crmCloseTopbarProfileMenu();
++      var dashMenu = document.getElementById('dash-profile-menu');
++      if (dashMenu && !dashMenu.contains(e.target)) crmCloseTopbarProfileMenu('dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
+     });
+ 
+     document.addEventListener('keydown', function (e) {
+-      if (e.key === 'Escape') crmCloseTopbarProfileMenu();
++      if (e.key === 'Escape') crmCloseAllTopbarProfileMenus();
+     });
+ 
+     /* -----------------------------------------------------------

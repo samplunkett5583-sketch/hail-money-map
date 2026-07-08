@@ -66,29 +66,6 @@
       display: none;
     }
 
-    /* Leads: match the Dashboard header's width/alignment. Dashboard's own
-       header lives inside the sidebar+content row, so it only spans the
-       125px-wide icon sidebar's remaining width (starts at x:125). This
-       shared outer header instead spans the full viewport (starts at x:0)
-       on every other page, so on just this page we offset/narrow it by the
-       sidebar's width to match. Reverted at the 960px breakpoint where the
-       sidebar itself stacks to full width.
-       NOTE: Create New Lead was previously included here too, but that
-       left a blank strip on the left instead of the header/sidebar area
-       spanning edge-to-edge like Dashboard's actually does visually — its
-       header stays full-width (below) and only the placeholder box marks
-       the far-left slot. */
-    body.all-leads-page-active .topbar {
-      margin-left: 125px;
-      width: calc(100% - 125px);
-    }
-    @media (max-width: 960px) {
-      body.all-leads-page-active .topbar {
-        margin-left: 0;
-        width: 100%;
-      }
-    }
-
     .topbar-left {
       display: flex;
       align-items: center;
@@ -453,33 +430,6 @@
       text-overflow: ellipsis;
     }
 
-    /* Far-left company-logo placeholder: hidden everywhere by default,
-       shown only on Create New Lead (below). Matches the Dashboard sidebar
-       placeholder's style/size as closely as this different header allows.
-       Non-clickable, no functionality -- logo uploads still happen only
-       via Admin -> Settings. */
-    .crm-header-logo-placeholder {
-      display: none;
-    }
-    body.field-lead-page-active .crm-header-logo-placeholder,
-    body.calendar-page-active .crm-header-logo-placeholder {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      width: 68px;
-      height: 68px;
-      flex: 0 0 auto;
-      font-size: 9px;
-      font-weight: 700;
-      line-height: 1.25;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.55);
-      pointer-events: none;
-      user-select: none;
-    }
-
     .crm-header-inline-title {
       display: none;
       min-width: 0;
@@ -711,14 +661,6 @@
 
     body:not(.app-page-active) .screen {
       padding-top: 0;
-    }
-
-    /* Calendar's sidebar/content should sit flush under the header and
-       flush against the left/right viewport edges, not use the shared
-       .screen padding meant for simpler single-column pages -- otherwise
-       it leaves a blank strip between the viewport edge and the sidebar. */
-    body.calendar-page-active .screen {
-      padding: 0 !important;
     }
 
     .page {
@@ -2201,24 +2143,6 @@
       flex: 0 0 auto;
     }
 
-    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .dash-sidebar-logo-placeholder {
-      width: 68px;
-      height: 68px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      flex: 0 0 auto;
-      font-size: 9px;
-      font-weight: 700;
-      line-height: 1.25;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.55);
-      pointer-events: none;
-      user-select: none;
-    }
-
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-item {
       width: 100%;
       min-height: 58px;
@@ -2347,7 +2271,7 @@
       background: #1a1a2e;
       padding: 6px 16px 8px;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
       gap: 16px;
       min-height: 76px;
@@ -2523,9 +2447,7 @@
       padding: 6px 10px;
       box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
       align-self: center;
-      justify-self: end;
       white-space: nowrap;
-      cursor: pointer;
     }
 
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .user-badge {
@@ -7302,13 +7224,6 @@
     .crm-calendar-page-wrap {
       max-width: 100%;
     }
-    /* .crm-dashboard-mini-layout .crm-wrap (shared with other mini-shell
-       pages, e.g. Create New Lead's narrow single-column form) caps width
-       at 760px with higher specificity than the rule above, leaving a
-       large empty gap beside Calendar's grid. Override it here only. */
-    .crm-dashboard-mini-layout .crm-wrap.crm-calendar-page-wrap {
-      max-width: 100%;
-    }
     .crm-calendar-shell {
       position: relative;
       background: #f8fafd;
@@ -7317,469 +7232,6 @@
       padding: 8px 12px 28px;
       box-shadow: none;
       color: #202124;
-    }
-    .crm-calendar-google-only-shell {
-      display: none;
-      min-height: calc(100vh - 210px);
-      border-radius: 28px;
-      background: #fff;
-      border: 1px solid #d7dfe8;
-      box-shadow: 0 18px 44px rgba(60, 64, 67, 0.12);
-      overflow: hidden;
-    }
-    .crm-calendar-google-only-toolbar {
-      display: none;
-    }
-    .crm-calendar-google-only-eyebrow {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #5f6368;
-    }
-    .crm-calendar-google-embed-fallback h2 {
-      margin: 0;
-      font-size: 32px;
-      line-height: 1.15;
-      font-weight: 500;
-      color: #202124;
-    }
-    .crm-calendar-google-embed-fallback p {
-      margin: 0;
-      max-width: 460px;
-      font-size: 15px;
-      line-height: 1.6;
-      color: #5f6368;
-    }
-    .crm-calendar-google-only-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .crm-calendar-google-layout {
-      display: grid;
-      grid-template-columns: 196px minmax(0, 1fr);
-      min-height: calc(100vh - 276px);
-      background: #fff;
-    }
-    .crm-calendar-google-sidebar {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      background: #f8fbff;
-      border-right: 1px solid #e7ecf3;
-    }
-    .crm-calendar-google-sidebar-head {
-      display: flex;
-      align-items: center;
-      min-height: 48px;
-      padding: 0 16px;
-      border-bottom: 1px solid #e7ecf3;
-      color: #5f6368;
-      font-size: 20px;
-      line-height: 1;
-      background: #eef3fb;
-      position: relative;
-    }
-    .crm-calendar-google-sidebar-head::after {
-      content: '';
-      position: absolute;
-      top: 10px;
-      right: 0;
-      bottom: 10px;
-      width: 1px;
-      background: #d9e1eb;
-    }
-    .crm-calendar-google-sidebar-inner {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      padding: 16px 12px 18px;
-    }
-    .crm-calendar-google-create-mini,
-    .crm-calendar-google-search-people {
-      min-height: 36px;
-      border: 1px solid #dadce0;
-      border-radius: 18px;
-      background: #fff;
-      color: #3c4043;
-      font-size: 13px;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 8px;
-      padding: 0 12px;
-      cursor: default;
-      text-align: left;
-    }
-    .crm-calendar-google-create-mini::before {
-      content: '+';
-      font-size: 22px;
-      line-height: 1;
-      color: #3c4043;
-    }
-    .crm-calendar-google-search-people::before {
-      content: '\1F50D';
-      font-size: 13px;
-      line-height: 1;
-      color: #5f6368;
-    }
-    .crm-calendar-google-mini-block {
-      padding: 6px 10px 10px;
-      border-radius: 16px;
-      background: #fff;
-      border: 1px solid #eef2f6;
-    }
-    .crm-calendar-google-mini-title-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .crm-calendar-google-mini-month {
-      font-size: 13px;
-      font-weight: 600;
-      color: #3c4043;
-    }
-    .crm-calendar-google-mini-nav {
-      font-size: 14px;
-      line-height: 1;
-      color: #5f6368;
-      letter-spacing: 0.25em;
-      white-space: nowrap;
-    }
-    .crm-calendar-google-mini-weekdays,
-    .crm-calendar-google-mini-grid {
-      display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 2px;
-    }
-    .crm-calendar-google-mini-weekdays {
-      margin-bottom: 4px;
-    }
-    .crm-calendar-google-mini-weekday {
-      text-align: center;
-      font-size: 9px;
-      font-weight: 600;
-      color: #5f6368;
-      text-transform: uppercase;
-      line-height: 1.6;
-    }
-    .crm-calendar-google-mini-day {
-      width: 22px;
-      height: 22px;
-      margin: 0 auto;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      color: #3c4043;
-      line-height: 1;
-    }
-    .crm-calendar-google-mini-day.outside {
-      color: #9aa0a6;
-    }
-    .crm-calendar-google-mini-day.today {
-      background: #1a73e8;
-      color: #fff;
-      font-weight: 700;
-    }
-    .crm-calendar-google-list-section {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 8px 2px 0;
-    }
-    .crm-calendar-google-list-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: #3c4043;
-    }
-    .crm-calendar-google-checkrow {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      color: #3c4043;
-    }
-    .crm-calendar-google-checkrow input {
-      margin: 0;
-      accent-color: #1a73e8;
-    }
-    .crm-calendar-google-main {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      background: #fff;
-    }
-    .crm-calendar-google-main-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      min-height: 48px;
-      padding: 8px 14px;
-      border-bottom: 1px solid #e7ecf3;
-      background: #eef3fb;
-    }
-    .crm-calendar-google-main-toolbar-left,
-    .crm-calendar-google-main-toolbar-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-    .crm-calendar-google-main-toolbar-left {
-      flex: 1 1 auto;
-    }
-    .crm-calendar-google-toolbar-icon {
-      color: #5f6368;
-    }
-    .crm-calendar-google-toolbar-period {
-      min-height: 36px;
-      border: none;
-      background: transparent;
-      color: #3c4043;
-      font-size: 14px;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 0 4px;
-      cursor: default;
-    }
-    .crm-calendar-google-toolbar-period::after {
-      content: '';
-      width: 8px;
-      height: 8px;
-      border-right: 1.7px solid currentColor;
-      border-bottom: 1.7px solid currentColor;
-      transform: rotate(45deg) translateY(-1px);
-      transform-origin: center;
-    }
-    .crm-calendar-google-date-badge {
-      width: 28px;
-      height: 32px;
-      padding: 0;
-      border: 0;
-      border-radius: 7px;
-      background: linear-gradient(180deg, #7fb1ff 0 24%, #1a73e8 24% 100%);
-      color: #ffffff;
-      font-size: 20px;
-      font-weight: 700;
-      line-height: 1;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 6px rgba(26, 115, 232, 0.18);
-      cursor: default;
-    }
-    .crm-calendar-google-settings-wrap {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-    }
-    .crm-calendar-google-settings-btn[aria-expanded="true"] {
-      background: #dfe8f7;
-      border-color: #cad6e8;
-    }
-    .crm-calendar-google-settings-menu {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      min-width: 280px;
-      padding: 10px;
-      border: 1px solid #d7dfe8;
-      border-radius: 16px;
-      background: #fff;
-      box-shadow: 0 18px 40px rgba(60, 64, 67, 0.18);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      z-index: 30;
-    }
-    .crm-calendar-google-settings-menu[hidden] {
-      display: none !important;
-    }
-    .crm-calendar-google-settings-account {
-      min-height: 18px;
-      padding: 4px 6px 10px;
-      border-bottom: 1px solid #eef2f6;
-      font-size: 12px;
-      line-height: 1.5;
-      color: #3c4043;
-    }
-    .crm-calendar-google-settings-action {
-      min-height: 38px;
-      width: 100%;
-      padding: 0 12px;
-      border: 1px solid #dadce0;
-      border-radius: 12px;
-      background: #fff;
-      color: #202124;
-      font-size: 14px;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      justify-content: flex-start;
-      cursor: pointer;
-    }
-    .crm-calendar-google-settings-action:hover,
-    .crm-calendar-google-settings-action:focus-visible {
-      background: #f8fbff;
-      border-color: #c9d3e3;
-      outline: none;
-    }
-    .crm-calendar-google-toolbar-select {
-      min-height: 36px;
-      padding: 0 14px;
-      border: 1px solid #dadce0;
-      border-radius: 18px;
-      background: #fff;
-      color: #3c4043;
-      font-size: 14px;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      cursor: default;
-      box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
-    }
-    .crm-calendar-google-toolbar-select::after {
-      content: '';
-      width: 8px;
-      height: 8px;
-      border-right: 1.7px solid currentColor;
-      border-bottom: 1.7px solid currentColor;
-      transform: rotate(45deg) translateY(-1px);
-      transform-origin: center;
-    }
-    .crm-calendar-google-toolbar-toggle {
-      min-height: 36px;
-      padding: 3px;
-      border: 1px solid #9fc2f9;
-      border-radius: 18px;
-      background: #d2e3fc;
-      display: inline-flex;
-      align-items: center;
-      gap: 2px;
-      cursor: default;
-    }
-    .crm-calendar-google-toolbar-toggle-segment {
-      width: 44px;
-      height: 28px;
-      border-radius: 14px;
-      color: #5f6368;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .crm-calendar-google-toolbar-toggle-segment.is-active {
-      background: #8ab4f8;
-      color: #174ea6;
-      box-shadow: inset 0 0 0 1px rgba(26, 115, 232, 0.18);
-    }
-    .crm-calendar-google-toolbar-toggle-segment svg {
-      width: 16px;
-      height: 16px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .crm-calendar-google-embed-wrap {
-      position: relative;
-      height: calc(100vh - 300px);
-      min-height: 640px;
-      background: #fff;
-    }
-    .crm-calendar-google-embed-frame {
-      display: block;
-      width: 100%;
-      height: 100%;
-      border: 0;
-      background: #fff;
-    }
-    .crm-calendar-google-embed-fallback {
-      padding: 34px 28px 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-      text-align: center;
-      border-top: 1px solid #e7ecf3;
-      background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
-    }
-    .crm-calendar-google-embed-fallback[hidden] {
-      display: none !important;
-    }
-    @media (max-width: 980px) {
-      .crm-calendar-google-layout {
-        grid-template-columns: 1fr;
-      }
-      .crm-calendar-google-sidebar {
-        border-right: none;
-        border-bottom: 1px solid #e7ecf3;
-      }
-    }
-    .crm-calendar-google-open-btn {
-      min-width: 280px;
-      min-height: 56px;
-      border: none;
-      border-radius: 999px;
-      padding: 0 28px;
-      background: #1a73e8;
-      color: #fff;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 10px 24px rgba(26, 115, 232, 0.24);
-      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-    }
-    .crm-calendar-google-open-btn:hover {
-      background: #1765cc;
-      transform: translateY(-1px);
-      box-shadow: 0 12px 28px rgba(26, 115, 232, 0.28);
-    }
-    .crm-calendar-google-only-account {
-      min-height: 18px;
-      font-size: 12px;
-      line-height: 1.5;
-      color: #202124;
-      margin-top: 4px;
-    }
-    body.calendar-page-active .crm-dashboard-mini-body {
-      padding: 0;
-    }
-    body.calendar-page-active .crm-calendar-page-wrap {
-      margin: 0;
-    }
-    body.calendar-page-active .crm-calendar-shell {
-      padding: 0;
-      border-radius: 0;
-    }
-    body.calendar-page-active #page-crm-calendar .crm-calendar-topbar,
-    body.calendar-page-active #page-crm-calendar #calendar-reminder-banner,
-    body.calendar-page-active #page-crm-calendar #calendar-form-card,
-    body.calendar-page-active #page-crm-calendar .crm-calendar-body-row,
-    body.calendar-page-active #page-crm-calendar #calendar-detail-card,
-    body.calendar-page-active #page-crm-calendar #calendar-quick-popup {
-      display: none !important;
-    }
-    body.calendar-page-active #page-crm-calendar .crm-calendar-google-only-shell {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      margin: 0;
-      min-height: calc(100vh - var(--crm-mini-shell-header-offset, 118px));
-      border-radius: 0;
-      border-left: none;
-      box-shadow: none;
     }
     .crm-calendar-topbar,
     .crm-calendar-topbar-left,
@@ -8413,15 +7865,14 @@
       padding: 0;
     }
     .crm-calendar-chip.all-day {
-      background: var(--crm-cal-fill, #d2e3fc);
-      color: var(--crm-cal-text, #174ea6);
-      border: 1px solid var(--crm-cal-border, #aecbfa);
+      background: #d2e3fc;
+      color: #174ea6;
       padding: 3px 8px;
       font-weight: 500;
       gap: 0;
     }
     .crm-calendar-chip.all-day:hover {
-      box-shadow: inset 0 0 0 999px rgba(255,255,255,0.08);
+      background: #c5dafc;
     }
     .crm-calendar-chip.all-day .crm-calendar-chip-dot,
     .crm-calendar-chip.all-day .crm-calendar-chip-time {
@@ -8521,25 +7972,6 @@
     .crm-calendar-scope-stack {
       min-width: min(100%, 440px);
       flex: 1 1 320px;
-    }
-    /* In the sidebar column (narrower than the scope bar's original
-       horizontal-row width), stack the label above the select instead of
-       side-by-side so it doesn't get squeezed. */
-    .crm-calendar-sidebar .crm-calendar-scope-bar {
-      margin: 0;
-    }
-    .crm-calendar-sidebar .crm-calendar-scope-group {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 6px;
-      flex: 1 1 auto;
-    }
-    .crm-calendar-sidebar .crm-calendar-scope-label {
-      padding-top: 0;
-    }
-    .crm-calendar-sidebar .crm-calendar-scope-stack {
-      min-width: 0;
-      flex: 1 1 auto;
     }
     .crm-calendar-scope-select,
     .crm-calendar-filter-search,
@@ -8671,70 +8103,37 @@
       text-transform: uppercase;
       color: #5f6368;
     }
-    /* Sidebar layout: Create button + Rep Calendar scope panel to the left
-       of the month grid, matching a Google Calendar-style shell. */
-    .crm-calendar-body-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-    }
-    .crm-calendar-sidebar {
-      flex: 0 0 280px;
-      width: 280px;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-    .crm-calendar-main {
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-    .crm-calendar-create-btn {
-      align-self: flex-start;
+    .crm-calendar-fab {
+      position: fixed;
+      left: 24px;
+      bottom: 26px;
+      width: 58px;
+      height: 58px;
+      border: none;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(60, 64, 67, 0.24);
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      height: 52px;
-      padding: 0 20px 0 16px;
-      border: none;
-      border-radius: 26px;
-      background: #fff;
-      box-shadow: 0 1px 3px rgba(60, 64, 67, 0.2), 0 4px 8px rgba(60, 64, 67, 0.12);
-      color: #3c4043;
-      font-size: 14px;
-      font-weight: 600;
+      justify-content: center;
+      color: #1a73e8;
       cursor: pointer;
-      transition: box-shadow 0.15s ease, background 0.15s ease;
+      z-index: 40;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     }
-    .crm-calendar-create-btn:hover {
+    .crm-calendar-fab:hover {
+      transform: translateY(-1px);
       background: #f8fbff;
-      box-shadow: 0 1px 3px rgba(60, 64, 67, 0.24), 0 6px 10px rgba(60, 64, 67, 0.16);
+      box-shadow: 0 10px 28px rgba(60, 64, 67, 0.28);
     }
-    .crm-calendar-create-btn svg {
-      width: 22px;
-      height: 22px;
-      stroke: #ea9d2b;
+    .crm-calendar-fab svg {
+      width: 28px;
+      height: 28px;
+      stroke: currentColor;
       fill: none;
-      stroke-width: 2.2;
+      stroke-width: 1.9;
       stroke-linecap: round;
       stroke-linejoin: round;
-      flex: 0 0 auto;
-    }
-    @media (max-width: 900px) {
-      .crm-calendar-body-row {
-        flex-direction: column;
-      }
-      .crm-calendar-sidebar {
-        flex: 1 1 auto;
-        width: 100%;
-        flex-direction: row;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-      .crm-calendar-sidebar .crm-calendar-scope-bar {
-        flex: 1 1 240px;
-      }
     }
     .crm-appt-reminder-banner {
       margin-bottom: 14px;
@@ -8745,86 +8144,6 @@
       color: #3c4043;
       font-size: 13px;
       line-height: 1.5;
-    }
-    .crm-calendar-google-card {
-      margin-top: 14px;
-      padding: 16px;
-      background: linear-gradient(180deg, #fff 0%, #f7fbff 100%);
-      border: 1px solid #d7dfe8;
-      border-radius: 24px;
-      box-shadow: 0 8px 24px rgba(60, 64, 67, 0.08);
-    }
-    .crm-calendar-google-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-    .crm-calendar-google-title {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #5f6368;
-    }
-    .crm-calendar-google-status {
-      font-size: 12px;
-      line-height: 1.5;
-      color: #5f6368;
-    }
-    .crm-calendar-google-account {
-      font-size: 12px;
-      line-height: 1.5;
-      color: #202124;
-      margin-top: 6px;
-    }
-    .crm-calendar-google-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .crm-calendar-google-switch-btn[hidden] {
-      display: none !important;
-    }
-    .crm-calendar-google-status.is-error {
-      color: #b3261e;
-    }
-    .crm-calendar-google-events {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 12px;
-    }
-    .crm-calendar-google-event {
-      padding: 12px 14px;
-      background: #fff;
-      border: 1px solid #e7ecf3;
-      border-radius: 18px;
-    }
-    .crm-calendar-google-event-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #202124;
-      margin-bottom: 4px;
-    }
-    .crm-calendar-google-event-meta {
-      font-size: 12px;
-      line-height: 1.5;
-      color: #5f6368;
-    }
-    .crm-calendar-google-event-link {
-      display: inline-flex;
-      margin-top: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #1a73e8;
-      text-decoration: none;
-    }
-    .crm-calendar-google-event-link:hover {
-      text-decoration: underline;
     }
     .crm-calendar-form-card {
       background: #fff;
@@ -8878,28 +8197,27 @@
       background: #fff;
     }
     .crm-calendar-view-content[data-calendar-view="month"] {
-      min-height: 0;
+      min-height: calc(100vh - 300px);
     }
     .crm-calendar-month-wrap {
-      min-height: 0;
+      min-height: calc(100vh - 300px);
     }
     .crm-calendar-month-grid {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
-      grid-auto-rows: minmax(112px, auto);
-      min-height: 0;
-      align-items: start;
+      grid-auto-rows: 1fr;
+      min-height: calc(100vh - 300px);
       background: #fff;
     }
     .crm-calendar-day-cell {
-      min-height: 112px;
-      padding: 6px 6px 8px;
+      min-height: 132px;
+      padding: 8px 8px 10px;
       border-right: 1px solid #eef2f6;
       border-top: 1px solid #eef2f6;
       background: #fff;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
       cursor: pointer;
       transition: background 0.15s ease, box-shadow 0.15s ease;
       min-width: 0;
@@ -8927,10 +8245,10 @@
     }
     .crm-calendar-day-header {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 8px;
-      min-height: 26px;
+      min-height: 30px;
     }
     .crm-calendar-day-number {
       width: 28px;
@@ -8957,27 +8275,26 @@
     .crm-calendar-week-stack {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
       min-width: 0;
-      align-items: stretch;
     }
     .crm-calendar-chip {
       width: 100%;
-      min-height: 20px;
-      padding: 3px 7px;
-      border: 1px solid var(--crm-cal-border, #d2e3fc);
-      border-radius: 7px;
-      background: var(--crm-cal-fill, #e8f0fe);
+      min-height: 22px;
+      padding: 2px 6px;
+      border: none;
+      border-radius: 11px;
+      background: transparent;
       display: flex;
       align-items: center;
       gap: 6px;
       text-align: left;
-      color: var(--crm-cal-text, #1967d2);
+      color: #3c4043;
       cursor: pointer;
       line-height: 1.25;
     }
     .crm-calendar-chip:hover {
-      box-shadow: inset 0 0 0 999px rgba(255,255,255,0.08);
+      background: #f1f3f4;
     }
     .crm-calendar-chip-dot {
       width: 8px;
@@ -8988,21 +8305,19 @@
     }
     .crm-calendar-chip-time {
       font-size: 11px;
-      color: inherit;
+      color: #3c4043;
       font-weight: 600;
       white-space: nowrap;
       margin: 0;
-      opacity: 0.88;
     }
     .crm-calendar-chip-title {
       display: block;
       min-width: 0;
       font-size: 12px;
-      color: inherit;
+      color: #3c4043;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-weight: 500;
     }
     .crm-calendar-chip.holiday {
       background: #e6f4ea;
@@ -9511,6 +8826,10 @@
       }
       .crm-calendar-day-cell:first-child {
         border-top: none;
+      }
+      .crm-calendar-fab {
+        left: 16px;
+        bottom: 20px;
       }
       .crm-calendar-picker-popover {
         min-width: 272px;
@@ -10237,70 +9556,6 @@
       background: rgba(255, 255, 255, 0.1);
       border-color: #f0cd7e;
     }
-    /* Calendar: same black header treatment as Create New Lead's family --
-       color scheme only. Calendar's header stays position:sticky (its
-       .screen padding is already zeroed above), so it doesn't need the
-       position:fixed treatment those pages use. */
-    body.calendar-page-active .topbar {
-      background: #090909;
-      border-bottom-color: #090909;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
-    }
-    /* The generic back-visible state (used by many pages) reserves 46px
-       of margin-bottom on .topbar for a back button rendered inline in
-       the header. Calendar instead shows its own Back button at the
-       bottom of the sidebar (above), so cancel that margin and always
-       hide the header's own back button here -- otherwise it leaves a
-       gray gap between the black header and the sidebar/content. */
-    body.calendar-page-active.crm-standard-header-back-visible .topbar {
-      margin-bottom: 0;
-    }
-    body.calendar-page-active #global-header-back-btn {
-      display: none !important;
-    }
-    /* Pipeline's stage-filter pill bars share this same header markup and
-       are left populated in the DOM after visiting Pipeline (nothing clears
-       them on navigation away). Since #pipeline-header-center is a column
-       flexbox on every crm-page-active page (not just Pipeline), those
-       leftover pills stack above/below the centered Hail Money brand here
-       and inflate .topbar's height -- that inflation is the "gray strip"
-       gap between the header and the sidebar. Hide them for Calendar only;
-       the centered brand (.map-header-center-brand) is untouched. */
-    body.calendar-page-active #crm-pipeline-stage-filter-left,
-    body.calendar-page-active #crm-pipeline-stage-filter-right {
-      display: none !important;
-    }
-    body.calendar-page-active .crm-header-page-title,
-    body.calendar-page-active .crm-header-inline-title,
-    body.calendar-page-active .map-header-center-heading,
-    body.calendar-page-active .map-header-center-subtitle,
-    body.calendar-page-active .crm-profile-name,
-    body.calendar-page-active .crm-profile-role,
-    body.calendar-page-active .crm-profile-caret,
-    body.calendar-page-active .jf-notif-btn {
-      color: #ffffff;
-    }
-    body.calendar-page-active .crm-profile-toggle {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(232, 190, 94, 0.7);
-      color: #ffffff;
-    }
-    body.calendar-page-active .crm-profile-toggle:hover,
-    body.calendar-page-active .crm-profile-toggle:focus-visible,
-    body.calendar-page-active .crm-profile-menu.is-open .crm-profile-toggle {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: #f0cd7e;
-      box-shadow: 0 0 0 3px rgba(232, 190, 94, 0.16);
-    }
-    body.calendar-page-active .crm-profile-avatar {
-      border-color: rgba(240, 205, 126, 0.62);
-      background: rgba(232, 190, 94, 0.2);
-      color: #f7de9a;
-    }
-    body.calendar-page-active .crm-header-page-title:not([hidden]),
-    body.calendar-page-active .crm-header-inline-title:not([hidden]) {
-      margin-left: 48px;
-    }
     body.new-contact-page-active .screen,
     body.new-lead-page-active .screen,
     body.reminder-page-active .screen,
@@ -10615,15 +9870,12 @@
       padding: 0;
       background: #eef1f4;
     }
+    #page-crm-calendar .crm-dashboard-mini-body {
+      padding: 0;
+      background: #ffffff;
+    }
     .crm-dashboard-mini-layout button {
       font: inherit;
-    }
-    .crm-dashboard-mini-layout .nav-item.crm-calendar-sidebar-back {
-      display: none;
-    }
-    body.calendar-page-active.crm-standard-header-back-visible .crm-dashboard-mini-layout .nav-item.crm-calendar-sidebar-back {
-      display: flex;
-      margin-top: auto;
     }
     .crm-dashboard-mini-layout .sidebar {
       width: 125px;
@@ -10778,6 +10030,14 @@
     }
     .crm-dashboard-mini-layout .crm-contact-page-shell {
       max-width: 1120px;
+    }
+    /* Calendar needs the full available width for the month/week/day grid,
+       not the shared 760px single-column cap. */
+    #page-crm-calendar .crm-wrap.crm-calendar-page-wrap {
+      max-width: none;
+      width: 100%;
+      margin-left: 0;
+      margin-right: 0;
     }
     @media (max-width: 960px) {
       #page-field-lead .new-lead-wrap {
@@ -13042,7 +12302,6 @@
           <img class="app-top-hail-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
           <div class="map-header-title">Hail Money</div>
         </div>
-        <div class="crm-header-logo-placeholder" id="crm-header-logo-placeholder">UPLOAD LOGO HERE</div>
         <div class="crm-header-inline-title" id="crm-header-inline-title" hidden></div>
         <div class="crm-header-page-title" id="crm-header-page-title" hidden></div>
       </div>
@@ -13159,8 +12418,7 @@
           <div class="wrap">
             <nav class="sidebar" aria-label="Dashboard navigation">
               <div class="logo">
-                <img id="dash-sidebar-company-logo" class="dash-sidebar-company-logo" src="./assets/hailmoney-logo.png?v=2" alt="Company Logo" draggable="false" style="display:none;" />
-                <span class="dash-sidebar-logo-placeholder" id="dash-sidebar-logo-placeholder">UPLOAD LOGO HERE</span>
+                <img id="dash-sidebar-company-logo" class="dash-sidebar-company-logo" src="./assets/hailmoney-logo.png?v=2" alt="Company Logo" draggable="false" />
                 <span class="sr-only" id="dash-company-initials">YP</span>
               </div>
               <div class="nav-flyout-group nav-flyout-group-new">
@@ -13247,19 +12505,11 @@
                     <button class="pill closed" type="button" data-dashboard-action="pipeline" data-dashboard-pipeline-stage="closed"><div class="label">CLOSED</div><div class="letter">C</div><div class="amount" id="dash-stage-closed-amount">$0</div></button>
                   </div>
                 </div>
-                <div class="user-info crm-profile-menu" id="dash-profile-menu" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false">
+                <div class="user-info">
                   <div class="user-badge" id="dash-user-badge">HM</div>
                   <div class="user-copy">
                     <div class="user-name" id="dash-user-name">User</div>
                     <div class="user-role" id="dash-user-role">Sales Rep</div>
-                  </div>
-                  <div class="crm-profile-dropdown" id="dash-profile-dropdown" role="menu" hidden>
-                    <button class="crm-profile-action" type="button" data-profile-action="profile">Profile</button>
-                    <button class="crm-profile-action" type="button" data-profile-action="change-picture">Change Picture</button>
-                    <button class="crm-profile-action" type="button" data-profile-action="account">Account Info</button>
-                    <button class="crm-profile-action" type="button" data-profile-action="username">Change Username</button>
-                    <button class="crm-profile-action" type="button" data-profile-action="password">Change Password</button>
-                    <button class="crm-profile-action danger" type="button" data-profile-action="logout">Logout</button>
                   </div>
                 </div>
               </div>
@@ -16004,102 +15254,8 @@
         <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell>
           <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
           <div class="crm-dashboard-mini-body">
-          <div class="crm-wrap crm-calendar-page-wrap">
+        <div class="crm-wrap crm-calendar-page-wrap">
           <div class="crm-calendar-shell">
-            <div class="crm-calendar-google-only-shell">
-              <div class="crm-calendar-google-layout">
-                <aside class="crm-calendar-google-sidebar">
-                  <div class="crm-calendar-google-sidebar-head" aria-hidden="true">&#9776;</div>
-                  <div class="crm-calendar-google-sidebar-inner">
-                    <button class="crm-calendar-google-create-mini" type="button" tabindex="-1">Create</button>
-                    <div class="crm-calendar-google-mini-block">
-                      <div class="crm-calendar-google-mini-title-row">
-                        <div id="calendar-google-mini-month" class="crm-calendar-google-mini-month">Month 0000</div>
-                        <div class="crm-calendar-google-mini-nav" aria-hidden="true">&#8249; &#8250;</div>
-                      </div>
-                      <div class="crm-calendar-google-mini-weekdays">
-                        <div class="crm-calendar-google-mini-weekday">S</div>
-                        <div class="crm-calendar-google-mini-weekday">M</div>
-                        <div class="crm-calendar-google-mini-weekday">T</div>
-                        <div class="crm-calendar-google-mini-weekday">W</div>
-                        <div class="crm-calendar-google-mini-weekday">T</div>
-                        <div class="crm-calendar-google-mini-weekday">F</div>
-                        <div class="crm-calendar-google-mini-weekday">S</div>
-                      </div>
-                      <div id="calendar-google-mini-grid" class="crm-calendar-google-mini-grid"></div>
-                    </div>
-                    <button class="crm-calendar-google-search-people" type="button" tabindex="-1">Search for people</button>
-                    <div class="crm-calendar-google-list-section">
-                      <div class="crm-calendar-google-list-title">My calendars</div>
-                      <label class="crm-calendar-google-checkrow">
-                        <input type="checkbox" checked disabled />
-                        <span id="calendar-google-my-calendar-label">My calendar</span>
-                      </label>
-                      <label class="crm-calendar-google-checkrow">
-                        <input type="checkbox" checked disabled />
-                        <span>Birthdays</span>
-                      </label>
-                    </div>
-                    <div class="crm-calendar-google-list-section">
-                      <div class="crm-calendar-google-list-title">Other calendars</div>
-                      <label class="crm-calendar-google-checkrow">
-                        <input type="checkbox" checked disabled />
-                        <span>Tasks</span>
-                      </label>
-                    </div>
-                  </div>
-                </aside>
-                <div class="crm-calendar-google-main">
-                  <div class="crm-calendar-google-main-toolbar">
-                    <div class="crm-calendar-google-main-toolbar-left">
-                      <button class="crm-calendar-today-btn" type="button" tabindex="-1">Today</button>
-                      <button class="crm-calendar-google-date-badge" type="button" tabindex="-1" aria-label="Calendar date 7">7</button>
-                      <button class="crm-calendar-icon-btn crm-calendar-google-toolbar-icon" type="button" tabindex="-1" aria-label="Previous month">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
-                      </button>
-                      <button class="crm-calendar-icon-btn crm-calendar-google-toolbar-icon" type="button" tabindex="-1" aria-label="Next month">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
-                      </button>
-                      <button class="crm-calendar-google-toolbar-period" type="button" tabindex="-1">
-                        <span id="calendar-google-main-period-label">July 2026</span>
-                      </button>
-                    </div>
-                    <div class="crm-calendar-google-main-toolbar-right">
-                      <button class="crm-calendar-icon-btn crm-calendar-google-toolbar-icon" type="button" tabindex="-1" aria-label="Search calendar">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.35-4.35"></path></svg>
-                      </button>
-                      <div class="crm-calendar-google-settings-wrap">
-                        <button id="calendar-google-settings-btn" class="crm-calendar-icon-btn crm-calendar-google-toolbar-icon crm-calendar-google-settings-btn" type="button" aria-label="Google Calendar settings" aria-haspopup="menu" aria-expanded="false" aria-controls="calendar-google-settings-menu">
-                          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1 1 0 0 0 .2 1.1l.05.05a2 2 0 0 1-2.83 2.83l-.05-.05a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.92V20a2 2 0 0 1-4 0v-.08a1 1 0 0 0-.66-.92 1 1 0 0 0-1.09.2l-.06.05a2 2 0 1 1-2.82-2.83l.05-.05a1 1 0 0 0 .2-1.1 1 1 0 0 0-.92-.6H4a2 2 0 0 1 0-4h.08a1 1 0 0 0 .92-.66 1 1 0 0 0-.2-1.09l-.05-.06a2 2 0 1 1 2.83-2.82l.05.05a1 1 0 0 0 1.1.2h.01a1 1 0 0 0 .59-.92V4a2 2 0 0 1 4 0v.08a1 1 0 0 0 .6.92 1 1 0 0 0 1.1-.2l.05-.05a2 2 0 1 1 2.83 2.83l-.05.05a1 1 0 0 0-.2 1.1v.01a1 1 0 0 0 .92.59H20a2 2 0 0 1 0 4h-.08a1 1 0 0 0-.52.19"></path></svg>
-                        </button>
-                        <div id="calendar-google-settings-menu" class="crm-calendar-google-settings-menu" role="menu" hidden>
-                          <div id="calendar-google-only-account" class="crm-calendar-google-settings-account"></div>
-                          <button class="crm-calendar-google-settings-action" type="button" id="calendar-google-only-connect-btn">Connect Google Calendar</button>
-                          <button class="crm-calendar-google-settings-action" type="button" id="calendar-google-only-switch-btn" hidden>Switch Google Account</button>
-                        </div>
-                      </div>
-                      <button class="crm-calendar-google-toolbar-select" type="button" tabindex="-1">Month</button>
-                      <button class="crm-calendar-google-toolbar-toggle" type="button" tabindex="-1" aria-label="Calendar and Tasks">
-                        <span class="crm-calendar-google-toolbar-toggle-segment is-active">
-                          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="2"></rect><path d="M8 4v4M16 4v4M5 10h14"></path></svg>
-                        </span>
-                        <span class="crm-calendar-google-toolbar-toggle-segment">
-                          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M9 12.2l2 2 4-4"></path></svg>
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="crm-calendar-google-embed-wrap">
-                    <iframe id="calendar-google-embed-frame" class="crm-calendar-google-embed-frame" title="Google Calendar" src="https://calendar.google.com/calendar/embed?mode=MONTH&amp;showTitle=0&amp;showNav=0&amp;showDate=0&amp;showPrint=0&amp;showTabs=0&amp;showCalendars=0&amp;showTz=0"></iframe>
-                  </div>
-                  <div id="calendar-google-embed-fallback" class="crm-calendar-google-embed-fallback" hidden>
-                    <h2>Google blocks some private calendars from being embedded</h2>
-                    <p>If the calendar does not load inside Hail Money, open Google Calendar directly in a new tab.</p>
-                    <button class="crm-calendar-google-open-btn" type="button" id="calendar-open-google-btn">Open Google Calendar</button>
-                  </div>
-                </div>
-              </div>
-            </div>
             <div class="crm-calendar-topbar">
               <div class="crm-calendar-topbar-left">
                 <button class="crm-calendar-icon-btn back-to-menu" type="button" aria-label="Main menu">
@@ -16134,12 +15290,6 @@
                 <button class="crm-calendar-icon-btn" type="button" aria-label="Search calendar">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.35-4.35"></path></svg>
                 </button>
-                <button class="crm-calendar-icon-btn" type="button" aria-label="Help">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.8 9.6a2.7 2.7 0 0 1 5.2.9c0 1.7-1.7 2.3-2.4 3.1-.3.35-.45.7-.45 1.4"></path><circle cx="12" cy="17.25" r="0.8" fill="currentColor" stroke="none"></circle></svg>
-                </button>
-                <button class="crm-calendar-icon-btn" type="button" aria-label="Settings">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1 1 0 0 0 .2 1.1l.05.05a2 2 0 0 1-2.83 2.83l-.05-.05a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.92V20a2 2 0 0 1-4 0v-.08a1 1 0 0 0-.66-.92 1 1 0 0 0-1.09.2l-.06.05a2 2 0 1 1-2.82-2.83l.05-.05a1 1 0 0 0 .2-1.1 1 1 0 0 0-.92-.6H4a2 2 0 0 1 0-4h.08a1 1 0 0 0 .92-.66 1 1 0 0 0-.2-1.09l-.05-.06a2 2 0 1 1 2.83-2.82l.05.05a1 1 0 0 0 1.1.2h.01a1 1 0 0 0 .59-.92V4a2 2 0 0 1 4 0v.08a1 1 0 0 0 .6.92 1 1 0 0 0 1.1-.2l.05-.05a2 2 0 1 1 2.83 2.83l-.05.05a1 1 0 0 0-.2 1.1v.01a1 1 0 0 0 .92.59H20a2 2 0 0 1 0 4h-.08a1 1 0 0 0-.52.19"></path></svg>
-                </button>
                 <select id="calendar-view-select" class="crm-calendar-view-select">
                   <option value="month">Month</option>
                   <option value="week">Week</option>
@@ -16147,6 +15297,27 @@
                 </select>
               </div>
             </div>
+            <div class="crm-calendar-scope-bar">
+              <div class="crm-calendar-scope-group">
+                <div class="crm-calendar-scope-label">Rep Calendar</div>
+                <div class="crm-calendar-scope-stack">
+                  <select id="calendar-scope-select" class="crm-calendar-scope-select"></select>
+                  <div id="calendar-filter-panel" class="crm-calendar-filter-panel" style="display:none;">
+                    <input id="calendar-filter-search" class="crm-calendar-filter-search" type="text" placeholder="Search reps" />
+                    <div class="crm-calendar-filter-actions">
+                      <button class="crm-calendar-filter-btn" type="button" data-crm-filter-select-all="1">Select All</button>
+                      <button class="crm-calendar-filter-btn" type="button" data-crm-filter-clear="1">Clear</button>
+                    </div>
+                    <div id="calendar-filter-summary" class="crm-calendar-filter-summary"></div>
+                    <div id="calendar-filter-list" class="crm-calendar-filter-list"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button class="crm-calendar-fab" type="button" id="calendar-add-btn" aria-label="Add appointment">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+            </button>
 
             <div id="calendar-reminder-banner" class="crm-appt-reminder-banner" style="display:none;"></div>
 
@@ -16223,100 +15394,17 @@
               <div id="calendar-save-msg" class="save-confirmation" style="display:none;margin-top:10px;">Appointment saved.</div>
             </div>
 
-            <div class="crm-calendar-body-row">
-              <aside class="crm-calendar-sidebar">
-                <button class="crm-calendar-create-btn" type="button" id="calendar-add-btn" aria-label="Create appointment">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
-                  <span>Create</span>
-                </button>
-                <div class="crm-calendar-sidebar-card crm-calendar-mini-card">
-                  <div class="crm-calendar-mini-head">
-                    <button class="crm-calendar-mini-nav-btn" type="button" data-crm-mini-nav="-1" aria-label="Previous month">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
-                    </button>
-                    <div id="calendar-mini-label" class="crm-calendar-mini-label">Month 0000</div>
-                    <button class="crm-calendar-mini-nav-btn" type="button" data-crm-mini-nav="1" aria-label="Next month">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
-                    </button>
-                  </div>
-                  <div class="crm-calendar-mini-weekdays">
-                    <div>S</div>
-                    <div>M</div>
-                    <div>T</div>
-                    <div>W</div>
-                    <div>T</div>
-                    <div>F</div>
-                    <div>S</div>
-                  </div>
-                  <div id="calendar-sidebar-mini-grid" class="crm-calendar-mini-grid"></div>
-                </div>
-                <button class="crm-calendar-sidebar-action" type="button" id="calendar-people-btn">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="9" r="3.4"></circle><path d="M4.5 18.2c1-2.55 3.2-3.9 5.5-3.9s4.5 1.35 5.5 3.9"></path><path d="M18 8h3M19.5 6.5v3"></path></svg>
-                  <span>Search for people</span>
-                </button>
-                <button class="crm-calendar-sidebar-action secondary" type="button">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="6" width="15" height="12" rx="2"></rect><path d="M8 10h8M8 14h5"></path></svg>
-                  <span>Booking pages</span>
-                </button>
-                <div class="crm-calendar-sidebar-section">
-                  <div class="crm-calendar-sidebar-section-title">My calendars</div>
-                  <label class="crm-calendar-sidebar-checkrow">
-                    <input type="checkbox" checked disabled />
-                    <span class="crm-calendar-sidebar-swatch" style="background:#1a73e8;"></span>
-                    <span>Hail Money</span>
-                  </label>
-                  <div class="crm-calendar-scope-bar">
-                    <div class="crm-calendar-scope-group">
-                      <div class="crm-calendar-scope-label">Visible calendars</div>
-                      <div class="crm-calendar-scope-stack">
-                        <select id="calendar-scope-select" class="crm-calendar-scope-select"></select>
-                        <div id="calendar-filter-panel" class="crm-calendar-filter-panel" style="display:none;">
-                          <input id="calendar-filter-search" class="crm-calendar-filter-search" type="text" placeholder="Search reps" />
-                          <div class="crm-calendar-filter-actions">
-                            <button class="crm-calendar-filter-btn" type="button" data-crm-filter-select-all="1">Select All</button>
-                            <button class="crm-calendar-filter-btn" type="button" data-crm-filter-clear="1">Clear</button>
-                          </div>
-                          <div id="calendar-filter-summary" class="crm-calendar-filter-summary"></div>
-                          <div id="calendar-filter-list" class="crm-calendar-filter-list"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="crm-calendar-sidebar-section">
-                  <div class="crm-calendar-sidebar-section-title">Other calendars</div>
-                  <div class="crm-calendar-google-card">
-                    <label class="crm-calendar-sidebar-checkrow">
-                      <input id="calendar-google-enabled" type="checkbox" disabled />
-                      <span class="crm-calendar-sidebar-swatch" style="background:#34a853;"></span>
-                      <span>Google Calendar</span>
-                    </label>
-                    <div class="crm-calendar-google-head">
-                      <div class="crm-calendar-google-actions">
-                        <button class="btn btn-primary" type="button" id="calendar-google-connect-btn">Connect Google Calendar</button>
-                        <button class="btn crm-calendar-google-switch-btn" type="button" id="calendar-google-switch-btn" hidden>Switch Google Account</button>
-                      </div>
-                    </div>
-                    <div id="calendar-google-account" class="crm-calendar-google-account"></div>
-                    <div id="calendar-google-status" class="crm-calendar-google-status">Connect to load your upcoming Google Calendar events.</div>
-                    <div id="calendar-google-events" class="crm-calendar-google-events"></div>
-                  </div>
-                </div>
-              </aside>
-              <div class="crm-calendar-main">
-                <div class="crm-calendar-stage-shell">
-                  <div id="calendar-weekdays" class="crm-calendar-weekdays">
-                    <div class="crm-calendar-weekday">Sun</div>
-                    <div class="crm-calendar-weekday">Mon</div>
-                    <div class="crm-calendar-weekday">Tue</div>
-                    <div class="crm-calendar-weekday">Wed</div>
-                    <div class="crm-calendar-weekday">Thu</div>
-                    <div class="crm-calendar-weekday">Fri</div>
-                    <div class="crm-calendar-weekday">Sat</div>
-                  </div>
-                  <div id="calendar-view-content" class="crm-calendar-view-content"></div>
-                </div>
+            <div class="crm-calendar-stage-shell">
+              <div id="calendar-weekdays" class="crm-calendar-weekdays">
+                <div class="crm-calendar-weekday">Sun</div>
+                <div class="crm-calendar-weekday">Mon</div>
+                <div class="crm-calendar-weekday">Tue</div>
+                <div class="crm-calendar-weekday">Wed</div>
+                <div class="crm-calendar-weekday">Thu</div>
+                <div class="crm-calendar-weekday">Fri</div>
+                <div class="crm-calendar-weekday">Sat</div>
               </div>
+              <div id="calendar-view-content" class="crm-calendar-view-content"></div>
             </div>
             <div id="calendar-detail-card" class="crm-calendar-detail-card" style="display:none;">
               <div id="calendar-detail-content" class="crm-calendar-detail-placeholder">
@@ -16326,8 +15414,6 @@
             <div id="calendar-quick-popup" class="crm-calendar-quick-popup" style="display:none;">
               <div id="calendar-quick-popup-content"></div>
             </div>
-          </div>
-        </div>
           </div>
         </div>
       </section>
@@ -16384,6 +15470,8 @@
               <hr class="crm-activity-divider" />
               <div class="crm-activity-feed-list"><div class="crm-activity-empty">No activity yet.</div></div>
             </div>
+          </div>
+        </div>
           </div>
         </div>
       </section>
@@ -17754,12 +16842,6 @@
     }
     var JOB_PHOTOS_BUCKET = 'job-photos';
     var JOBS_TABLE = 'jobs';
-    var HM_GOOGLE_CALENDAR_CLIENT_ID = '153623806900-eh8su07gp2du3ou8mtql11g4hn4lveeh.apps.googleusercontent.com';
-    var HM_GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
-    var HM_GOOGLE_CALENDAR_EVENTS_API_URL = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
-    var HM_GOOGLE_CALENDAR_ACCOUNT_API_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
-    var HM_GOOGLE_CALENDAR_EMBED_URL = 'https://calendar.google.com/calendar/embed?mode=MONTH&showTitle=0&showNav=0&showDate=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0';
-    var HM_GOOGLE_CALENDAR_EMBED_PREF_KEY = 'hm_google_calendar_embed_preferred';
 
     /* ---------- Supabase Jobs helpers ---------- */
     // Load all jobs from Supabase — Supabase is the sole source of truth.
@@ -18009,9 +17091,6 @@
         || pageId === 'page-field-lead'
         || pageId === 'page-canvasser-lead');
       document.body.classList.toggle('field-lead-page-active', pageId === 'page-field-lead');
-      document.body.classList.toggle('all-leads-page-active',
-        pageId === 'page-all-leads'
-        || pageId === 'page-my-assigned-leads');
       document.body.classList.toggle('contacts-page-active', pageId === 'page-crm-contacts');
       document.body.classList.toggle('reminder-page-active', pageId === 'page-crm-reminder');
       document.body.classList.toggle('task-compose-page-active', pageId === 'page-crm-task');
@@ -18023,7 +17102,6 @@
         || pageId === 'page-start-inspection-step'
         || pageId === 'page-docusign');
       document.body.classList.toggle('pipeline-page-active', pageId === 'page-crm-pipeline');
-      document.body.classList.toggle('calendar-page-active', pageId === 'page-crm-calendar');
       document.body.classList.toggle('settings-page-active', pageId === 'page-crm-settings');
       if (pageId === 'page-main-menu' && typeof crmRenderDashboardCommandCenter === 'function') crmRenderDashboardCommandCenter();
       updateGlobalHeaderBackButton();
@@ -33406,29 +32484,6 @@
       crmHandleTopbarProfileAction(btn.getAttribute('data-profile-action') || '');
     });
 
-    /* Dashboard's own profile badge — see crmCloseAllTopbarProfileMenus()
-       comment for why this is a second instance rather than reusing
-       #crm-profile-toggle/#crm-profile-dropdown directly. */
-    document.getElementById('dash-profile-menu').addEventListener('click', function (e) {
-      if (e.target.closest('#dash-profile-dropdown')) return;
-      e.stopPropagation();
-      crmToggleTopbarProfileMenu(undefined, 'dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
-    });
-    document.getElementById('dash-profile-menu').addEventListener('keydown', function (e) {
-      if (e.target !== e.currentTarget) return;
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      e.preventDefault();
-      e.stopPropagation();
-      crmToggleTopbarProfileMenu(undefined, 'dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
-    });
-    document.getElementById('dash-profile-dropdown').addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-profile-action]');
-      if (!btn) return;
-      e.stopPropagation();
-      crmHandleTopbarProfileAction(btn.getAttribute('data-profile-action') || '');
-      crmCloseTopbarProfileMenu('dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
-    });
-
     document.getElementById('admin-sales-reps-list').addEventListener('click', function (e) {
       var btn = e.target.closest('[data-sales-rep-id]');
       if (!btn) return;
@@ -33453,13 +32508,6 @@
       if (!backBtn) return;
       backBtn.addEventListener('click', goToPreviousAppPage);
     }());
-
-    /* Calendar's sidebar back button: markup is re-injected on every
-       navigation by crmRenderMiniDashboardShells(), so delegate from
-       document rather than binding to a specific element. */
-    document.addEventListener('click', function (e) {
-      if (e.target.closest('[data-crm-calendar-sidebar-back]')) goToPreviousAppPage();
-    });
 
     /* Upper-left logo (company logo or Hail Money fallback) also returns to Main Menu */
     (function () {
@@ -40816,13 +39864,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           '<button class="nav-item nav-item-admin-only" type="button" data-dashboard-action="settings" aria-label="Settings">',
             '<span class="dash-icon" data-dash-icon="gear" aria-hidden="true"></span><span class="nav-label">Settings</span>',
           '</button>',
-          /* Calendar-only: hidden everywhere else via CSS. Pushed to the
-             bottom of the sidebar with margin-top:auto. Reuses the same
-             goToPreviousAppPage() the (now-hidden, for Calendar) header
-             back button calls. */
-          '<button class="nav-item crm-calendar-sidebar-back" type="button" data-crm-calendar-sidebar-back="1" aria-label="Back">',
-            '<span class="dash-icon" aria-hidden="true"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M15 6l-6 6 6 6"></path></svg></span><span class="nav-label">Back</span>',
-          '</button>',
         '</nav>'
       ].join('');
     }
@@ -40883,27 +39924,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         el.src = dashboardCompanyLogo;
         el.alt = String(dashboardCompanyProfile && dashboardCompanyProfile.companyName || 'Company Logo');
       });
-      /* Dashboard's own sidebar logo slot only (unique #id, so this never
-         touches Pipeline's separate [data-dashboard-sidebar-logo] copy
-         above): show the uploaded company logo when one exists (still only
-         set via Admin -> Settings), otherwise show a plain, non-clickable
-         "Upload logo here" placeholder instead of the Hail Money fallback
-         the loop above just applied. */
-      var dashboardUploadedCompanyLogo = crmGetCompanyLogoUrl();
-      var dashSidebarLogoImg = root.querySelector('#dash-sidebar-company-logo');
-      var dashSidebarLogoPlaceholder = root.querySelector('#dash-sidebar-logo-placeholder');
-      if (dashSidebarLogoImg) {
-        if (dashboardUploadedCompanyLogo) {
-          dashSidebarLogoImg.src = dashboardUploadedCompanyLogo;
-          dashSidebarLogoImg.alt = String(dashboardCompanyProfile && dashboardCompanyProfile.companyName || 'Company Logo');
-          dashSidebarLogoImg.style.display = '';
-        } else {
-          dashSidebarLogoImg.style.display = 'none';
-        }
-      }
-      if (dashSidebarLogoPlaceholder) {
-        dashSidebarLogoPlaceholder.style.display = dashboardUploadedCompanyLogo ? 'none' : '';
-      }
 
       var dashboardUserName = (typeof crmGetCurrentUserName === 'function' ? crmGetCurrentUserName() : '') || 'User';
       var dashboardUserRole = (typeof crmGetRole === 'function' ? crmGetRole() : '') || 'Sales Rep';
@@ -44221,17 +43241,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     var _crmCalendarScopeValue = '';
     var _crmCalendarCustomRepIds = [];
     var _crmCalendarFilterSearch = '';
-    var _hmGoogleCalendarSdkPromise = null;
-    var _hmGoogleCalendarState = {
-      accessToken: '',
-      expiresAt: 0,
-      loading: false,
-      ready: false,
-      accountEmail: '',
-      accountName: '',
-      events: [],
-      error: ''
-    };
 
     document.getElementById('calendar-add-btn').addEventListener('click', function () {
       crmOpenAppointmentForm({
@@ -44239,36 +43248,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         type: 'Event',
         date: _crmCalendarSelectedDate || crmGetTodayDateStr()
       });
-    });
-    document.getElementById('calendar-google-connect-btn').addEventListener('click', function () {
-      hmConnectGoogleCalendar();
-    });
-    document.getElementById('calendar-google-switch-btn').addEventListener('click', function () {
-      hmSwitchGoogleCalendarAccount();
-    });
-    document.getElementById('calendar-google-only-connect-btn').addEventListener('click', function () {
-      hmCloseGoogleCalendarSettingsMenu();
-      hmRememberGoogleCalendarEmbedPreference();
-      hmConnectGoogleCalendar();
-    });
-    document.getElementById('calendar-google-only-switch-btn').addEventListener('click', function () {
-      hmCloseGoogleCalendarSettingsMenu();
-      hmRememberGoogleCalendarEmbedPreference();
-      hmSwitchGoogleCalendarAccount();
-    });
-    document.getElementById('calendar-google-settings-btn').addEventListener('click', function (e) {
-      e.stopPropagation();
-      hmToggleGoogleCalendarSettingsMenu();
-    });
-    document.getElementById('calendar-open-google-btn').addEventListener('click', function () {
-      hmRememberGoogleCalendarEmbedPreference();
-      window.open('https://calendar.google.com/calendar/u/0/r/month', '_blank', 'noopener');
-    });
-    document.getElementById('calendar-google-embed-frame').addEventListener('load', function () {
-      hmRememberGoogleCalendarEmbedPreference();
-      var fallback = document.getElementById('calendar-google-embed-fallback');
-      if (fallback) fallback.hidden = true;
-      this.setAttribute('data-embed-loaded', '1');
     });
 
     document.getElementById('calendar-today-btn').addEventListener('click', function () {
@@ -45170,456 +44149,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return crmDateToLocalYmd(new Date());
     }
 
-    function hmLoadGoogleIdentityServices() {
-      if (_hmGoogleCalendarSdkPromise) return _hmGoogleCalendarSdkPromise;
-      _hmGoogleCalendarSdkPromise = new Promise(function (resolve, reject) {
-        if (window.google && google.accounts && google.accounts.oauth2) {
-          _hmGoogleCalendarState.ready = true;
-          resolve(window.google);
-          return;
-        }
-        var existing = document.getElementById('hm-google-calendar-gis');
-        if (existing) {
-          existing.addEventListener('load', function () {
-            _hmGoogleCalendarState.ready = true;
-            resolve(window.google);
-          }, { once: true });
-          existing.addEventListener('error', function () {
-            reject(new Error('Google sign-in could not be loaded.'));
-          }, { once: true });
-          return;
-        }
-        var script = document.createElement('script');
-        script.id = 'hm-google-calendar-gis';
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.async = true;
-        script.defer = true;
-        script.onload = function () {
-          _hmGoogleCalendarState.ready = true;
-          resolve(window.google);
-        };
-        script.onerror = function () {
-          reject(new Error('Google sign-in could not be loaded.'));
-        };
-        document.head.appendChild(script);
-      });
-      return _hmGoogleCalendarSdkPromise;
-    }
-
-    function hmFormatGoogleCalendarEventWhen(event) {
-      var start = event && event.start || {};
-      var end = event && event.end || {};
-      if (start.date && !start.dateTime) {
-        var allDayDate = crmParseYmd(start.date);
-        if (!allDayDate) return 'All day';
-        return 'All day · ' + allDayDate.toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        });
-      }
-      var startAt = new Date(start.dateTime || start.date || '');
-      if (isNaN(startAt.getTime())) return 'Time unavailable';
-      var dateLabel = startAt.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
-      });
-      var startTime = startAt.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit'
-      });
-      var endAt = new Date(end.dateTime || end.date || '');
-      if (isNaN(endAt.getTime())) return dateLabel + ' · ' + startTime;
-      var endTime = endAt.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit'
-      });
-      return dateLabel + ' · ' + startTime + ' - ' + endTime;
-    }
-
-    function hmBuildGoogleCalendarEventsHtml(events) {
-      if (!Array.isArray(events) || !events.length) return '';
-      var html = '';
-      for (var i = 0; i < events.length; i++) {
-        var event = events[i] || {};
-        var title = String(event.summary || 'Untitled event').trim() || 'Untitled event';
-        var when = hmFormatGoogleCalendarEventWhen(event);
-        var location = String(event.location || '').trim();
-        var link = String(event.htmlLink || '').trim();
-        html += '<div class="crm-calendar-google-event">';
-        html += '<div class="crm-calendar-google-event-title">' + crmEscapeHtml(title) + '</div>';
-        html += '<div class="crm-calendar-google-event-meta">' + crmEscapeHtml(when) + '</div>';
-        if (location) {
-          html += '<div class="crm-calendar-google-event-meta">' + crmEscapeHtml(location) + '</div>';
-        }
-        if (link) {
-          html += '<a class="crm-calendar-google-event-link" href="' + crmEscapeHtml(link) + '" target="_blank" rel="noopener">Open in Google Calendar</a>';
-        }
-        html += '</div>';
-      }
-      return html;
-    }
-
-    function hmFormatGoogleCalendarTime(date) {
-      if (!(date instanceof Date) || isNaN(date.getTime())) return '';
-      var hours = String(date.getHours());
-      var mins = String(date.getMinutes());
-      if (hours.length < 2) hours = '0' + hours;
-      if (mins.length < 2) mins = '0' + mins;
-      return hours + ':' + mins;
-    }
-
-    function hmBuildGoogleCalendarRenderItems() {
-      var items = [];
-      var events = Array.isArray(_hmGoogleCalendarState.events) ? _hmGoogleCalendarState.events : [];
-      for (var i = 0; i < events.length; i++) {
-        var event = events[i] || {};
-        var start = event.start || {};
-        var end = event.end || {};
-        var allDay = !!(start.date && !start.dateTime);
-        var startDate = '';
-        var startTime = '';
-        var endDate = '';
-        var endTime = '';
-        if (allDay) {
-          startDate = String(start.date || '').trim();
-          var allDayEnd = crmParseYmd(String(end.date || startDate).trim());
-          if (allDayEnd) endDate = crmDateToLocalYmd(crmAddDays(allDayEnd, -1));
-          if (!endDate) endDate = startDate;
-        } else {
-          var startDt = new Date(start.dateTime || start.date || '');
-          if (isNaN(startDt.getTime())) continue;
-          startDate = crmDateToLocalYmd(startDt);
-          startTime = hmFormatGoogleCalendarTime(startDt);
-          var endDt = new Date(end.dateTime || end.date || '');
-          if (!isNaN(endDt.getTime())) {
-            endDate = crmDateToLocalYmd(endDt);
-            endTime = hmFormatGoogleCalendarTime(endDt);
-          }
-          if (!endDate) endDate = startDate;
-        }
-        if (!startDate) continue;
-        items.push({
-          id: 'google-calendar-' + String(event.id || i),
-          calendarSource: 'google',
-          title: String(event.summary || 'Untitled event').trim() || 'Untitled event',
-          type: 'Google Calendar',
-          date: startDate,
-          startDate: startDate,
-          time: startTime,
-          startTime: startTime,
-          endDate: endDate || startDate,
-          endTime: endTime,
-          allDay: allDay,
-          location: String(event.location || '').trim(),
-          address: String(event.location || '').trim(),
-          notes: String(event.description || '').trim(),
-          description: String(event.description || '').trim(),
-          meetingLink: String(event.hangoutLink || '').trim(),
-          googleCalendarHtmlLink: String(event.htmlLink || '').trim(),
-          createdAt: String(event.created || '').trim(),
-          updatedAt: String(event.updated || '').trim()
-        });
-      }
-      return items;
-    }
-
-    function hmRememberGoogleCalendarEmbedPreference() {
-      try {
-        localStorage.setItem(HM_GOOGLE_CALENDAR_EMBED_PREF_KEY, '1');
-      } catch (e) {}
-    }
-
-    function hmShouldAutoLoadGoogleCalendarEmbed() {
-      try {
-        return localStorage.getItem(HM_GOOGLE_CALENDAR_EMBED_PREF_KEY) === '1';
-      } catch (e) {
-        return false;
-      }
-    }
-
-    function hmGetGoogleCalendarSidebarLabel() {
-      var raw = String(_hmGoogleCalendarState.accountName || _hmGoogleCalendarState.accountEmail || '').trim();
-      if (!raw) return 'My calendar';
-      if (raw.indexOf('@') !== -1) raw = raw.split('@')[0];
-      raw = raw.trim();
-      return raw || 'My calendar';
-    }
-
-    function hmCloseGoogleCalendarSettingsMenu() {
-      var button = document.getElementById('calendar-google-settings-btn');
-      var menu = document.getElementById('calendar-google-settings-menu');
-      if (button) button.setAttribute('aria-expanded', 'false');
-      if (menu) menu.hidden = true;
-    }
-
-    function hmToggleGoogleCalendarSettingsMenu(forceOpen) {
-      var button = document.getElementById('calendar-google-settings-btn');
-      var menu = document.getElementById('calendar-google-settings-menu');
-      if (!button || !menu) return;
-      var shouldOpen = typeof forceOpen === 'boolean'
-        ? forceOpen
-        : button.getAttribute('aria-expanded') !== 'true';
-      button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-      menu.hidden = !shouldOpen;
-    }
-
-    function hmRenderGoogleCalendarChrome() {
-      var monthLabel = document.getElementById('calendar-google-mini-month');
-      var grid = document.getElementById('calendar-google-mini-grid');
-      var calendarLabel = document.getElementById('calendar-google-my-calendar-label');
-      var mainPeriodLabel = document.getElementById('calendar-google-main-period-label');
-      var anchor = new Date();
-      var first = new Date(anchor.getFullYear(), anchor.getMonth(), 1, 12, 0, 0, 0);
-      var start = crmStartOfWeek(first);
-      var today = crmGetTodayDateStr();
-      if (monthLabel) {
-        monthLabel.textContent = first.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      }
-      if (mainPeriodLabel) {
-        mainPeriodLabel.textContent = first.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      }
-      if (calendarLabel) {
-        calendarLabel.textContent = hmGetGoogleCalendarSidebarLabel();
-      }
-      if (grid) {
-        var html = '';
-        for (var i = 0; i < 35; i++) {
-          var d = crmAddDays(start, i);
-          var cls = 'crm-calendar-google-mini-day';
-          if (d.getMonth() !== first.getMonth()) cls += ' outside';
-          if (crmDateToLocalYmd(d) === today) cls += ' today';
-          html += '<div class="' + cls + '">' + d.getDate() + '</div>';
-        }
-        grid.innerHTML = html;
-      }
-    }
-
-    function hmRenderGoogleCalendarEmbed() {
-      var frame = document.getElementById('calendar-google-embed-frame');
-      var fallback = document.getElementById('calendar-google-embed-fallback');
-      if (!frame || !fallback) return;
-      var shouldLoad = hmShouldAutoLoadGoogleCalendarEmbed() || !!_hmGoogleCalendarState.accessToken || !!_hmGoogleCalendarState.accountEmail || document.body.classList.contains('calendar-page-active');
-      if (!shouldLoad) return;
-      var currentSrc = String(frame.getAttribute('src') || '').trim();
-      var needsReload = currentSrc !== HM_GOOGLE_CALENDAR_EMBED_URL;
-      if (needsReload) {
-        frame.setAttribute('src', HM_GOOGLE_CALENDAR_EMBED_URL);
-        frame.setAttribute('data-embed-loaded', '0');
-      }
-      if (frame.getAttribute('data-embed-loaded') === '1' && !needsReload) {
-        fallback.hidden = true;
-        return;
-      }
-      fallback.hidden = true;
-      var ticket = String(Date.now());
-      frame.setAttribute('data-embed-ticket', ticket);
-      setTimeout(function () {
-        if (!frame || frame.getAttribute('data-embed-ticket') !== ticket) return;
-        if (frame.getAttribute('data-embed-loaded') === '1') return;
-        fallback.hidden = false;
-      }, 4500);
-    }
-
-    function hmRenderGoogleCalendarPanel() {
-      var button = document.getElementById('calendar-google-connect-btn');
-      var switchButton = document.getElementById('calendar-google-switch-btn');
-      var account = document.getElementById('calendar-google-account');
-      var googleOnlyAccount = document.getElementById('calendar-google-only-account');
-      var googleOnlyConnectButton = document.getElementById('calendar-google-only-connect-btn');
-      var googleOnlySwitchButton = document.getElementById('calendar-google-only-switch-btn');
-      var status = document.getElementById('calendar-google-status');
-      var eventsHost = document.getElementById('calendar-google-events');
-      var enabledInput = document.getElementById('calendar-google-enabled');
-      if (!button || !switchButton || !account || !status || !eventsHost) return;
-      button.disabled = !!_hmGoogleCalendarState.loading;
-      switchButton.disabled = !!_hmGoogleCalendarState.loading;
-      switchButton.hidden = !_hmGoogleCalendarState.accessToken;
-      if (googleOnlyConnectButton) {
-        googleOnlyConnectButton.disabled = !!_hmGoogleCalendarState.loading;
-        googleOnlyConnectButton.textContent = _hmGoogleCalendarState.loading ? 'Connecting...' : (_hmGoogleCalendarState.accessToken ? 'Refresh Google Calendar' : 'Connect Google Calendar');
-      }
-      if (googleOnlySwitchButton) {
-        googleOnlySwitchButton.disabled = !!_hmGoogleCalendarState.loading;
-        googleOnlySwitchButton.hidden = !_hmGoogleCalendarState.accessToken;
-      }
-      if (enabledInput) enabledInput.checked = !!_hmGoogleCalendarState.accessToken;
-      if (_hmGoogleCalendarState.loading) {
-        button.textContent = 'Connecting...';
-      } else if (_hmGoogleCalendarState.accessToken) {
-        button.textContent = 'Refresh Google Calendar';
-      } else {
-        button.textContent = 'Connect Google Calendar';
-      }
-      account.textContent = _hmGoogleCalendarState.accountEmail
-        ? ('Connected as: ' + _hmGoogleCalendarState.accountEmail)
-        : '';
-      if (googleOnlyAccount) {
-        googleOnlyAccount.textContent = _hmGoogleCalendarState.accountEmail
-          ? ('Connected as: ' + _hmGoogleCalendarState.accountEmail)
-          : '';
-      }
-      if (_hmGoogleCalendarState.accountName) {
-        account.title = _hmGoogleCalendarState.accountName;
-        if (googleOnlyAccount) googleOnlyAccount.title = _hmGoogleCalendarState.accountName;
-      } else {
-        account.removeAttribute('title');
-        if (googleOnlyAccount) googleOnlyAccount.removeAttribute('title');
-      }
-      status.classList.toggle('is-error', !!_hmGoogleCalendarState.error);
-      if (_hmGoogleCalendarState.error) {
-        status.textContent = _hmGoogleCalendarState.error;
-      } else if (_hmGoogleCalendarState.loading) {
-        status.textContent = 'Connecting to Google Calendar...';
-      } else if (_hmGoogleCalendarState.accessToken) {
-        status.textContent = _hmGoogleCalendarState.events.length
-          ? 'Upcoming events from your Google Calendar.'
-          : 'Connected. No upcoming events were found.';
-      } else {
-        status.textContent = 'Connect to load your upcoming Google Calendar events.';
-      }
-      eventsHost.innerHTML = hmBuildGoogleCalendarEventsHtml(_hmGoogleCalendarState.events);
-      hmRenderGoogleCalendarChrome();
-      hmRenderGoogleCalendarEmbed();
-    }
-
-    function hmEnsureGoogleCalendarToken(options) {
-      options = options || {};
-      var forceAccountChooser = !!options.forceAccountChooser;
-      if (!forceAccountChooser && _hmGoogleCalendarState.accessToken && Date.now() < (_hmGoogleCalendarState.expiresAt - 60000)) {
-        return Promise.resolve(_hmGoogleCalendarState.accessToken);
-      }
-      return hmLoadGoogleIdentityServices().then(function () {
-        return new Promise(function (resolve, reject) {
-          try {
-            var tokenClient = google.accounts.oauth2.initTokenClient({
-              client_id: HM_GOOGLE_CALENDAR_CLIENT_ID,
-              scope: HM_GOOGLE_CALENDAR_SCOPE,
-              callback: function (response) {
-                if (response && response.error) {
-                  reject(new Error(response.error));
-                  return;
-                }
-                var token = String(response && response.access_token || '').trim();
-                if (!token) {
-                  reject(new Error('Google sign-in did not return an access token.'));
-                  return;
-                }
-                _hmGoogleCalendarState.accessToken = token;
-                _hmGoogleCalendarState.expiresAt = Date.now() + (Number(response.expires_in || 0) * 1000);
-                resolve(token);
-              },
-              error_callback: function (error) {
-                reject(new Error(error && (error.message || error.type) || 'Google sign-in was cancelled.'));
-              }
-            });
-            tokenClient.requestAccessToken({
-              prompt: forceAccountChooser || !_hmGoogleCalendarState.accessToken ? 'select_account consent' : ''
-            });
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
-    }
-
-    function hmFetchGoogleCalendarJson(url, token, fallbackMessage) {
-      return fetch(url, {
-        headers: {
-          Authorization: 'Bearer ' + token
-        }
-      }).then(function (response) {
-        if (response.ok) return response.json();
-        return response.json().catch(function () {
-          return {};
-        }).then(function (body) {
-          var message = body && body.error && body.error.message
-            ? body.error.message
-            : fallbackMessage;
-          throw new Error(message);
-        });
-      });
-    }
-
-    function hmFetchGoogleCalendarAccount(token) {
-      return hmFetchGoogleCalendarJson(HM_GOOGLE_CALENDAR_ACCOUNT_API_URL, token, 'Connected Google account details could not be loaded.').then(function (payload) {
-        _hmGoogleCalendarState.accountEmail = String(payload && payload.email || '').trim();
-        _hmGoogleCalendarState.accountName = String(payload && payload.name || '').trim();
-        return {
-          email: _hmGoogleCalendarState.accountEmail,
-          name: _hmGoogleCalendarState.accountName
-        };
-      });
-    }
-
-    function hmFetchGoogleCalendarEvents(options) {
-      options = options || {};
-      return hmEnsureGoogleCalendarToken(options).then(function (token) {
-        var url = HM_GOOGLE_CALENDAR_EVENTS_API_URL
-          + '?singleEvents=true'
-          + '&orderBy=startTime'
-          + '&timeMin=' + encodeURIComponent(new Date().toISOString())
-          + '&maxResults=10';
-        return Promise.all([
-          hmFetchGoogleCalendarJson(url, token, 'Google Calendar could not be loaded.'),
-          hmFetchGoogleCalendarAccount(token)
-        ]).then(function (results) {
-          var payload = results[0];
-          _hmGoogleCalendarState.events = Array.isArray(payload && payload.items) ? payload.items : [];
-          _hmGoogleCalendarState.error = '';
-          return _hmGoogleCalendarState.events;
-        });
-      });
-    }
-
-    function hmConnectGoogleCalendar() {
-      _hmGoogleCalendarState.loading = true;
-      _hmGoogleCalendarState.error = '';
-      hmRenderGoogleCalendarPanel();
-      hmFetchGoogleCalendarEvents().catch(function (error) {
-        _hmGoogleCalendarState.events = [];
-        _hmGoogleCalendarState.accessToken = '';
-        _hmGoogleCalendarState.expiresAt = 0;
-        _hmGoogleCalendarState.accountEmail = '';
-        _hmGoogleCalendarState.accountName = '';
-        _hmGoogleCalendarState.error = String(error && error.message || 'Google Calendar could not be connected.');
-        if (typeof showUploadToast === 'function') showUploadToast(_hmGoogleCalendarState.error);
-      }).finally(function () {
-        _hmGoogleCalendarState.loading = false;
-        crmRenderCalendar();
-      });
-    }
-
-    function hmSwitchGoogleCalendarAccount() {
-      var snapshot = {
-        accessToken: _hmGoogleCalendarState.accessToken,
-        expiresAt: _hmGoogleCalendarState.expiresAt,
-        accountEmail: _hmGoogleCalendarState.accountEmail,
-        accountName: _hmGoogleCalendarState.accountName,
-        events: Array.isArray(_hmGoogleCalendarState.events) ? _hmGoogleCalendarState.events.slice() : [],
-        error: _hmGoogleCalendarState.error
-      };
-      _hmGoogleCalendarState.loading = true;
-      _hmGoogleCalendarState.error = '';
-      hmRenderGoogleCalendarPanel();
-      hmFetchGoogleCalendarEvents({ forceAccountChooser: true }).catch(function (error) {
-        _hmGoogleCalendarState.accessToken = snapshot.accessToken;
-        _hmGoogleCalendarState.expiresAt = snapshot.expiresAt;
-        _hmGoogleCalendarState.accountEmail = snapshot.accountEmail;
-        _hmGoogleCalendarState.accountName = snapshot.accountName;
-        _hmGoogleCalendarState.events = snapshot.events;
-        _hmGoogleCalendarState.error = snapshot.error;
-        if (typeof showUploadToast === 'function') {
-          showUploadToast(String(error && error.message || 'Google account switch was cancelled.'));
-        }
-      }).finally(function () {
-        _hmGoogleCalendarState.loading = false;
-        crmRenderCalendar();
-      });
-    }
-
     function crmParseYmd(dateStr) {
       var parts = String(dateStr || '').split('-');
       if (parts.length !== 3) return null;
@@ -45735,14 +44264,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var reminderDt = crmGetAppointmentReminderDateTime(appt);
       var reminderMs = reminderDt ? reminderDt.getTime() : null;
       var completed = !!(appt && appt.completed);
-      if (crmIsGoogleCalendarEvent(appt)) {
-        return {
-          reminderActive: false,
-          overdue: false,
-          past: meetingMs > 0 && nowMs >= meetingMs,
-          completed: false
-        };
-      }
       return {
         reminderActive: !completed && reminderMs != null && meetingMs > 0 && nowMs >= reminderMs && nowMs < meetingMs,
         overdue: !completed && meetingMs > 0 && nowMs >= meetingMs,
@@ -45783,10 +44304,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmGetAppointmentTitle(appt) {
       return appt && (appt.title || crmBuildAppointmentTitle(appt.type, appt.customerName, appt.address)) || 'Appointment';
-    }
-
-    function crmIsGoogleCalendarEvent(appt) {
-      return !!(appt && appt.calendarSource === 'google');
     }
 
     function crmGetAppointmentStatusText(state) {
@@ -46005,7 +44522,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmGetAppointmentPrimaryAssignedName(appt) {
       if (!appt) return '';
-      if (crmIsGoogleCalendarEvent(appt)) return '';
       var primaryId = crmGetAppointmentPrimaryAssignedUserId(appt);
       if (primaryId) {
         var name = crmLookupCalendarUserNameById(primaryId);
@@ -46400,12 +44916,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmCanEditAppointment(appt) {
-      if (crmIsGoogleCalendarEvent(appt)) return false;
       return crmCanManageAppointmentRecord(appt);
     }
 
     function crmCanDeleteAppointment(appt) {
-      if (crmIsGoogleCalendarEvent(appt)) return false;
       var role = crmGetRole();
       if (role !== 'Admin' && role !== 'Owner' && role !== 'Manager') return false;
       return appt ? crmCanManageAppointmentRecord(appt) : true;
@@ -46456,13 +44970,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmGetAppointmentsForDate(items, dateStr) {
       return crmSortAppointments((items || []).filter(function (appt) {
-        var targetDate = String(dateStr || '').trim();
-        if (!appt || !targetDate) return false;
-        var startDate = String(crmGetAppointmentStartDate(appt) || '').trim();
-        if (!startDate) return false;
-        if (!appt.allDay) return startDate === targetDate;
-        var endDate = String(crmGetAppointmentEndDate(appt) || startDate).trim() || startDate;
-        return startDate <= targetDate && endDate >= targetDate;
+        return String(appt.date || '') === String(dateStr || '');
       }));
     }
 
@@ -46501,9 +45009,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmGetCalendarDisplayItems(items) {
       var list = (items || []).slice();
-      list = list.concat(hmBuildGoogleCalendarRenderItems());
       if (_crmCalendarDraftEvent && _crmCalendarDraftEvent.date) list.push(_crmCalendarDraftEvent);
-      return crmSortAppointments(list);
+      return list;
     }
 
     function crmShouldShowCalendarRepLabel() {
@@ -46511,9 +45018,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmGetCalendarEventStyleVars(appt, state) {
-      if (crmIsGoogleCalendarEvent(appt)) {
-        return '--crm-cal-accent:#1a73e8;--crm-cal-fill:rgba(26,115,232,0.16);--crm-cal-border:rgba(26,115,232,0.32);--crm-cal-text:#174ea6;';
-      }
       if (!appt || !state || state.completed || state.overdue || state.reminderActive) return '';
       var color = crmGetCalendarUserColor(crmGetAppointmentPrimaryAssignedUserId(appt) || crmGetAppointmentPrimaryAssignedName(appt));
       return '--crm-cal-accent:' + color + ';--crm-cal-fill:' + crmHexToRgba(color, 0.18) + ';--crm-cal-border:' + crmHexToRgba(color, 0.36) + ';--crm-cal-text:' + color + ';';
@@ -47309,7 +45813,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var chipAttr = appt && appt.isDraft
         ? 'data-crm-cal-date="' + crmEscapeHtml(appt.date || _crmCalendarQuickDate || '') + '"'
         : 'data-crm-appt-open="' + crmEscapeHtml(appt.id) + '"';
-      var titleText = !crmIsGoogleCalendarEvent(appt) && crmShouldShowCalendarRepLabel() && crmGetAppointmentPrimaryAssignedName(appt)
+      var titleText = crmShouldShowCalendarRepLabel() && crmGetAppointmentPrimaryAssignedName(appt)
         ? crmGetAppointmentPrimaryAssignedName(appt) + ' · ' + crmGetAppointmentTitle(appt)
         : crmGetAppointmentTitle(appt);
       var styleAttr = crmGetCalendarEventStyleVars(appt, state);
@@ -47335,7 +45839,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var attr = appt && appt.isDraft
         ? 'data-crm-cal-date="' + crmEscapeHtml(appt.date || _crmCalendarQuickDate || '') + '"'
         : 'data-crm-appt-open="' + crmEscapeHtml(appt.id) + '"';
-      var titleText = !crmIsGoogleCalendarEvent(appt) && crmShouldShowCalendarRepLabel() && crmGetAppointmentPrimaryAssignedName(appt)
+      var titleText = crmShouldShowCalendarRepLabel() && crmGetAppointmentPrimaryAssignedName(appt)
         ? crmGetAppointmentPrimaryAssignedName(appt) + ' · ' + crmGetAppointmentTitle(appt)
         : crmGetAppointmentTitle(appt);
       var styleAttr = crmGetCalendarEventStyleVars(appt, state);
@@ -47350,7 +45854,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderAppointmentCardHtml(appt, state) {
       var cardClass = 'crm-calendar-appt-card';
-      var isGoogleEvent = crmIsGoogleCalendarEvent(appt);
       if (state.completed) cardClass += ' completed';
       else if (state.overdue) cardClass += ' overdue';
       else if (state.reminderActive) cardClass += ' reminder';
@@ -47364,13 +45867,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       html += '<div class="crm-calendar-appt-meta">';
       html += '<div class="crm-calendar-appt-field"><div class="crm-calendar-field-label">Date</div><div class="crm-calendar-field-value">' + crmEscapeHtml(crmFormatDateShort(appt.date || '')) + '</div></div>';
       html += '<div class="crm-calendar-appt-field"><div class="crm-calendar-field-label">Time</div><div class="crm-calendar-field-value">' + crmEscapeHtml(appt.allDay ? 'All day' : crmFormatTime12(appt.time || '')) + '</div></div>';
-      if (isGoogleEvent) {
-        html += '<div class="crm-calendar-appt-field"><div class="crm-calendar-field-label">Calendar</div><div class="crm-calendar-field-value">Google Calendar</div></div>';
-      } else {
-        html += '<div class="crm-calendar-appt-field"><div class="crm-calendar-field-label">Customer</div><div class="crm-calendar-field-value">' + crmEscapeHtml(appt.customerName || '—') + '</div></div>';
-        html += '<div class="crm-calendar-appt-field"><div class="crm-calendar-field-label">Assigned Rep</div><div class="crm-calendar-field-value">' + crmEscapeHtml(crmGetAppointmentPrimaryAssignedName(appt) || '—') + '</div></div>';
-      }
-      html += '<div class="crm-calendar-appt-field full"><div class="crm-calendar-field-label">' + (isGoogleEvent ? 'Location' : 'Address') + '</div><div class="crm-calendar-field-value">' + crmEscapeHtml(crmGetAppointmentLocation(appt) || '—') + '</div></div>';
+      html += '<div class="crm-calendar-appt-field"><div class="crm-calendar-field-label">Customer</div><div class="crm-calendar-field-value">' + crmEscapeHtml(appt.customerName || '—') + '</div></div>';
+      html += '<div class="crm-calendar-appt-field"><div class="crm-calendar-field-label">Assigned Rep</div><div class="crm-calendar-field-value">' + crmEscapeHtml(crmGetAppointmentPrimaryAssignedName(appt) || '—') + '</div></div>';
+      html += '<div class="crm-calendar-appt-field full"><div class="crm-calendar-field-label">Address</div><div class="crm-calendar-field-value">' + crmEscapeHtml(crmGetAppointmentLocation(appt) || '—') + '</div></div>';
       if (appt.adjusterName) {
         html += '<div class="crm-calendar-appt-field"><div class="crm-calendar-field-label">Adjuster Name</div><div class="crm-calendar-field-value">' + crmEscapeHtml(appt.adjusterName) + '</div></div>';
       }
@@ -47380,16 +45879,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (appt.meetingLink) {
         html += '<div class="crm-calendar-appt-field full"><div class="crm-calendar-field-label">Meeting Link</div><div class="crm-calendar-field-value"><a class="crm-calendar-link" href="' + crmEscapeHtml(appt.meetingLink) + '" target="_blank" rel="noopener">Open meeting link</a></div></div>';
       }
-      if (appt.googleCalendarHtmlLink) {
-        html += '<div class="crm-calendar-appt-field full"><div class="crm-calendar-field-label">Google Calendar</div><div class="crm-calendar-field-value"><a class="crm-calendar-link" href="' + crmEscapeHtml(appt.googleCalendarHtmlLink) + '" target="_blank" rel="noopener">Open in Google Calendar</a></div></div>';
-      }
       if (crmGetAppointmentDescription(appt)) {
         html += '<div class="crm-calendar-appt-field full"><div class="crm-calendar-field-label">Notes</div><div class="crm-calendar-field-value">' + crmEscapeHtml(crmGetAppointmentDescription(appt)) + '</div></div>';
       }
-      if (!isGoogleEvent) {
-        html += '<div class="crm-calendar-appt-field"><div class="crm-calendar-field-label">Reminder</div><div class="crm-calendar-field-value">' + crmEscapeHtml(crmGetAppointmentReminderSummary(appt)) + '</div></div>';
-      }
-      html += '<div class="crm-calendar-appt-field"><div class="crm-calendar-field-label">Status</div><div class="crm-calendar-field-value">' + crmEscapeHtml(isGoogleEvent ? 'Synced from Google Calendar' : crmGetAppointmentStatusText(state)) + '</div></div>';
+      html += '<div class="crm-calendar-appt-field"><div class="crm-calendar-field-label">Reminder</div><div class="crm-calendar-field-value">' + crmEscapeHtml(crmGetAppointmentReminderSummary(appt)) + '</div></div>';
+      html += '<div class="crm-calendar-appt-field"><div class="crm-calendar-field-label">Completed Status</div><div class="crm-calendar-field-value">' + crmEscapeHtml(crmGetAppointmentStatusText(state)) + '</div></div>';
       html += '</div>';
       html += '<div class="crm-calendar-appt-actions">';
       if (!appt.completed && crmCanEditAppointment(appt)) {
@@ -47543,7 +46037,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmRenderCalendarMonthView(items) {
-      var mergedItems = crmGetCalendarDisplayItems(crmGetVisibleAppointments());
       var cursor = _crmCalendarCursor instanceof Date && !isNaN(_crmCalendarCursor.getTime())
         ? _crmCalendarCursor
         : new Date();
@@ -47555,7 +46048,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       for (var i = 0; i < 42; i++) {
         var d = crmAddDays(start, i);
         var dateStr = crmDateToLocalYmd(d);
-        var dayItems = crmGetAppointmentsForDate(mergedItems, dateStr);
+        var dayItems = crmGetAppointmentsForDate(items, dateStr);
         var holidayLabel = crmGetCalendarHolidayLabel(dateStr);
         var cellClass = 'crm-calendar-day-cell';
         if (d.getMonth() !== cursor.getMonth()) cellClass += ' outside-month';
@@ -47841,7 +46334,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmRenderCalendarPicker();
       crmRenderQuickEventPopup();
       crmRenderCalendarDetail(renderItems);
-      hmRenderGoogleCalendarPanel();
       crmRenderMainMenu();
     }
 
@@ -52259,29 +50751,19 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
     }
 
-    function crmCloseTopbarProfileMenu(menuId, toggleId, dropdownId) {
-      var menu = document.getElementById(menuId || 'crm-profile-menu');
-      var toggle = document.getElementById(toggleId || 'crm-profile-toggle');
-      var dropdown = document.getElementById(dropdownId || 'crm-profile-dropdown');
+    function crmCloseTopbarProfileMenu() {
+      var menu = document.getElementById('crm-profile-menu');
+      var toggle = document.getElementById('crm-profile-toggle');
+      var dropdown = document.getElementById('crm-profile-dropdown');
       if (menu) menu.classList.remove('is-open');
       if (toggle) toggle.setAttribute('aria-expanded', 'false');
       if (dropdown) dropdown.hidden = true;
     }
 
-    /* Dashboard's own profile badge (#dash-profile-menu) is a second,
-       independent instance of this same dropdown — its outer header is
-       display:none on the Dashboard page, so it can't reuse the shared
-       #crm-profile-menu instance. Closes both regardless of which page is
-       active; harmless no-op for whichever one isn't present/open. */
-    function crmCloseAllTopbarProfileMenus() {
-      crmCloseTopbarProfileMenu();
-      crmCloseTopbarProfileMenu('dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
-    }
-
-    function crmToggleTopbarProfileMenu(forceOpen, menuId, toggleId, dropdownId) {
-      var menu = document.getElementById(menuId || 'crm-profile-menu');
-      var toggle = document.getElementById(toggleId || 'crm-profile-toggle');
-      var dropdown = document.getElementById(dropdownId || 'crm-profile-dropdown');
+    function crmToggleTopbarProfileMenu(forceOpen) {
+      var menu = document.getElementById('crm-profile-menu');
+      var toggle = document.getElementById('crm-profile-toggle');
+      var dropdown = document.getElementById('crm-profile-dropdown');
       if (!menu || !toggle || !dropdown) return;
       var shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : dropdown.hidden;
       menu.classList.toggle('is-open', shouldOpen);
@@ -54947,15 +53429,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     document.addEventListener('click', function (e) {
       var menu = document.getElementById('crm-profile-menu');
       if (menu && !menu.contains(e.target)) crmCloseTopbarProfileMenu();
-      var dashMenu = document.getElementById('dash-profile-menu');
-      if (dashMenu && !dashMenu.contains(e.target)) crmCloseTopbarProfileMenu('dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
-      var googleSettingsWrap = document.querySelector('.crm-calendar-google-settings-wrap');
-      if (googleSettingsWrap && !googleSettingsWrap.contains(e.target)) hmCloseGoogleCalendarSettingsMenu();
     });
 
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') crmCloseAllTopbarProfileMenus();
-      if (e.key === 'Escape') hmCloseGoogleCalendarSettingsMenu();
+      if (e.key === 'Escape') crmCloseTopbarProfileMenu();
     });
 
     /* ═══════════════════════════════════════════════════════════

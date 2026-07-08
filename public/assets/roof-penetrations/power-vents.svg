@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <!-- roof surface -->
+  <rect x="4" y="58" width="72" height="14" rx="3" fill="#c8a86a" stroke="#6b7280" stroke-width="1.5"/>
+  <!-- dome housing -->
+  <path d="M15 59 Q15 30 40 28 Q65 30 65 59 Z" fill="#9ca3af" stroke="#374151" stroke-width="1.5"/>
+  <!-- fan grill ring -->
+  <circle cx="40" cy="48" r="14" fill="#6b7280" stroke="#374151" stroke-width="1.5"/>
+  <!-- fan blades -->
+  <line x1="40" y1="35" x2="40" y2="61" stroke="#d1d5db" stroke-width="2.5"/>
+  <line x1="27" y1="48" x2="53" y2="48" stroke="#d1d5db" stroke-width="2.5"/>
+  <line x1="30" y1="38" x2="50" y2="58" stroke="#d1d5db" stroke-width="2"/>
+  <line x1="50" y1="38" x2="30" y2="58" stroke="#d1d5db" stroke-width="2"/>
+  <!-- center hub -->
+  <circle cx="40" cy="48" r="4" fill="#374151"/>
+  <!-- motor bump on top -->
+  <circle cx="40" cy="33" r="5" fill="#374151" stroke="#374151" stroke-width="1"/>
+</svg>
