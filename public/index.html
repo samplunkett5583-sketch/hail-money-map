@@ -35427,8 +35427,12 @@ function mapsGoogleReady() {
       activeIndex: -1,
       predictions: [],
       selectedPlaceId: '',
+      autocompleteService: null,
+      placesService: null,
       geocoder: null,
-      noResults: false
+      sessionToken: null,
+      noResults: false,
+      errorMessage: ''
     };
 
     function crmAddressAutocompleteFillField(id, value) {
@@ -35487,6 +35491,7 @@ function mapsGoogleReady() {
       _crmFieldLeadAddressAutocomplete.activeIndex = -1;
       _crmFieldLeadAddressAutocomplete.predictions = [];
       _crmFieldLeadAddressAutocomplete.noResults = false;
+      _crmFieldLeadAddressAutocomplete.errorMessage = '';
     }
 
     function crmRenderFieldLeadAddressSuggestions() {
@@ -35494,6 +35499,11 @@ function mapsGoogleReady() {
       if (!list) return;
       var predictions = Array.isArray(_crmFieldLeadAddressAutocomplete.predictions) ? _crmFieldLeadAddressAutocomplete.predictions : [];
       if (!predictions.length) {
+        if (_crmFieldLeadAddressAutocomplete.errorMessage) {
+          list.innerHTML = '<div class="fl-address-suggestion is-empty" aria-live="polite">' + crmEscapeHtml(_crmFieldLeadAddressAutocomplete.errorMessage) + '</div>';
+          list.hidden = false;
+          return;
+        }
         if (_crmFieldLeadAddressAutocomplete.noResults) {
           list.innerHTML = '<div class="fl-address-suggestion is-empty" aria-live="polite">No addresses found</div>';
           list.hidden = false;
@@ -35516,24 +35526,21 @@ function mapsGoogleReady() {
 
     function crmBuildFieldLeadAddressPrediction(result) {
       result = result || {};
-      var components = Array.isArray(result.address_components) ? result.address_components : [];
-      var street = mapsBuildStreetFromComponents(components);
-      if (!street) street = String((result.formatted_address || '').split(',')[0] || '').trim();
-      var city =
-        mapsFindAddressComponent(components, 'locality', false) ||
-        mapsFindAddressComponent(components, 'postal_town', false) ||
-        mapsFindAddressComponent(components, 'sublocality', false) ||
-        mapsFindAddressComponent(components, 'administrative_area_level_3', false) ||
-        mapsFindAddressComponent(components, 'administrative_area_level_2', false);
-      var state = mapsFindAddressComponent(components, 'administrative_area_level_1', true);
-      var zip = mapsFindAddressComponent(components, 'postal_code', false);
-      var zipSuffix = mapsFindAddressComponent(components, 'postal_code_suffix', false);
-      if (zip && zipSuffix) zip += '-' + zipSuffix;
+      var formatting = result.structured_formatting && typeof result.structured_formatting === 'object'
+        ? result.structured_formatting
+        : {};
+      var description = String(result.description || '').trim();
+      var mainText = String(formatting.main_text || '').trim();
+      var secondaryText = String(formatting.secondary_text || '').trim();
+      if (!mainText && description) mainText = String(description.split(',')[0] || '').trim();
+      if (!secondaryText && description) secondaryText = description.replace(mainText, '').replace(/^,\s*/, '').trim();
       return {
-        key: String(result.place_id || result.formatted_address || '').trim(),
-        mainText: street,
-        secondaryText: [city, [state, zip].filter(Boolean).join(' ')].filter(Boolean).join(', '),
-        description: String(result.formatted_address || '').trim(),
+        key: String(result.place_id || description || mainText).trim(),
+        placeId: String(result.place_id || '').trim(),
+        mainText: mainText,
+        secondaryText: secondaryText,
+        description: description,
+        types: Array.isArray(result.types) ? result.types.slice() : [],
         result: result
       };
     }
@@ -35541,13 +35548,82 @@ function mapsGoogleReady() {
     function crmIsFieldLeadAddressCandidate(result) {
       result = result || {};
       var types = Array.isArray(result.types) ? result.types : [];
-      if (types.indexOf('street_address') !== -1) return true;
       if (types.indexOf('premise') !== -1 || types.indexOf('subpremise') !== -1) return true;
-      var components = Array.isArray(result.address_components) ? result.address_components : [];
-      var street = mapsBuildStreetFromComponents(components);
-      if (!street) return false;
-      if (types.indexOf('route') !== -1) return true;
-      return /^\d+\s+/.test(street);
+      if (types.indexOf('street_address') !== -1) return true;
+      if (types.indexOf('establishment') !== -1 || types.indexOf('point_of_interest') !== -1) return false;
+      if (types.indexOf('locality') !== -1 || types.indexOf('administrative_area_level_1') !== -1 || types.indexOf('country') !== -1) return false;
+      var description = String(result.description || '').trim();
+      var formatting = result.structured_formatting && typeof result.structured_formatting === 'object'
+        ? result.structured_formatting
+        : {};
+      var mainText = String(formatting.main_text || description).trim();
+      if (/^\d+\s+/.test(mainText) || /^\d+\s+/.test(description)) return true;
+      return types.indexOf('route') !== -1 || types.indexOf('geocode') !== -1;
+    }
+
+    function crmGetFieldLeadAddressPredictionScore(prediction) {
+      prediction = prediction || {};
+      var types = Array.isArray(prediction.types) ? prediction.types : [];
+      var text = String(prediction.mainText || prediction.description || '').trim();
+      var score = 0;
+      if (types.indexOf('street_address') !== -1) score += 50;
+      if (types.indexOf('premise') !== -1 || types.indexOf('subpremise') !== -1) score += 45;
+      if (types.indexOf('route') !== -1) score += 10;
+      if (types.indexOf('geocode') !== -1) score += 6;
+      if (/^\d+\s+/.test(text)) score += 40;
+      if (prediction.secondaryText) score += 4;
+      return score;
+    }
+
+    function crmEnsureFieldLeadAddressSessionToken() {
+      if (_crmFieldLeadAddressAutocomplete.sessionToken) return _crmFieldLeadAddressAutocomplete.sessionToken;
+      if (typeof google === 'undefined' || !google.maps || !google.maps.places || typeof google.maps.places.AutocompleteSessionToken !== 'function') {
+        return null;
+      }
+      _crmFieldLeadAddressAutocomplete.sessionToken = new google.maps.places.AutocompleteSessionToken();
+      return _crmFieldLeadAddressAutocomplete.sessionToken;
+    }
+
+    function crmResetFieldLeadAddressSessionToken() {
+      _crmFieldLeadAddressAutocomplete.sessionToken = null;
+    }
+
+    function crmFetchFieldLeadAddressPlaceDetails(placeId, callback) {
+      var placesService = _crmFieldLeadAddressAutocomplete.placesService;
+      if (!placeId || !placesService || typeof callback !== 'function') {
+        callback(null, 'SERVICE_UNAVAILABLE');
+        return;
+      }
+      var request = {
+        placeId: placeId,
+        fields: ['address_components', 'formatted_address', 'geometry', 'name', 'place_id']
+      };
+      var token = _crmFieldLeadAddressAutocomplete.sessionToken;
+      if (token) request.sessionToken = token;
+      try {
+        placesService.getDetails(request, function (place, status) {
+          var okStatus = typeof google !== 'undefined' && google.maps && google.maps.places && google.maps.places.PlacesServiceStatus
+            ? google.maps.places.PlacesServiceStatus.OK
+            : 'OK';
+          if (status === okStatus && place && Array.isArray(place.address_components) && place.address_components.length) {
+            callback(place, status);
+            return;
+          }
+          if (_crmFieldLeadAddressAutocomplete.geocoder) {
+            try {
+              _crmFieldLeadAddressAutocomplete.geocoder.geocode({ placeId: placeId }, function (results, geocodeStatus) {
+                var geocodePlace = Array.isArray(results) && results.length ? results[0] : null;
+                callback(geocodePlace, geocodeStatus || status || 'ERROR');
+              });
+              return;
+            } catch (geocodeErr) {
+            }
+          }
+          callback(place || null, status || 'ERROR');
+        });
+      } catch (err) {
+        callback(null, 'ERROR');
+      }
     }
 
     function crmApplyFieldLeadAddressPlace(place) {
@@ -35583,6 +35659,7 @@ function mapsGoogleReady() {
         if (typeof streetInput.setCustomValidity === 'function') streetInput.setCustomValidity('');
         streetInput.removeAttribute('aria-invalid');
       }
+      crmResetFieldLeadAddressSessionToken();
       crmHideFieldLeadAddressSuggestions();
     }
 
@@ -35590,54 +35667,97 @@ function mapsGoogleReady() {
       index = Number(index);
       if (!isFinite(index)) return;
       var prediction = (_crmFieldLeadAddressAutocomplete.predictions || [])[index] || null;
-      if (!prediction || !prediction.result) return;
-      crmApplyFieldLeadAddressPlace(prediction.result);
+      if (!prediction || !prediction.placeId) return;
+      _crmFieldLeadAddressAutocomplete.selectedPlaceId = String(prediction.placeId || '').trim();
+      var requestToken = ++_crmFieldLeadAddressAutocomplete.requestToken;
+      crmFetchFieldLeadAddressPlaceDetails(prediction.placeId, function (place, status) {
+        if (requestToken !== _crmFieldLeadAddressAutocomplete.requestToken) return;
+        var okStatus = typeof google !== 'undefined' && google.maps && google.maps.places && google.maps.places.PlacesServiceStatus
+          ? google.maps.places.PlacesServiceStatus.OK
+          : 'OK';
+        if (status === okStatus && place) {
+          crmApplyFieldLeadAddressPlace(place);
+          return;
+        }
+        _crmFieldLeadAddressAutocomplete.selectedPlaceId = '';
+        _crmFieldLeadAddressAutocomplete.errorMessage = 'Address details unavailable. Please complete the address manually.';
+        _crmFieldLeadAddressAutocomplete.predictions = [];
+        _crmFieldLeadAddressAutocomplete.activeIndex = -1;
+        _crmFieldLeadAddressAutocomplete.noResults = false;
+        crmResetFieldLeadAddressSessionToken();
+        crmRenderFieldLeadAddressSuggestions();
+      });
     }
 
     function crmFetchFieldLeadAddressPredictions(value) {
-      if (!_crmFieldLeadAddressAutocomplete.geocoder) return;
+      if (!_crmFieldLeadAddressAutocomplete.autocompleteService) return;
       var streetInput = document.getElementById('fl-street');
       if (!streetInput) return;
       var query = String(value || '').trim();
       streetInput.dataset.crmAddressValidated = '';
       _crmFieldLeadAddressAutocomplete.selectedPlaceId = '';
       _crmFieldLeadAddressAutocomplete.noResults = false;
+      _crmFieldLeadAddressAutocomplete.errorMessage = '';
       if (typeof streetInput.setCustomValidity === 'function') streetInput.setCustomValidity('');
       streetInput.removeAttribute('aria-invalid');
       if (query.length < 3) {
+        crmResetFieldLeadAddressSessionToken();
         crmHideFieldLeadAddressSuggestions();
         return;
       }
+      var request = {
+        input: query,
+        componentRestrictions: { country: 'us' },
+        types: ['address']
+      };
+      var sessionToken = crmEnsureFieldLeadAddressSessionToken();
+      if (sessionToken) request.sessionToken = sessionToken;
       var requestToken = ++_crmFieldLeadAddressAutocomplete.requestToken;
-      _crmFieldLeadAddressAutocomplete.geocoder.geocode({
-        address: query,
-        componentRestrictions: { country: 'US' },
-        region: 'US'
-      }, function (results, status) {
-        if (requestToken !== _crmFieldLeadAddressAutocomplete.requestToken) return;
-        if (status !== 'OK' || !Array.isArray(results) || !results.length) {
-          _crmFieldLeadAddressAutocomplete.predictions = [];
-          _crmFieldLeadAddressAutocomplete.activeIndex = -1;
-          _crmFieldLeadAddressAutocomplete.noResults = query.length >= 3;
+      try {
+        _crmFieldLeadAddressAutocomplete.autocompleteService.getPlacePredictions(request, function (results, status) {
+          if (requestToken !== _crmFieldLeadAddressAutocomplete.requestToken) return;
+          var okStatus = typeof google !== 'undefined' && google.maps && google.maps.places && google.maps.places.PlacesServiceStatus
+            ? google.maps.places.PlacesServiceStatus.OK
+            : 'OK';
+          var zeroResultsStatus = typeof google !== 'undefined' && google.maps && google.maps.places && google.maps.places.PlacesServiceStatus
+            ? google.maps.places.PlacesServiceStatus.ZERO_RESULTS
+            : 'ZERO_RESULTS';
+          if (status !== okStatus) {
+            _crmFieldLeadAddressAutocomplete.predictions = [];
+            _crmFieldLeadAddressAutocomplete.activeIndex = -1;
+            _crmFieldLeadAddressAutocomplete.noResults = status === zeroResultsStatus;
+            _crmFieldLeadAddressAutocomplete.errorMessage = status === zeroResultsStatus ? '' : 'Address suggestions unavailable right now.';
+            crmRenderFieldLeadAddressSuggestions();
+            return;
+          }
+          var seen = {};
+          _crmFieldLeadAddressAutocomplete.predictions = (Array.isArray(results) ? results : [])
+            .filter(crmIsFieldLeadAddressCandidate)
+            .map(crmBuildFieldLeadAddressPrediction)
+            .filter(function (prediction) {
+              if (!prediction.key || !prediction.mainText || !prediction.placeId) return false;
+              var key = prediction.key.toLowerCase();
+              if (seen[key]) return false;
+              seen[key] = true;
+              return true;
+            })
+            .sort(function (a, b) {
+              return crmGetFieldLeadAddressPredictionScore(b) - crmGetFieldLeadAddressPredictionScore(a);
+            })
+            .slice(0, 8);
+          _crmFieldLeadAddressAutocomplete.noResults = !_crmFieldLeadAddressAutocomplete.predictions.length;
+          _crmFieldLeadAddressAutocomplete.errorMessage = '';
+          _crmFieldLeadAddressAutocomplete.activeIndex = _crmFieldLeadAddressAutocomplete.predictions.length ? 0 : -1;
           crmRenderFieldLeadAddressSuggestions();
-          return;
-        }
-        var seen = {};
-        _crmFieldLeadAddressAutocomplete.predictions = results
-          .filter(crmIsFieldLeadAddressCandidate)
-          .map(crmBuildFieldLeadAddressPrediction)
-          .filter(function (prediction) {
-            if (!prediction.key || !prediction.mainText) return false;
-            var key = prediction.key.toLowerCase();
-            if (seen[key]) return false;
-            seen[key] = true;
-            return true;
-          })
-          .slice(0, 8);
-        _crmFieldLeadAddressAutocomplete.noResults = !_crmFieldLeadAddressAutocomplete.predictions.length;
-        _crmFieldLeadAddressAutocomplete.activeIndex = _crmFieldLeadAddressAutocomplete.predictions.length ? 0 : -1;
+        });
+      } catch (err) {
+        if (requestToken !== _crmFieldLeadAddressAutocomplete.requestToken) return;
+        _crmFieldLeadAddressAutocomplete.predictions = [];
+        _crmFieldLeadAddressAutocomplete.activeIndex = -1;
+        _crmFieldLeadAddressAutocomplete.noResults = false;
+        _crmFieldLeadAddressAutocomplete.errorMessage = 'Address suggestions unavailable right now.';
         crmRenderFieldLeadAddressSuggestions();
-      });
+      }
     }
 
     function crmMoveFieldLeadAddressSelection(direction) {
@@ -35651,17 +35771,24 @@ function mapsGoogleReady() {
     }
 
     function crmBindFieldLeadAddressAutocomplete() {
-      if (_crmFieldLeadAddressAutocomplete.bound || typeof google === 'undefined' || !google.maps) return;
+      if (_crmFieldLeadAddressAutocomplete.bound || typeof google === 'undefined' || !google.maps || !google.maps.places) return;
       var streetInput = document.getElementById('fl-street');
       var suggestionList = document.getElementById('fl-street-suggestions');
       if (!streetInput || !suggestionList) return;
+      if (typeof google.maps.places.AutocompleteService !== 'function' || typeof google.maps.places.PlacesService !== 'function') return;
       _crmFieldLeadAddressAutocomplete.bound = true;
+      _crmFieldLeadAddressAutocomplete.autocompleteService = new google.maps.places.AutocompleteService();
+      _crmFieldLeadAddressAutocomplete.placesService = new google.maps.places.PlacesService(document.createElement('div'));
       _crmFieldLeadAddressAutocomplete.geocoder = new google.maps.Geocoder();
       streetInput.setAttribute('autocomplete', 'off');
       streetInput.addEventListener('input', function () {
         crmFetchFieldLeadAddressPredictions(streetInput.value);
       });
       streetInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          crmHideFieldLeadAddressSuggestions();
+          return;
+        }
         if (!_crmFieldLeadAddressAutocomplete.predictions.length) return;
         if (e.key === 'ArrowDown') {
           e.preventDefault();
@@ -35678,9 +35805,6 @@ function mapsGoogleReady() {
           e.preventDefault();
           crmSelectFieldLeadAddressPrediction(_crmFieldLeadAddressAutocomplete.activeIndex);
           return;
-        }
-        if (e.key === 'Escape') {
-          crmHideFieldLeadAddressSuggestions();
         }
       });
       streetInput.addEventListener('blur', function () {
