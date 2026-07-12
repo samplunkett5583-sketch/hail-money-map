@@ -1888,6 +1888,366 @@
       text-align: center;
     }
 
+    .crm-crossref-panel {
+      display: none;
+      margin-top: 14px;
+      padding: 14px 16px;
+      border: 1px solid rgba(202, 168, 92, 0.34);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(202, 168, 92, 0.1) 0%, rgba(255, 255, 255, 0.96) 100%);
+      box-shadow: inset 0 0 0 1px rgba(202, 168, 92, 0.08);
+    }
+
+    #page-field-lead .crm-crossref-panel {
+      border-color: var(--border);
+      background: var(--panel);
+      box-shadow: none;
+    }
+
+    #page-field-lead .crm-crossref-panel.is-exact-match {
+      border-color: #caa85c;
+      background: linear-gradient(180deg, rgba(202, 168, 92, 0.16) 0%, rgba(255, 251, 239, 0.98) 100%);
+      box-shadow: inset 0 0 0 1px rgba(202, 168, 92, 0.14);
+    }
+
+    #page-field-lead .crm-crossref-panel .crm-crossref-panel-title,
+    #page-field-lead .crm-crossref-panel .crm-crossref-panel-count {
+      color: var(--text);
+    }
+
+    #page-field-lead .crm-crossref-panel.is-exact-match .crm-crossref-panel-title,
+    #page-field-lead .crm-crossref-panel.is-exact-match .crm-crossref-panel-count {
+      color: #8b5c10;
+    }
+
+    #page-field-lead .crm-crossref-panel .crm-crossref-item-reason,
+    #page-field-lead .crm-crossref-panel .crm-crossref-item-confidence.high,
+    #page-field-lead .crm-crossref-panel .crm-crossref-item-confidence.possible {
+      border-color: rgba(148, 163, 184, 0.34);
+      background: rgba(15, 23, 42, 0.06);
+      color: var(--text);
+    }
+
+    #page-field-lead .crm-crossref-panel.is-exact-match .crm-crossref-item-confidence.exact,
+    #page-field-lead .crm-crossref-panel.is-exact-match .crm-crossref-item-reason {
+      border-color: rgba(202, 168, 92, 0.4);
+      background: rgba(202, 168, 92, 0.2);
+      color: #8b5c10;
+    }
+
+    #page-field-lead #fl-property-crossref {
+      position: relative;
+      z-index: 30;
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 8px;
+      margin-bottom: 14px;
+    }
+
+    .fl-geocode-helper {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .crm-crossref-panel-title {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .crm-crossref-panel-subtitle {
+      margin: 6px 0 0;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .crm-crossref-panel-count {
+      margin-top: 10px;
+      font-size: 12px;
+      line-height: 1.3;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .crm-crossref-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .crm-crossref-item {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.94);
+      padding: 12px 14px;
+    }
+
+    .crm-crossref-item-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .crm-crossref-item-head {
+      min-width: 0;
+    }
+
+    .crm-crossref-item-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      flex: 0 0 auto;
+      max-width: 48%;
+    }
+
+    .crm-crossref-item-name {
+      font-size: 15px;
+      line-height: 1.3;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .crm-crossref-item-type {
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.2;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .crm-crossref-item-reason {
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(202, 168, 92, 0.14);
+      color: var(--accent);
+      font-size: 12px;
+      line-height: 1.2;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .crm-crossref-item-confidence {
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      line-height: 1.2;
+      font-weight: 800;
+      text-align: center;
+      border: 1px solid transparent;
+    }
+
+    .crm-crossref-item-confidence.exact {
+      background: rgba(202, 168, 92, 0.18);
+      border-color: rgba(202, 168, 92, 0.3);
+      color: #8b5c10;
+    }
+
+    .crm-crossref-item-confidence.high {
+      background: rgba(26, 115, 232, 0.12);
+      border-color: rgba(26, 115, 232, 0.26);
+      color: #1a73e8;
+    }
+
+    .crm-crossref-item-confidence.possible {
+      background: rgba(15, 23, 42, 0.08);
+      border-color: rgba(148, 163, 184, 0.34);
+      color: var(--text);
+    }
+
+    .crm-crossref-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 14px;
+      margin-top: 12px;
+    }
+
+    .crm-crossref-meta-line {
+      min-width: 0;
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+
+    .crm-crossref-meta-line.is-match-exact,
+    .crm-crossref-meta-line.is-match-similar {
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+    }
+
+    .crm-crossref-meta-line.is-match-exact {
+      background: rgba(202, 168, 92, 0.12);
+      border-color: rgba(202, 168, 92, 0.22);
+    }
+
+    .crm-crossref-meta-line.is-match-similar {
+      background: rgba(15, 23, 42, 0.04);
+      border-color: rgba(148, 163, 184, 0.22);
+    }
+
+    .crm-crossref-meta-line strong {
+      display: block;
+      margin-top: 2px;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    .crm-crossref-meta-note {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      line-height: 1.35;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .crm-crossref-signal-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .crm-crossref-signal {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      line-height: 1.2;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .crm-crossref-signal.exact {
+      background: rgba(202, 168, 92, 0.12);
+      border-color: rgba(202, 168, 92, 0.24);
+      color: #8b5c10;
+    }
+
+    .crm-crossref-signal.similar {
+      background: rgba(15, 23, 42, 0.06);
+      border-color: rgba(148, 163, 184, 0.28);
+      color: var(--text);
+    }
+
+    .crm-crossref-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .crm-crossref-btn {
+      min-height: 38px;
+      padding: 9px 13px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+
+    .crm-crossref-btn[disabled] {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .crm-crossref-btn-ignore {
+      background: var(--panel-2);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .crm-crossref-preview-card {
+      width: min(760px, 100%);
+    }
+
+    .crm-crossref-preview-banner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 2px 0 16px;
+    }
+
+    .crm-crossref-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .crm-crossref-preview-field {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      min-width: 0;
+    }
+
+    .crm-crossref-preview-field.is-match-exact {
+      background: rgba(202, 168, 92, 0.12);
+      border-color: rgba(202, 168, 92, 0.24);
+    }
+
+    .crm-crossref-preview-field.is-match-similar {
+      background: rgba(15, 23, 42, 0.04);
+      border-color: rgba(148, 163, 184, 0.24);
+    }
+
+    .crm-crossref-preview-label {
+      font-size: 11px;
+      line-height: 1.2;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .crm-crossref-preview-value {
+      margin-top: 6px;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    .crm-crossref-preview-note {
+      margin-top: 5px;
+      color: var(--accent);
+      font-size: 11px;
+      line-height: 1.35;
+      font-weight: 700;
+    }
+
+    @media (max-width: 720px) {
+      .crm-crossref-item-badges {
+        max-width: 100%;
+        justify-content: flex-start;
+      }
+      .crm-crossref-item-top,
+      .crm-crossref-preview-grid {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+      .crm-crossref-meta {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .pipeline-board {
       display: flex;
       gap: 14px;
@@ -3414,21 +3774,29 @@
     }
 
     body.pipeline-page-active .screen {
-      padding: 0;
+      padding: 118px 0 0;
+    }
+
+    body.pipeline-page-active > .app-shell > .topbar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      left: 0;
+      z-index: 40;
     }
 
     #page-crm-pipeline .hm-dashboard-ref .main .topbar .topbar-center { display: none; }
     #page-crm-pipeline .hm-dashboard-ref .main .topbar .user-info { display: none; }
 
     body.pipeline-page-active #page-crm-pipeline {
-      min-height: 100vh;
+      min-height: calc(100vh - 118px);
     }
 
     #page-crm-pipeline .hm-dashboard-ref {
       --surface-0: #f4f6f8;
       --border-accent: rgba(232, 160, 32, 0.32);
       width: 100%;
-      min-height: 100vh;
+      min-height: calc(100vh - 118px);
       color: #111827;
     }
 
@@ -3438,7 +3806,7 @@
 
     #page-crm-pipeline .hm-dashboard-ref .wrap {
       display: flex;
-      min-height: 100vh;
+      min-height: calc(100vh - 118px);
       background: linear-gradient(180deg, #f3db8f 0%, #ddb24b 100%);
       align-items: stretch;
     }
@@ -3453,12 +3821,11 @@
       gap: 6px;
       flex-shrink: 0;
       align-self: stretch;
-      position: relative;
       z-index: 6;
       overflow: visible;
-      position: sticky;
-      top: 0;
-      height: 100vh;
+      position: relative;
+      min-height: calc(100vh - 118px);
+      height: auto;
     }
 
     #page-crm-pipeline .hm-dashboard-ref .logo {
@@ -3595,7 +3962,7 @@
       flex-direction: column;
       overflow: visible;
       min-width: 0;
-      min-height: 100vh;
+      min-height: calc(100vh - 118px);
     }
 
     #page-crm-pipeline .hm-dashboard-ref .main .topbar {
@@ -3779,29 +4146,42 @@
       min-height: 0;
       gap: 0 14px;
       padding: 8px 14px 20px 10px;
-      background: linear-gradient(180deg, #f3db8f 0%, #ddb24b 100%);
+      background:
+        radial-gradient(circle at 52% 42%, rgba(255, 241, 190, 0.72) 0%, rgba(255, 225, 137, 0.34) 46%, rgba(214, 163, 54, 0.16) 100%),
+        linear-gradient(180deg, #f6dd91 0%, #e3b94f 100%);
+      background-attachment: fixed;
     }
 
     #page-crm-pipeline .hm-dashboard-ref .center {
       padding: 4px 0 0;
       min-width: 0;
+      align-self: stretch;
       background: transparent;
       isolation: isolate;
       position: relative;
     }
     #page-crm-pipeline .hm-dashboard-ref .center::before {
       content: '';
-      position: absolute;
-      inset: 0;
-      background: url('./assets/hailmoney-logo.png?v=2') no-repeat center 30%;
-      background-size: min(380px, 50%) auto;
-      opacity: 0.09;
+      position: fixed;
+      top: 136px;
+      right: 406px;
+      bottom: 24px;
+      left: 149px;
+      background: url('./assets/hailmoney-logo.png?v=2') no-repeat center center;
+      background-size: min(760px, calc(100vh - 145px), 75vw) auto;
+      opacity: 0.82;
       pointer-events: none;
-      z-index: -1;
+      z-index: 0;
+      transition: opacity 0.16s ease;
+    }
+    #page-crm-pipeline .hm-dashboard-ref .center.has-pipeline-selection::before {
+      opacity: 0.035;
     }
 
     #page-crm-pipeline .hm-dashboard-ref .center .crm-main-column {
       min-width: 0;
+      position: relative;
+      z-index: 1;
     }
 
     #page-crm-pipeline .hm-dashboard-ref .center .crm-pipeline-page-shell {
@@ -3848,6 +4228,10 @@
     }
 
     @media (max-width: 980px) {
+      #page-crm-pipeline .hm-dashboard-ref .center::before {
+        right: 24px;
+      }
+
       #page-crm-pipeline .hm-dashboard-ref .content {
         grid-template-columns: 1fr;
       }
@@ -12133,6 +12517,93 @@
       margin: 4px 0;
     }
     .fl-radio-inline input[type="radio"] { accent-color: #e0793a; width: 16px; height: 16px; }
+    .fl-primary-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 0;
+      background: transparent;
+      color: #60646c;
+      font: inherit;
+      font-weight: 500;
+      padding: 4px 2px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .fl-primary-btn::before {
+      content: '';
+      width: 14px;
+      height: 14px;
+      box-sizing: border-box;
+      border: 1.5px solid #9aa0ab;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: inset 0 0 0 3px #fff;
+    }
+    .fl-primary-btn:hover { color: #272a30; }
+    .fl-primary-btn:hover::before { border-color: #e0793a; }
+    .fl-primary-btn.is-primary {
+      color: #272a30;
+    }
+    .fl-primary-btn.is-primary::before {
+      border-color: #e0793a;
+      background: #e0793a;
+    }
+    .fl-multiselect { position: relative; }
+    .fl-multiselect summary {
+      min-height: 42px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      padding: 10px 36px 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      list-style: none;
+      position: relative;
+    }
+    .fl-multiselect summary::-webkit-details-marker { display: none; }
+    .fl-multiselect summary::after { content: '▾'; position: absolute; right: 12px; color: var(--muted); }
+    .fl-multiselect-menu {
+      position: absolute;
+      z-index: 40;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      max-height: 260px;
+      overflow-y: auto;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, .14);
+    }
+    .fl-multiselect-option { display: flex; align-items: center; gap: 8px; padding: 7px 8px; cursor: pointer; }
+    .fl-multiselect-option:hover { background: var(--panel-2); }
+    .fl-multiselect-clear { width: 100%; margin-top: 6px; border: 0; border-top: 1px solid var(--border); background: transparent; padding: 9px 8px 4px; color: var(--accent); text-align: left; cursor: pointer; font-weight: 700; }
+    .fl-multiselect-done {
+      position: sticky;
+      bottom: -8px;
+      width: 100%;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border: 1px solid #caa85c;
+      border-radius: 8px;
+      background: #caa85c;
+      color: #111;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 -6px 10px #fff;
+    }
+    .fl-multiselect-done:hover { filter: brightness(.96); }
+    .fl-commission-row { display: grid; grid-template-columns: minmax(0, 1fr) 112px; gap: 10px; align-items: end; margin-top: 10px; }
+    .fl-commission-row[hidden] { display: none; }
+    .fl-split-toggle { margin-top: 10px; }
+    .fl-commission-total { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--error); }
+    .fl-commission-total.is-valid { color: #16803c; }
     .fl-checkbox-inline input[type="checkbox"] { accent-color: #e0793a; width: 16px; height: 16px; }
     .fl-opt-in { display: block; color: #9aa0ab; }
 
@@ -14523,12 +14994,9 @@
       color: #f6c75f;
     }
     body.pipeline-page-active .topbar-left {
-      flex-direction: column;
-      align-items: flex-start;
+      flex-direction: row;
+      align-items: center;
       justify-content: flex-start;
-    }
-    body.pipeline-page-active #crm-header-page-title {
-      margin-top: auto;
     }
     body.pipeline-page-active .map-header-center-subtitle {
       display: block !important;
@@ -15229,6 +15697,7 @@
                   <input id="assignedRep" type="text" placeholder="Rep name" autocomplete="off" />
                 </div>
               </div>
+              <div id="crm-lead-customer-crossref" class="crm-crossref-panel" aria-live="polite"></div>
             </section>
 
             <section class="form-section">
@@ -15324,6 +15793,7 @@
                   <input id="stormDate" type="date" />
                 </div>
               </div>
+              <div id="crm-lead-address-crossref" class="crm-crossref-panel" aria-live="polite"></div>
             </section>
 
             <section class="form-section">
@@ -15413,6 +15883,23 @@
             </div>
             <div id="crm-lead-validation-msg" class="validation-msg">Please fill in all required fields (First Name, Last Name, Phone, Street, City, State).</div>
             <div id="crm-lead-saved-msg" class="save-confirmation">Lead saved.</div>
+            <div id="crm-lead-duplicate-preview-overlay" class="settings-modal-overlay" style="display:none;">
+              <div class="settings-modal-card crm-crossref-preview-card" role="dialog" aria-modal="true" aria-labelledby="crm-lead-duplicate-preview-title">
+                <div class="settings-modal-header">
+                  <div>
+                    <div id="crm-lead-duplicate-preview-title" class="settings-modal-title">Existing Record Preview</div>
+                    <div id="crm-lead-duplicate-preview-subtitle" class="settings-modal-subtitle">Review the possible match without leaving New Lead.</div>
+                  </div>
+                  <button class="settings-modal-close" type="button" id="crm-lead-duplicate-preview-close" aria-label="Close existing record preview">&times;</button>
+                </div>
+                <div id="crm-lead-duplicate-preview-banner" class="crm-crossref-preview-banner"></div>
+                <div id="crm-lead-duplicate-preview-body"></div>
+                <div class="settings-modal-actions">
+                  <button class="btn" type="button" id="crm-lead-duplicate-preview-dismiss">Close</button>
+                  <button class="btn btn-primary" type="button" id="crm-lead-duplicate-preview-open-full">Open Full Record</button>
+                </div>
+              </div>
+            </div>
               </section>
             </div>
           </div>
@@ -18920,9 +19407,6 @@
                       <div class="fl-grid fl-grid-1">
                         <div class="fl-field"><input id="fl-companyName" type="text" placeholder="Company Name" autocomplete="off" /></div>
                       </div>
-                      <div class="fl-grid fl-grid-1 fl-with-rule">
-                        <div class="fl-field"><input id="fl-crossReference" type="text" placeholder="Cross Reference" autocomplete="off" /></div>
-                      </div>
 
                       <div class="fl-grid fl-grid-phone fl-with-rule" id="fl-row-phone">
                         <div class="fl-field fl-req-visual"><label>Phone<span class="req">*</span></label><input id="fl-phone" type="tel" placeholder="Phone" /></div>
@@ -18936,7 +19420,7 @@
                             <option value="Other">Other</option>
                           </select>
                         </div>
-                        <label class="fl-radio-inline"><input type="radio" name="fl-phone-primary-radio" checked disabled /> Primary</label>
+                        <button type="button" class="fl-primary-btn is-primary" data-fl-primary-group="phone" aria-pressed="true">Primary</button>
                       </div>
                       <label class="fl-checkbox-inline fl-opt-in"><input type="checkbox" id="fl-phoneOptInSms" /> Opt in Texting/SMS</label>
                       <button type="button" class="fl-add-another" data-fl-clone="fl-row-phone" data-fl-host="fl-phone-more-host">+ Add Another</button>
@@ -18952,10 +19436,11 @@
                             <option value="Work">Work</option>
                           </select>
                         </div>
-                        <label class="fl-radio-inline"><input type="radio" name="fl-email-primary-radio" checked disabled /> Primary</label>
+                        <button type="button" class="fl-primary-btn is-primary" data-fl-primary-group="email" aria-pressed="true">Primary</button>
                       </div>
                       <button type="button" class="fl-add-another" data-fl-clone="fl-row-email" data-fl-host="fl-email-more-host">+ Add Another</button>
                       <div class="fl-add-more-host" id="fl-email-more-host"></div>
+                      <div id="fl-customer-crossref" class="crm-crossref-panel" aria-live="polite"></div>
 
                       <div class="fl-addr-block fl-with-rule">
                         <div class="fl-addr-label">Mailing Address</div>
@@ -18986,7 +19471,7 @@
                       </div>
                       <div class="fl-grid fl-grid-citystate">
                         <div class="fl-field fl-req-visual fl-wide"><label>City<span class="req">*</span></label><input id="fl-city" type="text" placeholder="City" autocomplete="off" /></div>
-                        <div class="fl-field fl-req-visual"><label>State<span class="req">*</span></label><input id="fl-state" type="text" placeholder="State" autocomplete="off" maxlength="2" style="text-transform:uppercase;" /></div>
+                        <div class="fl-field fl-req-visual"><label>State<span class="req">*</span></label><select id="fl-state" required><option value="">Select State</option><option value="AL">Alabama</option><option value="AK">Alaska</option><option value="AZ">Arizona</option><option value="AR">Arkansas</option><option value="CA">California</option><option value="CO">Colorado</option><option value="CT">Connecticut</option><option value="DE">Delaware</option><option value="DC">Washington, DC</option><option value="FL">Florida</option><option value="GA">Georgia</option><option value="HI">Hawaii</option><option value="ID">Idaho</option><option value="IL">Illinois</option><option value="IN">Indiana</option><option value="IA">Iowa</option><option value="KS">Kansas</option><option value="KY">Kentucky</option><option value="LA">Louisiana</option><option value="ME">Maine</option><option value="MD">Maryland</option><option value="MA">Massachusetts</option><option value="MI">Michigan</option><option value="MN">Minnesota</option><option value="MS">Mississippi</option><option value="MO">Missouri</option><option value="MT">Montana</option><option value="NE">Nebraska</option><option value="NV">Nevada</option><option value="NH">New Hampshire</option><option value="NJ">New Jersey</option><option value="NM">New Mexico</option><option value="NY">New York</option><option value="NC">North Carolina</option><option value="ND">North Dakota</option><option value="OH">Ohio</option><option value="OK">Oklahoma</option><option value="OR">Oregon</option><option value="PA">Pennsylvania</option><option value="RI">Rhode Island</option><option value="SC">South Carolina</option><option value="SD">South Dakota</option><option value="TN">Tennessee</option><option value="TX">Texas</option><option value="UT">Utah</option><option value="VT">Vermont</option><option value="VA">Virginia</option><option value="WA">Washington</option><option value="WV">West Virginia</option><option value="WI">Wisconsin</option><option value="WY">Wyoming</option></select></div>
                         <div class="fl-field fl-req-visual"><label>Zip<span class="req">*</span></label><input id="fl-zip" type="text" placeholder="Zip" inputmode="numeric" /></div>
                         <div class="fl-field">
                           <label>Country<span class="req">*</span></label>
@@ -18996,10 +19481,12 @@
                         </div>
                       </div>
                       <div class="fl-grid fl-grid-location-meta">
-                        <div class="fl-field"><label>County</label><input id="fl-county" type="text" placeholder="County" autocomplete="off" /></div>
-                        <div class="fl-field"><label>Latitude</label><input id="fl-lat" type="text" placeholder="Latitude" inputmode="decimal" autocomplete="off" /></div>
-                        <div class="fl-field"><label>Longitude</label><input id="fl-lng" type="text" placeholder="Longitude" inputmode="decimal" autocomplete="off" /></div>
+                        <div class="fl-field"><label>County</label><input id="fl-county" type="text" placeholder="Auto-filled" autocomplete="off" readonly /></div>
+                        <div class="fl-field"><label>Latitude</label><input id="fl-lat" type="text" placeholder="Auto-filled" inputmode="decimal" autocomplete="off" readonly /></div>
+                        <div class="fl-field"><label>Longitude</label><input id="fl-lng" type="text" placeholder="Auto-filled" inputmode="decimal" autocomplete="off" readonly /></div>
                       </div>
+                      <div class="fl-geocode-helper" id="fl-geocode-helper">Auto-fills when address lookup is available.</div>
+                      <div id="fl-property-crossref" class="crm-crossref-panel" aria-live="polite"></div>
 
                       <div class="fl-grid fl-grid-2 fl-with-rule">
                         <div class="fl-field fl-req-visual">
@@ -19012,22 +19499,19 @@
                         </div>
                         <div class="fl-field fl-req-visual">
                           <select id="fl-workType" class="fl-placeholder-select">
-                            <option value="" disabled selected>Work Type *</option>
-                            <option value="" disabled>Admin configured options will appear here</option>
+                            <option value="" disabled selected>Select Region</option>
                           </select>
                         </div>
                       </div>
                       <div class="fl-grid fl-grid-2">
                         <div class="fl-field fl-req-visual">
                           <select id="fl-tradeType" class="fl-placeholder-select">
-                            <option value="" disabled selected>Trade Type *</option>
-                            <option value="" disabled>Admin configured options will appear here</option>
+                            <option value="" disabled selected>Select Trade</option>
                           </select>
                         </div>
                         <div class="fl-field fl-req-visual">
                           <select id="fl-leadSource" class="fl-placeholder-select">
-                            <option value="" disabled selected>Lead Source *</option>
-                            <option value="" disabled>Admin configured options will appear here</option>
+                            <option value="" disabled selected>Select Lead Source</option>
                           </select>
                         </div>
                       </div>
@@ -19075,7 +19559,13 @@
                       </div>
 
                       <div class="fl-grid fl-grid-2 fl-with-rule">
-                        <div class="fl-field"><input id="fl-damageLocation" type="text" placeholder="Damage Location" autocomplete="off" /></div>
+                        <div class="fl-field">
+                          <details class="fl-multiselect" id="fl-damageLocationDropdown">
+                            <summary id="fl-damageLocationSummary">Select Damage Areas</summary>
+                            <div class="fl-multiselect-menu" id="fl-damageLocationMenu"></div>
+                          </details>
+                          <input id="fl-damageLocation" type="hidden" value="" />
+                        </div>
                         <div class="fl-field"><input id="fl-dateOfLoss" type="date" placeholder="Date of Loss" /></div>
                       </div>
                       <label class="fl-checkbox-inline"><input type="checkbox" id="fl-claimFiled" /> Claim Filed</label>
@@ -19124,8 +19614,15 @@
                           <label>Assign to</label>
                           <select id="fl-assignTo"></select>
                         </div>
+                        <div class="fl-field fl-narrow"><label>Commission %</label><input id="fl-primaryCommissionPercent" type="number" min="1" max="100" step="1" value="100" /></div>
                         <button type="button" class="fl-clear-btn" id="fl-assignTo-clear" aria-label="Clear assignment">&times;</button>
                       </div>
+                      <label class="fl-checkbox-inline fl-split-toggle"><input type="checkbox" id="fl-splitCommissionEnabled" /> Split Commission</label>
+                      <div class="fl-commission-row" id="fl-secondaryAssignRow" hidden>
+                        <div class="fl-field"><label>Second Assigned To</label><select id="fl-secondaryAssignTo"></select></div>
+                        <div class="fl-field"><label>Commission %</label><input id="fl-secondaryCommissionPercent" type="number" min="1" max="99" step="1" value="" /></div>
+                      </div>
+                      <div class="fl-commission-total is-valid" id="fl-commissionTotal">Total: 100%</div>
                       <div class="fl-subhead">Initial Appointment</div>
                       <div class="fl-grid fl-grid-appt">
                         <div class="fl-field"><input id="fl-appointmentDate" type="date" placeholder="Appointment Date" /></div>
@@ -19234,6 +19731,23 @@
                 <div id="fl-saved-msg" class="save-confirmation" style="display:none;"></div>
                 <div id="fl-warning-msg" style="display:none;margin-top:10px;padding:10px 14px;background:#fff8e6;border:1px solid #e4a230;border-radius:10px;color:#9a6000;font-size:13px;font-weight:600;line-height:1.5;"></div>
                 <button class="btn btn-primary fl-save-btn" type="button" id="fl-save-btn">Save</button>
+              </div>
+              <div id="fl-duplicate-preview-overlay" class="settings-modal-overlay" style="display:none;">
+                <div class="settings-modal-card crm-crossref-preview-card" role="dialog" aria-modal="true" aria-labelledby="fl-duplicate-preview-title">
+                  <div class="settings-modal-header">
+                    <div>
+                      <div id="fl-duplicate-preview-title" class="settings-modal-title">Existing Record Preview</div>
+                      <div id="fl-duplicate-preview-subtitle" class="settings-modal-subtitle">Review the possible match without leaving Create New Lead.</div>
+                    </div>
+                    <button class="settings-modal-close" type="button" id="fl-duplicate-preview-close" aria-label="Close existing record preview">&times;</button>
+                  </div>
+                  <div id="fl-duplicate-preview-banner" class="crm-crossref-preview-banner"></div>
+                  <div id="fl-duplicate-preview-body"></div>
+                  <div class="settings-modal-actions">
+                    <button class="btn" type="button" id="fl-duplicate-preview-dismiss">Close</button>
+                    <button class="btn btn-primary" type="button" id="fl-duplicate-preview-open-full">Open Full Record</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -20806,6 +21320,7 @@
       document.getElementById('lead-validation-msg').style.display = 'none';
       document.getElementById('lead-saved-msg').style.display = 'none';
       document.getElementById('canvasserField').style.display = 'none';
+      crmResetNewLeadDuplicateChecks();
     }
 
     async function renderPipeline(preloadedJobs) {
@@ -35430,6 +35945,9 @@ function mapsGoogleReady() {
       autocompleteService: null,
       placesService: null,
       geocoder: null,
+      geocodeTimer: null,
+      geocodeRequestToken: 0,
+      lastGeocodeSignature: '',
       sessionToken: null,
       noResults: false,
       errorMessage: ''
@@ -35439,6 +35957,59 @@ function mapsGoogleReady() {
       var el = document.getElementById(id);
       if (!el) return;
       el.value = value == null ? '' : String(value);
+    }
+
+    function crmClearFieldLeadGeocodeFields() {
+      crmAddressAutocompleteFillField('fl-county', '');
+      crmAddressAutocompleteFillField('fl-lat', '');
+      crmAddressAutocompleteFillField('fl-lng', '');
+      crmUpdateFieldLeadGeocodeHelper();
+    }
+
+    function crmUpdateFieldLeadGeocodeHelper() {
+      var helper = document.getElementById('fl-geocode-helper');
+      if (!helper) return;
+      var county = String((document.getElementById('fl-county') || {}).value || '').trim();
+      var lat = String((document.getElementById('fl-lat') || {}).value || '').trim();
+      var lng = String((document.getElementById('fl-lng') || {}).value || '').trim();
+      helper.hidden = !!(county && lat && lng);
+    }
+
+    function crmScheduleFieldLeadCompletedAddressGeocode() {
+      clearTimeout(_crmFieldLeadAddressAutocomplete.geocodeTimer);
+      var street = String((document.getElementById('fl-street') || {}).value || '').trim();
+      var city = String((document.getElementById('fl-city') || {}).value || '').trim();
+      var state = String((document.getElementById('fl-state') || {}).value || '').trim();
+      var zip = String((document.getElementById('fl-zip') || {}).value || '').trim();
+      crmClearFieldLeadGeocodeFields();
+      if (!street || !city || !state || !zip) {
+        _crmFieldLeadAddressAutocomplete.lastGeocodeSignature = '';
+        return;
+      }
+      var signature = [street, city, state, zip].join('|').toLowerCase();
+      _crmFieldLeadAddressAutocomplete.geocodeTimer = setTimeout(function () {
+        var geocoder = _crmFieldLeadAddressAutocomplete.geocoder;
+        if (!geocoder || typeof geocoder.geocode !== 'function') return;
+        var requestToken = ++_crmFieldLeadAddressAutocomplete.geocodeRequestToken;
+        geocoder.geocode({ address: [street, city, state, zip].join(', ') }, function (results, status) {
+          if (requestToken !== _crmFieldLeadAddressAutocomplete.geocodeRequestToken) return;
+          var result = status === 'OK' && results && results[0] ? results[0] : null;
+          if (!result || !result.geometry || !result.geometry.location) {
+            _crmFieldLeadAddressAutocomplete.lastGeocodeSignature = '';
+            crmClearFieldLeadGeocodeFields();
+            return;
+          }
+          var components = Array.isArray(result.address_components) ? result.address_components : [];
+          var county = mapsFindAddressComponent(components, 'administrative_area_level_2', false);
+          var lat = result.geometry.location.lat();
+          var lng = result.geometry.location.lng();
+          _crmFieldLeadAddressAutocomplete.lastGeocodeSignature = signature;
+          crmAddressAutocompleteFillField('fl-county', county);
+          crmAddressAutocompleteFillField('fl-lat', isFinite(lat) ? Number(lat).toFixed(6) : '');
+          crmAddressAutocompleteFillField('fl-lng', isFinite(lng) ? Number(lng).toFixed(6) : '');
+          crmUpdateFieldLeadGeocodeHelper();
+        });
+      }, 550);
     }
 
     function crmBindAddressAutocomplete(config) {
@@ -35652,6 +36223,7 @@ function mapsGoogleReady() {
       crmAddressAutocompleteFillField('fl-county', county);
       crmAddressAutocompleteFillField('fl-lat', isFinite(lat) ? Number(lat).toFixed(6) : '');
       crmAddressAutocompleteFillField('fl-lng', isFinite(lng) ? Number(lng).toFixed(6) : '');
+      crmUpdateFieldLeadGeocodeHelper();
       _crmFieldLeadAddressAutocomplete.selectedPlaceId = String(place.place_id || '').trim();
       var streetInput = document.getElementById('fl-street');
       if (streetInput) {
@@ -35660,6 +36232,8 @@ function mapsGoogleReady() {
         streetInput.removeAttribute('aria-invalid');
       }
       crmResetFieldLeadAddressSessionToken();
+      crmScheduleFieldLeadCompletedAddressGeocode();
+      if (typeof crmScheduleFieldLeadDuplicateCheck === 'function') crmScheduleFieldLeadDuplicateCheck('property');
       crmHideFieldLeadAddressSuggestions();
     }
 
@@ -35780,6 +36354,13 @@ function mapsGoogleReady() {
       _crmFieldLeadAddressAutocomplete.autocompleteService = new google.maps.places.AutocompleteService();
       _crmFieldLeadAddressAutocomplete.placesService = new google.maps.places.PlacesService(document.createElement('div'));
       _crmFieldLeadAddressAutocomplete.geocoder = new google.maps.Geocoder();
+      ['fl-street', 'fl-city', 'fl-state', 'fl-zip'].forEach(function (id) {
+        var field = document.getElementById(id);
+        if (!field || field.dataset.crmCompletedGeocodeBound === '1') return;
+        field.dataset.crmCompletedGeocodeBound = '1';
+        field.addEventListener('input', crmScheduleFieldLeadCompletedAddressGeocode);
+        if (field.tagName === 'SELECT') field.addEventListener('change', crmScheduleFieldLeadCompletedAddressGeocode);
+      });
       streetInput.setAttribute('autocomplete', 'off');
       streetInput.addEventListener('input', function () {
         crmFetchFieldLeadAddressPredictions(streetInput.value);
@@ -40704,11 +41285,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return value;
     }
 
-    function crmPopulateCanvasserSelect(selectId, selectedId) {
+    function crmPopulateCanvasserSelect(selectId, selectedId, placeholder) {
       var el = document.getElementById(selectId);
       if (!el) return;
       var current = String(selectedId || el.value || '').trim();
-      var options = ['<option value="">Select canvasser</option>'];
+      var options = ['<option value="">' + crmEscapeHtml(placeholder || 'Select canvasser') + '</option>'];
       crmGetCanvasserMembers().forEach(function (member) {
         options.push('<option value="' + crmEscapeHtml(member.id) + '">' + crmEscapeHtml(member.name) + '</option>');
       });
@@ -40716,10 +41297,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       el.value = current;
     }
 
-    function crmToggleCanvasserSelectForSource(sourceValue, wrapId, selectId, selectedId) {
+    function crmToggleCanvasserSelectForSource(sourceValue, wrapId, selectId, selectedId, placeholder) {
       var wrap = document.getElementById(wrapId);
       var show = String(sourceValue || '').trim() === 'Canvasser';
-      if (show) crmPopulateCanvasserSelect(selectId, selectedId);
+      if (show) crmPopulateCanvasserSelect(selectId, selectedId, placeholder);
       if (wrap) wrap.style.display = show ? '' : 'none';
       if (!show) {
         var select = document.getElementById(selectId);
@@ -41251,6 +41832,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var addrSlug = crmSettingsSlug(((lead.street || '') + '_' + (lead.city || '') + '_' + (lead.state || '') + '_' + (lead.zip || '')).trim());
       var id = String(lead.id || ('lead_' + nameSlug + '_' + addrSlug)).trim() || ('lead_' + nameSlug);
       var stage = String(lead.stage || lead.jobStage || '').trim();
+      var stageAliases = {
+        'lead': 'Lead',
+        'leads': 'Lead',
+        'new': 'Lead',
+        'new lead': 'New Lead',
+        'prospect': 'Lead',
+        'contacted': 'Contacted',
+        'inspected': 'Inspected',
+        'claim filed': 'Claim Filed',
+        'adjuster appointment': 'Adjuster Appointment',
+        'approved': 'Approved',
+        'contract signed': 'Contract Signed',
+        'production': 'Production',
+        'production start': 'Production',
+        'built': 'Built',
+        'invoiced': 'Invoiced',
+        'completed': 'Completed',
+        'complete': 'Complete',
+        'paid / closed': 'Paid / Closed'
+      };
+      if (stage && stageAliases[stage.toLowerCase()]) stage = stageAliases[stage.toLowerCase()];
       if (!stage) stage = lead.convertedToJob ? 'Contract Signed' : 'New Lead';
       /* Accept both legacy admin stages and new rep-facing stages */
       if (CRM_STAGES.indexOf(stage) === -1 && REP_PIPELINE_STAGES.indexOf(stage) === -1) {
@@ -41630,7 +42232,54 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       } catch (e) {}
     }
 
+    function crmMigrateLeadCollectionsToCanonical() {
+      var canonical = crmReadStoredJsonArray(CRM_LEADS_KEY);
+      var alternate = crmReadStoredJsonArray(APP_LEADS_KEY);
+      var snapshot = crmGetDataModelSnapshot();
+      var snapshotLeads = snapshot && Array.isArray(snapshot.leads) ? snapshot.leads : [];
+      var merged = [];
+      var seenById = {};
+      var seenByStableIdentity = {};
+
+      function stableIdentity(lead) {
+        return [
+          String(lead.firstName || '').trim().toLowerCase(),
+          String(lead.lastName || '').trim().toLowerCase(),
+          crmNormalizePhoneDigits(lead.phone || lead.primaryPhone || ''),
+          crmNormalizeAddressForMatch([lead.street, lead.city, lead.state, lead.zip].filter(Boolean).join('|')),
+          String(lead.createdAt || '').trim()
+        ].join('|');
+      }
+
+      function addCollection(records) {
+        (Array.isArray(records) ? records : []).forEach(function (rawLead) {
+          var lead = crmNormalizeLeadRecord(rawLead);
+          var id = String(lead.id || '').trim();
+          var identity = stableIdentity(lead);
+          if ((id && seenById[id]) || (identity && seenByStableIdentity[identity])) return;
+          if (id) seenById[id] = true;
+          if (identity) seenByStableIdentity[identity] = true;
+          merged.push(lead);
+        });
+      }
+
+      /* Canonical records win; alternate stores only contribute missing leads. */
+      addCollection(canonical);
+      addCollection(alternate);
+      addCollection(snapshotLeads);
+
+      try {
+        localStorage.setItem(CRM_LEADS_KEY, JSON.stringify(merged));
+        localStorage.setItem(APP_LEADS_KEY, JSON.stringify(merged));
+        return merged;
+      } catch (e) {
+        return canonical.map(crmNormalizeLeadRecord);
+      }
+    }
+
     crmHydrateLegacyFromDataModel();
+    crmMigrateLeadCollectionsToCanonical();
+    crmSyncDataModelSnapshot();
     crmApplyPipelineStageSettings();
     crmPopulateJobStageSelect();
 
@@ -42308,6 +42957,1341 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return parts[1] + '/' + parts[2] + '/' + parts[0];
     }
 
+    var CRM_NEW_LEAD_VALIDATION_DEFAULT_TEXT = 'Please fill in all required fields (First Name, Last Name, Phone, Street, City, State).';
+    var CRM_NEW_LEAD_DUPLICATE_REVIEW_TEXT = 'Review the possible existing customer/property warnings below or choose Ignore and Continue before saving this lead.';
+    var CRM_FIELD_LEAD_VALIDATION_DEFAULT_TEXT = 'Please fill in all required fields (First Name, Last Name, Phone, Street, City, State, Job Category, Claim Number, Insurance Company).';
+    var CRM_FIELD_LEAD_DUPLICATE_REVIEW_TEXT = 'Review the possible existing customer/property warnings below or ignore the matches before saving this lead.';
+    var _crmNewLeadDuplicateState = {
+      customer: { timer: null, signature: '', allMatches: [], visibleMatches: [], ignoredBySignature: {}, currentIndex: 0 },
+      property: { timer: null, signature: '', allMatches: [], visibleMatches: [], ignoredBySignature: {}, currentIndex: 0 }
+    };
+    var _crmNewLeadDuplicatePreviewState = { match: null };
+    var _crmFieldLeadDuplicateState = {
+      customer: { timer: null, signature: '', allMatches: [], visibleMatches: [], ignoredBySignature: {}, currentIndex: 0 },
+      property: { timer: null, signature: '', allMatches: [], visibleMatches: [], ignoredBySignature: {}, currentIndex: 0 }
+    };
+    var _crmFieldLeadDuplicatePreviewState = { match: null, backPageId: 'page-field-lead' };
+
+    function crmNormalizeTextForDuplicateMatch(value) {
+      return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+    }
+
+    function crmNormalizeEmailForDuplicateMatch(email) {
+      return String(email || '').trim().toLowerCase().replace(/\s+/g, '');
+    }
+
+    function crmNormalizePhoneForDuplicateMatch(phone) {
+      var digits = crmNormalizePhoneDigits(phone || '');
+      if (digits.length === 11 && digits.charAt(0) === '1') digits = digits.slice(1);
+      return digits;
+    }
+
+    function crmGetDuplicateState(scope, stateRoot) {
+      stateRoot = stateRoot || _crmNewLeadDuplicateState;
+      var state = stateRoot[scope] || null;
+      if (state && typeof state.currentIndex !== 'number') state.currentIndex = 0;
+      return state;
+    }
+
+    function crmClampDuplicateStateIndex(state) {
+      if (!state) return 0;
+      var maxIndex = Math.max(0, ((state.visibleMatches || []).length || 0) - 1);
+      var nextIndex = Number(state.currentIndex || 0);
+      if (!isFinite(nextIndex) || nextIndex < 0) nextIndex = 0;
+      if (nextIndex > maxIndex) nextIndex = maxIndex;
+      state.currentIndex = nextIndex;
+      return nextIndex;
+    }
+
+    function crmNormalizeStreetForDuplicateMatch(street) {
+      var aliasMap = {
+        street: 'st',
+        st: 'st',
+        road: 'rd',
+        rd: 'rd',
+        avenue: 'ave',
+        ave: 'ave',
+        boulevard: 'blvd',
+        blvd: 'blvd',
+        drive: 'dr',
+        dr: 'dr',
+        lane: 'ln',
+        ln: 'ln',
+        court: 'ct',
+        ct: 'ct',
+        circle: 'cir',
+        cir: 'cir',
+        place: 'pl',
+        pl: 'pl',
+        parkway: 'pkwy',
+        pkwy: 'pkwy',
+        terrace: 'ter',
+        ter: 'ter',
+        highway: 'hwy',
+        hwy: 'hwy',
+        trail: 'trl',
+        trl: 'trl',
+        way: 'way',
+        north: 'n',
+        n: 'n',
+        south: 's',
+        s: 's',
+        east: 'e',
+        e: 'e',
+        west: 'w',
+        w: 'w',
+        northeast: 'ne',
+        ne: 'ne',
+        northwest: 'nw',
+        nw: 'nw',
+        southeast: 'se',
+        se: 'se',
+        southwest: 'sw',
+        sw: 'sw'
+      };
+      return String(street || '')
+        .toLowerCase()
+        .replace(/#/g, ' ')
+        .replace(/[.,]/g, ' ')
+        .replace(/\b(apartment|apt|suite|ste|unit)\b/g, ' ')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(function (token) {
+          return aliasMap[token] || token;
+        })
+        .join(' ')
+        .trim();
+    }
+
+    function crmBuildDuplicateNameParts(firstName, lastName, displayName) {
+      var first = crmNormalizeTextForDuplicateMatch(firstName);
+      var last = crmNormalizeTextForDuplicateMatch(lastName);
+      var full = crmNormalizeTextForDuplicateMatch(displayName || [firstName, lastName].filter(Boolean).join(' '));
+      return {
+        first: first,
+        last: last,
+        full: full
+      };
+    }
+
+    function crmBuildDuplicateAddressParts(record) {
+      record = record || {};
+      var street = crmNormalizeStreetForDuplicateMatch(record.street || record.address || '');
+      var city = crmNormalizeTextForDuplicateMatch(record.city || '');
+      var state = crmNormalizeTextForDuplicateMatch(record.state || '').slice(0, 2);
+      var zip = crmNormalizePhoneDigits(record.zip || '').slice(0, 5);
+      var streetTokens = street ? street.split(' ') : [];
+      var houseNumber = streetTokens.length && /^\d+[a-z]?$/.test(streetTokens[0]) ? streetTokens[0] : '';
+      var route = houseNumber ? streetTokens.slice(1).join(' ') : street;
+      return {
+        street: street,
+        city: city,
+        state: state,
+        zip: zip,
+        houseNumber: houseNumber,
+        route: route,
+        full: [street, city, state, zip].filter(Boolean).join('|')
+      };
+    }
+
+    function crmLevenshteinDistance(a, b) {
+      a = String(a || '');
+      b = String(b || '');
+      if (!a) return b.length;
+      if (!b) return a.length;
+      var rows = a.length + 1;
+      var cols = b.length + 1;
+      var grid = new Array(rows);
+      for (var r = 0; r < rows; r++) {
+        grid[r] = new Array(cols);
+        grid[r][0] = r;
+      }
+      for (var c = 0; c < cols; c++) grid[0][c] = c;
+      for (var i = 1; i < rows; i++) {
+        for (var j = 1; j < cols; j++) {
+          var cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+          grid[i][j] = Math.min(
+            grid[i - 1][j] + 1,
+            grid[i][j - 1] + 1,
+            grid[i - 1][j - 1] + cost
+          );
+        }
+      }
+      return grid[rows - 1][cols - 1];
+    }
+
+    function crmAreDuplicateStringsSimilar(a, b, maxDistance) {
+      a = String(a || '');
+      b = String(b || '');
+      if (!a || !b) return false;
+      if (a === b) return true;
+      var limit = typeof maxDistance === 'number' ? maxDistance : 1;
+      if (Math.abs(a.length - b.length) > limit) return false;
+      return crmLevenshteinDistance(a, b) <= limit;
+    }
+
+    function crmFormatDuplicateJobNumber(jobNumber) {
+      var raw = String(jobNumber || '').trim();
+      if (!raw) return '';
+      raw = raw.replace(/^#/, '');
+      return '#' + formatJobNumber(raw);
+    }
+
+    function crmFindLegacyJobNumber(legacyJobs, lead, job, displayName, address) {
+      legacyJobs = Array.isArray(legacyJobs) ? legacyJobs : [];
+      var targetLeadId = String(lead && lead.id || '').trim();
+      var targetJobId = String(job && job.id || '').trim();
+      var targetName = crmNormalizeTextForDuplicateMatch(displayName || '');
+      var targetAddress = crmNormalizeAddressForMatch(address || '');
+      for (var i = 0; i < legacyJobs.length; i++) {
+        var item = legacyJobs[i] || {};
+        var itemJobId = String(item.id || '').trim();
+        var itemLeadId = String(item.leadId || item.relatedLeadId || '').trim();
+        if (targetJobId && itemJobId && itemJobId === targetJobId && item.jobNumber != null) return item.jobNumber;
+        if (targetLeadId && itemLeadId && itemLeadId === targetLeadId && item.jobNumber != null) return item.jobNumber;
+        var itemName = crmNormalizeTextForDuplicateMatch(item.homeownerName || [item.firstName, item.lastName].filter(Boolean).join(' '));
+        var itemAddress = crmNormalizeAddressForMatch([item.street, item.city, item.state, item.zip].filter(Boolean).join(', '));
+        if (targetAddress && itemAddress === targetAddress && (!targetName || itemName === targetName || crmAreDuplicateStringsSimilar(targetName, itemName, 2))) {
+          if (item.jobNumber != null) return item.jobNumber;
+        }
+      }
+      return '';
+    }
+
+    function crmGetDuplicateConfidenceInfo(score) {
+      score = Number(score || 0);
+      if (score >= 96) return { label: 'Exact Match', tone: 'exact', isExact: true };
+      if (score >= 84) return { label: 'High Confidence', tone: 'high', isExact: false };
+      return { label: 'Possible Match', tone: 'possible', isExact: false };
+    }
+
+    function crmBuildDuplicateSignal(fieldKey, signalMeta) {
+      if (!signalMeta) return null;
+      var exact = Number(signalMeta.score || 0) >= 96 || /^Exact\b/i.test(String(signalMeta.reason || ''));
+      var label = String(signalMeta.reason || '').trim();
+      if (!label) {
+        if (fieldKey === 'email') label = exact ? 'Exact Email Match' : 'Similar Email';
+        else if (fieldKey === 'phone') label = exact ? 'Exact Phone Match' : 'Similar Phone';
+        else if (fieldKey === 'address') label = exact ? 'Exact Address Match' : 'Similar Address';
+        else label = exact ? 'Exact Name Match' : 'Similar Name';
+      }
+      return {
+        fieldKey: fieldKey,
+        kind: exact ? 'exact' : 'similar',
+        label: label,
+        reason: String(signalMeta.reason || '').trim(),
+        score: Number(signalMeta.score || 0)
+      };
+    }
+
+    function crmBuildDuplicateReasonFromSignals(signals, fallback) {
+      var labels = [];
+      (signals || []).forEach(function (signal) {
+        var label = String(signal && signal.label || '').trim();
+        if (label && labels.indexOf(label) === -1) labels.push(label);
+      });
+      return labels.length ? labels.join(' + ') : String(fallback || 'Possible Match');
+    }
+
+    function crmBuildDuplicateSignalMap(signals) {
+      var map = {};
+      (signals || []).forEach(function (signal) {
+        if (signal && signal.fieldKey) map[signal.fieldKey] = signal;
+      });
+      return map;
+    }
+
+    function crmIsDuplicateRecordClosed(stageStatus) {
+      var normalized = String(stageStatus || '').trim().toLowerCase();
+      if (!normalized) return false;
+      return /(closed|complete|completed|paid|cancel|archiv|inactive)/.test(normalized);
+    }
+
+    function crmGetDuplicateSortBucket(match) {
+      if (!match) return 9;
+      if (match.isExactMatch) return 0;
+      if (match.recordType === 'job' && !crmIsDuplicateRecordClosed(match.stageStatus)) return 1;
+      if (match.recordType === 'lead' && !crmIsDuplicateRecordClosed(match.stageStatus)) return 2;
+      if (match.recordType === 'contact') return 3;
+      if (match.recordType === 'job') return 4;
+      if (match.recordType === 'lead') return 5;
+      return 6;
+    }
+
+    function crmBuildNewLeadDuplicateRecord(config) {
+      config = config || {};
+      var record = {
+        key: String(config.key || '').trim(),
+        recordType: String(config.recordType || 'lead').trim(),
+        leadId: String(config.leadId || '').trim(),
+        contactId: String(config.contactId || '').trim(),
+        displayName: String(config.displayName || '').trim() || 'Unnamed Record',
+        firstName: String(config.firstName || '').trim(),
+        lastName: String(config.lastName || '').trim(),
+        email: String(config.email || '').trim(),
+        phone: String(config.phone || '').trim(),
+        address: String(config.address || '').trim(),
+        addressStreet: String(config.addressStreet || '').trim(),
+        addressCity: String(config.addressCity || '').trim(),
+        addressState: String(config.addressState || '').trim(),
+        addressZip: String(config.addressZip || '').trim(),
+        stageStatus: String(config.stageStatus || '').trim(),
+        assignedRep: String(config.assignedRep || '').trim(),
+        recordTypeLabel: String(config.recordTypeLabel || '').trim(),
+        updatedAt: String(config.updatedAt || '').trim(),
+        leadSource: String(config.leadSource || '').trim(),
+        jobNumber: String(config.jobNumber || '').trim(),
+        companyName: String(config.companyName || '').trim(),
+        companyJobTitle: String(config.companyJobTitle || '').trim(),
+        contactType: String(config.contactType || '').trim(),
+        insuranceCompany: String(config.insuranceCompany || '').trim(),
+        claimNumber: String(config.claimNumber || '').trim()
+      };
+      record.nameParts = crmBuildDuplicateNameParts(record.firstName, record.lastName, record.displayName);
+      record.emailNorm = crmNormalizeEmailForDuplicateMatch(record.email);
+      record.phoneDigits = crmNormalizePhoneForDuplicateMatch(record.phone);
+      record.addressParts = crmBuildDuplicateAddressParts({
+        street: record.addressStreet || record.address,
+        city: record.addressCity,
+        state: record.addressState,
+        zip: record.addressZip
+      });
+      return record;
+    }
+
+    function crmFinalizeNewLeadDuplicateMatch(record, signals, score, reason) {
+      var confidence = crmGetDuplicateConfidenceInfo(score);
+      var finalized = Object.assign({}, record, {
+        score: Number(score || 0),
+        matchReason: String(reason || '').trim() || 'Possible match',
+        confidenceLabel: confidence.label,
+        confidenceTone: confidence.tone,
+        isExactMatch: confidence.isExact,
+        matchSignals: (signals || []).filter(Boolean),
+        matchSignalMap: crmBuildDuplicateSignalMap(signals || [])
+      });
+      finalized.sortBucket = crmGetDuplicateSortBucket(finalized);
+      return finalized;
+    }
+
+    function crmGetNewLeadDuplicateSearchRecords() {
+      var snapshot = crmGetDataModelSnapshot();
+      if (!snapshot || !Array.isArray(snapshot.leads)) snapshot = crmBuildDataModelSnapshot();
+      snapshot = snapshot || {};
+      var leads = Array.isArray(snapshot.leads) ? snapshot.leads.map(crmNormalizeLeadRecord) : crmGetLeads();
+      var contacts = crmGetContacts();
+      var customers = Array.isArray(snapshot.customers) ? snapshot.customers : [];
+      var properties = Array.isArray(snapshot.properties) ? snapshot.properties : [];
+      var jobs = Array.isArray(snapshot.jobs) ? snapshot.jobs.map(crmNormalizeJobRecord) : [];
+      var legacyJobs = typeof getJobs === 'function' ? getJobs() : [];
+      var customerByLeadId = {};
+      var customerById = {};
+      var propertyByLeadId = {};
+      var propertyById = {};
+      var jobByLeadId = {};
+      var records = [];
+
+      customers.forEach(function (customer) {
+        var leadId = String(customer && customer.leadId || '').trim();
+        var customerId = String(customer && customer.id || '').trim();
+        if (leadId && !customerByLeadId[leadId]) customerByLeadId[leadId] = customer;
+        if (customerId && !customerById[customerId]) customerById[customerId] = customer;
+      });
+
+      properties.forEach(function (property) {
+        var leadId = String(property && property.leadId || '').trim();
+        var propertyId = String(property && property.id || '').trim();
+        if (leadId && !propertyByLeadId[leadId]) propertyByLeadId[leadId] = property;
+        if (propertyId && !propertyById[propertyId]) propertyById[propertyId] = property;
+      });
+
+      jobs.forEach(function (job) {
+        var leadId = String(job && job.leadId || '').trim();
+        if (leadId && !jobByLeadId[leadId]) jobByLeadId[leadId] = job;
+      });
+
+      leads.forEach(function (lead) {
+        var customer = customerByLeadId[lead.id] || customerById[lead.customerId] || {};
+        var property = propertyByLeadId[lead.id] || propertyById[lead.propertyId] || {};
+        var job = jobByLeadId[lead.id] || (lead.convertedToJob ? crmBuildJobRecord(lead) : null);
+        var recordType = lead.convertedToJob || job ? 'job' : 'lead';
+        var displayName = [lead.firstName || customer.firstName, lead.lastName || customer.lastName].filter(Boolean).join(' ').trim() ||
+          (job && job.customerName) || 'Unnamed Record';
+        var address = crmBuildLeadAddress({
+          street: lead.street || property.street || '',
+          city: lead.city || property.city || '',
+          state: lead.state || property.state || '',
+          zip: lead.zip || property.zip || ''
+        }) || (job && job.propertyAddress) || '';
+        records.push(crmBuildNewLeadDuplicateRecord({
+          key: recordType + ':' + lead.id,
+          recordType: recordType,
+          recordTypeLabel: recordType === 'job' ? 'Job' : 'Lead',
+          leadId: lead.id,
+          displayName: displayName,
+          firstName: lead.firstName || customer.firstName || '',
+          lastName: lead.lastName || customer.lastName || '',
+          email: lead.email || customer.email || (job && job.email) || '',
+          phone: lead.phone || customer.phone || (job && job.phone) || '',
+          address: address,
+          addressStreet: lead.street || property.street || '',
+          addressCity: lead.city || property.city || '',
+          addressState: lead.state || property.state || '',
+          addressZip: lead.zip || property.zip || '',
+          stageStatus: recordType === 'job'
+            ? ((job && (job.status || job.pipelineStage)) || lead.jobStage || lead.stage || 'Job')
+            : (lead.stage || 'Lead'),
+          assignedRep: lead.assignedRep || (job && job.assignedRep) || '',
+          updatedAt: lead.updatedAt || (job && job.updatedAt) || '',
+          leadSource: lead.leadSource || (job && job.leadSource) || '',
+          jobNumber: recordType === 'job' ? crmFindLegacyJobNumber(legacyJobs, lead, job, displayName, address) : '',
+          insuranceCompany: (job && job.insuranceCompany) || lead.insuranceCompany || '',
+          claimNumber: (job && job.claimNumber) || lead.claimNumber || ''
+        }));
+      });
+
+      contacts.forEach(function (contact) {
+        records.push(crmBuildNewLeadDuplicateRecord({
+          key: 'contact:' + contact.id,
+          recordType: 'contact',
+          recordTypeLabel: 'Contact',
+          contactId: contact.id,
+          displayName: crmGetContactDisplayName(contact),
+          firstName: contact.firstName || '',
+          lastName: contact.lastName || '',
+          email: contact.email || '',
+          phone: crmFormatContactPhone(contact),
+          address: '',
+          addressStreet: '',
+          addressCity: '',
+          addressState: '',
+          addressZip: '',
+          stageStatus: contact.contactType || 'Contact',
+          assignedRep: '',
+          updatedAt: contact.updatedAt || '',
+          companyName: contact.companyName || '',
+          companyJobTitle: contact.companyJobTitle || '',
+          contactType: contact.contactType || ''
+        }));
+      });
+
+      return records;
+    }
+
+    function crmCollectNewLeadCustomerDuplicateQuery() {
+      function fieldVal(id) {
+        var el = document.getElementById(id);
+        return el ? String(el.value || '').trim() : '';
+      }
+      var firstName = fieldVal('firstName');
+      var lastName = fieldVal('lastName');
+      var email = fieldVal('email');
+      var phone = fieldVal('primaryPhone');
+      var nameParts = crmBuildDuplicateNameParts(firstName, lastName);
+      return {
+        firstName: firstName,
+        lastName: lastName,
+        emailNorm: crmNormalizeEmailForDuplicateMatch(email),
+        phoneDigits: crmNormalizePhoneForDuplicateMatch(phone),
+        nameParts: nameParts,
+        signature: [nameParts.first, nameParts.last, crmNormalizeEmailForDuplicateMatch(email), crmNormalizePhoneForDuplicateMatch(phone)].join('|')
+      };
+    }
+
+    function crmCollectNewLeadPropertyDuplicateQuery() {
+      function fieldVal(id) {
+        var el = document.getElementById(id);
+        return el ? String(el.value || '').trim() : '';
+      }
+      var addressParts = crmBuildDuplicateAddressParts({
+        street: fieldVal('street'),
+        city: fieldVal('city'),
+        state: fieldVal('state'),
+        zip: fieldVal('zip')
+      });
+      return {
+        addressParts: addressParts,
+        signature: [addressParts.street, addressParts.city, addressParts.state, addressParts.zip].join('|')
+      };
+    }
+
+    function crmHasEnoughNewLeadCustomerInfo(query) {
+      query = query || {};
+      return (!!query.emailNorm && query.emailNorm.length >= 5) ||
+        (!!query.phoneDigits && query.phoneDigits.length >= 10) ||
+        !!(query.nameParts && query.nameParts.first && query.nameParts.last && (query.nameParts.first.length + query.nameParts.last.length >= 4));
+    }
+
+    function crmHasEnoughNewLeadPropertyInfo(query) {
+      query = query || {};
+      var parts = query.addressParts || {};
+      return !!(parts.street && parts.street.length >= 6 && ((parts.city && parts.city.length >= 2) || (parts.state && parts.state.length >= 2) || (parts.zip && parts.zip.length >= 5)));
+    }
+
+    function crmMatchNewLeadNameDuplicate(queryName, candidateName) {
+      if (!queryName || !candidateName || !queryName.full || !candidateName.full) return null;
+      if (queryName.full === candidateName.full) {
+        return { score: 98, reason: 'Exact Name Match' };
+      }
+      if (queryName.last && candidateName.last && queryName.last === candidateName.last && queryName.first && candidateName.first) {
+        if (crmAreDuplicateStringsSimilar(queryName.first, candidateName.first, 1)) {
+          return { score: 82, reason: 'Similar Name' };
+        }
+      }
+      if (queryName.full.length >= 7 && candidateName.full.length >= 7 &&
+          crmAreDuplicateStringsSimilar(queryName.full, candidateName.full, 2) &&
+          (!queryName.last || !candidateName.last || queryName.last === candidateName.last || crmAreDuplicateStringsSimilar(queryName.last, candidateName.last, 1))) {
+        return { score: 74, reason: 'Similar Name' };
+      }
+      return null;
+    }
+
+    function crmMatchNewLeadEmailDuplicate(queryEmailNorm, candidateEmailNorm) {
+      queryEmailNorm = crmNormalizeEmailForDuplicateMatch(queryEmailNorm);
+      candidateEmailNorm = crmNormalizeEmailForDuplicateMatch(candidateEmailNorm);
+      if (!queryEmailNorm || !candidateEmailNorm) return null;
+      if (queryEmailNorm === candidateEmailNorm) {
+        return { score: 100, reason: 'Exact Email Match' };
+      }
+      var queryParts = queryEmailNorm.split('@');
+      var candidateParts = candidateEmailNorm.split('@');
+      if (queryParts.length === 2 && candidateParts.length === 2 && queryParts[1] === candidateParts[1] &&
+          crmAreDuplicateStringsSimilar(queryParts[0], candidateParts[0], 1)) {
+        return { score: 84, reason: 'Similar Email' };
+      }
+      if (crmAreDuplicateStringsSimilar(queryEmailNorm, candidateEmailNorm, 1)) {
+        return { score: 76, reason: 'Similar Email' };
+      }
+      return null;
+    }
+
+    function crmMatchNewLeadPhoneDuplicate(queryPhoneDigits, candidatePhoneDigits) {
+      queryPhoneDigits = crmNormalizePhoneForDuplicateMatch(queryPhoneDigits);
+      candidatePhoneDigits = crmNormalizePhoneForDuplicateMatch(candidatePhoneDigits);
+      if (!queryPhoneDigits || !candidatePhoneDigits) return null;
+      if (queryPhoneDigits.length < 10 || candidatePhoneDigits.length < 10) return null;
+      if (queryPhoneDigits === candidatePhoneDigits) {
+        return { score: 100, reason: 'Exact Phone Match' };
+      }
+      return null;
+    }
+
+    function crmMatchNewLeadAddressDuplicate(queryAddress, candidateAddress, useFieldLeadExactRules) {
+      queryAddress = queryAddress || {};
+      candidateAddress = candidateAddress || {};
+      if (!queryAddress.street || !candidateAddress.street) return null;
+      if (queryAddress.full && candidateAddress.full && queryAddress.full === candidateAddress.full) {
+        return { score: 100, reason: 'Exact Address Match' };
+      }
+      if (queryAddress.street === candidateAddress.street &&
+          queryAddress.city && candidateAddress.city && queryAddress.city === candidateAddress.city &&
+          queryAddress.state && candidateAddress.state && queryAddress.state === candidateAddress.state) {
+        return { score: useFieldLeadExactRules ? 100 : 92, reason: useFieldLeadExactRules ? 'Exact Address Match' : 'Street Address Match' };
+      }
+      if (queryAddress.houseNumber && candidateAddress.houseNumber &&
+          queryAddress.houseNumber === candidateAddress.houseNumber &&
+          queryAddress.route && candidateAddress.route &&
+          queryAddress.route === candidateAddress.route) {
+        return { score: 88, reason: 'House Number and Street Match' };
+      }
+      if (queryAddress.street.length >= 7 && candidateAddress.street.length >= 7 &&
+          crmAreDuplicateStringsSimilar(queryAddress.street, candidateAddress.street, 2) &&
+          (!queryAddress.city || !candidateAddress.city || queryAddress.city === candidateAddress.city || crmAreDuplicateStringsSimilar(queryAddress.city, candidateAddress.city, 1)) &&
+          (!queryAddress.state || !candidateAddress.state || queryAddress.state === candidateAddress.state)) {
+        return { score: 72, reason: 'Similar Address' };
+      }
+      return null;
+    }
+
+    function crmSortNewLeadDuplicateMatches(matches) {
+      return (matches || []).slice().sort(function (a, b) {
+        var bucketDiff = (a.sortBucket || 0) - (b.sortBucket || 0);
+        if (bucketDiff) return bucketDiff;
+        var scoreDiff = (b.score || 0) - (a.score || 0);
+        if (scoreDiff) return scoreDiff;
+        var bt = Date.parse(String(b && b.updatedAt || '')) || 0;
+        var at = Date.parse(String(a && a.updatedAt || '')) || 0;
+        if (bt !== at) return bt - at;
+        return String(a.displayName || '').localeCompare(String(b.displayName || ''));
+      });
+    }
+
+    function crmGetIgnoredNewLeadDuplicateMap(scope, signature, stateRoot) {
+      stateRoot = stateRoot || _crmNewLeadDuplicateState;
+      var state = stateRoot[scope];
+      if (!state || !signature) return {};
+      if (!state.ignoredBySignature[signature]) state.ignoredBySignature[signature] = {};
+      return state.ignoredBySignature[signature];
+    }
+
+    function crmFilterIgnoredNewLeadDuplicateMatches(scope, signature, matches, stateRoot) {
+      var ignored = crmGetIgnoredNewLeadDuplicateMap(scope, signature, stateRoot);
+      return (matches || []).filter(function (match) {
+        return !ignored[match.key];
+      });
+    }
+
+    function crmBuildCustomerDuplicateMatchesFromQuery(query, scope, stateRoot, useFieldLeadExactRules) {
+      stateRoot = stateRoot || _crmNewLeadDuplicateState;
+      if (!crmHasEnoughNewLeadCustomerInfo(query)) {
+        return { signature: query.signature, allMatches: [], visibleMatches: [] };
+      }
+      var matchedByKey = {};
+      crmGetNewLeadDuplicateSearchRecords().forEach(function (record) {
+        var emailMatch = crmMatchNewLeadEmailDuplicate(query.emailNorm, record.emailNorm);
+        var phoneMatch = crmMatchNewLeadPhoneDuplicate(query.phoneDigits, record.phoneDigits);
+        var nameMatch = crmMatchNewLeadNameDuplicate(query.nameParts, record.nameParts);
+        if (!emailMatch && !phoneMatch && !nameMatch) return;
+        var signals = [];
+        if (emailMatch) signals.push(crmBuildDuplicateSignal('email', emailMatch));
+        if (phoneMatch) signals.push(crmBuildDuplicateSignal('phone', phoneMatch));
+        if (nameMatch) signals.push(crmBuildDuplicateSignal('name', nameMatch));
+        var reason = crmBuildDuplicateReasonFromSignals(signals, (emailMatch || phoneMatch || nameMatch || {}).reason);
+        var score = Math.max(emailMatch ? emailMatch.score : 0, phoneMatch ? phoneMatch.score : 0, nameMatch ? nameMatch.score : 0);
+        if (signals.length > 1) score += 4 * (signals.length - 1);
+        if (useFieldLeadExactRules) {
+          var isSpecifiedExactMatch = !!(emailMatch && emailMatch.score >= 100) ||
+            !!(phoneMatch && phoneMatch.score >= 100 && nameMatch && nameMatch.score >= 98);
+          if (!isSpecifiedExactMatch) score = Math.min(score, 95);
+        }
+        matchedByKey[record.key] = crmFinalizeNewLeadDuplicateMatch(record, signals, score, reason);
+      });
+      var allMatches = crmSortNewLeadDuplicateMatches(Object.keys(matchedByKey).map(function (key) {
+        return matchedByKey[key];
+      }));
+      return {
+        signature: query.signature,
+        allMatches: allMatches,
+        visibleMatches: crmFilterIgnoredNewLeadDuplicateMatches(scope, query.signature, allMatches, stateRoot)
+      };
+    }
+
+    function crmBuildPropertyDuplicateMatchesFromQuery(query, scope, stateRoot, useFieldLeadExactRules) {
+      stateRoot = stateRoot || _crmNewLeadDuplicateState;
+      if (!crmHasEnoughNewLeadPropertyInfo(query)) {
+        return { signature: query.signature, allMatches: [], visibleMatches: [] };
+      }
+      var matchedByKey = {};
+      crmGetNewLeadDuplicateSearchRecords().forEach(function (record) {
+        var addressMatch = crmMatchNewLeadAddressDuplicate(query.addressParts, record.addressParts, useFieldLeadExactRules);
+        if (!addressMatch) return;
+        matchedByKey[record.key] = crmFinalizeNewLeadDuplicateMatch(
+          record,
+          [crmBuildDuplicateSignal('address', addressMatch)],
+          addressMatch.score,
+          crmBuildDuplicateReasonFromSignals([crmBuildDuplicateSignal('address', addressMatch)], addressMatch.reason)
+        );
+      });
+      var allMatches = crmSortNewLeadDuplicateMatches(Object.keys(matchedByKey).map(function (key) {
+        return matchedByKey[key];
+      }));
+      return {
+        signature: query.signature,
+        allMatches: allMatches,
+        visibleMatches: crmFilterIgnoredNewLeadDuplicateMatches(scope, query.signature, allMatches, stateRoot)
+      };
+    }
+
+    function crmFindNewLeadCustomerDuplicateMatches() {
+      return crmBuildCustomerDuplicateMatchesFromQuery(crmCollectNewLeadCustomerDuplicateQuery(), 'customer', _crmNewLeadDuplicateState);
+    }
+
+    function crmFindNewLeadPropertyDuplicateMatches() {
+      return crmBuildPropertyDuplicateMatchesFromQuery(crmCollectNewLeadPropertyDuplicateQuery(), 'property', _crmNewLeadDuplicateState);
+    }
+
+    function crmBuildDuplicateMetaLineHtml(label, value, signal) {
+      var className = 'crm-crossref-meta-line';
+      if (signal && signal.kind === 'exact') className += ' is-match-exact';
+      else if (signal && signal.kind === 'similar') className += ' is-match-similar';
+      return '<div class="' + className + '">' + crmEscapeHtml(label) +
+        '<strong>' + crmEscapeHtml(value || '—') + '</strong>' +
+        (signal ? '<span class="crm-crossref-meta-note">' + crmEscapeHtml(signal.label) + '</span>' : '') +
+      '</div>';
+    }
+
+    function crmBuildDuplicateSignalsHtml(signals) {
+      signals = (signals || []).filter(Boolean);
+      if (!signals.length) return '';
+      return '<div class="crm-crossref-signal-list">' + signals.map(function (signal) {
+        return '<span class="crm-crossref-signal ' + crmEscapeHtml(signal.kind || 'similar') + '">' + crmEscapeHtml(signal.label || 'Possible match') + '</span>';
+      }).join('') + '</div>';
+    }
+
+    function crmGetNewLeadDuplicateSourceRecord(match) {
+      match = match || {};
+      if (match.recordType === 'contact') return crmFindContactById(match.contactId);
+      var leadId = String(match.leadId || '').trim();
+      var lead = leadId && typeof crmGetLeads === 'function'
+        ? (crmGetLeads().find(function (item) { return String(item && item.id || '').trim() === leadId; }) || null)
+        : null;
+      if (match.recordType === 'job') {
+        if (lead && typeof crmBuildJobRecord === 'function') {
+          try {
+            return crmBuildJobRecord(lead);
+          } catch (e) {}
+        }
+        var snapshot = crmGetDataModelSnapshot();
+        if (!snapshot || !Array.isArray(snapshot.jobs)) snapshot = crmBuildDataModelSnapshot();
+        var jobs = snapshot && Array.isArray(snapshot.jobs) ? snapshot.jobs.map(crmNormalizeJobRecord) : [];
+        return jobs.find(function (job) {
+          return String(job && job.leadId || '').trim() === leadId || String(job && job.id || '').trim() === String(match.jobId || '').trim();
+        }) || null;
+      }
+      return lead;
+    }
+
+    function crmBuildDuplicatePreviewFieldHtml(label, value, signal, note) {
+      var className = 'crm-crossref-preview-field';
+      if (signal && signal.kind === 'exact') className += ' is-match-exact';
+      else if (signal && signal.kind === 'similar') className += ' is-match-similar';
+      var noteHtml = signal
+        ? '<div class="crm-crossref-preview-note">' + crmEscapeHtml(signal.label) + '</div>'
+        : (note ? '<div class="crm-crossref-preview-note">' + crmEscapeHtml(note) + '</div>' : '');
+      return '<div class="' + className + '">' +
+        '<div class="crm-crossref-preview-label">' + crmEscapeHtml(label) + '</div>' +
+        '<div class="crm-crossref-preview-value">' + crmEscapeHtml(value || 'Not available') + '</div>' +
+        noteHtml +
+      '</div>';
+    }
+
+    function crmRenderNewLeadDuplicatePanel(scope, matches, panelId, options) {
+      options = options || {};
+      var panel = document.getElementById(panelId || (scope === 'customer' ? 'crm-lead-customer-crossref' : 'crm-lead-address-crossref'));
+      if (!panel) return;
+      matches = matches || [];
+      if (!matches.length) {
+        panel.classList.remove('is-exact-match');
+        panel.style.display = 'none';
+        panel.innerHTML = '';
+        return;
+      }
+      var title = scope === 'customer' ? 'Possible Existing Customer' : 'Possible Existing Property';
+      var subtitle = scope === 'customer'
+        ? 'Review these existing records before creating a second homeowner record.'
+        : 'Review these existing records before creating a second property record.';
+      var totalMatches = matches.length;
+      var currentIndex = Number(options.currentIndex || 0);
+      if (!isFinite(currentIndex) || currentIndex < 0) currentIndex = 0;
+      if (currentIndex > totalMatches - 1) currentIndex = totalMatches - 1;
+      var match = matches[currentIndex];
+      panel.classList.toggle('is-exact-match', !!match.isExactMatch);
+      var signalMap = match.matchSignalMap || {};
+      var jobMeta = match.recordType === 'job' && match.jobNumber
+        ? crmBuildDuplicateMetaLineHtml('Job Number', crmFormatDuplicateJobNumber(match.jobNumber))
+        : '';
+      var secondaryMeta = '';
+      if (match.recordType === 'contact') {
+        if (match.contactType) secondaryMeta += crmBuildDuplicateMetaLineHtml('Contact Type', match.contactType);
+        if (match.companyName) secondaryMeta += crmBuildDuplicateMetaLineHtml('Company', match.companyName);
+      } else if (match.leadSource) {
+        secondaryMeta += crmBuildDuplicateMetaLineHtml('Lead Source', match.leadSource);
+      }
+      panel.innerHTML = '<h3 class="crm-crossref-panel-title">' + crmEscapeHtml(title) + '</h3>' +
+        '<p class="crm-crossref-panel-subtitle">' + crmEscapeHtml(subtitle) + '</p>' +
+        '<div class="crm-crossref-panel-count">' + crmEscapeHtml((currentIndex + 1) + ' of ' + totalMatches + ' possible matches') + '</div>' +
+        '<div class="crm-crossref-list">' +
+          '<div class="crm-crossref-item">' +
+            '<div class="crm-crossref-item-top">' +
+              '<div class="crm-crossref-item-head">' +
+                '<div class="crm-crossref-item-name">' + crmEscapeHtml(match.displayName || 'Unnamed Record') + '</div>' +
+                '<div class="crm-crossref-item-type">' + crmEscapeHtml(match.recordTypeLabel || match.recordType || 'Record') + '</div>' +
+              '</div>' +
+              '<div class="crm-crossref-item-badges">' +
+                '<span class="crm-crossref-item-confidence ' + crmEscapeHtml(match.confidenceTone || 'possible') + '">' + crmEscapeHtml(match.confidenceLabel || 'Possible Match') + '</span>' +
+                '<div class="crm-crossref-item-reason">' + crmEscapeHtml(match.matchReason || 'Possible match') + '</div>' +
+              '</div>' +
+            '</div>' +
+            crmBuildDuplicateSignalsHtml(match.matchSignals) +
+            '<div class="crm-crossref-meta">' +
+              crmBuildDuplicateMetaLineHtml('Name', match.displayName || 'Unnamed Record', signalMap.name) +
+              crmBuildDuplicateMetaLineHtml('Email', match.email, signalMap.email) +
+              crmBuildDuplicateMetaLineHtml('Phone', match.phone, signalMap.phone) +
+              crmBuildDuplicateMetaLineHtml('Property Address', match.address, signalMap.address) +
+              crmBuildDuplicateMetaLineHtml('Stage / Status', match.stageStatus) +
+              crmBuildDuplicateMetaLineHtml('Assigned Rep', match.assignedRep) +
+              jobMeta +
+              secondaryMeta +
+              crmBuildDuplicateMetaLineHtml('Last Updated', crmFormatContactTimestamp(match.updatedAt)) +
+            '</div>' +
+            '<div class="crm-crossref-actions">' +
+              '<button type="button" class="btn crm-crossref-btn" data-crm-crossref-action="prev" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '"' + (currentIndex <= 0 ? ' disabled' : '') + '>Previous</button>' +
+              '<button type="button" class="btn crm-crossref-btn" data-crm-crossref-action="next" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '"' + (currentIndex >= totalMatches - 1 ? ' disabled' : '') + '>Next</button>' +
+              '<button type="button" class="btn btn-primary crm-crossref-btn" data-crm-crossref-action="open" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '" data-crm-crossref-key="' + crmEscapeHtml(match.key) + '">' + crmEscapeHtml(options.openLabel || 'View Possible Match') + '</button>' +
+              '<button type="button" class="btn crm-crossref-btn crm-crossref-btn-ignore" data-crm-crossref-action="ignore" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '" data-crm-crossref-key="' + crmEscapeHtml(match.key) + '">' + crmEscapeHtml(options.ignoreLabel || 'Ignore') + '</button>' +
+              '<button type="button" class="btn crm-crossref-btn crm-crossref-btn-ignore" data-crm-crossref-action="ignore-all" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '">Ignore All</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      panel.style.display = 'block';
+    }
+
+    function crmRenderDuplicateStatePanel(scope, stateRoot, panelId, options) {
+      var state = crmGetDuplicateState(scope, stateRoot);
+      if (!state) return;
+      crmClampDuplicateStateIndex(state);
+      crmRenderNewLeadDuplicatePanel(
+        scope,
+        state.visibleMatches || [],
+        panelId,
+        Object.assign({}, options || {}, { currentIndex: state.currentIndex })
+      );
+    }
+
+    function crmStepDuplicateStateMatch(scope, direction, stateRoot, panelId, options) {
+      var state = crmGetDuplicateState(scope, stateRoot);
+      if (!state) return;
+      crmClampDuplicateStateIndex(state);
+      state.currentIndex += Number(direction || 0);
+      crmClampDuplicateStateIndex(state);
+      crmRenderDuplicateStatePanel(scope, stateRoot, panelId, options);
+    }
+
+    function crmIgnoreAllDuplicateStateMatches(scope, stateRoot, panelId, options, previewState, closePreviewFn, clearValidationFn) {
+      var state = crmGetDuplicateState(scope, stateRoot);
+      if (!state || !state.signature) return;
+      var ignored = crmGetIgnoredNewLeadDuplicateMap(scope, state.signature, stateRoot);
+      (state.visibleMatches || []).forEach(function (match) {
+        if (match && match.key) ignored[match.key] = true;
+      });
+      state.visibleMatches = crmFilterIgnoredNewLeadDuplicateMatches(scope, state.signature, state.allMatches, stateRoot);
+      state.currentIndex = 0;
+      crmRenderDuplicateStatePanel(scope, stateRoot, panelId, options);
+      if (previewState && previewState.match && closePreviewFn) closePreviewFn();
+      if (typeof clearValidationFn === 'function') clearValidationFn();
+    }
+
+    function crmOpenDuplicatePreview(match, options) {
+      options = options || {};
+      match = match || null;
+      var overlay = document.getElementById(options.overlayId || 'crm-lead-duplicate-preview-overlay');
+      var titleEl = document.getElementById(options.titleId || 'crm-lead-duplicate-preview-title');
+      var subtitleEl = document.getElementById(options.subtitleId || 'crm-lead-duplicate-preview-subtitle');
+      var bannerEl = document.getElementById(options.bannerId || 'crm-lead-duplicate-preview-banner');
+      var bodyEl = document.getElementById(options.bodyId || 'crm-lead-duplicate-preview-body');
+      if (!overlay || !titleEl || !subtitleEl || !bannerEl || !bodyEl || !match) return;
+      var previewState = options.previewState || _crmNewLeadDuplicatePreviewState;
+      previewState.match = match;
+      previewState.backPageId = options.backPageId || previewState.backPageId || 'page-new-lead';
+      var source = crmGetNewLeadDuplicateSourceRecord(match) || {};
+      var signalMap = match.matchSignalMap || {};
+      var companyName = match.companyName || source.companyName || '';
+      var companyJobTitle = match.companyJobTitle || source.companyJobTitle || '';
+      var contactType = match.contactType || source.contactType || '';
+      var leadSource = match.leadSource || source.leadSource || '';
+      var insuranceCompany = match.insuranceCompany || source.insuranceCompany || '';
+      var claimNumber = match.claimNumber || source.claimNumber || '';
+      titleEl.textContent = match.displayName || 'Existing Record Preview';
+      subtitleEl.textContent = (match.recordTypeLabel || match.recordType || 'Record') + ' preview';
+      bannerEl.innerHTML =
+        '<span class="crm-crossref-item-confidence ' + crmEscapeHtml(match.confidenceTone || 'possible') + '">' + crmEscapeHtml(match.confidenceLabel || 'Possible Match') + '</span>' +
+        '<span class="crm-crossref-item-reason">' + crmEscapeHtml(match.matchReason || 'Possible match') + '</span>';
+      bodyEl.innerHTML =
+        crmBuildDuplicateSignalsHtml(match.matchSignals) +
+        '<div class="crm-crossref-preview-grid">' +
+          crmBuildDuplicatePreviewFieldHtml('Record Type', match.recordTypeLabel || match.recordType || 'Record') +
+          crmBuildDuplicatePreviewFieldHtml('Name', match.displayName || 'Unnamed Record', signalMap.name) +
+          (match.recordType === 'job' && match.jobNumber ? crmBuildDuplicatePreviewFieldHtml('Job Number', crmFormatDuplicateJobNumber(match.jobNumber)) : '') +
+          crmBuildDuplicatePreviewFieldHtml('Email', match.email, signalMap.email) +
+          crmBuildDuplicatePreviewFieldHtml('Phone', match.phone, signalMap.phone) +
+          crmBuildDuplicatePreviewFieldHtml('Property Address', match.address, signalMap.address) +
+          crmBuildDuplicatePreviewFieldHtml('Stage / Status', match.stageStatus) +
+          crmBuildDuplicatePreviewFieldHtml('Assigned Rep', match.assignedRep) +
+          (leadSource ? crmBuildDuplicatePreviewFieldHtml('Lead Source', leadSource) : '') +
+          (contactType ? crmBuildDuplicatePreviewFieldHtml('Contact Type', contactType) : '') +
+          (companyName ? crmBuildDuplicatePreviewFieldHtml('Company', companyName) : '') +
+          (companyJobTitle ? crmBuildDuplicatePreviewFieldHtml('Company Job Title', companyJobTitle) : '') +
+          (insuranceCompany ? crmBuildDuplicatePreviewFieldHtml('Insurance Company', insuranceCompany) : '') +
+          (claimNumber ? crmBuildDuplicatePreviewFieldHtml('Claim Number', claimNumber) : '') +
+          crmBuildDuplicatePreviewFieldHtml('Last Updated', crmFormatContactTimestamp(match.updatedAt)) +
+        '</div>' +
+        '<div class="crm-crossref-preview-note">Your current New Lead entries stay in place unless you choose Open Full Record.</div>';
+      overlay.style.display = 'flex';
+    }
+
+    function crmOpenNewLeadDuplicatePreview(match) {
+      crmOpenDuplicatePreview(match, {
+        previewState: _crmNewLeadDuplicatePreviewState,
+        backPageId: 'page-new-lead'
+      });
+    }
+
+    function crmCloseDuplicatePreview(options) {
+      options = options || {};
+      var overlay = document.getElementById(options.overlayId || 'crm-lead-duplicate-preview-overlay');
+      if (overlay) overlay.style.display = 'none';
+      var previewState = options.previewState || _crmNewLeadDuplicatePreviewState;
+      previewState.match = null;
+    }
+
+    function crmCloseNewLeadDuplicatePreview() {
+      crmCloseDuplicatePreview({ previewState: _crmNewLeadDuplicatePreviewState });
+    }
+
+    function crmOpenDuplicateFullRecord(options) {
+      options = options || {};
+      var previewState = options.previewState || _crmNewLeadDuplicatePreviewState;
+      var match = previewState.match;
+      if (!match) return;
+      var backPageId = options.backPageId || previewState.backPageId || 'page-new-lead';
+      crmCloseDuplicatePreview(options);
+      if (match.recordType === 'contact') {
+        crmOpenNewContactPage(match.contactId);
+        return;
+      }
+      if (match.recordType === 'job') {
+        if (typeof crmOpenJobFile === 'function') crmOpenJobFile(match.leadId, 'overview', 'page', backPageId);
+        else if (typeof crmOpenLeadDetail === 'function') crmOpenLeadDetail(match.leadId, backPageId);
+        return;
+      }
+      if (typeof crmOpenLeadDetail === 'function') crmOpenLeadDetail(match.leadId, backPageId);
+    }
+
+    function crmOpenNewLeadDuplicateFullRecord() {
+      crmOpenDuplicateFullRecord({
+        previewState: _crmNewLeadDuplicatePreviewState,
+        backPageId: 'page-new-lead'
+      });
+    }
+
+    function crmApplyNewLeadDuplicateResults(scope, result) {
+      var state = crmGetDuplicateState(scope, _crmNewLeadDuplicateState);
+      if (!state) return result;
+      var nextSignature = result && result.signature ? result.signature : '';
+      if (state.signature && state.signature !== nextSignature) {
+        state.ignoredBySignature = {};
+        state.currentIndex = 0;
+      }
+      state.signature = nextSignature;
+      state.allMatches = result && result.allMatches ? result.allMatches : [];
+      state.visibleMatches = result && result.visibleMatches ? result.visibleMatches : [];
+      crmClampDuplicateStateIndex(state);
+      crmRenderDuplicateStatePanel(scope, _crmNewLeadDuplicateState);
+      return result;
+    }
+
+    function crmRunNewLeadDuplicateCheck(scope) {
+      try {
+        if (scope === 'customer') return crmApplyNewLeadDuplicateResults('customer', crmFindNewLeadCustomerDuplicateMatches());
+        return crmApplyNewLeadDuplicateResults('property', crmFindNewLeadPropertyDuplicateMatches());
+      } catch (e) {
+        return crmApplyNewLeadDuplicateResults(scope === 'customer' ? 'customer' : 'property', {
+          signature: '',
+          allMatches: [],
+          visibleMatches: []
+        });
+      }
+    }
+
+    function crmRunAllNewLeadDuplicateChecks() {
+      var customer = crmRunNewLeadDuplicateCheck('customer');
+      var property = crmRunNewLeadDuplicateCheck('property');
+      return {
+        customer: customer,
+        property: property,
+        hasVisibleMatches: !!((customer.visibleMatches || []).length || (property.visibleMatches || []).length)
+      };
+    }
+
+    function crmScheduleNewLeadDuplicateCheck(scope) {
+      var state = crmGetDuplicateState(scope, _crmNewLeadDuplicateState);
+      if (!state) return;
+      clearTimeout(state.timer);
+      state.timer = setTimeout(function () {
+        crmRunNewLeadDuplicateCheck(scope);
+        crmMaybeClearNewLeadDuplicateValidation();
+      }, 220);
+    }
+
+    function crmFindNewLeadDuplicateMatchByKey(scope, key, stateRoot) {
+      stateRoot = stateRoot || _crmNewLeadDuplicateState;
+      var state = stateRoot[scope];
+      if (!state || !key) return null;
+      return (state.allMatches || []).find(function (match) {
+        return match.key === key;
+      }) || null;
+    }
+
+    function crmMaybeClearNewLeadDuplicateValidation() {
+      var valMsg = document.getElementById('crm-lead-validation-msg');
+      if (!valMsg) return;
+      var hasVisibleMatches = (_crmNewLeadDuplicateState.customer.visibleMatches || []).length ||
+        (_crmNewLeadDuplicateState.property.visibleMatches || []).length;
+      if (!hasVisibleMatches && String(valMsg.textContent || '').trim() === CRM_NEW_LEAD_DUPLICATE_REVIEW_TEXT) {
+        valMsg.textContent = CRM_NEW_LEAD_VALIDATION_DEFAULT_TEXT;
+        valMsg.style.display = 'none';
+      }
+    }
+
+    function crmIgnoreNewLeadDuplicateMatch(scope, key) {
+      var state = crmGetDuplicateState(scope, _crmNewLeadDuplicateState);
+      if (!state || !state.signature || !key) return;
+      crmGetIgnoredNewLeadDuplicateMap(scope, state.signature)[key] = true;
+      state.visibleMatches = crmFilterIgnoredNewLeadDuplicateMatches(scope, state.signature, state.allMatches);
+      crmClampDuplicateStateIndex(state);
+      crmRenderDuplicateStatePanel(scope, _crmNewLeadDuplicateState);
+      if (_crmNewLeadDuplicatePreviewState.match && _crmNewLeadDuplicatePreviewState.match.key === key) {
+        crmCloseNewLeadDuplicatePreview();
+      }
+      crmMaybeClearNewLeadDuplicateValidation();
+    }
+
+    function crmOpenNewLeadDuplicateMatch(scope, key) {
+      var match = crmFindNewLeadDuplicateMatchByKey(scope, key) ||
+        crmFindNewLeadDuplicateMatchByKey(scope === 'customer' ? 'property' : 'customer', key);
+      if (!match) return;
+      crmOpenNewLeadDuplicatePreview(match);
+    }
+
+    function crmResetNewLeadDuplicateChecks() {
+      ['customer', 'property'].forEach(function (scope) {
+        var state = crmGetDuplicateState(scope, _crmNewLeadDuplicateState);
+        if (!state) return;
+        clearTimeout(state.timer);
+        state.timer = null;
+        state.signature = '';
+        state.allMatches = [];
+        state.visibleMatches = [];
+        state.ignoredBySignature = {};
+        state.currentIndex = 0;
+        crmRenderDuplicateStatePanel(scope, _crmNewLeadDuplicateState);
+      });
+      crmCloseNewLeadDuplicatePreview();
+      crmMaybeClearNewLeadDuplicateValidation();
+    }
+
+    (function () {
+      var bindings = [
+        { id: 'firstName', scope: 'customer' },
+        { id: 'lastName', scope: 'customer' },
+        { id: 'email', scope: 'customer' },
+        { id: 'street', scope: 'property' },
+        { id: 'city', scope: 'property' },
+        { id: 'state', scope: 'property' },
+        { id: 'zip', scope: 'property' }
+      ];
+      bindings.forEach(function (binding) {
+        var el = document.getElementById(binding.id);
+        if (!el) return;
+        el.addEventListener('input', function () {
+          crmScheduleNewLeadDuplicateCheck(binding.scope);
+        });
+        if (el.tagName === 'SELECT') {
+          el.addEventListener('change', function () {
+            crmScheduleNewLeadDuplicateCheck(binding.scope);
+          });
+        }
+      });
+
+      document.addEventListener('click', function (event) {
+        var trigger = event.target && event.target.closest ? event.target.closest('[data-crm-crossref-action]') : null;
+        if (!trigger || !trigger.closest || !trigger.closest('#page-new-lead')) return;
+        event.preventDefault();
+        var scope = String(trigger.getAttribute('data-crm-crossref-scope') || '').trim();
+        var key = String(trigger.getAttribute('data-crm-crossref-key') || '').trim();
+        var action = String(trigger.getAttribute('data-crm-crossref-action') || '').trim();
+        if (action === 'prev') {
+          crmStepDuplicateStateMatch(scope, -1, _crmNewLeadDuplicateState);
+          return;
+        }
+        if (action === 'next') {
+          crmStepDuplicateStateMatch(scope, 1, _crmNewLeadDuplicateState);
+          return;
+        }
+        if (action === 'ignore') {
+          crmIgnoreNewLeadDuplicateMatch(scope, key);
+          return;
+        }
+        if (action === 'ignore-all') {
+          crmIgnoreAllDuplicateStateMatches(scope, _crmNewLeadDuplicateState, null, null, _crmNewLeadDuplicatePreviewState, crmCloseNewLeadDuplicatePreview, crmMaybeClearNewLeadDuplicateValidation);
+          return;
+        }
+        if (action === 'open') crmOpenNewLeadDuplicateMatch(scope, key);
+      });
+
+      var previewOverlay = document.getElementById('crm-lead-duplicate-preview-overlay');
+      var previewCloseBtn = document.getElementById('crm-lead-duplicate-preview-close');
+      var previewDismissBtn = document.getElementById('crm-lead-duplicate-preview-dismiss');
+      var previewOpenFullBtn = document.getElementById('crm-lead-duplicate-preview-open-full');
+      if (previewCloseBtn) previewCloseBtn.addEventListener('click', crmCloseNewLeadDuplicatePreview);
+      if (previewDismissBtn) previewDismissBtn.addEventListener('click', crmCloseNewLeadDuplicatePreview);
+      if (previewOpenFullBtn) previewOpenFullBtn.addEventListener('click', crmOpenNewLeadDuplicateFullRecord);
+      if (previewOverlay) {
+        previewOverlay.addEventListener('click', function (event) {
+          if (event.target === previewOverlay) crmCloseNewLeadDuplicatePreview();
+        });
+      }
+    }());
+
+    function crmCollectFieldLeadCustomerDuplicateQuery() {
+      function fieldVal(id) {
+        var el = document.getElementById(id);
+        return el ? String(el.value || '').trim() : '';
+      }
+      var firstName = fieldVal('fl-firstName');
+      var lastName = fieldVal('fl-lastName');
+      var email = fieldVal('fl-email');
+      var phone = fieldVal('fl-phone');
+      var nameParts = crmBuildDuplicateNameParts(firstName, lastName);
+      return {
+        firstName: firstName,
+        lastName: lastName,
+        emailNorm: crmNormalizeEmailForDuplicateMatch(email),
+        phoneDigits: crmNormalizePhoneForDuplicateMatch(phone),
+        nameParts: nameParts,
+        signature: [nameParts.first, nameParts.last, crmNormalizeEmailForDuplicateMatch(email), crmNormalizePhoneForDuplicateMatch(phone)].join('|')
+      };
+    }
+
+    function crmCollectFieldLeadPropertyDuplicateQuery() {
+      function fieldVal(id) {
+        var el = document.getElementById(id);
+        return el ? String(el.value || '').trim() : '';
+      }
+      var addressParts = crmBuildDuplicateAddressParts({
+        street: fieldVal('fl-street'),
+        city: fieldVal('fl-city'),
+        state: fieldVal('fl-state'),
+        zip: fieldVal('fl-zip')
+      });
+      return {
+        addressParts: addressParts,
+        signature: [addressParts.street, addressParts.city, addressParts.state, addressParts.zip].join('|')
+      };
+    }
+
+    function crmFindFieldLeadCustomerDuplicateMatches() {
+      var query = crmCollectFieldLeadCustomerDuplicateQuery();
+      var hasRequiredIdentity = !!(query.nameParts && query.nameParts.first && query.nameParts.last &&
+        query.phoneDigits && query.phoneDigits.length >= 10);
+      if (!hasRequiredIdentity) return { signature: query.signature, allMatches: [], visibleMatches: [] };
+      return crmBuildCustomerDuplicateMatchesFromQuery(query, 'customer', _crmFieldLeadDuplicateState, true);
+    }
+
+    function crmFindFieldLeadPropertyDuplicateMatches() {
+      var query = crmCollectFieldLeadPropertyDuplicateQuery();
+      var parts = query.addressParts || {};
+      var hasRequiredAddress = !!(parts.street && parts.street.length >= 3 &&
+        parts.city && parts.city.length >= 2 && parts.state && parts.state.length >= 2);
+      if (!hasRequiredAddress) return { signature: query.signature, allMatches: [], visibleMatches: [] };
+      return crmBuildPropertyDuplicateMatchesFromQuery(query, 'property', _crmFieldLeadDuplicateState, true);
+    }
+
+    function crmApplyFieldLeadDuplicateResults(scope, result) {
+      var state = crmGetDuplicateState(scope, _crmFieldLeadDuplicateState);
+      if (!state) return result;
+      var nextSignature = result && result.signature ? result.signature : '';
+      if (state.signature && state.signature !== nextSignature) {
+        state.ignoredBySignature = {};
+        state.currentIndex = 0;
+      }
+      state.signature = nextSignature;
+      state.allMatches = result && result.allMatches ? result.allMatches : [];
+      state.visibleMatches = result && result.visibleMatches ? result.visibleMatches : [];
+      crmClampDuplicateStateIndex(state);
+      crmRenderDuplicateStatePanel(scope, _crmFieldLeadDuplicateState, scope === 'customer' ? 'fl-customer-crossref' : 'fl-property-crossref');
+      return result;
+    }
+
+    function crmRunFieldLeadDuplicateCheck(scope) {
+      try {
+        if (scope === 'customer') return crmApplyFieldLeadDuplicateResults('customer', crmFindFieldLeadCustomerDuplicateMatches());
+        return crmApplyFieldLeadDuplicateResults('property', crmFindFieldLeadPropertyDuplicateMatches());
+      } catch (e) {
+        return crmApplyFieldLeadDuplicateResults(scope === 'customer' ? 'customer' : 'property', {
+          signature: '',
+          allMatches: [],
+          visibleMatches: []
+        });
+      }
+    }
+
+    function crmRunAllFieldLeadDuplicateChecks() {
+      var customer = crmRunFieldLeadDuplicateCheck('customer');
+      var property = crmRunFieldLeadDuplicateCheck('property');
+      return {
+        customer: customer,
+        property: property,
+        hasVisibleMatches: !!((customer.visibleMatches || []).length || (property.visibleMatches || []).length)
+      };
+    }
+
+    function crmScheduleFieldLeadDuplicateCheck(scope) {
+      var state = crmGetDuplicateState(scope, _crmFieldLeadDuplicateState);
+      if (!state) return;
+      clearTimeout(state.timer);
+      state.timer = setTimeout(function () {
+        crmRunFieldLeadDuplicateCheck(scope);
+        crmMaybeClearFieldLeadDuplicateValidation();
+      }, 220);
+    }
+
+    function crmMaybeClearFieldLeadDuplicateValidation() {
+      var valMsg = document.getElementById('fl-validation-msg');
+      if (!valMsg) return;
+      var hasVisibleMatches = (_crmFieldLeadDuplicateState.customer.visibleMatches || []).length ||
+        (_crmFieldLeadDuplicateState.property.visibleMatches || []).length;
+      if (!hasVisibleMatches && String(valMsg.textContent || '').trim() === CRM_FIELD_LEAD_DUPLICATE_REVIEW_TEXT) {
+        valMsg.textContent = CRM_FIELD_LEAD_VALIDATION_DEFAULT_TEXT;
+        valMsg.style.display = 'none';
+      }
+    }
+
+    function crmIgnoreFieldLeadDuplicateMatch(scope, key) {
+      var state = crmGetDuplicateState(scope, _crmFieldLeadDuplicateState);
+      if (!state || !state.signature || !key) return;
+      crmGetIgnoredNewLeadDuplicateMap(scope, state.signature, _crmFieldLeadDuplicateState)[key] = true;
+      state.visibleMatches = crmFilterIgnoredNewLeadDuplicateMatches(scope, state.signature, state.allMatches, _crmFieldLeadDuplicateState);
+      crmClampDuplicateStateIndex(state);
+      crmRenderDuplicateStatePanel(scope, _crmFieldLeadDuplicateState, scope === 'customer' ? 'fl-customer-crossref' : 'fl-property-crossref');
+      if (_crmFieldLeadDuplicatePreviewState.match && _crmFieldLeadDuplicatePreviewState.match.key === key) {
+        crmCloseDuplicatePreview({
+          overlayId: 'fl-duplicate-preview-overlay',
+          previewState: _crmFieldLeadDuplicatePreviewState
+        });
+      }
+      crmMaybeClearFieldLeadDuplicateValidation();
+    }
+
+    function crmOpenFieldLeadDuplicateMatch(scope, key) {
+      var match = crmFindNewLeadDuplicateMatchByKey(scope, key, _crmFieldLeadDuplicateState) ||
+        crmFindNewLeadDuplicateMatchByKey(scope === 'customer' ? 'property' : 'customer', key, _crmFieldLeadDuplicateState);
+      if (!match) return;
+      crmOpenDuplicatePreview(match, {
+        overlayId: 'fl-duplicate-preview-overlay',
+        titleId: 'fl-duplicate-preview-title',
+        subtitleId: 'fl-duplicate-preview-subtitle',
+        bannerId: 'fl-duplicate-preview-banner',
+        bodyId: 'fl-duplicate-preview-body',
+        previewState: _crmFieldLeadDuplicatePreviewState,
+        backPageId: 'page-field-lead'
+      });
+    }
+
+    function crmResetFieldLeadDuplicateChecks() {
+      ['customer', 'property'].forEach(function (scope) {
+        var state = crmGetDuplicateState(scope, _crmFieldLeadDuplicateState);
+        if (!state) return;
+        clearTimeout(state.timer);
+        state.timer = null;
+        state.signature = '';
+        state.allMatches = [];
+        state.visibleMatches = [];
+        state.ignoredBySignature = {};
+        state.currentIndex = 0;
+        crmRenderDuplicateStatePanel(scope, _crmFieldLeadDuplicateState, scope === 'customer' ? 'fl-customer-crossref' : 'fl-property-crossref');
+      });
+      crmCloseDuplicatePreview({
+        overlayId: 'fl-duplicate-preview-overlay',
+        previewState: _crmFieldLeadDuplicatePreviewState
+      });
+      crmMaybeClearFieldLeadDuplicateValidation();
+    }
+
+    (function () {
+      var bindings = [
+        { id: 'fl-firstName', scope: 'customer' },
+        { id: 'fl-lastName', scope: 'customer' },
+        { id: 'fl-phone', scope: 'customer' },
+        { id: 'fl-email', scope: 'customer' },
+        { id: 'fl-street', scope: 'property' },
+        { id: 'fl-city', scope: 'property' },
+        { id: 'fl-state', scope: 'property' },
+        { id: 'fl-zip', scope: 'property' }
+      ];
+      bindings.forEach(function (binding) {
+        var el = document.getElementById(binding.id);
+        if (!el) return;
+        el.addEventListener('input', function () {
+          crmScheduleFieldLeadDuplicateCheck(binding.scope);
+        });
+        if (el.tagName === 'SELECT') {
+          el.addEventListener('change', function () {
+            crmScheduleFieldLeadDuplicateCheck(binding.scope);
+          });
+        }
+      });
+
+      document.addEventListener('click', function (event) {
+        var trigger = event.target && event.target.closest ? event.target.closest('[data-crm-crossref-action]') : null;
+        if (!trigger || !trigger.closest || !trigger.closest('#page-field-lead')) return;
+        event.preventDefault();
+        var scope = String(trigger.getAttribute('data-crm-crossref-scope') || '').trim();
+        var key = String(trigger.getAttribute('data-crm-crossref-key') || '').trim();
+        var action = String(trigger.getAttribute('data-crm-crossref-action') || '').trim();
+        if (action === 'prev') {
+          crmStepDuplicateStateMatch(scope, -1, _crmFieldLeadDuplicateState, scope === 'customer' ? 'fl-customer-crossref' : 'fl-property-crossref');
+          return;
+        }
+        if (action === 'next') {
+          crmStepDuplicateStateMatch(scope, 1, _crmFieldLeadDuplicateState, scope === 'customer' ? 'fl-customer-crossref' : 'fl-property-crossref');
+          return;
+        }
+        if (action === 'ignore') {
+          crmIgnoreFieldLeadDuplicateMatch(scope, key);
+          return;
+        }
+        if (action === 'ignore-all') {
+          crmIgnoreAllDuplicateStateMatches(
+            scope,
+            _crmFieldLeadDuplicateState,
+            scope === 'customer' ? 'fl-customer-crossref' : 'fl-property-crossref',
+            null,
+            _crmFieldLeadDuplicatePreviewState,
+            function () {
+              crmCloseDuplicatePreview({
+                overlayId: 'fl-duplicate-preview-overlay',
+                previewState: _crmFieldLeadDuplicatePreviewState
+              });
+            },
+            crmMaybeClearFieldLeadDuplicateValidation
+          );
+          return;
+        }
+        if (action === 'open') crmOpenFieldLeadDuplicateMatch(scope, key);
+      });
+
+      var previewOverlay = document.getElementById('fl-duplicate-preview-overlay');
+      var previewCloseBtn = document.getElementById('fl-duplicate-preview-close');
+      var previewDismissBtn = document.getElementById('fl-duplicate-preview-dismiss');
+      var previewOpenFullBtn = document.getElementById('fl-duplicate-preview-open-full');
+      if (previewCloseBtn) {
+        previewCloseBtn.addEventListener('click', function () {
+          crmCloseDuplicatePreview({
+            overlayId: 'fl-duplicate-preview-overlay',
+            previewState: _crmFieldLeadDuplicatePreviewState
+          });
+        });
+      }
+      if (previewDismissBtn) {
+        previewDismissBtn.addEventListener('click', function () {
+          crmCloseDuplicatePreview({
+            overlayId: 'fl-duplicate-preview-overlay',
+            previewState: _crmFieldLeadDuplicatePreviewState
+          });
+        });
+      }
+      if (previewOpenFullBtn) {
+        previewOpenFullBtn.addEventListener('click', function () {
+          crmOpenDuplicateFullRecord({
+            overlayId: 'fl-duplicate-preview-overlay',
+            previewState: _crmFieldLeadDuplicatePreviewState,
+            backPageId: 'page-field-lead'
+          });
+        });
+      }
+      if (previewOverlay) {
+        previewOverlay.addEventListener('click', function (event) {
+          if (event.target === previewOverlay) {
+            crmCloseDuplicatePreview({
+              overlayId: 'fl-duplicate-preview-overlay',
+              previewState: _crmFieldLeadDuplicatePreviewState
+            });
+          }
+        });
+      }
+    }());
+
     /* ── Save lead from CRM New Lead form ── */
     (function () {
       var btn = document.getElementById('crm-save-lead-btn');
@@ -42317,6 +44301,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var valMsg = document.getElementById('crm-lead-validation-msg');
         var savedMsg = document.getElementById('crm-lead-saved-msg');
 
+        valMsg.textContent = CRM_NEW_LEAD_VALIDATION_DEFAULT_TEXT;
         valMsg.style.display = 'none';
         savedMsg.style.display = 'none';
 
@@ -42352,6 +44337,17 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           valMsg.style.display = 'block';
           var firstEl = document.getElementById(missing[0]);
           if (firstEl) firstEl.focus();
+          return;
+        }
+
+        var duplicateCheck = crmRunAllNewLeadDuplicateChecks();
+        if (duplicateCheck.hasVisibleMatches) {
+          valMsg.textContent = CRM_NEW_LEAD_DUPLICATE_REVIEW_TEXT;
+          valMsg.style.display = 'block';
+          var firstPanel = document.getElementById((duplicateCheck.customer.visibleMatches || []).length ? 'crm-lead-customer-crossref' : 'crm-lead-address-crossref');
+          if (firstPanel && typeof firstPanel.scrollIntoView === 'function') {
+            firstPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
           return;
         }
 
@@ -42494,6 +44490,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           document.querySelectorAll('#page-new-lead .field').forEach(function (f) {
             f.classList.remove('field-error');
           });
+          crmResetNewLeadDuplicateChecks();
           _inspectionSession = null;
           crmUpdateTasksBadge();
         }, 1400);
@@ -43318,10 +45315,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var idMap = {};
         allLeads.forEach(function (l) { var id = String(l && l.id || '').trim(); if (id) idMap[id] = true; });
         var scoped = crmGetScopedLeads(pipelineScope).filter(function (l) { return !!idMap[String(l && l.id || '').trim()]; });
-        if (pipelineScope === 'self' && crmGetRole() === 'Sales Rep') {
-          var repName = String(crmGetCurrentUserName() || currentRep || '').trim();
-          scoped = scoped.filter(function (l) { return crmGetLeadAssignedRepName(l) === repName; });
-        }
         return scoped;
       }());
       var tasks = Array.isArray(crmGetTasks()) ? crmGetTasks() : [];
@@ -45696,12 +47689,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var leads = scope === 'all' ? storedLeads : crmGetScopedLeads(scope).filter(function (lead) {
         return !!storedLeadIds[String(lead && lead.id || '').trim()];
       });
-      if (scope === 'self' && crmGetRole() === 'Sales Rep') {
-        var currentName = String(crmGetCurrentUserName() || currentRep || '').trim();
-        leads = leads.filter(function (lead) {
-          return crmGetLeadAssignedRepName(lead) === currentName;
-        });
-      }
       return leads.map(function (lead) {
         var jobFile = crmGetLeadJobFileData(lead);
         var stageBucket = crmGetDashboardStageBucket(lead, jobFile);
@@ -46197,15 +48184,17 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       html += '<div class="crm-pipeline-search-wrap' + (_pipelinePreviewEditMode ? ' is-disabled' : '') + '"><span class="crm-pipeline-search-icon">&#128269;</span><input id="crm-pipeline-search" type="search" placeholder="Search homeowner, phone, address, email, claim, insurance..." value="' + crmEscapeHtml(_pipelineSearchQuery) + '" autocomplete="off"' + (_pipelinePreviewEditMode ? ' disabled aria-disabled="true"' : '') + ' /></div>';
       html += '<div class="crm-pipeline-list">' + listHtml + '</div>';
       html += '</div>';
-      html += '<div class="crm-pipeline-preview-panel' + (hasPreviewSelection ? ' has-selection' : ' is-empty') + '">';
       if (hasPreviewSelection) {
+        html += '<div class="crm-pipeline-preview-panel has-selection">';
         html += '<div class="crm-pipeline-preview-card">';
         html += '<div class="crm-pipeline-panel-header"><div class="crm-pipeline-panel-title-wrap"><div class="crm-pipeline-panel-title">Job Preview</div><div class="crm-pipeline-panel-subtitle">' + crmEscapeHtml(stageLabel) + '</div></div>' + previewHeaderActions + '</div>';
         html += crmRenderPipelinePreviewHtml(selectedEntry);
         html += '</div>';
+        html += '</div>';
       }
-      html += '</div>';
       board.innerHTML = html;
+      var pipelineCenter = board.closest('.center');
+      if (pipelineCenter) pipelineCenter.classList.toggle('has-pipeline-selection', hasPreviewSelection);
       crmRenderPipelineCompanyStrip();
       var previewPanel = board.querySelector('.crm-pipeline-preview-panel');
       if (previewPanel) {
@@ -57724,20 +59713,222 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var sel = document.getElementById('fl-assignTo');
       if (!sel) return;
       var members = (typeof crmGetTeamMembers === 'function' ? crmGetTeamMembers() : []) || [];
-      var reps = members.filter(function (m) { return m && m.active !== false; });
-      sel.innerHTML = '<option value="">Unassigned</option>' + reps.map(function (m) {
+      var reps = members.filter(function (m) { return m && m.active !== false && String(m.role || '').trim() === 'Sales Rep'; });
+      var optionsHtml = '<option value="">Unassigned</option>' + reps.map(function (m) {
         return '<option value="' + crmEscapeHtml(m.id || '') + '">' + crmEscapeHtml(m.name || '') + '</option>';
       }).join('');
-      var defaultMember = reps.filter(function (m) { return String(m.name || '').trim() === 'Sam Plunkett'; })[0]
-        || reps.filter(function (m) { return String(m.name || '').trim() === (currentRep || ''); })[0];
+      sel.innerHTML = optionsHtml;
+      var secondarySel = document.getElementById('fl-secondaryAssignTo');
+      if (secondarySel) secondarySel.innerHTML = optionsHtml;
+      var authenticatedName = typeof crmGetCurrentUserName === 'function' ? String(crmGetCurrentUserName() || '').trim() : '';
+      var defaultMember = String(typeof crmGetRole === 'function' ? crmGetRole() : '').trim() === 'Sales Rep'
+        ? reps.filter(function (m) { return String(m.name || '').trim().toLowerCase() === authenticatedName.toLowerCase(); })[0]
+        : null;
       sel.value = defaultMember ? defaultMember.id : '';
+      if (secondarySel) secondarySel.value = '';
+    }
+
+    var CRM_FIELD_LEAD_DAMAGE_AREAS = [
+      'Roof', 'Siding', 'Gutters', 'Gutter Guards', 'Window Wraps', 'Door Wraps', 'Window Screens',
+      'Soffit', 'Fascia', 'Downspouts', 'Garage Doors', 'Fencing', 'Deck', 'Exterior Paint',
+      'Interior Damage', 'Skylights', 'Chimney', 'HVAC', 'Solar Panels', 'Other'
+    ];
+
+    function crmGetFieldLeadDamageAreas() {
+      return Array.prototype.map.call(document.querySelectorAll('#fl-damageLocationMenu input[type="checkbox"]:checked'), function (input) {
+        return input.value;
+      });
+    }
+
+    function crmUpdateFieldLeadDamageAreasSummary() {
+      var selected = crmGetFieldLeadDamageAreas();
+      var summary = document.getElementById('fl-damageLocationSummary');
+      var compatibilityInput = document.getElementById('fl-damageLocation');
+      if (summary) summary.textContent = selected.length ? selected.join(', ') : 'Select Damage Areas';
+      if (compatibilityInput) compatibilityInput.value = selected.join(', ');
+    }
+
+    function crmSetFieldLeadDamageAreas(values) {
+      var selectedMap = {};
+      (Array.isArray(values) ? values : []).forEach(function (value) { selectedMap[String(value || '').trim()] = true; });
+      document.querySelectorAll('#fl-damageLocationMenu input[type="checkbox"]').forEach(function (input) {
+        input.checked = !!selectedMap[input.value];
+      });
+      crmUpdateFieldLeadDamageAreasSummary();
+    }
+
+    function crmInitFieldLeadDamageAreaDropdown() {
+      var menu = document.getElementById('fl-damageLocationMenu');
+      if (!menu) return;
+      if (!menu.children.length) {
+        menu.innerHTML = CRM_FIELD_LEAD_DAMAGE_AREAS.map(function (value) {
+          return '<label class="fl-multiselect-option"><input type="checkbox" value="' + crmEscapeHtml(value) + '" /> ' + crmEscapeHtml(value) + '</label>';
+        }).join('') +
+          '<button type="button" class="fl-multiselect-clear" id="fl-damageLocationClear">Clear All</button>' +
+          '<button type="button" class="fl-multiselect-done" id="fl-damageLocationDone">Done</button>';
+        menu.addEventListener('change', crmUpdateFieldLeadDamageAreasSummary);
+        document.getElementById('fl-damageLocationClear').addEventListener('click', function (event) {
+          event.preventDefault();
+          crmSetFieldLeadDamageAreas([]);
+        });
+        document.getElementById('fl-damageLocationDone').addEventListener('click', function (event) {
+          event.preventDefault();
+          var dropdown = document.getElementById('fl-damageLocationDropdown');
+          if (dropdown) dropdown.open = false;
+        });
+        document.addEventListener('keydown', function (event) {
+          var dropdown = document.getElementById('fl-damageLocationDropdown');
+          if (event.key === 'Escape' && dropdown && dropdown.open) dropdown.open = false;
+        });
+        document.addEventListener('click', function (event) {
+          var dropdown = document.getElementById('fl-damageLocationDropdown');
+          if (dropdown && dropdown.open && !dropdown.contains(event.target)) dropdown.open = false;
+        });
+      }
+      crmSetFieldLeadDamageAreas([]);
+    }
+
+    function crmUpdateFieldLeadCommissionState() {
+      var split = !!((document.getElementById('fl-splitCommissionEnabled') || {}).checked);
+      var primaryInput = document.getElementById('fl-primaryCommissionPercent');
+      var secondaryInput = document.getElementById('fl-secondaryCommissionPercent');
+      var secondarySelect = document.getElementById('fl-secondaryAssignTo');
+      var secondaryRow = document.getElementById('fl-secondaryAssignRow');
+      if (secondaryRow) secondaryRow.hidden = !split;
+      if (!split) {
+        if (primaryInput) primaryInput.value = '100';
+        if (secondaryInput) secondaryInput.value = '';
+        if (secondarySelect) secondarySelect.value = '';
+      }
+      var primaryPercent = Number(primaryInput && primaryInput.value || 0);
+      var secondaryPercent = split ? Number(secondaryInput && secondaryInput.value || 0) : 0;
+      var total = primaryPercent + secondaryPercent;
+      var totalEl = document.getElementById('fl-commissionTotal');
+      if (totalEl) {
+        totalEl.textContent = 'Total: ' + total + '%';
+        totalEl.classList.toggle('is-valid', total === 100 && primaryPercent > 0 && (!split || secondaryPercent > 0));
+      }
+    }
+
+    function crmSetFieldLeadSplitCommissionEnabled(enabled) {
+      var toggle = document.getElementById('fl-splitCommissionEnabled');
+      var primaryInput = document.getElementById('fl-primaryCommissionPercent');
+      var secondaryInput = document.getElementById('fl-secondaryCommissionPercent');
+      if (toggle) toggle.checked = !!enabled;
+      if (enabled) {
+        if (primaryInput) primaryInput.value = '50';
+        if (secondaryInput) secondaryInput.value = '50';
+      }
+      crmUpdateFieldLeadCommissionState();
+    }
+
+    function crmRestoreFieldLeadAssignmentAndDamage(lead) {
+      lead = lead || {};
+      crmSetFieldLeadDamageAreas(Array.isArray(lead.damageAreas) ? lead.damageAreas : String(lead.damageLocation || '').split(',').map(function (value) { return value.trim(); }).filter(Boolean));
+      var reps = crmGetTeamMembers().filter(function (member) { return member && member.active !== false && member.role === 'Sales Rep'; });
+      function memberIdByName(name) {
+        name = String(name || '').trim().toLowerCase();
+        var member = reps.filter(function (item) { return String(item.name || '').trim().toLowerCase() === name; })[0];
+        return member ? member.id : '';
+      }
+      var primarySelect = document.getElementById('fl-assignTo');
+      var secondarySelect = document.getElementById('fl-secondaryAssignTo');
+      if (primarySelect) primarySelect.value = memberIdByName(lead.primaryAssignedRep || lead.assignedRep);
+      if (secondarySelect) secondarySelect.value = memberIdByName(lead.secondaryAssignedRep);
+      var split = !!lead.splitCommissionEnabled;
+      var splitToggle = document.getElementById('fl-splitCommissionEnabled'); if (splitToggle) splitToggle.checked = split;
+      var primaryInput = document.getElementById('fl-primaryCommissionPercent'); if (primaryInput) primaryInput.value = String(lead.primaryCommissionPercent || (split ? 50 : 100));
+      var secondaryInput = document.getElementById('fl-secondaryCommissionPercent'); if (secondaryInput) secondaryInput.value = split ? String(lead.secondaryCommissionPercent || 50) : '';
+      crmUpdateFieldLeadCommissionState();
+      var leadSourceSelect = document.getElementById('fl-leadSource');
+      if (leadSourceSelect) leadSourceSelect.value = String(lead.leadSource || '');
+      crmToggleCanvasserSelectForSource(lead.leadSource, 'fl-canvasser-wrap', 'fl-canvasser', lead.canvasserId || '', 'Select Canvasser');
+    }
+
+    var CRM_FIELD_LEAD_DROPDOWN_OPTIONS_KEY = 'hmm_field_lead_dropdown_options_v1';
+    var CRM_FIELD_LEAD_DROPDOWN_DEFAULTS = {
+      leadSources: [
+        'Door Knocking', 'Canvasser', 'Referral', 'Previous Customer', 'Insurance Agent', 'Real Estate Agent',
+        'Home Show / Event', 'Yard Sign', 'Google Search', 'Google Ads', 'Facebook', 'Instagram',
+        'Website', 'Phone Call', 'Walk-In', 'Direct Mail', 'Neighborhood Canvassing', 'Storm List',
+        'Cold Call', 'Repeat Customer', 'Builder', 'Property Manager', 'HOA', 'Chamber of Commerce', 'Other'
+      ],
+      trades: [
+        'Roofing', 'Siding', 'Gutters', 'Windows', 'Doors', 'Painting', 'Solar', 'Insulation',
+        'Fencing', 'Decks', 'General Construction', 'Emergency Tarp', 'Repairs', 'Other'
+      ],
+      regions: ['Region 1', 'Region 2', 'Region 3', 'Region 4']
+    };
+
+    function crmNormalizeFieldLeadDropdownOptionList(values, fallback) {
+      var seen = {};
+      var normalized = (Array.isArray(values) ? values : []).map(function (value) {
+        return String(value || '').trim();
+      }).filter(function (value) {
+        var key = value.toLowerCase();
+        if (!value || seen[key]) return false;
+        seen[key] = true;
+        return true;
+      });
+      return normalized.length ? normalized : fallback.slice();
+    }
+
+    function crmEnsureFieldLeadCanvasserSource(values) {
+      values = values.slice();
+      if (values.some(function (value) { return value === 'Canvasser'; })) return values;
+      var doorKnockingIndex = values.indexOf('Door Knocking');
+      values.splice(doorKnockingIndex >= 0 ? doorKnockingIndex + 1 : values.length, 0, 'Canvasser');
+      return values;
+    }
+
+    function crmGetFieldLeadDropdownOptions() {
+      var custom = {};
+      try {
+        custom = JSON.parse(localStorage.getItem(CRM_FIELD_LEAD_DROPDOWN_OPTIONS_KEY) || '{}') || {};
+      } catch (e) {
+        custom = {};
+      }
+      return {
+        leadSources: crmEnsureFieldLeadCanvasserSource(crmNormalizeFieldLeadDropdownOptionList(custom.leadSources, CRM_FIELD_LEAD_DROPDOWN_DEFAULTS.leadSources)),
+        trades: crmNormalizeFieldLeadDropdownOptionList(custom.trades, CRM_FIELD_LEAD_DROPDOWN_DEFAULTS.trades),
+        regions: crmNormalizeFieldLeadDropdownOptionList(custom.regions, CRM_FIELD_LEAD_DROPDOWN_DEFAULTS.regions)
+      };
+    }
+
+    function crmSaveFieldLeadDropdownOptions(options) {
+      options = options || {};
+      var normalized = {
+        leadSources: crmEnsureFieldLeadCanvasserSource(crmNormalizeFieldLeadDropdownOptionList(options.leadSources, CRM_FIELD_LEAD_DROPDOWN_DEFAULTS.leadSources)),
+        trades: crmNormalizeFieldLeadDropdownOptionList(options.trades, CRM_FIELD_LEAD_DROPDOWN_DEFAULTS.trades),
+        regions: crmNormalizeFieldLeadDropdownOptionList(options.regions, CRM_FIELD_LEAD_DROPDOWN_DEFAULTS.regions)
+      };
+      localStorage.setItem(CRM_FIELD_LEAD_DROPDOWN_OPTIONS_KEY, JSON.stringify(normalized));
+      crmPopulateFieldLeadConfigurableDropdowns();
+      return normalized;
+    }
+
+    function crmPopulateFieldLeadDropdown(selectId, placeholder, values) {
+      var select = document.getElementById(selectId);
+      if (!select) return;
+      select.innerHTML = '<option value="" disabled selected>' + crmEscapeHtml(placeholder) + '</option>' +
+        values.map(function (value) {
+          return '<option value="' + crmEscapeHtml(value) + '">' + crmEscapeHtml(value) + '</option>';
+        }).join('');
+      select.value = '';
+    }
+
+    function crmPopulateFieldLeadConfigurableDropdowns() {
+      var options = crmGetFieldLeadDropdownOptions();
+      crmPopulateFieldLeadDropdown('fl-leadSource', 'Select Lead Source', options.leadSources);
+      crmPopulateFieldLeadDropdown('fl-tradeType', 'Select Trade', options.trades);
+      crmPopulateFieldLeadDropdown('fl-workType', 'Select Region', options.regions);
     }
 
     function crmInitFieldLead() {
       [
         'fl-firstName', 'fl-lastName', 'fl-phone', 'fl-email', 'fl-street', 'fl-city', 'fl-state', 'fl-zip',
         'fl-county', 'fl-lat', 'fl-lng',
-        'fl-claimNumber', 'fl-notes', 'fl-companyName', 'fl-crossReference', 'fl-phoneExt', 'fl-gclid', 'fl-suite',
+        'fl-claimNumber', 'fl-notes', 'fl-companyName', 'fl-phoneExt', 'fl-gclid', 'fl-suite',
         'fl-damageLocation', 'fl-dateOfLoss', 'fl-adjusterName', 'fl-adjusterPhone', 'fl-adjusterExt',
         'fl-adjusterFax', 'fl-adjusterEmail', 'fl-appointmentDate', 'fl-appointmentStart', 'fl-appointmentEnd',
         'fl-insuranceCompanyOther'
@@ -57753,6 +59944,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var country = document.getElementById('fl-country'); if (country) country.value = 'USA';
       var priority = document.getElementById('fl-priorityLevel'); if (priority) priority.value = 'Normal';
       var leadStatus = document.getElementById('fl-leadStatus'); if (leadStatus) leadStatus.value = '';
+      crmPopulateFieldLeadConfigurableDropdowns();
 
       ['fl-phoneOptInSms', 'fl-insuranceOther', 'fl-claimFiled', 'fl-adjusterOptInSms', 'fl-metAdjuster'].forEach(function (id) {
         var cb = document.getElementById(id); if (cb) cb.checked = false;
@@ -57764,6 +59956,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
       var phoneMoreHost = document.getElementById('fl-phone-more-host'); if (phoneMoreHost) phoneMoreHost.innerHTML = '';
       var emailMoreHost = document.getElementById('fl-email-more-host'); if (emailMoreHost) emailMoreHost.innerHTML = '';
+      document.querySelectorAll('#page-field-lead [data-fl-primary-group]').forEach(function (btn) {
+        var isOriginal = !!btn.closest('#fl-row-phone, #fl-row-email');
+        btn.classList.toggle('is-primary', isOriginal);
+        btn.setAttribute('aria-pressed', isOriginal ? 'true' : 'false');
+        btn.textContent = 'Primary';
+      });
 
       var assignHelp = document.getElementById('fl-assign-help-popover'); if (assignHelp) assignHelp.hidden = true;
       var rankHelp = document.getElementById('fl-lead-rank-popover'); if (rankHelp) rankHelp.hidden = true;
@@ -57771,10 +59969,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var notesCount = document.getElementById('fl-notes-count'); if (notesCount) notesCount.textContent = '0';
 
       crmPopulateFieldLeadAssignTo();
+      crmInitFieldLeadDamageAreaDropdown();
+      crmSetFieldLeadSplitCommissionEnabled(false);
 
       var sd = document.getElementById('fl-stormDate'); if (sd) sd.value = '';
       var canvasser = document.getElementById('fl-canvasser'); if (canvasser) canvasser.value = '';
-      crmToggleCanvasserSelectForSource('', 'fl-canvasser-wrap', 'fl-canvasser');
+      crmToggleCanvasserSelectForSource('', 'fl-canvasser-wrap', 'fl-canvasser', '', 'Select Canvasser');
       var photoInput = document.getElementById('fl-inspect-photos'); if (photoInput) photoInput.value = '';
       var contingencyInput = document.getElementById('fl-contingency-pdf'); if (contingencyInput) contingencyInput.value = '';
       var contingencyConfirmed = document.getElementById('fl-contingency-confirmed'); if (contingencyConfirmed) contingencyConfirmed.checked = false;
@@ -57783,9 +59983,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var cb = document.getElementById(id); if (cb) cb.checked = false;
       });
       document.getElementById('fl-validation-msg').style.display = 'none';
+      document.getElementById('fl-validation-msg').textContent = CRM_FIELD_LEAD_VALIDATION_DEFAULT_TEXT;
       document.getElementById('fl-saved-msg').style.display = 'none';
       document.getElementById('fl-warning-msg').style.display = 'none';
       document.getElementById('fl-warning-msg').textContent = '';
+      crmResetFieldLeadDuplicateChecks();
       crmApplyPendingContactLeadPrefill('fl');
     }
 
@@ -57844,10 +60046,49 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         assignClearBtn.addEventListener('click', function () { assignSelect.value = ''; });
       }
 
+      var splitToggle = document.getElementById('fl-splitCommissionEnabled');
+      var primaryCommissionInput = document.getElementById('fl-primaryCommissionPercent');
+      var secondaryCommissionInput = document.getElementById('fl-secondaryCommissionPercent');
+      var secondaryAssignSelect = document.getElementById('fl-secondaryAssignTo');
+      if (splitToggle) splitToggle.addEventListener('change', function () { crmSetFieldLeadSplitCommissionEnabled(splitToggle.checked); });
+      [primaryCommissionInput, secondaryCommissionInput].forEach(function (input) {
+        if (input) input.addEventListener('input', crmUpdateFieldLeadCommissionState);
+      });
+      if (assignSelect) {
+        assignSelect.addEventListener('change', function () {
+          if (secondaryAssignSelect && secondaryAssignSelect.value === assignSelect.value) secondaryAssignSelect.value = '';
+        });
+      }
+      if (secondaryAssignSelect) {
+        secondaryAssignSelect.addEventListener('change', function () {
+          if (assignSelect && secondaryAssignSelect.value && secondaryAssignSelect.value === assignSelect.value) secondaryAssignSelect.value = '';
+        });
+      }
+
       var addPhotoBtn = document.getElementById('fl-add-location-photo-btn');
       var addPhotoInput = document.getElementById('fl-location-photo');
       if (addPhotoBtn && addPhotoInput) {
         addPhotoBtn.addEventListener('click', function () { addPhotoInput.click(); });
+      }
+
+      function setPrimaryButtonState(btn, selected) {
+        btn.classList.toggle('is-primary', selected);
+        btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        btn.textContent = 'Primary';
+      }
+
+      var fieldLeadPage = document.getElementById('page-field-lead');
+      if (fieldLeadPage) {
+        fieldLeadPage.addEventListener('click', function (event) {
+          var btn = event.target.closest('[data-fl-primary-group]');
+          if (!btn || !fieldLeadPage.contains(btn)) return;
+          var group = btn.getAttribute('data-fl-primary-group');
+          var wasPrimary = btn.classList.contains('is-primary');
+          fieldLeadPage.querySelectorAll('[data-fl-primary-group="' + group + '"]').forEach(function (groupBtn) {
+            setPrimaryButtonState(groupBtn, false);
+          });
+          if (!wasPrimary) setPrimaryButtonState(btn, true);
+        });
       }
 
       document.querySelectorAll('#page-field-lead [data-fl-clone]').forEach(function (btn) {
@@ -57859,7 +60100,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           clone.removeAttribute('id');
           clone.querySelectorAll('[id]').forEach(function (el) { el.removeAttribute('id'); });
           clone.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"]').forEach(function (el) { el.value = ''; });
-          clone.querySelectorAll('input[type="radio"]').forEach(function (el) { el.checked = false; el.removeAttribute('name'); });
+          clone.querySelectorAll('[data-fl-primary-group]').forEach(function (el) { setPrimaryButtonState(el, false); });
           host.appendChild(clone);
         });
       });
@@ -57869,18 +60110,65 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var valMsg = document.getElementById('fl-validation-msg');
       var savedMsg = document.getElementById('fl-saved-msg');
       var warningMsg = document.getElementById('fl-warning-msg');
+      valMsg.textContent = CRM_FIELD_LEAD_VALIDATION_DEFAULT_TEXT;
       valMsg.style.display = 'none';
       savedMsg.style.display = 'none';
       warningMsg.style.display = 'none';
       warningMsg.textContent = '';
       function fv(id) { var el = document.getElementById(id); return el ? String(el.value || '').trim() : ''; }
       function fc(id) { var el = document.getElementById(id); return !!(el && el.checked); }
+      function collectRepeatedContactRows(group, rowSelector) {
+        return Array.prototype.map.call(document.querySelectorAll('#page-field-lead ' + rowSelector), function (row) {
+          var inputs = row.querySelectorAll('input');
+          var type = row.querySelector('select');
+          return {
+            value: String((inputs[0] && inputs[0].value) || '').trim(),
+            extension: group === 'phone' ? String((inputs[1] && inputs[1].value) || '').trim() : '',
+            type: String((type && type.value) || '').trim(),
+            primary: !!row.querySelector('[data-fl-primary-group="' + group + '"].is-primary')
+          };
+        }).filter(function (item) { return !!item.value; });
+      }
+      var phoneNumbers = collectRepeatedContactRows('phone', '.fl-grid-phone');
+      var emailAddresses = collectRepeatedContactRows('email', '.fl-grid-email');
+      var primaryPhone = phoneNumbers.filter(function (item) { return item.primary; })[0] || phoneNumbers[0] || null;
+      var primaryEmail = emailAddresses.filter(function (item) { return item.primary; })[0] || emailAddresses[0] || null;
       var insuranceCompanyVal = fc('fl-insuranceOther') ? fv('fl-insuranceCompanyOther') : fv('fl-insuranceCompany');
       var req = ['fl-firstName','fl-lastName','fl-phone','fl-street','fl-city','fl-state','fl-claimNumber','fl-jobCategory'];
       var missing = req.filter(function (id) { var el = document.getElementById(id); return !el || !String(el.value || '').trim(); });
       if (!insuranceCompanyVal) missing.push('fl-insuranceCompany');
-      if (fv('fl-leadSource') === 'Canvasser' && !fv('fl-canvasser')) missing.push('fl-canvasser');
+      if (fv('fl-leadSource') === 'Canvasser' && !fv('fl-canvasser')) {
+        valMsg.textContent = 'Please select the canvasser who created this lead.';
+        valMsg.style.display = 'block';
+        return;
+      }
       if (missing.length) { valMsg.style.display = 'block'; return; }
+      var splitCommissionEnabled = fc('fl-splitCommissionEnabled');
+      var primaryCommissionPercent = Number(fv('fl-primaryCommissionPercent') || 0);
+      var secondaryCommissionPercent = splitCommissionEnabled ? Number(fv('fl-secondaryCommissionPercent') || 0) : 0;
+      var primaryAssignedRepId = fv('fl-assignTo');
+      var secondaryAssignedRepId = splitCommissionEnabled ? fv('fl-secondaryAssignTo') : '';
+      if (primaryCommissionPercent <= 0 || (splitCommissionEnabled && secondaryCommissionPercent <= 0) ||
+          primaryCommissionPercent + secondaryCommissionPercent !== 100) {
+        valMsg.textContent = 'Commission split must total 100%.';
+        valMsg.style.display = 'block';
+        return;
+      }
+      if (splitCommissionEnabled && (!primaryAssignedRepId || !secondaryAssignedRepId || primaryAssignedRepId === secondaryAssignedRepId)) {
+        valMsg.textContent = 'Select two different assigned reps for a split commission.';
+        valMsg.style.display = 'block';
+        return;
+      }
+      var duplicateCheck = crmRunAllFieldLeadDuplicateChecks();
+      if (duplicateCheck.hasVisibleMatches) {
+        valMsg.textContent = CRM_FIELD_LEAD_DUPLICATE_REVIEW_TEXT;
+        valMsg.style.display = 'block';
+        var firstPanel = document.getElementById((duplicateCheck.customer.visibleMatches || []).length ? 'fl-customer-crossref' : 'fl-property-crossref');
+        if (firstPanel && typeof firstPanel.scrollIntoView === 'function') {
+          firstPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
 
       var concerns = [];
       [['fl-roof','Roof'],['fl-gutters','Gutters'],['fl-siding','Siding'],['fl-windows','Windows'],['fl-fence','Fence'],['fl-other','Other']].forEach(function (p) {
@@ -57893,31 +60181,41 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var fieldLeadState = crmGetFieldLeadSaveState(photoFiles, contingencyFile, contingencyConfirmed);
       var canvasserMember = crmLookupTeamMemberById(fv('fl-canvasser'));
       var assignToMember = fv('fl-assignTo') ? crmLookupTeamMemberById(fv('fl-assignTo')) : null;
-      var repMember = assignToMember || crmLookupTeamMemberByName(currentRep || '');
+      var secondaryAssignToMember = secondaryAssignedRepId ? crmLookupTeamMemberById(secondaryAssignedRepId) : null;
+      var authenticatedRepName = crmGetRole() === 'Sales Rep' ? (crmGetCurrentUserName() || '') : '';
+      var primaryAssignedRepName = assignToMember ? assignToMember.name : authenticatedRepName;
+      var repMember = assignToMember || crmLookupTeamMemberByName(authenticatedRepName || currentRep || '');
       var lead = {
         id: crmGenId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
         leadType: 'field_lead',
         assignmentStatus: 'Assigned',
-        assignedRep: assignToMember ? assignToMember.name : (currentRep || ''),
+        assignedRep: primaryAssignedRepName,
         assignedRepId: repMember ? repMember.id : '',
+        primaryAssignedRep: primaryAssignedRepName,
+        primaryCommissionPercent: primaryCommissionPercent,
+        secondaryAssignedRep: secondaryAssignToMember ? secondaryAssignToMember.name : '',
+        secondaryCommissionPercent: splitCommissionEnabled ? secondaryCommissionPercent : 0,
+        splitCommissionEnabled: splitCommissionEnabled,
         createdByName: crmGetCurrentUserName() || currentRep || '',
         createdByRole: 'Sales Rep',
         firstName: fv('fl-firstName'), lastName: fv('fl-lastName'),
-        companyName: fv('fl-companyName'), crossReference: fv('fl-crossReference'),
-        phone: fv('fl-phone'), phoneExt: fv('fl-phoneExt'), phoneType: fv('fl-phoneType'), phoneOptInSms: fc('fl-phoneOptInSms'),
-        email: fv('fl-email'), emailType: fv('fl-emailType'),
+        companyName: fv('fl-companyName'), crossReference: '',
+        phone: primaryPhone ? primaryPhone.value : fv('fl-phone'), phoneExt: primaryPhone ? primaryPhone.extension : fv('fl-phoneExt'), phoneType: primaryPhone ? primaryPhone.type : fv('fl-phoneType'), phoneOptInSms: fc('fl-phoneOptInSms'),
+        phoneNumbers: phoneNumbers,
+        email: primaryEmail ? primaryEmail.value : fv('fl-email'), emailType: primaryEmail ? primaryEmail.type : fv('fl-emailType'),
+        emailAddresses: emailAddresses,
         mailingSameAsLocation: fc('fl-mailingSameAsLocation'), billingSameAsMailing: fc('fl-billingSameAsMailing'),
         gclid: fv('fl-gclid'),
         street: fv('fl-street'), suite: fv('fl-suite'), city: fv('fl-city'), state: stateVal, zip: fv('fl-zip'), country: fv('fl-country') || 'USA',
         county: fv('fl-county'), lat: fv('fl-lat'), lng: fv('fl-lng'), latitude: fv('fl-lat'), longitude: fv('fl-lng'),
-        jobCategory: fv('fl-jobCategory'), workType: fv('fl-workType'), tradeType: fv('fl-tradeType'),
+        jobCategory: fv('fl-jobCategory'), workType: fv('fl-workType'), region: fv('fl-workType'), tradeType: fv('fl-tradeType'),
         leadSource: fv('fl-leadSource') || 'Self Generated',
         canvasserId: fv('fl-leadSource') === 'Canvasser' && canvasserMember ? canvasserMember.id : '',
         canvasserName: fv('fl-leadSource') === 'Canvasser' && canvasserMember ? canvasserMember.name : '',
         matchedLeadId: '',
         claimNumber: fv('fl-claimNumber'),
         insuranceCompany: insuranceCompanyVal,
-        damageLocation: fv('fl-damageLocation'), dateOfLoss: fv('fl-dateOfLoss'), claimFiled: fc('fl-claimFiled'),
+        damageLocation: fv('fl-damageLocation'), damageAreas: crmGetFieldLeadDamageAreas(), dateOfLoss: fv('fl-dateOfLoss'), claimFiled: fc('fl-claimFiled'),
         adjusterName: fv('fl-adjusterName'), adjusterPhone: fv('fl-adjusterPhone'), adjusterExt: fv('fl-adjusterExt'),
         adjusterType: fv('fl-adjusterType'), adjusterOptInSms: fc('fl-adjusterOptInSms'),
         adjusterFax: fv('fl-adjusterFax'), adjusterEmail: fv('fl-adjusterEmail'), metAdjuster: fc('fl-metAdjuster'),
@@ -57925,12 +60223,22 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         appointmentDate: fv('fl-appointmentDate'), appointmentStart: fv('fl-appointmentStart'), appointmentEnd: fv('fl-appointmentEnd'),
         notes: fv('fl-notes'), stormDate: fv('fl-stormDate'),
         contingencySigned: fieldLeadState.contingencyStatus === 'signed_confirmed' && contingencyConfirmed === true,
-        concerns: concerns, stage: fieldLeadState.stage,
+        concerns: concerns, stage: 'Lead',
         contingencyStatus: fieldLeadState.contingencyStatus,
         manualStageOverride: false, convertedToJob: false,
         activityNotes: [{ text: 'Field lead created', author: currentRep || 'Rep', ts: new Date().toISOString() }]
       };
-      var leads = crmGetLeads(); leads.push(lead); crmSaveLeads(leads);
+      var leads = crmGetLeads();
+      if (!leads.some(function (existingLead) { return existingLead && existingLead.id === lead.id; })) leads.push(lead);
+      if (!crmSaveLeads(leads)) {
+        valMsg.textContent = 'Lead could not be saved. Please try again.';
+        valMsg.style.display = 'block';
+        return;
+      }
+      crmSyncDataModelSnapshot();
+      crmRenderMainMenu();
+      crmRenderDashboardCommandCenter();
+      crmRenderPipeline();
       (function() {
         var _flName = ((lead.firstName || '') + ' ' + (lead.lastName || '')).trim();
         var _flAddr = [lead.street, lead.city, lead.state].filter(Boolean).join(', ');
@@ -57941,7 +60249,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         });
       }());
       savedMsg.style.display = 'block';
-      savedMsg.textContent = fieldLeadState.stage === 'Claim Filed' ? 'Field lead saved as Claim Filed.' : 'Field lead saved as Inspected.';
+      savedMsg.textContent = 'Field lead saved as Lead.';
       if (fieldLeadState.warning) {
         warningMsg.textContent = fieldLeadState.warning;
         warningMsg.style.display = 'block';
@@ -57964,7 +60272,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmToggleCanvasserSelectForSource(this.value, 'ol-canvasser-wrap', 'ol-canvasser');
     });
     document.getElementById('fl-leadSource').addEventListener('change', function () {
-      crmToggleCanvasserSelectForSource(this.value, 'fl-canvasser-wrap', 'fl-canvasser');
+      crmToggleCanvasserSelectForSource(this.value, 'fl-canvasser-wrap', 'fl-canvasser', '', 'Select Canvasser');
     });
 
     /* ── Pipeline filter by rep ── */
