@@ -14768,6 +14768,255 @@
     }
     .jf-tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
     .jf-tab-btn:hover:not(.active) { color:var(--text); }
+
+    /* Job Folder opened from Pipeline: reference dashboard layout. */
+    #page-lead-detail {
+      position: relative;
+      min-height: calc(100vh - 118px);
+      background:
+        radial-gradient(circle at 52% 42%, rgba(255, 241, 190, 0.72) 0%, rgba(255, 225, 137, 0.34) 46%, rgba(214, 163, 54, 0.16) 100%),
+        linear-gradient(180deg, #f6dd91 0%, #e3b94f 100%);
+      background-attachment: fixed;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    body.lead-detail-page-active .topbar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      left: 0;
+      z-index: 60;
+      min-height: 118px;
+      padding: 10px 20px 6px;
+      background: #1a1a2e;
+      border-bottom-color: rgba(223,188,95,0.18);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,0.88);
+    }
+    body.lead-detail-page-active.crm-standard-header-back-visible .topbar { margin-bottom: 0; }
+    body.lead-detail-page-active .screen { padding: 118px 0 40px; }
+    body.lead-detail-page-active .topbar-left {
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    body.lead-detail-page-active .crm-header-inline-title:not([hidden]) {
+      display: block;
+      color: #fff;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    body.lead-detail-page-active #global-header-back-btn { display: none !important; }
+    body.lead-detail-page-active .pipeline-header-center {
+      display: flex !important;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+    }
+    body.lead-detail-page-active .pipeline-header-center .crm-pipe-filter-bar {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      overflow: visible;
+    }
+    body.lead-detail-page-active .map-header-center-heading,
+    body.lead-detail-page-active .map-header-center-subtitle { color: #fff; }
+    body.lead-detail-page-active .map-header-center-subtitle {
+      display: block !important;
+      margin-top: -6px;
+      text-transform: uppercase;
+    }
+    body.lead-detail-page-active .map-header-center-brand img { height: 54px; }
+    body.lead-detail-page-active .crm-pipe-filter-btn {
+      border-color: rgba(223,188,95,0.36);
+      background: rgba(255,255,255,0.06);
+      color: #f8f4e5;
+    }
+    body.lead-detail-page-active .crm-pipe-filter-btn.active {
+      border-color: #f0cd7e;
+      background: #e4a51b;
+      color: #1a1a2e;
+    }
+    #page-lead-detail::before {
+      content: '';
+      position: fixed;
+      inset: 136px 24px 24px 149px;
+      background: url('./assets/hailmoney-logo.png?v=2') no-repeat calc(50% + 160px) calc(50% + 28px);
+      background-size: min(760px, calc(100vh - 145px), 75vw) auto;
+      opacity: 0.42;
+      pointer-events: none;
+      z-index: 0;
+    }
+    #page-lead-detail .jf-folder-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: none;
+      min-height: calc(100vh - 118px);
+      padding: 84px 36px 28px 143px;
+      box-sizing: border-box;
+    }
+    #page-lead-detail .jf-folder-sidebar {
+      position: absolute;
+      top: -64px;
+      bottom: 0;
+      left: 0;
+      width: 125px;
+      min-height: 100%;
+      padding: 0 8px 10px;
+      box-sizing: border-box;
+      background: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: stretch;
+    }
+    #page-lead-detail .jf-folder-sidebar .logo { display: none; }
+    #page-lead-detail .jf-folder-sidebar .nav-item {
+      width: 100%;
+      min-height: 58px;
+      padding: 6px 4px;
+      border: 0;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.04);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    #page-lead-detail .jf-folder-sidebar .dash-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: inherit;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+    #page-lead-detail .jf-folder-sidebar .dash-icon svg {
+      width: 27px;
+      height: 27px;
+      stroke: currentColor;
+      stroke-width: 1.85;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      display: block;
+    }
+    #page-lead-detail .jf-folder-sidebar .nav-label { color: currentColor; font-size: 11px; }
+    #page-lead-detail .jf-folder-sidebar .nav-flyout-group { position: relative; }
+    #page-lead-detail .jf-folder-sidebar .nav-flyout-menu { display: none; }
+    #page-lead-detail .jf-tab-bar {
+      position: fixed;
+      top: 118px;
+      right: 0;
+      left: 125px;
+      z-index: 50;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 10px;
+      overflow: visible;
+      padding: 10px 18px;
+      margin: 0;
+      border: 0;
+      border-radius: 0;
+      background: rgba(246, 221, 145, 0.96);
+      box-shadow: none;
+    }
+    #page-lead-detail .jf-tab-btn {
+      min-height: 52px;
+      padding: 9px 10px;
+      justify-content: center;
+      border: 7px solid #080808;
+      border-radius: 0;
+      background: rgba(255, 246, 211, 0.96);
+      color: #5f6470;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.1;
+      text-align: center;
+      box-shadow: 0 2px 0 rgba(255,255,255,0.34) inset;
+    }
+    #page-lead-detail .jf-tab-btn.active,
+    #page-lead-detail .jf-tab-btn:hover {
+      color: #5f6470;
+      border-color: #080808;
+      background: #ffe39a;
+    }
+    #page-lead-detail .jf-tab-btn[data-jf-tab="pfo"] { display: none; }
+    #page-lead-detail .crm-wrap {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      display: grid;
+      grid-template-columns: minmax(668px, 690px) minmax(96px, 1fr) minmax(280px, 360px);
+      grid-auto-flow: row;
+      column-gap: 18px;
+      align-items: start;
+    }
+    #page-lead-detail .crm-wrap > * { grid-column: 1; }
+    #page-lead-detail .crm-wrap > .jf-activity-card {
+      grid-column: 3;
+      grid-row: 1 / span 100;
+      align-self: stretch;
+      height: auto;
+      min-height: calc(100vh - 188px);
+      margin-top: -14px;
+      margin-bottom: -68px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #page-lead-detail .jf-activity-card .crm-activity-feed-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    @media (min-width: 981px) {
+      #page-lead-detail .ld-quick-bar { flex-wrap: nowrap; }
+    }
+    #page-lead-detail .crm-detail-card {
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(148,163,184,0.42);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.97);
+      box-shadow: 0 8px 22px rgba(15,23,42,0.09);
+    }
+    #page-lead-detail #ld-name { display: none; }
+    #page-lead-detail .jf-stage-action-row { margin-bottom: 8px; }
+    #page-lead-detail .ld-quick-bar { margin-top: 0; padding-top: 8px; }
+    #page-lead-detail .ld-qa-btn { flex: 0 1 auto; min-width: 76px; justify-content: center; }
+    #page-lead-detail .crm-detail-section-header { margin-top: 8px; }
+    #page-lead-detail .crm-detail-grid { gap: 8px 34px; }
+    #page-lead-detail .crm-detail-field { padding: 0; border: 0; background: transparent; }
+    #page-lead-detail #ld-next-step-card { padding: 18px; }
+    #page-lead-detail .ns-next-action { border-color: rgba(202,168,92,0.7); background: #fffaf0; }
+    @media (max-width: 980px) {
+      #page-lead-detail .jf-folder-wrap { padding-top: 146px; }
+      #page-lead-detail .jf-tab-bar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      #page-lead-detail .crm-wrap {
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+        column-gap: 18px;
+      }
+      #page-lead-detail .crm-wrap > .jf-activity-card { grid-column: 2; }
+    }
+    @media (max-width: 720px) {
+      #page-lead-detail::before { left: 18px; right: 18px; }
+      #page-lead-detail .jf-folder-wrap { padding-top: 270px; padding-left: 18px; }
+      #page-lead-detail .jf-folder-sidebar { display: none; }
+      #page-lead-detail .jf-tab-bar { left: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #page-lead-detail .crm-wrap { width: 100%; display: block; }
+      #page-lead-detail .crm-wrap > .jf-activity-card {
+        height: auto;
+        min-height: 420px;
+        margin-top: 20px;
+        margin-bottom: 0;
+      }
+    }
     .jf-tab-panel { display:none; }
     .jf-tab-panel.active { display:block; }
     .jf-detail-card {
@@ -17510,6 +17759,10 @@
 
             <div class="crm-detail-section-header">CONTACT</div>
             <div class="crm-detail-grid">
+              <div class="crm-detail-field full">
+                <div class="crm-detail-label">Contact Name</div>
+                <div class="crm-detail-value" id="ld-contact-name"></div>
+              </div>
               <div class="crm-detail-field">
                 <div class="crm-detail-label">Phone</div>
                 <div class="crm-detail-value" id="ld-phone"></div>
@@ -20376,6 +20629,7 @@
         || pageId === 'page-start-inspection-step'
         || pageId === 'page-docusign');
       document.body.classList.toggle('pipeline-page-active', pageId === 'page-crm-pipeline');
+      document.body.classList.toggle('lead-detail-page-active', pageId === 'page-lead-detail');
       document.body.classList.toggle('calendar-page-active', pageId === 'page-crm-calendar');
       document.body.classList.toggle('settings-page-active', pageId === 'page-crm-settings');
       if (pageId === 'page-main-menu' && typeof crmRenderDashboardCommandCenter === 'function') crmRenderDashboardCommandCenter();
@@ -37161,6 +37415,8 @@ function mapsGoogleReady() {
       'Other Roof Penetrations': './assets/roof-penetrations/other-roof-penetrations.png',
       'Turbine Vent':            './assets/roof-penetrations/turbine-vent.png'
     };
+    var CRM_PENDING_INSPECTION_KEY = 'hailmoney.crm.pendingInspection';
+    var CRM_FIELD_LEAD_DRAFT_KEY = 'hailmoney.crm.createLeadDraft';
     var _crmGroundInspectionState = null;
 
     function crmCreateGroundInspectionState() {
@@ -37172,6 +37428,7 @@ function mapsGoogleReady() {
         photosByStep['Roof Projections: ' + section] = [];
       });
       return {
+        id: 'pending_inspection_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
         currentStepIndex: 0,
         photosByStep: photosByStep,
         selectedRoofType: '',
@@ -37346,19 +37603,11 @@ function mapsGoogleReady() {
     function crmAddPenetrationFiles(section, fileList) {
       if (!fileList || !fileList.length || !section) return;
       var files = crmGetPenetrationSectionFiles(section);
-      [].slice.call(fileList).forEach(function (file) {
-        files.push({
-          id: 'pen_file_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
-          name: String(file && file.name || 'photo').trim() || 'photo',
-          size: Number(file && file.size || 0),
-          type: String(file && file.type || '').trim(),
-          addedAt: new Date().toISOString(),
-          addedLabel: crmFormatDashboardDateTime(new Date()),
-          file: file
-        });
+      var capturedFiles = Array.prototype.slice.call(fileList);
+      crmAddInspectionFilesToTemporaryRecord(capturedFiles, 'Roof Projections: ' + section, files, function (count) {
+        crmRenderGroundInspectionPenetrationsPanel();
+        showUploadToast(count + ' file' + (count === 1 ? '' : 's') + ' added to ' + section + '.');
       });
-      crmRenderGroundInspectionPenetrationsPanel();
-      showUploadToast(fileList.length + ' file' + (fileList.length === 1 ? '' : 's') + ' added to ' + section + '.');
     }
 
     function crmShowGroundInspectionUploadShell() {
@@ -37448,21 +37697,17 @@ function mapsGoogleReady() {
 
     function crmAddGroundInspectionFiles(fileList) {
       if (!fileList || !fileList.length) return;
+      var state = crmGetGroundInspectionState();
       var step = crmGetGroundInspectionCurrentStep();
       var files = crmGetGroundInspectionFiles(step);
-      [].slice.call(fileList).forEach(function (file) {
-        files.push({
-          id: 'inspection_file_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
-          name: String(file && file.name || 'photo').trim() || 'photo',
-          size: Number(file && file.size || 0),
-          type: String(file && file.type || '').trim(),
-          addedAt: new Date().toISOString(),
-          addedLabel: crmFormatDashboardDateTime(new Date()),
-          file: file
-        });
+      var category = state && state.currentAdditionalSlopeIndex >= 0
+        ? ('Slope: ' + String((state.additionalSlopes[state.currentAdditionalSlopeIndex] || {}).name || 'Additional Slope'))
+        : String(step && step.title || 'Inspection');
+      var capturedFiles = Array.prototype.slice.call(fileList);
+      crmAddInspectionFilesToTemporaryRecord(capturedFiles, category, files, function (count) {
+        crmRenderGroundInspectionStep();
+        showUploadToast(count + ' file' + (count === 1 ? '' : 's') + ' added.');
       });
-      crmRenderGroundInspectionStep();
-      showUploadToast(fileList.length + ' file' + (fileList.length === 1 ? '' : 's') + ' added.');
     }
 
     function crmOpenStartInspectionWorkflow() {
@@ -37480,6 +37725,7 @@ function mapsGoogleReady() {
       var stepPage = document.getElementById('page-start-inspection-step');
       state.currentAdditionalSlopeIndex = -1;
       state.currentStepIndex = nextIndex;
+      crmSavePendingInspectionRecord(state, 'in_progress');
       if (stepPage) stepPage.classList.toggle('crm-ground-inspection-elevation-mode', crmIsGroundInspectionElevationStep(nextStep));
       showPage('page-start-inspection-step');
       crmRenderGroundInspectionStep();
@@ -37494,10 +37740,14 @@ function mapsGoogleReady() {
           showUploadToast('Select a roof type to complete the inspection.');
           return;
         }
-        crmOpenStartInspectionWorkflow();
+        state.completedAt = new Date().toISOString();
+        state.inspectionDate = state.inspectionDate || state.completedAt.slice(0, 10);
+        crmSavePendingInspectionRecord(state, 'completed_pending_lead');
+        crmInitFieldLead();
+        showPage('page-field-lead');
         showUploadToast(selectedRoofType
-          ? ('Ground inspection saved. Roof type: ' + selectedRoofType + '.')
-          : 'Ground inspection saved.');
+          ? ('Inspection complete. Add the homeowner information to save the lead. Roof type: ' + selectedRoofType + '.')
+          : 'Inspection complete. Add the homeowner information to save the lead.');
         return;
       }
       crmOpenGroundInspectionStep(state.currentStepIndex + 1);
@@ -37562,6 +37812,7 @@ function mapsGoogleReady() {
       var otherInput = document.getElementById('crm-ground-inspection-other-input');
       if (roofType === 'Other') {
         crmGetGroundInspectionState().selectedRoofType = '__other__';
+        crmSavePendingInspectionRecord(crmGetGroundInspectionState(), 'in_progress');
         if (otherRow) otherRow.hidden = false;
         if (otherInput) { otherInput.value = ''; otherInput.focus(); }
         var roofGridEl = document.getElementById('crm-ground-inspection-roof-grid');
@@ -37570,6 +37821,7 @@ function mapsGoogleReady() {
       }
       if (otherRow) otherRow.hidden = true;
       crmGetGroundInspectionState().selectedRoofType = roofType;
+      crmSavePendingInspectionRecord(crmGetGroundInspectionState(), 'in_progress');
       crmAdvanceGroundInspectionStep();
     });
 
@@ -37578,6 +37830,7 @@ function mapsGoogleReady() {
       var val = String(input && input.value || '').trim();
       if (!val) { showUploadToast('Please type the roof type name.'); if (input) input.focus(); return; }
       crmGetGroundInspectionState().selectedRoofType = val;
+      crmSavePendingInspectionRecord(crmGetGroundInspectionState(), 'in_progress');
       crmAdvanceGroundInspectionStep();
     });
 
@@ -37595,6 +37848,7 @@ function mapsGoogleReady() {
       var state = crmGetGroundInspectionState();
       state.additionalSlopes.push({ name: name, photos: [] });
       state.currentAdditionalSlopeIndex = state.additionalSlopes.length - 1;
+      crmSavePendingInspectionRecord(state, 'in_progress');
       crmRenderGroundInspectionStep();
     });
 
@@ -43074,6 +43328,127 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       };
     }
 
+    function crmGetSerializableInspectionPhoto(entry, category) {
+      entry = entry || {};
+      return {
+        id: String(entry.id || entry.fileId || '').trim(),
+        fileId: String(entry.fileId || entry.id || '').trim(),
+        name: String(entry.name || entry.fileName || 'photo').trim() || 'photo',
+        fileName: String(entry.fileName || entry.name || 'photo').trim() || 'photo',
+        mimeType: String(entry.mimeType || entry.type || '').trim(),
+        size: Number(entry.size || 0),
+        category: String(category || entry.category || 'Inspection').trim() || 'Inspection',
+        photoPhase: 'inspection',
+        uploadedBy: String(entry.uploadedBy || '').trim(),
+        uploadedAt: String(entry.uploadedAt || entry.addedAt || new Date().toISOString()).trim(),
+        addedAt: String(entry.addedAt || entry.uploadedAt || new Date().toISOString()).trim(),
+        addedLabel: String(entry.addedLabel || '').trim(),
+        storageKey: String(entry.storageKey || '').trim()
+      };
+    }
+
+    function crmBuildPendingInspectionRecord(state, status) {
+      state = state || crmGetGroundInspectionState();
+      var photosByStep = {};
+      Object.keys(state.photosByStep || {}).forEach(function (stepName) {
+        photosByStep[stepName] = (state.photosByStep[stepName] || []).map(function (entry) {
+          return crmGetSerializableInspectionPhoto(entry, stepName);
+        });
+      });
+      var additionalSlopes = (state.additionalSlopes || []).map(function (slope) {
+        var slopeName = String(slope && slope.name || 'Additional Slope').trim() || 'Additional Slope';
+        return {
+          name: slopeName,
+          photos: (slope && slope.photos || []).map(function (entry) {
+            return crmGetSerializableInspectionPhoto(entry, 'Slope: ' + slopeName);
+          })
+        };
+      });
+      var allPhotos = [];
+      Object.keys(photosByStep).forEach(function (stepName) {
+        allPhotos = allPhotos.concat(photosByStep[stepName]);
+      });
+      additionalSlopes.forEach(function (slope) { allPhotos = allPhotos.concat(slope.photos); });
+      var completedAt = status === 'completed_pending_lead'
+        ? String(state.completedAt || new Date().toISOString())
+        : String(state.completedAt || '');
+      return {
+        id: String(state.id || ('pending_inspection_' + Date.now().toString(36))).trim(),
+        status: String(status || state.status || 'in_progress').trim(),
+        startedAt: String(state.startedAt || new Date().toISOString()).trim(),
+        completedAt: completedAt,
+        inspectionDate: String(state.inspectionDate || (completedAt ? completedAt.slice(0, 10) : '')).trim(),
+        stormDate: String(state.stormDate || '').trim(),
+        notes: String(state.notes || '').trim(),
+        roofType: String(state.selectedRoofType || '').trim(),
+        selectedRoofType: String(state.selectedRoofType || '').trim(),
+        currentStepIndex: Number(state.currentStepIndex || 0),
+        photosByStep: photosByStep,
+        inspectionPhotos: allPhotos,
+        elevationPhotos: ['Front Elevation', 'Right Elevation', 'Rear Elevation', 'Left Elevation'].reduce(function (photos, stepName) {
+          return photos.concat(photosByStep[stepName] || []);
+        }, []),
+        offTheLadderPhotos: photosByStep['Off the ladder pictures'] || [],
+        roofProjections: CRM_ROOF_PENETRATION_SECTIONS.reduce(function (result, section) {
+          result[section] = photosByStep['Roof Projections: ' + section] || [];
+          return result;
+        }, {}),
+        slopes: {
+          front: photosByStep['Front Slope'] || [],
+          back: photosByStep['Back Slope'] || [],
+          additional: additionalSlopes
+        },
+        additionalSlopes: additionalSlopes
+      };
+    }
+
+    function crmSavePendingInspectionRecord(state, status) {
+      var record = crmBuildPendingInspectionRecord(state, status);
+      try { localStorage.setItem(crmGetPendingInspectionStorageKey(), JSON.stringify(record)); }
+      catch (e) { console.warn('Unable to preserve the pending inspection locally.', e); }
+      return record;
+    }
+
+    function crmGetLocalDraftUserSuffix() {
+      return String(crmGetCurrentUserName() || currentRep || 'anonymous').trim().toLowerCase() || 'anonymous';
+    }
+
+    function crmGetPendingInspectionStorageKey() {
+      return CRM_PENDING_INSPECTION_KEY + ':' + crmGetLocalDraftUserSuffix();
+    }
+
+    function crmGetFieldLeadDraftStorageKey() {
+      return CRM_FIELD_LEAD_DRAFT_KEY + ':' + crmGetLocalDraftUserSuffix();
+    }
+
+    function crmGetPendingInspectionRecord() {
+      try {
+        var parsed = JSON.parse(localStorage.getItem(crmGetPendingInspectionStorageKey()) || 'null');
+        return parsed && typeof parsed === 'object' ? parsed : null;
+      } catch (e) { return null; }
+    }
+
+    function crmClearPendingInspectionRecord() {
+      localStorage.removeItem(crmGetPendingInspectionStorageKey());
+    }
+
+    function crmAddInspectionFilesToTemporaryRecord(fileList, category, targetFiles, onDone) {
+      var state = crmGetGroundInspectionState();
+      var capturedFiles = Array.prototype.slice.call(fileList || []);
+      if (!capturedFiles.length) { if (onDone) onDone(0); return; }
+      crmSaveFilesToDb(state.id, 'inspection_photo', capturedFiles, function (count, savedMeta) {
+        (savedMeta || []).forEach(function (meta) {
+          targetFiles.push(crmGetSerializableInspectionPhoto(meta, category));
+        });
+        crmSavePendingInspectionRecord(state, 'in_progress');
+        if (onDone) onDone(count);
+      }, {
+        category: category,
+        photoPhase: 'inspection',
+        note: 'Pending inspection photo'
+      });
+    }
+
     function crmBuildDuplicateAddressParts(record) {
       record = record || {};
       var street = crmNormalizeStreetForDuplicateMatch(record.street || record.address || '');
@@ -46741,6 +47116,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
 
       setVal('ld-phone', lead.phone);
+      setVal('ld-contact-name', name);
       setVal('ld-email', lead.email);
       setVal('ld-rep', lead.assignedRep);
       setVal('ld-source', crmGetLeadSourceDisplayLabel(lead.leadSource));
@@ -46820,6 +47196,18 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         }
       }
       crmPopulateJobStageSelect(lead.stage || lead.jobStage || 'New Lead', lead);
+
+      var folderWrap = document.querySelector('#page-lead-detail .jf-folder-wrap');
+      if (folderWrap && !folderWrap.querySelector('.jf-folder-sidebar')) {
+        var pipelineSidebar = document.querySelector('#page-crm-pipeline .hm-dashboard-ref .sidebar');
+        if (pipelineSidebar) {
+          var folderSidebar = pipelineSidebar.cloneNode(true);
+          folderSidebar.classList.add('jf-folder-sidebar');
+          folderSidebar.querySelectorAll('[id]').forEach(function (item) { item.removeAttribute('id'); });
+          folderSidebar.querySelectorAll('[aria-current]').forEach(function (item) { item.removeAttribute('aria-current'); });
+          folderWrap.insertBefore(folderSidebar, folderWrap.firstChild);
+        }
+      }
 
       showPage('page-lead-detail');
     }
@@ -54522,6 +54910,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       });
       return {
         status: crmGetJobFileStatus(lead, jobFile),
+        inspection: jobFile.inspection && typeof jobFile.inspection === 'object'
+          ? jobFile.inspection
+          : (lead.inspection && typeof lead.inspection === 'object' ? lead.inspection : {}),
         notes: notes,
         estimate: {
           status: String(estimate.status || 'Draft').trim() || 'Draft',
@@ -54590,6 +54981,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       data = data || {};
       lead.jobFile = {
         status: String(data.status || '').trim(),
+        inspection: data.inspection && typeof data.inspection === 'object'
+          ? data.inspection
+          : (lead.inspection && typeof lead.inspection === 'object' ? lead.inspection : {}),
         notes: Array.isArray(data.notes) ? data.notes.map(crmNormalizeJobNoteEntry) : [],
         estimate: Object.assign({}, data.estimate || {}),
         contract: Object.assign({}, data.contract || {}),
@@ -59924,6 +60318,178 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmPopulateFieldLeadDropdown('fl-workType', 'Select Region', options.regions);
     }
 
+    var _crmFieldLeadDraftTimer = null;
+    var _crmRestoringFieldLeadDraft = false;
+
+    function crmCollectFieldLeadDraftRows(selector, group) {
+      return Array.prototype.map.call(document.querySelectorAll('#page-field-lead ' + selector), function (row) {
+        var inputs = row.querySelectorAll('input');
+        var select = row.querySelector('select');
+        return {
+          value: String(inputs[0] && inputs[0].value || ''),
+          extension: group === 'phone' ? String(inputs[1] && inputs[1].value || '') : '',
+          type: String(select && select.value || ''),
+          primary: !!row.querySelector('[data-fl-primary-group="' + group + '"].is-primary')
+        };
+      });
+    }
+
+    function crmCaptureFieldLeadDraft() {
+      var page = document.getElementById('page-field-lead');
+      if (!page) return null;
+      var controls = {};
+      page.querySelectorAll('input[id], select[id], textarea[id]').forEach(function (control) {
+        if (!control.id || control.type === 'file' || control.type === 'button' || control.type === 'submit') return;
+        controls[control.id] = control.type === 'checkbox' || control.type === 'radio'
+          ? !!control.checked
+          : String(control.value || '');
+      });
+      return {
+        savedAt: new Date().toISOString(),
+        controls: controls,
+        damageAreas: crmGetFieldLeadDamageAreas(),
+        phoneRows: crmCollectFieldLeadDraftRows('.fl-grid-phone', 'phone'),
+        emailRows: crmCollectFieldLeadDraftRows('.fl-grid-email', 'email')
+      };
+    }
+
+    function crmSaveFieldLeadDraft() {
+      if (_crmRestoringFieldLeadDraft) return;
+      var draft = crmCaptureFieldLeadDraft();
+      if (!draft) return;
+      try { localStorage.setItem(crmGetFieldLeadDraftStorageKey(), JSON.stringify(draft)); }
+      catch (e) { console.warn('Unable to preserve the Create New Lead draft locally.', e); }
+    }
+
+    function crmScheduleFieldLeadDraftSave() {
+      if (_crmRestoringFieldLeadDraft) return;
+      clearTimeout(_crmFieldLeadDraftTimer);
+      _crmFieldLeadDraftTimer = setTimeout(crmSaveFieldLeadDraft, 180);
+    }
+
+    function crmClearFieldLeadDraft() {
+      clearTimeout(_crmFieldLeadDraftTimer);
+      localStorage.removeItem(crmGetFieldLeadDraftStorageKey());
+    }
+
+    function crmCreateFieldLeadDraftRow(sourceId, hostId, values, group) {
+      var source = document.getElementById(sourceId);
+      var host = document.getElementById(hostId);
+      if (!source || !host) return null;
+      var clone = source.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.querySelectorAll('[id]').forEach(function (el) { el.removeAttribute('id'); });
+      host.appendChild(clone);
+      var inputs = clone.querySelectorAll('input');
+      var select = clone.querySelector('select');
+      if (inputs[0]) inputs[0].value = String(values.value || '');
+      if (group === 'phone' && inputs[1]) inputs[1].value = String(values.extension || '');
+      if (select) select.value = String(values.type || '');
+      return clone;
+    }
+
+    function crmRestoreFieldLeadDraftRows(rows, sourceId, hostId, group) {
+      if (!Array.isArray(rows) || !rows.length) return;
+      var allRows = [];
+      var source = document.getElementById(sourceId);
+      if (source) allRows.push(source);
+      rows.slice(1).forEach(function (values) {
+        var clone = crmCreateFieldLeadDraftRow(sourceId, hostId, values, group);
+        if (clone) allRows.push(clone);
+      });
+      allRows.forEach(function (row, index) {
+        var values = rows[index] || {};
+        var inputs = row.querySelectorAll('input');
+        var select = row.querySelector('select');
+        if (inputs[0]) inputs[0].value = String(values.value || '');
+        if (group === 'phone' && inputs[1]) inputs[1].value = String(values.extension || '');
+        if (select) select.value = String(values.type || '');
+        var primary = row.querySelector('[data-fl-primary-group="' + group + '"]');
+        if (primary) {
+          primary.classList.toggle('is-primary', !!values.primary);
+          primary.setAttribute('aria-pressed', values.primary ? 'true' : 'false');
+          primary.textContent = 'Primary';
+        }
+      });
+    }
+
+    function crmRestoreFieldLeadDraft() {
+      var draft = null;
+      try { draft = JSON.parse(localStorage.getItem(crmGetFieldLeadDraftStorageKey()) || 'null'); }
+      catch (e) { draft = null; }
+      if (!draft || !draft.controls) return false;
+      _crmRestoringFieldLeadDraft = true;
+      var splitEnabled = draft.controls['fl-splitCommissionEnabled'] === true;
+      crmSetFieldLeadSplitCommissionEnabled(splitEnabled);
+      Object.keys(draft.controls).forEach(function (id) {
+        var control = document.getElementById(id);
+        if (!control || control.type === 'file') return;
+        if (control.type === 'checkbox' || control.type === 'radio') control.checked = !!draft.controls[id];
+        else control.value = String(draft.controls[id] == null ? '' : draft.controls[id]);
+      });
+      crmRestoreFieldLeadDraftRows(draft.phoneRows, 'fl-row-phone', 'fl-phone-more-host', 'phone');
+      crmRestoreFieldLeadDraftRows(draft.emailRows, 'fl-row-email', 'fl-email-more-host', 'email');
+      crmSetFieldLeadDamageAreas(draft.damageAreas || []);
+      crmToggleCanvasserSelectForSource(
+        String(draft.controls['fl-leadSource'] || ''),
+        'fl-canvasser-wrap',
+        'fl-canvasser',
+        String(draft.controls['fl-canvasser'] || ''),
+        'Select Canvasser'
+      );
+      var insuranceOtherWrap = document.getElementById('fl-insuranceOtherWrap');
+      if (insuranceOtherWrap) insuranceOtherWrap.style.display = draft.controls['fl-insuranceOther'] ? '' : 'none';
+      var notes = document.getElementById('fl-notes');
+      var notesCount = document.getElementById('fl-notes-count');
+      if (notes && notesCount) notesCount.textContent = String(notes.value.length);
+      crmUpdateFieldLeadCommissionState();
+      _crmRestoringFieldLeadDraft = false;
+      return true;
+    }
+
+    function crmAttachPendingInspectionToLead(lead, pendingInspection) {
+      if (!lead || !pendingInspection || pendingInspection.status !== 'completed_pending_lead') return;
+      var inspection = JSON.parse(JSON.stringify(pendingInspection));
+      var photos = Array.isArray(inspection.inspectionPhotos) ? inspection.inspectionPhotos : [];
+      lead.inspection = inspection;
+      lead.inspectionCompleted = true;
+      lead.inspectionDate = String(inspection.inspectionDate || '').trim();
+      lead.roofType = String(inspection.roofType || inspection.selectedRoofType || '').trim();
+      lead.photosCount = photos.length;
+      lead.photos = photos.map(function (photo) { return Object.assign({}, photo, { category: 'inspection' }); });
+      if (!lead.stormDate && inspection.stormDate) lead.stormDate = inspection.stormDate;
+      var jobFile = lead.jobFile && typeof lead.jobFile === 'object' ? lead.jobFile : {};
+      jobFile.inspection = inspection;
+      jobFile.photos = photos.map(function (photo) {
+        return {
+          id: String(photo.id || photo.fileId || crmGenId()).trim(),
+          fileId: String(photo.fileId || photo.id || '').trim(),
+          category: String(photo.category || 'Inspection').trim(),
+          caption: String(photo.name || photo.fileName || '').trim(),
+          note: 'Completed inspection photo',
+          uploadedBy: String(photo.uploadedBy || '').trim(),
+          uploadedAt: String(photo.uploadedAt || photo.addedAt || new Date().toISOString()).trim(),
+          photoPhase: 'inspection'
+        };
+      });
+      lead.jobFile = jobFile;
+    }
+
+    function crmMovePendingInspectionFilesToLead(pendingInspectionId, leadId) {
+      pendingInspectionId = String(pendingInspectionId || '').trim();
+      leadId = String(leadId || '').trim();
+      if (!pendingInspectionId || !leadId) return;
+      var files = crmGetLeadFiles();
+      var changed = false;
+      files.forEach(function (file) {
+        if (String(file && file.leadId || '').trim() !== pendingInspectionId) return;
+        file.leadId = leadId;
+        file.jobId = leadId;
+        changed = true;
+      });
+      if (changed) crmSaveLeadFiles(files);
+    }
+
     function crmInitFieldLead() {
       [
         'fl-firstName', 'fl-lastName', 'fl-phone', 'fl-email', 'fl-street', 'fl-city', 'fl-state', 'fl-zip',
@@ -59988,6 +60554,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       document.getElementById('fl-warning-msg').style.display = 'none';
       document.getElementById('fl-warning-msg').textContent = '';
       crmResetFieldLeadDuplicateChecks();
+      crmRestoreFieldLeadDraft();
       crmApplyPendingContactLeadPrefill('fl');
     }
 
@@ -60106,6 +60673,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       });
     }());
 
+    (function () {
+      var fieldLeadPage = document.getElementById('page-field-lead');
+      if (!fieldLeadPage) return;
+      fieldLeadPage.addEventListener('input', crmScheduleFieldLeadDraftSave);
+      fieldLeadPage.addEventListener('change', crmScheduleFieldLeadDraftSave);
+      window.addEventListener('beforeunload', function () {
+        if (fieldLeadPage.classList.contains('active')) crmSaveFieldLeadDraft();
+      });
+    }());
+
     document.getElementById('fl-save-btn').addEventListener('click', function () {
       var valMsg = document.getElementById('fl-validation-msg');
       var savedMsg = document.getElementById('fl-saved-msg');
@@ -60185,6 +60762,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var authenticatedRepName = crmGetRole() === 'Sales Rep' ? (crmGetCurrentUserName() || '') : '';
       var primaryAssignedRepName = assignToMember ? assignToMember.name : authenticatedRepName;
       var repMember = assignToMember || crmLookupTeamMemberByName(authenticatedRepName || currentRep || '');
+      var pendingInspection = crmGetPendingInspectionRecord();
       var lead = {
         id: crmGenId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
         leadType: 'field_lead',
@@ -60228,6 +60806,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         manualStageOverride: false, convertedToJob: false,
         activityNotes: [{ text: 'Field lead created', author: currentRep || 'Rep', ts: new Date().toISOString() }]
       };
+      crmAttachPendingInspectionToLead(lead, pendingInspection);
       var leads = crmGetLeads();
       if (!leads.some(function (existingLead) { return existingLead && existingLead.id === lead.id; })) leads.push(lead);
       if (!crmSaveLeads(leads)) {
@@ -60235,6 +60814,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         valMsg.style.display = 'block';
         return;
       }
+      if (pendingInspection && pendingInspection.status === 'completed_pending_lead') {
+        crmMovePendingInspectionFilesToLead(pendingInspection.id, lead.id);
+        crmClearPendingInspectionRecord();
+        _crmGroundInspectionState = null;
+      }
+      crmClearFieldLeadDraft();
       crmSyncDataModelSnapshot();
       crmRenderMainMenu();
       crmRenderDashboardCommandCenter();
@@ -60443,6 +61028,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var jobFileLeadName = crmFormatHeaderTitleText(jobFileLeadDisplayName);
         if (jobFileLeadName) return jobFileLeadName;
       }
+      if (pageId === 'page-lead-detail' && _crmCurrentLeadId) {
+        var leadDetailLead = crmGetLeads().find(function (item) { return item && item.id === _crmCurrentLeadId; }) || null;
+        var leadDetailName = leadDetailLead ? crmFormatHeaderTitleText(crmGetJobFileLeadName(leadDetailLead)) : '';
+        if (leadDetailName) return leadDetailName;
+      }
       var titleEl = crmGetHeaderTitleSource(pageId);
       if (titleEl) return crmFormatHeaderTitleText(titleEl.textContent || '');
       return crmFormatHeaderTitleText(activePage && activePage.getAttribute('data-crm-header-title') || '');
@@ -60472,7 +61062,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var pageId = typeof _appCurrentPageId !== 'undefined' ? (_appCurrentPageId || '') : '';
       var usesStandardHeader = crmUsesStandardHeaderLayout(pageId);
       var pageTitle = usesStandardHeader ? crmGetHeaderPageTitle(pageId) : '';
-      var showInlineHeaderTitle = usesStandardHeader && pageId === 'page-crm-job-file' && !!pageTitle;
+      var showInlineHeaderTitle = usesStandardHeader && (pageId === 'page-crm-job-file' || pageId === 'page-lead-detail') && !!pageTitle;
       var inlineTitleText = !usesStandardHeader ? (pageTitle || 'Hail Money') : '';
       var inlineTitle = inlineTitleText ? '<div class="map-header-title">' + crmEscapeHtml(inlineTitleText) + '</div>' : '';
       var profile = (typeof crmGetCompanyProfile === 'function') ? crmGetCompanyProfile() : {};
