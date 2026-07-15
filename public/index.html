@@ -15823,6 +15823,132 @@
     .jf-doc-cat-back:hover { border-color: var(--accent-2); color: var(--text); }
     .jf-doc-cat-title { font-size: 16px; font-weight: 700; }
 
+    /* Documents workspace: screenshot-matched folder hub without changing
+       the shared header, sidebar, activity feed, or folder behavior. */
+    body.crm-job-file-documents-page-active #crm-header-context-title {
+      min-width: 220px;
+      text-align: center;
+    }
+    body.crm-job-file-documents-page-active #page-crm-job-file #jf-header-card,
+    body.crm-job-file-documents-page-active #page-crm-job-file #jf-quick-actions-card,
+    body.crm-job-file-documents-page-active #page-crm-job-file #jf-tabs,
+    body.crm-job-file-documents-page-active #page-crm-job-file .page-actions {
+      display: none !important;
+    }
+    body.crm-job-file-documents-page-active #page-crm-job-file .crm-dashboard-mini-body {
+      background: #e7bf55;
+    }
+    body.crm-job-file-documents-page-active #page-crm-job-file .crm-layout {
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 16px;
+      width: 100%;
+      max-width: none;
+      min-height: calc(100vh - 132px);
+      align-items: stretch;
+    }
+    body.crm-job-file-documents-page-active #page-crm-job-file .crm-main-column,
+    body.crm-job-file-documents-page-active #page-crm-job-file .crm-job-file-wrap {
+      min-height: 100%;
+    }
+    body.crm-job-file-documents-page-active #page-crm-job-file #jf-tab-content {
+      min-height: calc(100vh - 132px);
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    body.crm-job-file-documents-page-active #page-crm-job-file .crm-activity-column {
+      min-width: 320px;
+      position: relative;
+      z-index: 3;
+    }
+    body.crm-job-file-documents-page-active #page-crm-job-file .crm-activity-panel {
+      position: sticky;
+      top: 14px;
+    }
+    .jf-doc-hub-shell {
+      position: relative;
+      isolation: isolate;
+      min-height: calc(100vh - 132px);
+      overflow: hidden;
+      background: #e7bf55;
+    }
+    .jf-doc-hub-shell::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: url('./assets/hailmoney-logo.png?v=2') no-repeat center center;
+      background-size: min(78%, 820px) auto;
+    }
+    .jf-doc-hub-shell .jf-doc-hub {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      min-height: calc(100vh - 132px);
+      margin: 0;
+      padding: 24px 18px;
+      display: grid;
+      grid-template-columns: repeat(3, 145px);
+      grid-template-rows: repeat(4, 100px);
+      column-gap: clamp(80px, 10vw, 210px);
+      row-gap: 14px;
+      align-content: center;
+      justify-content: center;
+    }
+    .jf-doc-hub-shell .jf-doc-hub-card {
+      width: 145px;
+      min-height: 100px;
+      padding: 10px 8px;
+      gap: 5px;
+      border: 7px solid #050505;
+      border-radius: 0;
+      background: #e7bf55;
+      color: #111;
+      box-shadow: none;
+    }
+    .jf-doc-hub-shell .jf-doc-hub-card:hover,
+    .jf-doc-hub-shell .jf-doc-hub-card:focus-visible {
+      border-color: #050505;
+      background: #f0cf70;
+      box-shadow: 0 7px 16px rgba(0,0,0,0.22);
+      transform: translateY(-2px);
+      outline: none;
+    }
+    .jf-doc-hub-shell .jf-doc-hub-card-icon {
+      min-height: 23px;
+      font-size: 22px;
+      line-height: 1;
+    }
+    .jf-doc-hub-shell .jf-doc-hub-card-label {
+      color: #111;
+      width: 128%;
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      white-space: nowrap;
+      transform: scaleX(0.78);
+    }
+    .jf-doc-hub-shell .jf-doc-hub-card-count {
+      color: rgba(17,17,17,0.72);
+      font-size: 10px;
+      line-height: 1;
+    }
+    .jf-doc-hub-shell .jf-doc-hub-card:nth-child(1) { grid-column: 1; grid-row: 1; }
+    .jf-doc-hub-shell .jf-doc-hub-card:nth-child(2) { grid-column: 3; grid-row: 1; }
+    .jf-doc-hub-shell .jf-doc-hub-card:nth-child(3) { grid-column: 1; grid-row: 2; }
+    .jf-doc-hub-shell .jf-doc-hub-card:nth-child(4) { grid-column: 3; grid-row: 2; }
+    .jf-doc-hub-shell .jf-doc-hub-card:nth-child(5) { grid-column: 1; grid-row: 3; }
+    .jf-doc-hub-shell .jf-doc-hub-card:nth-child(6) { grid-column: 3; grid-row: 3; }
+    .jf-doc-hub-shell .jf-doc-hub-card:nth-child(7) { grid-column: 1; grid-row: 4; }
+    .jf-doc-hub-shell .jf-doc-hub-card:nth-child(8) { grid-column: 2; grid-row: 4; }
+    .jf-doc-hub-shell .jf-doc-hub-card:nth-child(9) { grid-column: 3; grid-row: 4; }
+
     /* One authoritative CRM header. Route classes may change header data
        (page/customer title and optional pipeline filters), never its shell. */
     body.crm-standard-header-active > .app-shell > .topbar {
@@ -21284,6 +21410,8 @@
       document.body.classList.toggle('lead-detail-page-active', pageId === 'page-lead-detail');
       document.body.classList.toggle('crm-job-file-photos-page-active',
         pageId === 'page-crm-job-file' && _crmJobFileActiveTab === 'photos');
+      document.body.classList.toggle('crm-job-file-documents-page-active',
+        pageId === 'page-crm-job-file' && _crmJobFileActiveTab === 'documents');
       document.body.classList.toggle('calendar-page-active', pageId === 'page-crm-calendar');
       document.body.classList.toggle('settings-page-active', pageId === 'page-crm-settings');
       if (pageId === 'page-main-menu' && typeof crmRenderDashboardCommandCenter === 'function') crmRenderDashboardCommandCenter();
@@ -56117,15 +56245,15 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     var CRM_JOB_FILE_PHOTO_CATEGORIES = ['Front', 'Rear', 'Left Side', 'Right Side', 'Roof', 'Gutters', 'Siding', 'Windows', 'Interior', 'Other'];
     var CRM_JOB_FILE_DOCUMENT_CATEGORIES = ['Contingency', 'Contract', 'Estimate', 'Insurance Paperwork', 'Invoice', 'Supplements', 'Other Documents'];
     var JF_DOC_HUB_CATEGORIES = [
-      { key: 'Measurements',  icon: '📐', types: ['measurement_document'] },
-      { key: 'Job Paperwork', icon: '📋', types: ['job_document'] },
-      { key: 'Contract',      icon: '✍️',  types: ['signed_contract', 'signed_contingency'] },
-      { key: 'Payments',      icon: '💵', types: ['invoice_document', 'check_turned_in', 'final_invoice_paid'] },
-      { key: 'Photos',        icon: '📷', types: ['inspection_photo', 'after_photo'] },
-      { key: 'Insurance',     icon: '🏢', types: ['summary_of_loss', 'insurance_paperwork'] },
-      { key: 'Supplements',   icon: '📎', types: ['supplement_document'] },
-      { key: 'Permits',       icon: '🪪',  types: ['permit_document'] },
-      { key: 'Other',         icon: '📁', types: ['other'] },
+      { key: 'Measurements',  icon: '&#128208;', types: ['measurement_document'] },
+      { key: 'Payments',      icon: '&#128181;', types: ['check_turned_in'] },
+      { key: 'Contract',      icon: '&#9997;&#65039;', types: ['signed_contract', 'signed_contingency'] },
+      { key: 'Job Paperwork', icon: '&#128203;', types: ['job_document'] },
+      { key: 'Permits',       icon: '&#127380;', types: ['permit_document'] },
+      { key: 'Insurance',     icon: '&#127970;', types: ['summary_of_loss', 'insurance_paperwork'] },
+      { key: 'Cap Sheet',     icon: '&#128196;', types: ['supplement_document'] },
+      { key: 'Other',         icon: '&#128193;', types: ['other'] },
+      { key: 'Invoice',       icon: '&#129534;', types: ['invoice_document', 'final_invoice_paid'] }
     ];
     var _jfDocSelectedCategory = null;
 
@@ -58418,6 +58546,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       });
       if (crmGetActivePageId() === 'page-crm-job-file') {
         document.body.classList.toggle('crm-job-file-photos-page-active', _crmJobFileActiveTab === 'photos');
+        document.body.classList.toggle('crm-job-file-documents-page-active', _crmJobFileActiveTab === 'documents');
       }
       crmRenderMiniDashboardShells(document.getElementById('page-crm-job-file'));
       return true;
@@ -66061,9 +66190,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (_jfDocSelectedCategory) {
         return jfRenderDocCategoryHtml(lead, _jfDocSelectedCategory);
       }
-      var html = '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Documents</div>';
-      html += '<p style="font-size:13px;color:var(--muted);margin:0 0 14px;">Select a category to view or upload files.</p>';
-      html += '<div class="jf-doc-hub">';
+      var html = '<div class="jf-doc-hub-shell"><div class="jf-doc-hub" aria-label="Document folders">';
       JF_DOC_HUB_CATEGORIES.forEach(function(cat) {
         var count = jfGetDocHubCategoryCount(lead, cat.types);
         html += '<button class="jf-doc-hub-card" type="button" data-jf-doc-hub="' + crmEscapeHtml(cat.key) + '">';
