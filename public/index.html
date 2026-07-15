@@ -15949,6 +15949,529 @@
     .jf-doc-hub-shell .jf-doc-hub-card:nth-child(8) { grid-column: 2; grid-row: 4; }
     .jf-doc-hub-shell .jf-doc-hub-card:nth-child(9) { grid-column: 3; grid-row: 4; }
 
+    /* Production scheduler */
+    body.production-scheduler-page-active .production-scheduler-body {
+      padding: 14px 18px 36px;
+      background: linear-gradient(180deg, #f3dfa0 0%, #dfb84f 100%);
+    }
+    .production-scheduler-root {
+      width: 100%;
+      min-width: 0;
+      color: #171717;
+    }
+    .production-scheduler-toolbar,
+    .production-scheduler-filters,
+    .production-overview-panel {
+      background: rgba(255,255,255,0.96);
+      border: 1px solid rgba(82,59,12,0.22);
+      box-shadow: 0 10px 28px rgba(31,24,10,0.10);
+    }
+    .production-scheduler-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 14px;
+      border-radius: 14px 14px 0 0;
+    }
+    .production-scheduler-toolbar-left,
+    .production-scheduler-toolbar-right,
+    .production-scheduler-nav,
+    .production-view-switch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .production-scheduler-period {
+      min-width: 220px;
+      font-size: 18px;
+      font-weight: 900;
+      color: #171717;
+    }
+    .production-control-btn,
+    .production-view-btn {
+      min-height: 36px;
+      padding: 7px 12px;
+      border: 1px solid #c9a341;
+      border-radius: 8px;
+      background: #fff;
+      color: #171717;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .production-control-btn:hover,
+    .production-view-btn:hover,
+    .production-view-btn.is-active {
+      background: #e2b739;
+      border-color: #171717;
+    }
+    .production-scheduler-filters {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 10px;
+      padding: 10px 14px 12px;
+      border-top: 1px solid #e7dbc0;
+      border-radius: 0 0 14px 14px;
+    }
+    .production-filter-field {
+      min-width: 0;
+    }
+    .production-filter-field label {
+      display: block;
+      margin-bottom: 4px;
+      color: #6b5a31;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .production-filter-field select,
+    .production-filter-field input {
+      width: 100%;
+      height: 36px;
+      padding: 6px 9px;
+      border: 1px solid #d2c399;
+      border-radius: 8px;
+      background: #fff;
+      color: #171717;
+      font-size: 12px;
+    }
+    .production-scheduler-board-wrap {
+      margin-top: 14px;
+      overflow-x: auto;
+      border: 2px solid #171717;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 12px 28px rgba(31,24,10,0.15);
+    }
+    .production-scheduler-board {
+      min-width: max(100%, 980px);
+    }
+    .production-scheduler-grid-row {
+      --production-days: 7;
+      display: grid;
+      grid-template-columns: 180px repeat(var(--production-days), minmax(105px, 1fr));
+      position: relative;
+      min-height: 72px;
+      border-bottom: 1px solid #d8d8d8;
+    }
+    .production-scheduler-grid-row:last-child {
+      border-bottom: 0;
+    }
+    .production-scheduler-grid-row.is-header {
+      min-height: 58px;
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      background: #171717;
+      color: #fff;
+    }
+    .production-crew-cell,
+    .production-date-cell,
+    .production-day-drop-cell {
+      grid-row: 1;
+      min-width: 0;
+    }
+    .production-crew-cell {
+      grid-column: 1;
+      position: sticky;
+      left: 0;
+      z-index: 6;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 10px 12px;
+      border-right: 2px solid #171717;
+      background: #fffdf6;
+    }
+    .is-header .production-crew-cell {
+      background: #171717;
+      color: #f2c951;
+    }
+    .production-crew-name {
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .production-crew-meta {
+      margin-top: 3px;
+      color: #75694e;
+      font-size: 10px;
+    }
+    .production-date-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      border-right: 1px solid rgba(255,255,255,0.18);
+      text-align: center;
+    }
+    .production-date-day {
+      color: #f2c951;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .production-date-number {
+      font-size: 15px;
+      font-weight: 900;
+    }
+    .production-day-drop-cell {
+      border-right: 1px solid #e0e0e0;
+      background: rgba(255,255,255,0.72);
+    }
+    .production-day-drop-cell.is-weekend {
+      background: #f8f3e5;
+    }
+    .production-day-drop-cell.is-today {
+      background: rgba(235,190,63,0.24);
+    }
+    .production-day-drop-cell.is-dragover {
+      background: rgba(226,183,57,0.46);
+      box-shadow: inset 0 0 0 2px #171717;
+    }
+    .production-scheduler-grid-row.is-unassigned .production-crew-cell,
+    .production-scheduler-grid-row.is-unassigned .production-day-drop-cell {
+      background-color: #f0f0f0;
+    }
+    .production-job-bar {
+      grid-row: 1;
+      align-self: center;
+      z-index: 4;
+      height: 44px;
+      margin: 0 5px;
+      padding: 6px 9px;
+      overflow: hidden;
+      border: 2px solid rgba(0,0,0,0.52);
+      border-radius: 5px;
+      background: #e2b739;
+      color: #111;
+      text-align: left;
+      cursor: grab;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.17);
+    }
+    .production-job-bar:active { cursor: grabbing; }
+    .production-job-bar.status-in-progress { background: #dd8b2c; }
+    .production-job-bar.status-completed { background: #7eb276; }
+    .production-job-bar.status-not-scheduled { background: #e9d898; }
+    .production-job-bar.is-overridden { background: #a7a7a7; color: #111; }
+    .production-job-title {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      overflow: hidden;
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1.1;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .production-job-subtitle {
+      margin-top: 3px;
+      overflow: hidden;
+      font-size: 9px;
+      line-height: 1;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .production-closed-check {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 15px;
+      height: 15px;
+      flex: 0 0 15px;
+      border-radius: 50%;
+      background: #111;
+      color: #fff;
+      font-size: 10px;
+    }
+    .production-scheduler-empty {
+      padding: 48px 20px;
+      color: #665b43;
+      font-size: 14px;
+      text-align: center;
+    }
+    .production-overview-panel {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 14px;
+    }
+    .production-section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 16px;
+      font-weight: 900;
+    }
+    .production-overview-cards {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(110px, 1fr));
+      gap: 10px;
+    }
+    .production-overview-card {
+      padding: 12px;
+      border: 1px solid #d6c58f;
+      border-radius: 10px;
+      background: #fffaf0;
+    }
+    .production-overview-value {
+      font-size: 22px;
+      font-weight: 900;
+    }
+    .production-overview-label {
+      margin-top: 4px;
+      color: #75694e;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .production-overview-list {
+      margin-top: 12px;
+      border-top: 1px solid #eadfbf;
+    }
+    .production-overview-row {
+      display: grid;
+      grid-template-columns: minmax(160px, 1.5fr) repeat(5, minmax(100px, 1fr));
+      gap: 10px;
+      align-items: center;
+      padding: 9px 4px;
+      border-bottom: 1px solid #eee5cf;
+      font-size: 11px;
+    }
+    .production-overview-row.is-header {
+      color: #75694e;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .production-overview-job {
+      font-weight: 900;
+    }
+    .production-status-chip {
+      display: inline-flex;
+      width: fit-content;
+      padding: 3px 7px;
+      border: 1px solid #c7a33f;
+      border-radius: 999px;
+      background: #fff6d8;
+      font-size: 9px;
+      font-weight: 900;
+    }
+    .production-status-chip.is-missing {
+      border-color: #b86250;
+      background: #fae4df;
+      color: #7a281b;
+    }
+    .production-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      background: rgba(10,10,16,0.72);
+    }
+    .production-modal {
+      width: min(1040px, 96vw);
+      max-height: 92vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 2px solid #171717;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.4);
+    }
+    .production-modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 18px;
+      background: #171717;
+      color: #fff;
+    }
+    .production-modal-title {
+      font-size: 20px;
+      font-weight: 900;
+    }
+    .production-modal-address {
+      margin-top: 4px;
+      color: #e7c760;
+      font-size: 11px;
+    }
+    .production-modal-close {
+      width: 36px;
+      height: 36px;
+      border: 1px solid #d9b747;
+      border-radius: 8px;
+      background: transparent;
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .production-modal-tabs {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      border-bottom: 1px solid #d8d1bf;
+      background: #fbf6e8;
+    }
+    .production-modal-tab {
+      min-width: 140px;
+      padding: 11px 14px;
+      border: 0;
+      border-right: 1px solid #ddd2b3;
+      background: transparent;
+      color: #3b3424;
+      font-size: 11px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .production-modal-tab.is-active {
+      background: #e2b739;
+      color: #111;
+    }
+    .production-modal-body {
+      overflow-y: auto;
+      padding: 16px 18px 20px;
+    }
+    .production-modal-panel[hidden] { display: none; }
+    .production-form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .production-field.full { grid-column: 1 / -1; }
+    .production-field.two { grid-column: span 2; }
+    .production-field label {
+      display: block;
+      margin-bottom: 5px;
+      color: #655b43;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .production-field input,
+    .production-field select,
+    .production-field textarea {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid #cfc5aa;
+      border-radius: 8px;
+      background: #fff;
+      color: #171717;
+      font: inherit;
+    }
+    .production-field textarea {
+      min-height: 82px;
+      resize: vertical;
+    }
+    .production-field input[readonly] {
+      background: #f2f2f2;
+      color: #555;
+    }
+    .production-line-table {
+      width: 100%;
+      margin-top: 12px;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .production-line-table th,
+    .production-line-table td {
+      padding: 7px;
+      border: 1px solid #ded6c1;
+      text-align: left;
+      vertical-align: middle;
+    }
+    .production-line-table th {
+      background: #171717;
+      color: #f1ca55;
+      font-size: 9px;
+      text-transform: uppercase;
+    }
+    .production-line-table input,
+    .production-line-table select {
+      width: 100%;
+      min-width: 0;
+      padding: 7px;
+      border: 1px solid #ccc2a6;
+      border-radius: 6px;
+    }
+    .production-line-remove {
+      border: 0;
+      background: transparent;
+      color: #912f20;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .production-ticket-total {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+      font-size: 17px;
+      font-weight: 900;
+    }
+    .production-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #e5dcc5;
+    }
+    .production-primary-btn,
+    .production-secondary-btn {
+      min-height: 38px;
+      padding: 8px 15px;
+      border: 1px solid #171717;
+      border-radius: 8px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .production-primary-btn { background: #e2b739; color: #111; }
+    .production-secondary-btn { background: #fff; color: #111; }
+    .production-attachment-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .production-attachment-btn {
+      padding: 9px 10px;
+      overflow: hidden;
+      border: 1px solid #d2c399;
+      border-radius: 8px;
+      background: #fffaf0;
+      color: #171717;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    @media (max-width: 1100px) {
+      .production-scheduler-filters { grid-template-columns: repeat(3, minmax(130px, 1fr)); }
+      .production-overview-cards { grid-template-columns: repeat(3, minmax(110px, 1fr)); }
+      .production-overview-list { overflow-x: auto; }
+      .production-overview-row { min-width: 820px; }
+    }
+    @media (max-width: 760px) {
+      .production-scheduler-toolbar { align-items: flex-start; flex-direction: column; }
+      .production-scheduler-filters { grid-template-columns: 1fr 1fr; }
+      .production-form-grid { grid-template-columns: 1fr; }
+      .production-field.full,
+      .production-field.two { grid-column: auto; }
+    }
+
     /* One authoritative CRM header. Route classes may change header data
        (page/customer title and optional pipeline filters), never its shell. */
     body.crm-standard-header-active > .app-shell > .topbar {
@@ -19689,6 +20212,17 @@
         </div>
       </section>
 
+      <!-- CRM: PRODUCTION SCHEDULER -->
+      <section id="page-crm-production" class="page" data-crm-header-title="Production">
+        <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell data-dashboard-active-action="production">
+          <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
+          <div class="crm-dashboard-mini-body production-scheduler-body">
+            <div id="production-scheduler-root" class="production-scheduler-root"></div>
+          </div>
+        </div>
+        <div id="production-scheduler-modal-host"></div>
+      </section>
+
       <section id="page-crm-inspections" class="page">
         <div class="crm-layout">
           <div class="crm-main-column">
@@ -21408,6 +21942,7 @@
         || pageId === 'page-docusign');
       document.body.classList.toggle('pipeline-page-active', pageId === 'page-crm-pipeline');
       document.body.classList.toggle('lead-detail-page-active', pageId === 'page-lead-detail');
+      document.body.classList.toggle('production-scheduler-page-active', pageId === 'page-crm-production');
       document.body.classList.toggle('crm-job-file-photos-page-active',
         pageId === 'page-crm-job-file' && _crmJobFileActiveTab === 'photos');
       document.body.classList.toggle('crm-job-file-documents-page-active',
@@ -46500,9 +47035,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmGetDashboardProductionAction() {
       var role = crmGetWorkspaceMenuRole();
-      if (role === 'Sales Rep') return 'my-jobs';
       if (role === 'Viewer') return '';
-      return 'jobs';
+      return 'production-scheduler';
     }
 
     function crmGetDashboardStageDefinitions() {
@@ -56535,6 +57069,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           materialOrderStatus: String(production.materialOrderStatus || '').trim(),
           crewAssigned: String(production.crewAssigned || production.crew || '').trim(),
           scheduledBuildDate: String(production.scheduledBuildDate || production.startDate || '').trim(),
+          scheduledEndDate: String(production.scheduledEndDate || production.endDate || production.completionDate || '').trim(),
+          trade: String(production.trade || production.workType || 'Roofing').trim() || 'Roofing',
+          crewOverride: production.crewOverride === true,
+          closed: production.closed === true || String(production.status || '').trim() === 'Completed',
           permitStatus: String(production.permitStatus || '').trim(),
           roofColor: String(production.roofColor || '').trim(),
           shingleType: String(production.shingleType || '').trim(),
@@ -56542,6 +57080,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           completionDate: String(production.completionDate || '').trim(),
           crew: String(production.crew || production.crewAssigned || '').trim(),
           notes: String(production.notes || '').trim(),
+          workOrder: Object.assign({ status: 'Not Started', information: '' }, production.workOrder || {}),
+          laborTicket: Object.assign({ status: 'Not Started', scope: '', lineItems: [], crewNotes: '', productionNotes: '' }, production.laborTicket || {}, {
+            lineItems: Array.isArray(production.laborTicket && production.laborTicket.lineItems) ? production.laborTicket.lineItems.map(function (item) { return Object.assign({}, item); }) : []
+          }),
+          materialOrder: Object.assign({ status: 'Not Ordered', supplier: '', deliveryAddress: '', deliveryDate: '', notes: '', lineItems: [] }, production.materialOrder || {}, {
+            lineItems: Array.isArray(production.materialOrder && production.materialOrder.lineItems) ? production.materialOrder.lineItems.map(function (item) { return Object.assign({}, item); }) : []
+          }),
           updatedAt: String(production.updatedAt || '').trim()
         },
         paymentsSummary: {
@@ -61394,6 +61939,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         case 'inspections':        crmRenderInspections(viewingRepWorkspace ? 'rep' : undefined); showPage('page-crm-inspections'); break;
         case 'calendar':           crmOpenWorkspaceCalendar(); break;
         case 'payroll':            _crmPayrollBackPageId = 'page-main-menu'; renderPayroll();  showPage('page-payroll'); break;
+        case 'production-scheduler': crmOpenProductionScheduler(); break;
         case 'jobs':               crmRenderJobs();              showPage('page-crm-jobs'); break;
         case 'team-jobs':          crmRenderJobs();              showPage('page-crm-jobs'); break;
         case 'my-jobs':            crmRenderJobs('rep');         showPage('page-crm-jobs'); break;
@@ -66242,6 +66788,563 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       html += '</div>';
       return html;
     }
+
+    /* Production scheduler: shared lead/job-file backed data */
+    var _productionSchedulerState = {
+      anchorDate: '', view: 'week', crew: 'all', status: 'all', trade: 'all',
+      dateFrom: '', dateTo: '', selectedLeadId: '', modalTab: 'details'
+    };
+    var _productionSchedulerDragLeadId = '';
+
+    function crmProductionParseDate(value) {
+      var match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return null;
+      return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0, 0);
+    }
+
+    function crmProductionFormatYmd(date) {
+      if (!(date instanceof Date) || isNaN(date.getTime())) return '';
+      return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    }
+
+    function crmProductionTodayYmd() { return crmProductionFormatYmd(new Date()); }
+
+    function crmProductionAddDays(value, days) {
+      var date = crmProductionParseDate(value) || new Date();
+      date.setDate(date.getDate() + Number(days || 0));
+      return crmProductionFormatYmd(date);
+    }
+
+    function crmProductionDaysBetween(start, end) {
+      var startDate = crmProductionParseDate(start);
+      var endDate = crmProductionParseDate(end);
+      if (!startDate || !endDate) return 0;
+      return Math.round((endDate.getTime() - startDate.getTime()) / 86400000);
+    }
+
+    function crmProductionStartOfWeek(value) {
+      var date = crmProductionParseDate(value) || new Date();
+      date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+      return crmProductionFormatYmd(date);
+    }
+
+    function crmGetProductionDateRange() {
+      if (_productionSchedulerState.dateFrom && _productionSchedulerState.dateTo && _productionSchedulerState.dateTo >= _productionSchedulerState.dateFrom) {
+        return { start: _productionSchedulerState.dateFrom, days: Math.max(1, Math.min(31, crmProductionDaysBetween(_productionSchedulerState.dateFrom, _productionSchedulerState.dateTo) + 1)) };
+      }
+      var anchor = _productionSchedulerState.anchorDate || crmProductionTodayYmd();
+      if (_productionSchedulerState.view === 'day') return { start: anchor, days: 1 };
+      if (_productionSchedulerState.view === 'timeline') return { start: anchor, days: 14 };
+      return { start: crmProductionStartOfWeek(anchor), days: 7 };
+    }
+
+    function crmGetProductionRangeDates(range) {
+      var dates = [];
+      for (var i = 0; i < range.days; i++) dates.push(crmProductionAddDays(range.start, i));
+      return dates;
+    }
+
+    function crmFormatProductionRangeLabel(range) {
+      var start = crmProductionParseDate(range.start);
+      var end = crmProductionParseDate(crmProductionAddDays(range.start, range.days - 1));
+      if (!start || !end) return 'Production Schedule';
+      if (range.days === 1) return end.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+      return start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' - ' + end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function crmGetProductionSchedulerLeads() {
+      var stages = ['Contract Signed', 'Production', 'Production Start', 'Built', 'Invoiced', 'Completed', 'Complete', 'Paid / Closed'];
+      return crmGetLeads().filter(function (lead) {
+        if (!crmCanViewJobFileLead(lead)) return false;
+        var production = crmGetLeadJobFileData(lead).production;
+        var hasProductionData = !!(production.startDate || production.crewAssigned || production.notes || production.status !== 'Not Scheduled');
+        return lead.convertedToJob === true || hasProductionData || stages.indexOf(String(lead.stage || lead.jobStage || '')) !== -1;
+      });
+    }
+
+    function crmGetProductionCrewRecords(leads) {
+      var managedNames = {};
+      var records = [];
+      crmGetTeamMembers().forEach(function (member) {
+        if (!member || member.active === false || member.role !== 'Production') return;
+        var name = String(member.name || '').trim();
+        if (!name || managedNames[name.toLowerCase()]) return;
+        managedNames[name.toLowerCase()] = true;
+        records.push({ name: name, managed: true, placeholder: false });
+      });
+      leads.forEach(function (lead) {
+        var crew = String(crmGetLeadJobFileData(lead).production.crewAssigned || '').trim();
+        if (!crew || records.some(function (item) { return item.name.toLowerCase() === crew.toLowerCase(); })) return;
+        records.push({ name: crew, managed: false, placeholder: false });
+      });
+      if (!records.length) {
+        records.push({ name: 'Production Crew 1', managed: false, placeholder: true });
+        records.push({ name: 'Production Crew 2', managed: false, placeholder: true });
+      }
+      records.sort(function (a, b) { return a.name.localeCompare(b.name); });
+      records.unshift({ name: 'Unassigned', managed: true, placeholder: false });
+      return { records: records, managedNames: managedNames };
+    }
+
+    function crmGetProductionSchedulerJobs(leads, crewData) {
+      var range = crmGetProductionDateRange();
+      var rangeEnd = crmProductionAddDays(range.start, range.days - 1);
+      return leads.map(function (lead) {
+        var jobFile = crmGetLeadJobFileData(lead);
+        var production = jobFile.production;
+        var start = production.startDate || production.scheduledBuildDate || '';
+        var end = production.scheduledEndDate || production.completionDate || start;
+        var crew = String(production.crewAssigned || production.crew || '').trim() || 'Unassigned';
+        return { lead: lead, jobFile: jobFile, production: production, start: start, end: end || start, crew: crew,
+          managed: crew === 'Unassigned' || !!crewData.managedNames[crew.toLowerCase()], status: production.status || 'Not Scheduled', trade: production.trade || 'Roofing' };
+      }).filter(function (job) {
+        if (_productionSchedulerState.crew !== 'all' && job.crew !== _productionSchedulerState.crew) return false;
+        if (_productionSchedulerState.status !== 'all' && job.status !== _productionSchedulerState.status) return false;
+        if (_productionSchedulerState.trade !== 'all' && job.trade !== _productionSchedulerState.trade) return false;
+        if (!job.start) return job.crew === 'Unassigned';
+        return job.end >= range.start && job.start <= rangeEnd;
+      });
+    }
+
+    function crmProductionStatusClass(status) {
+      return 'status-' + String(status || 'Not Scheduled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    }
+
+    function crmProductionOption(value, label, selected) {
+      return '<option value="' + crmEscapeHtml(value) + '"' + (value === selected ? ' selected' : '') + '>' + crmEscapeHtml(label) + '</option>';
+    }
+
+    function crmRenderProductionScheduleRow(crewRecord, jobs, dates, range) {
+      var crewJobs = jobs.filter(function (job) { return job.crew === crewRecord.name; });
+      var html = '<div class="production-scheduler-grid-row' + (crewRecord.name === 'Unassigned' ? ' is-unassigned' : '') + '" style="--production-days:' + range.days + '">';
+      html += '<div class="production-crew-cell"><div class="production-crew-name">' + crmEscapeHtml(crewRecord.name) + '</div>';
+      html += '<div class="production-crew-meta">' + (crewRecord.name === 'Unassigned' ? 'Drop jobs here to remove crew' : (crewRecord.managed ? 'Labor manager crew' : 'Not found in labor manager')) + '</div></div>';
+      dates.forEach(function (date, index) {
+        var parsed = crmProductionParseDate(date);
+        var classes = 'production-day-drop-cell';
+        if (parsed && (parsed.getDay() === 0 || parsed.getDay() === 6)) classes += ' is-weekend';
+        if (date === crmProductionTodayYmd()) classes += ' is-today';
+        html += '<div class="' + classes + '" style="grid-column:' + (index + 2) + '" data-production-drop-date="' + date + '" data-production-drop-crew="' + crmEscapeHtml(crewRecord.name) + '"></div>';
+      });
+      crewJobs.forEach(function (job) {
+        var displayStart = job.start || range.start;
+        var displayEnd = job.end || displayStart;
+        var startOffset = Math.max(0, crmProductionDaysBetween(range.start, displayStart));
+        var endOffset = Math.min(range.days - 1, crmProductionDaysBetween(range.start, displayEnd));
+        var span = Math.max(1, endOffset - startOffset + 1);
+        var isOverridden = !job.managed || job.production.crewOverride === true;
+        var isClosed = job.production.closed === true || job.status === 'Completed' || String(job.lead.stage || '') === 'Paid / Closed';
+        html += '<button class="production-job-bar ' + crmProductionStatusClass(job.status) + (isOverridden ? ' is-overridden' : '') + '" type="button" draggable="true" data-production-job="' + crmEscapeHtml(job.lead.id) + '" style="grid-column:' + (startOffset + 2) + ' / span ' + span + '" title="Open ' + crmEscapeHtml(crmGetJobFileLeadName(job.lead)) + '">';
+        html += '<span class="production-job-title">' + (isClosed ? '<span class="production-closed-check">&#10003;</span>' : '') + '<span>' + crmEscapeHtml(crmGetJobFileLeadName(job.lead)) + '</span></span>';
+        html += '<span class="production-job-subtitle">' + crmEscapeHtml(job.trade + ' · ' + job.status) + '</span></button>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function crmRenderProductionOverview(leads) {
+      var records = leads.map(function (lead) {
+        var production = crmGetLeadJobFileData(lead).production;
+        var missing = [];
+        if (!production.startDate) missing.push('Dates');
+        if (!production.crewAssigned) missing.push('Crew');
+        if (!production.laborTicket || production.laborTicket.status === 'Not Started') missing.push('Labor');
+        if (!production.materialOrder || production.materialOrder.status === 'Not Ordered') missing.push('Materials');
+        if (!production.workOrder || production.workOrder.status === 'Not Started') missing.push('Work order');
+        return { lead: lead, production: production, missing: missing };
+      });
+      var scheduled = records.filter(function (item) { return !!item.production.startDate; }).length;
+      var assigned = records.filter(function (item) { return !!item.production.crewAssigned; }).length;
+      var laborReady = records.filter(function (item) { return ['Approved', 'Paid', 'Complete'].indexOf(item.production.laborTicket.status) !== -1; }).length;
+      var materialsReady = records.filter(function (item) { return ['Ordered', 'Confirmed', 'Delivered', 'Complete'].indexOf(item.production.materialOrder.status) !== -1; }).length;
+      var completed = records.filter(function (item) { return item.production.closed === true || item.production.status === 'Completed'; }).length;
+      var missingCount = records.filter(function (item) { return item.missing.length; }).length;
+      var html = '<section class="production-overview-panel"><div class="production-section-heading"><span>Production Overview</span><span class="production-status-chip">' + records.length + ' jobs</span></div>';
+      html += '<div class="production-overview-cards">';
+      [
+        [scheduled, 'Scheduled jobs'], [assigned, 'Assigned crew'], [laborReady, 'Labor ready'],
+        [materialsReady, 'Materials ready'], [completed, 'Completed'], [missingCount, 'Need attention']
+      ].forEach(function (card) {
+        html += '<div class="production-overview-card"><div class="production-overview-value">' + card[0] + '</div><div class="production-overview-label">' + card[1] + '</div></div>';
+      });
+      html += '</div><div class="production-overview-list">';
+      html += '<div class="production-overview-row is-header"><span>Job</span><span>Crew</span><span>Labor ticket</span><span>Material order</span><span>Dates</span><span>Completion</span></div>';
+      records.forEach(function (item) {
+        var production = item.production;
+        var dateText = production.startDate ? production.startDate + (production.scheduledEndDate && production.scheduledEndDate !== production.startDate ? ' - ' + production.scheduledEndDate : '') : 'Not scheduled';
+        html += '<div class="production-overview-row" data-production-overview-job="' + crmEscapeHtml(item.lead.id) + '">';
+        html += '<button class="production-attachment-btn production-overview-job" type="button" data-production-job="' + crmEscapeHtml(item.lead.id) + '">' + crmEscapeHtml(crmGetJobFileLeadName(item.lead)) + '</button>';
+        html += '<span>' + crmEscapeHtml(production.crewAssigned || 'Unassigned') + '</span>';
+        html += '<span>' + crmEscapeHtml(production.laborTicket.status || 'Not Started') + '</span>';
+        html += '<span>' + crmEscapeHtml(production.materialOrder.status || 'Not Ordered') + '</span>';
+        html += '<span>' + crmEscapeHtml(dateText) + '</span>';
+        html += '<span class="production-status-chip' + (item.missing.length ? ' is-missing' : '') + '">' + crmEscapeHtml(item.missing.length ? item.missing.join(', ') : (production.status || 'Ready')) + '</span></div>';
+      });
+      if (!records.length) html += '<div class="production-scheduler-empty">No production jobs are available yet.</div>';
+      html += '</div></section>';
+      return html;
+    }
+
+    function crmRenderProductionScheduler() {
+      var root = document.getElementById('production-scheduler-root');
+      if (!root) return;
+      if (!_productionSchedulerState.anchorDate) _productionSchedulerState.anchorDate = crmProductionTodayYmd();
+      var leads = crmGetProductionSchedulerLeads();
+      var crewData = crmGetProductionCrewRecords(leads);
+      var jobs = crmGetProductionSchedulerJobs(leads, crewData);
+      var range = crmGetProductionDateRange();
+      var dates = crmGetProductionRangeDates(range);
+      var trades = {};
+      leads.forEach(function (lead) { trades[crmGetLeadJobFileData(lead).production.trade || 'Roofing'] = true; });
+      var html = '<div class="production-scheduler-toolbar"><div class="production-scheduler-toolbar-left"><div class="production-scheduler-nav">';
+      html += '<button class="production-control-btn" type="button" data-production-nav="prev" aria-label="Previous dates">&#8249;</button>';
+      html += '<button class="production-control-btn" type="button" data-production-nav="today">Today</button>';
+      html += '<button class="production-control-btn" type="button" data-production-nav="next" aria-label="Next dates">&#8250;</button></div>';
+      html += '<div class="production-scheduler-period">' + crmEscapeHtml(crmFormatProductionRangeLabel(range)) + '</div></div>';
+      html += '<div class="production-scheduler-toolbar-right"><div class="production-view-switch">';
+      ['day', 'week', 'timeline'].forEach(function (view) {
+        html += '<button class="production-view-btn' + (_productionSchedulerState.view === view ? ' is-active' : '') + '" type="button" data-production-view="' + view + '">' + (view === 'timeline' ? 'Timeline' : view.charAt(0).toUpperCase() + view.slice(1)) + '</button>';
+      });
+      html += '</div></div></div>';
+      html += '<div class="production-scheduler-filters">';
+      html += '<div class="production-filter-field"><label for="production-filter-crew">Crew</label><select id="production-filter-crew" data-production-filter="crew">' + crmProductionOption('all', 'All crews', _productionSchedulerState.crew);
+      crewData.records.forEach(function (crew) { html += crmProductionOption(crew.name, crew.name, _productionSchedulerState.crew); });
+      html += '</select></div>';
+      html += '<div class="production-filter-field"><label for="production-filter-status">Job status</label><select id="production-filter-status" data-production-filter="status">' + crmProductionOption('all', 'All statuses', _productionSchedulerState.status);
+      ['Not Scheduled', 'Scheduled', 'In Progress', 'Completed'].forEach(function (status) { html += crmProductionOption(status, status, _productionSchedulerState.status); });
+      html += '</select></div>';
+      html += '<div class="production-filter-field"><label for="production-filter-trade">Trade</label><select id="production-filter-trade" data-production-filter="trade">' + crmProductionOption('all', 'All trades', _productionSchedulerState.trade);
+      Object.keys(trades).sort().forEach(function (trade) { html += crmProductionOption(trade, trade, _productionSchedulerState.trade); });
+      html += '</select></div>';
+      html += '<div class="production-filter-field"><label for="production-filter-from">From</label><input id="production-filter-from" data-production-filter="dateFrom" type="date" value="' + crmEscapeHtml(_productionSchedulerState.dateFrom) + '" /></div>';
+      html += '<div class="production-filter-field"><label for="production-filter-to">To</label><input id="production-filter-to" data-production-filter="dateTo" type="date" value="' + crmEscapeHtml(_productionSchedulerState.dateTo) + '" /></div></div>';
+      html += '<div class="production-scheduler-board-wrap"><div class="production-scheduler-board">';
+      html += '<div class="production-scheduler-grid-row is-header" style="--production-days:' + range.days + '"><div class="production-crew-cell"><div class="production-crew-name">Production crews</div><div class="production-crew-meta">Drag jobs to reschedule</div></div>';
+      dates.forEach(function (date, index) {
+        var parsed = crmProductionParseDate(date);
+        html += '<div class="production-date-cell" style="grid-column:' + (index + 2) + '"><span class="production-date-day">' + parsed.toLocaleDateString('en-US', { weekday: 'short' }) + '</span><span class="production-date-number">' + parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span></div>';
+      });
+      html += '</div>';
+      crewData.records.forEach(function (crew) { html += crmRenderProductionScheduleRow(crew, jobs, dates, range); });
+      if (!leads.length) html += '<div class="production-scheduler-empty">Convert a lead to a job to begin production scheduling.</div>';
+      html += '</div></div>' + crmRenderProductionOverview(leads);
+      root.innerHTML = html;
+      crmRenderMiniDashboardShells(document.getElementById('page-crm-production'));
+    }
+
+    function crmOpenProductionScheduler() {
+      if (!_productionSchedulerState.anchorDate) _productionSchedulerState.anchorDate = crmProductionTodayYmd();
+      crmRenderProductionScheduler();
+      showPage('page-crm-production');
+    }
+
+    function crmRenderProductionLaborRows(lineItems) {
+      var rows = Array.isArray(lineItems) && lineItems.length ? lineItems : [{ description: '', quantity: '', unitPrice: '' }];
+      return rows.map(function (item, index) {
+        var amount = crmParseMoneyNumber(item.quantity) * crmParseMoneyNumber(item.unitPrice);
+        return '<tr data-production-labor-row="' + index + '"><td><input data-production-line-field="description" type="text" value="' + crmEscapeHtml(item.description || '') + '" placeholder="Tear-off, install, cleanup..." /></td>' +
+          '<td><input data-production-line-field="quantity" type="number" min="0" step="0.01" value="' + crmEscapeHtml(item.quantity || '') + '" /></td>' +
+          '<td><input data-production-line-field="unitPrice" type="number" min="0" step="0.01" value="' + crmEscapeHtml(item.unitPrice || '') + '" /></td>' +
+          '<td data-production-line-amount>' + crmEscapeHtml(crmFormatMoney(amount)) + '</td>' +
+          '<td><button class="production-line-remove" type="button" data-production-remove-line="labor" aria-label="Remove labor line">Remove</button></td></tr>';
+      }).join('');
+    }
+
+    function crmRenderProductionMaterialRows(lineItems) {
+      var rows = Array.isArray(lineItems) && lineItems.length ? lineItems : [{ description: '', quantity: '', unit: 'Each' }];
+      return rows.map(function (item, index) {
+        return '<tr data-production-material-row="' + index + '"><td><input data-production-line-field="description" type="text" value="' + crmEscapeHtml(item.description || '') + '" placeholder="Shingles, underlayment, vents..." /></td>' +
+          '<td><input data-production-line-field="quantity" type="number" min="0" step="0.01" value="' + crmEscapeHtml(item.quantity || '') + '" /></td>' +
+          '<td><select data-production-line-field="unit">' + ['Each', 'Bundle', 'Square', 'Roll', 'Box', 'Linear ft', 'Sheet'].map(function (unit) { return crmProductionOption(unit, unit, item.unit || 'Each'); }).join('') + '</select></td>' +
+          '<td><button class="production-line-remove" type="button" data-production-remove-line="material" aria-label="Remove material line">Remove</button></td></tr>';
+      }).join('');
+    }
+
+    function crmRenderProductionJobModal() {
+      var host = document.getElementById('production-scheduler-modal-host');
+      if (!host) return;
+      var lead = crmGetJobFileLeadById(_productionSchedulerState.selectedLeadId);
+      if (!lead) { host.innerHTML = ''; return; }
+      var jobFile = crmGetLeadJobFileData(lead);
+      var production = jobFile.production;
+      var labor = production.laborTicket;
+      var material = production.materialOrder;
+      var workOrder = production.workOrder;
+      var crewData = crmGetProductionCrewRecords(crmGetProductionSchedulerLeads());
+      var crewOptions = crmProductionOption('', 'Unassigned', production.crewAssigned || '');
+      crewData.records.filter(function (crew) { return crew.name !== 'Unassigned'; }).forEach(function (crew) {
+        crewOptions += crmProductionOption(crew.name, crew.name + (crew.managed ? '' : ' (override)'), production.crewAssigned || '');
+      });
+      var attachments = crmGetJobFileDocumentEntries(lead);
+      var laborTotal = (labor.lineItems || []).reduce(function (sum, item) { return sum + crmParseMoneyNumber(item.quantity) * crmParseMoneyNumber(item.unitPrice); }, 0);
+      var missing = [];
+      if (!production.startDate) missing.push('Schedule dates');
+      if (!production.crewAssigned) missing.push('Assigned crew');
+      if (labor.status === 'Not Started') missing.push('Labor ticket');
+      if (material.status === 'Not Ordered') missing.push('Material order');
+      if (workOrder.status === 'Not Started') missing.push('Work order');
+      var html = '<div class="production-modal-overlay" data-production-modal-overlay><div class="production-modal" role="dialog" aria-modal="true" aria-labelledby="production-modal-title">';
+      html += '<div class="production-modal-header"><div><div class="production-modal-title" id="production-modal-title">' + crmEscapeHtml(crmGetJobFileLeadName(lead)) + '</div><div class="production-modal-address">' + crmEscapeHtml(crmGetJobFileLeadAddress(lead) || 'No address saved') + '</div></div><button class="production-modal-close" type="button" data-production-close-modal aria-label="Close">&times;</button></div>';
+      html += '<div class="production-modal-tabs">';
+      [['details','Job Details'],['labor','Labor Ticket'],['materials','Material Order'],['overview','Overview']].forEach(function (tab) {
+        html += '<button class="production-modal-tab' + (_productionSchedulerState.modalTab === tab[0] ? ' is-active' : '') + '" type="button" data-production-modal-tab="' + tab[0] + '">' + tab[1] + '</button>';
+      });
+      html += '</div><div class="production-modal-body">';
+      html += '<section class="production-modal-panel" data-production-panel="details"' + (_productionSchedulerState.modalTab === 'details' ? '' : ' hidden') + '><div class="production-form-grid">';
+      html += '<div class="production-field"><label>Homeowner / Job</label><input type="text" readonly value="' + crmEscapeHtml(crmGetJobFileLeadName(lead)) + '" /></div>';
+      html += '<div class="production-field two"><label>Address</label><input type="text" readonly value="' + crmEscapeHtml(crmGetJobFileLeadAddress(lead) || '') + '" /></div>';
+      html += '<div class="production-field"><label for="production-detail-trade">Trade / Work type</label><select id="production-detail-trade">' + ['Roofing','Siding','Gutters','Windows','Interior','Other'].map(function (trade) { return crmProductionOption(trade, trade, production.trade); }).join('') + '</select></div>';
+      html += '<div class="production-field"><label for="production-detail-start">Scheduled start</label><input id="production-detail-start" type="date" value="' + crmEscapeHtml(production.startDate || '') + '" /></div>';
+      html += '<div class="production-field"><label for="production-detail-end">Scheduled end</label><input id="production-detail-end" type="date" value="' + crmEscapeHtml(production.scheduledEndDate || production.startDate || '') + '" /></div>';
+      html += '<div class="production-field"><label for="production-detail-crew">Assigned crew</label><select id="production-detail-crew">' + crewOptions + '</select></div>';
+      html += '<div class="production-field"><label for="production-detail-status">Production status</label><select id="production-detail-status">' + ['Not Scheduled','Scheduled','In Progress','Completed'].map(function (status) { return crmProductionOption(status, status, production.status); }).join('') + '</select></div>';
+      html += '<div class="production-field"><label for="production-work-order-status">Work order status</label><select id="production-work-order-status">' + ['Not Started','Draft','Ready','Issued','Complete'].map(function (status) { return crmProductionOption(status, status, workOrder.status || 'Not Started'); }).join('') + '</select></div>';
+      html += '<div class="production-field full"><label for="production-detail-notes">Production notes</label><textarea id="production-detail-notes">' + crmEscapeHtml(production.notes || '') + '</textarea></div>';
+      html += '<div class="production-field full"><label for="production-work-order-info">Work order information</label><textarea id="production-work-order-info" placeholder="Scope, instructions, access, permits, and quality requirements...">' + crmEscapeHtml(workOrder.information || '') + '</textarea></div>';
+      html += '<div class="production-field full"><label>Attachments / Documents</label><div class="production-attachment-list">';
+      if (attachments.length) attachments.forEach(function (entry) { html += '<button class="production-attachment-btn" type="button" data-production-open-file="' + crmEscapeHtml(entry.fileId) + '">' + crmEscapeHtml(entry.file.fileName || entry.category || 'Document') + '</button>'; });
+      else html += '<span class="crm-job-file-inline-note">No job documents attached yet.</span>';
+      html += '</div></div></div><div class="production-modal-actions"><button class="production-secondary-btn" type="button" data-production-close-modal>Close</button><button class="production-primary-btn" type="button" data-production-save="details">Save Job Details</button></div></section>';
+      html += '<section class="production-modal-panel" data-production-panel="labor"' + (_productionSchedulerState.modalTab === 'labor' ? '' : ' hidden') + '><div class="production-form-grid">';
+      html += '<div class="production-field"><label for="production-labor-crew">Assigned crew</label><select id="production-labor-crew">' + crewOptions + '</select></div>';
+      html += '<div class="production-field"><label for="production-labor-status">Approval / Status</label><select id="production-labor-status">' + ['Not Started','Draft','Submitted','Approved','Paid','Complete'].map(function (status) { return crmProductionOption(status, status, labor.status || 'Not Started'); }).join('') + '</select></div>';
+      html += '<div class="production-field full"><label for="production-labor-scope">Scope of work</label><textarea id="production-labor-scope">' + crmEscapeHtml(labor.scope || '') + '</textarea></div></div>';
+      html += '<table class="production-line-table"><thead><tr><th>Labor line item</th><th style="width:110px">Quantity</th><th style="width:120px">Unit price</th><th style="width:110px">Amount</th><th style="width:76px"></th></tr></thead><tbody id="production-labor-lines">' + crmRenderProductionLaborRows(labor.lineItems) + '</tbody></table>';
+      html += '<button class="production-secondary-btn" type="button" data-production-add-line="labor">Add Labor Line</button><div class="production-ticket-total">Total labor: <span id="production-labor-total" style="margin-left:8px">' + crmEscapeHtml(crmFormatMoney(laborTotal)) + '</span></div>';
+      html += '<div class="production-form-grid" style="margin-top:12px"><div class="production-field"><label for="production-crew-notes">Crew notes</label><textarea id="production-crew-notes">' + crmEscapeHtml(labor.crewNotes || '') + '</textarea></div><div class="production-field two"><label for="production-labor-production-notes">Production notes</label><textarea id="production-labor-production-notes">' + crmEscapeHtml(labor.productionNotes || '') + '</textarea></div></div>';
+      html += '<div class="production-modal-actions"><button class="production-secondary-btn" type="button" data-production-close-modal>Close</button><button class="production-primary-btn" type="button" data-production-save="labor">Save Labor Ticket</button></div></section>';
+      html += '<section class="production-modal-panel" data-production-panel="materials"' + (_productionSchedulerState.modalTab === 'materials' ? '' : ' hidden') + '><div class="production-form-grid">';
+      html += '<div class="production-field"><label for="production-material-supplier">Supplier</label><input id="production-material-supplier" type="text" value="' + crmEscapeHtml(material.supplier || '') + '" /></div>';
+      html += '<div class="production-field"><label for="production-material-date">Delivery date</label><input id="production-material-date" type="date" value="' + crmEscapeHtml(material.deliveryDate || '') + '" /></div>';
+      html += '<div class="production-field"><label for="production-material-status">Order status</label><select id="production-material-status">' + ['Not Ordered','Draft','Ordered','Confirmed','Delivered','Complete'].map(function (status) { return crmProductionOption(status, status, material.status || 'Not Ordered'); }).join('') + '</select></div>';
+      html += '<div class="production-field full"><label for="production-material-address">Delivery address</label><input id="production-material-address" type="text" value="' + crmEscapeHtml(material.deliveryAddress || crmGetJobFileLeadAddress(lead) || '') + '" /></div></div>';
+      html += '<table class="production-line-table"><thead><tr><th>Material line item</th><th style="width:120px">Quantity</th><th style="width:130px">Unit</th><th style="width:76px"></th></tr></thead><tbody id="production-material-lines">' + crmRenderProductionMaterialRows(material.lineItems) + '</tbody></table>';
+      html += '<button class="production-secondary-btn" type="button" data-production-add-line="material">Add Material Line</button><div class="production-field full" style="margin-top:12px"><label for="production-material-notes">Order notes</label><textarea id="production-material-notes">' + crmEscapeHtml(material.notes || '') + '</textarea></div>';
+      html += '<div class="production-modal-actions"><button class="production-secondary-btn" type="button" data-production-close-modal>Close</button><button class="production-primary-btn" type="button" data-production-save="materials">Save Material Order</button></div></section>';
+      html += '<section class="production-modal-panel" data-production-panel="overview"' + (_productionSchedulerState.modalTab === 'overview' ? '' : ' hidden') + '><div class="production-overview-cards">';
+      [['Production', production.status],['Crew', production.crewAssigned || 'Unassigned'],['Labor ticket', labor.status],['Material order', material.status],['Work order', workOrder.status],['Completion', production.closed ? 'Closed' : 'Open']].forEach(function (card) {
+        html += '<div class="production-overview-card"><div class="production-overview-value" style="font-size:14px">' + crmEscapeHtml(card[1] || 'Not Started') + '</div><div class="production-overview-label">' + crmEscapeHtml(card[0]) + '</div></div>';
+      });
+      html += '</div><div class="crm-job-file-panel-block" style="margin-top:14px"><div class="crm-job-file-block-title">Missing / Incomplete</div>' + (missing.length ? '<ul><li>' + missing.map(crmEscapeHtml).join('</li><li>') + '</li></ul>' : '<div class="production-status-chip">Production record is complete</div>') + '</div></section>';
+      html += '</div></div></div>';
+      host.innerHTML = html;
+    }
+
+    function crmOpenProductionJobModal(leadId, tab) {
+      _productionSchedulerState.selectedLeadId = String(leadId || '').trim();
+      _productionSchedulerState.modalTab = String(tab || 'details').trim() || 'details';
+      crmRenderProductionJobModal();
+    }
+
+    function crmCloseProductionJobModal() {
+      _productionSchedulerState.selectedLeadId = '';
+      var host = document.getElementById('production-scheduler-modal-host');
+      if (host) host.innerHTML = '';
+    }
+
+    function crmUpdateProductionSchedulerLead(leadId, updater, activityText) {
+      var updated = crmUpdateJobFileLeadRecord(leadId, function (lead) {
+        var data = crmGetLeadJobFileData(lead);
+        if (typeof updater === 'function') updater(data.production, lead);
+        data.production.updatedAt = new Date().toISOString();
+        crmApplyLeadJobFileData(lead, data);
+        crmPushLeadActivity(lead, activityText || 'Production schedule updated', 'production');
+      });
+      if (!updated) return false;
+      crmRenderProductionScheduler();
+      if (_productionSchedulerState.selectedLeadId) crmRenderProductionJobModal();
+      return true;
+    }
+
+    function crmReadProductionRows(selector, rowAttribute) {
+      return Array.prototype.slice.call(document.querySelectorAll(selector)).map(function (row) {
+        var item = {};
+        row.querySelectorAll('[data-production-line-field]').forEach(function (input) {
+          item[input.getAttribute('data-production-line-field')] = String(input.value || '').trim();
+        });
+        return item;
+      }).filter(function (item) { return !!(item.description || item.quantity || item.unitPrice); });
+    }
+
+    function crmRecalculateProductionLaborTotal() {
+      var total = crmReadProductionRows('#production-labor-lines [data-production-labor-row]', 'data-production-labor-row').reduce(function (sum, item) {
+        return sum + crmParseMoneyNumber(item.quantity) * crmParseMoneyNumber(item.unitPrice);
+      }, 0);
+      var totalEl = document.getElementById('production-labor-total');
+      if (totalEl) totalEl.textContent = crmFormatMoney(total);
+      document.querySelectorAll('#production-labor-lines [data-production-labor-row]').forEach(function (row) {
+        var qty = row.querySelector('[data-production-line-field="quantity"]');
+        var price = row.querySelector('[data-production-line-field="unitPrice"]');
+        var amount = row.querySelector('[data-production-line-amount]');
+        if (amount) amount.textContent = crmFormatMoney(crmParseMoneyNumber(qty && qty.value) * crmParseMoneyNumber(price && price.value));
+      });
+    }
+
+    function crmSaveProductionModalSection(section) {
+      var leadId = _productionSchedulerState.selectedLeadId;
+      if (!leadId) return;
+      if (section === 'details') {
+        crmUpdateProductionSchedulerLead(leadId, function (production) {
+          var crew = String(document.getElementById('production-detail-crew').value || '').trim();
+          var managed = crmGetTeamMembers().some(function (member) { return member && member.active !== false && member.role === 'Production' && String(member.name || '').trim().toLowerCase() === crew.toLowerCase(); });
+          production.trade = String(document.getElementById('production-detail-trade').value || 'Roofing').trim();
+          production.startDate = String(document.getElementById('production-detail-start').value || '').trim();
+          production.scheduledBuildDate = production.startDate;
+          production.scheduledEndDate = String(document.getElementById('production-detail-end').value || production.startDate).trim();
+          production.crewAssigned = crew;
+          production.crew = crew;
+          production.crewOverride = !!crew && !managed;
+          production.status = String(document.getElementById('production-detail-status').value || 'Not Scheduled').trim();
+          production.closed = production.status === 'Completed';
+          production.notes = String(document.getElementById('production-detail-notes').value || '').trim();
+          production.workOrder = production.workOrder || {};
+          production.workOrder.status = String(document.getElementById('production-work-order-status').value || 'Not Started').trim();
+          production.workOrder.information = String(document.getElementById('production-work-order-info').value || '').trim();
+        }, 'Production job details updated');
+        showUploadToast('Production job saved.');
+        return;
+      }
+      if (section === 'labor') {
+        crmUpdateProductionSchedulerLead(leadId, function (production) {
+          var lines = crmReadProductionRows('#production-labor-lines [data-production-labor-row]', 'data-production-labor-row');
+          production.laborTicket = production.laborTicket || {};
+          production.laborTicket.assignedCrew = String(document.getElementById('production-labor-crew').value || '').trim();
+          production.laborTicket.scope = String(document.getElementById('production-labor-scope').value || '').trim();
+          production.laborTicket.status = String(document.getElementById('production-labor-status').value || 'Not Started').trim();
+          production.laborTicket.lineItems = lines;
+          production.laborTicket.total = lines.reduce(function (sum, item) { return sum + crmParseMoneyNumber(item.quantity) * crmParseMoneyNumber(item.unitPrice); }, 0);
+          production.laborTicket.crewNotes = String(document.getElementById('production-crew-notes').value || '').trim();
+          production.laborTicket.productionNotes = String(document.getElementById('production-labor-production-notes').value || '').trim();
+          production.laborTicket.updatedAt = new Date().toISOString();
+        }, 'Labor ticket updated');
+        showUploadToast('Labor ticket saved.');
+        return;
+      }
+      if (section === 'materials') {
+        crmUpdateProductionSchedulerLead(leadId, function (production) {
+          production.materialOrder = production.materialOrder || {};
+          production.materialOrder.supplier = String(document.getElementById('production-material-supplier').value || '').trim();
+          production.materialOrder.deliveryAddress = String(document.getElementById('production-material-address').value || '').trim();
+          production.materialOrder.deliveryDate = String(document.getElementById('production-material-date').value || '').trim();
+          production.materialOrder.status = String(document.getElementById('production-material-status').value || 'Not Ordered').trim();
+          production.materialOrder.notes = String(document.getElementById('production-material-notes').value || '').trim();
+          production.materialOrder.lineItems = crmReadProductionRows('#production-material-lines [data-production-material-row]', 'data-production-material-row');
+          production.materialOrder.updatedAt = new Date().toISOString();
+          production.materialOrderStatus = production.materialOrder.status;
+        }, 'Material order updated');
+        showUploadToast('Material order saved.');
+      }
+    }
+
+    document.addEventListener('click', function (e) {
+      var productionNav = e.target.closest('[data-production-nav]');
+      if (productionNav) {
+        var direction = productionNav.getAttribute('data-production-nav');
+        var range = crmGetProductionDateRange();
+        if (direction === 'today') _productionSchedulerState.anchorDate = crmProductionTodayYmd();
+        else _productionSchedulerState.anchorDate = crmProductionAddDays(_productionSchedulerState.anchorDate || range.start, (direction === 'prev' ? -1 : 1) * range.days);
+        _productionSchedulerState.dateFrom = '';
+        _productionSchedulerState.dateTo = '';
+        crmRenderProductionScheduler();
+        return;
+      }
+      var viewBtn = e.target.closest('[data-production-view]');
+      if (viewBtn) {
+        _productionSchedulerState.view = viewBtn.getAttribute('data-production-view') || 'week';
+        _productionSchedulerState.dateFrom = '';
+        _productionSchedulerState.dateTo = '';
+        crmRenderProductionScheduler();
+        return;
+      }
+      var jobBtn = e.target.closest('[data-production-job]');
+      if (jobBtn) { crmOpenProductionJobModal(jobBtn.getAttribute('data-production-job'), 'details'); return; }
+      var tabBtn = e.target.closest('[data-production-modal-tab]');
+      if (tabBtn) { _productionSchedulerState.modalTab = tabBtn.getAttribute('data-production-modal-tab') || 'details'; crmRenderProductionJobModal(); return; }
+      if (e.target.closest('[data-production-close-modal]')) { crmCloseProductionJobModal(); return; }
+      var saveBtn = e.target.closest('[data-production-save]');
+      if (saveBtn) { crmSaveProductionModalSection(saveBtn.getAttribute('data-production-save')); return; }
+      var addLine = e.target.closest('[data-production-add-line]');
+      if (addLine) {
+        var lineType = addLine.getAttribute('data-production-add-line');
+        var tbody = document.getElementById(lineType === 'labor' ? 'production-labor-lines' : 'production-material-lines');
+        if (tbody) tbody.insertAdjacentHTML('beforeend', lineType === 'labor' ? crmRenderProductionLaborRows([{ description: '', quantity: '', unitPrice: '' }]) : crmRenderProductionMaterialRows([{ description: '', quantity: '', unit: 'Each' }]));
+        crmRecalculateProductionLaborTotal();
+        return;
+      }
+      var removeLine = e.target.closest('[data-production-remove-line]');
+      if (removeLine) {
+        var row = removeLine.closest('tr');
+        if (row) row.remove();
+        crmRecalculateProductionLaborTotal();
+        return;
+      }
+      var fileBtn = e.target.closest('[data-production-open-file]');
+      if (fileBtn && _productionSchedulerState.selectedLeadId) {
+        _crmCurrentJobFileLeadId = _productionSchedulerState.selectedLeadId;
+        crmOpenFileViewer(fileBtn.getAttribute('data-production-open-file'), 'job-file', _crmCurrentJobFileLeadId, 'production');
+      }
+    });
+
+    document.addEventListener('change', function (e) {
+      var filter = e.target.closest('[data-production-filter]');
+      if (!filter) return;
+      var key = filter.getAttribute('data-production-filter');
+      if (Object.prototype.hasOwnProperty.call(_productionSchedulerState, key)) _productionSchedulerState[key] = String(filter.value || '').trim();
+      if (key === 'dateFrom' && _productionSchedulerState.dateFrom) _productionSchedulerState.anchorDate = _productionSchedulerState.dateFrom;
+      crmRenderProductionScheduler();
+    });
+
+    document.addEventListener('input', function (e) {
+      if (e.target.closest('#production-labor-lines')) crmRecalculateProductionLaborTotal();
+    });
+
+    document.addEventListener('dragstart', function (e) {
+      var bar = e.target.closest('[data-production-job]');
+      if (!bar || !bar.closest('#page-crm-production')) return;
+      _productionSchedulerDragLeadId = bar.getAttribute('data-production-job') || '';
+      if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', _productionSchedulerDragLeadId); }
+    });
+
+    document.addEventListener('dragover', function (e) {
+      var cell = e.target.closest('[data-production-drop-date]');
+      if (!cell) return;
+      e.preventDefault();
+      cell.classList.add('is-dragover');
+    });
+
+    document.addEventListener('dragleave', function (e) {
+      var cell = e.target.closest('[data-production-drop-date]');
+      if (cell) cell.classList.remove('is-dragover');
+    });
+
+    document.addEventListener('drop', function (e) {
+      var cell = e.target.closest('[data-production-drop-date]');
+      if (!cell) return;
+      e.preventDefault();
+      cell.classList.remove('is-dragover');
+      var leadId = _productionSchedulerDragLeadId || (e.dataTransfer && e.dataTransfer.getData('text/plain')) || '';
+      var date = cell.getAttribute('data-production-drop-date') || '';
+      var crew = cell.getAttribute('data-production-drop-crew') || 'Unassigned';
+      if (!leadId || !date) return;
+      crmUpdateProductionSchedulerLead(leadId, function (production) {
+        var duration = Math.max(0, crmProductionDaysBetween(production.startDate || date, production.scheduledEndDate || production.startDate || date));
+        var assignedCrew = crew === 'Unassigned' ? '' : crew;
+        var managed = crmGetTeamMembers().some(function (member) { return member && member.active !== false && member.role === 'Production' && String(member.name || '').trim().toLowerCase() === assignedCrew.toLowerCase(); });
+        production.startDate = date;
+        production.scheduledBuildDate = date;
+        production.scheduledEndDate = crmProductionAddDays(date, duration);
+        production.crewAssigned = assignedCrew;
+        production.crew = assignedCrew;
+        production.crewOverride = !!assignedCrew && !managed;
+        if (production.status === 'Not Scheduled') production.status = 'Scheduled';
+      }, 'Production job rescheduled');
+      _productionSchedulerDragLeadId = '';
+      showUploadToast('Production schedule updated.');
+    });
+
+    document.addEventListener('click', function (e) {
+      if (e.target.matches('[data-production-modal-overlay]')) crmCloseProductionJobModal();
+    });
 
     /* ── Init activity panels on load ── */
     crmInitActivityPanels();
