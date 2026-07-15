@@ -7242,6 +7242,46 @@
       padding: 9px 11px; font-size: 13px; cursor: pointer;
     }
     .crm-job-file-file-link:hover { border-color: var(--accent-2); }
+    .crm-job-file-upload-dropzone {
+      width: 100%; min-height: 150px; box-sizing: border-box; border: 2px dashed var(--accent-2);
+      border-radius: 16px; background: rgba(202,168,92,0.08); color: var(--text);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; padding: 24px; text-align: center; cursor: pointer;
+    }
+    .crm-job-file-upload-dropzone:hover,
+    .crm-job-file-upload-dropzone.is-dragover { background: rgba(202,168,92,0.16); border-color: var(--accent); }
+    .crm-job-file-upload-dropzone strong { font-size: 16px; }
+    .crm-job-file-upload-dropzone span { color: var(--muted); font-size: 12px; }
+    .crm-job-file-thumbnail-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; margin-top: 14px;
+    }
+    .crm-job-file-thumbnail-card {
+      position: relative; min-width: 0; overflow: hidden; border: 1px solid var(--border);
+      border-radius: 14px; padding: 0; background: var(--panel); color: var(--text); cursor: pointer; text-align: left;
+    }
+    .crm-job-file-thumbnail-card:hover { border-color: var(--accent-2); box-shadow: 0 8px 22px rgba(15,23,42,0.12); }
+    .crm-job-file-thumbnail-image {
+      display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--panel-2);
+    }
+    .crm-job-file-thumbnail-meta { display: block; padding: 10px 11px; }
+    .crm-job-file-thumbnail-title { display: block; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .crm-job-file-thumbnail-subtitle { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .crm-job-file-report-thumbnail .crm-job-file-thumbnail-image {
+      display: flex; align-items: center; justify-content: center; background: linear-gradient(145deg, #f8f0d7, #d7b456);
+      color: #4b3510; font-size: 38px; font-weight: 900;
+    }
+    .crm-job-file-report-stamp {
+      position: absolute; top: 49px; left: -35px; width: 220px; padding: 7px 0;
+      transform: rotate(-32deg); background: rgba(131,26,26,0.9); color: #fff;
+      text-align: center; font-size: 20px; font-weight: 900; letter-spacing: 0.16em;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.22); pointer-events: none;
+    }
+    body.crm-job-file-photos-page-active #page-crm-job-file #jf-header-card,
+    body.crm-job-file-photos-page-active #page-crm-job-file #jf-quick-actions-card,
+    body.crm-job-file-photos-page-active #page-crm-job-file #jf-tabs,
+    body.crm-job-file-photos-page-active #page-crm-job-file #jf-open-lead-btn {
+      display: none !important;
+    }
     .crm-job-file-payment-total {
       font-size: 18px; font-weight: 800; color: var(--accent);
     }
@@ -12659,6 +12699,12 @@
       border: 1px solid #f0d9a8; border-radius: 6px; font-size: 12.5px;
       line-height: 1.5; color: #6b5a2e;
     }
+    .fl-insurance-call-prompt {
+      margin: 0 0 12px; padding: 12px 14px; background: #fff8ec;
+      border: 1px solid #f0d9a8; border-radius: 6px; color: #6b5a2e;
+    }
+    .fl-insurance-call-prompt p { margin: 0 0 10px; font-size: 13px; font-weight: 600; }
+    .fl-insurance-call-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
     .fl-assign-row { display: flex; align-items: flex-end; gap: 8px; }
     .fl-clear-btn {
@@ -14147,6 +14193,343 @@
     #page-start-inspection-step #crm-ground-inspection-next-btn {
       margin-left: auto;
     }
+    #page-inspection-photo-review,
+    #page-inspection-report-preview,
+    #page-lead-contingency-action {
+      color: #172033;
+      background: linear-gradient(180deg, #f2df9b 0%, #e5c05b 54%, #d0912f 100%);
+      min-height: calc(100vh - 80px);
+    }
+    .crm-inspection-review-shell,
+    .crm-inspection-report-shell {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    .crm-inspection-review-head,
+    .crm-inspection-report-toolbar {
+      background: #fff;
+      border: 1px solid #d8dde6;
+      border-radius: 18px;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .crm-inspection-review-title,
+    .crm-inspection-report-title {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1.15;
+      color: #172033;
+    }
+    .crm-inspection-review-subtitle {
+      margin: 7px 0 0;
+      color: #647084;
+      font-size: 14px;
+    }
+    .crm-inspection-review-actions,
+    .crm-inspection-review-footer,
+    .crm-inspection-report-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .crm-inspection-review-actions,
+    .crm-inspection-report-actions { margin-top: 16px; }
+    .crm-inspection-review-footer {
+      justify-content: space-between;
+      background: #fff;
+      border: 1px solid #d8dde6;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-top: 18px;
+      position: sticky;
+      bottom: 12px;
+      z-index: 4;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    }
+    .crm-inspection-photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 16px;
+    }
+    .crm-inspection-photo-card {
+      min-width: 0;
+      background: #fff;
+      border: 1px solid #d8dde6;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+    }
+    .crm-inspection-photo-thumb-btn {
+      width: 100%;
+      height: 180px;
+      border: 0;
+      padding: 0;
+      background: #edf0f4;
+      cursor: zoom-in;
+      display: block;
+    }
+    .crm-inspection-photo-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .crm-inspection-photo-card-body { padding: 12px; }
+    .crm-inspection-photo-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #596579;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 9px;
+    }
+    .crm-inspection-note-row { display: flex; align-items: stretch; gap: 7px; }
+    .crm-inspection-photo-note {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid #ccd4df;
+      border-radius: 9px;
+      padding: 9px 10px;
+      font-size: 13px;
+      color: #172033;
+    }
+    .crm-inspection-mic-btn {
+      width: 40px;
+      flex: 0 0 40px;
+      border: 1px solid #d7b56f;
+      border-radius: 9px;
+      background: #fff8e8;
+      color: #9a6700;
+      cursor: pointer;
+      font-size: 17px;
+    }
+    .crm-inspection-remove-btn {
+      width: 100%;
+      margin-top: 9px;
+      border: 0;
+      background: transparent;
+      color: #b42318;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .crm-inspection-empty {
+      background: rgba(255,255,255,0.94);
+      border: 1px dashed #d1ad62;
+      border-radius: 16px;
+      padding: 40px 20px;
+      text-align: center;
+      color: #687386;
+    }
+    .crm-inspection-voice-message {
+      min-height: 20px;
+      margin: 10px 0 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #8a620c;
+    }
+    .crm-inspection-image-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1200;
+      background: rgba(7, 12, 24, 0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .crm-inspection-image-modal[hidden] { display: none; }
+    .crm-inspection-image-dialog {
+      position: relative;
+      width: min(1100px, 100%);
+      max-height: 92vh;
+      display: grid;
+      justify-items: center;
+    }
+    .crm-inspection-image-dialog img {
+      max-width: 100%;
+      max-height: 82vh;
+      object-fit: contain;
+      border-radius: 12px;
+      background: #fff;
+    }
+    .crm-inspection-image-close {
+      position: absolute;
+      top: -14px;
+      right: -14px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      background: #172033;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .crm-inspection-report-toolbar-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .crm-inspection-report-layout {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #4b5668;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .crm-inspection-report-layout select {
+      border: 1px solid #ccd4df;
+      border-radius: 9px;
+      padding: 9px 11px;
+      background: #fff;
+      color: #172033;
+    }
+    .crm-inspection-report-pages { display: grid; gap: 22px; justify-items: center; }
+    .crm-inspection-report-page {
+      width: min(816px, 100%);
+      min-height: 1056px;
+      box-sizing: border-box;
+      background: #fff;
+      border: 1px solid #d8dde6;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
+      padding: 44px;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .crm-inspection-report-page::before {
+      content: '';
+      position: absolute;
+      inset: 8% 7%;
+      z-index: 0;
+      background: url('./assets/hailmoney-logo.png') center / contain no-repeat;
+      filter: grayscale(1) contrast(1.25);
+      opacity: 0.055;
+      pointer-events: none;
+    }
+    .crm-inspection-report-page > * { position: relative; z-index: 1; }
+    .crm-inspection-report-page::after {
+      content: 'Created with Hail Money';
+      position: absolute;
+      right: 18px;
+      bottom: 14px;
+      color: #667085;
+      font-size: 9px;
+      letter-spacing: 0.03em;
+      z-index: 2;
+    }
+    .crm-inspection-report-cover {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 18px;
+    }
+    .crm-inspection-report-logo { max-width: 180px; max-height: 130px; object-fit: contain; }
+    .crm-inspection-report-cover h2 { margin: 0; font-size: 34px; }
+    .crm-inspection-report-company { color: #5e6878; line-height: 1.55; }
+    .crm-inspection-report-cover-details {
+      width: min(560px, 100%);
+      border-top: 2px solid #d3a03c;
+      margin-top: 16px;
+      padding-top: 20px;
+      display: grid;
+      gap: 11px;
+      text-align: left;
+    }
+    .crm-inspection-report-cover-row strong { display: inline-block; min-width: 150px; }
+    .crm-inspection-report-section-title {
+      margin: 0 0 22px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #d3a03c;
+      font-size: 24px;
+    }
+    .crm-inspection-report-photo-grid { display: grid; gap: 18px; }
+    .crm-inspection-report-photo-grid.layout-2 { grid-template-columns: 1fr; }
+    .crm-inspection-report-photo-grid.layout-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .crm-inspection-report-photo-grid.layout-1 { grid-template-columns: 1fr; }
+    .crm-inspection-report-photo-grid.layout-6,
+    .crm-inspection-report-photo-grid.layout-8 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .crm-inspection-report-photo {
+      border: 1px solid #dfe3e9;
+      border-radius: 12px;
+      padding: 10px;
+      min-width: 0;
+      background: #fff;
+    }
+    .crm-inspection-report-photo img {
+      width: 100%;
+      height: 250px;
+      object-fit: contain;
+      background: #f0f2f5;
+      border-radius: 8px;
+      cursor: zoom-in;
+    }
+    .layout-4 .crm-inspection-report-photo img { height: 190px; }
+    .layout-1 .crm-inspection-report-photo img { height: 650px; }
+    .layout-6 .crm-inspection-report-photo img { height: 145px; }
+    .layout-8 .crm-inspection-report-photo img { height: 115px; }
+    .crm-inspection-report-photo input {
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 9px;
+      border: 1px solid #ccd4df;
+      border-radius: 8px;
+      padding: 8px 9px;
+      font-size: 12px;
+    }
+    .crm-inspection-report-caption {
+      display: none;
+      margin-top: 9px;
+      color: #344054;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .crm-inspection-report-photo-tools { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .crm-inspection-report-photo-tools button {
+      border: 1px solid #d8dde6;
+      border-radius: 7px;
+      background: #fff;
+      padding: 6px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .crm-inspection-report-excluded {
+      width: min(816px, 100%);
+      background: rgba(255,255,255,0.94);
+      border-radius: 14px;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .crm-inspection-report-excluded button { margin: 5px 6px 0 0; }
+    .crm-inspection-report-readonly .crm-inspection-report-photo-tools,
+    .crm-inspection-report-readonly .crm-inspection-report-photo input { display: none; }
+    .crm-inspection-report-readonly .crm-inspection-report-caption { display: block; }
+    .crm-lead-contingency-card {
+      width: min(680px, calc(100% - 32px));
+      margin: 42px auto;
+      padding: 28px;
+      box-sizing: border-box;
+      background: #fff;
+      border: 1px solid #d8dde6;
+      border-radius: 18px;
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+    }
+    .crm-lead-contingency-card h1 { margin: 0 0 8px; font-size: 26px; }
+    .crm-lead-contingency-card p { color: #667085; line-height: 1.55; }
+    .crm-lead-contingency-actions { display: grid; gap: 10px; margin-top: 22px; }
+    .crm-lead-contingency-actions .btn { min-height: 48px; justify-content: center; }
     @media (max-width: 760px) {
       #page-start-inspection-workflow .crm-start-inspection-card,
       #page-start-inspection-step .crm-start-inspection-card,
@@ -14175,6 +14558,13 @@
       #page-start-inspection-workflow #crm-start-inspection-landing-start-btn {
         width: clamp(140px, 46vw, 168px);
       }
+      .crm-inspection-review-shell,
+      .crm-inspection-report-shell { padding: 14px; }
+      .crm-inspection-report-page { min-height: 0; padding: 24px 18px; }
+      .crm-inspection-report-photo-grid.layout-4 { grid-template-columns: 1fr; }
+      .crm-inspection-report-photo-grid.layout-6,
+      .crm-inspection-report-photo-grid.layout-8 { grid-template-columns: 1fr; }
+      .crm-inspection-review-footer { position: static; }
       #page-crm-leaderboard .crm-leaderboard-card {
         padding: 20px 16px;
       }
@@ -14780,38 +15170,7 @@
       overflow: hidden;
       isolation: isolate;
     }
-    body.lead-detail-page-active .topbar {
-      position: fixed;
-      top: 0;
-      right: 0;
-      left: 0;
-      z-index: 60;
-      min-height: 118px;
-      padding: 10px 20px 6px;
-      background: #1a1a2e;
-      border-bottom-color: rgba(223,188,95,0.18);
-      box-shadow: inset 0 2px 0 rgba(255,255,255,0.88);
-    }
-    body.lead-detail-page-active.crm-standard-header-back-visible .topbar { margin-bottom: 0; }
     body.lead-detail-page-active .screen { padding: 118px 0 40px; }
-    body.lead-detail-page-active .topbar-left {
-      flex-direction: row;
-      align-items: center;
-      justify-content: flex-start;
-    }
-    body.lead-detail-page-active .crm-header-inline-title:not([hidden]) {
-      display: block;
-      color: #fff;
-      font-size: 24px;
-      font-weight: 700;
-    }
-    body.lead-detail-page-active #global-header-back-btn { display: none !important; }
-    body.lead-detail-page-active .pipeline-header-center {
-      display: flex !important;
-      flex-direction: row;
-      align-items: center;
-      gap: 16px;
-    }
     body.lead-detail-page-active .pipeline-header-center .crm-pipe-filter-bar {
       display: flex;
       flex-wrap: nowrap;
@@ -14820,14 +15179,6 @@
       padding: 0;
       overflow: visible;
     }
-    body.lead-detail-page-active .map-header-center-heading,
-    body.lead-detail-page-active .map-header-center-subtitle { color: #fff; }
-    body.lead-detail-page-active .map-header-center-subtitle {
-      display: block !important;
-      margin-top: -6px;
-      text-transform: uppercase;
-    }
-    body.lead-detail-page-active .map-header-center-brand img { height: 54px; }
     body.lead-detail-page-active .crm-pipe-filter-btn {
       border-color: rgba(223,188,95,0.36);
       background: rgba(255,255,255,0.06);
@@ -14946,7 +15297,6 @@
       border-color: #080808;
       background: #ffe39a;
     }
-    #page-lead-detail .jf-tab-btn[data-jf-tab="pfo"] { display: none; }
     #page-lead-detail .crm-wrap {
       width: 100%;
       max-width: none;
@@ -15472,17 +15822,228 @@
       padding: 5px 12px; cursor: pointer; font-size: 13px; color: var(--muted); }
     .jf-doc-cat-back:hover { border-color: var(--accent-2); color: var(--text); }
     .jf-doc-cat-title { font-size: 16px; font-weight: 700; }
+
+    /* One authoritative CRM header. Route classes may change header data
+       (page/customer title and optional pipeline filters), never its shell. */
+    body.crm-standard-header-active > .app-shell > .topbar {
+      position: fixed !important;
+      top: 0;
+      right: 0;
+      left: 0;
+      z-index: 60;
+      width: 100% !important;
+      height: 118px;
+      min-height: 118px;
+      margin: 0 !important;
+      padding: 10px 20px 6px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 16px;
+      box-sizing: border-box;
+      background: #1a1a2e !important;
+      border-bottom: 1px solid rgba(223,188,95,0.18) !important;
+      box-shadow: inset 0 2px 0 rgba(255,255,255,0.88) !important;
+    }
+    body.crm-standard-header-active > .app-shell > .screen {
+      padding-top: 118px !important;
+      padding-right: 0 !important;
+      padding-left: 0 !important;
+    }
+    body.crm-standard-header-active.main-menu-page-active > .app-shell > .screen {
+      padding-top: 0 !important;
+    }
+    body.crm-standard-header-active .topbar-left {
+      grid-column: 1;
+      justify-self: start;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 18px;
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+    }
+    body.crm-standard-header-active .crm-header-company-logo {
+      display: block;
+      width: 68px;
+      height: 68px;
+      flex: 0 0 68px;
+      object-fit: contain;
+      object-position: center;
+    }
+    body.crm-standard-header-active .crm-header-inline-title:not([hidden]) {
+      display: block;
+      min-width: 0;
+      color: #fff;
+      font-size: 24px;
+      line-height: 1.08;
+      font-weight: 700;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    body.crm-standard-header-active .crm-header-page-title,
+    body.crm-standard-header-active .map-header-brand,
+    body.crm-standard-header-active .pipeline-header-meta {
+      display: none !important;
+    }
+    body.crm-standard-header-active .pipeline-header-center {
+      grid-column: 2;
+      justify-self: center;
+      display: flex !important;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      min-width: 0;
+    }
+    body.crm-standard-header-active .map-header-center-brand {
+      display: flex !important;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      color: #fff;
+      text-align: center;
+    }
+    body.crm-standard-header-active .map-header-center-heading {
+      color: #fff;
+      font-size: 20px;
+      line-height: 1.05;
+    }
+    body.crm-standard-header-active .map-header-center-brand img {
+      display: block;
+      width: auto;
+      height: 54px;
+      max-width: min(220px, 18vw);
+      object-fit: contain;
+    }
+    body.crm-standard-header-active .crm-header-context-title:not([hidden]) {
+      display: block;
+      min-width: 0;
+      max-width: min(320px, 24vw);
+      color: #fff;
+      font-size: 24px;
+      line-height: 1.08;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    body.crm-standard-header-active .map-header-center-subtitle {
+      display: none !important;
+    }
+    body.crm-standard-header-active .pipeline-header-center .crm-pipe-filter-bar {
+      display: none !important;
+    }
+    body.crm-standard-header-active.pipeline-page-active .pipeline-header-center .crm-pipe-filter-bar,
+    body.crm-standard-header-active.lead-detail-page-active .pipeline-header-center .crm-pipe-filter-bar {
+      display: flex !important;
+    }
+    body.crm-standard-header-active .topbar-right {
+      grid-column: 3;
+      justify-self: end;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin: 0;
+    }
+    body.crm-standard-header-active .topbar-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    body.crm-standard-header-active .jf-notif-btn {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      color: #f6c75f;
+    }
+    body.crm-standard-header-active .crm-profile-toggle {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(232,190,94,0.7);
+      color: #fff;
+    }
+    body.crm-standard-header-active .crm-profile-name,
+    body.crm-standard-header-active .crm-profile-role,
+    body.crm-standard-header-active .crm-profile-caret {
+      color: #fff;
+    }
+    body.crm-standard-header-active .crm-profile-avatar {
+      border-color: rgba(240,205,126,0.62);
+      background: rgba(232,190,94,0.2);
+      color: #f7de9a;
+    }
+    body.crm-standard-header-active #global-header-back-btn {
+      position: fixed;
+      top: 126px;
+      left: 133px;
+      z-index: 58;
+      width: 48px;
+      height: 48px;
+      padding: 5px;
+      margin: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #111;
+      box-shadow: none;
+      cursor: pointer;
+    }
+    body.crm-standard-header-active #global-header-back-btn.is-visible {
+      display: inline-flex !important;
+    }
+    body.crm-standard-header-active #global-header-back-btn:hover,
+    body.crm-standard-header-active #global-header-back-btn:focus-visible {
+      background: rgba(255,255,255,0.34);
+      color: #7b5205;
+      outline: none;
+    }
+    body.crm-standard-header-active #global-header-back-btn svg {
+      width: 36px;
+      height: 36px;
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 3.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+    body.crm-standard-header-active.crm-standard-header-back-visible .crm-dashboard-mini-body {
+      padding-left: 66px;
+    }
+    body.pipeline-page-active.crm-standard-header-back-visible #page-crm-pipeline .hm-dashboard-ref .center {
+      padding-left: 66px;
+    }
+    body.crm-standard-header-active.lead-detail-page-active.crm-standard-header-back-visible #page-lead-detail .jf-tab-bar {
+      padding-left: 70px;
+    }
+    body.crm-standard-header-active .page.active .page-actions > button[id*="back"],
+    body.crm-standard-header-active .page.active .page-actions > .back-to-menu,
+    body.crm-standard-header-active .page.active .crm-calendar-sidebar-back {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <div class="topbar-left">
-        <button type="button" class="btn global-header-back-btn" id="global-header-back-btn">Back</button>
+        <button type="button" class="global-header-back-btn" id="global-header-back-btn" aria-label="Back to previous page" title="Back to previous page">
+          <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M24 7 11 20l13 13"></path><path d="M12 20h18"></path></svg>
+          <span class="sr-only">Back</span>
+        </button>
         <div class="pipeline-header-company" id="crm-pipeline-header-company" hidden>
           <img id="crm-pipeline-header-company-logo" class="pipeline-header-company-logo" src="./assets/hailmoney-logo.png?v=2" alt="Company Logo" draggable="false" />
         </div>
-        <div class="map-header-brand" id="map-header-brand" role="button" tabindex="0" aria-label="Go to Main Menu">
+        <div class="map-header-brand" id="map-header-brand" role="button" tabindex="0" aria-label="Hail Money">
           <img class="app-top-hail-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
           <div class="map-header-title">Hail Money</div>
         </div>
@@ -15498,11 +16059,11 @@
       </div>
       <div class="pipeline-header-center" id="pipeline-header-center">
         <div id="crm-pipeline-stage-filter-left" class="crm-pipe-filter-bar crm-pipeline-header-filter" aria-label="Lead stages"></div>
-        <div class="map-header-center-brand" id="map-header-center-brand" role="button" tabindex="0" aria-label="Go to Main Menu">
+        <div class="map-header-center-brand" id="map-header-center-brand" role="button" tabindex="0" aria-label="Hail Money">
           <span class="map-header-center-heading">Hail Money</span>
           <img src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
-          <span class="map-header-center-subtitle">Main Menu</span>
         </div>
+        <div class="crm-header-context-title" id="crm-header-context-title" hidden></div>
         <div id="crm-pipeline-stage-filter-right" class="crm-pipe-filter-bar crm-pipeline-header-filter" aria-label="Job stages"></div>
         <div class="pipeline-header-meta" id="pipeline-header-meta">
           <div class="pipeline-header-title" id="pipeline-header-title">Hail Money</div>
@@ -15510,7 +16071,7 @@
       </div>
       <div class="topbar-right">
         <div class="topbar-controls">
-          <button class="jf-notif-btn" type="button" id="jf-notif-btn" title="Notifications" aria-label="Notifications" style="display:none;">
+          <button class="jf-notif-btn" type="button" id="jf-notif-btn" title="Notifications" aria-label="Notifications">
             🔔<span class="jf-notif-badge" id="jf-notif-badge"></span>
           </button>
           <div class="crm-profile-menu" id="crm-profile-menu">
@@ -16970,6 +17531,74 @@
       </section>
 
       <!-- ── DocuSign / Forms Shell ── -->
+      <section id="page-inspection-photo-review" class="page" data-crm-header-title="Photo Review">
+        <div class="crm-inspection-review-shell">
+          <div class="crm-inspection-review-head">
+            <h1 class="crm-inspection-review-title">Review Photos</h1>
+            <p class="crm-inspection-review-subtitle" id="crm-inspection-review-section"></p>
+            <div class="crm-inspection-review-actions">
+              <button class="btn btn-primary" type="button" id="crm-inspection-review-camera-btn">Take Picture</button>
+              <button class="btn" type="button" id="crm-inspection-review-device-btn">Select From Device</button>
+            </div>
+            <div class="crm-inspection-voice-message" id="crm-inspection-voice-message" aria-live="polite"></div>
+          </div>
+          <div class="crm-inspection-photo-grid" id="crm-inspection-review-grid"></div>
+          <div class="crm-inspection-review-footer">
+            <button class="btn" type="button" id="crm-inspection-review-back-btn">Back</button>
+            <button class="btn btn-primary" type="button" id="crm-inspection-review-continue-btn">Continue</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-lead-contingency-action" class="page" data-crm-header-title="Contingency">
+        <div class="crm-lead-contingency-card">
+          <h1>Contingency Action</h1>
+          <p id="crm-lead-contingency-summary">Choose how to handle the homeowner contingency. The Property Photo Report Review opens after this step.</p>
+          <div class="crm-lead-contingency-actions">
+            <button class="btn btn-primary" type="button" id="crm-contingency-docusign-btn">Sign with DocuSign</button>
+            <button class="btn" type="button" id="crm-contingency-email-btn">Email the Contingency</button>
+            <button class="btn" type="button" id="crm-contingency-upload-btn">Upload Signed Contingency</button>
+            <button class="btn" type="button" id="crm-contingency-skip-btn">Skip for Now</button>
+          </div>
+          <input type="file" id="crm-contingency-upload-input" accept="application/pdf,.pdf" hidden>
+        </div>
+      </section>
+
+      <section id="page-inspection-report-preview" class="page" data-crm-header-title="Property Photo Report">
+        <div class="crm-inspection-report-shell">
+          <div class="crm-inspection-report-toolbar">
+            <div class="crm-inspection-report-toolbar-row">
+              <div>
+                <h1 class="crm-inspection-report-title">Property Photo Report Review</h1>
+                <p class="crm-inspection-review-subtitle" id="crm-inspection-report-subtitle">Review every page before finalizing the Property Photo Report.</p>
+              </div>
+              <label class="crm-inspection-report-layout" id="crm-inspection-report-layout-wrap">Photo layout
+                <select id="crm-inspection-report-layout">
+                  <option value="1">One photo per page</option>
+                  <option value="2">Two photos per page</option>
+                  <option value="4" selected>Four photos per page</option>
+                  <option value="6">Six photos per page</option>
+                  <option value="8">Eight photos per page</option>
+                </select>
+              </label>
+            </div>
+            <div class="crm-inspection-report-actions">
+              <button class="btn" type="button" id="crm-inspection-report-back-btn">Back to Contingency</button>
+              <button class="btn btn-primary" type="button" id="crm-inspection-report-approve-btn">Finalize &amp; Save Report</button>
+            </div>
+          </div>
+          <div class="crm-inspection-report-pages" id="crm-inspection-report-pages"></div>
+          <div class="crm-inspection-report-excluded" id="crm-inspection-report-excluded" hidden></div>
+        </div>
+      </section>
+
+      <div class="crm-inspection-image-modal" id="crm-inspection-image-modal" role="dialog" aria-modal="true" aria-label="Photo preview" hidden>
+        <div class="crm-inspection-image-dialog">
+          <button class="crm-inspection-image-close" type="button" id="crm-inspection-image-close" aria-label="Close photo preview">&times;</button>
+          <img id="crm-inspection-image-large" alt="Inspection photo preview" />
+        </div>
+      </div>
+
       <section id="page-docusign" class="page" data-crm-header-title="Forms &amp; Signatures">
         <div class="crm-wrap crm-start-inspection-shell">
           <div class="crm-start-inspection-card">
@@ -17718,14 +18347,14 @@
       <section id="page-lead-detail" class="page">
         <div class="jf-folder-wrap">
           <div class="jf-tab-bar" role="tablist" aria-label="Job folder sections">
-            <button class="jf-tab-btn" type="button" data-jf-tab="photos">📷 Upload Photos</button>
+            <button class="jf-tab-btn" type="button" data-jf-tab="photos">📷 Photos</button>
             <button class="jf-tab-btn" type="button" data-jf-tab="documents">📄 Documents</button>
             <button class="jf-tab-btn" type="button" data-jf-tab="reports">📊 Reports</button>
             <button class="jf-tab-btn active" type="button" data-jf-tab="production">📅 Production</button>
             <button class="jf-tab-btn" type="button" data-jf-tab="financial">📋 Financial Worksheet</button>
             <button class="jf-tab-btn" type="button" data-jf-tab="invoice">🧾 Invoice</button>
             <button class="jf-tab-btn" type="button" data-jf-tab="estimates">📐 Estimates</button>
-            <button class="jf-tab-btn" type="button" data-jf-tab="pfo">💬 PFO Messages</button>
+            <button class="jf-tab-btn" type="button" data-jf-tab="messages">💬 Messages</button>
           </div>
           <div class="crm-wrap">
           <div class="page-actions" style="margin-bottom:14px;display:none;">
@@ -18961,7 +19590,59 @@
         </div>
       </section>
 
+      <section id="page-crm-job-file" class="page" data-crm-header-title="Job Folder Section">
+        <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell>
+          <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
+          <div class="crm-dashboard-mini-body">
+            <div class="crm-layout">
+              <div class="crm-main-column">
+                <div class="crm-wrap crm-job-file-wrap">
+                  <div class="page-actions">
+                    <button class="btn" type="button" id="jf-back-btn">Back to Job Folder</button>
+                    <button class="btn" type="button" id="jf-open-lead-btn">Open Lead Detail</button>
+                  </div>
+                  <div id="jf-header-card" class="crm-detail-card crm-job-file-header-card"></div>
+                  <div id="jf-quick-actions-card" class="crm-detail-card crm-job-file-quick-card"></div>
+                  <div id="jf-tabs" class="crm-job-file-tabs">
+                    <button class="crm-job-file-tab-btn active" type="button" data-jf-tab="overview">Overview</button>
+                    <button class="crm-job-file-tab-btn" type="button" data-jf-tab="activity">Activity</button>
+                    <button class="crm-job-file-tab-btn" type="button" data-jf-tab="photos">Photos</button>
+                    <button class="crm-job-file-tab-btn" type="button" data-jf-tab="documents">Documents</button>
+                    <button class="crm-job-file-tab-btn" type="button" data-jf-tab="reports">Reports</button>
+                    <button class="crm-job-file-tab-btn" type="button" data-jf-tab="estimate">Estimates</button>
+                    <button class="crm-job-file-tab-btn" type="button" data-jf-tab="insurance">Insurance</button>
+                    <button class="crm-job-file-tab-btn" type="button" data-jf-tab="calendar">Calendar</button>
+                    <button class="crm-job-file-tab-btn" type="button" data-jf-tab="tasks">Tasks</button>
+                    <button class="crm-job-file-tab-btn" type="button" data-jf-tab="production">Production</button>
+                    <button class="crm-job-file-tab-btn" type="button" data-jf-tab="payments">Invoice</button>
+                    <button class="crm-job-file-tab-btn" type="button" data-jf-tab="messages">Messages</button>
+                  </div>
+                  <div id="jf-tab-content" class="crm-detail-card"></div>
+                  <input type="file" id="jf-photo-upload-input" accept="image/*,.heic,.heif" multiple hidden />
+                  <input type="file" id="jf-doc-upload-input" accept="image/*,.pdf,.doc,.docx,.txt" hidden />
+                </div>
+              </div>
+              <div class="crm-activity-column">
+                <div class="crm-activity-panel">
+                  <div class="crm-activity-panel-title">Activity Feed</div>
+                  <div class="crm-activity-quick-actions">
+                    <button class="crm-activity-quick-btn" type="button" data-ap-action="add-note">📝 Add Note</button>
+                    <button class="crm-activity-quick-btn" type="button" data-ap-action="log-comm">📋 Log Communication</button>
+                    <button class="crm-activity-quick-btn" type="button" data-ap-action="add-task">✅ Add Task</button>
+                  </div>
+                  <hr class="crm-activity-divider" />
+                  <div class="crm-activity-feed-list"><div class="crm-activity-empty">No activity yet.</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="page-crm-financial-worksheet" class="page" data-crm-header-title="Financial Worksheet">
+        <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell>
+          <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
+          <div class="crm-dashboard-mini-body">
         <div class="crm-layout">
           <div class="crm-main-column">
             <div class="crm-wrap crm-job-file-wrap">
@@ -18985,9 +19666,14 @@
             </div>
           </div>
         </div>
+          </div>
+        </div>
       </section>
 
       <section id="page-crm-job-profitability" class="page" data-crm-header-title="Job Profitability">
+        <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell>
+          <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
+          <div class="crm-dashboard-mini-body">
         <div class="crm-layout">
           <div class="crm-main-column">
             <div class="crm-wrap crm-job-file-wrap">
@@ -19009,6 +19695,8 @@
               <hr class="crm-activity-divider" />
               <div class="crm-activity-feed-list"><div class="crm-activity-empty">No activity yet.</div></div>
             </div>
+          </div>
+        </div>
           </div>
         </div>
       </section>
@@ -19795,20 +20483,27 @@
                         <div class="fl-field fl-wide">
                           <select id="fl-insuranceCompany">
                             <option value="">Insurance Company</option>
-                            <option value="State Farm">State Farm</option>
-                            <option value="Allstate">Allstate</option>
-                            <option value="USAA">USAA</option>
-                            <option value="Progressive">Progressive</option>
-                            <option value="Farmers">Farmers</option>
-                            <option value="Liberty Mutual">Liberty Mutual</option>
-                            <option value="Nationwide">Nationwide</option>
-                            <option value="Travelers">Travelers</option>
+                            <option value="State Farm" data-claim-phone="8007325246">State Farm</option>
+                            <option value="Allstate" data-claim-phone="8002557828">Allstate</option>
+                            <option value="USAA" data-claim-phone="8005318722">USAA</option>
+                            <option value="Progressive" data-claim-phone="8007764737">Progressive</option>
+                            <option value="Farmers" data-claim-phone="8004357764">Farmers</option>
+                            <option value="Liberty Mutual" data-claim-phone="8002252467">Liberty Mutual</option>
+                            <option value="Nationwide" data-claim-phone="8004213535">Nationwide</option>
+                            <option value="Travelers" data-claim-phone="8002524633">Travelers</option>
                           </select>
                         </div>
                         <label class="fl-checkbox-inline fl-inline-check"><input type="checkbox" id="fl-insuranceOther" /> Other</label>
                       </div>
                       <div class="fl-field" id="fl-insuranceOtherWrap" style="display:none;">
                         <input id="fl-insuranceCompanyOther" type="text" placeholder="Insurance company name" autocomplete="off" />
+                      </div>
+                      <div class="fl-insurance-call-prompt" id="fl-insurance-call-prompt" role="dialog" aria-live="polite" hidden>
+                        <p>Would you like to call in the claim now?</p>
+                        <div class="fl-insurance-call-actions">
+                          <button class="btn btn-primary" type="button" id="fl-call-insurance-btn">Call Insurance Company</button>
+                          <button class="btn" type="button" id="fl-skip-insurance-call-btn">Skip</button>
+                        </div>
                       </div>
 
                       <div class="fl-grid fl-grid-2 fl-with-rule">
@@ -19824,7 +20519,7 @@
                       <label class="fl-checkbox-inline"><input type="checkbox" id="fl-claimFiled" /> Claim Filed</label>
 
                       <div class="fl-grid fl-grid-1 fl-with-rule">
-                        <div class="fl-field fl-req-visual"><label>Claim Number<span class="req">*</span></label><input id="fl-claimNumber" type="text" placeholder="Claim Number" autocomplete="off" /></div>
+                        <div class="fl-field"><label>Claim Number</label><input id="fl-claimNumber" type="text" placeholder="Claim Number" autocomplete="off" /></div>
                       </div>
 
                       <div class="fl-grid fl-grid-1 fl-with-rule">
@@ -19889,49 +20584,6 @@
                     </div>
                   </section>
 
-                  <!-- ── Property Concerns (retained) ── -->
-                  <section class="fl-card">
-                    <div class="fl-card-head"><span class="fl-card-title">Property Concerns</span></div>
-                    <div class="fl-card-body">
-                      <div class="crm-checkbox-group">
-                        <label class="crm-checkbox-item"><input type="checkbox" id="fl-roof"    value="Roof" />    Roof</label>
-                        <label class="crm-checkbox-item"><input type="checkbox" id="fl-gutters" value="Gutters" /> Gutters</label>
-                        <label class="crm-checkbox-item"><input type="checkbox" id="fl-siding"  value="Siding" />  Siding</label>
-                        <label class="crm-checkbox-item"><input type="checkbox" id="fl-windows" value="Windows" /> Windows</label>
-                        <label class="crm-checkbox-item"><input type="checkbox" id="fl-fence"   value="Fence" />   Fence</label>
-                        <label class="crm-checkbox-item"><input type="checkbox" id="fl-other"   value="Other" />   Other</label>
-                      </div>
-                    </div>
-                  </section>
-
-                  <!-- ── Inspection & Contingency Uploads (retained) ── -->
-                  <section class="fl-card">
-                    <div class="fl-card-head"><span class="fl-card-title">Inspection &amp; Contingency Uploads</span></div>
-                    <div class="fl-card-body">
-                      <div class="fl-grid fl-grid-1">
-                        <div class="fl-field"><label>Storm Date</label><input id="fl-stormDate" type="date" /></div>
-                      </div>
-                      <div class="fl-field" style="margin-bottom:16px;">
-                        <label>Inspection Photos</label>
-                        <input type="file" id="fl-inspect-photos" multiple accept="image/*"
-                               style="width:100%;background:var(--input);border:1px solid var(--border);
-                                      border-radius:10px;padding:10px 13px;color:var(--text);
-                                      font-size:13px;cursor:pointer;" />
-                      </div>
-                      <div class="fl-field" style="margin-bottom:12px;">
-                        <label>Signed Contingency Agreement <span style="font-size:11px;color:var(--muted);">(PDF only)</span></label>
-                        <input type="file" id="fl-contingency-pdf" accept="application/pdf,.pdf"
-                               style="width:100%;background:var(--input);border:1px solid var(--border);
-                                      border-radius:10px;padding:10px 13px;color:var(--text);
-                                      font-size:13px;cursor:pointer;" />
-                      </div>
-                      <label class="crm-checkbox-item" style="padding-top:6px;align-items:flex-start;gap:10px;font-size:14px;">
-                        <input type="checkbox" id="fl-contingency-confirmed" style="margin-top:2px;flex-shrink:0;width:16px;height:16px;accent-color:var(--accent);" />
-                        <span>I confirm this contingency agreement is signed.</span>
-                      </label>
-                    </div>
-                  </section>
-
                 </div><!-- /.fl-main -->
 
                 <aside class="fl-sidebar">
@@ -19980,7 +20632,7 @@
               </div><!-- /.fl-layout -->
 
               <div class="fl-save-bar">
-                <div id="fl-validation-msg" class="validation-msg" style="display:none;">Please fill in all required fields (First Name, Last Name, Phone, Street, City, State, Job Category, Claim Number, Insurance Company).</div>
+                <div id="fl-validation-msg" class="validation-msg" style="display:none;">Please fill in all required fields (First Name, Last Name, Phone, Street, City, State, Job Category, Insurance Company).</div>
                 <div id="fl-saved-msg" class="save-confirmation" style="display:none;"></div>
                 <div id="fl-warning-msg" style="display:none;margin-top:10px;padding:10px 14px;background:#fff8e6;border:1px solid #e4a230;border-radius:10px;color:#9a6000;font-size:13px;font-weight:600;line-height:1.5;"></div>
                 <button class="btn btn-primary fl-save-btn" type="button" id="fl-save-btn">Save</button>
@@ -20496,6 +21148,7 @@
       'page-crm-contacts',
       'page-crm-financial-worksheet',
       'page-crm-job-profitability',
+      'page-crm-job-file',
       'page-crm-calendar',
       'page-payroll',
       'page-crm-settings'
@@ -20533,8 +21186,7 @@
       var previousPageId = peekAppHeaderBackTarget();
       return _appCurrentPageId !== 'page-login'
         && _appCurrentPageId !== 'page-main-menu'
-        && !!previousPageId
-        && previousPageId !== 'page-main-menu';
+        && !!previousPageId;
     }
 
     function updateGlobalHeaderBackButton() {
@@ -20630,6 +21282,8 @@
         || pageId === 'page-docusign');
       document.body.classList.toggle('pipeline-page-active', pageId === 'page-crm-pipeline');
       document.body.classList.toggle('lead-detail-page-active', pageId === 'page-lead-detail');
+      document.body.classList.toggle('crm-job-file-photos-page-active',
+        pageId === 'page-crm-job-file' && _crmJobFileActiveTab === 'photos');
       document.body.classList.toggle('calendar-page-active', pageId === 'page-crm-calendar');
       document.body.classList.toggle('settings-page-active', pageId === 'page-crm-settings');
       if (pageId === 'page-main-menu' && typeof crmRenderDashboardCommandCenter === 'function') crmRenderDashboardCommandCenter();
@@ -37418,6 +38072,12 @@ function mapsGoogleReady() {
     var CRM_PENDING_INSPECTION_KEY = 'hailmoney.crm.pendingInspection';
     var CRM_FIELD_LEAD_DRAFT_KEY = 'hailmoney.crm.createLeadDraft';
     var _crmGroundInspectionState = null;
+    var _crmInspectionPhotoReviewContext = null;
+    var _crmInspectionPreviewObjectUrls = [];
+    var _crmInspectionNoteSaveTimer = null;
+    var _crmSavedInspectionReportContext = null;
+    var _crmPostLeadContingencyContext = null;
+    var _crmInspectionReportLeadId = '';
 
     function crmCreateGroundInspectionState() {
       var photosByStep = {};
@@ -37434,6 +38094,9 @@ function mapsGoogleReady() {
         selectedRoofType: '',
         additionalSlopes: [],
         currentAdditionalSlopeIndex: -1,
+        reportLayout: 4,
+        reportApproved: false,
+        photoReport: null,
         startedAt: new Date().toISOString()
       };
     }
@@ -37476,6 +38139,480 @@ function mapsGoogleReady() {
       if (!size) return '0 KB';
       if (size >= 1024 * 1024) return (size / (1024 * 1024)).toFixed(1).replace(/\.0$/, '') + ' MB';
       return Math.max(Math.round(size / 1024), 1) + ' KB';
+    }
+
+    function crmClearInspectionPreviewObjectUrls() {
+      _crmInspectionPreviewObjectUrls.forEach(function (url) {
+        try { URL.revokeObjectURL(url); } catch (e) {}
+      });
+      _crmInspectionPreviewObjectUrls = [];
+    }
+
+    function crmGetInspectionPhotoCollections(state) {
+      state = state || crmGetGroundInspectionState();
+      var collections = [];
+      var seen = {};
+      function add(sectionKey, title, photos, kind, value) {
+        sectionKey = String(sectionKey || '').trim();
+        if (sectionKey) seen[sectionKey] = true;
+        collections.push({
+          sectionKey: sectionKey,
+          title: String(title || sectionKey || 'Inspection').trim(),
+          photos: Array.isArray(photos) ? photos : [],
+          kind: String(kind || 'photos'),
+          value: String(value || '')
+        });
+      }
+      ['Front Elevation', 'Right Elevation', 'Rear Elevation', 'Left Elevation'].forEach(function (title) {
+        add(title, title, state.photosByStep && state.photosByStep[title]);
+      });
+      add('Roof Type', 'Roof Type', [], 'roof-type', state.selectedRoofType || 'Not selected');
+      ['Off the ladder pictures', 'Overview'].forEach(function (title) {
+        add(title, title, state.photosByStep && state.photosByStep[title]);
+      });
+      CRM_ROOF_PENETRATION_SECTIONS.forEach(function (section) {
+        var key = 'Roof Projections: ' + section;
+        add(key, 'Roof Projections — ' + section, state.photosByStep && state.photosByStep[key]);
+      });
+      ['Front Slope', 'Back Slope'].forEach(function (title) {
+        add(title, title, state.photosByStep && state.photosByStep[title]);
+      });
+      (state.additionalSlopes || []).forEach(function (slope) {
+        var name = String(slope && slope.name || 'Additional Slope').trim() || 'Additional Slope';
+        add('Slope: ' + name, name, slope && slope.photos);
+      });
+      Object.keys(state.photosByStep || {}).forEach(function (key) {
+        if (seen[key] || key === 'Ground Inspection Complete') return;
+        add(key, key, state.photosByStep[key]);
+      });
+      return collections;
+    }
+
+    function crmGetInspectionPhotoById(photoId, state) {
+      photoId = String(photoId || '').trim();
+      var found = null;
+      crmGetInspectionPhotoCollections(state).some(function (section) {
+        return section.photos.some(function (photo) {
+          if (String(photo && (photo.id || photo.fileId) || '').trim() !== photoId) return false;
+          found = photo;
+          return true;
+        });
+      });
+      if (!found && _crmSavedInspectionReportContext && _crmSavedInspectionReportContext.report) {
+        (_crmSavedInspectionReportContext.report.sections || []).some(function (section) {
+          return (section.photos || []).some(function (photo) {
+            if (String(photo && (photo.id || photo.fileId) || '').trim() !== photoId) return false;
+            found = photo;
+            return true;
+          });
+        });
+      }
+      return found;
+    }
+
+    function crmGetInspectionPhotoArray(sectionKey, state) {
+      state = state || crmGetGroundInspectionState();
+      sectionKey = String(sectionKey || '').trim();
+      if (sectionKey.indexOf('Slope: ') === 0) {
+        var slopeName = sectionKey.slice(7);
+        for (var i = 0; i < (state.additionalSlopes || []).length; i++) {
+          if (String(state.additionalSlopes[i].name || '').trim() === slopeName) return state.additionalSlopes[i].photos;
+        }
+        return [];
+      }
+      if (!state.photosByStep) state.photosByStep = {};
+      if (!Array.isArray(state.photosByStep[sectionKey])) state.photosByStep[sectionKey] = [];
+      return state.photosByStep[sectionKey];
+    }
+
+    function crmLoadInspectionPhotoUrl(photo, callback) {
+      photo = photo || {};
+      var storageKey = String(photo.storageKey || '').trim();
+      if (!storageKey) { callback(''); return; }
+      crmOpenFilesDb(function (dbErr, db) {
+        if (dbErr || !db) { callback(''); return; }
+        crmDbGetBlob(db, storageKey, function (blobErr, blob) {
+          if (blobErr || !blob) { callback(''); return; }
+          var url = URL.createObjectURL(blob);
+          _crmInspectionPreviewObjectUrls.push(url);
+          callback(url);
+        });
+      });
+    }
+
+    function crmHydrateInspectionPhotoImages(container) {
+      if (!container) return;
+      Array.prototype.forEach.call(container.querySelectorAll('[data-inspection-photo-id]'), function (img) {
+        var photo = crmGetInspectionPhotoById(img.getAttribute('data-inspection-photo-id'));
+        if (!photo) return;
+        crmLoadInspectionPhotoUrl(photo, function (url) {
+          if (url && img.isConnected) img.src = url;
+        });
+      });
+    }
+
+    function crmOpenInspectionImagePreview(photoId) {
+      var photo = crmGetInspectionPhotoById(photoId);
+      if (!photo) return;
+      crmLoadInspectionPhotoUrl(photo, function (url) {
+        if (!url) { showUploadToast('Photo preview is unavailable.'); return; }
+        var modal = document.getElementById('crm-inspection-image-modal');
+        var image = document.getElementById('crm-inspection-image-large');
+        if (!modal || !image) return;
+        image.src = url;
+        modal.hidden = false;
+      });
+    }
+
+    function crmCloseInspectionImagePreview() {
+      var modal = document.getElementById('crm-inspection-image-modal');
+      var image = document.getElementById('crm-inspection-image-large');
+      if (modal) modal.hidden = true;
+      if (image) image.removeAttribute('src');
+    }
+
+    function crmScheduleInspectionStateSave() {
+      clearTimeout(_crmInspectionNoteSaveTimer);
+      _crmInspectionNoteSaveTimer = setTimeout(function () {
+        var state = crmGetGroundInspectionState();
+        state.reportApproved = false;
+        state.photoReport = null;
+        crmSavePendingInspectionRecord(state, _crmInspectionReportLeadId ? 'completed_pending_report' : 'in_progress');
+      }, 180);
+    }
+
+    function crmRenderInspectionPhotoReview() {
+      var context = _crmInspectionPhotoReviewContext;
+      var grid = document.getElementById('crm-inspection-review-grid');
+      var sectionEl = document.getElementById('crm-inspection-review-section');
+      var continueBtn = document.getElementById('crm-inspection-review-continue-btn');
+      var voiceMsg = document.getElementById('crm-inspection-voice-message');
+      if (!context || !grid) return;
+      crmClearInspectionPreviewObjectUrls();
+      if (sectionEl) sectionEl.textContent = context.sectionLabel + ' — ' + context.photos.length + ' photo' + (context.photos.length === 1 ? '' : 's');
+      if (continueBtn) continueBtn.textContent = context.continueLabel || 'Continue';
+      if (voiceMsg) voiceMsg.textContent = '';
+      if (!context.photos.length) {
+        grid.innerHTML = '<div class="crm-inspection-empty">No photos are attached to this inspection section yet. Add a photo to continue reviewing.</div>';
+        return;
+      }
+      grid.innerHTML = context.photos.map(function (photo) {
+        var id = String(photo.id || photo.fileId || '').trim();
+        return '<article class="crm-inspection-photo-card">' +
+          '<button class="crm-inspection-photo-thumb-btn" type="button" data-inspection-open-photo="' + crmEscapeHtml(id) + '">' +
+            '<img class="crm-inspection-photo-thumb" data-inspection-photo-id="' + crmEscapeHtml(id) + '" alt="' + crmEscapeHtml(photo.name || photo.fileName || 'Inspection photo') + '">' +
+          '</button>' +
+          '<div class="crm-inspection-photo-card-body">' +
+            '<div class="crm-inspection-photo-name">' + crmEscapeHtml(photo.name || photo.fileName || 'Inspection photo') + '</div>' +
+            '<div class="crm-inspection-note-row">' +
+              '<input class="crm-inspection-photo-note" type="text" data-inspection-note-id="' + crmEscapeHtml(id) + '" value="' + crmEscapeHtml(photo.note || photo.caption || '') + '" placeholder="Add a photo label or note">' +
+              '<button class="crm-inspection-mic-btn" type="button" data-inspection-mic-id="' + crmEscapeHtml(id) + '" aria-label="Voice type this photo note">&#127908;</button>' +
+            '</div>' +
+            '<button class="crm-inspection-remove-btn" type="button" data-inspection-remove-id="' + crmEscapeHtml(id) + '">Remove Photo</button>' +
+          '</div>' +
+        '</article>';
+      }).join('');
+      crmHydrateInspectionPhotoImages(grid);
+    }
+
+    function crmOpenInspectionPhotoReview(options) {
+      options = options || {};
+      _crmInspectionPhotoReviewContext = {
+        sectionKey: String(options.sectionKey || '').trim(),
+        sectionLabel: String(options.sectionLabel || options.sectionKey || 'Inspection Photos').trim(),
+        photos: Array.isArray(options.photos) ? options.photos : [],
+        continueMode: String(options.continueMode || 'advance'),
+        continueLabel: String(options.continueLabel || 'Continue'),
+        penetrationSection: String(options.penetrationSection || '').trim()
+      };
+      showPage('page-inspection-photo-review');
+      crmRenderInspectionPhotoReview();
+    }
+
+    function crmDeleteInspectionPhoto(photoId) {
+      var context = _crmInspectionPhotoReviewContext;
+      if (!context) return;
+      photoId = String(photoId || '').trim();
+      var index = context.photos.findIndex(function (photo) {
+        return String(photo && (photo.id || photo.fileId) || '').trim() === photoId;
+      });
+      if (index === -1) return;
+      var removed = context.photos.splice(index, 1)[0] || {};
+      var state = crmGetGroundInspectionState();
+      var allMeta = crmGetLeadFiles();
+      var storageKey = String(removed.storageKey || '').trim();
+      allMeta = allMeta.filter(function (file) {
+        return !(String(file && file.leadId || '').trim() === state.id && String(file && file.id || '').trim() === photoId);
+      });
+      crmSaveLeadFiles(allMeta);
+      if (storageKey) {
+        crmOpenFilesDb(function (dbErr, db) {
+          if (dbErr || !db) return;
+          var tx = db.transaction(CRM_FILES_STORE, 'readwrite');
+          tx.objectStore(CRM_FILES_STORE).delete(storageKey);
+        });
+      }
+      state.reportApproved = false;
+      state.photoReport = null;
+      crmSavePendingInspectionRecord(state, _crmInspectionReportLeadId ? 'completed_pending_report' : 'in_progress');
+      crmRenderInspectionPhotoReview();
+    }
+
+    function crmStartInspectionVoiceTyping(photoId, input) {
+      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      var message = document.getElementById('crm-inspection-voice-message');
+      if (!SpeechRecognition) {
+        if (message) message.textContent = 'Voice typing is unavailable in this browser. You can still type or edit the note.';
+        if (input) input.focus();
+        return;
+      }
+      var recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      if (message) message.textContent = 'Listening…';
+      recognition.onresult = function (event) {
+        var transcript = String(event.results && event.results[0] && event.results[0][0] && event.results[0][0].transcript || '').trim();
+        if (!transcript || !input) return;
+        input.value = [String(input.value || '').trim(), transcript].filter(Boolean).join(' ');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      recognition.onerror = function () {
+        if (message) message.textContent = 'Voice typing could not start. You can still enter the note manually.';
+      };
+      recognition.onend = function () {
+        if (message && message.textContent === 'Listening…') message.textContent = '';
+      };
+      recognition.start();
+    }
+
+    function crmGetInspectionReportCover(state, lead) {
+      var profile = typeof crmGetCompanyProfile === 'function' ? crmGetCompanyProfile() : {};
+      lead = lead || {};
+      var homeownerName = String(lead.homeownerName || [lead.firstName, lead.lastName].filter(Boolean).join(' ')).trim();
+      var address = typeof crmGetJobFileLeadAddress === 'function' ? crmGetJobFileLeadAddress(lead) : '';
+      return {
+        companyName: String(profile.companyName || 'Hail Money').trim(),
+        companyInfo: [profile.street, profile.city, profile.state, profile.zip, profile.phone, profile.email, profile.website, profile.licenseNumber].filter(Boolean).join(' · '),
+        companyLogo: typeof crmGetCompanyLogoUrl === 'function' ? crmGetCompanyLogoUrl() : '',
+        homeownerName: homeownerName || 'To be added when the lead is saved',
+        propertyAddress: address || 'To be added when the lead is saved',
+        inspectionDate: String(state.inspectionDate || new Date().toISOString().slice(0, 10)).trim(),
+        inspectorName: String((lead && lead.assignedRep) || (typeof crmGetCurrentUserName === 'function' ? crmGetCurrentUserName() : '') || currentRep || '').trim()
+      };
+    }
+
+    function crmBuildInspectionPhotoReport(state, lead) {
+      state = state || crmGetGroundInspectionState();
+      var sections = crmGetInspectionPhotoCollections(state).map(function (section) {
+        return {
+          sectionKey: section.sectionKey,
+          title: section.title,
+          kind: section.kind,
+          value: section.value,
+          photos: section.photos.map(function (photo) {
+            return crmGetSerializableInspectionPhoto(photo, section.sectionKey);
+          })
+        };
+      }).filter(function (section) {
+        return section.photos.length || (section.kind === 'roof-type' && section.value);
+      });
+      return {
+        id: String(state.photoReport && state.photoReport.id || ('inspection_report_' + Date.now().toString(36))).trim(),
+        type: 'property_photo_report',
+        title: 'Property Photo Report',
+        inspectionId: String(state.id || '').trim(),
+        leadId: String(lead && lead.id || '').trim(),
+        layout: [1, 2, 4, 6, 8].indexOf(Number(state.reportLayout)) !== -1 ? Number(state.reportLayout) : 4,
+        createdAt: String(state.photoReport && state.photoReport.createdAt || new Date().toISOString()).trim(),
+        updatedAt: new Date().toISOString(),
+        cover: crmGetInspectionReportCover(state, lead),
+        sections: sections
+      };
+    }
+
+    function crmRenderInspectionReportPreview() {
+      var savedContext = _crmSavedInspectionReportContext;
+      var readOnly = !!(savedContext && savedContext.report);
+      var state = readOnly ? null : crmGetGroundInspectionState();
+      var reportLead = !readOnly && _crmInspectionReportLeadId
+        ? crmGetLeads().find(function (item) { return String(item && item.id || '') === String(_crmInspectionReportLeadId); })
+        : null;
+      var report = readOnly ? savedContext.report : crmBuildInspectionPhotoReport(state, reportLead);
+      var pagesEl = document.getElementById('crm-inspection-report-pages');
+      var excludedEl = document.getElementById('crm-inspection-report-excluded');
+      var layoutEl = document.getElementById('crm-inspection-report-layout');
+      var layoutWrap = document.getElementById('crm-inspection-report-layout-wrap');
+      var approveBtn = document.getElementById('crm-inspection-report-approve-btn');
+      var backBtn = document.getElementById('crm-inspection-report-back-btn');
+      var shell = document.querySelector('#page-inspection-report-preview .crm-inspection-report-shell');
+      if (!pagesEl || !report) return;
+      crmClearInspectionPreviewObjectUrls();
+      if (shell) shell.classList.toggle('crm-inspection-report-readonly', readOnly);
+      if (layoutWrap) layoutWrap.hidden = readOnly;
+      if (approveBtn) approveBtn.hidden = readOnly;
+      if (backBtn) backBtn.textContent = readOnly ? 'Back to Job Folder' : (_crmInspectionReportLeadId ? 'Back to Contingency' : 'Back to Inspection');
+      if (layoutEl) layoutEl.value = String(report.layout || 4);
+      var cover = report.cover || {};
+      var html = '<article class="crm-inspection-report-page crm-inspection-report-cover">' +
+        (cover.companyLogo ? '<img class="crm-inspection-report-logo" src="' + crmEscapeHtml(cover.companyLogo) + '" alt="Company logo">' : '') +
+        '<h2>' + crmEscapeHtml(cover.companyName || 'Hail Money') + '</h2>' +
+        '<div class="crm-inspection-report-company">' + crmEscapeHtml(cover.companyInfo || '') + '</div>' +
+        '<h3>Property Photo Report</h3>' +
+        '<div class="crm-inspection-report-cover-details">' +
+          '<div class="crm-inspection-report-cover-row"><strong>Homeowner</strong> ' + crmEscapeHtml(cover.homeownerName || '') + '</div>' +
+          '<div class="crm-inspection-report-cover-row"><strong>Property</strong> ' + crmEscapeHtml(cover.propertyAddress || '') + '</div>' +
+          '<div class="crm-inspection-report-cover-row"><strong>Inspection Date</strong> ' + crmEscapeHtml(cover.inspectionDate || '') + '</div>' +
+          '<div class="crm-inspection-report-cover-row"><strong>Inspector / Rep</strong> ' + crmEscapeHtml(cover.inspectorName || '') + '</div>' +
+        '</div></article>';
+      var perPage = [1, 2, 4, 6, 8].indexOf(Number(report.layout)) !== -1 ? Number(report.layout) : 4;
+      (report.sections || []).forEach(function (section) {
+        var included = (section.photos || []).filter(function (photo) { return photo.reportExcluded !== true; });
+        if (!included.length && section.kind === 'roof-type') {
+          html += '<article class="crm-inspection-report-page"><h2 class="crm-inspection-report-section-title">' + crmEscapeHtml(section.title) + '</h2><p>' + crmEscapeHtml(section.value || 'Not selected') + '</p></article>';
+          return;
+        }
+        for (var offset = 0; offset < included.length; offset += perPage) {
+          var chunk = included.slice(offset, offset + perPage);
+          html += '<article class="crm-inspection-report-page"><h2 class="crm-inspection-report-section-title">' + crmEscapeHtml(section.title) + '</h2>' +
+            '<div class="crm-inspection-report-photo-grid layout-' + perPage + '">' + chunk.map(function (photo) {
+              var photoId = String(photo.id || photo.fileId || '').trim();
+              return '<div class="crm-inspection-report-photo">' +
+                '<img data-inspection-photo-id="' + crmEscapeHtml(photoId) + '" data-report-open-photo="' + crmEscapeHtml(photoId) + '" alt="' + crmEscapeHtml(photo.name || 'Inspection photo') + '">' +
+                '<input type="text" data-report-note-id="' + crmEscapeHtml(photoId) + '" value="' + crmEscapeHtml(photo.note || photo.caption || '') + '" placeholder="Photo caption">' +
+                '<div class="crm-inspection-report-caption">' + crmEscapeHtml(photo.note || photo.caption || '') + '</div>' +
+                '<div class="crm-inspection-report-photo-tools">' +
+                  '<button type="button" data-report-move="up" data-report-photo-id="' + crmEscapeHtml(photoId) + '" data-report-section="' + crmEscapeHtml(section.sectionKey) + '">Earlier</button>' +
+                  '<button type="button" data-report-move="down" data-report-photo-id="' + crmEscapeHtml(photoId) + '" data-report-section="' + crmEscapeHtml(section.sectionKey) + '">Later</button>' +
+                  '<button type="button" data-report-exclude-id="' + crmEscapeHtml(photoId) + '">Remove from Report</button>' +
+                '</div></div>';
+            }).join('') + '</div></article>';
+        }
+      });
+      pagesEl.innerHTML = html;
+      crmHydrateInspectionPhotoImages(pagesEl);
+      if (excludedEl && !readOnly) {
+        var excluded = [];
+        crmGetInspectionPhotoCollections(state).forEach(function (section) {
+          section.photos.forEach(function (photo) { if (photo.reportExcluded === true) excluded.push(photo); });
+        });
+        excludedEl.hidden = !excluded.length;
+        excludedEl.innerHTML = excluded.length ? '<strong>Removed from this report</strong><div>' + excluded.map(function (photo) {
+          return '<button class="btn" type="button" data-report-restore-id="' + crmEscapeHtml(photo.id || photo.fileId || '') + '">Restore ' + crmEscapeHtml(photo.name || 'photo') + '</button>';
+        }).join('') + '</div>' : '';
+      }
+    }
+
+    function crmOpenInspectionReportPreview(leadId) {
+      _crmSavedInspectionReportContext = null;
+      _crmInspectionReportLeadId = String(leadId || _crmInspectionReportLeadId || '').trim();
+      var state = crmGetGroundInspectionState();
+      state.inspectionDate = state.inspectionDate || new Date().toISOString().slice(0, 10);
+      state.reportLayout = [1, 2, 4, 6, 8].indexOf(Number(state.reportLayout)) !== -1 ? Number(state.reportLayout) : 4;
+      crmSavePendingInspectionRecord(state, _crmInspectionReportLeadId ? 'completed_pending_report' : 'in_progress');
+      showPage('page-inspection-report-preview');
+      crmRenderInspectionReportPreview();
+    }
+
+    function crmCompleteInspectionFromReport() {
+      clearTimeout(_crmInspectionNoteSaveTimer);
+      var state = crmGetGroundInspectionState();
+      var leadId = String(_crmInspectionReportLeadId || '').trim();
+      var leads = crmGetLeads();
+      var lead = leads.find(function (item) { return String(item && item.id || '') === leadId; });
+      if (!lead) { showUploadToast('The saved lead could not be found.'); return; }
+      state.completedAt = state.completedAt || new Date().toISOString();
+      state.inspectionDate = state.inspectionDate || state.completedAt.slice(0, 10);
+      state.reportApproved = true;
+      state.photoReport = crmBuildInspectionPhotoReport(state, lead);
+      var report = JSON.parse(JSON.stringify(state.photoReport));
+      var jobFile = lead.jobFile && typeof lead.jobFile === 'object' ? lead.jobFile : {};
+      jobFile.photoReports = Array.isArray(jobFile.photoReports) ? jobFile.photoReports : [];
+      var reportIndex = jobFile.photoReports.findIndex(function (item) { return String(item && item.id || '') === String(report.id || ''); });
+      if (reportIndex >= 0) jobFile.photoReports[reportIndex] = report;
+      else jobFile.photoReports.push(report);
+      var photoById = {};
+      crmGetInspectionPhotoCollections(state).forEach(function (section) {
+        section.photos.forEach(function (photo) { photoById[String(photo && (photo.id || photo.fileId) || '')] = photo; });
+      });
+      jobFile.photos = (jobFile.photos || []).map(function (photo) {
+        var source = photoById[String(photo && (photo.fileId || photo.id) || '')];
+        if (!source) return photo;
+        photo.category = String(source.category || photo.category || 'Inspection').trim();
+        photo.caption = String(source.caption || source.note || '').trim();
+        photo.note = String(source.note || source.caption || '').trim();
+        return photo;
+      });
+      jobFile.inspection = crmBuildPendingInspectionRecord(state, 'completed');
+      jobFile.inspection.photoReport = report;
+      lead.jobFile = jobFile;
+      lead.inspection = jobFile.inspection;
+      lead.photoReports = jobFile.photoReports;
+      lead.updatedAt = new Date().toISOString();
+      if (!crmSaveLeads(leads)) { showUploadToast('The Property Photo Report could not be saved.'); return; }
+      crmClearPendingInspectionRecord();
+      _crmGroundInspectionState = null;
+      _crmInspectionReportLeadId = '';
+      _crmPostLeadContingencyContext = null;
+      crmSyncDataModelSnapshot();
+      crmRenderPipeline();
+      crmRenderMainMenu();
+      showUploadToast('Property Photo Report saved to the Job Folder.');
+      crmOpenJobFileSection(lead.id, 'photos');
+    }
+
+    function crmOpenSavedInspectionPhotoReport(leadId, reportId) {
+      var lead = crmGetLeads().find(function (item) { return String(item && item.id || '') === String(leadId || ''); });
+      var reports = lead && lead.jobFile && Array.isArray(lead.jobFile.photoReports) ? lead.jobFile.photoReports : [];
+      var report = reports.find(function (item) { return String(item && item.id || '') === String(reportId || ''); }) || reports[0];
+      if (!report) { showUploadToast('No Property Photo Report has been saved for this job.'); return; }
+      _crmSavedInspectionReportContext = { leadId: lead.id, report: report };
+      showPage('page-inspection-report-preview');
+      crmRenderInspectionReportPreview();
+    }
+
+    function crmRestoreGroundInspectionStateFromPending() {
+      var pending = crmGetPendingInspectionRecord();
+      if (!pending) return null;
+      _crmGroundInspectionState = JSON.parse(JSON.stringify(pending));
+      _crmGroundInspectionState.selectedRoofType = String(pending.selectedRoofType || pending.roofType || '').trim();
+      _crmGroundInspectionState.currentAdditionalSlopeIndex = -1;
+      _crmGroundInspectionState.reportLayout = [1, 2, 4, 6, 8].indexOf(Number(pending.reportLayout)) !== -1 ? Number(pending.reportLayout) : 4;
+      return _crmGroundInspectionState;
+    }
+
+    function crmOpenLeadContingencyActions(leadId) {
+      leadId = String(leadId || '').trim();
+      var lead = crmGetLeads().find(function (item) { return String(item && item.id || '') === leadId; });
+      if (!lead) { showUploadToast('The saved lead could not be found.'); return; }
+      _crmPostLeadContingencyContext = { leadId: leadId };
+      var summary = document.getElementById('crm-lead-contingency-summary');
+      if (summary) {
+        summary.textContent = 'Choose how to handle the contingency for ' + crmGetLeadDisplayName(lead) + '. The Property Photo Report Review opens after this step.';
+      }
+      showPage('page-lead-contingency-action');
+    }
+
+    function crmUpdatePostLeadContingency(leadId, status, updates) {
+      var leads = crmGetLeads();
+      var lead = leads.find(function (item) { return String(item && item.id || '') === String(leadId || ''); });
+      if (!lead) return null;
+      lead.contingencyStatus = String(status || '').trim();
+      Object.keys(updates || {}).forEach(function (key) { lead[key] = updates[key]; });
+      lead.updatedAt = new Date().toISOString();
+      crmSaveLeads(leads);
+      return lead;
+    }
+
+    function crmOpenPostLeadPhotoReport(leadId) {
+      var state = _crmGroundInspectionState || crmRestoreGroundInspectionStateFromPending();
+      if (!state) {
+        showUploadToast('The completed inspection could not be restored.');
+        crmOpenJobFile(leadId, 'overview', 'page', 'page-crm-pipeline');
+        return;
+      }
+      _crmInspectionReportLeadId = String(leadId || '').trim();
+      crmOpenInspectionReportPreview(_crmInspectionReportLeadId);
     }
 
     function crmRenderStartInspectionLanding() {
@@ -37605,8 +38742,15 @@ function mapsGoogleReady() {
       var files = crmGetPenetrationSectionFiles(section);
       var capturedFiles = Array.prototype.slice.call(fileList);
       crmAddInspectionFilesToTemporaryRecord(capturedFiles, 'Roof Projections: ' + section, files, function (count) {
-        crmRenderGroundInspectionPenetrationsPanel();
         showUploadToast(count + ' file' + (count === 1 ? '' : 's') + ' added to ' + section + '.');
+        crmOpenInspectionPhotoReview({
+          sectionKey: 'Roof Projections: ' + section,
+          sectionLabel: 'Roof Projections — ' + section,
+          photos: files,
+          continueMode: 'return',
+          continueLabel: 'Back to Roof Projections',
+          penetrationSection: section
+        });
       });
     }
 
@@ -37705,8 +38849,14 @@ function mapsGoogleReady() {
         : String(step && step.title || 'Inspection');
       var capturedFiles = Array.prototype.slice.call(fileList);
       crmAddInspectionFilesToTemporaryRecord(capturedFiles, category, files, function (count) {
-        crmRenderGroundInspectionStep();
         showUploadToast(count + ' file' + (count === 1 ? '' : 's') + ' added.');
+        crmOpenInspectionPhotoReview({
+          sectionKey: category,
+          sectionLabel: category,
+          photos: files,
+          continueMode: (crmIsGroundInspectionBackSlopeStep(step) || state.currentAdditionalSlopeIndex >= 0) ? 'return' : 'advance',
+          continueLabel: (crmIsGroundInspectionBackSlopeStep(step) || state.currentAdditionalSlopeIndex >= 0) ? 'Back to Slopes' : 'Continue'
+        });
       });
     }
 
@@ -37742,12 +38892,12 @@ function mapsGoogleReady() {
         }
         state.completedAt = new Date().toISOString();
         state.inspectionDate = state.inspectionDate || state.completedAt.slice(0, 10);
+        state.reportApproved = false;
+        state.photoReport = null;
         crmSavePendingInspectionRecord(state, 'completed_pending_lead');
         crmInitFieldLead();
         showPage('page-field-lead');
-        showUploadToast(selectedRoofType
-          ? ('Inspection complete. Add the homeowner information to save the lead. Roof type: ' + selectedRoofType + '.')
-          : 'Inspection complete. Add the homeowner information to save the lead.');
+        showUploadToast('Inspection complete. Add the homeowner and claim information to save the lead.');
         return;
       }
       crmOpenGroundInspectionStep(state.currentStepIndex + 1);
@@ -37941,6 +39091,241 @@ function mapsGoogleReady() {
       this.value = '';
     });
 
+    document.getElementById('crm-inspection-review-camera-btn').addEventListener('click', function () {
+      var context = _crmInspectionPhotoReviewContext;
+      if (!context) return;
+      if (context.penetrationSection) {
+        _crmActivePenetrationSection = context.penetrationSection;
+        document.getElementById('crm-penetrations-camera-input').click();
+      } else {
+        document.getElementById('crm-ground-inspection-camera-input').click();
+      }
+    });
+
+    document.getElementById('crm-inspection-review-device-btn').addEventListener('click', function () {
+      var context = _crmInspectionPhotoReviewContext;
+      if (!context) return;
+      if (context.penetrationSection) {
+        _crmActivePenetrationSection = context.penetrationSection;
+        document.getElementById('crm-penetrations-upload-input').click();
+      } else {
+        document.getElementById('crm-ground-inspection-upload-input').click();
+      }
+    });
+
+    document.getElementById('crm-inspection-review-grid').addEventListener('click', function (e) {
+      var openBtn = e.target && e.target.closest ? e.target.closest('[data-inspection-open-photo]') : null;
+      var removeBtn = e.target && e.target.closest ? e.target.closest('[data-inspection-remove-id]') : null;
+      var micBtn = e.target && e.target.closest ? e.target.closest('[data-inspection-mic-id]') : null;
+      if (openBtn) crmOpenInspectionImagePreview(openBtn.getAttribute('data-inspection-open-photo'));
+      if (removeBtn) crmDeleteInspectionPhoto(removeBtn.getAttribute('data-inspection-remove-id'));
+      if (micBtn) {
+        var photoId = micBtn.getAttribute('data-inspection-mic-id');
+        var input = this.querySelector('[data-inspection-note-id="' + photoId + '"]');
+        crmStartInspectionVoiceTyping(photoId, input);
+      }
+    });
+
+    document.getElementById('crm-inspection-review-grid').addEventListener('input', function (e) {
+      var input = e.target && e.target.closest ? e.target.closest('[data-inspection-note-id]') : null;
+      if (!input) return;
+      var photo = crmGetInspectionPhotoById(input.getAttribute('data-inspection-note-id'));
+      if (!photo) return;
+      photo.note = String(input.value || '');
+      photo.caption = photo.note;
+      crmScheduleInspectionStateSave();
+    });
+
+    document.getElementById('crm-inspection-review-back-btn').addEventListener('click', function () {
+      showPage('page-start-inspection-step');
+      crmRenderGroundInspectionStep();
+    });
+
+    document.getElementById('crm-inspection-review-continue-btn').addEventListener('click', function () {
+      var context = _crmInspectionPhotoReviewContext;
+      crmSavePendingInspectionRecord(crmGetGroundInspectionState(), 'in_progress');
+      if (context && context.continueMode === 'advance') crmAdvanceGroundInspectionStep();
+      else {
+        showPage('page-start-inspection-step');
+        crmRenderGroundInspectionStep();
+      }
+    });
+
+    document.getElementById('crm-inspection-image-close').addEventListener('click', crmCloseInspectionImagePreview);
+    document.getElementById('crm-inspection-image-modal').addEventListener('click', function (e) {
+      if (e.target === this) crmCloseInspectionImagePreview();
+    });
+
+    document.getElementById('crm-inspection-report-layout').addEventListener('change', function () {
+      var state = crmGetGroundInspectionState();
+      state.reportLayout = [1, 2, 4, 6, 8].indexOf(Number(this.value)) !== -1 ? Number(this.value) : 4;
+      state.reportApproved = false;
+      state.photoReport = null;
+      crmSavePendingInspectionRecord(state, _crmInspectionReportLeadId ? 'completed_pending_report' : 'in_progress');
+      crmRenderInspectionReportPreview();
+    });
+
+    document.getElementById('crm-inspection-report-pages').addEventListener('click', function (e) {
+      var openPhoto = e.target && e.target.closest ? e.target.closest('[data-report-open-photo]') : null;
+      var moveBtn = e.target && e.target.closest ? e.target.closest('[data-report-move]') : null;
+      var excludeBtn = e.target && e.target.closest ? e.target.closest('[data-report-exclude-id]') : null;
+      if (openPhoto) crmOpenInspectionImagePreview(openPhoto.getAttribute('data-report-open-photo'));
+      if (_crmSavedInspectionReportContext) return;
+      if (excludeBtn) {
+        var excludedPhoto = crmGetInspectionPhotoById(excludeBtn.getAttribute('data-report-exclude-id'));
+        if (excludedPhoto) excludedPhoto.reportExcluded = true;
+        crmScheduleInspectionStateSave();
+        crmRenderInspectionReportPreview();
+      }
+      if (moveBtn) {
+        var array = crmGetInspectionPhotoArray(moveBtn.getAttribute('data-report-section'));
+        var photoId = moveBtn.getAttribute('data-report-photo-id');
+        var index = array.findIndex(function (photo) { return String(photo && (photo.id || photo.fileId) || '') === String(photoId || ''); });
+        var nextIndex = moveBtn.getAttribute('data-report-move') === 'up' ? index - 1 : index + 1;
+        if (index >= 0 && nextIndex >= 0 && nextIndex < array.length) {
+          var moved = array.splice(index, 1)[0];
+          array.splice(nextIndex, 0, moved);
+          crmScheduleInspectionStateSave();
+          crmRenderInspectionReportPreview();
+        }
+      }
+    });
+
+    document.getElementById('crm-inspection-report-pages').addEventListener('input', function (e) {
+      var input = e.target && e.target.closest ? e.target.closest('[data-report-note-id]') : null;
+      if (!input || _crmSavedInspectionReportContext) return;
+      var photo = crmGetInspectionPhotoById(input.getAttribute('data-report-note-id'));
+      if (!photo) return;
+      photo.note = String(input.value || '');
+      photo.caption = photo.note;
+      crmScheduleInspectionStateSave();
+    });
+
+    document.getElementById('crm-inspection-report-excluded').addEventListener('click', function (e) {
+      var restoreBtn = e.target && e.target.closest ? e.target.closest('[data-report-restore-id]') : null;
+      if (!restoreBtn) return;
+      var photo = crmGetInspectionPhotoById(restoreBtn.getAttribute('data-report-restore-id'));
+      if (photo) photo.reportExcluded = false;
+      crmScheduleInspectionStateSave();
+      crmRenderInspectionReportPreview();
+    });
+
+    document.getElementById('crm-inspection-report-back-btn').addEventListener('click', function () {
+      if (_crmSavedInspectionReportContext) {
+        var leadId = _crmSavedInspectionReportContext.leadId;
+        _crmSavedInspectionReportContext = null;
+        crmOpenLeadDetail(leadId);
+        return;
+      }
+      if (_crmInspectionReportLeadId) {
+        crmOpenLeadContingencyActions(_crmInspectionReportLeadId);
+        return;
+      }
+      showPage('page-start-inspection-step');
+      crmRenderGroundInspectionStep();
+    });
+
+    document.getElementById('crm-inspection-report-approve-btn').addEventListener('click', crmCompleteInspectionFromReport);
+
+    document.getElementById('crm-contingency-docusign-btn').addEventListener('click', function () {
+      if (!_crmPostLeadContingencyContext || !_crmPostLeadContingencyContext.leadId) return;
+      openDocuSign(_crmPostLeadContingencyContext.leadId);
+    });
+
+    document.getElementById('crm-contingency-email-btn').addEventListener('click', function () {
+      if (!_crmPostLeadContingencyContext) return;
+      var leadId = _crmPostLeadContingencyContext.leadId;
+      var lead = crmUpdatePostLeadContingency(leadId, 'emailed', { contingencyEmailedAt: new Date().toISOString() });
+      if (!lead) return;
+      crmOpenPostLeadPhotoReport(leadId);
+      if (lead.email) {
+        setTimeout(function () {
+          window.location.href = 'mailto:' + encodeURIComponent(lead.email) + '?subject=' + encodeURIComponent('Contingency Agreement for ' + crmGetLeadDisplayName(lead));
+        }, 0);
+      }
+    });
+
+    document.getElementById('crm-contingency-upload-btn').addEventListener('click', function () {
+      document.getElementById('crm-contingency-upload-input').click();
+    });
+
+    document.getElementById('crm-contingency-upload-input').addEventListener('change', function () {
+      var file = this.files && this.files[0];
+      var leadId = _crmPostLeadContingencyContext && _crmPostLeadContingencyContext.leadId;
+      this.value = '';
+      if (!file || !leadId) return;
+      if (String(file.type || '').toLowerCase() !== 'application/pdf' && !/\.pdf$/i.test(String(file.name || ''))) {
+        showUploadToast('Upload a signed contingency PDF.');
+        return;
+      }
+      crmSaveFilesToDb(leadId, 'signed_contingency', [file], function (count, savedMeta) {
+        if (!count || !savedMeta || !savedMeta.length) { showUploadToast('The signed contingency could not be saved.'); return; }
+        var leads = crmGetLeads();
+        var lead = leads.find(function (item) { return String(item && item.id || '') === String(leadId || ''); });
+        if (!lead) return;
+        var meta = savedMeta[0];
+        lead.contingencySigned = true;
+        lead.contingencySignedAt = new Date().toISOString();
+        lead.contingencyStatus = 'signed_uploaded';
+        lead.contingencyDocumentId = String(meta.id || '').trim();
+        var jobFile = lead.jobFile && typeof lead.jobFile === 'object' ? lead.jobFile : {};
+        jobFile.contingencySigned = true;
+        jobFile.contingencyDocumentId = lead.contingencyDocumentId;
+        jobFile.documents = Array.isArray(jobFile.documents) ? jobFile.documents : [];
+        jobFile.documents.push(crmNormalizeJobFileDocumentMeta({
+          id: meta.id,
+          fileId: meta.id,
+          category: 'Job Paperwork',
+          note: 'Signed contingency agreement',
+          uploadedBy: crmGetCurrentUserName() || currentRep || '',
+          uploadedAt: meta.uploadedAt || new Date().toISOString()
+        }));
+        lead.jobFile = jobFile;
+        lead.updatedAt = new Date().toISOString();
+        crmSaveLeads(leads);
+        crmOpenPostLeadPhotoReport(leadId);
+      }, { category: 'Job Paperwork', note: 'Signed contingency agreement' });
+    });
+
+    document.getElementById('crm-contingency-skip-btn').addEventListener('click', function () {
+      if (!_crmPostLeadContingencyContext) return;
+      var leadId = _crmPostLeadContingencyContext.leadId;
+      if (!crmUpdatePostLeadContingency(leadId, 'skipped', { contingencySkippedAt: new Date().toISOString() })) return;
+      crmOpenPostLeadPhotoReport(leadId);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') crmCloseInspectionImagePreview();
+    });
+
+    document.addEventListener('click', function (e) {
+      var reportBtn = e.target && e.target.closest ? e.target.closest('[data-jf-open-photo-report]') : null;
+      if (reportBtn) {
+        crmOpenSavedInspectionPhotoReport(reportBtn.getAttribute('data-jf-report-lead'), reportBtn.getAttribute('data-jf-open-photo-report'));
+        return;
+      }
+      var leadDetailTabBtn = e.target && e.target.closest ? e.target.closest('#page-lead-detail [data-jf-tab]') : null;
+      if (!leadDetailTabBtn || !_crmCurrentLeadId) return;
+      var tabMap = {
+        photos: 'photos',
+        documents: 'documents',
+        reports: 'reports',
+        production: 'production',
+        financial: 'financial',
+        invoice: 'payments',
+        estimates: 'estimate',
+        messages: 'messages',
+        pfo: 'messages'
+      };
+      var requestedTab = tabMap[String(leadDetailTabBtn.getAttribute('data-jf-tab') || '').trim()] || 'overview';
+      if (requestedTab === 'financial') {
+        _crmCurrentJobFileLeadId = _crmCurrentLeadId;
+        crmOpenFinancialWorksheetPage(_crmCurrentLeadId);
+        return;
+      }
+      crmOpenJobFileSection(_crmCurrentLeadId, requestedTab);
+    });
+
     /* ---------- DocuSign / Forms ---------- */
 
     /* Map template field keys to job object properties */
@@ -37951,7 +39336,7 @@ function mapsGoogleReady() {
       'homeowner_name':      function (j) { return j.homeownerName || ((j.firstName || '') + ' ' + (j.lastName || '')).trim() || ''; },
       'address':             function (j) { return [j.street, j.city, j.state, j.zip].filter(Boolean).join(', '); },
       'email':               function (j) { return j.email || ''; },
-      'phone':               function (j) { return j.primaryPhone || ''; },
+      'phone':               function (j) { return j.primaryPhone || j.phone || ''; },
       'claim_number':        function (j) { return j.claimNumber || ''; },
       'insurance_company':   function (j) { return j.insuranceCompany || ''; },
       'dol':                 function (j) { return j.dateOfLoss || ''; },
@@ -37968,10 +39353,15 @@ function mapsGoogleReady() {
 
     var docusignJobId = null;
 
+    function crmGetDocuSignSourceRecord(recordId) {
+      if (_crmPostLeadContingencyContext && String(_crmPostLeadContingencyContext.leadId || '') === String(recordId || '')) {
+        return crmGetLeads().find(function (lead) { return String(lead && lead.id || '') === String(recordId || ''); }) || null;
+      }
+      return getJobs().find(function (job) { return String(job && job.id || '') === String(recordId || ''); }) || null;
+    }
+
     function openDocuSign(jobId) {
-      var jobs = getJobs();
-      var job = null;
-      for (var i = 0; i < jobs.length; i++) { if (jobs[i].id === jobId) { job = jobs[i]; break; } }
+      var job = crmGetDocuSignSourceRecord(jobId);
       if (!job) return;
       docusignJobId = jobId;
 
@@ -38042,9 +39432,7 @@ function mapsGoogleReady() {
     function createAndOpenFormInstance(jobId, tplIdx) {
       var tpl = savedFormTemplates[tplIdx];
       if (!tpl) return;
-      var jobs = getJobs();
-      var job = null;
-      for (var i = 0; i < jobs.length; i++) { if (jobs[i].id === jobId) { job = jobs[i]; break; } }
+      var job = crmGetDocuSignSourceRecord(jobId);
       if (!job) return;
 
       _activeFormInstance = createFormInstance(tpl, job);
@@ -38052,9 +39440,7 @@ function mapsGoogleReady() {
     }
 
     function openFormInstance(jobId, inst) {
-      var jobs = getJobs();
-      var job = null;
-      for (var i = 0; i < jobs.length; i++) { if (jobs[i].id === jobId) { job = jobs[i]; break; } }
+      var job = crmGetDocuSignSourceRecord(jobId);
       if (!job) return;
 
       // Session state for interactive fields
@@ -38280,6 +39666,24 @@ function mapsGoogleReady() {
           inst.status = 'signed';
           inst.signedAt = new Date().toISOString();
           inst.completedBy = currentRep;
+
+          if (_crmPostLeadContingencyContext && String(_crmPostLeadContingencyContext.leadId || '') === String(jobId || '')) {
+            var leadRows = crmGetLeads();
+            var signedLead = leadRows.find(function (lead) { return String(lead && lead.id || '') === String(jobId || ''); });
+            if (!signedLead) return;
+            signedLead.contingencySigned = true;
+            signedLead.contingencySignedAt = inst.signedAt;
+            signedLead.contingencyStatus = 'signed_docusign';
+            signedLead.jobFile = signedLead.jobFile && typeof signedLead.jobFile === 'object' ? signedLead.jobFile : {};
+            signedLead.jobFile.contingencySigned = true;
+            signedLead.contingencyFormInstances = Array.isArray(signedLead.contingencyFormInstances) ? signedLead.contingencyFormInstances : [];
+            signedLead.contingencyFormInstances.push(inst);
+            signedLead.updatedAt = new Date().toISOString();
+            crmSaveLeads(leadRows);
+            _activeFormInstance = null;
+            crmOpenPostLeadPhotoReport(signedLead.id);
+            return;
+          }
 
           // Save completed instance to job.savedDocs
           var freshJobs = getJobs();
@@ -38535,6 +39939,10 @@ function mapsGoogleReady() {
     });
 
     document.getElementById('back-from-docusign').addEventListener('click', function () {
+      if (_crmPostLeadContingencyContext && _crmPostLeadContingencyContext.leadId) {
+        crmOpenLeadContingencyActions(_crmPostLeadContingencyContext.leadId);
+        return;
+      }
       if (docusignJobId) {
         openJobDetail(docusignJobId);
       } else {
@@ -43213,7 +44621,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     var CRM_NEW_LEAD_VALIDATION_DEFAULT_TEXT = 'Please fill in all required fields (First Name, Last Name, Phone, Street, City, State).';
     var CRM_NEW_LEAD_DUPLICATE_REVIEW_TEXT = 'Review the possible existing customer/property warnings below or choose Ignore and Continue before saving this lead.';
-    var CRM_FIELD_LEAD_VALIDATION_DEFAULT_TEXT = 'Please fill in all required fields (First Name, Last Name, Phone, Street, City, State, Job Category, Claim Number, Insurance Company).';
+    var CRM_FIELD_LEAD_VALIDATION_DEFAULT_TEXT = 'Please fill in all required fields (First Name, Last Name, Phone, Street, City, State, Job Category, Insurance Company).';
     var CRM_FIELD_LEAD_DUPLICATE_REVIEW_TEXT = 'Review the possible existing customer/property warnings below or ignore the matches before saving this lead.';
     var _crmNewLeadDuplicateState = {
       customer: { timer: null, signature: '', allMatches: [], visibleMatches: [], ignoredBySignature: {}, currentIndex: 0 },
@@ -43343,7 +44751,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         uploadedAt: String(entry.uploadedAt || entry.addedAt || new Date().toISOString()).trim(),
         addedAt: String(entry.addedAt || entry.uploadedAt || new Date().toISOString()).trim(),
         addedLabel: String(entry.addedLabel || '').trim(),
-        storageKey: String(entry.storageKey || '').trim()
+        storageKey: String(entry.storageKey || '').trim(),
+        caption: String(entry.caption || entry.note || '').trim(),
+        note: String(entry.note || entry.caption || '').trim(),
+        reportExcluded: entry.reportExcluded === true
       };
     }
 
@@ -43398,7 +44809,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           back: photosByStep['Back Slope'] || [],
           additional: additionalSlopes
         },
-        additionalSlopes: additionalSlopes
+        additionalSlopes: additionalSlopes,
+        reportLayout: [1, 2, 4, 6, 8].indexOf(Number(state.reportLayout)) !== -1 ? Number(state.reportLayout) : 4,
+        reportApproved: state.reportApproved === true,
+        photoReport: state.photoReport && typeof state.photoReport === 'object'
+          ? JSON.parse(JSON.stringify(state.photoReport))
+          : null
       };
     }
 
@@ -43445,7 +44861,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }, {
         category: category,
         photoPhase: 'inspection',
-        note: 'Pending inspection photo'
+        note: ''
       });
     }
 
@@ -43906,9 +45322,17 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       });
     }
 
-    function crmBuildCustomerDuplicateMatchesFromQuery(query, scope, stateRoot, useFieldLeadExactRules) {
+    function crmBuildCustomerDuplicateMatchesFromQuery(query, scope, stateRoot, useFieldLeadExactRules, allowSingleField) {
       stateRoot = stateRoot || _crmNewLeadDuplicateState;
-      if (!crmHasEnoughNewLeadCustomerInfo(query)) {
+      var hasSingleField = !!(
+        query && query.nameParts && (
+          (query.nameParts.first && query.nameParts.first.length >= 2) ||
+          (query.nameParts.last && query.nameParts.last.length >= 2)
+        ) ||
+        query && query.emailNorm && query.emailNorm.length >= 3 ||
+        query && query.phoneDigits && query.phoneDigits.length >= 4
+      );
+      if (!(allowSingleField ? hasSingleField : crmHasEnoughNewLeadCustomerInfo(query))) {
         return { signature: query.signature, allMatches: [], visibleMatches: [] };
       }
       var matchedByKey = {};
@@ -43916,6 +45340,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var emailMatch = crmMatchNewLeadEmailDuplicate(query.emailNorm, record.emailNorm);
         var phoneMatch = crmMatchNewLeadPhoneDuplicate(query.phoneDigits, record.phoneDigits);
         var nameMatch = crmMatchNewLeadNameDuplicate(query.nameParts, record.nameParts);
+        if (allowSingleField) {
+          var firstQuery = String(query.nameParts && query.nameParts.first || '');
+          var lastQuery = String(query.nameParts && query.nameParts.last || '');
+          var firstCandidate = String(record.nameParts && record.nameParts.first || '');
+          var lastCandidate = String(record.nameParts && record.nameParts.last || '');
+          if (firstQuery && firstCandidate && firstQuery === firstCandidate) {
+            nameMatch = { score: 100, reason: 'Exact First Name Match' };
+          } else if (lastQuery && lastCandidate && lastQuery === lastCandidate) {
+            nameMatch = { score: 100, reason: 'Exact Last Name Match' };
+          } else if (!nameMatch && firstQuery.length >= 2 && firstCandidate.indexOf(firstQuery) === 0) {
+            nameMatch = { score: 72, reason: 'Similar First Name' };
+          } else if (!nameMatch && lastQuery.length >= 2 && lastCandidate.indexOf(lastQuery) === 0) {
+            nameMatch = { score: 72, reason: 'Similar Last Name' };
+          }
+          if (!phoneMatch && query.phoneDigits && query.phoneDigits.length >= 4 && record.phoneDigits.indexOf(query.phoneDigits) === 0) {
+            phoneMatch = { score: 74, reason: 'Similar Phone' };
+          }
+          if (!emailMatch && query.emailNorm && query.emailNorm.length >= 3 && record.emailNorm.indexOf(query.emailNorm) === 0) {
+            emailMatch = { score: 74, reason: 'Similar Email' };
+          }
+        }
         if (!emailMatch && !phoneMatch && !nameMatch) return;
         var signals = [];
         if (emailMatch) signals.push(crmBuildDuplicateSignal('email', emailMatch));
@@ -43925,8 +45370,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var score = Math.max(emailMatch ? emailMatch.score : 0, phoneMatch ? phoneMatch.score : 0, nameMatch ? nameMatch.score : 0);
         if (signals.length > 1) score += 4 * (signals.length - 1);
         if (useFieldLeadExactRules) {
-          var isSpecifiedExactMatch = !!(emailMatch && emailMatch.score >= 100) ||
-            !!(phoneMatch && phoneMatch.score >= 100 && nameMatch && nameMatch.score >= 98);
+          var isSpecifiedExactMatch = !!(emailMatch && emailMatch.score >= 96) ||
+            !!(phoneMatch && phoneMatch.score >= 96) ||
+            !!(nameMatch && nameMatch.score >= 96);
           if (!isSpecifiedExactMatch) score = Math.min(score, 95);
         }
         matchedByKey[record.key] = crmFinalizeNewLeadDuplicateMatch(record, signals, score, reason);
@@ -43941,14 +45387,20 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       };
     }
 
-    function crmBuildPropertyDuplicateMatchesFromQuery(query, scope, stateRoot, useFieldLeadExactRules) {
+    function crmBuildPropertyDuplicateMatchesFromQuery(query, scope, stateRoot, useFieldLeadExactRules, allowSingleField) {
       stateRoot = stateRoot || _crmNewLeadDuplicateState;
-      if (!crmHasEnoughNewLeadPropertyInfo(query)) {
+      var hasSingleStreet = !!(query && query.addressParts && query.addressParts.street && query.addressParts.street.length >= 3);
+      if (!(allowSingleField ? hasSingleStreet : crmHasEnoughNewLeadPropertyInfo(query))) {
         return { signature: query.signature, allMatches: [], visibleMatches: [] };
       }
       var matchedByKey = {};
       crmGetNewLeadDuplicateSearchRecords().forEach(function (record) {
         var addressMatch = crmMatchNewLeadAddressDuplicate(query.addressParts, record.addressParts, useFieldLeadExactRules);
+        if (allowSingleField && query.addressParts.street === record.addressParts.street) {
+          addressMatch = { score: 100, reason: 'Exact Street Address Match' };
+        } else if (allowSingleField && !addressMatch && query.addressParts.street.length >= 3 && record.addressParts.street.indexOf(query.addressParts.street) === 0) {
+          addressMatch = { score: 72, reason: 'Similar Street Address' };
+        }
         if (!addressMatch) return;
         matchedByKey[record.key] = crmFinalizeNewLeadDuplicateMatch(
           record,
@@ -43968,11 +45420,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmFindNewLeadCustomerDuplicateMatches() {
-      return crmBuildCustomerDuplicateMatchesFromQuery(crmCollectNewLeadCustomerDuplicateQuery(), 'customer', _crmNewLeadDuplicateState);
+      return crmBuildCustomerDuplicateMatchesFromQuery(crmCollectNewLeadCustomerDuplicateQuery(), 'customer', _crmNewLeadDuplicateState, true, true);
     }
 
     function crmFindNewLeadPropertyDuplicateMatches() {
-      return crmBuildPropertyDuplicateMatchesFromQuery(crmCollectNewLeadPropertyDuplicateQuery(), 'property', _crmNewLeadDuplicateState);
+      return crmBuildPropertyDuplicateMatchesFromQuery(crmCollectNewLeadPropertyDuplicateQuery(), 'property', _crmNewLeadDuplicateState, true, true);
     }
 
     function crmBuildDuplicateMetaLineHtml(label, value, signal) {
@@ -44041,15 +45493,19 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         panel.innerHTML = '';
         return;
       }
-      var title = scope === 'customer' ? 'Possible Existing Customer' : 'Possible Existing Property';
-      var subtitle = scope === 'customer'
-        ? 'Review these existing records before creating a second homeowner record.'
-        : 'Review these existing records before creating a second property record.';
       var totalMatches = matches.length;
       var currentIndex = Number(options.currentIndex || 0);
       if (!isFinite(currentIndex) || currentIndex < 0) currentIndex = 0;
       if (currentIndex > totalMatches - 1) currentIndex = totalMatches - 1;
       var match = matches[currentIndex];
+      var currentMatchGroup = matches.filter(function (item) { return !!item.isExactMatch === !!match.isExactMatch; });
+      var currentGroupIndex = currentMatchGroup.indexOf(match);
+      var title = match.isExactMatch ? 'Exact Matches' : 'Possible Matches';
+      var subtitle = match.isExactMatch
+        ? 'An exact existing lead match was found.'
+        : (scope === 'customer'
+            ? 'Review these possible existing customer matches before creating another lead.'
+            : 'Review these possible existing property matches before creating another lead.');
       panel.classList.toggle('is-exact-match', !!match.isExactMatch);
       var signalMap = match.matchSignalMap || {};
       var jobMeta = match.recordType === 'job' && match.jobNumber
@@ -44064,7 +45520,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
       panel.innerHTML = '<h3 class="crm-crossref-panel-title">' + crmEscapeHtml(title) + '</h3>' +
         '<p class="crm-crossref-panel-subtitle">' + crmEscapeHtml(subtitle) + '</p>' +
-        '<div class="crm-crossref-panel-count">' + crmEscapeHtml((currentIndex + 1) + ' of ' + totalMatches + ' possible matches') + '</div>' +
+        '<div class="crm-crossref-panel-count">' + crmEscapeHtml((currentGroupIndex + 1) + ' of ' + currentMatchGroup.length + (match.isExactMatch ? ' exact matches' : ' possible matches')) + '</div>' +
         '<div class="crm-crossref-list">' +
           '<div class="crm-crossref-item">' +
             '<div class="crm-crossref-item-top">' +
@@ -44090,9 +45546,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
               crmBuildDuplicateMetaLineHtml('Last Updated', crmFormatContactTimestamp(match.updatedAt)) +
             '</div>' +
             '<div class="crm-crossref-actions">' +
-              '<button type="button" class="btn crm-crossref-btn" data-crm-crossref-action="prev" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '"' + (currentIndex <= 0 ? ' disabled' : '') + '>Previous</button>' +
-              '<button type="button" class="btn crm-crossref-btn" data-crm-crossref-action="next" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '"' + (currentIndex >= totalMatches - 1 ? ' disabled' : '') + '>Next</button>' +
-              '<button type="button" class="btn btn-primary crm-crossref-btn" data-crm-crossref-action="open" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '" data-crm-crossref-key="' + crmEscapeHtml(match.key) + '">' + crmEscapeHtml(options.openLabel || 'View Possible Match') + '</button>' +
+              '<button type="button" class="btn crm-crossref-btn" data-crm-crossref-action="prev" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '"' + (currentIndex <= 0 ? ' disabled' : '') + '>Previous Match</button>' +
+              '<button type="button" class="btn crm-crossref-btn" data-crm-crossref-action="next" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '"' + (currentIndex >= totalMatches - 1 ? ' disabled' : '') + '>Next Match</button>' +
+              '<button type="button" class="btn btn-primary crm-crossref-btn" data-crm-crossref-action="open" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '" data-crm-crossref-key="' + crmEscapeHtml(match.key) + '">' + crmEscapeHtml(options.openLabel || (match.isExactMatch ? 'View Match' : 'View Possible Match')) + '</button>' +
               '<button type="button" class="btn crm-crossref-btn crm-crossref-btn-ignore" data-crm-crossref-action="ignore" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '" data-crm-crossref-key="' + crmEscapeHtml(match.key) + '">' + crmEscapeHtml(options.ignoreLabel || 'Ignore') + '</button>' +
               '<button type="button" class="btn crm-crossref-btn crm-crossref-btn-ignore" data-crm-crossref-action="ignore-all" data-crm-crossref-scope="' + crmEscapeHtml(scope) + '">Ignore All</button>' +
             '</div>' +
@@ -44339,6 +45795,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var bindings = [
         { id: 'firstName', scope: 'customer' },
         { id: 'lastName', scope: 'customer' },
+        { id: 'primaryPhone', scope: 'customer' },
         { id: 'email', scope: 'customer' },
         { id: 'street', scope: 'property' },
         { id: 'city', scope: 'property' },
@@ -44437,19 +45894,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmFindFieldLeadCustomerDuplicateMatches() {
       var query = crmCollectFieldLeadCustomerDuplicateQuery();
-      var hasRequiredIdentity = !!(query.nameParts && query.nameParts.first && query.nameParts.last &&
-        query.phoneDigits && query.phoneDigits.length >= 10);
-      if (!hasRequiredIdentity) return { signature: query.signature, allMatches: [], visibleMatches: [] };
-      return crmBuildCustomerDuplicateMatchesFromQuery(query, 'customer', _crmFieldLeadDuplicateState, true);
+      return crmBuildCustomerDuplicateMatchesFromQuery(query, 'customer', _crmFieldLeadDuplicateState, true, true);
     }
 
     function crmFindFieldLeadPropertyDuplicateMatches() {
       var query = crmCollectFieldLeadPropertyDuplicateQuery();
-      var parts = query.addressParts || {};
-      var hasRequiredAddress = !!(parts.street && parts.street.length >= 3 &&
-        parts.city && parts.city.length >= 2 && parts.state && parts.state.length >= 2);
-      if (!hasRequiredAddress) return { signature: query.signature, allMatches: [], visibleMatches: [] };
-      return crmBuildPropertyDuplicateMatchesFromQuery(query, 'property', _crmFieldLeadDuplicateState, true);
+      return crmBuildPropertyDuplicateMatchesFromQuery(query, 'property', _crmFieldLeadDuplicateState, true, true);
     }
 
     function crmApplyFieldLeadDuplicateResults(scope, result) {
@@ -47512,11 +48962,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
             contentEl.innerHTML =
               '<img src="" alt="' + (meta.fileName || 'Image') +
               '" style="max-width:100%;border-radius:8px;display:block;margin:0 auto;" />';
+            contentEl.querySelector('img').src = url;
           } else if (mime === 'application/pdf') {
             contentEl.innerHTML =
               '<iframe src="" title="' + (meta.fileName || 'PDF') +
               '" style="width:100%;min-height:70vh;border:1px solid var(--border);' +
               'border-radius:8px;background:#fff;display:block;"></iframe>';
+            contentEl.querySelector('iframe').src = url;
           } else {
             contentEl.innerHTML =
               '<div style="text-align:center;padding:40px 20px;">' +
@@ -47537,7 +48989,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmRevokeViewerUrl();
       var lid = _crmViewerLeadId || _crmCurrentLeadId;
       if (_crmViewerReturnMode === 'job-file' && lid) {
-        crmOpenJobFile(lid, _crmViewerReturnTab || 'overview', _crmViewerBackMode || 'jobs');
+        crmOpenJobFileSection(lid, _crmViewerReturnTab || 'overview');
       } else if (lid) {
         crmOpenLeadDetail(lid);
       } else {
@@ -47856,7 +49308,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           crmSaveLeads(leads);
           document.getElementById('ld-convert-panel').style.display = 'none';
           crmRenderJobs();
-          crmOpenJobFile(_crmCurrentLeadId, 'overview', 'lead', 'page-lead-detail');
+          crmOpenJobFileSection(_crmCurrentLeadId, 'overview');
           break;
         }
       }
@@ -54658,6 +56110,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     var _crmJobFilePendingPhotoType = 'after_photo';
     var _crmJobFilePendingDocType = 'job_document';
     var _crmJobFilePendingUploadMeta = null;
+    var _crmJobFileThumbnailUrls = [];
     var CRM_JOB_FILE_TABS = ['overview','contacts','documents','photos','reports','notes','activity','estimate','insurance','calendar','tasks','production','payments','messages'];
     var _crmFinancialWorksheetDraft = null;
     var _crmJobProfitabilityDraft = null;
@@ -54898,6 +56351,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var payments = Array.isArray(jobFile.payments) ? jobFile.payments.map(crmNormalizeJobFilePayment) : [];
       var photos = Array.isArray(jobFile.photos) ? jobFile.photos.map(crmNormalizeJobFilePhotoMeta) : [];
       var documents = Array.isArray(jobFile.documents) ? jobFile.documents.map(crmNormalizeJobFileDocumentMeta) : [];
+      var reports = Array.isArray(jobFile.reports) ? JSON.parse(JSON.stringify(jobFile.reports)) : [];
+      var photoReports = Array.isArray(jobFile.photoReports) ? JSON.parse(JSON.stringify(jobFile.photoReports)) : reports;
       var notes = Array.isArray(jobFile.notes) ? jobFile.notes.map(crmNormalizeJobNoteEntry) : [];
       var financialWorksheet = crmGetDefaultFinancialWorksheetData({
         financialWorksheet: jobFile.financialWorksheet || {},
@@ -54973,6 +56428,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         jobProfitability: jobProfitability,
         photos: photos,
         documents: documents,
+        reports: reports,
+        photoReports: photoReports,
         payments: payments
       };
     }
@@ -55004,6 +56461,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         }),
         photos: Array.isArray(data.photos) ? data.photos.map(crmNormalizeJobFilePhotoMeta) : [],
         documents: Array.isArray(data.documents) ? data.documents.map(crmNormalizeJobFileDocumentMeta) : [],
+        reports: Array.isArray(data.reports) ? JSON.parse(JSON.stringify(data.reports)) : [],
+        photoReports: Array.isArray(data.photoReports) ? JSON.parse(JSON.stringify(data.photoReports)) : (Array.isArray(data.reports) ? JSON.parse(JSON.stringify(data.reports)) : []),
         payments: Array.isArray(data.payments) ? data.payments.map(crmNormalizeJobFilePayment) : []
       };
       lead.claimNumber = String(lead.jobFile.insurance.claimNumber || '').trim();
@@ -55463,10 +56922,36 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmGetJobFileVisibleTab(tab) {
       tab = String(tab || 'overview').trim();
-      if (['overview','contacts','documents','photos','reports','notes','activity'].indexOf(tab) !== -1) return tab;
-      if (['estimate','insurance','calendar','production','payments'].indexOf(tab) !== -1) return 'reports';
-      if (['tasks','messages'].indexOf(tab) !== -1) return 'activity';
-      return 'overview';
+      return CRM_JOB_FILE_TABS.indexOf(tab) === -1 ? 'overview' : tab;
+    }
+
+    function crmClearJobFileThumbnailUrls() {
+      _crmJobFileThumbnailUrls.forEach(function (url) {
+        try { URL.revokeObjectURL(url); } catch (e) {}
+      });
+      _crmJobFileThumbnailUrls = [];
+    }
+
+    function crmHydrateJobFilePhotoThumbnails(root) {
+      crmClearJobFileThumbnailUrls();
+      if (!root) return;
+      var images = root.querySelectorAll('[data-jf-photo-thumb-id]');
+      if (!images.length) return;
+      var files = crmGetLeadFiles();
+      crmOpenFilesDb(function (dbErr, db) {
+        if (dbErr || !db) return;
+        images.forEach(function (img) {
+          var fileId = String(img.getAttribute('data-jf-photo-thumb-id') || '').trim();
+          var meta = files.find(function (item) { return String(item && item.id || '') === fileId; }) || null;
+          if (!meta || !meta.storageKey) return;
+          crmDbGetBlob(db, meta.storageKey, function (blobErr, blob) {
+            if (blobErr || !blob || !img.isConnected) return;
+            var url = URL.createObjectURL(blob);
+            _crmJobFileThumbnailUrls.push(url);
+            img.src = url;
+          });
+        });
+      });
     }
 
     function crmGetJobFileJobTypeLabel(lead) {
@@ -56393,7 +57878,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmReturnToJobFileFromFinancePage() {
-      if (crmRenderJobFile()) showPage('page-crm-job-file');
+      if (_crmCurrentJobFileLeadId) crmOpenLeadDetail(_crmCurrentJobFileLeadId, _crmJobFileBackPageId || 'page-crm-pipeline');
     }
 
     function crmOpenFinancialWorksheetPage(leadId) {
@@ -56466,12 +57951,24 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderJobFilePhotoEntry(entry) {
       var metaBits = [entry.category || '', entry.uploadedBy || '', entry.uploadedAt ? crmFormatDateTimeLabel(entry.uploadedAt) : ''].filter(Boolean);
-      var detailBits = [entry.caption || '', entry.note || ''].filter(Boolean);
-      var html = '<button class="crm-job-file-file-link" type="button" data-jf-open-file="' + crmEscapeHtml(entry.fileId) + '">';
-      html += '<strong>' + crmEscapeHtml(entry.file.fileName || entry.file.name || 'Photo') + '</strong>';
+      var detailBits = [];
+      var html = '<button class="crm-job-file-thumbnail-card" type="button" data-jf-open-file="' + crmEscapeHtml(entry.fileId) + '">';
+      html += '<img class="crm-job-file-thumbnail-image" data-jf-photo-thumb-id="' + crmEscapeHtml(entry.fileId) + '" alt="' + crmEscapeHtml(entry.file.fileName || entry.file.name || 'Photo') + '" />';
+      html += '<span class="crm-job-file-thumbnail-meta"><span class="crm-job-file-thumbnail-title">' + crmEscapeHtml(entry.caption || entry.file.fileName || entry.file.name || 'Photo') + '</span>';
       if (detailBits.length) html += '<span style="display:block;font-size:12px;color:var(--text);margin-top:6px;">' + crmEscapeHtml(detailBits.join(' · ')) + '</span>';
       if (metaBits.length) html += '<span style="display:block;font-size:11px;color:var(--muted);margin-top:4px;">' + crmEscapeHtml(metaBits.join(' · ')) + '</span>';
-      html += '</button>';
+      html += '</span></button>';
+      return html;
+    }
+
+    function crmRenderJobFilePhotoReportEntry(lead, report) {
+      var inspectionDate = String(report && report.cover && report.cover.inspectionDate || '').trim();
+      var html = '<button class="crm-job-file-thumbnail-card crm-job-file-report-thumbnail" type="button" data-jf-open-photo-report="' + crmEscapeHtml(report.id || '') + '" data-jf-report-lead="' + crmEscapeHtml(lead.id || '') + '">';
+      html += '<span class="crm-job-file-thumbnail-image" aria-hidden="true">📷</span>';
+      html += '<span class="crm-job-file-report-stamp">REPORT</span>';
+      html += '<span class="crm-job-file-thumbnail-meta"><span class="crm-job-file-thumbnail-title">' + crmEscapeHtml(report.title || 'Property Photo Report') + '</span>';
+      if (inspectionDate) html += '<span class="crm-job-file-thumbnail-subtitle">' + crmEscapeHtml(inspectionDate) + '</span>';
+      html += '</span></button>';
       return html;
     }
 
@@ -56564,6 +58061,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmRenderJobFileReportsHtml(lead, jobFile) {
       var canFinance = crmCanAccessJobFinancialPages(lead);
       var html = '<div class="crm-job-folder-card-grid">';
+      html += '<div class="crm-job-folder-card full">';
+      html += '<div class="crm-job-folder-section-title">Reports</div>';
+      html += '<div class="crm-job-file-inline-note">Operational and financial reporting tools for this job. Photo Reports are stored only in Photos.</div>';
+      html += '</div>';
       html += '<div class="crm-job-folder-card">';
       html += '<div class="crm-job-folder-section-title">Insurance Snapshot</div>';
       html += '<div class="crm-job-folder-detail-list">';
@@ -56633,33 +58134,17 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderJobFilePhotosHtml(lead) {
       var entries = crmGetJobFilePhotoEntries(lead);
-      var grouped = {};
-      CRM_JOB_FILE_PHOTO_CATEGORIES.forEach(function (category) { grouped[category] = []; });
-      entries.forEach(function (entry) {
-        var key = CRM_JOB_FILE_PHOTO_CATEGORIES.indexOf(entry.category) === -1 ? 'Other' : entry.category;
-        grouped[key].push(entry);
-      });
-      var html = '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Upload Photo</div>';
-      html += '<div class="crm-job-file-form-grid">';
-      html += '<div class="field"><label for="jf-photo-category">Category</label><select id="jf-photo-category">' + CRM_JOB_FILE_PHOTO_CATEGORIES.map(function (category) {
-        return '<option value="' + crmEscapeHtml(category) + '">' + crmEscapeHtml(category) + '</option>';
-      }).join('') + '</select></div>';
-      html += '<div class="field"><label for="jf-photo-phase">Photo set</label><select id="jf-photo-phase"><option value="inspection">Inspection</option><option value="completion">Completion</option></select></div>';
-      html += '<div class="field"><label for="jf-photo-caption">Caption</label><input id="jf-photo-caption" type="text" placeholder="Front slope, adjuster notes, damage area..." /></div>';
-      html += '<div class="field full"><label for="jf-photo-note">Note</label><textarea id="jf-photo-note" placeholder="Optional photo note or context..."></textarea></div>';
-      html += '</div><div class="crm-job-file-inline-actions"><button class="btn btn-primary" type="button" data-jf-open-photo-picker="1">Upload Photo</button></div></div>';
-      html += '<div class="crm-job-file-photo-grid">';
-      CRM_JOB_FILE_PHOTO_CATEGORIES.forEach(function (category) {
-        html += '<div class="crm-job-file-file-card">';
-        html += '<div class="crm-job-file-row-top"><div class="crm-job-file-row-title">' + crmEscapeHtml(category) + '</div><div class="crm-job-file-row-meta">' + crmEscapeHtml(String(grouped[category].length)) + '</div></div>';
-        if (!grouped[category].length) html += '<div class="crm-job-file-empty">No photos in this category yet.</div>';
-        else {
-          html += '<div class="crm-job-file-file-links">';
-          grouped[category].forEach(function (entry) { html += crmRenderJobFilePhotoEntry(entry); });
-          html += '</div>';
-        }
-        html += '</div>';
-      });
+      var jobFile = crmGetLeadJobFileData(lead);
+      var photoReports = Array.isArray(jobFile.photoReports) ? jobFile.photoReports : [];
+      var html = '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Upload Photos</div>';
+      html += '<button class="crm-job-file-upload-dropzone" type="button" data-jf-photo-dropzone="1"><strong>Drag and drop photos here</strong><span>or click to choose image files from this device</span><span class="btn btn-primary">Choose Photos</span></button></div>';
+      if (!photoReports.length && !entries.length) {
+        html += '<div class="crm-job-file-empty">No photos or Photo Reports have been added yet.</div>';
+        return html;
+      }
+      html += '<div class="crm-job-file-thumbnail-grid">';
+      photoReports.forEach(function (report) { html += crmRenderJobFilePhotoReportEntry(lead, report); });
+      entries.forEach(function (entry) { html += crmRenderJobFilePhotoEntry(entry); });
       html += '</div>';
       return html;
     }
@@ -56917,15 +58402,24 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       quickCard.innerHTML = '';
       quickCard.hidden = true;
       tabContent.innerHTML = crmRenderJobFileTabContent(lead, jobFile, feed);
-      document.getElementById('jf-back-btn').textContent = _crmJobFileBackMode === 'lead'
-        ? 'Back to Lead'
+      if (_crmJobFileActiveTab === 'photos') crmHydrateJobFilePhotoThumbnails(tabContent);
+      else crmClearJobFileThumbnailUrls();
+      var jobFileBackBtn = document.getElementById('jf-back-btn');
+      var jobFolderBackLabel = 'Back to ' + crmGetJobFileLeadName(lead) + "'s Job Folder";
+      jobFileBackBtn.textContent = _crmJobFileBackMode === 'lead'
+        ? jobFolderBackLabel
         : (_crmJobFileBackPageId === 'page-crm-jobs' ? 'Back to Jobs' : 'Back');
+      jobFileBackBtn.setAttribute('aria-label', jobFolderBackLabel);
+      jobFileBackBtn.title = jobFolderBackLabel;
       document.getElementById('jf-open-lead-btn').setAttribute('data-jf-lead-id', lead.id);
       var visibleTab = crmGetJobFileVisibleTab(_crmJobFileActiveTab);
       document.querySelectorAll('#jf-tabs [data-jf-tab]').forEach(function (btn) {
         btn.classList.toggle('active', btn.getAttribute('data-jf-tab') === visibleTab);
       });
-      crmRenderDashboardShellChrome(document.querySelector('#page-crm-job-file .hm-dashboard-ref'));
+      if (crmGetActivePageId() === 'page-crm-job-file') {
+        document.body.classList.toggle('crm-job-file-photos-page-active', _crmJobFileActiveTab === 'photos');
+      }
+      crmRenderMiniDashboardShells(document.getElementById('page-crm-job-file'));
       return true;
     }
 
@@ -56935,6 +58429,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       /* Reset documents hub category when switching away from documents */
       if (tab !== 'documents') _jfDocSelectedCategory = null;
       crmRenderJobFile();
+      renderTopBrand();
     }
 
     function crmGetActivePageId() {
@@ -56994,6 +58489,20 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmOpenJobFile(leadId, initialTab, backMode, backPageId) {
       crmOpenLeadDetail(leadId, backPageId || crmGetActivePageId());
+    }
+
+    function crmOpenJobFileSection(leadId, initialTab) {
+      var lead = crmGetJobFileLeadById(leadId);
+      if (!crmCanViewJobFileLead(lead)) {
+        showUploadToast('You do not have permission to open that job file section.');
+        return;
+      }
+      _crmCurrentJobFileLeadId = lead.id;
+      _crmCurrentLeadId = lead.id;
+      _crmJobFileActiveTab = CRM_JOB_FILE_TABS.indexOf(initialTab) === -1 ? 'overview' : initialTab;
+      _crmJobFileBackMode = 'lead';
+      _crmJobFileBackPageId = 'page-lead-detail';
+      if (crmRenderJobFile()) showPage('page-crm-job-file');
     }
 
     function crmOpenJobFileCalendarForm(lead, type) {
@@ -57069,7 +58578,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     document.getElementById('ld-open-job-file-btn').addEventListener('click', function () {
       if (!_crmCurrentLeadId) return;
-      crmOpenJobFile(_crmCurrentLeadId, 'overview', 'lead', 'page-lead-detail');
+      crmOpenJobFileSection(_crmCurrentLeadId, 'overview');
     });
 
     document.getElementById('jfw-back-btn').addEventListener('click', function () {
@@ -57146,6 +58655,383 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmRenderJobFile();
     });
 
+    document.getElementById('jf-back-btn').addEventListener('click', function () {
+      if (_crmCurrentJobFileLeadId) crmOpenLeadDetail(_crmCurrentJobFileLeadId, _crmJobFileBackPageId || 'page-crm-pipeline');
+    });
+
+    document.getElementById('jf-open-lead-btn').addEventListener('click', function () {
+      var leadId = this.getAttribute('data-jf-lead-id') || _crmCurrentJobFileLeadId || '';
+      if (leadId) crmOpenLeadDetail(leadId, _crmJobFileBackPageId || 'page-crm-pipeline');
+    });
+
+    document.getElementById('jf-tabs').addEventListener('click', function (e) {
+      var tabBtn = e.target.closest('[data-jf-tab]');
+      if (tabBtn) crmSwitchJobFileTab(tabBtn.getAttribute('data-jf-tab') || 'overview');
+    });
+
+    document.getElementById('page-crm-job-file').addEventListener('click', function (e) {
+      var lead = crmGetJobFileLeadById(_crmCurrentJobFileLeadId);
+      if (!crmCanViewJobFileLead(lead)) return;
+
+      var shortcut = e.target.closest('[data-jf-tab-shortcut]');
+      if (shortcut) { crmSwitchJobFileTab(shortcut.getAttribute('data-jf-tab-shortcut') || 'overview'); return; }
+
+      var actionBtn = e.target.closest('[data-jf-action]');
+      if (actionBtn) {
+        var action = actionBtn.getAttribute('data-jf-action') || '';
+        if (action === 'financial-worksheet') crmOpenFinancialWorksheetPage(lead.id);
+        else if (action === 'job-profitability') crmOpenJobProfitabilityPage(lead.id);
+        else if (action === 'call' && lead.phone) window.location.href = 'tel:' + String(lead.phone).replace(/[^\d+]/g, '');
+        else if (action === 'text' && lead.phone) window.location.href = 'sms:' + String(lead.phone).replace(/[^\d+]/g, '');
+        else if (action === 'email' && lead.email) window.location.href = 'mailto:' + lead.email;
+        else if (action === 'directions') {
+          var address = crmGetJobFileLeadAddress(lead);
+          if (address) window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(address), '_blank');
+        } else if (action === 'schedule-inspection') crmOpenJobFileCalendarForm(lead, 'Inspection');
+        else if (action === 'add-task') crmOpenJobFileTaskModal(lead);
+        else if (action === 'add-note') crmOpenJobFileNoteModal(lead);
+        else if (action === 'log-comm') {
+          crmOpenLeadDetail(lead.id, 'page-crm-job-file');
+          setTimeout(function () { var btn = document.getElementById('ld-log-comm-btn'); if (btn) btn.click(); }, 80);
+        } else if (action === 'upload-photo') crmOpenJobFilePhotoPicker(lead);
+        else if (action === 'create-estimate') crmSwitchJobFileTab('estimate');
+        else if (action === 'create-contract') crmCreateJobFileContractDraft(lead);
+        return;
+      }
+
+      if (e.target.closest('[data-jf-photo-dropzone], [data-jf-open-photo-picker]')) { crmOpenJobFilePhotoPicker(lead); return; }
+
+      var uploadDocBtn = e.target.closest('[data-jf-upload-doc]');
+      if (uploadDocBtn) {
+        var docType = uploadDocBtn.getAttribute('data-jf-upload-doc') || 'job_document';
+        crmOpenJobFileDocumentPicker(lead, docType, uploadDocBtn.getAttribute('data-jf-doc-category') || crmGetJobFileDocumentCategoryForType(docType), '');
+        return;
+      }
+
+      if (e.target.closest('[data-jf-open-doc-picker]')) {
+        var selectedCategory = String((document.getElementById('jf-doc-category') || {}).value || 'Other Documents').trim() || 'Other Documents';
+        var docTypeMap = { Contingency: 'signed_contingency', Contract: 'signed_contract', Estimate: 'estimate_document',
+          'Insurance Paperwork': 'insurance_paperwork', Invoice: 'invoice_document', Supplements: 'supplement_document', 'Other Documents': 'job_document' };
+        crmOpenJobFileDocumentPicker(lead, docTypeMap[selectedCategory] || 'job_document', selectedCategory, String((document.getElementById('jf-doc-note') || {}).value || '').trim());
+        return;
+      }
+
+      var openFileBtn = e.target.closest('[data-jf-open-file]');
+      if (openFileBtn) {
+        crmOpenFileViewer(openFileBtn.getAttribute('data-jf-open-file') || '', 'job-file', lead.id, _crmJobFileActiveTab);
+        return;
+      }
+
+      if (e.target.closest('[data-jf-create-contract]')) { crmCreateJobFileContractDraft(lead); return; }
+
+      var toggleFlagBtn = e.target.closest('[data-jf-toggle-flag]');
+      if (toggleFlagBtn) {
+        var flagType = toggleFlagBtn.getAttribute('data-jf-toggle-flag') || '';
+        if (flagType) {
+          if (crmHasFileType(lead.id, flagType)) crmRemoveLeadFileType(lead.id, flagType);
+          else crmAddLeadFile(lead.id, flagType, crmGetJobFileDocLabel(flagType));
+          crmAutoAdvanceStage(lead.id);
+          crmRenderJobFile();
+        }
+        return;
+      }
+
+      if (e.target.closest('[data-jf-save-note]')) {
+        var noteText = String((document.getElementById('jf-note-text') || {}).value || '').trim();
+        if (noteText) crmUpdateJobFileLeadRecord(lead.id, function (item) { crmPushLeadActivity(item, noteText, 'note'); });
+        crmRenderJobFile();
+        return;
+      }
+
+      if (e.target.closest('[data-jf-save-estimate]')) {
+        crmUpdateJobFileLeadRecord(lead.id, function (item) {
+          var data = crmGetLeadJobFileData(item);
+          data.estimate.status = String(document.getElementById('jf-estimate-status').value || 'Draft').trim() || 'Draft';
+          data.estimate.amount = String(document.getElementById('jf-estimate-amount').value || '').trim();
+          data.estimate.scope = String(document.getElementById('jf-estimate-scope').value || '').trim();
+          data.estimate.notes = String(document.getElementById('jf-estimate-notes').value || '').trim();
+          data.estimate.updatedAt = new Date().toISOString();
+          crmApplyLeadJobFileData(item, data);
+          crmPushLeadActivity(item, 'Estimate updated', 'estimate');
+        });
+        crmRenderJobFile();
+        return;
+      }
+
+      if (e.target.closest('[data-jf-save-insurance]')) {
+        crmUpdateJobFileLeadRecord(lead.id, function (item) {
+          var data = crmGetLeadJobFileData(item);
+          data.insurance.claimNumber = String(document.getElementById('jf-claim-number').value || '').trim();
+          data.insurance.company = String(document.getElementById('jf-insurance-company').value || '').trim();
+          data.insurance.dateOfLoss = String(document.getElementById('jf-date-of-loss').value || '').trim();
+          data.insurance.adjusterName = String(document.getElementById('jf-adjuster-name').value || '').trim();
+          data.insurance.adjusterPhone = String(document.getElementById('jf-adjuster-phone').value || '').trim();
+          data.insurance.adjusterEmail = String(document.getElementById('jf-adjuster-email').value || '').trim();
+          data.insurance.adjusterAppointmentDate = String(document.getElementById('jf-adjuster-appt-date').value || '').trim();
+          data.insurance.adjusterAppointmentTime = String(document.getElementById('jf-adjuster-appt-time').value || '').trim();
+          data.insurance.approvedAmount = String(document.getElementById('jf-approved-amount').value || '').trim();
+          data.insurance.deductible = String(document.getElementById('jf-insurance-deductible').value || '').trim();
+          data.insurance.supplementStatus = String(document.getElementById('jf-supplement-status').value || '').trim();
+          data.insurance.mortgageCheckStatus = String(document.getElementById('jf-mortgage-check-status').value || '').trim();
+          data.contingencySigned = !!((document.getElementById('jf-contingency-signed') || {}).checked);
+          data.insurance.notes = String(document.getElementById('jf-insurance-notes').value || '').trim();
+          data.insurance.updatedAt = new Date().toISOString();
+          crmApplyLeadJobFileData(item, data);
+          crmPushLeadActivity(item, 'Insurance details updated', 'insurance');
+        });
+        crmRenderJobFile();
+        return;
+      }
+
+      var appointmentCompleteBtn = e.target.closest('[data-crm-appt-complete]');
+      if (appointmentCompleteBtn) {
+        var appointmentCompleteId = appointmentCompleteBtn.getAttribute('data-crm-appt-complete') || '';
+        var appointmentItems = crmGetAppointments();
+        appointmentItems.forEach(function (appointment) {
+          if (appointment.id === appointmentCompleteId && crmCanEditAppointment(appointment)) {
+            appointment.completed = true;
+            appointment.updatedAt = new Date().toISOString();
+          }
+        });
+        crmSaveAppointments(appointmentItems);
+        crmRenderJobFile();
+        return;
+      }
+
+      var appointmentEditBtn = e.target.closest('[data-crm-appt-edit]');
+      if (appointmentEditBtn) {
+        var appointmentEditId = appointmentEditBtn.getAttribute('data-crm-appt-edit') || '';
+        var appointmentToEdit = crmGetAppointments().find(function (appointment) { return appointment.id === appointmentEditId; }) || null;
+        if (appointmentToEdit && crmCanEditAppointment(appointmentToEdit)) crmOpenAppointmentForm(appointmentToEdit);
+        return;
+      }
+
+      var appointmentDeleteBtn = e.target.closest('[data-crm-appt-delete]');
+      if (appointmentDeleteBtn) {
+        var appointmentDeleteId = appointmentDeleteBtn.getAttribute('data-crm-appt-delete') || '';
+        var appointmentToDelete = crmGetAppointments().find(function (appointment) { return appointment.id === appointmentDeleteId; }) || null;
+        if (!appointmentToDelete || !crmCanDeleteAppointment(appointmentToDelete) || !confirm('Delete this appointment?')) return;
+        crmSaveAppointments(crmGetAppointments().filter(function (appointment) { return appointment.id !== appointmentDeleteId; }));
+        crmRenderJobFile();
+        return;
+      }
+
+      var appointmentOpenBtn = e.target.closest('[data-crm-appt-open]');
+      if (appointmentOpenBtn) {
+        var appointmentOpenId = appointmentOpenBtn.getAttribute('data-crm-appt-open') || '';
+        var appointmentToOpen = crmGetAppointments().find(function (appointment) { return appointment.id === appointmentOpenId; }) || null;
+        if (appointmentToOpen) {
+          _crmCalendarSelectedAppointmentId = appointmentOpenId;
+          _crmCalendarSelectedDate = crmGetAppointmentStartDate(appointmentToOpen) || appointmentToOpen.date || _crmCalendarSelectedDate;
+          _crmCalendarCursor = crmParseYmd(_crmCalendarSelectedDate) || _crmCalendarCursor;
+          crmRenderCalendar();
+          showPage('page-crm-calendar');
+        }
+        return;
+      }
+
+      var calendarBtn = e.target.closest('[data-jf-open-calendar]');
+      if (calendarBtn) {
+        var calendarMode = calendarBtn.getAttribute('data-jf-open-calendar') || 'inspection';
+        crmOpenJobFileCalendarForm(lead, calendarMode === 'inspection' ? 'Inspection' : (calendarMode === 'event' ? 'Event' : 'any'));
+        return;
+      }
+
+      var taskToggleBtn = e.target.closest('[data-jf-task-toggle]');
+      if (taskToggleBtn) {
+        var taskId = taskToggleBtn.getAttribute('data-jf-task-toggle') || '';
+        var tasks = crmGetTasks();
+        tasks.forEach(function (task) {
+          if (task.id === taskId) { task.status = task.status === 'done' ? 'open' : 'done'; task.completed = task.status === 'done'; task.updatedAt = new Date().toISOString(); }
+        });
+        crmSaveTasks(tasks); crmUpdateTasksBadge(); crmRenderJobFile();
+        return;
+      }
+
+      if (e.target.closest('[data-jf-save-task]')) {
+        var taskTitle = String(document.getElementById('jf-task-title').value || '').trim();
+        if (!taskTitle) return;
+        var assignedTo = String(document.getElementById('jf-task-assigned').value || '').trim();
+        var tasks2 = crmGetTasks();
+        tasks2.push({ id: crmGenId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), title: taskTitle,
+          dueDate: String(document.getElementById('jf-task-due').value || '').trim(), assignedTo: assignedTo,
+          priority: String(document.getElementById('jf-task-priority').value || 'Normal').trim() || 'Normal', leadId: lead.id,
+          jobId: crmGetJobFileId(lead), completed: false, createdByName: crmGetCurrentUserName() || currentRep || '', status: 'open' });
+        crmSaveTasks(tasks2); crmUpdateTasksBadge(); crmRenderJobFile();
+        return;
+      }
+
+      if (e.target.closest('[data-jf-save-production]')) { crmSaveJobFileProduction(lead); return; }
+      if (e.target.closest('[data-jf-save-payment-summary]')) { crmSaveJobFilePaymentSummary(lead); return; }
+      if (e.target.closest('[data-jf-save-payment]')) { crmSaveJobFilePayment(lead); return; }
+      var deletePaymentBtn = e.target.closest('[data-jf-payment-delete]');
+      if (deletePaymentBtn) {
+        var paymentId = deletePaymentBtn.getAttribute('data-jf-payment-delete') || '';
+        crmUpdateJobFileLeadRecord(lead.id, function (item) {
+          var data = crmGetLeadJobFileData(item);
+          data.payments = data.payments.filter(function (payment) { return payment.id !== paymentId; });
+          crmApplyLeadJobFileData(item, data);
+        });
+        crmRenderJobFile();
+      }
+    });
+
+
+    function crmOpenJobFilePhotoPicker(lead) {
+      if (!lead || !crmCanEditJobFileLead(lead)) { showUploadToast('You do not have permission to upload files to this job.'); return; }
+      _crmJobFilePendingPhotoType = 'inspection_photo';
+      _crmJobFilePendingUploadMeta = { category: 'Other', caption: '', note: '', uploadedBy: crmGetCurrentUserName() || currentRep || '', photoPhase: 'inspection', jobId: crmGetJobFileId(lead) };
+      document.getElementById('jf-photo-upload-input').click();
+    }
+
+    function crmSaveJobFilePhotoFiles(fileList) {
+      var leadId = _crmCurrentJobFileLeadId;
+      var lead = crmGetJobFileLeadById(leadId);
+      var files = Array.prototype.slice.call(fileList || []).filter(function (file) {
+        return String(file.type || '').indexOf('image/') === 0 || /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(String(file.name || ''));
+      });
+      if (!leadId || !files.length) { if (fileList && fileList.length) showUploadToast('Choose supported image files.'); return; }
+      if (!crmCanEditJobFileLead(lead)) { showUploadToast('You do not have permission to upload files to this job.'); return; }
+      var type = _crmJobFilePendingPhotoType || 'inspection_photo';
+      var meta = _crmJobFilePendingUploadMeta || { category: 'Other', photoPhase: 'inspection', jobId: crmGetJobFileId(lead) };
+      crmSaveFilesToDb(leadId, type, files, function (count, savedMeta) {
+        if (!count) return;
+        crmUpdateJobFileLeadRecord(leadId, function (item) {
+          var data = crmGetLeadJobFileData(item);
+          (savedMeta || []).forEach(function (fileMeta) {
+            data.photos.push(crmNormalizeJobFilePhotoMeta({ id: crmGenId(), fileId: fileMeta.id,
+              category: meta.category || fileMeta.category || 'Other', caption: meta.caption || fileMeta.caption || '',
+              note: meta.note || fileMeta.note || '', uploadedBy: meta.uploadedBy || fileMeta.uploadedBy || crmGetCurrentUserName() || currentRep || '',
+              uploadedAt: fileMeta.uploadedAt || new Date().toISOString(), photoPhase: meta.photoPhase || fileMeta.photoPhase || 'inspection' }));
+          });
+          crmApplyLeadJobFileData(item, data);
+          crmPushLeadActivity(item, count + ' photo' + (count !== 1 ? 's' : '') + ' uploaded', 'photo');
+        });
+        crmAutoAdvanceStage(leadId);
+        crmRenderJobFile();
+        showUploadToast(count + ' photo' + (count !== 1 ? 's' : '') + ' uploaded.');
+        _crmJobFilePendingUploadMeta = null;
+      }, meta);
+    }
+
+    function crmOpenJobFileDocumentPicker(lead, type, category, note) {
+      if (!lead || !crmCanEditJobFileLead(lead)) { showUploadToast('You do not have permission to upload files to this job.'); return; }
+      _crmJobFilePendingDocType = type || 'job_document';
+      _crmJobFilePendingUploadMeta = { category: category || crmGetJobFileDocumentCategoryForType(_crmJobFilePendingDocType),
+        docCategory: category || crmGetJobFileDocumentCategoryForType(_crmJobFilePendingDocType), note: note || '',
+        uploadedBy: crmGetCurrentUserName() || currentRep || '', jobId: crmGetJobFileId(lead) };
+      document.getElementById('jf-doc-upload-input').click();
+    }
+
+    function crmCreateJobFileContractDraft(lead) {
+      crmUpdateJobFileLeadRecord(lead.id, function (item) {
+        var data = crmGetLeadJobFileData(item);
+        if (!data.contract.createdAt) data.contract.createdAt = new Date().toISOString();
+        data.contract.status = data.contract.status === 'Signed File Uploaded' ? data.contract.status : 'Draft Created';
+        data.contract.updatedAt = new Date().toISOString();
+        crmApplyLeadJobFileData(item, data);
+        crmPushLeadActivity(item, 'Contract draft created', 'contract');
+      });
+      crmSwitchJobFileTab('documents');
+    }
+
+    function crmSaveJobFileProduction(lead) {
+      crmUpdateJobFileLeadRecord(lead.id, function (item) {
+        var data = crmGetLeadJobFileData(item);
+        data.production.status = String(document.getElementById('jf-production-status').value || 'Not Scheduled').trim();
+        data.production.materialOrderStatus = String(document.getElementById('jf-material-order-status').value || '').trim();
+        data.production.crewAssigned = String(document.getElementById('jf-production-crew').value || '').trim();
+        data.production.crew = data.production.crewAssigned;
+        data.production.scheduledBuildDate = String(document.getElementById('jf-production-start').value || '').trim();
+        data.production.startDate = data.production.scheduledBuildDate;
+        data.production.permitStatus = String(document.getElementById('jf-permit-status').value || '').trim();
+        data.production.roofColor = String(document.getElementById('jf-roof-color').value || '').trim();
+        data.production.shingleType = String(document.getElementById('jf-shingle-type').value || '').trim();
+        data.production.notes = String(document.getElementById('jf-production-notes').value || '').trim();
+        data.production.updatedAt = new Date().toISOString();
+        crmApplyLeadJobFileData(item, data); crmPushLeadActivity(item, 'Production details updated', 'production');
+      });
+      crmRenderJobFile();
+    }
+
+    function crmSaveJobFilePaymentSummary(lead) {
+      crmUpdateJobFileLeadRecord(lead.id, function (item) {
+        var data = crmGetLeadJobFileData(item);
+        data.paymentsSummary.contractAmount = String(document.getElementById('jf-contract-amount').value || '').trim();
+        data.paymentsSummary.deductible = String(document.getElementById('jf-summary-deductible').value || '').trim();
+        data.paymentsSummary.insurancePaid = String(document.getElementById('jf-insurance-paid').value || '').trim();
+        data.paymentsSummary.customerPaid = String(document.getElementById('jf-customer-paid').value || '').trim();
+        data.paymentsSummary.supplements = String(document.getElementById('jf-supplements-total').value || '').trim();
+        data.paymentsSummary.balanceDue = String(document.getElementById('jf-balance-due').value || '').trim();
+        crmApplyLeadJobFileData(item, data); crmPushLeadActivity(item, 'Payment summary updated', 'payment');
+      });
+      crmRenderJobFile();
+    }
+
+    function crmSaveJobFilePayment(lead) {
+      var label = String(document.getElementById('jf-payment-label').value || '').trim();
+      var amount = String(document.getElementById('jf-payment-amount').value || '').trim();
+      if (!label || !amount) return;
+      crmUpdateJobFileLeadRecord(lead.id, function (item) {
+        var data = crmGetLeadJobFileData(item);
+        data.payments.push(crmNormalizeJobFilePayment({ id: crmGenId(), label: label,
+          category: String(document.getElementById('jf-payment-category').value || 'Other').trim(), amount: amount,
+          date: String(document.getElementById('jf-payment-date').value || '').trim(), status: String(document.getElementById('jf-payment-status').value || 'Pending').trim(),
+          notes: String(document.getElementById('jf-payment-notes').value || '').trim(), addedBy: crmGetCurrentUserName() || currentRep || '',
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }));
+        crmApplyLeadJobFileData(item, data); crmPushLeadActivity(item, label + ' added', 'payment');
+      });
+      crmRenderJobFile();
+    }
+
+    document.getElementById('jf-photo-upload-input').addEventListener('change', function () {
+      var files = Array.prototype.slice.call(this.files || []);
+      this.value = '';
+      crmSaveJobFilePhotoFiles(files);
+    });
+
+    document.getElementById('page-crm-job-file').addEventListener('dragover', function (e) {
+      var dropzone = e.target.closest('[data-jf-photo-dropzone]');
+      if (!dropzone) return;
+      e.preventDefault();
+      dropzone.classList.add('is-dragover');
+    });
+    document.getElementById('page-crm-job-file').addEventListener('dragleave', function (e) {
+      var dropzone = e.target.closest('[data-jf-photo-dropzone]');
+      if (dropzone) dropzone.classList.remove('is-dragover');
+    });
+    document.getElementById('page-crm-job-file').addEventListener('drop', function (e) {
+      var dropzone = e.target.closest('[data-jf-photo-dropzone]');
+      if (!dropzone) return;
+      e.preventDefault();
+      dropzone.classList.remove('is-dragover');
+      _crmJobFilePendingPhotoType = 'inspection_photo';
+      _crmJobFilePendingUploadMeta = { category: 'Other', uploadedBy: crmGetCurrentUserName() || currentRep || '', photoPhase: 'inspection', jobId: crmGetJobFileId(crmGetJobFileLeadById(_crmCurrentJobFileLeadId)) };
+      crmSaveJobFilePhotoFiles(e.dataTransfer && e.dataTransfer.files || []);
+    });
+
+    document.getElementById('jf-doc-upload-input').addEventListener('change', function () {
+      var leadId = _crmCurrentJobFileLeadId;
+      var lead = crmGetJobFileLeadById(leadId);
+      var files = Array.prototype.slice.call(this.files || []);
+      this.value = '';
+      if (!leadId || !files.length || !crmCanEditJobFileLead(lead)) return;
+      var type = _crmJobFilePendingDocType || 'job_document';
+      var meta = _crmJobFilePendingUploadMeta || {};
+      crmSaveFilesToDb(leadId, type, files, function (count, savedMeta) {
+        if (!count) return;
+        crmUpdateJobFileLeadRecord(leadId, function (item) {
+          var data = crmGetLeadJobFileData(item);
+          (savedMeta || []).forEach(function (fileMeta) {
+            data.documents.push(crmNormalizeJobFileDocumentMeta({ id: crmGenId(), fileId: fileMeta.id,
+              category: meta.category || meta.docCategory || crmGetJobFileDocumentCategoryForType(type), note: meta.note || '',
+              uploadedBy: meta.uploadedBy || crmGetCurrentUserName() || currentRep || '', uploadedAt: fileMeta.uploadedAt || new Date().toISOString() }));
+          });
+          crmApplyLeadJobFileData(item, data); crmPushLeadActivity(item, count + ' document' + (count !== 1 ? 's' : '') + ' uploaded', 'document');
+        });
+        crmRenderJobFile(); showUploadToast(count + ' document' + (count !== 1 ? 's' : '') + ' uploaded.');
+      }, meta);
+    });
 
     document.getElementById('page-crm-financial-worksheet').addEventListener('input', function (e) {
       if (!e.target.closest('#jfw-content')) return;
@@ -60460,13 +62346,28 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!lead.stormDate && inspection.stormDate) lead.stormDate = inspection.stormDate;
       var jobFile = lead.jobFile && typeof lead.jobFile === 'object' ? lead.jobFile : {};
       jobFile.inspection = inspection;
+      var report = inspection.photoReport && typeof inspection.photoReport === 'object'
+        ? JSON.parse(JSON.stringify(inspection.photoReport))
+        : null;
+      if (report) {
+        report.leadId = String(lead.id || '').trim();
+        report.cover = crmGetInspectionReportCover(inspection, lead);
+        report.updatedAt = new Date().toISOString();
+        jobFile.photoReports = Array.isArray(jobFile.photoReports) ? jobFile.photoReports : [];
+        var reportIndex = jobFile.photoReports.findIndex(function (item) { return String(item && item.id || '') === String(report.id || ''); });
+        if (reportIndex >= 0) jobFile.photoReports[reportIndex] = report;
+        else jobFile.photoReports.push(report);
+        lead.photoReports = jobFile.photoReports;
+        inspection.photoReport = report;
+        lead.inspection.photoReport = report;
+      }
       jobFile.photos = photos.map(function (photo) {
         return {
           id: String(photo.id || photo.fileId || crmGenId()).trim(),
           fileId: String(photo.fileId || photo.id || '').trim(),
           category: String(photo.category || 'Inspection').trim(),
-          caption: String(photo.name || photo.fileName || '').trim(),
-          note: 'Completed inspection photo',
+          caption: String(photo.caption || photo.note || photo.name || photo.fileName || '').trim(),
+          note: String(photo.note || photo.caption || '').trim(),
           uploadedBy: String(photo.uploadedBy || '').trim(),
           uploadedAt: String(photo.uploadedAt || photo.addedAt || new Date().toISOString()).trim(),
           photoPhase: 'inspection'
@@ -60475,16 +62376,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       lead.jobFile = jobFile;
     }
 
-    function crmMovePendingInspectionFilesToLead(pendingInspectionId, leadId) {
+    function crmMovePendingInspectionFilesToLead(pendingInspectionId, leadId, pendingInspection) {
       pendingInspectionId = String(pendingInspectionId || '').trim();
       leadId = String(leadId || '').trim();
       if (!pendingInspectionId || !leadId) return;
       var files = crmGetLeadFiles();
+      var photoById = {};
+      (pendingInspection && pendingInspection.inspectionPhotos || []).forEach(function (photo) {
+        photoById[String(photo && (photo.id || photo.fileId) || '').trim()] = photo;
+      });
       var changed = false;
       files.forEach(function (file) {
         if (String(file && file.leadId || '').trim() !== pendingInspectionId) return;
         file.leadId = leadId;
         file.jobId = leadId;
+        var photo = photoById[String(file.id || '').trim()];
+        if (photo) {
+          file.category = String(photo.category || file.category || 'Inspection').trim();
+          file.caption = String(photo.caption || photo.note || '').trim();
+          file.note = String(photo.note || photo.caption || '').trim();
+          file.photoPhase = 'inspection';
+        }
         changed = true;
       });
       if (changed) crmSaveLeadFiles(files);
@@ -60519,6 +62431,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var cb = document.getElementById(id); if (cb) cb.checked = true;
       });
       var insOtherWrap = document.getElementById('fl-insuranceOtherWrap'); if (insOtherWrap) insOtherWrap.style.display = 'none';
+      var insuranceCallPrompt = document.getElementById('fl-insurance-call-prompt'); if (insuranceCallPrompt) insuranceCallPrompt.hidden = true;
 
       var phoneMoreHost = document.getElementById('fl-phone-more-host'); if (phoneMoreHost) phoneMoreHost.innerHTML = '';
       var emailMoreHost = document.getElementById('fl-email-more-host'); if (emailMoreHost) emailMoreHost.innerHTML = '';
@@ -60599,10 +62512,46 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var insOther = document.getElementById('fl-insuranceOther');
       var insOtherWrap = document.getElementById('fl-insuranceOtherWrap');
       var insSelect = document.getElementById('fl-insuranceCompany');
+      var insuranceCallPrompt = document.getElementById('fl-insurance-call-prompt');
+      var callInsuranceBtn = document.getElementById('fl-call-insurance-btn');
+      var skipInsuranceCallBtn = document.getElementById('fl-skip-insurance-call-btn');
+      function hideInsuranceCallPrompt() {
+        if (!insuranceCallPrompt) return;
+        insuranceCallPrompt.hidden = true;
+        insuranceCallPrompt.removeAttribute('data-phone');
+      }
+      if (insSelect && insuranceCallPrompt) {
+        insSelect.addEventListener('change', function () {
+          var option = insSelect.options[insSelect.selectedIndex];
+          var phone = String(option && option.getAttribute('data-claim-phone') || '').replace(/[^0-9+]/g, '');
+          if (!insSelect.value || !phone) {
+            hideInsuranceCallPrompt();
+            return;
+          }
+          insuranceCallPrompt.setAttribute('data-phone', phone);
+          insuranceCallPrompt.hidden = false;
+        });
+      }
+      if (callInsuranceBtn && insuranceCallPrompt) {
+        callInsuranceBtn.addEventListener('click', function () {
+          var phone = String(insuranceCallPrompt.getAttribute('data-phone') || '').replace(/[^0-9+]/g, '');
+          if (!phone) return;
+          crmSaveFieldLeadDraft();
+          window.location.href = 'tel:' + phone;
+        });
+      }
+      if (skipInsuranceCallBtn) {
+        skipInsuranceCallBtn.addEventListener('click', function () {
+          hideInsuranceCallPrompt();
+          var nextField = document.getElementById('fl-damageLocationSummary');
+          if (nextField) nextField.focus();
+        });
+      }
       if (insOther && insOtherWrap) {
         insOther.addEventListener('change', function () {
           insOtherWrap.style.display = insOther.checked ? '' : 'none';
           if (insOther.checked && insSelect) insSelect.value = '';
+          if (insOther.checked) hideInsuranceCallPrompt();
           if (!insOther.checked) { var otherInput = document.getElementById('fl-insuranceCompanyOther'); if (otherInput) otherInput.value = ''; }
         });
       }
@@ -60711,7 +62660,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var primaryPhone = phoneNumbers.filter(function (item) { return item.primary; })[0] || phoneNumbers[0] || null;
       var primaryEmail = emailAddresses.filter(function (item) { return item.primary; })[0] || emailAddresses[0] || null;
       var insuranceCompanyVal = fc('fl-insuranceOther') ? fv('fl-insuranceCompanyOther') : fv('fl-insuranceCompany');
-      var req = ['fl-firstName','fl-lastName','fl-phone','fl-street','fl-city','fl-state','fl-claimNumber','fl-jobCategory'];
+      var req = ['fl-firstName','fl-lastName','fl-phone','fl-street','fl-city','fl-state','fl-jobCategory'];
       var missing = req.filter(function (id) { var el = document.getElementById(id); return !el || !String(el.value || '').trim(); });
       if (!insuranceCompanyVal) missing.push('fl-insuranceCompany');
       if (fv('fl-leadSource') === 'Canvasser' && !fv('fl-canvasser')) {
@@ -60815,9 +62764,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         return;
       }
       if (pendingInspection && pendingInspection.status === 'completed_pending_lead') {
-        crmMovePendingInspectionFilesToLead(pendingInspection.id, lead.id);
-        crmClearPendingInspectionRecord();
-        _crmGroundInspectionState = null;
+        crmMovePendingInspectionFilesToLead(pendingInspection.id, lead.id, pendingInspection);
       }
       crmClearFieldLeadDraft();
       crmSyncDataModelSnapshot();
@@ -60849,7 +62796,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         savedMsg.style.display = 'none';
         warningMsg.style.display = 'none';
         crmInitFieldLead();
-        goToMainMenuFromHeader();
+        if (pendingInspection && pendingInspection.status === 'completed_pending_lead') crmOpenLeadContingencyActions(lead.id);
+        else goToMainMenuFromHeader();
       }, 1400);
     });
 
@@ -61018,20 +62966,49 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return null;
     }
 
+    function crmGetJobFileHeaderContext(pageId) {
+      var sectionTitles = {
+        overview: 'Job Folder',
+        contacts: 'Contacts',
+        documents: 'Documents',
+        photos: 'Photos',
+        reports: 'Reports',
+        notes: 'Notes',
+        activity: 'Activity',
+        estimate: 'Estimates',
+        insurance: 'Insurance',
+        calendar: 'Calendar',
+        tasks: 'Tasks',
+        production: 'Production',
+        payments: 'Invoice',
+        messages: 'Messages'
+      };
+      var pageTitles = {
+        'page-crm-financial-worksheet': 'Financial Worksheet',
+        'page-crm-job-profitability': 'Job Profitability',
+        'page-crm-file-viewer': 'File Viewer',
+        'page-inspection-report': 'Property Photo Report',
+        'page-inspection-report-preview': 'Property Photo Report'
+      };
+      var pageTitle = pageId === 'page-crm-job-file'
+        ? (sectionTitles[_crmJobFileActiveTab] || 'Job Folder')
+        : pageTitles[pageId];
+      if (!pageTitle || !_crmCurrentJobFileLeadId) return null;
+      var lead = crmGetJobFileLeadById(_crmCurrentJobFileLeadId);
+      if (!lead) return null;
+      return {
+        homeownerName: crmGetJobFileLeadName(lead),
+        pageTitle: pageTitle
+      };
+    }
+
     function crmGetHeaderPageTitle(pageId) {
       var activePage = pageId ? document.getElementById(pageId) : null;
-      if (pageId === 'page-crm-job-file') {
-        var jobFileLead = _crmCurrentJobFileLeadId ? crmGetJobFileLeadById(_crmCurrentJobFileLeadId) : null;
-        var jobFileLeadDisplayName = jobFileLead
-          ? (String(jobFileLead.homeownerName || '').trim() || crmGetJobFileLeadName(jobFileLead))
-          : '';
-        var jobFileLeadName = crmFormatHeaderTitleText(jobFileLeadDisplayName);
-        if (jobFileLeadName) return jobFileLeadName;
-      }
+      var jobFileHeaderContext = crmGetJobFileHeaderContext(pageId);
+      if (jobFileHeaderContext) return jobFileHeaderContext.homeownerName;
       if (pageId === 'page-lead-detail' && _crmCurrentLeadId) {
-        var leadDetailLead = crmGetLeads().find(function (item) { return item && item.id === _crmCurrentLeadId; }) || null;
-        var leadDetailName = leadDetailLead ? crmFormatHeaderTitleText(crmGetJobFileLeadName(leadDetailLead)) : '';
-        if (leadDetailName) return leadDetailName;
+        var contextLead = crmGetJobFileLeadById(_crmCurrentLeadId);
+        if (contextLead) return crmGetJobFileLeadName(contextLead);
       }
       var titleEl = crmGetHeaderTitleSource(pageId);
       if (titleEl) return crmFormatHeaderTitleText(titleEl.textContent || '');
@@ -61058,11 +63035,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var companyLogoEl = document.getElementById('crm-header-company-logo');
       var inlineHeaderTitleEl = document.getElementById('crm-header-inline-title');
       var headerTitleEl = document.getElementById('crm-header-page-title');
+      var contextHeaderTitleEl = document.getElementById('crm-header-context-title');
       if (!brand) return;
       var pageId = typeof _appCurrentPageId !== 'undefined' ? (_appCurrentPageId || '') : '';
       var usesStandardHeader = crmUsesStandardHeaderLayout(pageId);
+      var jobFileHeaderContext = usesStandardHeader ? crmGetJobFileHeaderContext(pageId) : null;
       var pageTitle = usesStandardHeader ? crmGetHeaderPageTitle(pageId) : '';
-      var showInlineHeaderTitle = usesStandardHeader && (pageId === 'page-crm-job-file' || pageId === 'page-lead-detail') && !!pageTitle;
+      var showInlineHeaderTitle = usesStandardHeader && !!pageTitle;
       var inlineTitleText = !usesStandardHeader ? (pageTitle || 'Hail Money') : '';
       var inlineTitle = inlineTitleText ? '<div class="map-header-title">' + crmEscapeHtml(inlineTitleText) + '</div>' : '';
       var profile = (typeof crmGetCompanyProfile === 'function') ? crmGetCompanyProfile() : {};
@@ -61085,6 +63064,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (headerTitleEl) {
         headerTitleEl.textContent = usesStandardHeader && !showInlineHeaderTitle ? pageTitle : '';
         headerTitleEl.hidden = !usesStandardHeader || !pageTitle || showInlineHeaderTitle;
+      }
+      if (contextHeaderTitleEl) {
+        contextHeaderTitleEl.textContent = jobFileHeaderContext ? jobFileHeaderContext.pageTitle : '';
+        contextHeaderTitleEl.hidden = !jobFileHeaderContext;
       }
       crmSyncSharedHeaderBody(pageId);
     }
@@ -63646,6 +65629,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (_pipelinePreviewEditMode && !crmDiscardPipelinePreviewChanges('a different stage filter')) return;
       _pipelineStageFilter = filterBtn.getAttribute('data-pipe-filter') || 'all';
       crmRenderPipeline(); /* re-render kanban with new stage filter (reuses saved scope) */
+      if (crmGetActivePageId() === 'page-lead-detail') showPage('page-crm-pipeline');
       crmTrackRecentDestination('page-crm-pipeline');
     });
 
