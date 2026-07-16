@@ -16075,6 +16075,74 @@
     body.crm-job-file-invoice-page-active #page-crm-job-file #jf-tabs {
       display: none !important;
     }
+    body.crm-job-file-invoice-page-active #page-crm-job-file #jf-tab-content {
+      padding: 0;
+      overflow: visible;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .jf-invoice-shell { min-width: 0; padding: 18px; }
+    .jf-invoice-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
+    .jf-invoice-view-only { margin: 0 0 12px; padding: 10px 14px; border: 1px solid #b88a22; border-radius: 8px; background: #fff7da; color: #5b4517; font-weight: 800; }
+    .jf-invoice-paper { box-sizing: border-box; width: 100%; max-width: 1100px; min-height: 900px; margin: 0 auto; padding: 30px; border: 1px solid #d5d5d5; background: #fff; color: #111; box-shadow: 0 8px 24px rgba(0,0,0,.16); }
+    .jf-invoice-paper input, .jf-invoice-paper select, .jf-invoice-paper textarea { box-sizing: border-box; width: 100%; border: 2px solid #111; border-radius: 0; background: #fff; color: #111; font: inherit; }
+    .jf-invoice-paper input, .jf-invoice-paper select { min-height: 34px; padding: 5px 8px; }
+    .jf-invoice-paper textarea { min-height: 80px; padding: 8px; resize: vertical; }
+    .jf-invoice-paper input:disabled, .jf-invoice-paper select:disabled, .jf-invoice-paper textarea:disabled { opacity: 1; border-color: #888; background: #f4f4f4; color: #222; }
+    .jf-invoice-top { display: grid; grid-template-columns: minmax(220px,1fr) minmax(360px,1.1fr); gap: 36px; align-items: start; }
+    .jf-invoice-logo-box { display: flex; align-items: center; justify-content: center; width: 190px; height: 130px; overflow: hidden; border: 3px solid #111; background: #f4f4f4; text-align: center; font-weight: 900; line-height: 1.3; cursor: pointer; }
+    .jf-invoice-logo-box.is-readonly { cursor: default; }
+    .jf-invoice-logo-box img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    .jf-invoice-meta-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px 18px; }
+    .jf-invoice-field label, .jf-invoice-section-label { display: block; margin-bottom: 5px; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+    .jf-invoice-bill { margin: 34px 0; }
+    .jf-invoice-bill-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px 16px; max-width: 760px; }
+    .jf-invoice-claim-title { margin: 0 0 5px; font-size: 22px; font-weight: 900; }
+    .jf-invoice-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .jf-invoice-table th, .jf-invoice-table td { border: 2px solid #111; padding: 6px; text-align: left; vertical-align: middle; }
+    .jf-invoice-table th:nth-child(2), .jf-invoice-table td:nth-child(2) { width: 170px; text-align: right; }
+    .jf-invoice-table .jf-invoice-remove-cell { width: 44px; text-align: center; }
+    .jf-invoice-icon-btn { width: 32px; min-height: 32px; border: 2px solid #111; background: #fff; color: #111; font-weight: 900; cursor: pointer; }
+    .jf-invoice-add-row { margin-top: 8px; }
+    .jf-invoice-summary-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(320px,430px); gap: 30px; margin-top: 22px; }
+    .jf-invoice-remit { padding-top: 12px; font-size: 13px; line-height: 1.55; }
+    .jf-invoice-remit strong { font-size: 15px; }
+    .jf-invoice-totals { display: grid; gap: 8px; }
+    .jf-invoice-total-row { display: grid; grid-template-columns: 1fr 160px; gap: 16px; align-items: center; font-weight: 900; }
+    .jf-invoice-total-row span:first-child { text-align: right; }
+    .jf-invoice-total-value { padding: 7px 10px; border: 3px solid #111; background: #f3f3f3; text-align: right; }
+    .jf-invoice-total-row.is-due { margin-top: 4px; font-size: 18px; }
+    .jf-invoice-total-row.is-due .jf-invoice-total-value { background: #e9c75d; }
+    .jf-invoice-balance-status { grid-column: 1 / -1; text-align: right; color: #6b5316; font-size: 12px; }
+    .jf-invoice-payments { margin-top: 28px; }
+    .jf-invoice-payment-form { display: grid; grid-template-columns: 150px 1fr 150px 150px; gap: 10px; align-items: end; }
+    .jf-invoice-payment-form .notes { grid-column: 1 / -1; }
+    .jf-invoice-payment-list { display: grid; gap: 6px; margin-top: 12px; }
+    .jf-invoice-payment-row { display: grid; grid-template-columns: 110px 1fr 140px 130px 40px; gap: 8px; align-items: center; padding: 7px; border: 1px solid #aaa; font-size: 12px; }
+    .jf-invoice-notes { margin-top: 26px; }
+    @media (max-width: 1100px) {
+      .jf-invoice-top, .jf-invoice-summary-grid { grid-template-columns: 1fr; }
+      .jf-invoice-payment-form { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+    @media print {
+      @page { size: letter; margin: .35in; }
+      body.crm-job-file-invoice-page-active { background: #fff !important; }
+      body.crm-job-file-invoice-page-active .crm-topbar,
+      body.crm-job-file-invoice-page-active .crm-sidebar,
+      body.crm-job-file-invoice-page-active .crm-activity-column,
+      body.crm-job-file-invoice-page-active .jf-invoice-actions,
+      body.crm-job-file-invoice-page-active .jf-invoice-view-only,
+      body.crm-job-file-invoice-page-active #jf-back-btn,
+      body.crm-job-file-invoice-page-active .jf-invoice-edit-only { display: none !important; }
+      body.crm-job-file-invoice-page-active #page-crm-job-file,
+      body.crm-job-file-invoice-page-active #page-crm-job-file .crm-dashboard-mini-layout,
+      body.crm-job-file-invoice-page-active #page-crm-job-file .crm-dashboard-mini-body,
+      body.crm-job-file-invoice-page-active #page-crm-job-file .crm-layout,
+      body.crm-job-file-invoice-page-active #page-crm-job-file .crm-main-column { position: static !important; display: block !important; width: 100% !important; height: auto !important; min-height: 0 !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-shell { padding: 0; }
+      body.crm-job-file-invoice-page-active .jf-invoice-paper { max-width: none; min-height: 0; padding: 0; border: 0; box-shadow: none; }
+    }
     @media (min-width: 981px) {
       #page-crm-job-file .crm-dashboard-mini-layout,
       #page-crm-financial-worksheet .crm-dashboard-mini-layout,
@@ -57124,6 +57192,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       };
     }
 
+    function crmGetDefaultJobInvoiceData(seed, lead) {
+      seed = seed && typeof seed === 'object' ? seed : {};
+      var billing = seed.billingContact && typeof seed.billingContact === 'object' ? seed.billingContact : {};
+      var leadKey = String(lead && lead.id || 'JOB').replace(/[^a-z0-9]/gi, '').toUpperCase();
+      var today = new Date().toISOString().slice(0, 10);
+      return {
+        invoiceDate: String(seed.invoiceDate || today).trim(),
+        invoiceNumber: String(seed.invoiceNumber || ('INV-' + (leadKey.slice(-8) || 'JOB'))).trim(),
+        dueDate: String(seed.dueDate || 'Upon Receipt').trim() || 'Upon Receipt',
+        billingContact: {
+          name: String(billing.name || crmGetJobFileLeadName(lead)).trim(),
+          address: String(billing.address || crmGetJobFileLeadAddress(lead)).trim(),
+          phone: String(billing.phone || lead && (lead.phone || lead.primaryPhone) || '').trim(),
+          email: String(billing.email || lead && lead.email || '').trim()
+        },
+        notes: String(seed.notes || '').trim(),
+        logoDataUrl: String(seed.logoDataUrl || '').trim(),
+        updatedAt: String(seed.updatedAt || '').trim()
+      };
+    }
+
     function crmNormalizeJobFileRevenueEntry(entry) {
       entry = entry || {};
       return {
@@ -57283,6 +57372,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var jobProfitability = crmGetDefaultJobProfitabilityData({
         jobProfitability: jobFile.jobProfitability || {}
       });
+      var invoice = crmGetDefaultJobInvoiceData(jobFile.invoice || {}, lead);
       return {
         status: crmGetJobFileStatus(lead, jobFile),
         inspection: jobFile.inspection && typeof jobFile.inspection === 'object'
@@ -57357,6 +57447,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           balanceDue: String(jobFile.balanceDue || jobFile.paymentsSummary && jobFile.paymentsSummary.balanceDue || '').trim()
         },
         financialWorksheet: financialWorksheet,
+        invoice: invoice,
         jobProfitability: jobProfitability,
         photos: photos,
         documents: documents,
@@ -57388,6 +57479,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           paymentsSummary: data.paymentsSummary || {},
           estimate: data.estimate || {}
         }),
+        invoice: crmGetDefaultJobInvoiceData(data.invoice || {}, lead),
         jobProfitability: crmGetDefaultJobProfitabilityData({
           jobProfitability: data.jobProfitability || {}
         }),
@@ -59337,6 +59429,90 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return html;
     }
 
+    var _crmInvoiceLogoDraftDataUrl = '';
+
+    function crmCanEditJobInvoice(lead) {
+      if (!crmCanViewJobFileLead(lead)) return false;
+      var role = String(crmGetRole() || '').trim();
+      if (role === 'Sales Rep') return false;
+      if (role === 'Owner') return true;
+      return crmCanEditFinancialWorksheet(lead) || crmGetFinancialWorksheetPermissionFlag('createInvoices');
+    }
+
+    function crmGetJobInvoiceMetrics(jobFile) {
+      var metrics = crmGetFinancialWorksheetMetrics(jobFile.financialWorksheet || {});
+      return {
+        totalRcv: metrics.totalRcv,
+        totalWorkNotBeingDone: metrics.totalWorkNotBeingDone,
+        invoiceTotal: metrics.completedWorkInvoice,
+        deductible: metrics.deductible,
+        paymentsReceived: metrics.totalPaymentsReceived,
+        totalCredits: metrics.deductible + metrics.totalPaymentsReceived,
+        totalDue: metrics.remainingBalance
+      };
+    }
+
+    function crmRenderJobInvoiceAdjustmentRow(item, canEdit) {
+      var disabled = canEdit ? '' : ' disabled';
+      return '<tr class="jf-invoice-adjustment-row" data-jf-invoice-adjustment-id="' + crmEscapeHtml(item.id || crmGenId()) + '">' +
+        '<td><input class="jf-invoice-adjustment-description" type="text" value="' + crmEscapeHtml(item.description || '') + '" placeholder="Work not being completed / adjustment"' + disabled + ' /></td>' +
+        '<td><input class="jf-invoice-adjustment-amount" type="text" inputmode="decimal" value="' + crmEscapeHtml(item.amount || '') + '" placeholder="0.00"' + disabled + ' /></td>' +
+        '<td class="jf-invoice-remove-cell jf-invoice-edit-only"><button class="jf-invoice-icon-btn" type="button" data-jf-invoice-remove-line aria-label="Remove line item">−</button></td></tr>';
+    }
+
+    function crmRenderJobInvoiceHtml(lead, jobFile) {
+      var canEdit = crmCanEditJobInvoice(lead);
+      var disabled = canEdit ? '' : ' disabled';
+      var invoice = crmGetDefaultJobInvoiceData(jobFile.invoice || {}, lead);
+      var company = typeof crmGetCompanyProfile === 'function' ? crmGetCompanyProfile() : {};
+      var logoDataUrl = _crmInvoiceLogoDraftDataUrl || invoice.logoDataUrl || company.logoDataUrl || '';
+      var companyAddress = [company.street, company.city, company.state, company.zip].filter(Boolean).join(', ');
+      var payments = (jobFile.financialWorksheet.paymentsReceived || []).slice().sort(function (a, b) { return String(b.paymentDate || '').localeCompare(String(a.paymentDate || '')); });
+      var metrics = crmGetJobInvoiceMetrics(jobFile);
+      var status = Math.abs(metrics.totalDue) < 0.005 ? 'Paid in Full / Balanced' : (metrics.totalDue < 0 ? 'Overpaid / Review Entries' : 'Balance Remaining');
+      var html = '<div class="jf-invoice-shell">';
+      html += '<div class="jf-invoice-actions"><button class="btn" type="button" data-jf-invoice-print>Print Invoice</button><button class="btn" type="button" data-jf-invoice-pdf>Save as PDF</button>';
+      if (canEdit) html += '<button class="btn btn-primary" type="button" data-jf-invoice-save>Save Invoice</button>';
+      html += '</div>';
+      if (!canEdit) html += '<div class="jf-invoice-view-only">View Only — You do not have permission to edit this invoice.</div>';
+      html += '<article class="jf-invoice-paper" aria-label="Invoice">';
+      html += '<div class="jf-invoice-top"><div><label class="jf-invoice-logo-box' + (canEdit ? '' : ' is-readonly') + '" for="jf-invoice-logo-input">';
+      html += logoDataUrl ? '<img src="' + crmEscapeHtml(logoDataUrl) + '" alt="Company logo" />' : '<span>DROP A FILE OR<br>CLICK TO UPLOAD<br>YOUR COMPANY LOGO</span>';
+      html += '</label><input id="jf-invoice-logo-input" type="file" accept="image/*" hidden' + disabled + ' /></div>';
+      html += '<div class="jf-invoice-meta-grid">';
+      html += '<div class="jf-invoice-field"><label for="jf-invoice-date">Invoice Date</label><input id="jf-invoice-date" type="date" value="' + crmEscapeHtml(invoice.invoiceDate) + '"' + disabled + ' /></div>';
+      html += '<div class="jf-invoice-field"><label for="jf-invoice-number">Invoice #</label><input id="jf-invoice-number" type="text" value="' + crmEscapeHtml(invoice.invoiceNumber) + '"' + disabled + ' /></div>';
+      html += '<div class="jf-invoice-field"><label for="jf-invoice-due-date">Due Date</label><input id="jf-invoice-due-date" type="text" value="' + crmEscapeHtml(invoice.dueDate) + '"' + disabled + ' /></div>';
+      html += '<div class="jf-invoice-field"><label>Sales Rep</label><input type="text" value="' + crmEscapeHtml(lead.assignedRep || 'Unassigned') + '" disabled /></div></div></div>';
+      html += '<section class="jf-invoice-bill"><div class="jf-invoice-section-label">Bill To</div><div class="jf-invoice-bill-grid">';
+      [['name','Name'],['address','Address'],['phone','Phone'],['email','Email']].forEach(function (field) {
+        html += '<div class="jf-invoice-field"><label for="jf-invoice-bill-' + field[0] + '">' + field[1] + '</label><input id="jf-invoice-bill-' + field[0] + '" type="' + (field[0] === 'email' ? 'email' : 'text') + '" value="' + crmEscapeHtml(invoice.billingContact[field[0]]) + '"' + disabled + ' /></div>';
+      });
+      html += '</div></section>';
+      html += '<section><h2 class="jf-invoice-claim-title">Insurance Claim</h2><table class="jf-invoice-table"><thead><tr><th>Description</th><th>Amount</th><th class="jf-invoice-remove-cell jf-invoice-edit-only"></th></tr></thead><tbody id="jf-invoice-claim-lines">';
+      html += '<tr><td>Total Replacement Cost Value (RCV)</td><td data-jf-invoice-base-rcv>' + crmEscapeHtml(crmFormatMoney(metrics.totalRcv)) + '</td><td class="jf-invoice-remove-cell jf-invoice-edit-only"></td></tr>';
+      (jobFile.financialWorksheet.workNotBeingDone || []).forEach(function (item) { html += crmRenderJobInvoiceAdjustmentRow(item, canEdit); });
+      html += '</tbody></table>';
+      if (canEdit) html += '<button class="btn jf-invoice-add-row jf-invoice-edit-only" type="button" data-jf-invoice-add-line>+ Add Claim Adjustment</button>';
+      html += '</section>';
+      html += '<div class="jf-invoice-summary-grid"><div class="jf-invoice-remit"><strong>Remit Payment To:</strong><br>' + crmEscapeHtml(company.companyName || 'Company profile not completed') + '<br>' + crmEscapeHtml(companyAddress || 'Address not added') + '<br>' + crmEscapeHtml([company.phone, company.email].filter(Boolean).join(' · ')) + '<br><br><strong>Payment Instructions:</strong><br>' + crmEscapeHtml(company.paymentInstructions || company.remitInstructions || 'Payment instructions have not been added in Settings.') + '</div>';
+      html += '<div class="jf-invoice-totals">';
+      [['TOTAL INITIAL CLAIM:', 'totalRcv'], ['WORK NOT COMPLETED:', 'totalWorkNotBeingDone'], ['INVOICE TOTAL:', 'invoiceTotal'], ['DEDUCTIBLE:', 'deductible'], ['PAYMENTS RECEIVED:', 'paymentsReceived'], ['PAYMENTS/CREDITS:', 'totalCredits']].forEach(function (row) {
+        html += '<div class="jf-invoice-total-row"><span>' + row[0] + '</span><span class="jf-invoice-total-value" data-jf-invoice-metric="' + row[1] + '">' + crmEscapeHtml(crmFormatMoney(metrics[row[1]])) + '</span></div>';
+      });
+      html += '<div class="jf-invoice-total-row is-due"><span>TOTAL DUE:</span><span class="jf-invoice-total-value" data-jf-invoice-metric="totalDue">' + crmEscapeHtml(crmFormatMoney(metrics.totalDue)) + '</span><span class="jf-invoice-balance-status" data-jf-invoice-status>' + crmEscapeHtml(status) + '</span></div></div></div>';
+      html += '<section class="jf-invoice-payments"><h2 class="jf-invoice-claim-title">Payments / Credits</h2>';
+      if (canEdit) html += '<div class="jf-invoice-payment-form jf-invoice-edit-only"><div class="jf-invoice-field"><label for="jf-invoice-payment-date">Date</label><input id="jf-invoice-payment-date" type="date" /></div><div class="jf-invoice-field"><label for="jf-invoice-payment-type">Type</label><select id="jf-invoice-payment-type"><option>First Insurance Check</option><option>Depreciation Check</option><option>Supplemental Payment</option><option>Homeowner Payment</option><option>Other</option></select></div><div class="jf-invoice-field"><label for="jf-invoice-payment-reference">Reference</label><input id="jf-invoice-payment-reference" type="text" /></div><div class="jf-invoice-field"><label for="jf-invoice-payment-amount">Amount</label><input id="jf-invoice-payment-amount" type="text" inputmode="decimal" placeholder="0.00" /></div><div class="jf-invoice-field notes"><label for="jf-invoice-payment-notes">Notes</label><input id="jf-invoice-payment-notes" type="text" /></div><button class="btn btn-primary" type="button" data-jf-invoice-add-payment>Add Payment / Credit</button></div>';
+      html += '<div class="jf-invoice-payment-list">';
+      if (!payments.length) html += '<div class="crm-job-file-empty">No payments or credits recorded.</div>';
+      payments.forEach(function (payment) {
+        html += '<div class="jf-invoice-payment-row"><span>' + crmEscapeHtml(payment.paymentDate ? crmFormatDateShort(payment.paymentDate) : 'No date') + '</span><span><strong>' + crmEscapeHtml(payment.paymentType || 'Payment') + '</strong>' + (payment.notes ? '<br>' + crmEscapeHtml(payment.notes) : '') + '</span><span>' + crmEscapeHtml(payment.referenceNumber || '—') + '</span><span>' + crmEscapeHtml(crmFormatMoney(payment.amount)) + '</span>' + (canEdit ? '<button class="jf-invoice-icon-btn jf-invoice-edit-only" type="button" data-jf-invoice-remove-payment="' + crmEscapeHtml(payment.id) + '" aria-label="Remove payment">−</button>' : '<span></span>') + '</div>';
+      });
+      html += '</div></section><section class="jf-invoice-notes"><div class="jf-invoice-section-label">Note</div><textarea id="jf-invoice-notes" placeholder="Invoice notes"' + disabled + '>' + crmEscapeHtml(invoice.notes) + '</textarea></section>';
+      html += '</article></div>';
+      return html;
+    }
+
     function crmRenderJobFileTabContent(lead, jobFile, feed) {
       if (_crmJobFileActiveTab === 'contacts') return crmRenderJobFileContactsHtml(lead);
       if (_crmJobFileActiveTab === 'reports') return crmRenderJobFileReportsHtml(lead, jobFile);
@@ -59349,7 +59525,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (_crmJobFileActiveTab === 'calendar') return crmRenderJobFileCalendarHtml(lead);
       if (_crmJobFileActiveTab === 'tasks') return crmRenderJobFileTasksHtml(lead);
       if (_crmJobFileActiveTab === 'production') return crmRenderJobFileProductionHtml(lead);
-      if (_crmJobFileActiveTab === 'payments') return crmRenderJobFilePaymentsHtml(jobFile);
+      if (_crmJobFileActiveTab === 'payments') return crmRenderJobInvoiceHtml(lead, jobFile);
       if (_crmJobFileActiveTab === 'messages') return crmRenderJobFileMessagesHtml(lead);
       return crmRenderJobFileOverviewHtml(lead, jobFile, feed);
     }
@@ -59406,6 +59582,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmSwitchJobFileTab(tab) {
       if (CRM_JOB_FILE_TABS.indexOf(tab) === -1) tab = 'overview';
       _crmJobFileActiveTab = tab;
+      if (tab !== 'payments') _crmInvoiceLogoDraftDataUrl = '';
       /* Reset documents hub category when switching away from documents */
       if (tab !== 'documents') _jfDocSelectedCategory = null;
       crmRenderJobFile();
@@ -59479,6 +59656,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
       _crmCurrentJobFileLeadId = lead.id;
       _crmCurrentLeadId = lead.id;
+      _crmInvoiceLogoDraftDataUrl = '';
       _crmJobFileActiveTab = CRM_JOB_FILE_TABS.indexOf(initialTab) === -1 ? 'overview' : initialTab;
       _crmJobFileBackMode = 'lead';
       _crmJobFileBackPageId = 'page-lead-detail';
@@ -59652,6 +59830,32 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     document.getElementById('page-crm-job-file').addEventListener('click', function (e) {
       var lead = crmGetJobFileLeadById(_crmCurrentJobFileLeadId);
       if (!crmCanViewJobFileLead(lead)) return;
+
+      if (e.target.closest('[data-jf-invoice-print]')) { window.print(); return; }
+      if (e.target.closest('[data-jf-invoice-pdf]')) {
+        showUploadToast('Choose “Save as PDF” in the print window.');
+        window.print();
+        return;
+      }
+      if (e.target.closest('[data-jf-invoice-save]')) { crmSaveJobFileInvoice(lead); return; }
+      if (e.target.closest('[data-jf-invoice-add-line]')) {
+        if (!crmCanEditJobInvoice(lead)) { showUploadToast('You do not have permission to edit this invoice.'); return; }
+        var invoiceLines = document.getElementById('jf-invoice-claim-lines');
+        if (invoiceLines) invoiceLines.insertAdjacentHTML('beforeend', crmRenderJobInvoiceAdjustmentRow(crmNormalizeJobFileMoneyLineItem({}), true));
+        crmApplyJobInvoiceMetricDom();
+        return;
+      }
+      var removeInvoiceLineBtn = e.target.closest('[data-jf-invoice-remove-line]');
+      if (removeInvoiceLineBtn) {
+        if (!crmCanEditJobInvoice(lead)) { showUploadToast('You do not have permission to edit this invoice.'); return; }
+        var invoiceLine = removeInvoiceLineBtn.closest('.jf-invoice-adjustment-row');
+        if (invoiceLine) invoiceLine.remove();
+        crmApplyJobInvoiceMetricDom();
+        return;
+      }
+      if (e.target.closest('[data-jf-invoice-add-payment]')) { crmAddJobInvoicePayment(lead); return; }
+      var removeInvoicePaymentBtn = e.target.closest('[data-jf-invoice-remove-payment]');
+      if (removeInvoicePaymentBtn) { crmRemoveJobInvoicePayment(lead, removeInvoicePaymentBtn.getAttribute('data-jf-invoice-remove-payment') || ''); return; }
 
       var shortcut = e.target.closest('[data-jf-tab-shortcut]');
       if (shortcut) { crmSwitchJobFileTab(shortcut.getAttribute('data-jf-tab-shortcut') || 'overview'); return; }
@@ -59856,6 +60060,26 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
     });
 
+    document.getElementById('page-crm-job-file').addEventListener('input', function (e) {
+      if (_crmJobFileActiveTab !== 'payments' || !e.target.closest('.jf-invoice-paper')) return;
+      if (!crmCanEditJobInvoice(crmGetJobFileLeadById(_crmCurrentJobFileLeadId))) return;
+      if (e.target.matches('.jf-invoice-adjustment-amount')) crmApplyJobInvoiceMetricDom();
+    });
+
+    document.getElementById('page-crm-job-file').addEventListener('change', function (e) {
+      if (e.target.id !== 'jf-invoice-logo-input') return;
+      var lead = crmGetJobFileLeadById(_crmCurrentJobFileLeadId);
+      if (!crmCanEditJobInvoice(lead)) { e.target.value = ''; return; }
+      var file = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!file || String(file.type || '').indexOf('image/') !== 0) { showUploadToast('Choose an image file for the company logo.'); return; }
+      crmCompressLogo(file, function (dataUrl) {
+        _crmInvoiceLogoDraftDataUrl = dataUrl || '';
+        var logoBox = document.querySelector('.jf-invoice-logo-box');
+        if (logoBox && _crmInvoiceLogoDraftDataUrl) logoBox.innerHTML = '<img src="' + crmEscapeHtml(_crmInvoiceLogoDraftDataUrl) + '" alt="Company logo" />';
+      });
+    });
+
 
     function crmOpenJobFilePhotoPicker(lead) {
       if (!lead || !crmCanEditJobFileLead(lead)) { showUploadToast('You do not have permission to upload files to this job.'); return; }
@@ -59930,6 +60154,102 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         data.production.notes = String(document.getElementById('jf-production-notes').value || '').trim();
         data.production.updatedAt = new Date().toISOString();
         crmApplyLeadJobFileData(item, data); crmPushLeadActivity(item, 'Production details updated', 'production');
+      });
+      crmRenderJobFile();
+    }
+
+    function crmReadJobInvoiceAdjustments() {
+      return Array.prototype.slice.call(document.querySelectorAll('#jf-invoice-claim-lines .jf-invoice-adjustment-row')).map(function (row) {
+        return crmNormalizeJobFileMoneyLineItem({
+          id: row.getAttribute('data-jf-invoice-adjustment-id') || crmGenId(),
+          description: String((row.querySelector('.jf-invoice-adjustment-description') || {}).value || '').trim(),
+          amount: String((row.querySelector('.jf-invoice-adjustment-amount') || {}).value || '').trim()
+        });
+      });
+    }
+
+    function crmApplyJobInvoiceMetricDom() {
+      var lead = crmGetJobFileLeadById(_crmCurrentJobFileLeadId);
+      if (!lead) return;
+      var jobFile = crmGetLeadJobFileData(lead);
+      jobFile.financialWorksheet.workNotBeingDone = crmReadJobInvoiceAdjustments();
+      var metrics = crmGetJobInvoiceMetrics(jobFile);
+      Object.keys(metrics).forEach(function (key) {
+        var el = document.querySelector('[data-jf-invoice-metric="' + key + '"]');
+        if (el) el.textContent = crmFormatMoney(metrics[key]);
+      });
+      var statusEl = document.querySelector('[data-jf-invoice-status]');
+      if (statusEl) statusEl.textContent = Math.abs(metrics.totalDue) < 0.005 ? 'Paid in Full / Balanced' : (metrics.totalDue < 0 ? 'Overpaid / Review Entries' : 'Balance Remaining');
+    }
+
+    function crmReadJobInvoiceForm(lead, existingInvoice) {
+      return crmGetDefaultJobInvoiceData({
+        invoiceDate: String((document.getElementById('jf-invoice-date') || {}).value || '').trim(),
+        invoiceNumber: String((document.getElementById('jf-invoice-number') || {}).value || '').trim(),
+        dueDate: String((document.getElementById('jf-invoice-due-date') || {}).value || '').trim(),
+        billingContact: {
+          name: String((document.getElementById('jf-invoice-bill-name') || {}).value || '').trim(),
+          address: String((document.getElementById('jf-invoice-bill-address') || {}).value || '').trim(),
+          phone: String((document.getElementById('jf-invoice-bill-phone') || {}).value || '').trim(),
+          email: String((document.getElementById('jf-invoice-bill-email') || {}).value || '').trim()
+        },
+        notes: String((document.getElementById('jf-invoice-notes') || {}).value || '').trim(),
+        logoDataUrl: _crmInvoiceLogoDraftDataUrl || existingInvoice && existingInvoice.logoDataUrl || '',
+        updatedAt: new Date().toISOString()
+      }, lead);
+    }
+
+    function crmSaveJobFileInvoice(lead) {
+      if (!crmCanEditJobInvoice(lead)) { showUploadToast('You do not have permission to edit this invoice.'); return; }
+      crmUpdateJobFileLeadRecord(lead.id, function (item) {
+        var data = crmGetLeadJobFileData(item);
+        data.financialWorksheet.workNotBeingDone = crmReadJobInvoiceAdjustments();
+        data.financialWorksheet.updatedAt = new Date().toISOString();
+        data.invoice = crmReadJobInvoiceForm(item, data.invoice);
+        crmApplyLeadJobFileData(item, data);
+        crmPushLeadActivity(item, 'Invoice updated', 'payment');
+      });
+      _crmInvoiceLogoDraftDataUrl = '';
+      crmRenderJobFile();
+      showUploadToast('Invoice saved.');
+    }
+
+    function crmAddJobInvoicePayment(lead) {
+      if (!crmCanEditJobInvoice(lead)) { showUploadToast('You do not have permission to edit this invoice.'); return; }
+      var amount = String((document.getElementById('jf-invoice-payment-amount') || {}).value || '').trim();
+      if (!amount || !isFinite(crmParseMoneyNumber(amount)) || crmParseMoneyNumber(amount) <= 0) { showUploadToast('Enter a valid payment amount.'); return; }
+      var payment = crmNormalizeFinancialWorksheetPayment({
+        id: crmGenId(),
+        paymentType: String((document.getElementById('jf-invoice-payment-type') || {}).value || 'Other').trim(),
+        referenceNumber: String((document.getElementById('jf-invoice-payment-reference') || {}).value || '').trim(),
+        paymentDate: String((document.getElementById('jf-invoice-payment-date') || {}).value || '').trim(),
+        amount: String(crmParseMoneyNumber(amount).toFixed(2)),
+        notes: String((document.getElementById('jf-invoice-payment-notes') || {}).value || '').trim()
+      });
+      crmUpdateJobFileLeadRecord(lead.id, function (item) {
+        var data = crmGetLeadJobFileData(item);
+        data.financialWorksheet.workNotBeingDone = crmReadJobInvoiceAdjustments();
+        data.financialWorksheet.paymentsReceived.push(payment);
+        data.financialWorksheet.updatedAt = new Date().toISOString();
+        data.invoice = crmReadJobInvoiceForm(item, data.invoice);
+        crmApplyLeadJobFileData(item, data);
+        crmPushLeadActivity(item, payment.paymentType + ' recorded on invoice', 'payment');
+      });
+      crmRenderJobFile();
+      showUploadToast('Payment added to the Invoice and Financial Worksheet.');
+    }
+
+    function crmRemoveJobInvoicePayment(lead, paymentId) {
+      if (!crmCanEditJobInvoice(lead)) { showUploadToast('You do not have permission to edit this invoice.'); return; }
+      if (!paymentId || !confirm('Remove this payment from the Invoice and Financial Worksheet?')) return;
+      crmUpdateJobFileLeadRecord(lead.id, function (item) {
+        var data = crmGetLeadJobFileData(item);
+        data.financialWorksheet.workNotBeingDone = crmReadJobInvoiceAdjustments();
+        data.financialWorksheet.paymentsReceived = data.financialWorksheet.paymentsReceived.filter(function (payment) { return payment.id !== paymentId; });
+        data.financialWorksheet.updatedAt = new Date().toISOString();
+        data.invoice = crmReadJobInvoiceForm(item, data.invoice);
+        crmApplyLeadJobFileData(item, data);
+        crmPushLeadActivity(item, 'Invoice payment removed', 'payment');
       });
       crmRenderJobFile();
     }
