@@ -7662,6 +7662,78 @@
       flex-direction: column;
       gap: 12px;
     }
+    .jfw-worksheet .crm-job-file-panel-block {
+      border: 1px solid rgba(180,139,42,0.32);
+      box-shadow: 0 8px 22px rgba(17,24,39,0.06);
+    }
+    .jfw-summary-panel {
+      background: #171717;
+      color: #fff;
+      border-color: #d6aa36 !important;
+    }
+    .jfw-summary-panel .crm-job-file-block-title,
+    .jfw-summary-panel .crm-job-fin-formula {
+      color: #f2c951;
+    }
+    .jfw-summary-lines {
+      margin-top: 14px;
+      border-top: 1px solid rgba(242,201,81,0.3);
+    }
+    .jfw-summary-lines > div {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 11px 2px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      font-size: 14px;
+    }
+    .jfw-summary-lines strong {
+      color: #fff;
+      font-size: 16px;
+      white-space: nowrap;
+    }
+    .jfw-balance-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 6px 18px;
+      margin-top: 16px;
+      padding: 18px;
+      border: 2px solid #d6aa36;
+      border-radius: 14px;
+      background: rgba(242,201,81,0.12);
+    }
+    .jfw-balance-card > span {
+      font-size: 15px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .jfw-balance-card > strong {
+      font-size: 30px;
+      line-height: 1;
+      color: #f2c951;
+    }
+    .jfw-balance-card > em {
+      grid-column: 1 / -1;
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 800;
+    }
+    .jfw-balance-card.is-balanced {
+      border-color: #5cc78c;
+      background: rgba(35,151,91,0.18);
+    }
+    .jfw-balance-card.is-balanced > strong,
+    .jfw-balance-card.is-balanced > em { color: #85e5ad; }
+    .jfw-balance-card.is-overpaid {
+      border-color: #e47762;
+      background: rgba(189,61,39,0.2);
+    }
+    .jfw-balance-card.is-overpaid > strong,
+    .jfw-balance-card.is-overpaid > em { color: #ff9a87; }
+    .jfw-balance-card.is-remaining > em { color: #f2c951; }
     @media (max-width: 900px) {
       .crm-job-file-header-grid,
       .crm-job-file-stat-grid,
@@ -15987,8 +16059,88 @@
       background: transparent;
       box-shadow: none;
     }
+    body.crm-job-file-invoice-page-active #crm-header-context-title {
+      position: fixed;
+      top: 59px;
+      left: calc(50% + min(260px, 18vw));
+      z-index: 61;
+      width: min(240px, 20vw);
+      max-width: none;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    body.crm-job-file-invoice-page-active #page-crm-job-file .page-actions,
+    body.crm-job-file-invoice-page-active #page-crm-job-file #jf-header-card,
+    body.crm-job-file-invoice-page-active #page-crm-job-file #jf-quick-actions-card,
+    body.crm-job-file-invoice-page-active #page-crm-job-file #jf-tabs {
+      display: none !important;
+    }
+    @media (min-width: 981px) {
+      #page-crm-job-file .crm-dashboard-mini-layout,
+      #page-crm-financial-worksheet .crm-dashboard-mini-layout,
+      #page-crm-job-profitability .crm-dashboard-mini-layout {
+        height: calc(100vh - var(--crm-mini-shell-header-offset, 118px));
+        min-height: 0;
+        overflow: hidden;
+      }
+      #page-crm-job-file .crm-dashboard-mini-body,
+      #page-crm-financial-worksheet .crm-dashboard-mini-body,
+      #page-crm-job-profitability .crm-dashboard-mini-body,
+      #page-crm-job-file .crm-layout,
+      #page-crm-financial-worksheet .crm-layout,
+      #page-crm-job-profitability .crm-layout {
+        height: 100%;
+        min-height: 0;
+      }
+      #page-crm-job-file .crm-layout,
+      #page-crm-financial-worksheet .crm-layout,
+      #page-crm-job-profitability .crm-layout {
+        align-items: stretch;
+      }
+      #page-crm-job-file .crm-main-column,
+      #page-crm-financial-worksheet .crm-main-column,
+      #page-crm-job-profitability .crm-main-column {
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+      }
+      #page-crm-job-file .crm-activity-column,
+      #page-crm-financial-worksheet .crm-activity-column,
+      #page-crm-job-profitability .crm-activity-column {
+        height: 100%;
+        min-height: 0;
+      }
+      #page-crm-job-file .crm-activity-panel,
+      #page-crm-financial-worksheet .crm-activity-panel,
+      #page-crm-job-profitability .crm-activity-panel {
+        position: sticky;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        max-height: none;
+        box-sizing: border-box;
+        overflow: hidden;
+      }
+      #page-crm-job-file .crm-activity-feed-list,
+      #page-crm-financial-worksheet .crm-activity-feed-list,
+      #page-crm-job-profitability .crm-activity-feed-list {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+      }
+    }
     @media (max-width: 900px) {
       body.crm-job-file-production-page-active #crm-header-context-title {
+        left: 68%;
+        width: 150px;
+        font-size: 19px;
+      }
+      body.crm-job-file-invoice-page-active #crm-header-context-title {
         left: 68%;
         width: 150px;
         font-size: 19px;
@@ -22003,6 +22155,8 @@
         pageId === 'page-crm-job-file' && _crmJobFileActiveTab === 'documents');
       document.body.classList.toggle('crm-job-file-production-page-active',
         pageId === 'page-crm-job-file' && _crmJobFileActiveTab === 'production');
+      document.body.classList.toggle('crm-job-file-invoice-page-active',
+        pageId === 'page-crm-job-file' && _crmJobFileActiveTab === 'payments');
       document.body.classList.toggle('calendar-page-active', pageId === 'page-crm-calendar');
       document.body.classList.toggle('settings-page-active', pageId === 'page-crm-settings');
       if (pageId === 'page-main-menu' && typeof crmRenderDashboardCommandCenter === 'function') crmRenderDashboardCommandCenter();
@@ -56892,6 +57046,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return access !== 'none';
     }
 
+    function crmGetFinancialWorksheetPermissionFlag(permissionKey) {
+      var member = crmGetCurrentTeamMember();
+      var memberPermissions = member && member.permissions && typeof member.permissions === 'object' ? member.permissions : {};
+      if (Object.prototype.hasOwnProperty.call(memberPermissions, permissionKey)) return !!memberPermissions[permissionKey];
+      var roleName = String(member && member.role || crmGetRole() || '').trim();
+      var rolePreset = typeof CRM_ROLE_PRESETS !== 'undefined' && CRM_ROLE_PRESETS[roleName];
+      return !!(rolePreset && rolePreset[permissionKey]);
+    }
+
+    function crmCanViewFinancialWorksheet(lead) {
+      return crmCanViewJobFileLead(lead);
+    }
+
+    function crmCanEditFinancialWorksheet(lead) {
+      if (!crmCanViewFinancialWorksheet(lead)) return false;
+      var role = String(crmGetRole() || '').trim();
+      if (role === 'Sales Rep') return false;
+      if (role === 'Owner') return true;
+      return crmGetFinancialWorksheetPermissionFlag('editFinancialWorksheet');
+    }
+
     function crmCloneObject(obj) {
       try {
         return JSON.parse(JSON.stringify(obj || {}));
@@ -56934,6 +57109,18 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         id: String(item.id || crmGenId()).trim(),
         description: String(item.description || '').trim(),
         amount: String(item.amount || '').trim()
+      };
+    }
+
+    function crmNormalizeFinancialWorksheetPayment(entry) {
+      entry = entry || {};
+      return {
+        id: String(entry.id || crmGenId()).trim(),
+        paymentType: String(entry.paymentType || 'First Insurance Check').trim() || 'First Insurance Check',
+        referenceNumber: String(entry.referenceNumber || entry.checkNumber || '').trim(),
+        paymentDate: String(entry.paymentDate || entry.dateReceived || entry.date || '').trim(),
+        amount: String(entry.amount || '').trim(),
+        notes: String(entry.notes || '').trim()
       };
     }
 
@@ -56998,6 +57185,20 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var insurance = seed.insurance && typeof seed.insurance === 'object' ? seed.insurance : {};
       var paymentsSummary = seed.paymentsSummary && typeof seed.paymentsSummary === 'object' ? seed.paymentsSummary : {};
       var estimate = seed.estimate && typeof seed.estimate === 'object' ? seed.estimate : {};
+      var paymentsReceived = Array.isArray(financialWorksheet.paymentsReceived)
+        ? financialWorksheet.paymentsReceived.map(crmNormalizeFinancialWorksheetPayment)
+        : [];
+      if (!Array.isArray(financialWorksheet.paymentsReceived)) {
+        var legacySupplements = String(insuranceBreakdown.supplements || paymentsSummary.supplements || '').trim();
+        var legacyFirstCheck = String(insuranceBreakdown.firstCheck || '').trim();
+        if (!legacyFirstCheck && paymentsSummary.insurancePaid) {
+          legacyFirstCheck = String(Math.max(crmParseMoneyNumber(paymentsSummary.insurancePaid) - crmParseMoneyNumber(legacySupplements), 0).toFixed(2));
+        }
+        var legacyHomeownerPayment = String(paymentsSummary.customerPaid || '').trim();
+        if (crmParseMoneyNumber(legacyFirstCheck)) paymentsReceived.push(crmNormalizeFinancialWorksheetPayment({ paymentType: 'First Insurance Check', amount: legacyFirstCheck }));
+        if (crmParseMoneyNumber(legacySupplements)) paymentsReceived.push(crmNormalizeFinancialWorksheetPayment({ paymentType: 'Supplemental Payment', amount: legacySupplements }));
+        if (crmParseMoneyNumber(legacyHomeownerPayment)) paymentsReceived.push(crmNormalizeFinancialWorksheetPayment({ paymentType: 'Homeowner Payment', amount: legacyHomeownerPayment }));
+      }
       return {
         insuranceBreakdown: {
           totalRcv: String(insuranceBreakdown.totalRcv || insurance.approvedAmount || estimate.amount || paymentsSummary.contractAmount || '').trim(),
@@ -57011,6 +57212,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         workNotBeingDone: Array.isArray(financialWorksheet.workNotBeingDone)
           ? financialWorksheet.workNotBeingDone.map(crmNormalizeJobFileMoneyLineItem)
           : [],
+        paymentsReceived: paymentsReceived,
         updatedAt: String(financialWorksheet.updatedAt || '').trim()
       };
     }
@@ -58108,6 +58310,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var canEdit = crmCanEditJobFileLead(lead);
       var canCalendar = canEdit && crmCanUseCalendar();
       var canFinance = crmCanAccessJobFinancialPages(lead);
+      var canViewWorksheet = crmCanViewFinancialWorksheet(lead);
       var quickActions = [
         { action: 'call', label: 'Call', disabled: !lead.phone },
         { action: 'text', label: 'Text', disabled: !lead.phone },
@@ -58121,12 +58324,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         { action: 'create-estimate', label: 'Create Estimate', disabled: !canEdit },
         { action: 'create-contract', label: 'Create Contract', disabled: !canEdit }
       ];
-      if (canFinance) {
-        quickActions.push(
-          { action: 'financial-worksheet', label: 'Financial Worksheet', disabled: false },
-          { action: 'job-profitability', label: 'Job Profitability', disabled: false }
-        );
-      }
+      if (canViewWorksheet) quickActions.push({ action: 'financial-worksheet', label: 'Financial Worksheet', disabled: false });
+      if (canFinance) quickActions.push({ action: 'job-profitability', label: 'Job Profitability', disabled: false });
       var html = '<div class="crm-detail-section-header">QUICK ACTIONS</div><div class="crm-job-file-quick-grid">';
       quickActions.forEach(function (item) {
         html += '<button class="crm-job-file-quick-btn" type="button" data-jf-action="' + item.action + '"' + (item.disabled ? ' disabled' : '') + '><span>' + crmEscapeHtml(item.label) + '</span></button>';
@@ -58146,24 +58345,23 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var insurance = data.insuranceBreakdown || {};
       var totalRcv = crmParseMoneyNumber(insurance.totalRcv || 0);
       var deductible = crmParseMoneyNumber(insurance.deductible || 0);
-      var firstCheck = crmParseMoneyNumber(insurance.firstCheck || 0);
-      var supplements = crmParseMoneyNumber(insurance.supplements || 0);
-      var nonRecoverableDepreciation = crmParseMoneyNumber(insurance.nonRecoverableDepreciation || 0);
-      var enteredHoldback = crmParseMoneyNumber(insurance.depreciationHoldback || 0);
-      var derivedHoldback = enteredHoldback || Math.max(totalRcv - deductible - firstCheck, 0);
-      var recoverableDepreciation = crmParseMoneyNumber(insurance.recoverableDepreciation || 0);
-      var effectiveRecoverable = recoverableDepreciation || Math.max(derivedHoldback - nonRecoverableDepreciation, 0);
-      var totalInsuranceValue = firstCheck + effectiveRecoverable + supplements;
       var totalWorkNotBeingDone = (Array.isArray(data.workNotBeingDone) ? data.workNotBeingDone : []).reduce(function (sum, item) {
         return sum + crmParseMoneyNumber(item && item.amount || 0);
       }, 0);
-      var completedWorkInvoice = Math.max(totalRcv - totalWorkNotBeingDone, 0);
-      var amountDue = completedWorkInvoice - deductible - firstCheck;
+      var totalPaymentsReceived = (Array.isArray(data.paymentsReceived) ? data.paymentsReceived : []).reduce(function (sum, payment) {
+        return sum + crmParseMoneyNumber(payment && payment.amount || 0);
+      }, 0);
+      var completedWorkInvoice = totalRcv - totalWorkNotBeingDone;
+      var remainingBalance = Math.round((completedWorkInvoice - totalPaymentsReceived - deductible) * 100) / 100;
       return {
-        totalInsuranceValue: totalInsuranceValue,
+        totalRcv: totalRcv,
+        deductible: deductible,
+        totalInsuranceValue: totalRcv,
         totalWorkNotBeingDone: totalWorkNotBeingDone,
+        totalPaymentsReceived: totalPaymentsReceived,
         completedWorkInvoice: completedWorkInvoice,
-        amountDue: amountDue
+        remainingBalance: remainingBalance,
+        amountDue: remainingBalance
       };
     }
 
@@ -58315,20 +58513,28 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmReadFinancialWorksheetForm() {
+      var draftInsurance = _crmFinancialWorksheetDraft && _crmFinancialWorksheetDraft.insuranceBreakdown || {};
       return {
         insuranceBreakdown: {
           totalRcv: String((document.getElementById('jfw-total-rcv') || {}).value || '').trim(),
           deductible: String((document.getElementById('jfw-deductible') || {}).value || '').trim(),
-          firstCheck: String((document.getElementById('jfw-first-check') || {}).value || '').trim(),
-          depreciationHoldback: String((document.getElementById('jfw-depreciation-holdback') || {}).value || '').trim(),
-          recoverableDepreciation: String((document.getElementById('jfw-recoverable-depreciation') || {}).value || '').trim(),
-          nonRecoverableDepreciation: String((document.getElementById('jfw-nonrecoverable-depreciation') || {}).value || '').trim(),
-          supplements: String((document.getElementById('jfw-supplements') || {}).value || '').trim()
+          firstCheck: String(draftInsurance.firstCheck || '').trim(),
+          depreciationHoldback: String(draftInsurance.depreciationHoldback || '').trim(),
+          recoverableDepreciation: String(draftInsurance.recoverableDepreciation || '').trim(),
+          nonRecoverableDepreciation: String(draftInsurance.nonRecoverableDepreciation || '').trim(),
+          supplements: String(draftInsurance.supplements || '').trim()
         },
         workNotBeingDone: crmReadFinancialRepeatingRows('jfw-work-not-done', [
           { key: 'description' },
           { key: 'amount' }
         ], crmNormalizeJobFileMoneyLineItem),
+        paymentsReceived: crmReadFinancialRepeatingRows('jfw-payments-received', [
+          { key: 'paymentType' },
+          { key: 'referenceNumber' },
+          { key: 'paymentDate' },
+          { key: 'amount' },
+          { key: 'notes' }
+        ], crmNormalizeFinancialWorksheetPayment),
         updatedAt: _crmFinancialWorksheetDraft && _crmFinancialWorksheetDraft.updatedAt ? _crmFinancialWorksheetDraft.updatedAt : ''
       };
     }
@@ -58367,12 +58573,26 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       };
     }
 
+    function crmGetFinancialWorksheetBalanceState(balance) {
+      if (balance === 0) return { key: 'balanced', label: 'Paid in Full / Balanced' };
+      if (balance < 0) return { key: 'overpaid', label: 'Overpaid / Review Entries' };
+      return { key: 'remaining', label: 'Balance Remaining' };
+    }
+
+    function crmFormatFinancialWorksheetInputMoney(value) {
+      return String(value == null ? '' : value).trim() ? crmFormatMoney(crmParseMoneyNumber(value)) : '';
+    }
+
     function crmApplyFinancialWorksheetMetricDom(data) {
       var metrics = crmGetFinancialWorksheetMetrics(data);
       var mapping = {
+        totalRcv: crmFormatMoney(metrics.totalRcv),
         totalInsuranceValue: crmFormatMoney(metrics.totalInsuranceValue),
         totalWorkNotBeingDone: crmFormatMoney(metrics.totalWorkNotBeingDone),
+        totalPaymentsReceived: crmFormatMoney(metrics.totalPaymentsReceived),
+        deductible: crmFormatMoney(metrics.deductible),
         completedWorkInvoice: crmFormatMoney(metrics.completedWorkInvoice),
+        remainingBalance: crmFormatMoney(metrics.remainingBalance),
         amountDue: crmFormatMoney(metrics.amountDue)
       };
       Object.keys(mapping).forEach(function (key) {
@@ -58380,8 +58600,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           el.textContent = mapping[key];
         });
       });
-      var totalInsuranceValueEl = document.getElementById('jfw-total-insurance-value');
-      if (totalInsuranceValueEl) totalInsuranceValueEl.value = mapping.totalInsuranceValue;
+      var balanceState = crmGetFinancialWorksheetBalanceState(metrics.remainingBalance);
+      document.querySelectorAll('[data-jfw-balance-status]').forEach(function (el) { el.textContent = balanceState.label; });
+      document.querySelectorAll('[data-jfw-balance-card]').forEach(function (el) {
+        el.classList.remove('is-remaining', 'is-balanced', 'is-overpaid');
+        el.classList.add('is-' + balanceState.key);
+      });
     }
 
     function crmApplyJobProfitabilityMetricDom(data) {
@@ -58416,53 +58640,82 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmRenderFinancialWorksheetContent(lead, data) {
-      var canEdit = crmCanEditJobFileLead(lead);
+      var canEdit = crmCanEditFinancialWorksheet(lead);
       var metrics = crmGetFinancialWorksheetMetrics(data);
       var insurance = data.insuranceBreakdown || {};
+      var balanceState = crmGetFinancialWorksheetBalanceState(metrics.remainingBalance);
+      var workRows = (Array.isArray(data.workNotBeingDone) ? data.workNotBeingDone : []).map(function (item) {
+        return Object.assign({}, item, { amount: crmFormatFinancialWorksheetInputMoney(item.amount) });
+      });
+      var paymentRows = (Array.isArray(data.paymentsReceived) ? data.paymentsReceived : []).map(function (item) {
+        return Object.assign({}, item, { amount: crmFormatFinancialWorksheetInputMoney(item.amount) });
+      });
       var html = '';
-      if (!canEdit) html += '<div class="crm-job-fin-readonly">Read-only. Contact a manager/admin to update this worksheet.</div>';
-      html += '<div class="crm-job-fin-summary-grid">';
-      html += crmRenderJobFinancialSummaryCard('Total Insurance Value', crmFormatMoney(metrics.totalInsuranceValue), 'Calculated from payments and depreciation.', 'accent', 'data-jfw-metric', 'totalInsuranceValue');
-      html += crmRenderJobFinancialSummaryCard('Total Work Not Being Done', crmFormatMoney(metrics.totalWorkNotBeingDone), 'Scope excluded from the final invoice.', '', 'data-jfw-metric', 'totalWorkNotBeingDone');
-      html += crmRenderJobFinancialSummaryCard('Completed Work Invoice', crmFormatMoney(metrics.completedWorkInvoice), 'Total RCV minus excluded work.', '', 'data-jfw-metric', 'completedWorkInvoice');
-      html += crmRenderJobFinancialSummaryCard('Amount Due', crmFormatMoney(metrics.amountDue), 'Completed work less deductible and first check.', 'accent', 'data-jfw-metric', 'amountDue');
-      html += '</div>';
-      html += '<div class="crm-job-fin-section-stack">';
+      if (!canEdit) html += '<div class="crm-job-fin-readonly">View Only &mdash; You do not have permission to edit this worksheet.</div>';
+      html += '<div class="crm-job-fin-section-stack jfw-worksheet">';
       html += '<div class="crm-job-file-panel-block crm-job-fin-highlight">';
-      html += '<div class="crm-job-file-row-top"><div class="crm-job-file-block-title">Insurance Breakdown</div><div class="crm-job-file-payment-total" data-jfw-metric="totalInsuranceValue">' + crmEscapeHtml(crmFormatMoney(metrics.totalInsuranceValue)) + '</div></div>';
+      html += '<div class="crm-job-file-row-top"><div><div class="crm-job-file-block-title">1. Total RCV</div><div class="crm-job-file-inline-note">Full replacement cost value for this insurance claim.</div></div><div class="crm-job-file-payment-total" data-jfw-metric="totalRcv">' + crmEscapeHtml(crmFormatMoney(metrics.totalRcv)) + '</div></div>';
       html += '<div class="crm-job-file-form-grid">';
-      html += crmRenderJobFinancialField('Total RCV', 'jfw-total-rcv', insurance.totalRcv || '', '0.00', { disabled: !canEdit, inputMode: 'decimal' });
-      html += crmRenderJobFinancialField('Deductible', 'jfw-deductible', insurance.deductible || '', '0.00', { disabled: !canEdit, inputMode: 'decimal' });
-      html += crmRenderJobFinancialField('First Check (ACV / ACH)', 'jfw-first-check', insurance.firstCheck || '', '0.00', { disabled: !canEdit, inputMode: 'decimal' });
-      html += crmRenderJobFinancialField('Depreciation Holdback', 'jfw-depreciation-holdback', insurance.depreciationHoldback || '', '0.00', { disabled: !canEdit, inputMode: 'decimal' });
-      html += crmRenderJobFinancialField('Recoverable Depreciation', 'jfw-recoverable-depreciation', insurance.recoverableDepreciation || '', '0.00', { disabled: !canEdit, inputMode: 'decimal' });
-      html += crmRenderJobFinancialField('Non-Recoverable Depreciation', 'jfw-nonrecoverable-depreciation', insurance.nonRecoverableDepreciation || '', '0.00', { disabled: !canEdit, inputMode: 'decimal' });
-      html += crmRenderJobFinancialField('Supplements', 'jfw-supplements', insurance.supplements || '', '0.00', { disabled: !canEdit, inputMode: 'decimal' });
-      html += crmRenderJobFinancialField('Total Insurance Value', 'jfw-total-insurance-value', crmFormatMoney(metrics.totalInsuranceValue), '', { disabled: true });
+      html += crmRenderJobFinancialField('Total RCV', 'jfw-total-rcv', crmFormatFinancialWorksheetInputMoney(insurance.totalRcv), '$0.00', { disabled: !canEdit, inputMode: 'decimal' });
       html += '</div>';
-      html += '<div class="crm-job-fin-formula">Total Insurance Value is calculated from the first check, recoverable depreciation, and supplements.</div>';
       html += '</div>';
       html += '<div class="crm-job-file-panel-block">';
-      html += '<div class="crm-job-file-row-top"><div class="crm-job-file-block-title">Work Not Being Performed</div><div class="crm-job-file-payment-total" data-jfw-metric="totalWorkNotBeingDone">' + crmEscapeHtml(crmFormatMoney(metrics.totalWorkNotBeingDone)) + '</div></div>';
+      html += '<div class="crm-job-file-row-top"><div><div class="crm-job-file-block-title">2. Work Not Being Completed</div><div class="crm-job-file-inline-note">List approved scope that will not be completed.</div></div><div class="crm-job-file-payment-total" data-jfw-metric="totalWorkNotBeingDone">' + crmEscapeHtml(crmFormatMoney(metrics.totalWorkNotBeingDone)) + '</div></div>';
       html += crmRenderJobFinancialTable({
         listKey: 'jfw-work-not-done',
-        rows: data.workNotBeingDone,
+        rows: workRows,
         readOnly: !canEdit,
-        addLabel: 'Add Work Exclusion',
-        totalLabel: 'Total Work Not Being Done',
+        addLabel: 'Add Item',
+        totalLabel: 'Total Work Not Being Completed',
         totalValue: crmFormatMoney(metrics.totalWorkNotBeingDone),
         totalAttrName: 'data-jfw-metric',
         totalKey: 'totalWorkNotBeingDone',
         createRow: function () { return crmNormalizeJobFileMoneyLineItem({}); },
         columns: [
-          { key: 'description', label: 'Description', placeholder: 'Gutters, window wraps, fence, interior...' },
+          { key: 'description', label: 'Description', placeholder: 'Work not being completed...' },
           { key: 'amount', label: 'Amount', type: 'money', placeholder: '0.00' }
         ]
       });
       html += '</div>';
-      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Completed Work</div><div class="crm-job-fin-total-row"><span>Completed Work Invoice</span><strong data-jfw-metric="completedWorkInvoice">' + crmEscapeHtml(crmFormatMoney(metrics.completedWorkInvoice)) + '</strong></div><div class="crm-job-fin-formula">Formula: Total RCV - Total Work Not Being Done</div></div>';
-      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Amount Due</div><div class="crm-job-fin-total-row"><span>Amount Due</span><strong data-jfw-metric="amountDue">' + crmEscapeHtml(crmFormatMoney(metrics.amountDue)) + '</strong></div><div class="crm-job-fin-formula">Formula: Completed Work Invoice - Deductible - First Check Received (ACV / ACH)</div></div>';
-      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Invoice</div><div class="crm-job-file-inline-note">Create Invoice is a placeholder for now. PDF generation, QuickBooks sync, and payment processing are not connected yet.</div><div class="crm-job-fin-actions"><button class="btn btn-primary" type="button" data-jfw-save="1"' + (canEdit ? '' : ' disabled') + '>Save Worksheet</button><button class="btn" type="button" data-jfw-create-invoice="1"' + (canEdit ? '' : ' disabled') + '>Create Invoice</button></div></div>';
+      html += '<div class="crm-job-file-panel-block">';
+      html += '<div class="crm-job-file-row-top"><div><div class="crm-job-file-block-title">3. Payments Received</div><div class="crm-job-file-inline-note">Record every insurance and homeowner payment applied to this claim.</div></div><div class="crm-job-file-payment-total" data-jfw-metric="totalPaymentsReceived">' + crmEscapeHtml(crmFormatMoney(metrics.totalPaymentsReceived)) + '</div></div>';
+      html += crmRenderJobFinancialTable({
+        listKey: 'jfw-payments-received',
+        rows: paymentRows,
+        readOnly: !canEdit,
+        minWidth: 980,
+        addLabel: 'Add Payment',
+        totalLabel: 'Total Payments Received',
+        totalValue: crmFormatMoney(metrics.totalPaymentsReceived),
+        totalAttrName: 'data-jfw-metric',
+        totalKey: 'totalPaymentsReceived',
+        createRow: function () { return crmNormalizeFinancialWorksheetPayment({}); },
+        columns: [
+          { key: 'paymentType', label: 'Payment Type', type: 'select', options: [
+            { value: 'First Insurance Check', label: 'First Insurance Check' },
+            { value: 'Depreciation Check', label: 'Depreciation Check' },
+            { value: 'Supplemental Payment', label: 'Supplemental Payment' },
+            { value: 'Homeowner Payment', label: 'Homeowner Payment' },
+            { value: 'Other', label: 'Other' }
+          ] },
+          { key: 'referenceNumber', label: 'Check / ACH / Reference #', placeholder: 'Reference number' },
+          { key: 'paymentDate', label: 'Payment Date', type: 'date' },
+          { key: 'amount', label: 'Amount', type: 'money', placeholder: '0.00' },
+          { key: 'notes', label: 'Notes', placeholder: 'Payment notes' }
+        ]
+      });
+      html += '</div>';
+      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-row-top"><div><div class="crm-job-file-block-title">4. Deductible</div><div class="crm-job-file-inline-note">Homeowner deductible applied to the claim.</div></div><div class="crm-job-file-payment-total" data-jfw-metric="deductible">' + crmEscapeHtml(crmFormatMoney(metrics.deductible)) + '</div></div><div class="crm-job-file-form-grid">';
+      html += crmRenderJobFinancialField('Deductible', 'jfw-deductible', crmFormatFinancialWorksheetInputMoney(insurance.deductible), '$0.00', { disabled: !canEdit, inputMode: 'decimal' });
+      html += '</div></div>';
+      html += '<div class="crm-job-file-panel-block jfw-summary-panel"><div class="crm-job-file-block-title">5. Summary</div><div class="jfw-summary-lines">';
+      html += '<div><span>Total RCV</span><strong data-jfw-metric="totalRcv">' + crmEscapeHtml(crmFormatMoney(metrics.totalRcv)) + '</strong></div>';
+      html += '<div><span>Minus Work Not Being Completed</span><strong data-jfw-metric="totalWorkNotBeingDone">' + crmEscapeHtml(crmFormatMoney(metrics.totalWorkNotBeingDone)) + '</strong></div>';
+      html += '<div><span>Minus Payments Received</span><strong data-jfw-metric="totalPaymentsReceived">' + crmEscapeHtml(crmFormatMoney(metrics.totalPaymentsReceived)) + '</strong></div>';
+      html += '<div><span>Minus Deductible</span><strong data-jfw-metric="deductible">' + crmEscapeHtml(crmFormatMoney(metrics.deductible)) + '</strong></div>';
+      html += '</div><div class="jfw-balance-card is-' + balanceState.key + '" data-jfw-balance-card><span>Remaining Balance</span><strong data-jfw-metric="remainingBalance">' + crmEscapeHtml(crmFormatMoney(metrics.remainingBalance)) + '</strong><em data-jfw-balance-status>' + crmEscapeHtml(balanceState.label) + '</em></div>';
+      html += '<div class="crm-job-fin-formula">Remaining Balance = Total RCV - Work Not Being Completed - Payments Received - Deductible</div>';
+      html += '<div class="crm-job-fin-actions"><button class="btn btn-primary" type="button" data-jfw-save="1"' + (canEdit ? '' : ' disabled') + '>Save Worksheet</button></div></div>';
       html += '</div>';
       return html;
     }
@@ -58577,8 +58830,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderFinancialWorksheetPage() {
       var lead = crmGetJobFileLeadById(_crmCurrentJobFileLeadId);
-      if (!crmCanAccessJobFinancialPages(lead)) {
-        showUploadToast('You do not have permission to open this financial page.');
+      if (!crmCanViewFinancialWorksheet(lead)) {
         return false;
       }
       var headerCard = document.getElementById('jfw-header-card');
@@ -58613,8 +58865,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmOpenFinancialWorksheetPage(leadId) {
       var lead = crmGetJobFileLeadById(leadId || _crmCurrentJobFileLeadId);
-      if (!crmCanAccessJobFinancialPages(lead)) {
-        showUploadToast('You do not have permission to open this financial page.');
+      if (!crmCanViewFinancialWorksheet(lead)) {
         return;
       }
       _crmCurrentJobFileLeadId = lead.id;
@@ -58790,6 +59041,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderJobFileReportsHtml(lead, jobFile) {
       var canFinance = crmCanAccessJobFinancialPages(lead);
+      var canViewWorksheet = crmCanViewFinancialWorksheet(lead);
       var html = '<div class="crm-job-folder-card-grid">';
       html += '<div class="crm-job-folder-card full">';
       html += '<div class="crm-job-folder-section-title">Reports</div>';
@@ -58823,8 +59075,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       html += '<div class="crm-job-folder-section-title">Report Actions</div>';
       html += '<div class="crm-job-file-inline-note">Open the financial pages or supporting records for more reporting detail.</div>';
       html += '<div class="crm-job-file-inline-actions">';
-      if (canFinance) {
+      if (canViewWorksheet) {
         html += '<button class="btn" type="button" data-jf-action="financial-worksheet">Financial Worksheet</button>';
+      }
+      if (canFinance) {
         html += '<button class="btn" type="button" data-jf-action="job-profitability">Job Profitability</button>';
       }
       html += '<button class="btn" type="button" data-jf-tab-shortcut="documents">Open Documents</button>';
@@ -59113,6 +59367,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var quickCard = document.getElementById('jf-quick-actions-card');
       var tabContent = document.getElementById('jf-tab-content');
       if (!headerCard || !quickCard || !tabContent) return false;
+      var isInvoiceWorkspace = _crmJobFileActiveTab === 'payments';
+      var jobFilePageActions = document.querySelector('#page-crm-job-file .page-actions');
+      var jobFileTabs = document.getElementById('jf-tabs');
+      headerCard.style.display = isInvoiceWorkspace ? 'none' : '';
+      if (jobFilePageActions) jobFilePageActions.style.display = isInvoiceWorkspace ? 'none' : '';
+      if (jobFileTabs) jobFileTabs.style.display = isInvoiceWorkspace ? 'none' : '';
+      document.body.classList.toggle('crm-job-file-invoice-page-active', isInvoiceWorkspace);
       headerCard.innerHTML = crmRenderJobFileHeaderHtml(lead, feed);
       quickCard.innerHTML = '';
       quickCard.hidden = true;
@@ -59136,6 +59397,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         document.body.classList.toggle('crm-job-file-photos-page-active', _crmJobFileActiveTab === 'photos');
         document.body.classList.toggle('crm-job-file-documents-page-active', _crmJobFileActiveTab === 'documents');
         document.body.classList.toggle('crm-job-file-production-page-active', _crmJobFileActiveTab === 'production');
+        document.body.classList.toggle('crm-job-file-invoice-page-active', _crmJobFileActiveTab === 'payments');
       }
       crmRenderMiniDashboardShells(document.getElementById('page-crm-job-file'));
       return true;
@@ -59753,18 +60015,36 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     document.getElementById('page-crm-financial-worksheet').addEventListener('input', function (e) {
       if (!e.target.closest('#jfw-content')) return;
+      if (!crmCanEditFinancialWorksheet(crmGetJobFileLeadById(_crmCurrentJobFileLeadId))) return;
+      crmApplyFinancialWorksheetMetricDom(crmReadFinancialWorksheetForm());
+    });
+
+    document.getElementById('page-crm-financial-worksheet').addEventListener('focusout', function (e) {
+      if (!e.target.closest('#jfw-content')) return;
+      if (!crmCanEditFinancialWorksheet(crmGetJobFileLeadById(_crmCurrentJobFileLeadId))) return;
+      if (!e.target.matches('#jfw-total-rcv, #jfw-deductible, .crm-job-fin-table-input.money')) return;
+      var rawValue = String(e.target.value || '').trim();
+      e.target.value = rawValue ? crmFormatMoney(crmParseMoneyNumber(rawValue)) : '';
       crmApplyFinancialWorksheetMetricDom(crmReadFinancialWorksheetForm());
     });
 
     document.getElementById('page-crm-financial-worksheet').addEventListener('click', function (e) {
       var lead = crmGetJobFileLeadById(_crmCurrentJobFileLeadId);
-      if (!crmCanAccessJobFinancialPages(lead)) return;
+      if (!crmCanViewFinancialWorksheet(lead)) return;
 
       var addBtn = e.target.closest('[data-fin-add-row]');
       if (addBtn) {
+        if (!crmCanEditFinancialWorksheet(lead)) {
+          showUploadToast('Only authorized management can edit this worksheet.');
+          return;
+        }
         _crmFinancialWorksheetDraft = crmReadFinancialWorksheetForm();
-        if (addBtn.getAttribute('data-fin-add-row') === 'jfw-work-not-done') {
+        var addListKey = addBtn.getAttribute('data-fin-add-row') || '';
+        if (addListKey === 'jfw-work-not-done') {
           _crmFinancialWorksheetDraft.workNotBeingDone.push(crmNormalizeJobFileMoneyLineItem({}));
+          crmRenderFinancialWorksheetPage();
+        } else if (addListKey === 'jfw-payments-received') {
+          _crmFinancialWorksheetDraft.paymentsReceived.push(crmNormalizeFinancialWorksheetPayment({}));
           crmRenderFinancialWorksheetPage();
         }
         return;
@@ -59772,10 +60052,20 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
       var removeBtn = e.target.closest('[data-fin-remove-row]');
       if (removeBtn) {
+        if (!crmCanEditFinancialWorksheet(lead)) {
+          showUploadToast('Only authorized management can edit this worksheet.');
+          return;
+        }
         _crmFinancialWorksheetDraft = crmReadFinancialWorksheetForm();
-        if (removeBtn.getAttribute('data-fin-remove-row') === 'jfw-work-not-done') {
-          var removeId = removeBtn.getAttribute('data-row-id') || '';
+        var removeListKey = removeBtn.getAttribute('data-fin-remove-row') || '';
+        var removeId = removeBtn.getAttribute('data-row-id') || '';
+        if (removeListKey === 'jfw-work-not-done') {
           _crmFinancialWorksheetDraft.workNotBeingDone = _crmFinancialWorksheetDraft.workNotBeingDone.filter(function (item) {
+            return item.id !== removeId;
+          });
+          crmRenderFinancialWorksheetPage();
+        } else if (removeListKey === 'jfw-payments-received') {
+          _crmFinancialWorksheetDraft.paymentsReceived = _crmFinancialWorksheetDraft.paymentsReceived.filter(function (item) {
             return item.id !== removeId;
           });
           crmRenderFinancialWorksheetPage();
@@ -59785,7 +60075,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
       var saveBtn = e.target.closest('[data-jfw-save]');
       if (saveBtn) {
-        if (!crmCanEditJobFileLead(lead)) {
+        if (!crmCanEditFinancialWorksheet(lead)) {
           showUploadToast('You do not have permission to edit this financial page.');
           return;
         }
@@ -61034,7 +61324,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       'Sales Rep': {
         viewCRM: true,  editCRM: true,  deleteLeads: false, assignLeads: false,
         viewAllPipelines: false, editAllPipelines: false, deleteJobs: false,
-        viewFinancialWorksheet: false, editFinancialWorksheet: false,
+        viewFinancialWorksheet: true, editFinancialWorksheet: false,
         viewJobProfitability: false, editJobProfitability: false,
         createInvoices: false, viewPayroll: false, editPayroll: false,
         editCompanyInfo: false, manageUsers: false,
@@ -61046,7 +61336,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       'Manager': {
         viewCRM: true,  editCRM: true,  deleteLeads: false, assignLeads: true,
         viewAllPipelines: true, editAllPipelines: false, deleteJobs: false,
-        viewFinancialWorksheet: true, editFinancialWorksheet: false,
+        viewFinancialWorksheet: true, editFinancialWorksheet: true,
         viewJobProfitability: true, editJobProfitability: false,
         createInvoices: true, viewPayroll: false, editPayroll: false,
         editCompanyInfo: false, manageUsers: false,
