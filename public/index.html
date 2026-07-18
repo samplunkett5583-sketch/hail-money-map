@@ -17615,6 +17615,171 @@
         scrollbar-gutter: stable;
       }
     }
+
+    /* Phase 1 shared-shell contract: Dashboard, Pipeline, Contacts and
+       Company Documents use the same header, rail and reserved Back column. */
+    body.crm-phase-one-shared-shell-active .crm-header-inline-title,
+    body.crm-phase-one-shared-shell-active .crm-header-context-title {
+      pointer-events: none;
+      user-select: none;
+    }
+    body.crm-phase-one-shared-shell-active > .app-shell > .topbar {
+      background: #090909 !important;
+      color: #fff;
+    }
+    body.crm-phase-one-shared-shell-active .topbar-right {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      padding-right: 16px;
+      box-sizing: border-box;
+    }
+    body.crm-phase-one-shared-shell-active .topbar-controls {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      justify-content: flex-end;
+    }
+    body.crm-phase-one-shared-shell-active .crm-profile-menu {
+      min-width: 0;
+      max-width: calc(100% - 54px);
+    }
+    body.crm-phase-one-shared-shell-active .crm-profile-toggle {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    body.crm-phase-one-shared-shell-active .map-header-center-brand {
+      cursor: pointer;
+    }
+    body.crm-phase-one-shared-shell-active .map-header-center-brand:focus-visible {
+      outline: 2px solid #f6c75f;
+      outline-offset: 4px;
+      border-radius: 6px;
+    }
+    body.crm-phase-one-shared-shell-active [data-crm-phase-one-shared-sidebar] {
+      position: relative;
+      z-index: 20;
+      height: 100%;
+      min-height: 0;
+      max-width: 100%;
+      gap: 10px !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+    }
+    body.crm-phase-one-shared-shell-active [data-crm-phase-one-shared-sidebar] .nav-dropdown-menu {
+      position: static;
+      left: 0;
+      top: auto;
+      width: 100%;
+      min-width: 100%;
+      max-width: 100%;
+      margin: 8px 0;
+      padding: 8px 6px;
+      transform: none;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      box-shadow: none;
+      z-index: 300;
+    }
+    body.crm-phase-one-shared-shell-active [data-crm-phase-one-shared-sidebar] .nav-dropdown-option {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 10px 8px;
+      box-sizing: border-box;
+      white-space: normal;
+    }
+    body.crm-phase-one-shared-shell-active [data-crm-phase-one-shared-sidebar] .nav-dropdown-group:not(.is-open) .nav-dropdown-menu {
+      display: none !important;
+    }
+    body.crm-phase-one-shared-shell-active [data-crm-phase-one-shared-sidebar] .nav-dropdown-group.is-open .nav-dropdown-menu {
+      display: flex !important;
+    }
+    #page-crm-contacts .crm-dashboard-mini-body {
+      background: #eef1f4;
+    }
+    .crm-company-docs-page-shell {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+    }
+    .crm-company-docs-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .crm-company-docs-category {
+      min-width: 0;
+      padding: 20px;
+      border: 1px solid #d8dde6;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+    }
+    .crm-company-docs-category h2 {
+      margin: 0 0 12px;
+      color: #172033;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+    .crm-company-docs-empty {
+      padding: 18px 14px;
+      border: 1px dashed #cbd2dd;
+      border-radius: 12px;
+      color: #6b7280;
+      background: #f8fafc;
+      font-size: 14px;
+      text-align: center;
+    }
+    @media (min-width: 981px) {
+      body.crm-phase-one-shared-shell-active #page-crm-contacts,
+      body.crm-phase-one-shared-shell-active #page-crm-contacts .crm-phase-one-shared-shell {
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
+      body.crm-phase-one-shared-shell-active #page-crm-contacts .crm-dashboard-mini-body {
+        height: 100%;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+    }
+    @media (max-width: 720px) {
+      body.crm-phase-one-shared-shell-active #page-main-menu .hm-dashboard-ref .wrap,
+      body.crm-phase-one-shared-shell-active #page-crm-pipeline .hm-dashboard-ref .wrap,
+      body.crm-phase-one-shared-shell-active .crm-phase-one-shared-shell {
+        flex-direction: row;
+        align-items: stretch;
+      }
+      body.crm-phase-one-shared-shell-active #page-main-menu .hm-dashboard-ref [data-crm-phase-one-shared-sidebar],
+      body.crm-phase-one-shared-shell-active #page-crm-pipeline .hm-dashboard-ref [data-crm-phase-one-shared-sidebar],
+      body.crm-phase-one-shared-shell-active .crm-dashboard-mini-sidebar {
+        width: var(--crm-shell-rail-w);
+        min-width: var(--crm-shell-rail-w);
+        flex: 0 0 var(--crm-shell-rail-w);
+      }
+      body.crm-phase-one-shared-shell-active [data-crm-phase-one-shared-sidebar] {
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
+        align-items: stretch !important;
+      }
+      body.crm-phase-one-shared-shell-active .crm-dashboard-mini-sidebar > [data-crm-phase-one-shared-sidebar] {
+        width: 100% !important;
+      }
+      body.crm-phase-one-shared-shell-active [data-crm-phase-one-shared-sidebar] .nav-item,
+      body.crm-phase-one-shared-shell-active [data-crm-phase-one-shared-sidebar] .nav-dropdown-group {
+        width: 100% !important;
+        flex: 0 0 auto !important;
+      }
+      .crm-company-docs-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -17644,7 +17809,7 @@
       </div>
       <div class="pipeline-header-center" id="pipeline-header-center">
         <div id="crm-pipeline-stage-filter-left" class="crm-pipe-filter-bar crm-pipeline-header-filter" aria-label="Lead stages"></div>
-        <div class="map-header-center-brand" id="map-header-center-brand" role="button" tabindex="0" aria-label="Hail Money">
+        <div class="map-header-center-brand" id="map-header-center-brand" role="button" tabindex="0" aria-label="Open Dashboard" title="Open Dashboard">
           <span class="map-header-center-heading">Hail Money</span>
           <img src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
         </div>
@@ -20403,13 +20568,18 @@
       </section>
 
       <section id="page-crm-contacts" class="page" data-crm-header-title="Contacts">
-        <div class="crm-contacts-page-shell">
-          <div class="crm-contact-list-card">
-            <div class="crm-contact-list-header">
-              <h1 class="crm-contact-list-title">Contacts</h1>
-              <div class="crm-contact-list-meta" id="crm-contacts-count">0 contacts</div>
+        <div class="crm-dashboard-mini-layout crm-phase-one-shared-shell" data-crm-phase-one-shared-shell data-dashboard-active-action="contacts">
+          <div class="crm-dashboard-mini-sidebar" data-crm-phase-one-sidebar></div>
+          <div class="crm-dashboard-mini-body">
+            <div class="crm-contacts-page-shell">
+              <div class="crm-contact-list-card">
+                <div class="crm-contact-list-header">
+                  <h1 class="crm-contact-list-title">Contacts</h1>
+                  <div class="crm-contact-list-meta" id="crm-contacts-count">0 contacts</div>
+                </div>
+                <div id="crm-contacts-list"></div>
+              </div>
             </div>
-            <div id="crm-contacts-list"></div>
           </div>
         </div>
       </section>
@@ -21342,56 +21512,23 @@
       </div>
 
       <!-- ═══════════════════ CRM: COMPANY DOCUMENTS ═══════════════════ -->
-      <section id="page-company-docs" class="page">
-        <div class="crm-wrap">
-          <h1 class="page-title">Company Documents</h1>
-          <p class="page-subtitle">Shared contracts, templates, and company files.</p>
-          <div class="page-actions">
-            <button class="btn back-to-menu" type="button">Back to Main Menu</button>
-          </div>
-          <section class="form-card">
-            <section class="form-section">
-              <div class="form-section-header">DOCUMENTS</div>
-              <div class="crm-docs-list">
-                <div class="crm-docs-item">
-                  <div class="crm-docs-icon">📄</div>
-                  <div class="crm-docs-info">
-                    <div class="crm-docs-name">Contingency Agreement</div>
-                    <div class="crm-docs-desc">Standard homeowner contingency contract template</div>
-                  </div>
-                </div>
-                <div class="crm-docs-item">
-                  <div class="crm-docs-icon">📄</div>
-                  <div class="crm-docs-info">
-                    <div class="crm-docs-name">Roofing Contract</div>
-                    <div class="crm-docs-desc">Full roofing work contract template</div>
-                  </div>
-                </div>
-                <div class="crm-docs-item">
-                  <div class="crm-docs-icon">📋</div>
-                  <div class="crm-docs-info">
-                    <div class="crm-docs-name">Inspection Checklist</div>
-                    <div class="crm-docs-desc">Roof and exterior inspection checklist</div>
-                  </div>
-                </div>
-                <div class="crm-docs-item">
-                  <div class="crm-docs-icon">📋</div>
-                  <div class="crm-docs-info">
-                    <div class="crm-docs-name">Scope of Work Template</div>
-                    <div class="crm-docs-desc">Standard scope of work for insurance claims</div>
-                  </div>
-                </div>
-                <div class="crm-docs-item">
-                  <div class="crm-docs-icon">📝</div>
-                  <div class="crm-docs-info">
-                    <div class="crm-docs-name">Door Knock Script</div>
-                    <div class="crm-docs-desc">Canvassing script and objection handlers</div>
-                  </div>
-                </div>
+      <section id="page-company-docs" class="page" data-crm-header-title="Company Documents">
+        <div class="crm-dashboard-mini-layout crm-phase-one-shared-shell" data-crm-phase-one-shared-shell data-dashboard-active-action="company-documents">
+          <div class="crm-dashboard-mini-sidebar" data-crm-phase-one-sidebar></div>
+          <div class="crm-dashboard-mini-body">
+            <div class="crm-company-docs-page-shell">
+              <h1 class="page-title">Company Documents</h1>
+              <p class="page-subtitle">Shared company documents available for Sales Rep viewing and download.</p>
+              <div class="crm-company-docs-grid" aria-label="Company document categories">
+                <section class="crm-company-docs-category"><h2>Contingencies</h2><div class="crm-company-docs-empty">No documents uploaded yet</div></section>
+                <section class="crm-company-docs-category"><h2>Contracts</h2><div class="crm-company-docs-empty">No documents uploaded yet</div></section>
+                <section class="crm-company-docs-category"><h2>Shingle and Manufacturer Specifications</h2><div class="crm-company-docs-empty">No documents uploaded yet</div></section>
+                <section class="crm-company-docs-category"><h2>Company Insurance Documents</h2><div class="crm-company-docs-empty">No documents uploaded yet</div></section>
+                <section class="crm-company-docs-category"><h2>Roofing Licenses</h2><div class="crm-company-docs-empty">No documents uploaded yet</div></section>
+                <section class="crm-company-docs-category"><h2>Other Company Documents</h2><div class="crm-company-docs-empty">No documents uploaded yet</div></section>
               </div>
-              <p style="margin-top:16px;font-size:13px;color:var(--muted);">Document uploads and management coming in a future update.</p>
-            </section>
-          </section>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -22762,6 +22899,51 @@
     var _appCurrentPageId = '';
     var _appPageHistoryLocked = false;
 
+    /* Phase 1 shared-shell contract. This is the single route-context source
+       for shell chrome; page renderers continue to own their existing data. */
+    var CRM_PHASE_ONE_SHARED_SHELL_PAGES = {
+      'page-main-menu': 'Dashboard',
+      'page-crm-pipeline': 'Pipeline',
+      'page-crm-contacts': 'Contacts',
+      'page-company-docs': 'Company Documents'
+    };
+
+    function crmGetPageContext(pageId) {
+      pageId = String(pageId || _appCurrentPageId || '').trim();
+      var jobFileHeaderContext = (typeof crmGetJobFileHeaderContext === 'function')
+        ? crmGetJobFileHeaderContext(pageId)
+        : null;
+      var insideJobFolder = pageId === 'page-lead-detail'
+        || pageId === 'page-crm-job-file'
+        || pageId === 'page-crm-financial-worksheet'
+        || pageId === 'page-crm-job-profitability'
+        || pageId === 'page-crm-file-viewer';
+      var selectedLeadId = insideJobFolder
+        ? String((pageId === 'page-lead-detail' ? _crmCurrentLeadId : _crmCurrentJobFileLeadId) || _crmCurrentLeadId || '').trim()
+        : '';
+      var homeownerName = jobFileHeaderContext ? String(jobFileHeaderContext.homeownerName || '').trim() : '';
+      if (!homeownerName && selectedLeadId && typeof crmGetJobFileLeadById === 'function') {
+        var selectedLead = crmGetJobFileLeadById(selectedLeadId);
+        if (selectedLead && typeof crmGetJobFileLeadName === 'function') homeownerName = crmGetJobFileLeadName(selectedLead);
+      }
+      var page = pageId ? document.getElementById(pageId) : null;
+      var pageTitle = CRM_PHASE_ONE_SHARED_SHELL_PAGES[pageId]
+        || (jobFileHeaderContext && jobFileHeaderContext.pageTitle)
+        || String(page && page.getAttribute('data-crm-header-title') || '').trim();
+      var isPhaseOneSharedShell = Object.prototype.hasOwnProperty.call(CRM_PHASE_ONE_SHARED_SHELL_PAGES, pageId);
+      return {
+        pageId: pageId,
+        pageTitle: pageTitle,
+        homeownerName: homeownerName,
+        selectedLeadId: selectedLeadId,
+        selectedJobId: selectedLeadId,
+        isInsideJobFolder: insideJobFolder,
+        shouldShowBack: pageId !== 'page-login' && pageId !== 'page-main-menu' && (isPhaseOneSharedShell || !!peekAppHeaderBackTarget()),
+        isWatermarkExcluded: pageId === 'page-map' || pageId === 'page-campaigns',
+        isPhaseOneSharedShell: isPhaseOneSharedShell
+      };
+    }
+
     function isTrackedAppPage(pageId) {
       return !!pageId && pageId !== 'page-login';
     }
@@ -22783,10 +22965,7 @@
     }
 
     function shouldShowGlobalHeaderBack() {
-      var previousPageId = peekAppHeaderBackTarget();
-      return _appCurrentPageId !== 'page-login'
-        && _appCurrentPageId !== 'page-main-menu'
-        && !!previousPageId;
+      return crmGetPageContext(_appCurrentPageId).shouldShowBack;
     }
 
     function updateGlobalHeaderBackButton() {
@@ -22892,6 +23071,7 @@
         || pageId === 'page-docusign');
       document.body.classList.toggle('pipeline-page-active', pageId === 'page-crm-pipeline');
       document.body.classList.toggle('lead-detail-page-active', pageId === 'page-lead-detail');
+      document.body.classList.toggle('crm-phase-one-shared-shell-active', crmGetPageContext(pageId).isPhaseOneSharedShell);
       document.body.classList.toggle('production-scheduler-page-active', pageId === 'page-crm-production');
       document.body.classList.toggle('crm-job-file-photos-page-active',
         pageId === 'page-crm-job-file' && _crmJobFileActiveTab === 'photos');
@@ -22911,6 +23091,7 @@
       if (typeof crmRenderPipelineCompanyStrip === 'function') crmRenderPipelineCompanyStrip();
       if (typeof crmTrackRecentDestination === 'function') crmTrackRecentDestination(pageId);
       if (typeof crmRenderMiniDashboardShells === 'function') crmRenderMiniDashboardShells(target);
+      if (typeof crmRenderPhaseOneSharedShell === 'function') crmRenderPhaseOneSharedShell(pageId);
       if (pageId === 'page-map' && window.google && mapsState && mapsState.map) {
         var center = mapsState.map.getCenter();
         google.maps.event.trigger(mapsState.map, 'resize');
@@ -43663,6 +43844,7 @@ var CRM_REPS_KEY    = 'crm_reps';
 var CRM_APPOINTMENTS_KEY = 'crm_appointments';
 var CRM_REMINDERS_KEY = 'crm_reminders';
 var CRM_RECENT_DESTINATIONS_KEY = 'crm_recent_destinations';
+var _crmContactsCategoryFilter = '';
 var APP_LEADS_KEY           = 'app.leads';
 var APP_PIPELINE_STAGES_KEY = 'app.pipelineStages';
 var APP_TEAM_MEMBERS_KEY    = 'app.teamMembers';
@@ -45829,19 +46011,41 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }, 0);
     }
 
+    function crmContactMatchesCategory(contact, category) {
+      var contactType = String(contact && contact.contactType || '').trim().toLowerCase();
+      category = String(category || '').trim().toLowerCase();
+      if (!category) return true;
+      if (category === 'company') return contactType === 'office contact' || contactType === 'vendor' || contactType === 'company';
+      if (category === 'insurance') return contactType.indexOf('insurance') !== -1;
+      if (category === 'commercial') return contactType.indexOf('commercial') !== -1;
+      if (category === 'residential') return contactType === 'customer' || contactType === 'homeowner' || contactType.indexOf('residential') !== -1;
+      return false;
+    }
+
+    function crmOpenContactsCategory(category) {
+      _crmContactsCategoryFilter = String(category || '').trim();
+      crmRenderContactsPage();
+      showPage('page-crm-contacts');
+    }
+
     function crmRenderContactsPage() {
       var listEl = document.getElementById('crm-contacts-list');
       var countEl = document.getElementById('crm-contacts-count');
       if (!listEl) return;
-      var contacts = crmGetContacts().slice().sort(function (a, b) {
+      var selectedCategory = String(_crmContactsCategoryFilter || '').trim();
+      var contacts = crmGetContacts().filter(function (contact) {
+        return crmContactMatchesCategory(contact, selectedCategory);
+      }).sort(function (a, b) {
         var bt = Date.parse(String(b && b.updatedAt || '')) || 0;
         var at = Date.parse(String(a && a.updatedAt || '')) || 0;
         if (bt !== at) return bt - at;
         return crmGetContactDisplayName(a).localeCompare(crmGetContactDisplayName(b));
       });
-      if (countEl) countEl.textContent = contacts.length + ' contact' + (contacts.length === 1 ? '' : 's');
+      if (countEl) countEl.textContent = contacts.length + ' contact' + (contacts.length === 1 ? '' : 's') + (selectedCategory ? ' · ' + selectedCategory : '');
       if (!contacts.length) {
-        listEl.innerHTML = '<div class="crm-contact-empty">No contacts yet. Use New → Contact from the dashboard to add one.</div>';
+        listEl.innerHTML = '<div class="crm-contact-empty">' + (selectedCategory
+          ? 'No ' + crmEscapeHtml(selectedCategory) + ' contacts found.'
+          : 'No contacts yet. Use New → Contact from the dashboard to add one.') + '</div>';
         return;
       }
       var rows = contacts.map(function (contact) {
@@ -48308,9 +48512,30 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var stageFilter = crmNormalizePipelineStageFilter(destination.pipelineStage || 'all');
         return stageFilter === 'all' ? 'Pipeline' : crmGetPipelineStageFilterLabel(stageFilter);
       }
+      if (pageId === 'page-lead-detail' || pageId === 'page-crm-job-file') {
+        var homeownerName = String(destination.homeownerName || '').trim() || 'Job';
+        var jobSection = pageId === 'page-crm-job-file' ? ({
+          overview: 'Job Folder',
+          contacts: 'Contacts',
+          documents: 'Documents',
+          photos: 'Photos',
+          reports: 'Reports',
+          notes: 'Notes',
+          activity: 'Activity',
+          estimate: 'Estimates',
+          insurance: 'Insurance',
+          calendar: 'Calendar',
+          tasks: 'Tasks',
+          production: 'Production',
+          payments: 'Invoice',
+          messages: 'Messages'
+        })[String(destination.jobTab || 'overview').trim()] || 'Job Folder' : 'Job Folder';
+        return homeownerName + ' - ' + jobSection;
+      }
       return ({
         'page-new-contact': 'New Contact',
         'page-crm-contacts': 'Contacts',
+        'page-company-docs': 'Company Documents',
         'page-crm-reminder': 'Reminder',
         'page-crm-task': 'Task',
         'page-start-inspection-workflow': 'Start Inspection',
@@ -48347,6 +48572,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           crmNormalizePipelineStageFilter(destination.pipelineStage || 'all') + '::' +
           String(destination.pipelineScope || '').trim().toLowerCase();
       }
+      if (pageId === 'page-lead-detail' || pageId === 'page-crm-job-file') {
+        return pageId + '::' + String(destination.leadId || '').trim() + '::' + String(destination.jobTab || '').trim();
+      }
       return pageId;
     }
 
@@ -48357,24 +48585,41 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var normalized = {
         pageId: pageId,
         pipelineStage: '',
-        pipelineScope: ''
+        pipelineScope: '',
+        leadId: '',
+        jobTab: '',
+        homeownerName: ''
       };
       if (pageId === 'page-crm-pipeline') {
         normalized.pipelineStage = crmNormalizePipelineStageFilter(destination.pipelineStage || 'all');
         normalized.pipelineScope = String(destination.pipelineScope || '').trim().toLowerCase();
+      }
+      if (pageId === 'page-lead-detail' || pageId === 'page-crm-job-file') {
+        normalized.leadId = String(destination.leadId || '').trim();
+        normalized.jobTab = pageId === 'page-crm-job-file' ? String(destination.jobTab || 'overview').trim() : '';
+        normalized.homeownerName = String(destination.homeownerName || '').trim();
+        if (!normalized.leadId) return null;
       }
       normalized.label = crmGetRecentDestinationLabel(normalized);
       normalized.key = crmGetRecentDestinationKey(normalized);
       return normalized.label && normalized.key ? normalized : null;
     }
 
-    function crmGetRecentDestinations() {
-      return crmReadJsonArray(CRM_RECENT_DESTINATIONS_KEY).map(crmNormalizeRecentDestination).filter(Boolean).slice(0, 3);
+    function crmGetRecentDestinations(options) {
+      options = options || {};
+      var currentKey = options.excludeCurrent === false ? '' : crmGetRecentDestinationKey(crmBuildCurrentRecentDestination(_appCurrentPageId) || {});
+      var limit = Number(options.limit || 3);
+      var seen = {};
+      return crmReadJsonArray(CRM_RECENT_DESTINATIONS_KEY).map(crmNormalizeRecentDestination).filter(function (destination) {
+        if (!destination || seen[destination.key] || (currentKey && destination.key === currentKey)) return false;
+        seen[destination.key] = true;
+        return true;
+      }).slice(0, limit);
     }
 
     function crmSaveRecentDestinations(destinations) {
       try {
-        var normalized = (destinations || []).map(crmNormalizeRecentDestination).filter(Boolean).slice(0, 3);
+        var normalized = (destinations || []).map(crmNormalizeRecentDestination).filter(Boolean).slice(0, 4);
         localStorage.setItem(CRM_RECENT_DESTINATIONS_KEY, JSON.stringify(normalized));
         return true;
       } catch (e) {
@@ -48417,28 +48662,33 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         dropdownGroup.classList.toggle('is-open', !!isOpen);
         if (dropdownButton) dropdownButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
       }
+      function openDropdown(persistOpen) {
+        cancelDropdownClose();
+        crmCloseAllDashboardDropdowns(dropdownGroup);
+        if (persistOpen) dropdownGroup._dashDropdownClickOpen = true;
+        setDropdownOpen(true);
+      }
       function scheduleDropdownClose() {
         cancelDropdownClose();
+        if (dropdownGroup._dashDropdownClickOpen) return;
         dropdownCloseTimer = setTimeout(function () {
           dropdownCloseTimer = null;
-          dropdownGroup._dashDropdownClickOpen = false;
+          if (dropdownGroup._dashDropdownClickOpen) return;
           setDropdownOpen(false);
-        }, 200);
+        }, 220);
       }
       dropdownGroup.addEventListener('pointerenter', function () {
-        cancelDropdownClose();
-        setDropdownOpen(true);
+        openDropdown(false);
       });
       dropdownGroup.addEventListener('pointerleave', function () {
         scheduleDropdownClose();
       });
       dropdownGroup.addEventListener('focusin', function () {
-        setDropdownOpen(true);
+        openDropdown(false);
       });
       dropdownGroup.addEventListener('focusout', function (event) {
         var nextTarget = event && event.relatedTarget;
         if (nextTarget && dropdownGroup.contains(nextTarget)) return;
-        dropdownGroup._dashDropdownClickOpen = false;
         scheduleDropdownClose();
       });
       if (dropdownButton) {
@@ -48446,13 +48696,17 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         dropdownButton.addEventListener('click', function (e) {
           e.preventDefault();
           e.stopPropagation();
-          var shouldOpen = !dropdownGroup._dashDropdownClickOpen;
-          document.querySelectorAll('.nav-dropdown-group.is-open').forEach(function (otherGroup) {
-            if (otherGroup === dropdownGroup) return;
-            if (typeof otherGroup._crmCloseDashboardDropdown === 'function') otherGroup._crmCloseDashboardDropdown();
-          });
-          dropdownGroup._dashDropdownClickOpen = shouldOpen;
-          setDropdownOpen(shouldOpen);
+          if (dropdownGroup.classList.contains('nav-dropdown-group-contacts')) {
+            crmHandleDashboardTabAction('contacts');
+            setTimeout(function () {
+              var activeContactsGroup = document.querySelector('.page.active [data-crm-phase-one-shared-sidebar] .nav-dropdown-group-contacts');
+              if (activeContactsGroup && typeof activeContactsGroup._crmOpenDashboardDropdown === 'function') {
+                activeContactsGroup._crmOpenDashboardDropdown();
+              }
+            }, 0);
+            return;
+          }
+          openDropdown(true);
         });
       }
       if (dropdownMenu) {
@@ -48466,41 +48720,80 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         dropdownGroup._dashDropdownClickOpen = false;
         setDropdownOpen(false);
       };
+      dropdownGroup._crmOpenDashboardDropdown = function () {
+        openDropdown(true);
+      };
       dropdownGroup._dashDropdownBound = true;
+      crmEnsureDashboardDropdownDismissHandlers();
     }
 
-    function crmGetDashboardMiniSidebarMarkup() {
+    function crmCloseAllDashboardDropdowns(exceptGroup) {
+      document.querySelectorAll('.nav-dropdown-group.is-open').forEach(function (group) {
+        if (group === exceptGroup) return;
+        if (typeof group._crmCloseDashboardDropdown === 'function') group._crmCloseDashboardDropdown();
+      });
+    }
+
+    function crmEnsureDashboardDropdownDismissHandlers() {
+      if (document._crmDashboardDropdownDismissBound) return;
+      document.addEventListener('click', function (event) {
+        var activeGroup = event.target && event.target.closest ? event.target.closest('.nav-dropdown-group') : null;
+        crmCloseAllDashboardDropdowns(activeGroup);
+      });
+      document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        crmCloseAllDashboardDropdowns(null);
+      });
+      document._crmDashboardDropdownDismissBound = true;
+    }
+
+    function crmGetDashboardMiniSidebarMarkup(options) {
+      options = options || {};
       return [
-        '<nav class="sidebar" aria-label="Dashboard navigation">',
+        '<nav class="sidebar" aria-label="CRM navigation"' + (options.phaseOneShared ? ' data-crm-phase-one-shared-sidebar' : '') + '>',
           '<div class="nav-dropdown-group nav-dropdown-group-new">',
-            '<button class="nav-item active" type="button" aria-label="New" aria-haspopup="menu">',
+            '<button class="nav-item' + (options.phaseOneShared ? '' : ' active') + '" type="button" aria-label="New" aria-haspopup="menu">',
               '<span class="dash-icon" data-dash-icon="layout-dashboard" aria-hidden="true"></span><span class="nav-label">New</span>',
             '</button>',
             '<div class="nav-dropdown-menu" aria-label="New options">',
-              '<button class="nav-dropdown-option" type="button" data-dashboard-action="new-contact">New Contact</button>',
-              '<button class="nav-dropdown-option" type="button" data-dashboard-action="new-lead">New Lead</button>',
-              '<button class="nav-dropdown-option" type="button" data-dashboard-action="reminder">New Reminder</button>',
-              '<button class="nav-dropdown-option" type="button" data-dashboard-action="task">New Task</button>',
+              '<button class="nav-dropdown-option" type="button" data-dashboard-action="new-contact">' + (options.phaseOneShared ? 'Contact' : 'New Contact') + '</button>',
+              '<button class="nav-dropdown-option" type="button" data-dashboard-action="new-lead">' + (options.phaseOneShared ? 'Lead' : 'New Lead') + '</button>',
+              '<button class="nav-dropdown-option" type="button" data-dashboard-action="reminder">' + (options.phaseOneShared ? 'Reminder' : 'New Reminder') + '</button>',
+              '<button class="nav-dropdown-option" type="button" data-dashboard-action="task">' + (options.phaseOneShared ? 'Task' : 'New Task') + '</button>',
             '</div>',
           '</div>',
+          '<button class="nav-item" type="button" data-dashboard-action="start-inspection" aria-label="Start Inspection">',
+            '<span class="dash-icon" data-dash-icon="play" aria-hidden="true"></span><span class="nav-label">Start</span>',
+          '</button>',
           '<div class="nav-dropdown-group nav-dropdown-group-recent">',
             '<button class="nav-item" type="button" aria-label="Recent" aria-haspopup="menu">',
               '<span class="dash-icon" data-dash-icon="clock" aria-hidden="true"></span><span class="nav-label">Recent</span>',
             '</button>',
             '<div class="nav-dropdown-menu" data-dashboard-recent-menu aria-label="Recent pages"></div>',
           '</div>',
-          '<button class="nav-item" type="button" data-dashboard-action="start-inspection" aria-label="Start Inspection">',
-            '<span class="dash-icon" data-dash-icon="play" aria-hidden="true"></span><span class="nav-label">Start</span>',
-          '</button>',
+          options.phaseOneShared
+            ? '<button class="nav-item" type="button" data-dashboard-action="company-documents" aria-label="Company Documents"><span class="dash-icon" data-dash-icon="file-text" aria-hidden="true"></span><span class="nav-label">Documents</span></button>'
+            : '',
+          options.phaseOneShared ? [
+            '<div class="nav-dropdown-group nav-dropdown-group-contacts">',
+              '<button class="nav-item" type="button" data-dashboard-action="contacts" aria-label="Contacts" aria-haspopup="menu">',
+                '<span class="dash-icon" data-dash-icon="address-book" aria-hidden="true"></span><span class="nav-label">Contacts</span>',
+              '</button>',
+              '<div class="nav-dropdown-menu" aria-label="Contact categories">',
+                '<button class="nav-dropdown-option" type="button" data-contact-category="Company">Company</button>',
+                '<button class="nav-dropdown-option" type="button" data-contact-category="Insurance">Insurance</button>',
+                '<button class="nav-dropdown-option" type="button" data-contact-category="Commercial">Commercial</button>',
+                '<button class="nav-dropdown-option" type="button" data-contact-category="Residential">Residential</button>',
+              '</div>',
+            '</div>'
+          ].join('') : '',
           '<button class="nav-item" type="button" data-dashboard-action="pipeline" aria-label="Pipeline">',
             '<span class="dash-icon" data-dash-icon="list-check" aria-hidden="true"></span><span class="nav-label">Pipeline</span>',
           '</button>',
           '<button class="nav-item" type="button" data-dashboard-action="leads" aria-label="Leads">',
             '<span class="dash-icon" data-dash-icon="users" aria-hidden="true"></span><span class="nav-label">Leads</span>',
           '</button>',
-          '<button class="nav-item" type="button" data-dashboard-action="contacts" aria-label="Contacts">',
-            '<span class="dash-icon" data-dash-icon="address-book" aria-hidden="true"></span><span class="nav-label">Contacts</span>',
-          '</button>',
+          options.phaseOneShared ? '' : '<button class="nav-item" type="button" data-dashboard-action="contacts" aria-label="Contacts"><span class="dash-icon" data-dash-icon="address-book" aria-hidden="true"></span><span class="nav-label">Contacts</span></button>',
           '<button class="nav-item" type="button" data-dashboard-action="production" aria-label="Production">',
             '<span class="dash-icon" data-dash-icon="factory" aria-hidden="true"></span><span class="nav-label">Production</span>',
           '</button>',
@@ -48537,6 +48830,29 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           '</button>',
         '</nav>'
       ].join('');
+    }
+
+    function crmRenderPhaseOneSharedShell(pageId) {
+      var context = crmGetPageContext(pageId);
+      if (!context.isPhaseOneSharedShell) return;
+      var page = document.getElementById(context.pageId);
+      if (!page) return;
+      var shellRoot = page.querySelector('[data-crm-phase-one-shared-shell]') || page.querySelector('.hm-dashboard-ref');
+      if (!shellRoot) return;
+      var sidebar = page.querySelector('[data-crm-phase-one-sidebar]')
+        || page.querySelector('.hm-dashboard-ref .wrap > .sidebar');
+      if (!sidebar) return;
+      var sidebarMarkup = crmGetDashboardMiniSidebarMarkup({
+        phaseOneShared: true
+      });
+      if (sidebar.hasAttribute('data-crm-phase-one-sidebar')) sidebar.innerHTML = sidebarMarkup;
+      else sidebar.outerHTML = sidebarMarkup;
+      var activeAction = context.pageId === 'page-main-menu'
+        ? 'dashboard'
+        : (context.pageId === 'page-crm-pipeline'
+          ? 'pipeline'
+          : (context.pageId === 'page-company-docs' ? 'company-documents' : 'contacts'));
+      crmRenderDashboardShellChrome(shellRoot, { activeAction: activeAction });
     }
 
     function crmRenderMiniDashboardShells(scope) {
@@ -48577,6 +48893,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
       crmBindDashboardDropdownGroup(root.querySelector('.nav-dropdown-group-new'));
       crmBindDashboardDropdownGroup(root.querySelector('.nav-dropdown-group-recent'));
+      crmBindDashboardDropdownGroup(root.querySelector('.nav-dropdown-group-contacts'));
       crmRenderDashboardRecentDropdown(root);
 
       var sidebarRole = crmGetWorkspaceMenuRole();
@@ -48635,6 +48952,15 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           pipelineScope: _pipelineScopeFilter || ''
         });
       }
+      if (pageId === 'page-lead-detail' || pageId === 'page-crm-job-file') {
+        var pageContext = crmGetPageContext(pageId);
+        return crmNormalizeRecentDestination({
+          pageId: pageId,
+          leadId: pageContext.selectedLeadId,
+          jobTab: pageId === 'page-crm-job-file' ? (_crmJobFileActiveTab || 'overview') : '',
+          homeownerName: pageContext.homeownerName
+        });
+      }
       return crmNormalizeRecentDestination({ pageId: pageId });
     }
 
@@ -48665,6 +48991,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         case 'page-crm-contacts':
           crmRenderContactsPage();
           showPage('page-crm-contacts');
+          return true;
+        case 'page-lead-detail':
+          crmOpenLeadDetail(destination.leadId, crmGetActivePageId() || 'page-main-menu');
+          return true;
+        case 'page-crm-job-file':
+          crmOpenJobFileSection(destination.leadId, destination.jobTab || 'overview');
           return true;
         case 'page-crm-reminder':
           crmOpenReminderPage();
@@ -48766,7 +49098,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmOpenRecentDestinationByKey(key) {
       key = String(key || '').trim();
       if (!key) return false;
-      var destination = crmGetRecentDestinations().find(function (item) {
+      var destination = crmGetRecentDestinations({ excludeCurrent: false, limit: 4 }).find(function (item) {
         return item && item.key === key;
       }) || null;
       return destination ? crmOpenRecentDestination(destination) : false;
@@ -49088,6 +49420,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (pageId === 'page-main-menu') crmRenderMainMenu();
       else if (pageId === 'page-crm-job-file') crmRenderJobFile();
       else if (pageId === 'page-crm-pipeline') crmRenderPipeline();
+      else if (pageId === 'page-crm-contacts') crmRenderContactsPage();
       else if (pageId === 'page-lead-detail' && _crmCurrentLeadId) crmOpenLeadDetail(_crmCurrentLeadId, _crmLeadDetailBackPageId || 'page-all-leads');
       else if (pageId === 'page-all-leads') crmRenderAllLeads(document.getElementById('al-search') ? document.getElementById('al-search').value || '' : '');
       else if (pageId === 'page-my-assigned-leads') crmRenderMyAssignedLeads();
@@ -49100,6 +49433,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         if (currentPage) crmRenderMiniDashboardShells(currentPage);
       }
       if (typeof renderTopBrand === 'function') renderTopBrand();
+      if (typeof crmRenderPhaseOneSharedShell === 'function') crmRenderPhaseOneSharedShell(pageId);
       if (typeof crmRefreshActivityPanel === 'function') {
         var leadId = pageId === 'page-crm-job-file' || pageId === 'page-crm-financial-worksheet'
           ? (_crmCurrentJobFileLeadId || null)
@@ -49126,8 +49460,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         return;
       }
       if (tab === 'contacts') {
+        _crmContactsCategoryFilter = '';
         crmRenderContactsPage();
         showPage('page-crm-contacts');
+        return;
+      }
+      if (tab === 'company-documents') {
+        showPage('page-company-docs');
         return;
       }
       if (tab === 'reminder') {
@@ -49204,6 +49543,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     document.addEventListener('click', function (e) {
+      var contactCategoryBtn = e.target.closest('[data-contact-category]');
+      if (contactCategoryBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        crmOpenContactsCategory(contactCategoryBtn.getAttribute('data-contact-category') || '');
+        return;
+      }
       var refreshBtn = e.target.closest('[data-crm-refresh], [data-dashboard-action="refresh"], [data-dashboard-tab="refresh"], button[aria-label="Refresh"]');
       if (refreshBtn) {
         e.preventDefault();
@@ -65989,7 +66335,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmGetHeaderTitleSource(pageId) {
       var activePage = pageId ? document.getElementById(pageId) : null;
       if (!activePage) return null;
-      var candidates = activePage.querySelectorAll('.page-title, .main-menu-title, .crm-calendar-app-title, .form-section-header');
+      var candidates = activePage.querySelectorAll('.page-title, .main-menu-title, .crm-contact-list-title, .crm-calendar-app-title, .form-section-header');
       for (var i = 0; i < candidates.length; i++) {
         if (crmIsVisibleHeaderTitleElement(candidates[i], activePage)) return candidates[i];
       }
@@ -66068,9 +66414,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var contextHeaderTitleEl = document.getElementById('crm-header-context-title');
       if (!brand) return;
       var pageId = typeof _appCurrentPageId !== 'undefined' ? (_appCurrentPageId || '') : '';
+      var pageContext = crmGetPageContext(pageId);
       var usesStandardHeader = crmUsesStandardHeaderLayout(pageId);
       var jobFileHeaderContext = usesStandardHeader ? crmGetJobFileHeaderContext(pageId) : null;
-      var pageTitle = usesStandardHeader ? crmGetHeaderPageTitle(pageId) : '';
+      var pageTitle = usesStandardHeader
+        ? (pageContext.isPhaseOneSharedShell ? pageContext.pageTitle : crmGetHeaderPageTitle(pageId))
+        : '';
       var showInlineHeaderTitle = usesStandardHeader && !!pageTitle;
       var inlineTitleText = !usesStandardHeader ? (pageTitle || 'Hail Money') : '';
       var inlineTitle = inlineTitleText ? '<div class="map-header-title">' + crmEscapeHtml(inlineTitleText) + '</div>' : '';
