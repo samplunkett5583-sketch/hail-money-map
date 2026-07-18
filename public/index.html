@@ -1973,6 +1973,7 @@
     }
     #page-map .maps-style-ctrl {
       position:fixed; top:calc(var(--maps-topbar-h) + 12px); right:12px; z-index:20;
+      display:flex; flex-direction:column; gap:6px; width:180px;
       pointer-events:auto;
     }
     #page-map #stormMap .gm-style-mtc,
@@ -1992,7 +1993,8 @@
       pointer-events:auto;
     }
     #page-map .maps-opacity-ctrl {
-      top:calc(var(--maps-topbar-h) + 56px); right:12px; left:auto; z-index:20;
+      top:calc(var(--maps-topbar-h) + 100px); right:12px; left:auto; z-index:20;
+      flex-direction:column; align-items:stretch;
       pointer-events:auto;
     }
     .maps-hurricane-ticker {
@@ -2052,6 +2054,9 @@
     }
     #page-map #maps-storm-panel,
     #page-map .maps-panel#maps-storm-panel {
+      background:transparent;
+      border:none;
+      box-shadow:none;
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
@@ -2071,8 +2076,9 @@
       border:2px solid #000;
       border-radius:0;
       background:transparent;
-      color:#39ff14;
+      color:#1683ff;
       overflow:visible;
+      box-shadow:none;
     }
     #page-map #maps-storm-panel .maps-storm-row:hover,
     #page-map #maps-storm-panel .maps-storm-row.is-preview {
@@ -2083,8 +2089,10 @@
     #page-map #maps-storm-panel .storm-home-count,
     #page-map #maps-storm-panel .storm-source-badge,
     #page-map #maps-storm-panel .maps-pin-btn {
-      color:#39ff14 !important;
-      text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 5px #000;
+      color:#1683ff !important;
+      -webkit-text-stroke:0.35px #000;
+      paint-order:stroke fill;
+      text-shadow:none;
     }
     #page-map #maps-storm-panel .storm-label {
       font-weight:700;
@@ -2103,7 +2111,7 @@
     }
     #page-map #maps-storm-panel .storm-color-dot {
       border:1px solid #000;
-      box-shadow:0 0 0 1px rgba(0,0,0,.65);
+      box-shadow:none;
     }
     #page-map #maps-storm-panel .maps-pin-btn {
       width:22px;
@@ -2111,6 +2119,46 @@
       border:1px solid #000;
       border-radius:0;
       background:transparent;
+    }
+    #page-map .maps-style-ctrl .maps-style-select,
+    #page-map .maps-style-ctrl .maps-storm-search-input,
+    #page-map .maps-opacity-ctrl .maps-opacity-btn,
+    #page-map .maps-opacity-ctrl .maps-location-btn,
+    #page-map .maps-opacity-ctrl .maps-opacity-slider-wrap,
+    #page-map .maps-opacity-ctrl .storm-action {
+      background:transparent;
+      border:1px solid #000;
+      box-shadow:none;
+      color:#1683ff;
+      -webkit-text-stroke:0.35px #000;
+      paint-order:stroke fill;
+      text-shadow:none;
+    }
+    #page-map .maps-opacity-ctrl .maps-location-btn {
+      margin-left:0;
+    }
+    #page-map .maps-style-ctrl .maps-storm-search-row,
+    #page-map .maps-opacity-ctrl > .storm-panel-actions {
+      margin:0;
+      padding:0;
+      background:transparent;
+      border:0;
+      box-shadow:none;
+    }
+    #page-map .maps-style-ctrl .maps-storm-search-error {
+      min-height:0;
+      margin:0;
+      color:#1683ff;
+      -webkit-text-stroke:0.35px #000;
+      paint-order:stroke fill;
+      text-shadow:none;
+    }
+    #page-map .maps-opacity-ctrl > .storm-panel-actions {
+      position:static;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      width:100%;
     }
 
     /* ── Street Color Overlay Control (Maps page) ── */
@@ -5729,10 +5777,6 @@
 
               <!-- Recent tab -->
               <div id="storm-tab-recent" class="maps-storm-tab-panel">
-                <div id="stormSearchRow" class="maps-storm-search-row" style="pointer-events:auto;">
-                  <input type="text" id="stormSearchInput" class="maps-storm-search-input" placeholder="Search property or date" />
-                  <div id="stormSearchError" class="maps-storm-search-error" aria-live="polite"></div>
-                </div>
                 <ul id="maps-storm-list" class="maps-storm-list"></ul>
                 <div class="maps-paging">
                   <button type="button" id="maps-page-prev" class="maps-paging-btn" disabled>&laquo; Prev</button>
@@ -5758,8 +5802,6 @@
                   <div style="color:var(--muted);font-size:12px;padding:12px 0;">No pinned storm dates yet.</div>
                 </div>
               </div>
-
-              <div id="maps-storm-actions" class="storm-panel-actions"></div>
               <!-- Admin debug panel (hidden for non-admin) -->
               <details id="maps-debug-panel" class="maps-debug-panel" style="display:none;">
                 <summary>Debug: Storm Dates</summary>
@@ -5961,6 +6003,10 @@
           <div class="maps-map-area">
             <div id="stormMap" class="maps-map-container"></div>
             <div class="maps-style-ctrl">
+              <div id="stormSearchRow" class="maps-storm-search-row">
+                <input type="date" id="stormSearchInput" class="maps-storm-search-input" aria-label="Search storm date" />
+                <div id="stormSearchError" class="maps-storm-search-error" aria-live="polite"></div>
+              </div>
               <select id="mapStyleSelect" class="maps-style-select" style="position:relative;z-index:20;pointer-events:auto;">
                 <option value="roadmap">Map</option>
                 <option value="satellite">Satellite</option>
@@ -5998,6 +6044,7 @@
                   <span id="maps-opacity-tornado-val" class="maps-opacity-val">30%</span>
                 </div>
               </div>
+              <div id="maps-storm-actions" class="storm-panel-actions"></div>
             </div>
             <!-- Street Color Overlay Control -->
             <div class="maps-street-ctrl">
@@ -21386,13 +21433,9 @@
 
     function renderStormPanelActionButtons(container) {
       if (!container) return;
-      if (container.querySelector('.storm-panel-actions')) return;
-      container.insertAdjacentHTML('beforeend',
-        '<div class="storm-panel-actions">' +
-          '<button type="button" class="storm-action storm-action-campaign">Go to Campaign</button>' +
-          '<button type="button" class="storm-action storm-action-draw">Draw Area Report</button>' +
-        '</div>'
-      );
+      container.innerHTML =
+        '<button type="button" class="storm-action storm-action-campaign">Go to Campaign</button>' +
+        '<button type="button" class="storm-action storm-action-draw">Draw Area Report</button>';
       var campaignBtn = container.querySelector('.storm-action-campaign');
       if (campaignBtn) {
         campaignBtn.addEventListener('click', function () {
