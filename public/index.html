@@ -19,6 +19,17 @@
       --maps-panel-width: 320px;
       --maps-panel-max-width: min(var(--maps-panel-width), calc(100vw - 24px));
       --maps-topbar-h: 52px;
+      --crm-shell-header-h: 118px;
+      --crm-shell-rail-w: 125px;
+      --crm-shell-back-col-w: 66px;
+      --crm-shell-feed-w: 320px;
+      --crm-shell-gap: 20px;
+      --crm-shell-pad-x: 18px;
+      --crm-shell-pad-y: 14px;
+      --crm-control-h: 42px;
+      --crm-control-radius: 10px;
+      --crm-card-radius: 14px;
+      --crm-title-size: 24px;
     }
 
     * {
@@ -78,17 +89,6 @@
        spanning edge-to-edge like Dashboard's actually does visually — its
        header stays full-width (below) and only the placeholder box marks
        the far-left slot. */
-    body.all-leads-page-active .topbar {
-      margin-left: 125px;
-      width: calc(100% - 125px);
-    }
-    @media (max-width: 960px) {
-      body.all-leads-page-active .topbar {
-        margin-left: 0;
-        width: 100%;
-      }
-    }
-
     .topbar-left {
       display: flex;
       align-items: center;
@@ -493,10 +493,6 @@
       margin-bottom: 0;
     }
 
-    body.crm-standard-header-active.crm-standard-header-back-visible .topbar {
-      margin-bottom: 46px;
-    }
-
     body.crm-standard-header-active .screen {
       padding-top: 18px;
     }
@@ -625,10 +621,6 @@
 
       .crm-header-inline-title {
         font-size: 18px;
-      }
-
-      body.crm-standard-header-active.crm-standard-header-back-visible .topbar {
-        margin-bottom: 40px;
       }
 
       body.crm-standard-header-active .screen {
@@ -2454,14 +2446,6 @@
       border: 0;
     }
 
-    body.main-menu-page-active header.topbar {
-      display: none !important;
-    }
-
-    body.main-menu-page-active .screen {
-      padding: 0;
-    }
-
     body.main-menu-page-active #page-main-menu {
       min-height: 100vh;
     }
@@ -2586,18 +2570,21 @@
       text-align: center;
     }
 
-    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-group {
+    .nav-dropdown-group {
       position: relative;
       display: block;
       width: 100%;
       z-index: 20;
     }
 
-    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-menu {
+    .nav-dropdown-menu {
       position: absolute;
-      top: 0;
-      left: 100%;
-      min-width: 188px;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      min-width: 100%;
+      margin-left: 0;
+      transform: none;
       display: none;
       flex-direction: column;
       gap: 4px;
@@ -2609,13 +2596,16 @@
       z-index: 40;
     }
 
-    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-group:hover .nav-flyout-menu,
-    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-group:focus-within .nav-flyout-menu,
-    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-group.is-open .nav-flyout-menu {
+    .nav-dropdown-group:hover,
+    .nav-dropdown-group:focus-within,
+    .nav-dropdown-group.is-open { z-index: 200; }
+    .nav-dropdown-group:hover .nav-dropdown-menu,
+    .nav-dropdown-group:focus-within .nav-dropdown-menu,
+    .nav-dropdown-group.is-open .nav-dropdown-menu {
       display: flex;
     }
 
-    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-option {
+    .nav-dropdown-option {
       width: 100%;
       border: none;
       background: transparent;
@@ -2629,12 +2619,12 @@
       line-height: 1.2;
     }
 
-    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-option:hover,
-    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-option:focus-visible {
+    .nav-dropdown-option:hover,
+    .nav-dropdown-option:focus-visible {
       background: rgba(26, 26, 46, 0.08);
       outline: none;
     }
-    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-flyout-option[disabled] {
+    .nav-dropdown-option[disabled] {
       cursor: default;
       opacity: 0.6;
     }
@@ -3858,60 +3848,6 @@
       padding: 6px 4px;
       color: #ffffff;
       text-align: center;
-    }
-
-    #page-crm-pipeline .hm-dashboard-ref .nav-flyout-group {
-      position: relative;
-      display: block;
-      width: 100%;
-      z-index: 20;
-    }
-
-    #page-crm-pipeline .hm-dashboard-ref .nav-flyout-menu {
-      position: absolute;
-      top: 0;
-      left: 100%;
-      min-width: 188px;
-      display: none;
-      flex-direction: column;
-      gap: 4px;
-      padding: 8px;
-      background: rgba(255, 255, 255, 0.98);
-      border: 1px solid rgba(170, 128, 18, 0.26);
-      border-radius: 10px;
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
-      z-index: 40;
-    }
-
-    #page-crm-pipeline .hm-dashboard-ref .nav-flyout-group:hover .nav-flyout-menu,
-    #page-crm-pipeline .hm-dashboard-ref .nav-flyout-group:focus-within .nav-flyout-menu,
-    #page-crm-pipeline .hm-dashboard-ref .nav-flyout-group.is-open .nav-flyout-menu {
-      display: flex;
-    }
-
-    #page-crm-pipeline .hm-dashboard-ref .nav-flyout-option {
-      width: 100%;
-      border: none;
-      background: transparent;
-      color: #1b1b2f;
-      text-align: left;
-      padding: 8px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16.5px;
-      font-weight: 600;
-      line-height: 1.2;
-    }
-
-    #page-crm-pipeline .hm-dashboard-ref .nav-flyout-option:hover,
-    #page-crm-pipeline .hm-dashboard-ref .nav-flyout-option:focus-visible {
-      background: rgba(26, 26, 46, 0.08);
-      outline: none;
-    }
-
-    #page-crm-pipeline .hm-dashboard-ref .nav-flyout-option[disabled] {
-      cursor: default;
-      opacity: 0.6;
     }
 
     #page-crm-pipeline .hm-dashboard-ref .nav-item:hover {
@@ -12995,54 +12931,6 @@
     .crm-dashboard-mini-layout .nav-item.active .dash-icon {
       color: #ffffff;
     }
-    .crm-dashboard-mini-layout .nav-flyout-group {
-      position: relative;
-      display: block;
-      width: 100%;
-      z-index: 20;
-    }
-    .crm-dashboard-mini-layout .nav-flyout-menu {
-      position: absolute;
-      top: 0;
-      left: 100%;
-      min-width: 188px;
-      display: none;
-      flex-direction: column;
-      gap: 4px;
-      padding: 8px;
-      background: rgba(255, 255, 255, 0.98);
-      border: 1px solid rgba(170, 128, 18, 0.26);
-      border-radius: 10px;
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
-      z-index: 40;
-    }
-    .crm-dashboard-mini-layout .nav-flyout-group:hover .nav-flyout-menu,
-    .crm-dashboard-mini-layout .nav-flyout-group:focus-within .nav-flyout-menu,
-    .crm-dashboard-mini-layout .nav-flyout-group.is-open .nav-flyout-menu {
-      display: flex;
-    }
-    .crm-dashboard-mini-layout .nav-flyout-option {
-      width: 100%;
-      border: none;
-      background: transparent;
-      color: #1b1b2f;
-      text-align: left;
-      padding: 8px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16.5px;
-      font-weight: 600;
-      line-height: 1.2;
-    }
-    .crm-dashboard-mini-layout .nav-flyout-option:hover,
-    .crm-dashboard-mini-layout .nav-flyout-option:focus-visible {
-      background: rgba(26, 26, 46, 0.08);
-      outline: none;
-    }
-    .crm-dashboard-mini-layout .nav-flyout-option[disabled] {
-      cursor: default;
-      opacity: 0.6;
-    }
     .crm-dashboard-mini-layout .dash-icon {
       display: inline-flex;
       align-items: center;
@@ -13122,15 +13010,15 @@
         min-height: 72px;
         margin-bottom: 0;
       }
-      .crm-dashboard-mini-layout .nav-flyout-group {
+      .crm-dashboard-mini-layout .nav-dropdown-group {
         width: auto;
         flex: 0 0 auto;
       }
       .crm-dashboard-mini-layout .nav-item {
         width: 78px;
       }
-      .crm-dashboard-mini-layout .nav-flyout-menu {
-        top: calc(100% + 8px);
+      .crm-dashboard-mini-layout .nav-dropdown-menu {
+        top: 100%;
         left: 0;
       }
       body.inspection-dashboard-shell-page-active .crm-dashboard-mini-layout {
@@ -13146,16 +13034,16 @@
         flex-wrap: nowrap;
         justify-content: flex-start;
       }
-      body.inspection-dashboard-shell-page-active .crm-dashboard-mini-layout .nav-flyout-group {
+      body.inspection-dashboard-shell-page-active .crm-dashboard-mini-layout .nav-dropdown-group {
         width: 100%;
         flex: 0 0 auto;
       }
       body.inspection-dashboard-shell-page-active .crm-dashboard-mini-layout .nav-item {
         width: 100%;
       }
-      body.inspection-dashboard-shell-page-active .crm-dashboard-mini-layout .nav-flyout-menu {
-        top: 0;
-        left: 100%;
+      body.inspection-dashboard-shell-page-active .crm-dashboard-mini-layout .nav-dropdown-menu {
+        top: 100%;
+        left: 0;
       }
     }
     #page-new-contact,
@@ -15330,8 +15218,8 @@
       display: block;
     }
     #page-lead-detail .jf-folder-sidebar .nav-label { color: currentColor; font-size: 11px; }
-    #page-lead-detail .jf-folder-sidebar .nav-flyout-group { position: relative; }
-    #page-lead-detail .jf-folder-sidebar .nav-flyout-menu { display: none; }
+    #page-lead-detail .jf-folder-sidebar .nav-dropdown-group { position: relative; }
+    #page-lead-detail .jf-folder-sidebar .nav-dropdown-menu { display: none; }
     #page-lead-detail .jf-tab-bar {
       position: fixed;
       top: 118px;
@@ -16086,6 +15974,7 @@
     .jf-invoice-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
     .jf-invoice-view-only { margin: 0 0 12px; padding: 10px 14px; border: 1px solid #b88a22; border-radius: 8px; background: #fff7da; color: #5b4517; font-weight: 800; }
     .jf-invoice-paper { box-sizing: border-box; width: 100%; max-width: 1100px; min-height: 900px; margin: 0 auto; padding: 30px; border: 1px solid #d5d5d5; background: #fff; color: #111; box-shadow: 0 8px 24px rgba(0,0,0,.16); }
+    .jf-invoice-document-title { margin: -8px 0 18px; text-align: center; font-size: 30px; font-weight: 900; letter-spacing: .04em; }
     .jf-invoice-paper input, .jf-invoice-paper select, .jf-invoice-paper textarea { box-sizing: border-box; width: 100%; border: 2px solid #111; border-radius: 0; background: #fff; color: #111; font: inherit; }
     .jf-invoice-paper input, .jf-invoice-paper select { min-height: 34px; padding: 5px 8px; }
     .jf-invoice-paper textarea { min-height: 80px; padding: 8px; resize: vertical; }
@@ -16104,7 +15993,9 @@
     .jf-invoice-table th, .jf-invoice-table td { border: 2px solid #111; padding: 6px; text-align: left; vertical-align: middle; }
     .jf-invoice-table th:nth-child(2), .jf-invoice-table td:nth-child(2) { width: 170px; text-align: right; }
     .jf-invoice-table .jf-invoice-remove-cell { width: 44px; text-align: center; }
-    .jf-invoice-table textarea.jf-invoice-adjustment-description { min-height: 42px; field-sizing: content; overflow: hidden; resize: vertical; }
+    .jf-invoice-table textarea.jf-invoice-claim-description { min-height: 42px; field-sizing: content; overflow: hidden; resize: vertical; }
+    .jf-invoice-claim-kind { width: 100%; min-height: 28px !important; margin-top: 5px; padding: 3px 6px !important; border-width: 1px !important; color: #5b4517 !important; font-size: 11px !important; }
+    .jf-invoice-claim-kind-label { display: block; margin-top: 4px; color: #5b4517; font-size: 10px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
     .jf-invoice-icon-btn { width: 32px; min-height: 32px; border: 2px solid #111; background: #fff; color: #111; font-weight: 900; cursor: pointer; }
     .jf-invoice-add-row { margin-top: 8px; }
     .jf-invoice-summary-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(320px,430px); gap: 30px; margin-top: 22px; }
@@ -16123,29 +16014,437 @@
     .jf-invoice-payment-row .jf-invoice-icon-btn { position: absolute; top: 9px; right: 7px; }
     .jf-invoice-payment-row .jf-invoice-field label { font-size: 9px; }
     .jf-invoice-payment-row input, .jf-invoice-payment-row select { min-height: 30px; font-size: 12px; }
+    .jf-invoice-payment-notes-print { grid-column: 1 / -1; }
     .jf-invoice-add-payment { width: 100%; margin-bottom: 10px; }
     .jf-invoice-notes { margin-top: 26px; }
+    .jf-invoice-paper.jf-invoice-print-form { min-height: 0; border: 1px solid #aaa; box-shadow: none; }
+    .jf-invoice-print-form .jf-invoice-top { grid-template-columns: minmax(210px,.8fr) minmax(430px,1.2fr); }
+    .jf-invoice-print-form .jf-invoice-right-header { display: grid; gap: 24px; }
+    .jf-invoice-claim-number { display: grid; grid-template-columns: auto minmax(190px,1fr); gap: 12px; align-items: center; justify-self: end; width: min(100%,430px); }
+    .jf-invoice-claim-number label { margin: 0; white-space: nowrap; }
+    .jf-invoice-printed-field { min-width: 0; }
+    .jf-invoice-printed-field-label { margin-bottom: 4px; color: #111; font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .jf-invoice-printed-field-value { min-height: 22px; padding: 2px 0 5px; border-bottom: 1px solid #777; color: #111; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
+    .jf-invoice-edit-field { min-width: 0; }
+    .jf-invoice-edit-field input { min-height: 28px; padding: 2px 0 4px; border: 0; border-bottom: 2px solid #b88a22; background: #fffdf5; font-size: 14px; }
+    .jf-invoice-edit-field input:focus { outline: 2px solid rgba(184,138,34,.28); outline-offset: 2px; }
+    .jf-invoice-edit-field input[type="date"] { cursor: pointer; }
+    .jf-invoice-total-value input { min-height: 28px; padding: 2px 6px; border: 0; background: transparent; text-align: right; font-weight: 900; }
+    .jf-invoice-total-value input:focus { outline: 2px solid #b88a22; }
+    .jf-invoice-editing-note { margin-right: auto; align-self: center; color: #5b4517; font-size: 13px; font-weight: 800; }
+    .jf-invoice-claim-number .jf-invoice-printed-field-value { min-width: 190px; padding: 2px 0 5px; border: 0; border-bottom: 1px solid #777; font-weight: 800; }
+    .jf-invoice-plain-description { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .jf-invoice-plain-notes { min-height: 130px; padding: 4px 6px; border: 1px solid #777; line-height: 28px; white-space: pre-wrap; overflow-wrap: anywhere; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, #222 28px); }
+    .jf-invoice-print-form .jf-invoice-bill { max-width: 760px; margin: 34px 0 28px; }
+    .jf-invoice-bill-lines { display: grid; gap: 2px; color: #111; font-size: 14px; line-height: 1.35; }
+    .jf-invoice-print-form .jf-invoice-summary-grid { align-items: start; margin-top: 32px; }
+    .jf-invoice-print-form .jf-invoice-remit { min-height: 220px; }
+    .jf-invoice-print-form .jf-invoice-payment-heading { text-align: center; text-decoration: underline; }
+    .jf-invoice-print-form .jf-invoice-notes textarea { min-height: 130px; line-height: 28px; background-color: #fff; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, #222 28px); }
+    .jf-invoice-print-form .jf-invoice-payment-row { break-inside: avoid; }
+    .jf-invoice-print-form .jf-invoice-table tr { break-inside: avoid; }
+    .jf-invoice-print-form:not(.is-editing) .jf-invoice-payment-row {
+      grid-template-columns: 100px minmax(0,1fr) 120px;
+      grid-template-areas: "date type amount" "date reference amount" "notes notes notes";
+      gap: 2px 14px;
+      padding: 6px 0;
+      border: 0;
+      border-bottom: 1px solid #bbb;
+      background: transparent;
+    }
+    .jf-invoice-print-form:not(.is-editing) .jf-invoice-payment-row > :nth-child(1) { grid-area: type; }
+    .jf-invoice-print-form:not(.is-editing) .jf-invoice-payment-row > :nth-child(2) { grid-area: amount; text-align: right; }
+    .jf-invoice-print-form:not(.is-editing) .jf-invoice-payment-row > :nth-child(3) { grid-area: date; }
+    .jf-invoice-print-form:not(.is-editing) .jf-invoice-payment-row > :nth-child(4) { grid-area: reference; }
+    .jf-invoice-print-form:not(.is-editing) .jf-invoice-payment-row > :nth-child(5) { grid-area: notes; }
+    .jf-invoice-print-form:not(.is-editing) .jf-invoice-payment-row .jf-invoice-printed-field-label { margin-bottom: 1px; font-size: 8px; }
+    .jf-invoice-print-form:not(.is-editing) .jf-invoice-payment-row .jf-invoice-printed-field-value { min-height: 0; padding: 0; border: 0; }
+    body.crm-invoice-designer-open { overflow: hidden !important; }
+    body:not(.crm-invoice-designer-open) .jf-invoice-designer-overlay {
+      display: none !important;
+      pointer-events: none !important;
+    }
+    .jf-invoice-designer-overlay {
+      position: fixed; inset: 0; z-index: 100000; padding: 18px;
+      background: rgba(8,10,24,.68); backdrop-filter: blur(4px);
+    }
+    .jf-invoice-designer-modal {
+      display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden;
+      border: 2px solid #c99b2d; border-radius: 16px; background: #111426;
+      box-shadow: 0 28px 90px rgba(0,0,0,.55);
+    }
+    .jf-invoice-designer-toolbar {
+      flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 18px;
+      min-height: 66px; padding: 10px 16px; border-bottom: 1px solid #a77d1c;
+      background: #17192c; color: #fff;
+    }
+    .jf-invoice-designer-toolbar > div:first-child { display: grid; gap: 2px; }
+    .jf-invoice-designer-toolbar strong { font-size: 20px; }
+    .jf-invoice-designer-toolbar span { color: #d7c78f; font-size: 11px; }
+    .jf-invoice-designer-toolbar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .jf-invoice-builder-workspace {
+      flex: 1 1 auto; display: grid; grid-template-columns: 250px minmax(620px,1fr) 240px;
+      gap: 0; min-width: 0; min-height: 0; overflow: hidden;
+    }
+    .jf-invoice-builder-sidebar,
+    .jf-invoice-builder-properties {
+      min-height: 0; overflow-y: auto; padding: 14px; background: #fffdf4; color: #181818;
+      scrollbar-width: thin;
+    }
+    .jf-invoice-builder-sidebar { border-right: 1px solid #b89030; }
+    .jf-invoice-builder-properties { border-left: 1px solid #b89030; }
+    .jf-invoice-builder-panel-title { margin: 0 0 5px; font-size: 16px; font-weight: 900; }
+    .jf-invoice-builder-panel-help { margin: 0 0 14px; color: #6f623e; font-size: 11px; line-height: 1.4; }
+    .jf-invoice-builder-library-group { margin-top: 15px; }
+    .jf-invoice-builder-library-heading {
+      margin-bottom: 6px; color: #6a4b05; font-size: 10px; font-weight: 900;
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    .jf-invoice-builder-library-list { display: grid; gap: 6px; }
+    .jf-invoice-builder-library-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      width: 100%; min-height: 37px; padding: 7px 9px; border: 1px solid #d5c083;
+      border-radius: 8px; background: #fff; color: #171717; text-align: left;
+      font-size: 11px; font-weight: 800; cursor: grab;
+    }
+    .jf-invoice-builder-library-item::after { content: '+'; color: #a36f00; font-size: 17px; }
+    .jf-invoice-builder-library-item:hover,
+    .jf-invoice-builder-library-item:focus-visible { border-color: #8f6508; background: #fff4c9; outline: none; }
+    .jf-invoice-builder-canvas-shell {
+      min-width: 0; min-height: 0; overflow: auto; padding: 14px 28px 40px;
+      background: linear-gradient(180deg,#e8cc73 0%,#d7aa3a 100%);
+    }
+    .jf-invoice-builder-canvas-heading {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      width: 816px; margin: 0 auto 8px; color: #342600;
+      font-size: 11px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase;
+    }
+    .jf-invoice-builder-page {
+      box-sizing: border-box; display: grid; grid-template-columns: repeat(12,minmax(0,1fr));
+      grid-auto-flow: row; grid-auto-rows: max-content; align-content: start; gap: 10px;
+      width: 816px; min-height: 1056px; margin: 0 auto; padding: 38px;
+      border: 2px solid #737373; background: #fff; color: #111;
+      box-shadow: 0 14px 34px rgba(0,0,0,.28);
+    }
+    .jf-invoice-builder-page.is-drop-target { outline: 5px solid rgba(184,138,34,.55); outline-offset: -6px; }
+    .jf-invoice-builder-empty {
+      grid-column: 1 / -1; display: grid; place-items: center; min-height: 340px;
+      border: 2px dashed #c8ac5d; color: #7d692f; font-size: 14px; font-weight: 800;
+    }
+    .jf-invoice-builder-block {
+      position: relative; box-sizing: border-box; min-width: 0; min-height: 62px;
+      padding: 27px 10px 10px; border: 1px dashed #a98a38; background: #fff;
+      transition: border-color .12s, box-shadow .12s, transform .12s;
+    }
+    .jf-invoice-builder-block:hover,
+    .jf-invoice-builder-block.is-selected { border-style: solid; border-color: #9b6700; box-shadow: 0 0 0 3px rgba(184,138,34,.22); }
+    .jf-invoice-builder-block.is-dragging { opacity: .42; transform: scale(.99); }
+    .jf-invoice-builder-block.is-drop-before { box-shadow: 0 -5px 0 #c28700; }
+    .jf-invoice-builder-block-toolbar {
+      position: absolute; top: 3px; right: 4px; left: 4px; display: flex;
+      align-items: center; justify-content: space-between; gap: 4px;
+    }
+    .jf-invoice-builder-drag-handle {
+      min-width: 28px; border: 0; background: transparent; color: #80620d;
+      font-size: 15px; font-weight: 900; cursor: grab; line-height: 1;
+    }
+    .jf-invoice-builder-block-actions { display: flex; gap: 3px; }
+    .jf-invoice-builder-mini-btn {
+      width: 25px; height: 22px; padding: 0; border: 1px solid #c4aa62;
+      border-radius: 5px; background: #fff9e5; color: #3d300e;
+      font-size: 12px; font-weight: 900; cursor: pointer;
+    }
+    .jf-invoice-builder-block-title { margin-bottom: 4px; font-weight: 900; line-height: 1.2; }
+    .jf-invoice-builder-placeholder { color: #665f4d; font-size: 11px; line-height: 1.35; white-space: pre-wrap; }
+    .jf-invoice-builder-logo-placeholder { display: grid; place-items: center; width: 130px; height: 76px; border: 1px dashed #8d8d8d; font-size: 10px; }
+    .jf-invoice-designer-logo { display: block; max-width: 150px; max-height: 95px; object-fit: contain; }
+    .jf-invoice-designer-title-preview { font-size: inherit; font-weight: inherit; }
+    .jf-invoice-builder-table-preview { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .jf-invoice-builder-table-preview th,
+    .jf-invoice-builder-table-preview td { padding: 3px 5px; border: 1px solid #777; text-align: left; }
+    .jf-invoice-builder-table-preview th:last-child,
+    .jf-invoice-builder-table-preview td:last-child { width: 108px; text-align: right; }
+    .jf-invoice-builder-total-preview { display: grid; grid-template-columns: 1fr 110px; gap: 10px; align-items: center; font-size: 12px; font-weight: 900; }
+    .jf-invoice-builder-total-preview span:last-child { padding: 4px 6px; border: 1px solid #111; text-align: right; }
+    .jf-invoice-builder-divider-preview { margin: 12px 0; border-top: 2px solid #111; }
+    .jf-invoice-builder-spacer-preview { height: 46px; background: repeating-linear-gradient(135deg,#fafafa,#fafafa 6px,#ededed 6px,#ededed 12px); }
+    .jf-invoice-builder-properties .field { margin-bottom: 11px; }
+    .jf-invoice-builder-properties .field label { font-size: 10px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
+    .jf-invoice-builder-properties input,
+    .jf-invoice-builder-properties select { min-height: 37px; }
+    .jf-invoice-builder-check { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 12px; font-weight: 800; }
+    .jf-invoice-builder-check input { width: auto; min-height: 0; }
+    .jf-invoice-builder-no-selection { padding: 24px 8px; color: #74633c; font-size: 12px; line-height: 1.5; text-align: center; }
+    .jf-invoice-designer-overlay.is-preview .jf-invoice-builder-workspace { grid-template-columns: minmax(620px,1fr); }
+    .jf-invoice-designer-overlay.is-preview .jf-invoice-builder-sidebar,
+    .jf-invoice-designer-overlay.is-preview .jf-invoice-builder-properties { display: none; }
+    .jf-invoice-designer-overlay.is-preview .jf-invoice-builder-block { padding: 10px; border-color: transparent; box-shadow: none; }
+    .jf-invoice-designer-overlay.is-preview .jf-invoice-builder-block-toolbar { display: none; }
+    .jf-invoice-layout-page {
+      display: grid; grid-template-columns: repeat(12,minmax(0,1fr)); grid-auto-flow: row;
+      grid-auto-rows: max-content; align-content: start; gap: 14px;
+    }
+    .jf-invoice-layout-block { min-width: 0; break-inside: auto; page-break-inside: auto; }
+    .jf-invoice-layout-block .jf-invoice-document-title { margin: 4px 0; font-size: inherit; font-weight: inherit; }
+    .jf-invoice-layout-block .jf-invoice-logo-box { max-width: 100%; }
+    .jf-invoice-layout-block .jf-invoice-claim-title { margin-top: 0; }
+    .jf-invoice-layout-block .jf-invoice-payment-heading { margin-top: 0; }
+    .jf-invoice-layout-block .jf-invoice-bill { width: auto; max-width: none; margin: 0; }
+    .jf-invoice-layout-block .jf-invoice-notes { margin-top: 0; }
+    .jf-invoice-layout-block-total .jf-invoice-total-row { grid-template-columns: minmax(0,1fr) minmax(100px,160px); }
+    .jf-invoice-layout-divider { margin: 14px 0; border-top: 2px solid #111; }
+    .jf-invoice-layout-spacer { min-height: 46px; }
+    @media (max-width: 1280px) {
+      .jf-invoice-builder-workspace { grid-template-columns: 220px minmax(560px,1fr) 220px; }
+    }
+    .jf-invoice-print-value, .jf-invoice-print-only { display: none; }
     @media (max-width: 1100px) {
       .jf-invoice-top, .jf-invoice-summary-grid { grid-template-columns: 1fr; }
+      .jf-invoice-print-form .jf-invoice-top { grid-template-columns: 1fr; }
       .jf-invoice-payment-row { grid-template-columns: 1fr; }
     }
     @media print {
-      @page { size: letter; margin: .35in; }
-      body.crm-job-file-invoice-page-active { background: #fff !important; }
-      body.crm-job-file-invoice-page-active .crm-topbar,
-      body.crm-job-file-invoice-page-active .crm-sidebar,
+      @page { size: letter portrait; margin: .45in; }
+      html,
+      body.crm-job-file-invoice-page-active {
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      body.crm-job-file-invoice-page-active .topbar,
+      body.crm-job-file-invoice-page-active .crm-workspace-banner,
+      body.crm-job-file-invoice-page-active .crm-dashboard-mini-sidebar,
       body.crm-job-file-invoice-page-active .crm-activity-column,
+      body.crm-job-file-invoice-page-active .jf-invoice-designer-overlay,
       body.crm-job-file-invoice-page-active .jf-invoice-actions,
       body.crm-job-file-invoice-page-active .jf-invoice-view-only,
+      body.crm-job-file-invoice-page-active .upload-toast,
       body.crm-job-file-invoice-page-active #jf-back-btn,
-      body.crm-job-file-invoice-page-active .jf-invoice-edit-only { display: none !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-edit-only,
+      body.crm-job-file-invoice-page-active .jf-invoice-remove-cell,
+      body.crm-job-file-invoice-page-active button,
+      body.crm-job-file-invoice-page-active > iframe,
+      body.crm-job-file-invoice-page-active [class*="floating"],
+      body.crm-job-file-invoice-page-active [class*="launcher"],
+      body.crm-job-file-invoice-page-active [class*="chat-widget"] { display: none !important; }
+      body.crm-job-file-invoice-page-active .app-shell,
+      body.crm-job-file-invoice-page-active .screen,
       body.crm-job-file-invoice-page-active #page-crm-job-file,
       body.crm-job-file-invoice-page-active #page-crm-job-file .crm-dashboard-mini-layout,
       body.crm-job-file-invoice-page-active #page-crm-job-file .crm-dashboard-mini-body,
       body.crm-job-file-invoice-page-active #page-crm-job-file .crm-layout,
-      body.crm-job-file-invoice-page-active #page-crm-job-file .crm-main-column { position: static !important; display: block !important; width: 100% !important; height: auto !important; min-height: 0 !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
-      body.crm-job-file-invoice-page-active .jf-invoice-shell { padding: 0; }
-      body.crm-job-file-invoice-page-active .jf-invoice-paper { max-width: none; min-height: 0; padding: 0; border: 0; box-shadow: none; }
+      body.crm-job-file-invoice-page-active #page-crm-job-file .crm-main-column,
+      body.crm-job-file-invoice-page-active #page-crm-job-file .crm-wrap,
+      body.crm-job-file-invoice-page-active #page-crm-job-file #jf-tab-content {
+        position: static !important;
+        display: block !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: #fff !important;
+        box-shadow: none !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-shell {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-paper {
+        position: relative !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: #fff !important;
+        color: #000 !important;
+        box-shadow: none !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        font-family: Georgia, "Times New Roman", serif !important;
+        font-size: 10.5pt !important;
+        line-height: 1.25 !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-document-title {
+        position: absolute !important;
+        top: 3px !important;
+        left: 34% !important;
+        right: 34% !important;
+        margin: 0 !important;
+        font-size: 22pt !important;
+        line-height: 1 !important;
+        letter-spacing: 0 !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-top {
+        grid-template-columns: 148px minmax(310px,1fr) !important;
+        gap: 20px !important;
+        align-items: start !important;
+        min-height: 0 !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-logo-box {
+        width: 130px !important;
+        height: 96px !important;
+        border: 0 !important;
+        background: transparent !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-logo-box.no-logo { visibility: hidden !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-right-header {
+        width: 315px !important;
+        justify-self: end !important;
+        gap: 8px !important;
+        padding-top: 24px !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-meta-grid { gap: 4px 18px !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-printed-field-label { font-size: 8pt !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-printed-field-value {
+        min-height: 0 !important;
+        padding: 1px 0 3px !important;
+        font-size: 10pt !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-bill {
+        width: 46% !important;
+        margin: 5px 0 14px !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-bill-lines { gap: 0 !important; font-size: 10.5pt !important; line-height: 1.3 !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-claim-title { margin-bottom: 1px !important; font-size: 17pt !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-table { font-size: 9.5pt !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-table thead { display: table-header-group; }
+      body.crm-job-file-invoice-page-active .jf-invoice-table th,
+      body.crm-job-file-invoice-page-active .jf-invoice-table td { border-width: 1px !important; padding: 3px 5px !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-table th:nth-child(2),
+      body.crm-job-file-invoice-page-active .jf-invoice-table td:nth-child(2) { width: 135px !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-claim-kind,
+      body.crm-job-file-invoice-page-active .jf-invoice-claim-kind-label { display: none !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-top,
+      body.crm-job-file-invoice-page-active .jf-invoice-bill,
+      body.crm-job-file-invoice-page-active .jf-invoice-total-row,
+      body.crm-job-file-invoice-page-active .jf-invoice-payment-row,
+      body.crm-job-file-invoice-page-active .jf-invoice-table tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-print-source input,
+      body.crm-job-file-invoice-page-active .jf-invoice-print-source select,
+      body.crm-job-file-invoice-page-active .jf-invoice-print-source textarea { display: none !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-print-value {
+        display: block !important;
+        min-height: 0 !important;
+        padding: 2px 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        color: #000 !important;
+        font: inherit !important;
+        line-height: 1.35 !important;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-total-row.jf-invoice-print-only { display: grid !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-payment-row {
+        grid-template-columns: 80px minmax(0,1fr) 105px !important;
+        grid-template-areas: "date type amount" "date reference amount" "notes notes notes" !important;
+        gap: 1px 12px !important;
+        padding: 4px 0 !important;
+        border: 0 !important;
+        border-bottom: 1px solid #aaa !important;
+        background: #fff !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-payment-row > :nth-child(1) { grid-area: type !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-payment-row > :nth-child(2) { grid-area: amount !important; text-align: right !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-payment-row > :nth-child(3) { grid-area: date !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-payment-row > :nth-child(4) { grid-area: reference !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-payment-row > :nth-child(5) { grid-area: notes !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-payment-row .jf-invoice-field label { font-size: 9px !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-payment-notes-print { grid-column: 1 / -1; }
+      body.crm-job-file-invoice-page-active .jf-invoice-notes .jf-invoice-print-value {
+        min-height: 72px !important;
+        border-top: 1px solid #777 !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-print-form .jf-invoice-remit { min-height: 0 !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-summary-grid {
+        display: grid !important;
+        grid-template-columns: minmax(0,1fr) 315px !important;
+        grid-template-rows: max-content !important;
+        grid-auto-rows: max-content !important;
+        gap: 20px !important;
+        align-items: start !important;
+        align-content: start !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin-top: 10px !important;
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-remit {
+        align-self: start !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 9.5pt !important;
+        line-height: 1.3 !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-totals {
+        align-self: start !important;
+        display: grid !important;
+        grid-auto-rows: max-content !important;
+        gap: 2px !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        break-inside: avoid-page;
+        page-break-inside: avoid;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-total-row { grid-template-columns: 1fr 112px !important; gap: 10px !important; font-size: 9.5pt !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-total-value { padding: 3px 5px !important; border-width: 1px !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-payment-heading { margin: 5px 0 2px !important; padding-top: 5px !important; font-size: 11pt !important; break-after: avoid; page-break-after: avoid; }
+      body.crm-job-file-invoice-page-active .jf-invoice-payment-list { gap: 2px !important; margin: 0 0 3px !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-payment-empty { margin: 0 !important; padding: 1px 0 3px !important; line-height: 1.25 !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-balance-status { margin-top: 1px !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-notes { margin-top: 10px !important; break-inside: avoid-page; page-break-inside: avoid; }
+      body.crm-job-file-invoice-page-active .jf-invoice-layout-page {
+        display: grid !important;
+        grid-template-columns: repeat(12,minmax(0,1fr)) !important;
+        grid-auto-flow: row !important;
+        grid-auto-rows: max-content !important;
+        align-content: start !important;
+        gap: 8pt !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-layout-block {
+        min-width: 0 !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-layout-page .jf-invoice-document-title {
+        position: static !important;
+        margin: 2pt 0 !important;
+        font-size: inherit !important;
+        font-weight: inherit !important;
+        line-height: 1 !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-layout-block .jf-invoice-bill {
+        width: 100% !important;
+        margin: 0 !important;
+      }
+      body.crm-job-file-invoice-page-active .jf-invoice-layout-block .jf-invoice-claim-title,
+      body.crm-job-file-invoice-page-active .jf-invoice-layout-block .jf-invoice-payment-heading,
+      body.crm-job-file-invoice-page-active .jf-invoice-layout-block .jf-invoice-notes { margin-top: 0 !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-layout-divider { margin: 6pt 0 !important; }
+      body.crm-job-file-invoice-page-active .jf-invoice-layout-spacer { min-height: 24pt !important; }
     }
     @media (min-width: 981px) {
       #page-crm-job-file .crm-dashboard-mini-layout,
@@ -16777,9 +17076,6 @@
       padding-right: 0 !important;
       padding-left: 0 !important;
     }
-    body.crm-standard-header-active.main-menu-page-active > .app-shell > .screen {
-      padding-top: 0 !important;
-    }
     body.crm-standard-header-active .topbar-left {
       grid-column: 1;
       justify-self: start;
@@ -16957,6 +17253,368 @@
     body.crm-standard-header-active .page.active .crm-calendar-sidebar-back {
       display: none !important;
     }
+
+    /* Authoritative desktop CRM application frame. Page renderers own only
+       the content inside these fixed header, rail, content and feed zones. */
+    @media (min-width: 981px) {
+      html { scrollbar-gutter: stable; }
+      body.crm-standard-header-active {
+        height: 100vh;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+      body.crm-standard-header-active > .app-shell {
+        height: 100vh;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+      body.crm-standard-header-active > .app-shell > .topbar {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) 220px minmax(0, 1fr);
+        width: 100% !important;
+        height: var(--crm-shell-header-h) !important;
+        min-height: var(--crm-shell-header-h) !important;
+        padding: 10px 20px 6px !important;
+        gap: 16px !important;
+        isolation: isolate;
+      }
+      body.crm-standard-header-active > .app-shell > .screen {
+        width: 100%;
+        height: 100vh;
+        min-height: 0;
+        padding: var(--crm-shell-header-h) 0 0 !important;
+        overflow-x: hidden;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+      body.crm-standard-header-active .topbar-left {
+        width: 100%;
+        max-width: calc(50vw - 126px);
+        overflow: hidden;
+      }
+      body.crm-standard-header-active .crm-header-company-logo {
+        width: 68px !important;
+        height: 68px !important;
+        flex-basis: 68px !important;
+      }
+      body.crm-standard-header-active .crm-header-inline-title:not([hidden]) {
+        max-width: calc(50vw - 220px);
+        font-size: var(--crm-title-size) !important;
+        line-height: 1.08;
+      }
+      body.crm-standard-header-active .pipeline-header-center {
+        position: static;
+        width: 220px;
+        min-width: 220px;
+      }
+      body.crm-standard-header-active .map-header-center-brand {
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        z-index: 2;
+        width: 150px;
+        transform: translate(-50%, -50%) !important;
+      }
+      body.crm-standard-header-active .map-header-center-brand img {
+        width: auto !important;
+        height: 54px !important;
+        max-width: 130px !important;
+      }
+      body.crm-standard-header-active .map-header-center-heading {
+        font-size: 20px !important;
+        line-height: 1.05 !important;
+      }
+      body.crm-standard-header-active .crm-header-context-title:not([hidden]) {
+        position: absolute;
+        top: 50%;
+        right: 286px;
+        left: calc(50% + 92px);
+        z-index: 2;
+        width: auto;
+        max-width: none;
+        margin: 0;
+        transform: translateY(-50%);
+        text-align: center;
+        font-size: var(--crm-title-size) !important;
+      }
+      body.crm-standard-header-active .topbar-right {
+        width: 100%;
+        min-width: 260px;
+      }
+      body.crm-standard-header-active .topbar-controls {
+        min-width: 260px;
+        justify-content: flex-end;
+      }
+      body.crm-standard-header-active .jf-notif-btn {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+      }
+      body.crm-standard-header-active .crm-profile-toggle {
+        min-height: 48px;
+        max-width: 210px;
+      }
+      body.crm-standard-header-active.pipeline-page-active #crm-pipeline-stage-filter-left,
+      body.crm-standard-header-active.lead-detail-page-active #crm-pipeline-stage-filter-left {
+        position: absolute;
+        top: 50%;
+        right: calc(50% + 82px);
+        transform: translateY(-50%);
+      }
+      body.crm-standard-header-active.pipeline-page-active #crm-pipeline-stage-filter-right,
+      body.crm-standard-header-active.lead-detail-page-active #crm-pipeline-stage-filter-right {
+        position: absolute;
+        top: 50%;
+        left: calc(50% + 82px);
+        transform: translateY(-50%);
+      }
+      body.crm-standard-header-active #global-header-back-btn {
+        top: calc(var(--crm-shell-header-h) + 8px);
+        left: calc(var(--crm-shell-rail-w) + 8px);
+      }
+
+      body.crm-standard-header-active .page.active {
+        min-height: 100%;
+      }
+      body.crm-standard-header-active .crm-dashboard-mini-layout {
+        width: 100%;
+        height: calc(100vh - var(--crm-shell-header-h));
+        min-height: 0;
+        overflow: hidden;
+      }
+      body.crm-standard-header-active .crm-dashboard-mini-sidebar {
+        width: var(--crm-shell-rail-w);
+        flex: 0 0 var(--crm-shell-rail-w);
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
+      body.crm-standard-header-active .crm-dashboard-mini-layout .sidebar {
+        width: var(--crm-shell-rail-w);
+        height: 100%;
+        min-height: 0;
+        padding: 0 8px 10px;
+        gap: 6px;
+        overflow-x: visible;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+      body.crm-standard-header-active .crm-dashboard-mini-layout .nav-item {
+        min-height: 58px;
+        padding: 6px 4px;
+      }
+      body.crm-standard-header-active .crm-dashboard-mini-layout .nav-item .dash-icon svg {
+        width: 27px;
+        height: 27px;
+      }
+      body.crm-standard-header-active .crm-dashboard-mini-layout .nav-label {
+        font-size: 11px;
+        line-height: 1.1;
+      }
+      body.crm-standard-header-active .crm-dashboard-mini-body {
+        height: 100%;
+        min-height: 0;
+        padding: var(--crm-shell-pad-y) var(--crm-shell-pad-x) 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+      body.crm-standard-header-active.crm-standard-header-back-visible .crm-dashboard-mini-body {
+        padding-left: calc(var(--crm-shell-pad-x) + var(--crm-shell-back-col-w));
+      }
+      body.crm-standard-header-active .crm-layout {
+        width: 100%;
+        max-width: none;
+        grid-template-columns: minmax(0, 1fr) var(--crm-shell-feed-w);
+        gap: var(--crm-shell-gap);
+        margin: 0;
+      }
+      body.crm-standard-header-active .crm-main-column { min-width: 0; }
+      body.crm-standard-header-active .crm-activity-column {
+        width: var(--crm-shell-feed-w);
+        min-width: var(--crm-shell-feed-w);
+        max-width: var(--crm-shell-feed-w);
+      }
+      #page-crm-job-file .crm-dashboard-mini-body,
+      #page-crm-financial-worksheet .crm-dashboard-mini-body,
+      #page-crm-job-profitability .crm-dashboard-mini-body {
+        overflow: hidden;
+      }
+      #page-crm-job-file .crm-layout,
+      #page-crm-financial-worksheet .crm-layout,
+      #page-crm-job-profitability .crm-layout {
+        height: 100%;
+        min-height: 0;
+      }
+      #page-crm-job-file .crm-main-column,
+      #page-crm-financial-worksheet .crm-main-column,
+      #page-crm-job-profitability .crm-main-column {
+        height: 100%;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+      #page-crm-job-file .crm-activity-column,
+      #page-crm-financial-worksheet .crm-activity-column,
+      #page-crm-job-profitability .crm-activity-column {
+        height: 100%;
+        min-height: 0;
+      }
+      #page-crm-job-file .crm-activity-panel,
+      #page-crm-financial-worksheet .crm-activity-panel,
+      #page-crm-job-profitability .crm-activity-panel {
+        position: static;
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        border-radius: var(--crm-card-radius);
+      }
+
+      body.main-menu-page-active #page-main-menu,
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref,
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .wrap {
+        height: 100%;
+        min-height: 0;
+      }
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .main .topbar {
+        display: none !important;
+      }
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .sidebar,
+      #page-crm-pipeline .hm-dashboard-ref .sidebar {
+        width: var(--crm-shell-rail-w);
+        flex: 0 0 var(--crm-shell-rail-w);
+        min-height: 0;
+        padding: 0 8px 10px;
+        overflow-x: visible;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .sidebar .logo {
+        display: none;
+      }
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .main {
+        height: 100%;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+      #page-crm-pipeline,
+      #page-crm-pipeline .hm-dashboard-ref,
+      #page-crm-pipeline .hm-dashboard-ref .wrap {
+        height: 100%;
+        min-height: 0;
+      }
+
+      #page-lead-detail {
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
+      #page-lead-detail .jf-folder-wrap {
+        height: 100%;
+        min-height: 0;
+        padding-right: calc(var(--crm-shell-feed-w) + var(--crm-shell-gap) + 36px);
+        overflow-x: hidden;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+      #page-lead-detail .jf-folder-sidebar {
+        position: fixed;
+        top: var(--crm-shell-header-h);
+        bottom: 0;
+        left: 0;
+        width: var(--crm-shell-rail-w);
+        min-height: 0;
+        overflow-x: visible;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+      #page-lead-detail .jf-tab-bar {
+        top: var(--crm-shell-header-h);
+        right: calc(var(--crm-shell-feed-w) + var(--crm-shell-gap));
+        left: var(--crm-shell-rail-w);
+      }
+      #page-lead-detail .crm-wrap > .jf-activity-card {
+        position: fixed;
+        top: var(--crm-shell-header-h);
+        right: 0;
+        bottom: 0;
+        z-index: 49;
+        width: var(--crm-shell-feed-w);
+        height: auto;
+        min-height: 0;
+        margin: 0;
+        border-radius: 0;
+      }
+
+      body.crm-standard-header-active .main-menu-title,
+      body.crm-standard-header-active .page-title {
+        font-size: var(--crm-title-size);
+        line-height: 1.15;
+      }
+      body.crm-standard-header-active .btn {
+        min-height: var(--crm-control-h);
+        border-radius: var(--crm-control-radius);
+        padding: 9px 14px;
+        font-size: 14px;
+      }
+      body.crm-standard-header-active :where(.field, .fl-field, .crm-task-field, .crm-reminder-field, .production-field)
+        :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select) {
+        min-height: var(--crm-control-h);
+        border-radius: var(--crm-control-radius);
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+      body.crm-standard-header-active :where(.field, .fl-field, .crm-task-field, .crm-reminder-field, .production-field) textarea {
+        min-height: 96px;
+        border-radius: var(--crm-control-radius);
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+      body.crm-standard-header-active :where(.field, .fl-field, .crm-task-field, .crm-reminder-field, .production-field) label {
+        margin-bottom: 4px;
+        font-size: 12px;
+        line-height: 1.25;
+      }
+      body.crm-standard-header-active :where(.main-menu-card, .form-card, .placeholder-card, .job-detail-card, .crm-detail-card, .crm-job-file-panel-block) {
+        border-radius: var(--crm-card-radius);
+      }
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .content,
+      #page-crm-pipeline .hm-dashboard-ref .content {
+        grid-template-columns: minmax(0, 1fr) var(--crm-shell-feed-w);
+        height: 100%;
+        min-height: 0;
+        align-items: stretch;
+      }
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .right-panel,
+      #page-crm-pipeline .hm-dashboard-ref .right-panel {
+        width: var(--crm-shell-feed-w);
+        min-width: var(--crm-shell-feed-w);
+        max-width: var(--crm-shell-feed-w);
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .right-panel .crm-activity-panel,
+      #page-crm-pipeline .hm-dashboard-ref .right-panel .crm-activity-panel {
+        height: 100%;
+        min-height: 0;
+        max-height: none;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .right-panel .crm-activity-feed-list,
+      #page-crm-pipeline .hm-dashboard-ref .right-panel .crm-activity-feed-list {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+    }
   </style>
 </head>
 <body>
@@ -17095,22 +17753,22 @@
                 <span class="dash-sidebar-logo-placeholder" id="dash-sidebar-logo-placeholder">UPLOAD LOGO HERE</span>
                 <span class="sr-only" id="dash-company-initials">YP</span>
               </div>
-              <div class="nav-flyout-group nav-flyout-group-new">
+              <div class="nav-dropdown-group nav-dropdown-group-new">
                 <button class="nav-item active" type="button" aria-label="New" aria-haspopup="menu">
                   <span class="dash-icon" data-dash-icon="layout-dashboard" aria-hidden="true"></span><span class="nav-label">New</span>
                 </button>
-                <div class="nav-flyout-menu" aria-label="New options">
-                  <button class="nav-flyout-option" type="button" data-dashboard-action="new-contact">Contact</button>
-                  <button class="nav-flyout-option" type="button" data-dashboard-action="new-lead">Lead</button>
-                  <button class="nav-flyout-option" type="button" data-dashboard-action="reminder">Reminder</button>
-                  <button class="nav-flyout-option" type="button" data-dashboard-action="task">Task</button>
+                <div class="nav-dropdown-menu" aria-label="New options">
+                  <button class="nav-dropdown-option" type="button" data-dashboard-action="new-contact">New Contact</button>
+                  <button class="nav-dropdown-option" type="button" data-dashboard-action="new-lead">New Lead</button>
+                  <button class="nav-dropdown-option" type="button" data-dashboard-action="reminder">New Reminder</button>
+                  <button class="nav-dropdown-option" type="button" data-dashboard-action="task">New Task</button>
                 </div>
               </div>
-              <div class="nav-flyout-group nav-flyout-group-recent">
+              <div class="nav-dropdown-group nav-dropdown-group-recent">
                 <button class="nav-item" type="button" aria-label="Recent" aria-haspopup="menu">
                   <span class="dash-icon" data-dash-icon="clock" aria-hidden="true"></span><span class="nav-label">Recent</span>
                 </button>
-                <div class="nav-flyout-menu" id="dash-recent-menu" aria-label="Recent pages"></div>
+                <div class="nav-dropdown-menu" id="dash-recent-menu" aria-label="Recent pages"></div>
               </div>
               <button class="nav-item" type="button" data-dashboard-action="start-inspection" aria-label="Start Inspection">
                 <span class="dash-icon" data-dash-icon="play" aria-hidden="true"></span><span class="nav-label">Start</span>
@@ -19869,22 +20527,22 @@
               <button class="nav-item" type="button" data-dashboard-action="dashboard" aria-label="Dashboard">
                 <span class="dash-icon" data-dash-icon="layout-dashboard" aria-hidden="true"></span><span class="nav-label">Dashboard</span>
               </button>
-              <div class="nav-flyout-group nav-flyout-group-new">
+              <div class="nav-dropdown-group nav-dropdown-group-new">
                 <button class="nav-item" type="button" aria-label="New" aria-haspopup="menu">
                   <span class="dash-icon" data-dash-icon="layout-dashboard" aria-hidden="true"></span><span class="nav-label">New</span>
                 </button>
-                <div class="nav-flyout-menu" aria-label="New options">
-                  <button class="nav-flyout-option" type="button" data-dashboard-action="new-contact">Contact</button>
-                  <button class="nav-flyout-option" type="button" data-dashboard-action="new-lead">Lead</button>
-                  <button class="nav-flyout-option" type="button" data-dashboard-action="reminder">Reminder</button>
-                  <button class="nav-flyout-option" type="button" data-dashboard-action="task">Task</button>
+                <div class="nav-dropdown-menu" aria-label="New options">
+                  <button class="nav-dropdown-option" type="button" data-dashboard-action="new-contact">New Contact</button>
+                  <button class="nav-dropdown-option" type="button" data-dashboard-action="new-lead">New Lead</button>
+                  <button class="nav-dropdown-option" type="button" data-dashboard-action="reminder">New Reminder</button>
+                  <button class="nav-dropdown-option" type="button" data-dashboard-action="task">New Task</button>
                 </div>
               </div>
-              <div class="nav-flyout-group nav-flyout-group-recent">
+              <div class="nav-dropdown-group nav-dropdown-group-recent">
                 <button class="nav-item" type="button" aria-label="Recent" aria-haspopup="menu">
                   <span class="dash-icon" data-dash-icon="clock" aria-hidden="true"></span><span class="nav-label">Recent</span>
                 </button>
-                <div class="nav-flyout-menu" data-dashboard-recent-menu aria-label="Recent pages"></div>
+                <div class="nav-dropdown-menu" data-dashboard-recent-menu aria-label="Recent pages"></div>
               </div>
               <button class="nav-item" type="button" data-dashboard-action="start-inspection" aria-label="Start Inspection">
                 <span class="dash-icon" data-dash-icon="play" aria-hidden="true"></span><span class="nav-label">Start</span>
@@ -22177,6 +22835,16 @@
           typeof crmDiscardPipelinePreviewChanges === 'function' &&
           !crmDiscardPipelinePreviewChanges('the next page')) {
         return false;
+      }
+      if (pageId !== 'page-crm-job-file') {
+        document.querySelectorAll('.jf-invoice-designer-overlay').forEach(function (overlay) { overlay.remove(); });
+        document.body.classList.remove('crm-invoice-designer-open');
+        if (typeof _crmInvoiceBuilderMode !== 'undefined') {
+          _crmInvoiceBuilderMode = false;
+          _crmInvoiceBuilderDraft = null;
+          _crmInvoiceBuilderSelectedBlockId = '';
+          _crmInvoiceBuilderPreviewMode = false;
+        }
       }
       if (pageId === 'page-login') {
         _appPageHistory = [];
@@ -47714,7 +48382,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
     }
 
-    function crmRenderDashboardRecentFlyout(root) {
+    function crmRenderDashboardRecentDropdown(root) {
       root = root || document.querySelector('#page-main-menu .hm-dashboard-ref');
       var menu = root
         ? (root.querySelector('[data-dashboard-recent-menu]') || root.querySelector('#dash-recent-menu'))
@@ -47722,60 +48390,104 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!menu) return;
       var destinations = crmGetRecentDestinations();
       if (!destinations.length) {
-        menu.innerHTML = '<button class="nav-flyout-option" type="button" disabled>No recent pages</button>';
+        menu.innerHTML = '<button class="nav-dropdown-option" type="button" disabled>No recent pages</button>';
         return;
       }
       menu.innerHTML = destinations.map(function (destination) {
-        return '<button class="nav-flyout-option" type="button" data-recent-destination-key="' +
+        return '<button class="nav-dropdown-option" type="button" data-recent-destination-key="' +
           crmEscapeHtml(destination.key) + '">' + crmEscapeHtml(destination.label) + '</button>';
       }).join('');
     }
 
-    function crmBindDashboardFlyoutGroup(flyoutGroup) {
-      if (!flyoutGroup || flyoutGroup._dashFlyoutBound) return;
-      flyoutGroup.addEventListener('mouseenter', function () {
-        flyoutGroup.classList.add('is-open');
+    function crmBindDashboardDropdownGroup(dropdownGroup) {
+      if (!dropdownGroup || dropdownGroup._dashDropdownBound) return;
+      var dropdownButton = dropdownGroup.querySelector('.nav-item');
+      var dropdownMenu = dropdownGroup.querySelector('.nav-dropdown-menu');
+      var dropdownCloseTimer = null;
+      function cancelDropdownClose() {
+        if (!dropdownCloseTimer) return;
+        clearTimeout(dropdownCloseTimer);
+        dropdownCloseTimer = null;
+      }
+      function setDropdownOpen(isOpen) {
+        cancelDropdownClose();
+        if (isOpen && dropdownGroup.classList.contains('nav-dropdown-group-recent')) {
+          crmRenderDashboardRecentDropdown(dropdownGroup.closest('.hm-dashboard-ref'));
+        }
+        dropdownGroup.classList.toggle('is-open', !!isOpen);
+        if (dropdownButton) dropdownButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      }
+      function scheduleDropdownClose() {
+        cancelDropdownClose();
+        dropdownCloseTimer = setTimeout(function () {
+          dropdownCloseTimer = null;
+          dropdownGroup._dashDropdownClickOpen = false;
+          setDropdownOpen(false);
+        }, 200);
+      }
+      dropdownGroup.addEventListener('pointerenter', function () {
+        cancelDropdownClose();
+        setDropdownOpen(true);
       });
-      flyoutGroup.addEventListener('mouseleave', function () {
-        flyoutGroup.classList.remove('is-open');
+      dropdownGroup.addEventListener('pointerleave', function () {
+        scheduleDropdownClose();
       });
-      flyoutGroup.addEventListener('focusin', function () {
-        flyoutGroup.classList.add('is-open');
+      dropdownGroup.addEventListener('focusin', function () {
+        setDropdownOpen(true);
       });
-      flyoutGroup.addEventListener('focusout', function (event) {
+      dropdownGroup.addEventListener('focusout', function (event) {
         var nextTarget = event && event.relatedTarget;
-        if (nextTarget && flyoutGroup.contains(nextTarget)) return;
-        flyoutGroup.classList.remove('is-open');
+        if (nextTarget && dropdownGroup.contains(nextTarget)) return;
+        dropdownGroup._dashDropdownClickOpen = false;
+        scheduleDropdownClose();
       });
-      var flyoutButton = flyoutGroup.querySelector('.nav-item');
-      if (flyoutButton) {
-        flyoutButton.addEventListener('click', function (e) {
+      if (dropdownButton) {
+        dropdownButton.setAttribute('aria-expanded', 'false');
+        dropdownButton.addEventListener('click', function (e) {
           e.preventDefault();
           e.stopPropagation();
+          var shouldOpen = !dropdownGroup._dashDropdownClickOpen;
+          document.querySelectorAll('.nav-dropdown-group.is-open').forEach(function (otherGroup) {
+            if (otherGroup === dropdownGroup) return;
+            if (typeof otherGroup._crmCloseDashboardDropdown === 'function') otherGroup._crmCloseDashboardDropdown();
+          });
+          dropdownGroup._dashDropdownClickOpen = shouldOpen;
+          setDropdownOpen(shouldOpen);
         });
       }
-      flyoutGroup._dashFlyoutBound = true;
+      if (dropdownMenu) {
+        dropdownMenu.addEventListener('click', function (event) {
+          if (!event.target.closest('.nav-dropdown-option')) return;
+          dropdownGroup._dashDropdownClickOpen = false;
+          setDropdownOpen(false);
+        });
+      }
+      dropdownGroup._crmCloseDashboardDropdown = function () {
+        dropdownGroup._dashDropdownClickOpen = false;
+        setDropdownOpen(false);
+      };
+      dropdownGroup._dashDropdownBound = true;
     }
 
     function crmGetDashboardMiniSidebarMarkup() {
       return [
         '<nav class="sidebar" aria-label="Dashboard navigation">',
-          '<div class="nav-flyout-group nav-flyout-group-new">',
+          '<div class="nav-dropdown-group nav-dropdown-group-new">',
             '<button class="nav-item active" type="button" aria-label="New" aria-haspopup="menu">',
               '<span class="dash-icon" data-dash-icon="layout-dashboard" aria-hidden="true"></span><span class="nav-label">New</span>',
             '</button>',
-            '<div class="nav-flyout-menu" aria-label="New options">',
-              '<button class="nav-flyout-option" type="button" data-dashboard-action="new-contact">Contact</button>',
-              '<button class="nav-flyout-option" type="button" data-dashboard-action="new-lead">Lead</button>',
-              '<button class="nav-flyout-option" type="button" data-dashboard-action="reminder">Reminder</button>',
-              '<button class="nav-flyout-option" type="button" data-dashboard-action="task">Task</button>',
+            '<div class="nav-dropdown-menu" aria-label="New options">',
+              '<button class="nav-dropdown-option" type="button" data-dashboard-action="new-contact">New Contact</button>',
+              '<button class="nav-dropdown-option" type="button" data-dashboard-action="new-lead">New Lead</button>',
+              '<button class="nav-dropdown-option" type="button" data-dashboard-action="reminder">New Reminder</button>',
+              '<button class="nav-dropdown-option" type="button" data-dashboard-action="task">New Task</button>',
             '</div>',
           '</div>',
-          '<div class="nav-flyout-group nav-flyout-group-recent">',
+          '<div class="nav-dropdown-group nav-dropdown-group-recent">',
             '<button class="nav-item" type="button" aria-label="Recent" aria-haspopup="menu">',
               '<span class="dash-icon" data-dash-icon="clock" aria-hidden="true"></span><span class="nav-label">Recent</span>',
             '</button>',
-            '<div class="nav-flyout-menu" data-dashboard-recent-menu aria-label="Recent pages"></div>',
+            '<div class="nav-dropdown-menu" data-dashboard-recent-menu aria-label="Recent pages"></div>',
           '</div>',
           '<button class="nav-item" type="button" data-dashboard-action="start-inspection" aria-label="Start Inspection">',
             '<span class="dash-icon" data-dash-icon="play" aria-hidden="true"></span><span class="nav-label">Start</span>',
@@ -47863,9 +48575,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         });
       }
 
-      crmBindDashboardFlyoutGroup(root.querySelector('.nav-flyout-group-new'));
-      crmBindDashboardFlyoutGroup(root.querySelector('.nav-flyout-group-recent'));
-      crmRenderDashboardRecentFlyout(root);
+      crmBindDashboardDropdownGroup(root.querySelector('.nav-dropdown-group-new'));
+      crmBindDashboardDropdownGroup(root.querySelector('.nav-dropdown-group-recent'));
+      crmRenderDashboardRecentDropdown(root);
 
       var sidebarRole = crmGetWorkspaceMenuRole();
       var sidebarIsAdmin = (sidebarRole !== 'Sales Rep' && sidebarRole !== 'Canvasser' && sidebarRole !== 'Viewer');
@@ -47934,7 +48646,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       });
       destinations.unshift(normalized);
       crmSaveRecentDestinations(destinations);
-      crmRenderDashboardRecentFlyout();
+      crmRenderDashboardRecentDropdown();
     }
 
     function crmTrackRecentDestination(pageId) {
@@ -48370,10 +49082,40 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
     }
 
+    function crmRefreshCurrentPage() {
+      var pageId = crmGetActivePageId();
+      if (!pageId) return;
+      if (pageId === 'page-main-menu') crmRenderMainMenu();
+      else if (pageId === 'page-crm-job-file') crmRenderJobFile();
+      else if (pageId === 'page-crm-pipeline') crmRenderPipeline();
+      else if (pageId === 'page-lead-detail' && _crmCurrentLeadId) crmOpenLeadDetail(_crmCurrentLeadId, _crmLeadDetailBackPageId || 'page-all-leads');
+      else if (pageId === 'page-all-leads') crmRenderAllLeads(document.getElementById('al-search') ? document.getElementById('al-search').value || '' : '');
+      else if (pageId === 'page-my-assigned-leads') crmRenderMyAssignedLeads();
+      else if (pageId === 'page-assign-leads') crmRenderAssignLeads();
+      else if (pageId === 'page-crm-jobs') crmRenderJobs();
+      else if (pageId === 'page-crm-calendar') crmRenderCalendar();
+      else if (pageId === 'page-crm-financial-worksheet') crmRenderFinancialWorksheetPage();
+      else {
+        var currentPage = document.getElementById(pageId);
+        if (currentPage) crmRenderMiniDashboardShells(currentPage);
+      }
+      if (typeof renderTopBrand === 'function') renderTopBrand();
+      if (typeof crmRefreshActivityPanel === 'function') {
+        var leadId = pageId === 'page-crm-job-file' || pageId === 'page-crm-financial-worksheet'
+          ? (_crmCurrentJobFileLeadId || null)
+          : (pageId === 'page-lead-detail' ? (_crmCurrentLeadId || null) : null);
+        crmRefreshActivityPanel(leadId);
+      }
+    }
+
     function crmHandleDashboardTabAction(tab, pipelineStage) {
       tab = String(tab || '').trim();
       pipelineStage = String(pipelineStage || '').trim().toLowerCase();
       if (!tab) return;
+      if (tab === 'refresh') {
+        crmRefreshCurrentPage();
+        return;
+      }
       if (tab === 'dashboard' || tab === 'recent') {
         crmRenderMainMenu();
         showPage('page-main-menu');
@@ -48462,6 +49204,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     document.addEventListener('click', function (e) {
+      var refreshBtn = e.target.closest('[data-crm-refresh], [data-dashboard-action="refresh"], [data-dashboard-tab="refresh"], button[aria-label="Refresh"]');
+      if (refreshBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        crmRefreshCurrentPage();
+        return;
+      }
       var recentDestinationBtn = e.target.closest('[data-recent-destination-key]');
       if (recentDestinationBtn) {
         e.preventDefault();
@@ -57188,6 +57937,18 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       };
     }
 
+    function crmNormalizeJobInvoiceClaimRow(item) {
+      item = item || {};
+      var kind = String(item.kind || item.type || 'detail').trim();
+      if (['total_rcv', 'detail', 'work_completed', 'supplement', 'work_not_completed', 'approved_reduction'].indexOf(kind) === -1) kind = 'detail';
+      return {
+        id: String(item.id || crmGenId()).trim(),
+        kind: kind,
+        description: String(item.description || '').trim(),
+        amount: String(item.amount || '').trim()
+      };
+    }
+
     function crmNormalizeFinancialWorksheetPayment(entry) {
       entry = entry || {};
       return {
@@ -57308,6 +58069,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         },
         workNotBeingDone: Array.isArray(financialWorksheet.workNotBeingDone)
           ? financialWorksheet.workNotBeingDone.map(crmNormalizeJobFileMoneyLineItem)
+          : [],
+        claimRows: Array.isArray(financialWorksheet.claimRows)
+          ? financialWorksheet.claimRows.map(crmNormalizeJobInvoiceClaimRow)
           : [],
         paymentsReceived: paymentsReceived,
         updatedAt: String(financialWorksheet.updatedAt || '').trim()
@@ -58633,6 +59397,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           { key: 'description' },
           { key: 'amount' }
         ], crmNormalizeJobFileMoneyLineItem),
+        claimRows: Array.isArray(_crmFinancialWorksheetDraft && _crmFinancialWorksheetDraft.claimRows)
+          ? _crmFinancialWorksheetDraft.claimRows.map(crmNormalizeJobInvoiceClaimRow)
+          : [],
         paymentsReceived: crmReadFinancialRepeatingRows('jfw-payments-received', [
           { key: 'paymentType' },
           { key: 'referenceNumber' },
@@ -59446,11 +60213,357 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     var _crmInvoiceLogoDraftDataUrl = '';
+    var _crmInvoiceEditMode = false;
+    var CRM_INVOICE_LAYOUT_KEY = 'hmm_invoice_company_layout_v1';
+    var _crmInvoiceBuilderMode = false;
+    var _crmInvoiceBuilderDraft = null;
+    var _crmInvoiceBuilderSelectedBlockId = '';
+    var _crmInvoiceBuilderDragBlockId = '';
+    var _crmInvoiceBuilderDragType = '';
+    var _crmInvoiceBuilderPreviewMode = false;
+
+    function crmCanManageInvoiceTemplates() {
+      var role = String(crmGetRole() || '').trim();
+      return role === 'Admin' || role === 'Owner';
+    }
+
+    function crmGetInvoiceBuilderCatalog() {
+      return [
+        { group: 'Header and Customer', items: [
+          ['company_logo', 'Company Logo'], ['invoice_title', 'Invoice Title'], ['claim_number', 'Claim Number'],
+          ['invoice_date', 'Invoice Date'], ['invoice_number', 'Invoice Number'], ['due_date', 'Due Date'],
+          ['sales_rep', 'Sales Rep'], ['bill_to', 'Bill To']
+        ] },
+        { group: 'Work and Payments', items: [
+          ['description_of_work', 'Description of Work'], ['insurance_claim', 'Insurance Claim'], ['supplements', 'Supplements'],
+          ['payments_credits', 'Payments / Credits'], ['remit_payment_to', 'Remit Payment To'], ['notes', 'Notes']
+        ] },
+        { group: 'Financial Totals', items: [
+          ['total_initial_claim', 'Total Initial Claim'], ['work_not_completed', 'Work Not Completed'],
+          ['invoice_total', 'Invoice Total'], ['deductible', 'Deductible'], ['total_received', 'Total Received'],
+          ['balance_due', 'Balance Due']
+        ] },
+        { group: 'Layout', items: [
+          ['text_field', 'Text Field'], ['divider', 'Divider Line'], ['spacer', 'Spacer']
+        ] }
+      ];
+    }
+
+    function crmGetInvoiceBuilderDefinition(type) {
+      var found = null;
+      crmGetInvoiceBuilderCatalog().some(function (group) {
+        return group.items.some(function (item) {
+          if (item[0] !== type) return false;
+          found = { type: item[0], label: item[1], group: group.group };
+          return true;
+        });
+      });
+      return found || { type: 'text_field', label: 'Text Field', group: 'Layout' };
+    }
+
+    function crmCreateInvoiceBuilderBlock(type, seed) {
+      seed = seed || {};
+      var definition = crmGetInvoiceBuilderDefinition(type);
+      var defaultWidths = {
+        company_logo: 4, invoice_title: 4, claim_number: 4, invoice_date: 3, invoice_number: 3,
+        due_date: 3, sales_rep: 3, bill_to: 6, description_of_work: 12, insurance_claim: 12,
+        supplements: 12, payments_credits: 6, remit_payment_to: 6, total_initial_claim: 6,
+        work_not_completed: 6, invoice_total: 6, deductible: 6, total_received: 6,
+        balance_due: 6, notes: 12, text_field: 12, divider: 12, spacer: 12
+      };
+      var width = parseInt(seed.width, 10);
+      if ([3, 4, 6, 8, 9, 12].indexOf(width) === -1) width = defaultWidths[definition.type] || 12;
+      var fontSize = parseInt(seed.fontSize, 10);
+      if (!isFinite(fontSize) || fontSize < 8 || fontSize > 36) fontSize = definition.type === 'invoice_title' ? 28 : 12;
+      return {
+        id: String(seed.id || crmGenId()).trim(),
+        type: definition.type,
+        label: String(seed.label || definition.label).trim() || definition.label,
+        width: width,
+        align: ['left', 'center', 'right'].indexOf(seed.align) !== -1 ? seed.align : (definition.type === 'invoice_title' ? 'center' : 'left'),
+        fontSize: fontSize,
+        bold: seed.bold === true || definition.type === 'invoice_title'
+      };
+    }
+
+    function crmGetDefaultInvoiceLayout() {
+      return {
+        id: 'company-invoice-layout',
+        version: 1,
+        page: {
+          size: 'letter',
+          orientation: 'portrait',
+          blocks: [
+            crmCreateInvoiceBuilderBlock('company_logo'),
+            crmCreateInvoiceBuilderBlock('invoice_title', { label: 'Invoice' }),
+            crmCreateInvoiceBuilderBlock('claim_number'),
+            crmCreateInvoiceBuilderBlock('bill_to'),
+            crmCreateInvoiceBuilderBlock('invoice_date'),
+            crmCreateInvoiceBuilderBlock('invoice_number'),
+            crmCreateInvoiceBuilderBlock('due_date'),
+            crmCreateInvoiceBuilderBlock('sales_rep'),
+            crmCreateInvoiceBuilderBlock('insurance_claim'),
+            crmCreateInvoiceBuilderBlock('remit_payment_to'),
+            crmCreateInvoiceBuilderBlock('total_initial_claim'),
+            crmCreateInvoiceBuilderBlock('work_not_completed'),
+            crmCreateInvoiceBuilderBlock('invoice_total'),
+            crmCreateInvoiceBuilderBlock('deductible'),
+            crmCreateInvoiceBuilderBlock('payments_credits'),
+            crmCreateInvoiceBuilderBlock('total_received'),
+            crmCreateInvoiceBuilderBlock('balance_due', { bold: true }),
+            crmCreateInvoiceBuilderBlock('notes')
+          ]
+        },
+        updatedAt: ''
+      };
+    }
+
+    function crmNormalizeInvoiceLayout(layout) {
+      layout = layout && typeof layout === 'object' ? layout : {};
+      var page = layout.page && typeof layout.page === 'object' ? layout.page : {};
+      return {
+        id: 'company-invoice-layout',
+        version: 1,
+        page: {
+          size: 'letter',
+          orientation: 'portrait',
+          blocks: (Array.isArray(page.blocks) ? page.blocks : []).map(function (block) {
+            return crmCreateInvoiceBuilderBlock(block && block.type, block);
+          })
+        },
+        updatedAt: String(layout.updatedAt || '').trim()
+      };
+    }
+
+    function crmGetSavedInvoiceLayout() {
+      try {
+        var saved = JSON.parse(localStorage.getItem(CRM_INVOICE_LAYOUT_KEY) || 'null');
+        if (saved && saved.page && Array.isArray(saved.page.blocks)) return crmNormalizeInvoiceLayout(saved);
+      } catch (e) {}
+      return crmGetDefaultInvoiceLayout();
+    }
+
+    function crmGetInvoiceBuilderPage() {
+      if (!_crmInvoiceBuilderDraft) _crmInvoiceBuilderDraft = crmCloneObject(crmGetSavedInvoiceLayout());
+      if (!_crmInvoiceBuilderDraft.page || typeof _crmInvoiceBuilderDraft.page !== 'object') {
+        _crmInvoiceBuilderDraft.page = { size: 'letter', orientation: 'portrait', blocks: [] };
+      }
+      if (!Array.isArray(_crmInvoiceBuilderDraft.page.blocks)) _crmInvoiceBuilderDraft.page.blocks = [];
+      return _crmInvoiceBuilderDraft.page;
+    }
+
+    function crmFindInvoiceBuilderBlock(blockId) {
+      return crmGetInvoiceBuilderPage().blocks.find(function (block) { return block.id === blockId; }) || null;
+    }
+
+    function crmGetInvoiceClaimGroup(kind) {
+      if (kind === 'supplement') return 'supplements';
+      if (kind === 'work_completed') return 'description_of_work';
+      return 'insurance_claim';
+    }
+
+    function crmRenderInvoiceBuilderBlockPreview(block, lead, jobFile) {
+      var type = block.type;
+      var label = crmEscapeHtml(block.label || crmGetInvoiceBuilderDefinition(type).label);
+      var company = typeof crmGetCompanyProfile === 'function' ? crmGetCompanyProfile() : {};
+      var invoice = crmGetDefaultJobInvoiceData(jobFile.invoice || {}, lead);
+      var metrics = crmGetJobInvoiceMetrics(jobFile);
+      var claimRows = crmGetJobInvoiceClaimRows(jobFile.financialWorksheet || {}).filter(function (row) { return crmGetInvoiceClaimGroup(row.kind) === type; });
+      var payments = (jobFile.financialWorksheet.paymentsReceived || []).slice(0, 2);
+      var moneyMap = {
+        total_initial_claim: metrics.totalRcv, work_not_completed: metrics.totalWorkNotBeingDone,
+        invoice_total: metrics.invoiceTotal, deductible: metrics.deductible,
+        total_received: metrics.paymentsReceived, balance_due: metrics.totalDue
+      };
+      if (type === 'company_logo') return company.logoDataUrl ? '<img class="jf-invoice-designer-logo" src="' + crmEscapeHtml(company.logoDataUrl) + '" alt="Company logo" />' : '<div class="jf-invoice-builder-logo-placeholder">Company logo from Settings</div>';
+      if (type === 'invoice_title') return '<div class="jf-invoice-designer-title-preview">' + label + '</div>';
+      if (type === 'divider') return '<div class="jf-invoice-builder-divider-preview"></div>';
+      if (type === 'spacer') return '<div class="jf-invoice-builder-spacer-preview" aria-label="Spacer"></div>';
+      if (type === 'bill_to') {
+        return '<div class="jf-invoice-builder-block-title">' + label + '</div><div class="jf-invoice-builder-placeholder">' + [crmGetJobFileLeadName(lead), crmGetJobFileLeadAddress(lead), lead.phone || lead.primaryPhone || '', lead.email || ''].filter(Boolean).map(crmEscapeHtml).join('<br>') + '</div>';
+      }
+      if (type === 'claim_number') return '<div class="jf-invoice-builder-block-title">' + label + '</div><div>' + crmEscapeHtml(jobFile.insurance && jobFile.insurance.claimNumber || lead.claimNumber || 'Not provided') + '</div>';
+      if (type === 'invoice_date') return '<div class="jf-invoice-builder-block-title">' + label + '</div><div>' + crmEscapeHtml(invoice.invoiceDate ? crmFormatDateShort(invoice.invoiceDate) : 'Not provided') + '</div>';
+      if (type === 'invoice_number') return '<div class="jf-invoice-builder-block-title">' + label + '</div><div>' + crmEscapeHtml(invoice.invoiceNumber || 'Not provided') + '</div>';
+      if (type === 'due_date') return '<div class="jf-invoice-builder-block-title">' + label + '</div><div>' + crmEscapeHtml(invoice.dueDate || 'Upon Receipt') + '</div>';
+      if (type === 'sales_rep') return '<div class="jf-invoice-builder-block-title">' + label + '</div><div>' + crmEscapeHtml(lead.assignedRep || 'Unassigned') + '</div>';
+      if (type === 'description_of_work' || type === 'insurance_claim' || type === 'supplements') {
+        var rowHtml = (claimRows.length ? claimRows.slice(0, 2) : [{ description: 'Description row', amount: '' }]).map(function (row) {
+          return '<tr><td>' + crmEscapeHtml(row.description || 'Description row') + '</td><td>' + crmEscapeHtml(crmFormatMoney(row.amount || 0)) + '</td></tr>';
+        }).join('');
+        return '<div class="jf-invoice-builder-block-title">' + label + '</div><table class="jf-invoice-builder-table-preview"><thead><tr><th>Description</th><th>Amount</th></tr></thead><tbody>' + rowHtml + '</tbody></table>';
+      }
+      if (type === 'payments_credits') {
+        var paymentHtml = (payments.length ? payments : [{ paymentType: 'Payment type', amount: '' }]).map(function (payment) {
+          return '<tr><td>' + crmEscapeHtml(payment.paymentType || 'Payment') + (payment.paymentDate ? ' · ' + crmEscapeHtml(crmFormatDateShort(payment.paymentDate)) : '') + '</td><td>' + crmEscapeHtml(crmFormatMoney(payment.amount || 0)) + '</td></tr>';
+        }).join('');
+        return '<div class="jf-invoice-builder-block-title">' + label + '</div><table class="jf-invoice-builder-table-preview"><tbody>' + paymentHtml + '</tbody></table>';
+      }
+      if (Object.prototype.hasOwnProperty.call(moneyMap, type)) return '<div class="jf-invoice-builder-total-preview"><span>' + label + '</span><span>' + crmEscapeHtml(crmFormatMoney(moneyMap[type])) + '</span></div>';
+      if (type === 'remit_payment_to') {
+        var companyAddress = [company.street, company.city, company.state, company.zip].filter(Boolean).join(', ');
+        return '<div class="jf-invoice-builder-block-title">' + label + '</div><div class="jf-invoice-builder-placeholder">' + [company.companyName, companyAddress, company.phone, company.email, company.paymentInstructions || company.remitInstructions].filter(Boolean).map(crmEscapeHtml).join('<br>') + '</div>';
+      }
+      if (type === 'notes') return '<div class="jf-invoice-builder-block-title">' + label + '</div><div class="jf-invoice-builder-placeholder">' + crmEscapeHtml(invoice.notes || 'Invoice notes') + '</div>';
+      return '<div class="jf-invoice-builder-block-title">' + label + '</div>';
+    }
+
+    function crmRenderInvoiceBuilderBlockHtml(block, lead, jobFile) {
+      var selected = block.id === _crmInvoiceBuilderSelectedBlockId;
+      var style = 'grid-column:span ' + block.width + ';text-align:' + block.align + ';font-size:' + block.fontSize + 'px;font-weight:' + (block.bold ? '700' : '400') + ';';
+      var html = '<div class="jf-invoice-builder-block' + (selected ? ' is-selected' : '') + '" style="' + style + '" data-invoice-builder-select="' + crmEscapeHtml(block.id) + '">';
+      html += '<div class="jf-invoice-builder-block-toolbar"><button class="jf-invoice-builder-drag-handle" type="button" draggable="true" data-invoice-builder-drag="' + crmEscapeHtml(block.id) + '" aria-label="Move ' + crmEscapeHtml(block.label) + '">&#8942;&#8942;</button>';
+      html += '<div class="jf-invoice-builder-block-actions"><button class="jf-invoice-builder-mini-btn" type="button" data-invoice-builder-cycle-width="' + crmEscapeHtml(block.id) + '" title="Resize width">&#8596;</button><button class="jf-invoice-builder-mini-btn" type="button" data-invoice-builder-remove="' + crmEscapeHtml(block.id) + '" title="Remove field">&#215;</button></div></div>';
+      html += crmRenderInvoiceBuilderBlockPreview(block, lead, jobFile) + '</div>';
+      return html;
+    }
+
+    function crmRenderInvoiceBuilderPropertiesHtml() {
+      var block = crmFindInvoiceBuilderBlock(_crmInvoiceBuilderSelectedBlockId);
+      var html = '<div class="jf-invoice-builder-panel-title">Properties</div>';
+      if (!block) return html + '<div class="jf-invoice-builder-no-selection">Select a field on the page to change its label, width, alignment, or text style.</div>';
+      html += '<div class="field"><label>Field type</label><input type="text" value="' + crmEscapeHtml(crmGetInvoiceBuilderDefinition(block.type).label) + '" disabled /></div>';
+      html += '<div class="field"><label for="invoice-builder-prop-label">Label</label><input id="invoice-builder-prop-label" type="text" value="' + crmEscapeHtml(block.label) + '" data-invoice-builder-property="label" /></div>';
+      html += '<div class="field"><label for="invoice-builder-prop-width">Width</label><select id="invoice-builder-prop-width" data-invoice-builder-property="width">';
+      [[12,'Full width'],[9,'Three quarters'],[8,'Two thirds'],[6,'Half width'],[4,'One third'],[3,'Quarter width']].forEach(function (option) {
+        html += '<option value="' + option[0] + '"' + (block.width === option[0] ? ' selected' : '') + '>' + option[1] + '</option>';
+      });
+      html += '</select></div><div class="field"><label for="invoice-builder-prop-align">Alignment</label><select id="invoice-builder-prop-align" data-invoice-builder-property="align">';
+      ['left','center','right'].forEach(function (value) { html += '<option value="' + value + '"' + (block.align === value ? ' selected' : '') + '>' + value.charAt(0).toUpperCase() + value.slice(1) + '</option>'; });
+      html += '</select></div><div class="field"><label for="invoice-builder-prop-font">Font size</label><input id="invoice-builder-prop-font" type="number" min="8" max="36" step="1" value="' + block.fontSize + '" data-invoice-builder-property="fontSize" /></div>';
+      html += '<label class="jf-invoice-builder-check"><input type="checkbox" data-invoice-builder-property="bold"' + (block.bold ? ' checked' : '') + ' /> Bold</label>';
+      return html;
+    }
+
+    function crmRenderInvoiceBuilderHtml(lead, jobFile) {
+      var page = crmGetInvoiceBuilderPage();
+      var html = '<div id="crm-invoice-designer-overlay" class="jf-invoice-designer-overlay' + (_crmInvoiceBuilderPreviewMode ? ' is-preview' : '') + '" role="dialog" aria-modal="true" aria-label="Customize Invoice"><div class="jf-invoice-designer-modal">';
+      html += '<div class="jf-invoice-designer-toolbar"><div><strong>Customize Invoice</strong><span>One company layout · Letter portrait</span></div><div class="jf-invoice-designer-toolbar-actions"><button class="btn" type="button" data-invoice-builder-preview>' + (_crmInvoiceBuilderPreviewMode ? 'Edit Layout' : 'Preview') + '</button><button class="btn" type="button" data-invoice-builder-reset>Reset Layout</button><button class="btn btn-primary" type="button" data-invoice-builder-save>Save Layout</button><button class="btn" type="button" data-invoice-builder-exit>Close</button></div></div>';
+      html += '<div class="jf-invoice-builder-workspace"><aside class="jf-invoice-builder-sidebar"><div class="jf-invoice-builder-panel-title">Invoice Fields</div><p class="jf-invoice-builder-panel-help">Drag a field to the page or click it to add. The layout never stores customer or financial values.</p>';
+      crmGetInvoiceBuilderCatalog().forEach(function (group) {
+        html += '<div class="jf-invoice-builder-library-group"><div class="jf-invoice-builder-library-heading">' + crmEscapeHtml(group.group) + '</div><div class="jf-invoice-builder-library-list">';
+        group.items.forEach(function (item) { html += '<button class="jf-invoice-builder-library-item" type="button" draggable="true" data-invoice-builder-add="' + crmEscapeHtml(item[0]) + '">' + crmEscapeHtml(item[1]) + '</button>'; });
+        html += '</div></div>';
+      });
+      html += '</aside><main class="jf-invoice-builder-canvas-shell"><div class="jf-invoice-builder-canvas-heading"><span>Invoice Page</span><span>8.5 × 11 · Printable grid</span></div><div class="jf-invoice-builder-page" data-invoice-builder-page="0">';
+      if (!page.blocks.length) html += '<div class="jf-invoice-builder-empty">Drag invoice fields here</div>';
+      page.blocks.forEach(function (block) { html += crmRenderInvoiceBuilderBlockHtml(block, lead, jobFile); });
+      html += '</div></main><aside class="jf-invoice-builder-properties">' + crmRenderInvoiceBuilderPropertiesHtml() + '</aside></div></div></div>';
+      return html;
+    }
+
+    function crmSyncInvoiceDesignerOverlay() {
+      document.querySelectorAll('.jf-invoice-designer-overlay').forEach(function (overlay) { overlay.remove(); });
+      var shouldOpen = !!_crmInvoiceBuilderMode &&
+        _crmJobFileActiveTab === 'payments' &&
+        crmGetActivePageId() === 'page-crm-job-file' &&
+        crmCanManageInvoiceTemplates();
+      document.body.classList.toggle('crm-invoice-designer-open', shouldOpen);
+      if (!shouldOpen) return;
+      var lead = crmGetJobFileLeadById(_crmCurrentJobFileLeadId);
+      if (!lead) return;
+      document.body.insertAdjacentHTML('beforeend', crmRenderInvoiceBuilderHtml(lead, crmGetLeadJobFileData(lead)));
+    }
+
+    function crmOpenInvoiceBuilder() {
+      if (!crmCanManageInvoiceTemplates()) { showUploadToast('Only Admin users can customize the invoice layout.'); return; }
+      _crmInvoiceBuilderMode = true;
+      _crmInvoiceBuilderDraft = crmCloneObject(crmGetSavedInvoiceLayout());
+      _crmInvoiceBuilderSelectedBlockId = '';
+      _crmInvoiceBuilderPreviewMode = false;
+      crmSyncInvoiceDesignerOverlay();
+    }
+
+    function crmCloseInvoiceBuilder() {
+      _crmInvoiceBuilderMode = false;
+      _crmInvoiceBuilderDraft = null;
+      _crmInvoiceBuilderSelectedBlockId = '';
+      _crmInvoiceBuilderPreviewMode = false;
+      crmSyncInvoiceDesignerOverlay();
+    }
+
+    function crmSaveInvoiceBuilderDefaultTemplate() {
+      if (!crmCanManageInvoiceTemplates() || !_crmInvoiceBuilderDraft) return;
+      var normalized = crmNormalizeInvoiceLayout(_crmInvoiceBuilderDraft);
+      normalized.updatedAt = new Date().toISOString();
+      try {
+        localStorage.setItem(CRM_INVOICE_LAYOUT_KEY, JSON.stringify(normalized));
+        _crmInvoiceBuilderDraft = crmCloneObject(normalized);
+        crmRenderJobFile();
+        showUploadToast('Invoice layout saved.');
+      } catch (e) {
+        showUploadToast('The invoice layout could not be saved on this device.');
+      }
+    }
+
+    function crmAddInvoiceBuilderBlock(type, insertIndex) {
+      var page = crmGetInvoiceBuilderPage();
+      var repeatableTypes = ['text_field', 'divider', 'spacer'];
+      var existing = page.blocks.find(function (block) { return block.type === type; });
+      if (existing && repeatableTypes.indexOf(type) === -1) {
+        _crmInvoiceBuilderSelectedBlockId = existing.id;
+        crmSyncInvoiceDesignerOverlay();
+        showUploadToast(crmGetInvoiceBuilderDefinition(type).label + ' is already on the invoice.');
+        return;
+      }
+      var block = crmCreateInvoiceBuilderBlock(type);
+      var index = isFinite(insertIndex) ? Math.max(0, Math.min(page.blocks.length, insertIndex)) : page.blocks.length;
+      page.blocks.splice(index, 0, block);
+      _crmInvoiceBuilderSelectedBlockId = block.id;
+      crmSyncInvoiceDesignerOverlay();
+    }
+
+    function crmRemoveInvoiceBuilderBlock(blockId) {
+      var page = crmGetInvoiceBuilderPage();
+      page.blocks = page.blocks.filter(function (block) { return block.id !== blockId; });
+      if (_crmInvoiceBuilderSelectedBlockId === blockId) _crmInvoiceBuilderSelectedBlockId = '';
+      crmSyncInvoiceDesignerOverlay();
+    }
+
+    function crmCycleInvoiceBuilderBlockWidth(blockId) {
+      var block = crmFindInvoiceBuilderBlock(blockId);
+      if (!block) return;
+      var widths = [12, 9, 8, 6, 4, 3];
+      var index = widths.indexOf(block.width);
+      block.width = widths[(index + 1) % widths.length];
+      _crmInvoiceBuilderSelectedBlockId = block.id;
+      crmSyncInvoiceDesignerOverlay();
+    }
+
+    function crmMoveInvoiceBuilderBlock(blockId, targetId, placeAfter) {
+      var page = crmGetInvoiceBuilderPage();
+      var sourceIndex = page.blocks.findIndex(function (block) { return block.id === blockId; });
+      if (sourceIndex === -1 || blockId === targetId) return;
+      var moved = page.blocks.splice(sourceIndex, 1)[0];
+      var targetIndex = targetId ? page.blocks.findIndex(function (block) { return block.id === targetId; }) : page.blocks.length;
+      if (targetIndex < 0) targetIndex = page.blocks.length;
+      if (placeAfter && targetIndex < page.blocks.length) targetIndex += 1;
+      page.blocks.splice(Math.max(0, Math.min(page.blocks.length, targetIndex)), 0, moved);
+      _crmInvoiceBuilderSelectedBlockId = moved.id;
+      crmSyncInvoiceDesignerOverlay();
+    }
+
+    function crmUpdateInvoiceBuilderProperty(property, field) {
+      var block = crmFindInvoiceBuilderBlock(_crmInvoiceBuilderSelectedBlockId);
+      if (!block || !field) return;
+      if (property === 'bold') block.bold = !!field.checked;
+      else if (property === 'width') {
+        var width = parseInt(field.value, 10);
+        if ([3,4,6,8,9,12].indexOf(width) !== -1) block.width = width;
+      } else if (property === 'fontSize') {
+        block.fontSize = Math.max(8, Math.min(36, parseInt(field.value, 10) || 12));
+      } else if (property === 'align') {
+        if (['left','center','right'].indexOf(field.value) !== -1) block.align = field.value;
+      } else if (property === 'label') {
+        block.label = String(field.value || crmGetInvoiceBuilderDefinition(block.type).label).trim() || crmGetInvoiceBuilderDefinition(block.type).label;
+      }
+      crmSyncInvoiceDesignerOverlay();
+    }
 
     function crmCanEditJobInvoice(lead) {
       if (!crmCanViewJobFileLead(lead)) return false;
       var role = String(crmGetRole() || '').trim();
-      if (role === 'Sales Rep') return false;
+      if (role === 'Sales Rep') return crmGetFinancialWorksheetPermissionFlag('editFinancialWorksheet');
       if (role === 'Owner') return true;
       return crmCanEditFinancialWorksheet(lead) || crmGetFinancialWorksheetPermissionFlag('createInvoices');
     }
@@ -59460,7 +60573,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return {
         totalRcv: metrics.totalRcv,
         totalWorkNotBeingDone: metrics.totalWorkNotBeingDone,
-        invoiceTotal: metrics.completedWorkInvoice,
+        invoiceTotal: metrics.completedWorkInvoice - metrics.totalCredits,
         deductible: metrics.deductible,
         paymentsReceived: metrics.totalPaymentsReceived,
         totalCredits: metrics.totalCredits,
@@ -59468,23 +60581,87 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       };
     }
 
+    function crmGetJobInvoiceClaimRows(financialWorksheet) {
+      financialWorksheet = financialWorksheet || {};
+      var savedRows = (Array.isArray(financialWorksheet.claimRows) ? financialWorksheet.claimRows : []).map(crmNormalizeJobInvoiceClaimRow);
+      var totalRow = savedRows.find(function (row) { return row.kind === 'total_rcv'; }) || crmNormalizeJobInvoiceClaimRow({
+        kind: 'total_rcv',
+        description: 'Total cost of all repairs'
+      });
+      totalRow.kind = 'total_rcv';
+      totalRow.description = totalRow.description || 'Total cost of all repairs';
+      totalRow.amount = String(financialWorksheet.insuranceBreakdown && financialWorksheet.insuranceBreakdown.totalRcv || totalRow.amount || '').trim();
+      var detailRows = savedRows.filter(function (row) {
+        return row.kind === 'detail' || row.kind === 'work_completed' || row.kind === 'supplement';
+      });
+      var reductionKindsById = {};
+      savedRows.forEach(function (row) {
+        if (row.kind === 'work_not_completed' || row.kind === 'approved_reduction') reductionKindsById[row.id] = row.kind;
+      });
+      var reductionRows = (Array.isArray(financialWorksheet.workNotBeingDone) ? financialWorksheet.workNotBeingDone : []).map(function (item) {
+        return crmNormalizeJobInvoiceClaimRow({
+          id: item.id,
+          kind: reductionKindsById[item.id] || 'work_not_completed',
+          description: item.description,
+          amount: item.amount
+        });
+      });
+      return [totalRow].concat(detailRows, reductionRows);
+    }
+
+    function crmRenderJobInvoiceClaimRow(item, canEdit) {
+      item = crmNormalizeJobInvoiceClaimRow(item);
+      if (!canEdit) {
+        return '<tr><td class="jf-invoice-plain-description">' + crmEscapeHtml(item.description || '—') + '</td><td>' + crmEscapeHtml(crmFormatMoney(item.amount || 0)) + '</td></tr>';
+      }
+      var isTotal = item.kind === 'total_rcv';
+      var kindOptions = [
+        { value: 'detail', label: 'Included claim detail' },
+        { value: 'work_completed', label: 'Work completed (included)' },
+        { value: 'supplement', label: 'Supplement (included)' },
+        { value: 'work_not_completed', label: 'Work not completed (subtract)' },
+        { value: 'approved_reduction', label: 'Approved reduction / credit (subtract)' }
+      ];
+      var kindControl = isTotal
+        ? '<input class="jf-invoice-claim-kind" type="hidden" value="total_rcv" /><span class="jf-invoice-claim-kind-label">Total RCV</span>'
+        : '<select class="jf-invoice-claim-kind" aria-label="Claim row calculation type">' + kindOptions.map(function (option) {
+            return '<option value="' + option.value + '"' + (item.kind === option.value ? ' selected' : '') + '>' + option.label + '</option>';
+          }).join('') + '</select>';
+      return '<tr class="jf-invoice-claim-row" data-jf-invoice-claim-id="' + crmEscapeHtml(item.id) + '">' +
+        '<td class="jf-invoice-print-source" data-jf-invoice-print-format="text"><textarea class="jf-invoice-claim-description" rows="2" placeholder="Claim description">' + crmEscapeHtml(item.description || '') + '</textarea>' + kindControl + '<span class="jf-invoice-print-value">' + crmEscapeHtml(item.description || '—') + '</span></td>' +
+        '<td class="jf-invoice-print-source" data-jf-invoice-print-format="money"><input' + (isTotal ? ' id="jf-invoice-total-rcv"' : '') + ' class="jf-invoice-claim-amount' + (isTotal ? ' jf-invoice-rcv-input' : '') + '" type="text" inputmode="decimal" value="' + crmEscapeHtml(item.amount || '') + '" placeholder="0.00" /><span class="jf-invoice-print-value">' + crmEscapeHtml(crmFormatMoney(item.amount || 0)) + '</span></td>' +
+        '<td class="jf-invoice-remove-cell jf-invoice-edit-only">' + (isTotal ? '' : '<button class="jf-invoice-icon-btn" type="button" data-jf-invoice-remove-line aria-label="Remove claim line">−</button>') + '</td></tr>';
+    }
+
     function crmRenderJobInvoiceAdjustmentRow(item, canEdit) {
+      if (!canEdit) {
+        return '<tr><td class="jf-invoice-plain-description">' + crmEscapeHtml(item.description || '—') + '</td><td>' + crmEscapeHtml(crmFormatMoney(item.amount || 0)) + '</td></tr>';
+      }
       var disabled = canEdit ? '' : ' disabled';
       return '<tr class="jf-invoice-adjustment-row" data-jf-invoice-adjustment-id="' + crmEscapeHtml(item.id || crmGenId()) + '">' +
-        '<td><textarea class="jf-invoice-adjustment-description" rows="2" placeholder="Work not completed, supplement, credit, or claim adjustment"' + disabled + '>' + crmEscapeHtml(item.description || '') + '</textarea></td>' +
-        '<td><input class="jf-invoice-adjustment-amount" type="text" inputmode="decimal" value="' + crmEscapeHtml(item.amount || '') + '" placeholder="0.00"' + disabled + ' /></td>' +
+        '<td class="jf-invoice-print-source" data-jf-invoice-print-format="text"><textarea class="jf-invoice-adjustment-description" rows="2" placeholder="Work not completed, supplement, credit, or claim adjustment"' + disabled + '>' + crmEscapeHtml(item.description || '') + '</textarea><span class="jf-invoice-print-value">' + crmEscapeHtml(item.description || '—') + '</span></td>' +
+        '<td class="jf-invoice-print-source" data-jf-invoice-print-format="money"><input class="jf-invoice-adjustment-amount" type="text" inputmode="decimal" value="' + crmEscapeHtml(item.amount || '') + '" placeholder="0.00"' + disabled + ' /><span class="jf-invoice-print-value">' + crmEscapeHtml(crmFormatMoney(item.amount || 0)) + '</span></td>' +
         '<td class="jf-invoice-remove-cell jf-invoice-edit-only"><button class="jf-invoice-icon-btn" type="button" data-jf-invoice-remove-line aria-label="Remove line item">−</button></td></tr>';
     }
 
     function crmRenderJobInvoicePaymentRow(payment, canEdit) {
+      if (!canEdit) {
+        return '<div class="jf-invoice-payment-row">' +
+          '<div class="jf-invoice-printed-field"><div class="jf-invoice-printed-field-label">Payment Type / Label</div><div class="jf-invoice-printed-field-value">' + crmEscapeHtml(payment.paymentType || 'Payment') + '</div></div>' +
+          '<div class="jf-invoice-printed-field"><div class="jf-invoice-printed-field-label">Amount</div><div class="jf-invoice-printed-field-value">' + crmEscapeHtml(crmFormatMoney(payment.amount || 0)) + '</div></div>' +
+          '<div class="jf-invoice-printed-field"><div class="jf-invoice-printed-field-label">Date Received</div><div class="jf-invoice-printed-field-value">' + crmEscapeHtml(payment.paymentDate ? crmFormatDateShort(payment.paymentDate) : '—') + '</div></div>' +
+          '<div class="jf-invoice-printed-field"><div class="jf-invoice-printed-field-label">Check / ACH / Reference #</div><div class="jf-invoice-printed-field-value">' + crmEscapeHtml(payment.referenceNumber || '—') + '</div></div>' +
+          (payment.notes ? '<div class="jf-invoice-printed-field jf-invoice-payment-notes-print"><div class="jf-invoice-printed-field-label">Payment Notes</div><div class="jf-invoice-printed-field-value">' + crmEscapeHtml(payment.notes) + '</div></div>' : '') + '</div>';
+      }
       var disabled = canEdit ? '' : ' disabled';
       var types = ['First Insurance Check', 'Depreciation Check', 'Supplemental Payment', 'Homeowner Payment', 'Credit / Adjustment', 'Other'];
       var options = types.map(function (type) { return '<option value="' + type + '"' + (payment.paymentType === type ? ' selected' : '') + '>' + type + '</option>'; }).join('');
-      return '<div class="jf-invoice-payment-row" data-jf-invoice-payment-id="' + crmEscapeHtml(payment.id || crmGenId()) + '" data-jf-invoice-payment-notes="' + crmEscapeHtml(payment.notes || '') + '">' +
-        '<div class="jf-invoice-field"><label>Payment Type / Label</label><select class="jf-invoice-payment-type"' + disabled + '>' + options + '</select></div>' +
-        '<div class="jf-invoice-field"><label>Amount</label><input class="jf-invoice-payment-amount" type="text" inputmode="decimal" value="' + crmEscapeHtml(payment.amount || '') + '" placeholder="0.00"' + disabled + ' /></div>' +
-        '<div class="jf-invoice-field"><label>Date Received</label><input class="jf-invoice-payment-date" type="date" value="' + crmEscapeHtml(payment.paymentDate || '') + '"' + disabled + ' /></div>' +
-        '<div class="jf-invoice-field"><label>Check / ACH / Reference #</label><input class="jf-invoice-payment-reference" type="text" value="' + crmEscapeHtml(payment.referenceNumber || '') + '"' + disabled + ' /></div>' +
+      return '<div class="jf-invoice-payment-row" data-jf-invoice-payment-id="' + crmEscapeHtml(payment.id || crmGenId()) + '">' +
+        '<div class="jf-invoice-field jf-invoice-print-source" data-jf-invoice-print-format="text"><label>Payment Type / Label</label><select class="jf-invoice-payment-type"' + disabled + '>' + options + '</select><span class="jf-invoice-print-value">' + crmEscapeHtml(payment.paymentType || 'Payment') + '</span></div>' +
+        '<div class="jf-invoice-field jf-invoice-print-source" data-jf-invoice-print-format="money"><label>Amount</label><input class="jf-invoice-payment-amount" type="text" inputmode="decimal" value="' + crmEscapeHtml(payment.amount || '') + '" placeholder="0.00"' + disabled + ' /><span class="jf-invoice-print-value">' + crmEscapeHtml(crmFormatMoney(payment.amount || 0)) + '</span></div>' +
+        '<div class="jf-invoice-field jf-invoice-print-source" data-jf-invoice-print-format="date"><label>Date Received</label><input class="jf-invoice-payment-date" type="date" value="' + crmEscapeHtml(payment.paymentDate || '') + '"' + disabled + ' /><span class="jf-invoice-print-value">' + crmEscapeHtml(payment.paymentDate ? crmFormatDateShort(payment.paymentDate) : '—') + '</span></div>' +
+        '<div class="jf-invoice-field jf-invoice-print-source" data-jf-invoice-print-format="text"><label>Check / ACH / Reference #</label><input class="jf-invoice-payment-reference" type="text" value="' + crmEscapeHtml(payment.referenceNumber || '') + '"' + disabled + ' /><span class="jf-invoice-print-value">' + crmEscapeHtml(payment.referenceNumber || '—') + '</span></div>' +
+        '<div class="jf-invoice-field jf-invoice-print-source jf-invoice-payment-notes-print" data-jf-invoice-print-format="text"><label>Payment Notes</label><input class="jf-invoice-payment-notes" type="text" value="' + crmEscapeHtml(payment.notes || '') + '" placeholder="Optional notes"' + disabled + ' /><span class="jf-invoice-print-value">' + crmEscapeHtml(payment.notes || '') + '</span></div>' +
         (canEdit ? '<button class="jf-invoice-icon-btn jf-invoice-edit-only" type="button" data-jf-invoice-remove-payment aria-label="Remove payment">−</button>' : '') + '</div>';
     }
 
@@ -59493,9 +60670,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var disabled = canEdit ? '' : ' disabled';
       var invoice = crmGetDefaultJobInvoiceData(jobFile.invoice || {}, lead);
       var company = typeof crmGetCompanyProfile === 'function' ? crmGetCompanyProfile() : {};
-      var logoDataUrl = _crmInvoiceLogoDraftDataUrl || invoice.logoDataUrl || company.logoDataUrl || '';
+      var logoDataUrl = company.logoDataUrl || '';
       var companyAddress = [company.street, company.city, company.state, company.zip].filter(Boolean).join(', ');
       var payments = (jobFile.financialWorksheet.paymentsReceived || []).slice().sort(function (a, b) { return String(b.paymentDate || '').localeCompare(String(a.paymentDate || '')); });
+      var claimRows = crmGetJobInvoiceClaimRows(jobFile.financialWorksheet || {});
       var metrics = crmGetJobInvoiceMetrics(jobFile);
       var status = Math.abs(metrics.totalDue) < 0.005 ? 'Paid in Full / Balanced' : (metrics.totalDue < 0 ? 'Overpaid / Review Entries' : 'Balance Remaining');
       var html = '<div class="jf-invoice-shell">';
@@ -59591,6 +60769,189 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return html;
     }
 
+    function crmRenderPrintedJobInvoiceHtmlLegacy(lead, jobFile) {
+      var canEdit = crmCanEditJobInvoice(lead);
+      var disabled = canEdit ? '' : ' disabled';
+      var invoice = crmGetDefaultJobInvoiceData(jobFile.invoice || {}, lead);
+      var company = typeof crmGetCompanyProfile === 'function' ? crmGetCompanyProfile() : {};
+      var logoDataUrl = _crmInvoiceLogoDraftDataUrl || invoice.logoDataUrl || company.logoDataUrl || '';
+      var companyAddress = [company.street, company.city, company.state, company.zip].filter(Boolean).join(', ');
+      var companyContact = [company.phone, company.email].filter(Boolean).join(' · ');
+      var hasCompanyInfo = !!(company.companyName || companyAddress || companyContact);
+      var claimNumber = String(jobFile.insurance && jobFile.insurance.claimNumber || lead.claimNumber || '').trim();
+      var payments = (jobFile.financialWorksheet.paymentsReceived || []).slice().sort(function (a, b) { return String(b.paymentDate || '').localeCompare(String(a.paymentDate || '')); });
+      var metrics = crmGetJobInvoiceMetrics(jobFile);
+      var status = Math.abs(metrics.totalDue) < 0.005 ? 'Paid In Full / Balanced' : (metrics.totalDue < 0 ? 'Overpaid / Review Entries' : 'Balance Remaining');
+      function printedField(label, value, extraClass) {
+        return '<div class="jf-invoice-printed-field' + (extraClass ? ' ' + extraClass : '') + '"><div class="jf-invoice-printed-field-label">' + crmEscapeHtml(label) + '</div><div class="jf-invoice-printed-field-value">' + crmEscapeHtml(value || '—') + '</div></div>';
+      }
+      var html = '<div class="jf-invoice-shell"><div class="jf-invoice-actions"><button class="btn" type="button" data-jf-invoice-print>Print Invoice</button><button class="btn" type="button" data-jf-invoice-pdf>Save as PDF</button>';
+      if (canEdit) html += '<button class="btn btn-primary" type="button" data-jf-invoice-save>Save Invoice</button>';
+      html += '</div>';
+      if (!canEdit) html += '<div class="jf-invoice-view-only">View Only — You do not have permission to edit this invoice.</div>';
+      html += '<article class="jf-invoice-paper jf-invoice-print-form" aria-label="Invoice"><div class="jf-invoice-top"><div><label class="jf-invoice-logo-box' + (logoDataUrl ? ' has-logo' : '') + (canEdit ? '' : ' is-readonly') + '" for="jf-invoice-logo-input">';
+      html += logoDataUrl ? '<img src="' + crmEscapeHtml(logoDataUrl) + '" alt="Company logo" />' : '<span>DROP A FILE OR<br>CLICK TO UPLOAD<br>YOUR COMPANY<br>LOGO HERE</span>';
+      html += '</label><input id="jf-invoice-logo-input" type="file" accept="image/*" hidden' + disabled + ' /></div><div class="jf-invoice-right-header">';
+      html += printedField('Claim Number', claimNumber || 'Not provided', 'jf-invoice-claim-number') + '<div class="jf-invoice-meta-grid">';
+      html += printedField('Invoice Date', invoice.invoiceDate ? crmFormatDateShort(invoice.invoiceDate) : 'Not provided');
+      html += printedField('Invoice #', invoice.invoiceNumber || 'Not provided');
+      html += printedField('Due Date', invoice.dueDate || 'Upon Receipt');
+      html += printedField('Sales Rep', lead.assignedRep || 'Unassigned') + '</div></div></div>';
+      var billToLines = [crmGetJobFileLeadName(lead), crmGetJobFileLeadAddress(lead), lead.phone || lead.primaryPhone || '', lead.email || ''].filter(Boolean);
+      html += '<section class="jf-invoice-bill"><div class="jf-invoice-section-label">BILL TO</div><div class="jf-invoice-bill-lines">' + billToLines.map(function (line) { return '<div>' + crmEscapeHtml(line) + '</div>'; }).join('') + '</div></section>';
+      html += '<section><h2 class="jf-invoice-claim-title">Insurance Claim</h2><table class="jf-invoice-table"><thead><tr><th>Description</th><th>Amount</th>' + (canEdit ? '<th class="jf-invoice-remove-cell"></th>' : '') + '</tr></thead><tbody id="jf-invoice-claim-lines">';
+      html += '<tr><td>Total Replacement Cost Value (RCV)</td><td data-jf-invoice-base-rcv>' + crmEscapeHtml(crmFormatMoney(metrics.totalRcv)) + '</td>' + (canEdit ? '<td class="jf-invoice-remove-cell"></td>' : '') + '</tr>';
+      (jobFile.financialWorksheet.workNotBeingDone || []).forEach(function (item) { html += crmRenderJobInvoiceAdjustmentRow(item, canEdit); });
+      html += '</tbody></table>';
+      if (canEdit) html += '<button class="jf-invoice-icon-btn jf-invoice-add-row jf-invoice-edit-only" type="button" data-jf-invoice-add-line aria-label="Add claim line">+</button>';
+      html += '</section><div class="jf-invoice-summary-grid"><div class="jf-invoice-remit"><strong>Remit Payment To:</strong><br>';
+      html += hasCompanyInfo ? [company.companyName, companyAddress, companyContact, company.paymentInstructions || company.remitInstructions].filter(Boolean).map(crmEscapeHtml).join('<br>') : 'Company information has not been added in Settings.';
+      html += '</div><div class="jf-invoice-totals">';
+      [['TOTAL INITIAL CLAIM:', 'totalRcv'], ['INVOICE TOTAL:', 'invoiceTotal'], ['DEDUCTIBLE:', 'deductible']].forEach(function (row) {
+        html += '<div class="jf-invoice-total-row' + (row[1] === 'deductible' ? ' jf-invoice-print-only' : '') + '"><span>' + row[0] + '</span><span class="jf-invoice-total-value" data-jf-invoice-metric="' + row[1] + '">' + crmEscapeHtml(crmFormatMoney(metrics[row[1]])) + '</span></div>';
+      });
+      html += '<div class="jf-invoice-payment-heading">PAYMENTS/CREDITS</div><div class="jf-invoice-payment-list" id="jf-invoice-payment-lines">';
+      payments.forEach(function (payment) { html += crmRenderJobInvoicePaymentRow(payment, canEdit); });
+      html += '</div>';
+      if (canEdit) html += '<button class="jf-invoice-icon-btn jf-invoice-add-payment jf-invoice-edit-only" type="button" data-jf-invoice-add-payment aria-label="Add payment">+</button>';
+      html += '<div class="jf-invoice-total-row jf-invoice-print-only"><span>PAYMENTS/CREDITS:</span><span class="jf-invoice-total-value" data-jf-invoice-metric="totalCredits">' + crmEscapeHtml(crmFormatMoney(metrics.totalCredits)) + '</span></div>';
+      html += '<div class="jf-invoice-total-row"><span>TOTAL RECEIVED:</span><span class="jf-invoice-total-value" data-jf-invoice-metric="paymentsReceived">' + crmEscapeHtml(crmFormatMoney(metrics.paymentsReceived)) + '</span></div>';
+      html += '<div class="jf-invoice-total-row is-due"><span>TOTAL DUE:</span><span class="jf-invoice-total-value" data-jf-invoice-metric="totalDue">' + crmEscapeHtml(crmFormatMoney(metrics.totalDue)) + '</span><span class="jf-invoice-balance-status" data-jf-invoice-status>' + crmEscapeHtml(status) + '</span></div></div></div>';
+      html += '<section class="jf-invoice-notes"><div class="jf-invoice-section-label">NOTE:</div>' + (canEdit ? '<div class="jf-invoice-print-source" data-jf-invoice-print-format="text"><textarea id="jf-invoice-notes" placeholder="Invoice notes">' + crmEscapeHtml(invoice.notes) + '</textarea><div class="jf-invoice-print-value">' + crmEscapeHtml(invoice.notes || '') + '</div></div>' : '<div class="jf-invoice-plain-notes">' + crmEscapeHtml(invoice.notes || '') + '</div>') + '</section></article></div>';
+      return html;
+    }
+
+    function crmRenderInvoicePrintedFieldHtml(label, value, extraClass) {
+      return '<div class="jf-invoice-printed-field' + (extraClass ? ' ' + extraClass : '') + '"><div class="jf-invoice-printed-field-label">' + crmEscapeHtml(label) + '</div><div class="jf-invoice-printed-field-value">' + crmEscapeHtml(value || '—') + '</div></div>';
+    }
+
+    function crmRenderInvoiceEditFieldHtml(label, id, value, type, extraClass) {
+      var displayValue = type === 'date' && value ? crmFormatDateShort(value) : (value || '—');
+      return '<div class="jf-invoice-printed-field jf-invoice-edit-field jf-invoice-print-source' + (extraClass ? ' ' + extraClass : '') + '" data-jf-invoice-print-format="' + (type === 'date' ? 'date' : 'text') + '"><div class="jf-invoice-printed-field-label">' + crmEscapeHtml(label) + '</div><input id="' + crmEscapeHtml(id) + '" type="' + crmEscapeHtml(type || 'text') + '" value="' + crmEscapeHtml(value || '') + '" /><div class="jf-invoice-print-value">' + crmEscapeHtml(displayValue) + '</div></div>';
+    }
+
+    function crmRenderInvoiceMetricRowHtml(label, key, metrics, extraClass) {
+      return '<div class="jf-invoice-total-row' + (extraClass ? ' ' + extraClass : '') + '"><span>' + crmEscapeHtml(label) + '</span><span class="jf-invoice-total-value" data-jf-invoice-metric="' + key + '">' + crmEscapeHtml(crmFormatMoney(metrics[key])) + '</span></div>';
+    }
+
+    function crmRenderInvoiceDescriptionBlockHtml(block, context) {
+      var type = block.type;
+      var addKind = type === 'supplements' ? 'supplement' : (type === 'description_of_work' ? 'work_completed' : 'detail');
+      var rows = context.claimRows.filter(function (row) { return crmGetInvoiceClaimGroup(row.kind) === type; });
+      if (!rows.length && context.isEditing) rows = [crmNormalizeJobInvoiceClaimRow({ kind: addKind })];
+      var html = '<h2 class="jf-invoice-claim-title">' + crmEscapeHtml(block.label) + '</h2><table class="jf-invoice-table"><thead><tr><th>Description</th><th>Amount</th>' + (context.isEditing ? '<th class="jf-invoice-remove-cell"></th>' : '') + '</tr></thead><tbody data-jf-invoice-row-group="' + type + '">';
+      rows.forEach(function (item) { html += crmRenderJobInvoiceClaimRow(item, context.isEditing); });
+      html += '</tbody></table>';
+      if (context.isEditing) html += '<button class="jf-invoice-icon-btn jf-invoice-add-row jf-invoice-edit-only" type="button" data-jf-invoice-add-line="' + addKind + '" data-jf-invoice-row-target="' + type + '" aria-label="Add ' + crmEscapeHtml(block.label) + ' row">+</button>';
+      return html;
+    }
+
+    function crmRenderSavedInvoiceBlockHtml(block, context) {
+      var type = block.type;
+      var style = 'grid-column:span ' + block.width + ';text-align:' + block.align + ';font-size:' + block.fontSize + 'px;font-weight:' + (block.bold ? '700' : '400') + ';';
+      var className = 'jf-invoice-layout-block jf-invoice-layout-block-' + type;
+      var html = '';
+      if (type === 'company_logo') {
+        html = '<div class="jf-invoice-logo-box is-readonly' + (context.logoDataUrl ? ' has-logo' : ' no-logo') + '">' + (context.logoDataUrl ? '<img src="' + crmEscapeHtml(context.logoDataUrl) + '" alt="Company logo" />' : '<span>Company logo not set in Settings</span>') + '</div>';
+      } else if (type === 'invoice_title') {
+        html = '<div class="jf-invoice-document-title">' + crmEscapeHtml(block.label || 'Invoice') + '</div>';
+      } else if (type === 'claim_number') {
+        html = context.isEditing ? crmRenderInvoiceEditFieldHtml(block.label, 'jf-invoice-claim-number-input', context.claimNumber, 'text', 'jf-invoice-claim-number') : crmRenderInvoicePrintedFieldHtml(block.label, context.claimNumber || 'Not provided', 'jf-invoice-claim-number');
+      } else if (type === 'invoice_date') {
+        html = context.isEditing ? crmRenderInvoiceEditFieldHtml(block.label, 'jf-invoice-date', context.invoice.invoiceDate, 'date') : crmRenderInvoicePrintedFieldHtml(block.label, context.invoice.invoiceDate ? crmFormatDateShort(context.invoice.invoiceDate) : 'Not provided');
+      } else if (type === 'invoice_number') {
+        html = context.isEditing ? crmRenderInvoiceEditFieldHtml(block.label, 'jf-invoice-number', context.invoice.invoiceNumber, 'text') : crmRenderInvoicePrintedFieldHtml(block.label, context.invoice.invoiceNumber || 'Not provided');
+      } else if (type === 'due_date') {
+        html = context.isEditing ? crmRenderInvoiceEditFieldHtml(block.label, 'jf-invoice-due-date', context.invoice.dueDate, 'text') : crmRenderInvoicePrintedFieldHtml(block.label, context.invoice.dueDate || 'Upon Receipt');
+      } else if (type === 'sales_rep') {
+        html = crmRenderInvoicePrintedFieldHtml(block.label, context.lead.assignedRep || 'Unassigned');
+      } else if (type === 'bill_to') {
+        html = '<section class="jf-invoice-bill"><div class="jf-invoice-section-label">' + crmEscapeHtml(block.label) + '</div><div class="jf-invoice-bill-lines">' + context.billToLines.map(function (line) { return '<div>' + crmEscapeHtml(line) + '</div>'; }).join('') + '</div></section>';
+      } else if (type === 'description_of_work' || type === 'insurance_claim' || type === 'supplements') {
+        className += ' jf-invoice-layout-block-section';
+        html = crmRenderInvoiceDescriptionBlockHtml(block, context);
+      } else if (type === 'remit_payment_to') {
+        html = '<div class="jf-invoice-remit"><strong>' + crmEscapeHtml(block.label) + ':</strong><br>' + (context.companyLines.length ? context.companyLines.map(crmEscapeHtml).join('<br>') : 'Company information has not been added in Settings.') + '</div>';
+      } else if (type === 'payments_credits') {
+        html = '<div class="jf-invoice-payment-heading">' + crmEscapeHtml(block.label) + '</div><div class="jf-invoice-payment-list" id="jf-invoice-payment-lines">';
+        context.payments.forEach(function (payment) { html += crmRenderJobInvoicePaymentRow(payment, context.isEditing); });
+        if (!context.payments.length && !context.isEditing) html += '<div class="jf-invoice-payment-empty">No payments or credits recorded.</div>';
+        html += '</div>';
+        if (context.isEditing) html += '<button class="jf-invoice-icon-btn jf-invoice-add-payment jf-invoice-edit-only" type="button" data-jf-invoice-add-payment aria-label="Add payment or credit">+</button>';
+        html += crmRenderInvoiceMetricRowHtml('PAYMENTS/CREDITS:', 'totalCredits', context.metrics);
+      } else if (type === 'deductible') {
+        className += ' jf-invoice-layout-block-total';
+        if (context.isEditing) html = '<div class="jf-invoice-total-row"><span>' + crmEscapeHtml(block.label) + ':</span><span class="jf-invoice-total-value jf-invoice-print-source" data-jf-invoice-print-format="money"><input id="jf-invoice-deductible" class="jf-invoice-deductible-input" type="text" inputmode="decimal" value="' + crmEscapeHtml(context.jobFile.financialWorksheet.insuranceBreakdown.deductible || '') + '" placeholder="0.00" /><span class="jf-invoice-print-value">' + crmEscapeHtml(crmFormatMoney(context.metrics.deductible)) + '</span></span></div>';
+        else html = crmRenderInvoiceMetricRowHtml(block.label + ':', 'deductible', context.metrics);
+      } else if (type === 'total_initial_claim') {
+        className += ' jf-invoice-layout-block-total';
+        html = crmRenderInvoiceMetricRowHtml(block.label + ':', 'totalRcv', context.metrics);
+      } else if (type === 'work_not_completed') {
+        className += ' jf-invoice-layout-block-total';
+        html = crmRenderInvoiceMetricRowHtml(block.label + ':', 'totalWorkNotBeingDone', context.metrics);
+      } else if (type === 'invoice_total') {
+        className += ' jf-invoice-layout-block-total';
+        html = crmRenderInvoiceMetricRowHtml(block.label + ':', 'invoiceTotal', context.metrics);
+      } else if (type === 'total_received') {
+        className += ' jf-invoice-layout-block-total';
+        html = crmRenderInvoiceMetricRowHtml(block.label + ':', 'paymentsReceived', context.metrics);
+      } else if (type === 'balance_due') {
+        className += ' jf-invoice-layout-block-total';
+        html = crmRenderInvoiceMetricRowHtml(block.label + ':', 'totalDue', context.metrics, 'is-due') + '<div class="jf-invoice-balance-status" data-jf-invoice-status>' + crmEscapeHtml(context.status) + '</div>';
+      } else if (type === 'notes') {
+        html = '<section class="jf-invoice-notes"><div class="jf-invoice-section-label">' + crmEscapeHtml(block.label) + '</div>';
+        if (context.isEditing) html += '<div class="jf-invoice-print-source" data-jf-invoice-print-format="text"><textarea id="jf-invoice-notes" placeholder="Invoice notes">' + crmEscapeHtml(context.invoice.notes) + '</textarea><div class="jf-invoice-print-value">' + crmEscapeHtml(context.invoice.notes || '') + '</div></div>';
+        else html += '<div class="jf-invoice-plain-notes">' + (context.invoice.notes ? crmEscapeHtml(context.invoice.notes) : '&nbsp;') + '</div>';
+        html += '</section>';
+      } else if (type === 'divider') {
+        html = '<div class="jf-invoice-layout-divider"></div>';
+      } else if (type === 'spacer') {
+        html = '<div class="jf-invoice-layout-spacer"></div>';
+      } else {
+        html = '<div>' + crmEscapeHtml(block.label) + '</div>';
+      }
+      return '<div class="' + className + '" style="' + style + '" data-invoice-layout-type="' + crmEscapeHtml(type) + '">' + html + '</div>';
+    }
+
+    function crmRenderPrintedJobInvoiceHtml(lead, jobFile) {
+      var canEdit = crmCanEditJobInvoice(lead);
+      var isEditing = canEdit && _crmInvoiceEditMode;
+      var invoice = crmGetDefaultJobInvoiceData(jobFile.invoice || {}, lead);
+      var company = typeof crmGetCompanyProfile === 'function' ? crmGetCompanyProfile() : {};
+      var companyAddress = [company.street, company.city, company.state, company.zip].filter(Boolean).join(', ');
+      var companyContact = [company.phone, company.email].filter(Boolean).join(' · ');
+      var payments = (jobFile.financialWorksheet.paymentsReceived || []).slice().sort(function (a, b) { return String(b.paymentDate || '').localeCompare(String(a.paymentDate || '')); });
+      var metrics = crmGetJobInvoiceMetrics(jobFile);
+      var context = {
+        lead: lead,
+        jobFile: jobFile,
+        isEditing: isEditing,
+        invoice: invoice,
+        company: company,
+        logoDataUrl: company.logoDataUrl || '',
+        claimNumber: String(jobFile.insurance && jobFile.insurance.claimNumber || lead.claimNumber || '').trim(),
+        billToLines: [crmGetJobFileLeadName(lead), crmGetJobFileLeadAddress(lead), lead.phone || lead.primaryPhone || '', lead.email || ''].filter(Boolean),
+        companyLines: [company.companyName, companyAddress, companyContact, company.paymentInstructions || company.remitInstructions].filter(Boolean),
+        payments: payments,
+        claimRows: crmGetJobInvoiceClaimRows(jobFile.financialWorksheet || {}),
+        metrics: metrics,
+        status: Math.abs(metrics.totalDue) < 0.005 ? 'Paid in Full / Balanced' : (metrics.totalDue < 0 ? 'Overpaid / Review Entries' : 'Balance Remaining')
+      };
+      var layout = crmGetSavedInvoiceLayout();
+      var html = '<div class="jf-invoice-shell"><div class="jf-invoice-actions">';
+      if (isEditing) html += '<span class="jf-invoice-editing-note">Editing invoice and shared financial worksheet values</span>';
+      html += '<button class="btn" type="button" data-jf-invoice-print>Print Invoice</button><button class="btn" type="button" data-jf-invoice-pdf>Save as PDF</button>';
+      if (crmCanManageInvoiceTemplates() && !isEditing) html += '<button class="btn" type="button" data-invoice-builder-open>Customize Invoice</button>';
+      if (canEdit && !isEditing) html += '<button class="btn btn-primary" type="button" data-jf-invoice-edit>Edit Invoice</button>';
+      if (isEditing) html += '<button class="btn" type="button" data-jf-invoice-cancel>Cancel</button><button class="btn btn-primary" type="button" data-jf-invoice-save>Save Invoice</button>';
+      html += '</div>';
+      if (!canEdit) html += '<div class="jf-invoice-view-only">View Only — You do not have permission to edit this invoice.</div>';
+      html += '<article class="jf-invoice-paper jf-invoice-print-form jf-invoice-layout-page' + (isEditing ? ' is-editing' : '') + '" aria-label="Invoice">';
+      layout.page.blocks.forEach(function (block) { html += crmRenderSavedInvoiceBlockHtml(block, context); });
+      html += '</article></div>';
+      return html;
+    }
+
     function crmRenderJobFileTabContent(lead, jobFile, feed) {
       if (_crmJobFileActiveTab === 'contacts') return crmRenderJobFileContactsHtml(lead);
       if (_crmJobFileActiveTab === 'reports') return crmRenderJobFileReportsHtml(lead, jobFile);
@@ -59603,7 +60964,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (_crmJobFileActiveTab === 'calendar') return crmRenderJobFileCalendarHtml(lead);
       if (_crmJobFileActiveTab === 'tasks') return crmRenderJobFileTasksHtml(lead);
       if (_crmJobFileActiveTab === 'production') return crmRenderJobFileProductionHtml(lead);
-      if (_crmJobFileActiveTab === 'payments') return crmRenderFinalJobInvoiceHtml(lead, jobFile);
+      if (_crmJobFileActiveTab === 'payments') return crmRenderPrintedJobInvoiceHtml(lead, jobFile);
       if (_crmJobFileActiveTab === 'messages') return crmRenderJobFileMessagesHtml(lead);
       return crmRenderJobFileOverviewHtml(lead, jobFile, feed);
     }
@@ -59633,7 +60994,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       quickCard.hidden = true;
       tabContent.innerHTML = crmRenderJobFileTabContent(lead, jobFile, feed);
       if (_crmJobFileActiveTab === 'payments') {
-        tabContent.querySelectorAll('.jf-invoice-adjustment-description').forEach(function (field) {
+        tabContent.querySelectorAll('.jf-invoice-claim-description, #jf-invoice-notes').forEach(function (field) {
           field.style.height = 'auto';
           field.style.height = field.scrollHeight + 'px';
         });
@@ -59660,13 +61021,21 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         document.body.classList.toggle('crm-job-file-invoice-page-active', _crmJobFileActiveTab === 'payments');
       }
       crmRenderMiniDashboardShells(document.getElementById('page-crm-job-file'));
+      crmSyncInvoiceDesignerOverlay();
       return true;
     }
 
     function crmSwitchJobFileTab(tab) {
       if (CRM_JOB_FILE_TABS.indexOf(tab) === -1) tab = 'overview';
       _crmJobFileActiveTab = tab;
-      if (tab !== 'payments') _crmInvoiceLogoDraftDataUrl = '';
+      if (tab !== 'payments') {
+        _crmInvoiceLogoDraftDataUrl = '';
+        _crmInvoiceEditMode = false;
+        _crmInvoiceBuilderMode = false;
+        _crmInvoiceBuilderDraft = null;
+        _crmInvoiceBuilderSelectedBlockId = '';
+        _crmInvoiceBuilderPreviewMode = false;
+      }
       /* Reset documents hub category when switching away from documents */
       if (tab !== 'documents') _jfDocSelectedCategory = null;
       crmRenderJobFile();
@@ -59741,6 +61110,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       _crmCurrentJobFileLeadId = lead.id;
       _crmCurrentLeadId = lead.id;
       _crmInvoiceLogoDraftDataUrl = '';
+      _crmInvoiceEditMode = false;
+      _crmInvoiceBuilderMode = false;
+      _crmInvoiceBuilderDraft = null;
+      _crmInvoiceBuilderSelectedBlockId = '';
+      _crmInvoiceBuilderPreviewMode = false;
       _crmJobFileActiveTab = CRM_JOB_FILE_TABS.indexOf(initialTab) === -1 ? 'overview' : initialTab;
       _crmJobFileBackMode = 'lead';
       _crmJobFileBackPageId = 'page-lead-detail';
@@ -59915,35 +61289,51 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var lead = crmGetJobFileLeadById(_crmCurrentJobFileLeadId);
       if (!crmCanViewJobFileLead(lead)) return;
 
+      if (e.target.closest('[data-invoice-builder-open]')) { crmOpenInvoiceBuilder(); return; }
+
       var invoiceDateInput = e.target.closest('.jf-invoice-paper input[type="date"]');
       if (invoiceDateInput && !invoiceDateInput.disabled && typeof invoiceDateInput.showPicker === 'function') {
         try { invoiceDateInput.showPicker(); } catch (pickerError) {}
       }
 
-      if (e.target.closest('[data-jf-invoice-print]')) { window.print(); return; }
+      if (e.target.closest('[data-jf-invoice-print]')) { crmOpenJobInvoicePrintDialog(false); return; }
       if (e.target.closest('[data-jf-invoice-pdf]')) {
-        showUploadToast('Choose “Save as PDF” in the print window.');
-        window.print();
+        crmOpenJobInvoicePrintDialog(true);
+        return;
+      }
+      if (e.target.closest('[data-jf-invoice-edit]')) {
+        if (!crmCanEditJobInvoice(lead)) { showUploadToast('You do not have permission to edit this invoice.'); return; }
+        _crmInvoiceEditMode = true;
+        crmRenderJobFile();
+        return;
+      }
+      if (e.target.closest('[data-jf-invoice-cancel]')) {
+        _crmInvoiceEditMode = false;
+        _crmInvoiceLogoDraftDataUrl = '';
+        crmRenderJobFile();
         return;
       }
       if (e.target.closest('[data-jf-invoice-save]')) { crmSaveJobFileInvoice(lead); return; }
-      if (e.target.closest('[data-jf-invoice-add-line]')) {
-        if (!crmCanEditJobInvoice(lead)) { showUploadToast('You do not have permission to edit this invoice.'); return; }
-        var invoiceLines = document.getElementById('jf-invoice-claim-lines');
-        if (invoiceLines) invoiceLines.insertAdjacentHTML('beforeend', crmRenderJobInvoiceAdjustmentRow(crmNormalizeJobFileMoneyLineItem({}), true));
+      var addInvoiceLineBtn = e.target.closest('[data-jf-invoice-add-line]');
+      if (addInvoiceLineBtn) {
+        if (!crmCanEditJobInvoice(lead) || !_crmInvoiceEditMode) { showUploadToast('Open Edit Invoice before changing claim rows.'); return; }
+        var rowTarget = addInvoiceLineBtn.getAttribute('data-jf-invoice-row-target') || 'insurance_claim';
+        var rowKind = addInvoiceLineBtn.getAttribute('data-jf-invoice-add-line') || 'detail';
+        var invoiceLines = document.querySelector('[data-jf-invoice-row-group="' + rowTarget + '"]');
+        if (invoiceLines) invoiceLines.insertAdjacentHTML('beforeend', crmRenderJobInvoiceClaimRow(crmNormalizeJobInvoiceClaimRow({ kind: rowKind }), true));
         crmApplyJobInvoiceMetricDom();
         return;
       }
       var removeInvoiceLineBtn = e.target.closest('[data-jf-invoice-remove-line]');
       if (removeInvoiceLineBtn) {
-        if (!crmCanEditJobInvoice(lead)) { showUploadToast('You do not have permission to edit this invoice.'); return; }
-        var invoiceLine = removeInvoiceLineBtn.closest('.jf-invoice-adjustment-row');
+        if (!crmCanEditJobInvoice(lead) || !_crmInvoiceEditMode) { showUploadToast('Open Edit Invoice before changing claim rows.'); return; }
+        var invoiceLine = removeInvoiceLineBtn.closest('.jf-invoice-claim-row');
         if (invoiceLine) invoiceLine.remove();
         crmApplyJobInvoiceMetricDom();
         return;
       }
       if (e.target.closest('[data-jf-invoice-add-payment]')) {
-        if (!crmCanEditJobInvoice(lead)) { showUploadToast('You do not have permission to edit this invoice.'); return; }
+        if (!crmCanEditJobInvoice(lead) || !_crmInvoiceEditMode) { showUploadToast('Open Edit Invoice before changing payments.'); return; }
         var paymentLines = document.getElementById('jf-invoice-payment-lines');
         if (paymentLines) paymentLines.insertAdjacentHTML('beforeend', crmRenderJobInvoicePaymentRow(crmNormalizeFinancialWorksheetPayment({ paymentType: 'First Insurance Check' }), true));
         crmApplyJobInvoiceMetricDom();
@@ -59951,7 +61341,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
       var removeInvoicePaymentBtn = e.target.closest('[data-jf-invoice-remove-payment]');
       if (removeInvoicePaymentBtn) {
-        if (!crmCanEditJobInvoice(lead)) { showUploadToast('You do not have permission to edit this invoice.'); return; }
+        if (!crmCanEditJobInvoice(lead) || !_crmInvoiceEditMode) { showUploadToast('Open Edit Invoice before changing payments.'); return; }
         var paymentRow = removeInvoicePaymentBtn.closest('.jf-invoice-payment-row');
         if (paymentRow) paymentRow.remove();
         crmApplyJobInvoiceMetricDom();
@@ -60161,21 +61551,62 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
     });
 
+    document.addEventListener('click', function (e) {
+      var overlay = e.target.closest('#crm-invoice-designer-overlay');
+      if (!_crmInvoiceBuilderMode || !overlay) return;
+      if (e.target.closest('[data-invoice-builder-exit]')) { crmCloseInvoiceBuilder(); return; }
+      if (e.target.closest('[data-invoice-builder-save]')) { crmSaveInvoiceBuilderDefaultTemplate(); return; }
+      if (e.target.closest('[data-invoice-builder-preview]')) {
+        _crmInvoiceBuilderPreviewMode = !_crmInvoiceBuilderPreviewMode;
+        _crmInvoiceBuilderSelectedBlockId = '';
+        crmSyncInvoiceDesignerOverlay();
+        return;
+      }
+      if (e.target.closest('[data-invoice-builder-reset]')) {
+        _crmInvoiceBuilderDraft = crmCloneObject(crmGetDefaultInvoiceLayout());
+        _crmInvoiceBuilderSelectedBlockId = '';
+        _crmInvoiceBuilderPreviewMode = false;
+        crmSyncInvoiceDesignerOverlay();
+        return;
+      }
+      var addBuilderBlock = e.target.closest('[data-invoice-builder-add]');
+      if (addBuilderBlock) { crmAddInvoiceBuilderBlock(addBuilderBlock.getAttribute('data-invoice-builder-add') || 'text_field'); return; }
+      var removeBuilderBlock = e.target.closest('[data-invoice-builder-remove]');
+      if (removeBuilderBlock) { crmRemoveInvoiceBuilderBlock(removeBuilderBlock.getAttribute('data-invoice-builder-remove') || ''); return; }
+      var widthBuilderBlock = e.target.closest('[data-invoice-builder-cycle-width]');
+      if (widthBuilderBlock) { crmCycleInvoiceBuilderBlockWidth(widthBuilderBlock.getAttribute('data-invoice-builder-cycle-width') || ''); return; }
+      var selectBuilderBlock = e.target.closest('[data-invoice-builder-select]');
+      if (selectBuilderBlock && !_crmInvoiceBuilderPreviewMode) {
+        _crmInvoiceBuilderSelectedBlockId = selectBuilderBlock.getAttribute('data-invoice-builder-select') || '';
+        crmSyncInvoiceDesignerOverlay();
+      }
+    });
+
+    document.addEventListener('change', function (e) {
+      if (!_crmInvoiceBuilderMode || !e.target.closest('#crm-invoice-designer-overlay')) return;
+      var builderProperty = e.target.getAttribute('data-invoice-builder-property');
+      if (builderProperty) crmUpdateInvoiceBuilderProperty(builderProperty, e.target);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (_crmInvoiceBuilderMode && e.key === 'Escape') crmCloseInvoiceBuilder();
+    });
+
     document.getElementById('page-crm-job-file').addEventListener('input', function (e) {
       if (_crmJobFileActiveTab !== 'payments' || !e.target.closest('.jf-invoice-paper')) return;
       if (!crmCanEditJobInvoice(crmGetJobFileLeadById(_crmCurrentJobFileLeadId))) return;
-      if (e.target.matches('.jf-invoice-adjustment-description')) {
+      if (e.target.matches('.jf-invoice-claim-description, #jf-invoice-notes')) {
         e.target.style.height = 'auto';
         e.target.style.height = e.target.scrollHeight + 'px';
       }
-      if (e.target.matches('.jf-invoice-adjustment-amount, .jf-invoice-payment-amount, .jf-invoice-payment-type')) crmApplyJobInvoiceMetricDom();
+      if (e.target.matches('.jf-invoice-claim-amount, .jf-invoice-claim-kind, .jf-invoice-payment-amount, .jf-invoice-payment-type, .jf-invoice-deductible-input')) crmApplyJobInvoiceMetricDom();
     });
 
     document.getElementById('page-crm-job-file').addEventListener('change', function (e) {
       if (_crmJobFileActiveTab === 'payments' && e.target.closest('.jf-invoice-payment-row')) crmApplyJobInvoiceMetricDom();
       if (e.target.id !== 'jf-invoice-logo-input') return;
       var lead = crmGetJobFileLeadById(_crmCurrentJobFileLeadId);
-      if (!crmCanEditJobInvoice(lead)) { e.target.value = ''; return; }
+      if (!crmCanEditJobInvoice(lead) || !_crmInvoiceEditMode) { e.target.value = ''; return; }
       var file = e.target.files && e.target.files[0];
       e.target.value = '';
       if (!file || String(file.type || '').indexOf('image/') !== 0) { showUploadToast('Choose an image file for the company logo.'); return; }
@@ -60267,25 +61698,43 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmRenderJobFile();
     }
 
-    function crmReadJobInvoiceAdjustments() {
-      return Array.prototype.slice.call(document.querySelectorAll('#jf-invoice-claim-lines .jf-invoice-adjustment-row')).map(function (row) {
-        return crmNormalizeJobFileMoneyLineItem({
-          id: row.getAttribute('data-jf-invoice-adjustment-id') || crmGenId(),
-          description: String((row.querySelector('.jf-invoice-adjustment-description') || {}).value || '').trim(),
-          amount: String((row.querySelector('.jf-invoice-adjustment-amount') || {}).value || '').trim()
+    function crmReadJobInvoiceClaimRows(existingRows) {
+      var visibleGroups = Array.prototype.slice.call(document.querySelectorAll('[data-jf-invoice-row-group]')).map(function (group) {
+        return group.getAttribute('data-jf-invoice-row-group') || 'insurance_claim';
+      });
+      var rows = Array.prototype.slice.call(document.querySelectorAll('.jf-invoice-layout-page .jf-invoice-claim-row')).map(function (row) {
+        return crmNormalizeJobInvoiceClaimRow({
+          id: row.getAttribute('data-jf-invoice-claim-id') || crmGenId(),
+          kind: String((row.querySelector('.jf-invoice-claim-kind') || {}).value || 'detail').trim(),
+          description: String((row.querySelector('.jf-invoice-claim-description') || {}).value || '').trim(),
+          amount: String((row.querySelector('.jf-invoice-claim-amount') || {}).value || '').trim()
         });
+      });
+      (Array.isArray(existingRows) ? existingRows : []).map(crmNormalizeJobInvoiceClaimRow).forEach(function (row) {
+        if (visibleGroups.indexOf(crmGetInvoiceClaimGroup(row.kind)) === -1) rows.push(row);
+      });
+      return rows;
+    }
+
+    function crmReadJobInvoiceAdjustments(claimRows) {
+      return (Array.isArray(claimRows) ? claimRows : crmReadJobInvoiceClaimRows()).filter(function (row) {
+        return row.kind === 'work_not_completed' || row.kind === 'approved_reduction';
+      }).map(function (row) {
+        return crmNormalizeJobFileMoneyLineItem({ id: row.id, description: row.description, amount: row.amount });
       });
     }
 
-    function crmReadJobInvoicePayments() {
-      return Array.prototype.slice.call(document.querySelectorAll('#jf-invoice-payment-lines .jf-invoice-payment-row')).map(function (row) {
+    function crmReadJobInvoicePayments(existingPayments) {
+      var paymentContainer = document.getElementById('jf-invoice-payment-lines');
+      if (!paymentContainer) return (Array.isArray(existingPayments) ? existingPayments : []).map(crmNormalizeFinancialWorksheetPayment);
+      return Array.prototype.slice.call(paymentContainer.querySelectorAll('.jf-invoice-payment-row')).map(function (row) {
         return crmNormalizeFinancialWorksheetPayment({
           id: row.getAttribute('data-jf-invoice-payment-id') || crmGenId(),
           paymentType: String((row.querySelector('.jf-invoice-payment-type') || {}).value || 'Other').trim(),
           amount: String((row.querySelector('.jf-invoice-payment-amount') || {}).value || '').trim(),
           paymentDate: String((row.querySelector('.jf-invoice-payment-date') || {}).value || '').trim(),
           referenceNumber: String((row.querySelector('.jf-invoice-payment-reference') || {}).value || '').trim(),
-          notes: String(row.getAttribute('data-jf-invoice-payment-notes') || '').trim()
+          notes: String((row.querySelector('.jf-invoice-payment-notes') || {}).value || '').trim()
         });
       }).filter(function (payment) {
         return !!(payment.amount || payment.paymentDate || payment.referenceNumber || payment.notes);
@@ -60296,46 +61745,92 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var lead = crmGetJobFileLeadById(_crmCurrentJobFileLeadId);
       if (!lead) return;
       var jobFile = crmGetLeadJobFileData(lead);
-      jobFile.financialWorksheet.workNotBeingDone = crmReadJobInvoiceAdjustments();
-      jobFile.financialWorksheet.paymentsReceived = crmReadJobInvoicePayments();
+      var deductibleInput = document.getElementById('jf-invoice-deductible');
+      var claimRows = crmReadJobInvoiceClaimRows(crmGetJobInvoiceClaimRows(jobFile.financialWorksheet || {}));
+      var totalRcvRow = claimRows.find(function (row) { return row.kind === 'total_rcv'; });
+      if (totalRcvRow) jobFile.financialWorksheet.insuranceBreakdown.totalRcv = String(totalRcvRow.amount || '').trim();
+      if (deductibleInput) jobFile.financialWorksheet.insuranceBreakdown.deductible = String(deductibleInput.value || '').trim();
+      jobFile.financialWorksheet.claimRows = claimRows;
+      jobFile.financialWorksheet.workNotBeingDone = crmReadJobInvoiceAdjustments(claimRows);
+      jobFile.financialWorksheet.paymentsReceived = crmReadJobInvoicePayments(jobFile.financialWorksheet.paymentsReceived);
       var metrics = crmGetJobInvoiceMetrics(jobFile);
       Object.keys(metrics).forEach(function (key) {
-        var el = document.querySelector('[data-jf-invoice-metric="' + key + '"]');
-        if (el) el.textContent = crmFormatMoney(metrics[key]);
+        Array.prototype.forEach.call(document.querySelectorAll('[data-jf-invoice-metric="' + key + '"]'), function (el) {
+          el.textContent = crmFormatMoney(metrics[key]);
+        });
       });
-      var statusEl = document.querySelector('[data-jf-invoice-status]');
-      if (statusEl) statusEl.textContent = Math.abs(metrics.totalDue) < 0.005 ? 'Paid In Full / Balanced' : (metrics.totalDue < 0 ? 'Overpaid' : 'Balance Remaining');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-jf-invoice-status]'), function (statusEl) {
+        statusEl.textContent = Math.abs(metrics.totalDue) < 0.005 ? 'Paid In Full / Balanced' : (metrics.totalDue < 0 ? 'Overpaid / Review Entries' : 'Balance Remaining');
+      });
+    }
+
+    function crmPrepareJobInvoiceForPrint() {
+      Array.prototype.forEach.call(document.querySelectorAll('.jf-invoice-print-source'), function (field) {
+        var control = field.querySelector('input, select, textarea');
+        var output = field.querySelector('.jf-invoice-print-value');
+        if (!control || !output) return;
+        var value = String(control.value || '').trim();
+        var format = field.getAttribute('data-jf-invoice-print-format') || 'text';
+        if (format === 'money') value = crmFormatMoney(crmParseMoneyNumber(value));
+        else if (format === 'date') value = value ? crmFormatDateShort(value) : '—';
+        output.textContent = value || '—';
+      });
+    }
+
+    function crmOpenJobInvoicePrintDialog(saveAsPdf) {
+      crmPrepareJobInvoiceForPrint();
+      showUploadToast((saveAsPdf ? 'Choose Save as PDF. ' : '') + 'Turn off Headers and footers in the browser print dialog.');
+      setTimeout(function () { window.print(); }, 900);
     }
 
     function crmReadJobInvoiceForm(lead, existingInvoice) {
+      existingInvoice = crmGetDefaultJobInvoiceData(existingInvoice || {}, lead);
+      var invoiceDateInput = document.getElementById('jf-invoice-date');
+      var invoiceNumberInput = document.getElementById('jf-invoice-number');
+      var dueDateInput = document.getElementById('jf-invoice-due-date');
       return crmGetDefaultJobInvoiceData({
-        invoiceDate: String((document.getElementById('jf-invoice-date') || {}).value || '').trim(),
-        invoiceNumber: String((document.getElementById('jf-invoice-number') || {}).value || '').trim(),
-        dueDate: String((document.getElementById('jf-invoice-due-date') || {}).value || '').trim(),
+        invoiceDate: invoiceDateInput ? String(invoiceDateInput.value || '').trim() : existingInvoice.invoiceDate,
+        invoiceNumber: invoiceNumberInput ? String(invoiceNumberInput.value || '').trim() : existingInvoice.invoiceNumber,
+        dueDate: dueDateInput ? String(dueDateInput.value || '').trim() : existingInvoice.dueDate,
         billingContact: {
-          name: String((document.getElementById('jf-invoice-bill-name') || {}).value || '').trim(),
-          address: String((document.getElementById('jf-invoice-bill-address') || {}).value || '').trim(),
-          phone: String((document.getElementById('jf-invoice-bill-phone') || {}).value || '').trim(),
-          email: String((document.getElementById('jf-invoice-bill-email') || {}).value || '').trim()
+          name: crmGetJobFileLeadName(lead),
+          address: crmGetJobFileLeadAddress(lead),
+          phone: String(lead && (lead.phone || lead.primaryPhone) || '').trim(),
+          email: String(lead && lead.email || '').trim()
         },
-        notes: String((document.getElementById('jf-invoice-notes') || {}).value || '').trim(),
+        notes: document.getElementById('jf-invoice-notes') ? String(document.getElementById('jf-invoice-notes').value || '').trim() : existingInvoice.notes,
         logoDataUrl: _crmInvoiceLogoDraftDataUrl || existingInvoice && existingInvoice.logoDataUrl || '',
         updatedAt: new Date().toISOString()
       }, lead);
     }
 
     function crmSaveJobFileInvoice(lead) {
-      if (!crmCanEditJobInvoice(lead)) { showUploadToast('You do not have permission to edit this invoice.'); return; }
+      if (!crmCanEditJobInvoice(lead) || !_crmInvoiceEditMode) { showUploadToast('Open Edit Invoice before saving changes.'); return; }
+      var currentJobFile = crmGetLeadJobFileData(lead);
+      var claimNumberInput = document.getElementById('jf-invoice-claim-number-input');
+      var claimNumber = claimNumberInput ? String(claimNumberInput.value || '').trim() : String(currentJobFile.insurance.claimNumber || lead.claimNumber || '').trim();
+      var claimRows = crmReadJobInvoiceClaimRows(crmGetJobInvoiceClaimRows(currentJobFile.financialWorksheet || {}));
+      var totalRcvRow = claimRows.find(function (row) { return row.kind === 'total_rcv'; });
+      var totalRcv = String(totalRcvRow && totalRcvRow.amount || currentJobFile.financialWorksheet.insuranceBreakdown.totalRcv || '').trim();
+      var deductibleInput = document.getElementById('jf-invoice-deductible');
+      var deductible = deductibleInput ? String(deductibleInput.value || '').trim() : String(currentJobFile.financialWorksheet.insuranceBreakdown.deductible || '').trim();
       crmUpdateJobFileLeadRecord(lead.id, function (item) {
         var data = crmGetLeadJobFileData(item);
-        data.financialWorksheet.workNotBeingDone = crmReadJobInvoiceAdjustments();
-        data.financialWorksheet.paymentsReceived = crmReadJobInvoicePayments();
+        data.insurance.claimNumber = claimNumber;
+        data.insurance.deductible = deductible;
+        data.insurance.updatedAt = new Date().toISOString();
+        data.financialWorksheet.insuranceBreakdown.totalRcv = totalRcv;
+        data.financialWorksheet.insuranceBreakdown.deductible = deductible;
+        data.financialWorksheet.claimRows = claimRows;
+        data.financialWorksheet.workNotBeingDone = crmReadJobInvoiceAdjustments(claimRows);
+        data.financialWorksheet.paymentsReceived = crmReadJobInvoicePayments(data.financialWorksheet.paymentsReceived);
         data.financialWorksheet.updatedAt = new Date().toISOString();
         data.invoice = crmReadJobInvoiceForm(item, data.invoice);
         crmApplyLeadJobFileData(item, data);
         crmPushLeadActivity(item, 'Invoice updated', 'payment');
       });
       _crmInvoiceLogoDraftDataUrl = '';
+      _crmInvoiceEditMode = false;
       crmRenderJobFile();
       showUploadToast('Invoice saved.');
     }
@@ -60354,7 +61849,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       });
       crmUpdateJobFileLeadRecord(lead.id, function (item) {
         var data = crmGetLeadJobFileData(item);
-        data.financialWorksheet.workNotBeingDone = crmReadJobInvoiceAdjustments();
+        var claimRows = crmReadJobInvoiceClaimRows(crmGetJobInvoiceClaimRows(data.financialWorksheet || {}));
+        data.financialWorksheet.claimRows = claimRows;
+        data.financialWorksheet.workNotBeingDone = crmReadJobInvoiceAdjustments(claimRows);
         data.financialWorksheet.paymentsReceived.push(payment);
         data.financialWorksheet.updatedAt = new Date().toISOString();
         data.invoice = crmReadJobInvoiceForm(item, data.invoice);
@@ -60370,7 +61867,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!paymentId || !confirm('Remove this payment from the Invoice and Financial Worksheet?')) return;
       crmUpdateJobFileLeadRecord(lead.id, function (item) {
         var data = crmGetLeadJobFileData(item);
-        data.financialWorksheet.workNotBeingDone = crmReadJobInvoiceAdjustments();
+        var claimRows = crmReadJobInvoiceClaimRows(crmGetJobInvoiceClaimRows(data.financialWorksheet || {}));
+        data.financialWorksheet.claimRows = claimRows;
+        data.financialWorksheet.workNotBeingDone = crmReadJobInvoiceAdjustments(claimRows);
         data.financialWorksheet.paymentsReceived = data.financialWorksheet.paymentsReceived.filter(function (payment) { return payment.id !== paymentId; });
         data.financialWorksheet.updatedAt = new Date().toISOString();
         data.invoice = crmReadJobInvoiceForm(item, data.invoice);
@@ -60416,17 +61915,94 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmSaveJobFilePhotoFiles(files);
     });
 
-    document.getElementById('page-crm-job-file').addEventListener('dragover', function (e) {
+    document.addEventListener('dragstart', function (e) {
+      if (!_crmInvoiceBuilderMode) return;
+      var libraryItem = e.target.closest('[data-invoice-builder-add]');
+      var blockHandle = e.target.closest('[data-invoice-builder-drag]');
+      if (libraryItem) {
+        _crmInvoiceBuilderDragType = libraryItem.getAttribute('data-invoice-builder-add') || 'text_field';
+        _crmInvoiceBuilderDragBlockId = '';
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = 'copy';
+          e.dataTransfer.setData('text/plain', 'type:' + _crmInvoiceBuilderDragType);
+        }
+        return;
+      }
+      if (blockHandle) {
+        _crmInvoiceBuilderDragBlockId = blockHandle.getAttribute('data-invoice-builder-drag') || '';
+        _crmInvoiceBuilderDragType = '';
+        var draggedBlock = blockHandle.closest('.jf-invoice-builder-block');
+        if (draggedBlock) draggedBlock.classList.add('is-dragging');
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', 'block:' + _crmInvoiceBuilderDragBlockId);
+        }
+      }
+    });
+
+    document.addEventListener('dragend', function () {
+      _crmInvoiceBuilderDragBlockId = '';
+      _crmInvoiceBuilderDragType = '';
+      document.querySelectorAll('.jf-invoice-builder-block.is-dragging, .jf-invoice-builder-block.is-drop-before').forEach(function (node) {
+        node.classList.remove('is-dragging', 'is-drop-before');
+      });
+      document.querySelectorAll('.jf-invoice-builder-page.is-drop-target').forEach(function (node) { node.classList.remove('is-drop-target'); });
+    });
+
+    document.addEventListener('dragover', function (e) {
+      var builderPage = e.target.closest('[data-invoice-builder-page]');
+      if (_crmInvoiceBuilderMode && builderPage) {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = _crmInvoiceBuilderDragBlockId ? 'move' : 'copy';
+        builderPage.classList.add('is-drop-target');
+        builderPage.querySelectorAll('.jf-invoice-builder-block.is-drop-before').forEach(function (node) { node.classList.remove('is-drop-before'); });
+        var targetBlock = e.target.closest('.jf-invoice-builder-block');
+        if (targetBlock && targetBlock.getAttribute('data-invoice-builder-select') !== _crmInvoiceBuilderDragBlockId) targetBlock.classList.add('is-drop-before');
+        return;
+      }
       var dropzone = e.target.closest('[data-jf-photo-dropzone]');
       if (!dropzone) return;
       e.preventDefault();
       dropzone.classList.add('is-dragover');
     });
-    document.getElementById('page-crm-job-file').addEventListener('dragleave', function (e) {
+    document.addEventListener('dragleave', function (e) {
+      var builderPage = e.target.closest('[data-invoice-builder-page]');
+      if (_crmInvoiceBuilderMode && builderPage) {
+        if (!e.relatedTarget || !builderPage.contains(e.relatedTarget)) {
+          builderPage.classList.remove('is-drop-target');
+          builderPage.querySelectorAll('.jf-invoice-builder-block.is-drop-before').forEach(function (node) { node.classList.remove('is-drop-before'); });
+        }
+        return;
+      }
       var dropzone = e.target.closest('[data-jf-photo-dropzone]');
       if (dropzone) dropzone.classList.remove('is-dragover');
     });
-    document.getElementById('page-crm-job-file').addEventListener('drop', function (e) {
+    document.addEventListener('drop', function (e) {
+      var builderPage = e.target.closest('[data-invoice-builder-page]');
+      if (_crmInvoiceBuilderMode && builderPage) {
+        e.preventDefault();
+        var targetBlock = e.target.closest('.jf-invoice-builder-block');
+        var targetId = targetBlock ? targetBlock.getAttribute('data-invoice-builder-select') || '' : '';
+        var placeAfter = false;
+        if (targetBlock) {
+          var targetRect = targetBlock.getBoundingClientRect();
+          placeAfter = e.clientY > targetRect.top + (targetRect.height / 2);
+        }
+        builderPage.classList.remove('is-drop-target');
+        builderPage.querySelectorAll('.jf-invoice-builder-block.is-drop-before').forEach(function (node) { node.classList.remove('is-drop-before'); });
+        if (_crmInvoiceBuilderDragBlockId && _crmInvoiceBuilderDragBlockId !== targetId) {
+          crmMoveInvoiceBuilderBlock(_crmInvoiceBuilderDragBlockId, targetId, placeAfter);
+        } else if (_crmInvoiceBuilderDragType) {
+          var page = crmGetInvoiceBuilderPage();
+          var targetIndex = targetId ? page.blocks.findIndex(function (block) { return block.id === targetId; }) : page.blocks.length;
+          if (targetIndex < 0) targetIndex = page.blocks.length;
+          if (placeAfter && targetIndex < page.blocks.length) targetIndex += 1;
+          crmAddInvoiceBuilderBlock(_crmInvoiceBuilderDragType, targetIndex);
+        }
+        _crmInvoiceBuilderDragBlockId = '';
+        _crmInvoiceBuilderDragType = '';
+        return;
+      }
       var dropzone = e.target.closest('[data-jf-photo-dropzone]');
       if (!dropzone) return;
       e.preventDefault();
@@ -64396,8 +65972,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       pageId = String(pageId || '').trim();
       return !!pageId
         && pageId !== 'page-login'
-        && pageId !== 'page-map'
-        && pageId !== 'page-campaigns';
+        && pageId !== 'page-map';
     }
 
     function crmIsVisibleHeaderTitleElement(el, page) {
