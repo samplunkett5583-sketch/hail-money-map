@@ -2578,12 +2578,14 @@
     }
 
     .nav-dropdown-menu {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      width: 100%;
-      min-width: 100%;
-      margin-left: 0;
+      position: fixed;
+      top: var(--crm-nav-dropdown-top, 0px);
+      left: var(--crm-nav-dropdown-left, 0px);
+      width: var(--crm-nav-dropdown-width, 220px);
+      min-width: var(--crm-nav-dropdown-width, 220px);
+      max-width: calc(100vw - var(--crm-nav-dropdown-left, 0px));
+      max-height: var(--crm-nav-dropdown-max-height, calc(100vh - 16px));
+      margin: 0;
       transform: none;
       display: none;
       flex-direction: column;
@@ -2593,14 +2595,16 @@
       border: 1px solid rgba(170, 128, 18, 0.26);
       border-radius: 10px;
       box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      box-sizing: border-box;
       z-index: 40;
     }
 
     .nav-dropdown-group:hover,
     .nav-dropdown-group:focus-within,
     .nav-dropdown-group.is-open { z-index: 200; }
-    .nav-dropdown-group:hover .nav-dropdown-menu,
-    .nav-dropdown-group:focus-within .nav-dropdown-menu,
     .nav-dropdown-group.is-open .nav-dropdown-menu {
       display: flex;
     }
@@ -17725,17 +17729,19 @@
       scrollbar-gutter: stable;
     }
     body.crm-phase-one-shared-shell-active [data-crm-phase-one-shared-sidebar] .nav-dropdown-menu {
-      position: absolute;
-      left: 0;
-      top: 100%;
-      width: 100%;
-      min-width: 100%;
-      max-width: 100%;
-      margin: 8px 0;
+      position: fixed;
+      left: var(--crm-nav-dropdown-left, 0px);
+      top: var(--crm-nav-dropdown-top, 0px);
+      width: var(--crm-nav-dropdown-width, 220px);
+      min-width: var(--crm-nav-dropdown-width, 220px);
+      max-width: calc(100vw - var(--crm-nav-dropdown-left, 0px));
+      max-height: var(--crm-nav-dropdown-max-height, calc(100vh - 16px));
+      margin: 0;
       padding: 8px 6px;
       transform: none;
       box-sizing: border-box;
       overflow-x: hidden;
+      overflow-y: auto;
       box-shadow: none;
       z-index: 300;
     }
@@ -17753,6 +17759,46 @@
     }
     body.crm-phase-one-shared-shell-active [data-crm-phase-one-shared-sidebar] .nav-dropdown-group.is-open .nav-dropdown-menu {
       display: flex !important;
+    }
+    body.crm-standard-header-active .page.active .nav-dropdown-group.is-open > .nav-dropdown-menu {
+      display: flex !important;
+    }
+
+    /* Shared CRM watermark: one fixed-size, stationary layer centered in the
+       usable main column while page content scrolls above it. */
+    body.crm-shared-watermark-active {
+      --crm-shared-watermark-size: 760px;
+    }
+    body.crm-shared-watermark-active #page-main-menu .hm-dashboard-ref .center,
+    body.crm-shared-watermark-active #page-crm-pipeline .hm-dashboard-ref .center,
+    body.crm-shared-watermark-active .page.active .crm-dashboard-mini-body > .crm-layout > .crm-main-column {
+      position: relative;
+      isolation: isolate;
+      background-image: none;
+    }
+    body.crm-shared-watermark-active #page-main-menu .hm-dashboard-ref .center::before,
+    body.crm-shared-watermark-active #page-crm-pipeline .hm-dashboard-ref .center::before,
+    body.crm-shared-watermark-active #page-lead-detail::before,
+    body.crm-shared-watermark-active .page.active .crm-dashboard-mini-body > .crm-layout > .crm-main-column::before {
+      content: '' !important;
+      display: block !important;
+      position: fixed;
+      top: calc(var(--crm-shell-header-h) + 12px);
+      right: calc(var(--crm-shell-feed-w) + var(--crm-shell-gap));
+      bottom: 0;
+      left: var(--crm-shell-rail-w);
+      z-index: 0;
+      background: url('./assets/hailmoney-logo.png?v=2') no-repeat center top;
+      background-size: var(--crm-shared-watermark-size) auto;
+      opacity: 1;
+      pointer-events: none;
+    }
+    body.crm-shared-watermark-active #page-main-menu .hm-dashboard-ref .center > *,
+    body.crm-shared-watermark-active #page-crm-pipeline .hm-dashboard-ref .center > *,
+    body.crm-shared-watermark-active .page.active .crm-dashboard-mini-body > .crm-layout > .crm-main-column > *,
+    body.crm-shared-watermark-active #page-lead-detail .jf-folder-wrap {
+      position: relative;
+      z-index: 1;
     }
     #page-crm-contacts .crm-dashboard-mini-body {
       background: #eef1f4;
@@ -22709,7 +22755,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly&callback=mapsGoogleReady" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly&callback=mapsGoogleReady" defer></script>
   <script src="demo_swaths.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -23104,10 +23150,13 @@
         target.classList.add('active');
       }
       _appCurrentPageId = pageId;
+      var pageContext = crmGetPageContext(pageId);
       document.body.classList.toggle('app-page-active', pageId !== 'page-login');
       document.body.classList.toggle('map-page-active', pageId === 'page-map');
       document.body.classList.toggle('crm-page-active', pageId !== 'page-login' && pageId !== 'page-map');
       document.body.classList.toggle('crm-standard-header-active', crmUsesStandardHeaderLayout(pageId));
+      document.body.classList.toggle('crm-shared-watermark-active',
+        pageId !== 'page-login' && crmUsesStandardHeaderLayout(pageId) && !pageContext.isWatermarkExcluded);
       document.body.classList.toggle('main-menu-page-active', pageId === 'page-main-menu');
       document.body.classList.toggle('new-contact-page-active', pageId === 'page-new-contact');
       document.body.classList.toggle('new-lead-page-active',
@@ -23131,7 +23180,7 @@
         || pageId === 'page-docusign');
       document.body.classList.toggle('pipeline-page-active', pageId === 'page-crm-pipeline');
       document.body.classList.toggle('lead-detail-page-active', pageId === 'page-lead-detail');
-      document.body.classList.toggle('crm-phase-one-shared-shell-active', crmGetPageContext(pageId).isPhaseOneSharedShell);
+      document.body.classList.toggle('crm-phase-one-shared-shell-active', pageContext.isPhaseOneSharedShell);
       document.body.classList.toggle('production-scheduler-page-active', pageId === 'page-crm-production');
       document.body.classList.toggle('crm-job-file-photos-page-active',
         pageId === 'page-crm-job-file' && _crmJobFileActiveTab === 'photos');
@@ -41787,7 +41836,7 @@ function mapsGoogleReady() {
       var w = window.open('', '_blank');
       w.document.write('<html><head><title>Print Document</title><style>body{margin:0;} img{max-width:100%;} div{position:absolute;}</style></head><body>');
       w.document.write(previewEl.innerHTML);
-      w.document.write('<' + '/body><' + '/html>');
+      w.document.write('</bo' + 'dy></ht' + 'ml>');
       w.document.close();
       w.print();
     });
@@ -48710,6 +48759,23 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         clearTimeout(dropdownCloseTimer);
         dropdownCloseTimer = null;
       }
+      function positionDropdownMenu() {
+        if (!dropdownButton || !dropdownMenu) return;
+        var rect = dropdownButton.getBoundingClientRect();
+        var viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+        var viewportHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+        var preferredWidth = Math.max(rect.width, 220);
+        var placeBelow = viewportWidth <= 720 || rect.right + preferredWidth > viewportWidth;
+        var left = placeBelow ? Math.max(0, Math.min(rect.left, viewportWidth - preferredWidth)) : rect.right;
+        var top = placeBelow ? rect.bottom : rect.top;
+        var availableWidth = Math.max(0, viewportWidth - left);
+        var width = Math.min(preferredWidth, availableWidth);
+        dropdownMenu.style.setProperty('--crm-nav-dropdown-left', Math.round(left) + 'px');
+        dropdownMenu.style.setProperty('--crm-nav-dropdown-top', Math.round(top) + 'px');
+        dropdownMenu.style.setProperty('--crm-nav-dropdown-width', Math.round(width) + 'px');
+        dropdownMenu.style.setProperty('--crm-nav-dropdown-max-height', Math.max(96, Math.floor(viewportHeight - top - 8)) + 'px');
+        dropdownMenu.classList.toggle('nav-dropdown-menu-below', placeBelow);
+      }
       function setDropdownOpen(isOpen) {
         cancelDropdownClose();
         if (isOpen && dropdownGroup.classList.contains('nav-dropdown-group-recent')) {
@@ -48717,6 +48783,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         }
         dropdownGroup.classList.toggle('is-open', !!isOpen);
         if (dropdownButton) dropdownButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if (isOpen) positionDropdownMenu();
       }
       function openDropdown(persistOpen) {
         cancelDropdownClose();
@@ -48779,6 +48846,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       dropdownGroup._crmOpenDashboardDropdown = function () {
         openDropdown(true);
       };
+      dropdownGroup._crmPositionDashboardDropdown = positionDropdownMenu;
       dropdownGroup._dashDropdownBound = true;
       crmEnsureDashboardDropdownDismissHandlers();
     }
@@ -48800,6 +48868,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         if (event.key !== 'Escape') return;
         crmCloseAllDashboardDropdowns(null);
       });
+      function positionOpenDropdowns() {
+        document.querySelectorAll('.nav-dropdown-group.is-open').forEach(function (group) {
+          if (typeof group._crmPositionDashboardDropdown === 'function') group._crmPositionDashboardDropdown();
+        });
+      }
+      window.addEventListener('resize', positionOpenDropdowns);
+      document.addEventListener('scroll', positionOpenDropdowns, true);
       document._crmDashboardDropdownDismissBound = true;
     }
 
@@ -48947,9 +49022,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         });
       }
 
-      crmBindDashboardDropdownGroup(root.querySelector('.nav-dropdown-group-new'));
-      crmBindDashboardDropdownGroup(root.querySelector('.nav-dropdown-group-recent'));
-      crmBindDashboardDropdownGroup(root.querySelector('.nav-dropdown-group-contacts'));
+      root.querySelectorAll('.nav-dropdown-group').forEach(crmBindDashboardDropdownGroup);
       crmRenderDashboardRecentDropdown(root);
 
       var sidebarRole = crmGetWorkspaceMenuRole();
@@ -50755,6 +50828,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           folderSidebar.querySelectorAll('[id]').forEach(function (item) { item.removeAttribute('id'); });
           folderSidebar.querySelectorAll('[aria-current]').forEach(function (item) { item.removeAttribute('aria-current'); });
           folderWrap.insertBefore(folderSidebar, folderWrap.firstChild);
+          folderSidebar.querySelectorAll('.nav-dropdown-group').forEach(crmBindDashboardDropdownGroup);
+          crmRenderDashboardRecentDropdown(folderSidebar);
         }
       }
 
