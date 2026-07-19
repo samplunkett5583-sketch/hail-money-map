@@ -314,6 +314,10 @@
       padding: 4px 14px;
     }
 
+    body.map-page-active {
+      --maps-topbar-h: var(--crm-shell-header-h);
+    }
+
     body.map-page-active .app-top-hail-logo {
       height: 36px;
       max-width: min(160px, 36vw);
@@ -5278,6 +5282,13 @@
       z-index: 0;
       pointer-events: auto;
     }
+    body.map-page-active #page-map .maps-map-area,
+    body.map-page-active #page-map #stormMap,
+    body.map-page-active #page-map .maps-map-container {
+      top: var(--maps-topbar-h);
+      bottom: 36px;
+      height: auto;
+    }
     #mapsView .ht-ui-layer,
     #page-map .maps-layout {
       position: fixed;
@@ -5811,7 +5822,7 @@
     }
     #page-map #stormMap .gm-style-mtc,
     #page-map #stormMap .gm-style-mtc-bbw {
-      margin-top: calc(var(--maps-topbar-h) + 12px) !important;
+      margin-top: 12px !important;
     }
     #page-map .maps-style-select {
       min-width:124px; height:36px; padding:0 10px;
@@ -6368,7 +6379,7 @@
       .maps-prop-card { bottom:100px; top:auto; right:10px; left:10px; width:auto; }
       #page-map .maps-style-ctrl { top:calc(var(--maps-topbar-h) + 10px); right:10px; }
       #page-map #stormMap .gm-style-mtc,
-      #page-map #stormMap .gm-style-mtc-bbw { margin-top: calc(var(--maps-topbar-h) + 10px) !important; }
+      #page-map #stormMap .gm-style-mtc-bbw { margin-top: 10px !important; }
       #page-map .maps-opacity-ctrl { top:calc(var(--maps-topbar-h) + 54px); right:10px; left:auto; }
       /* Bottom panel collapse handle */
       .maps-mobile-bar::before {
@@ -17882,6 +17893,273 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* Canonical application header. This final block is authoritative for
+       every signed-in page; page renderers provide only title text and the
+       optional shared stage-filter hosts. */
+    :root {
+      --hm-header-height: 118px;
+      --hm-header-background: #1a1a2e;
+      --hm-header-border: rgba(223, 188, 95, 0.18);
+      --hm-header-padding-top: 10px;
+      --hm-header-padding-right: 20px;
+      --hm-header-padding-bottom: 6px;
+      --hm-header-padding-left: 20px;
+      --hm-header-column-gap: 16px;
+      --hm-header-center-width: 220px;
+      --hm-header-company-logo-size: 68px;
+      --hm-header-brand-logo-height: 54px;
+      --hm-header-brand-text-size: 20px;
+      --hm-header-title-size: 24px;
+      --hm-header-profile-height: 48px;
+      --crm-shell-header-h: var(--hm-header-height);
+    }
+    body.crm-standard-header-active > .app-shell > .topbar {
+      position: fixed !important;
+      inset: 0 0 auto 0 !important;
+      z-index: 60 !important;
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) var(--hm-header-center-width) minmax(0, 1fr) !important;
+      align-items: center !important;
+      gap: var(--hm-header-column-gap) !important;
+      width: 100% !important;
+      height: var(--hm-header-height) !important;
+      min-height: var(--hm-header-height) !important;
+      margin: 0 !important;
+      padding: var(--hm-header-padding-top) var(--hm-header-padding-right) var(--hm-header-padding-bottom) var(--hm-header-padding-left) !important;
+      box-sizing: border-box !important;
+      overflow: visible !important;
+      isolation: isolate;
+      background: var(--hm-header-background) !important;
+      color: #fff !important;
+      border: 0 !important;
+      border-bottom: 1px solid var(--hm-header-border) !important;
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.88) !important;
+    }
+    body.crm-standard-header-active > .app-shell > .screen {
+      padding-top: var(--hm-header-height) !important;
+    }
+    body.crm-standard-header-active .topbar-left {
+      grid-column: 1 !important;
+      justify-self: stretch !important;
+      display: grid !important;
+      grid-template-columns: var(--hm-header-company-logo-size) minmax(0, 1fr) !important;
+      align-items: center !important;
+      gap: 18px !important;
+      width: 100% !important;
+      max-width: none !important;
+      min-width: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+    }
+    body.crm-standard-header-active .pipeline-header-company,
+    body.crm-standard-header-active .map-header-brand,
+    body.crm-standard-header-active .crm-header-page-title,
+    body.crm-standard-header-active .crm-header-context-title {
+      display: none !important;
+    }
+    body.crm-standard-header-active .crm-header-company-logo {
+      grid-column: 1 !important;
+      display: block !important;
+      width: var(--hm-header-company-logo-size) !important;
+      height: var(--hm-header-company-logo-size) !important;
+      min-width: var(--hm-header-company-logo-size) !important;
+      max-width: var(--hm-header-company-logo-size) !important;
+      flex: 0 0 var(--hm-header-company-logo-size) !important;
+      object-fit: contain !important;
+      object-position: center !important;
+    }
+    body.crm-standard-header-active .crm-header-inline-title:not([hidden]) {
+      grid-column: 2 !important;
+      display: block !important;
+      width: 100% !important;
+      max-width: none !important;
+      min-width: 0 !important;
+      margin: 0 !important;
+      color: #fff !important;
+      font-size: var(--hm-header-title-size) !important;
+      line-height: 1.08 !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.02em !important;
+      text-align: center !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+    body.crm-standard-header-active .pipeline-header-center {
+      position: static !important;
+      grid-column: 2 !important;
+      justify-self: center !important;
+      display: flex !important;
+      width: var(--hm-header-center-width) !important;
+      min-width: var(--hm-header-center-width) !important;
+      height: 100% !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    body.crm-standard-header-active .map-header-center-brand {
+      position: absolute !important;
+      top: 50% !important;
+      left: 50% !important;
+      z-index: 4 !important;
+      display: flex !important;
+      width: 150px !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 2px !important;
+      margin: 0 !important;
+      color: #fff !important;
+      text-align: center !important;
+      transform: translate(-50%, -50%) !important;
+    }
+    body.crm-standard-header-active .map-header-center-heading {
+      color: #fff !important;
+      font-size: var(--hm-header-brand-text-size) !important;
+      line-height: 1.05 !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.01em !important;
+    }
+    body.crm-standard-header-active .map-header-center-brand img {
+      display: block !important;
+      width: auto !important;
+      height: var(--hm-header-brand-logo-height) !important;
+      max-width: 130px !important;
+      object-fit: contain !important;
+      object-position: center !important;
+    }
+    body.crm-standard-header-active .topbar-right {
+      grid-column: 3 !important;
+      justify-self: stretch !important;
+      display: flex !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      align-items: center !important;
+      justify-content: flex-end !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    body.crm-standard-header-active .topbar-controls {
+      display: flex !important;
+      min-width: 260px !important;
+      align-items: center !important;
+      justify-content: flex-end !important;
+      gap: 10px !important;
+    }
+    body.crm-standard-header-active .jf-notif-btn {
+      display: inline-flex !important;
+      width: 44px !important;
+      height: 44px !important;
+      flex: 0 0 44px !important;
+      align-items: center !important;
+      justify-content: center !important;
+      color: #f6c75f !important;
+    }
+    body.crm-standard-header-active .crm-profile-toggle {
+      min-height: var(--hm-header-profile-height) !important;
+      max-width: 210px !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+      border-color: rgba(232, 190, 94, 0.7) !important;
+      color: #fff !important;
+    }
+    body.crm-standard-header-active .crm-profile-toggle:hover,
+    body.crm-standard-header-active .crm-profile-toggle:focus-visible,
+    body.crm-standard-header-active .crm-profile-menu.is-open .crm-profile-toggle {
+      background: rgba(255, 255, 255, 0.1) !important;
+      border-color: #f0cd7e !important;
+      box-shadow: 0 0 0 3px rgba(232, 190, 94, 0.16) !important;
+    }
+    body.crm-standard-header-active .crm-profile-name,
+    body.crm-standard-header-active .crm-profile-role,
+    body.crm-standard-header-active .crm-profile-caret {
+      color: #fff !important;
+    }
+    body.crm-standard-header-active .crm-profile-avatar {
+      border-color: rgba(240, 205, 126, 0.62) !important;
+      background: rgba(232, 190, 94, 0.2) !important;
+      color: #f7de9a !important;
+    }
+    body.crm-standard-header-active .pipeline-header-center .crm-pipe-filter-bar {
+      display: none !important;
+    }
+    body.crm-standard-header-active.crm-header-stage-row-active .map-header-center-brand {
+      top: 38% !important;
+    }
+    body.crm-standard-header-active.crm-header-stage-row-active .pipeline-header-center .crm-pipe-filter-bar {
+      position: absolute !important;
+      top: auto !important;
+      bottom: 5px !important;
+      z-index: 3 !important;
+      display: flex !important;
+      max-width: calc(50vw - 12px) !important;
+      flex-wrap: nowrap !important;
+      align-items: center !important;
+      gap: 6px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      transform: none !important;
+    }
+    body.crm-standard-header-active.crm-header-stage-row-active #crm-pipeline-stage-filter-left {
+      right: calc(50% + 3px) !important;
+      left: auto !important;
+      justify-content: flex-end !important;
+    }
+    body.crm-standard-header-active.crm-header-stage-row-active #crm-pipeline-stage-filter-right {
+      right: auto !important;
+      left: calc(50% + 3px) !important;
+      justify-content: flex-start !important;
+    }
+    body.crm-standard-header-active.crm-header-stage-row-active .crm-pipeline-header-filter .crm-pipe-filter-btn {
+      min-height: 30px !important;
+      padding: 5px 11px !important;
+      border-radius: 999px !important;
+      border: 1px solid rgba(223, 188, 95, 0.36) !important;
+      background: rgba(255, 255, 255, 0.06) !important;
+      color: #f8f4e5 !important;
+      font-size: 11px !important;
+      line-height: 1 !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.02em !important;
+      white-space: nowrap !important;
+      box-shadow: none !important;
+    }
+    body.crm-standard-header-active.crm-header-stage-row-active .crm-pipeline-header-filter .crm-pipe-filter-btn:hover:not(.active) {
+      border-color: rgba(240, 205, 126, 0.78) !important;
+      background: rgba(255, 255, 255, 0.12) !important;
+      color: #fff !important;
+    }
+    body.crm-standard-header-active.crm-header-stage-row-active .crm-pipeline-header-filter .crm-pipe-filter-btn.active {
+      background: #e4a51b !important;
+      border-color: #f0cd7e !important;
+      color: #1a1a2e !important;
+    }
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref .main > .topbar,
+    #page-crm-pipeline .hm-dashboard-ref .main > .topbar {
+      display: none !important;
+    }
+    @media (max-width: 720px) {
+      :root {
+        --hm-header-padding-right: 12px;
+        --hm-header-padding-left: 12px;
+        --hm-header-column-gap: 8px;
+        --hm-header-center-width: 150px;
+      }
+      body.crm-standard-header-active .topbar-left { gap: 8px !important; }
+      body.crm-standard-header-active .crm-header-inline-title:not([hidden]) { font-size: 18px !important; }
+      body.crm-standard-header-active .topbar-controls { min-width: 0 !important; }
+      body.crm-standard-header-active .crm-profile-copy,
+      body.crm-standard-header-active .crm-profile-caret { display: none !important; }
+      body.crm-standard-header-active.crm-header-stage-row-active .crm-pipeline-header-filter .crm-pipe-filter-btn {
+        padding-right: 7px !important;
+        padding-left: 7px !important;
+        font-size: 10px !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -17902,12 +18180,6 @@
         <img id="crm-header-company-logo" class="crm-header-company-logo" data-dashboard-header-logo src="./assets/hailmoney-logo.png?v=2" alt="Company Logo" draggable="false" />
         <div class="crm-header-inline-title" id="crm-header-inline-title" hidden></div>
         <div class="crm-header-page-title" id="crm-header-page-title" hidden></div>
-      </div>
-      <!-- Maps date picker: true top minibar, visible only on the Maps page, controls Recent/Impact/Pinned + swath loading -->
-      <div class="maps-header-date-row" id="maps-header-date-row">
-        <input type="date" id="maps-date-picker" class="maps-date-input" />
-        <button type="button" id="maps-load-date-btn" class="maps-header-load-btn">Load Date</button>
-        <div id="maps-date-status" class="maps-status-msg"></div>
       </div>
       <div class="pipeline-header-center" id="pipeline-header-center">
         <div id="crm-pipeline-stage-filter-left" class="crm-pipe-filter-bar crm-pipeline-header-filter" aria-label="Lead stages"></div>
@@ -18318,7 +18590,7 @@
         </div>
       </section>
 
-      <section id="page-new-lead" class="page">
+      <section id="page-new-lead" class="page" data-crm-header-title="New Lead">
         <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell>
           <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
           <div class="crm-dashboard-mini-body">
@@ -18579,7 +18851,7 @@
         </div>
       </section>
 
-      <section id="page-map" class="page">
+      <section id="page-map" class="page" data-crm-header-title="Money Maps">
         <div class="maps-layout">
           <!-- Left Panel -->
           <div class="maps-panel" id="maps-storm-panel">
@@ -18597,6 +18869,11 @@
                   <button type="button" class="maps-storm-tab-btn active" data-storm-tab="recent">Recent</button>
                   <button type="button" class="maps-storm-tab-btn" data-storm-tab="impact">Impact</button>
                   <button type="button" class="maps-storm-tab-btn" data-storm-tab="pinned">Pinned</button>
+                </div>
+                <div class="maps-header-date-row" id="maps-header-date-row">
+                  <input type="date" id="maps-date-picker" class="maps-date-input" />
+                  <button type="button" id="maps-load-date-btn" class="maps-header-load-btn">Load Date</button>
+                  <div id="maps-date-status" class="maps-status-msg"></div>
                 </div>
                 <div id="stormSearchRow" class="maps-storm-search-row">
                   <input type="text" id="stormSearchInput" class="maps-storm-search-input" placeholder="Search storm date" aria-label="Search storm date" />
@@ -21618,7 +21895,7 @@
       </div>
 
       <!-- ═══════════════════ CRM: COMPANY DOCUMENTS ═══════════════════ -->
-      <section id="page-company-docs" class="page" data-crm-header-title="Company Documents">
+      <section id="page-company-docs" class="page" data-crm-header-title="Documents">
         <div class="crm-dashboard-mini-layout crm-phase-one-shared-shell" data-crm-phase-one-shared-shell data-dashboard-active-action="company-documents">
           <div class="crm-dashboard-mini-sidebar" data-crm-phase-one-sidebar></div>
           <div class="crm-dashboard-mini-body">
@@ -22089,7 +22366,7 @@
       </section>
 
       <!-- ═══════════════════ CRM: OFFICE LEAD FORM ═══════════════════ -->
-      <section id="page-office-lead" class="page">
+      <section id="page-office-lead" class="page" data-crm-header-title="New Lead">
         <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell>
           <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
           <div class="crm-dashboard-mini-body">
@@ -22164,7 +22441,7 @@
       </section>
 
       <!-- ═══════════════════ CRM: FIELD LEAD FORM ═══════════════════ -->
-      <section id="page-field-lead" class="page" data-crm-header-title="Create New Lead">
+      <section id="page-field-lead" class="page" data-crm-header-title="New Lead">
         <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell>
           <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
           <div class="crm-dashboard-mini-body">
@@ -22521,7 +22798,7 @@
       </section>
 
       <!-- ═══════════════════ CANVASSER: ADD LEAD ═══════════════════ -->
-      <section id="page-canvasser-lead" class="page">
+      <section id="page-canvasser-lead" class="page" data-crm-header-title="New Lead">
         <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell>
           <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
           <div class="crm-dashboard-mini-body">
@@ -23011,7 +23288,7 @@
       'page-main-menu': 'Dashboard',
       'page-crm-pipeline': 'Pipeline',
       'page-crm-contacts': 'Contacts',
-      'page-company-docs': 'Company Documents'
+      'page-company-docs': 'Documents'
     };
 
     function crmGetPageContext(pageId) {
@@ -23044,7 +23321,7 @@
         selectedLeadId: selectedLeadId,
         selectedJobId: selectedLeadId,
         isInsideJobFolder: insideJobFolder,
-        shouldShowBack: pageId !== 'page-login' && pageId !== 'page-main-menu' && (isPhaseOneSharedShell || !!peekAppHeaderBackTarget()),
+        shouldShowBack: pageId !== 'page-login' && pageId !== 'page-main-menu' && pageId !== 'page-map' && (isPhaseOneSharedShell || !!peekAppHeaderBackTarget()),
         isWatermarkExcluded: pageId === 'page-map' || pageId === 'page-campaigns',
         isPhaseOneSharedShell: isPhaseOneSharedShell
       };
@@ -23179,6 +23456,7 @@
         || pageId === 'page-start-inspection-step'
         || pageId === 'page-docusign');
       document.body.classList.toggle('pipeline-page-active', pageId === 'page-crm-pipeline');
+      document.body.classList.toggle('crm-header-stage-row-active', pageId === 'page-crm-pipeline' || pageId === 'page-lead-detail');
       document.body.classList.toggle('lead-detail-page-active', pageId === 'page-lead-detail');
       document.body.classList.toggle('crm-phase-one-shared-shell-active', pageContext.isPhaseOneSharedShell);
       document.body.classList.toggle('production-scheduler-page-active', pageId === 'page-crm-production');
@@ -66448,8 +66726,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmUsesStandardHeaderLayout(pageId) {
       pageId = String(pageId || '').trim();
       return !!pageId
-        && pageId !== 'page-login'
-        && pageId !== 'page-map';
+        && pageId !== 'page-login';
     }
 
     function crmIsVisibleHeaderTitleElement(el, page) {
@@ -66509,17 +66786,87 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       };
     }
 
+    var CRM_CANONICAL_HEADER_TITLES = {
+      'page-admin-placeholder': 'Admin Workspace',
+      'page-admin-sales-reps': 'Sales Reps',
+      'page-new-lead': 'New Lead',
+      'page-my-jobs': 'My Jobs',
+      'page-map': 'Money Maps',
+      'page-campaigns': 'Campaigns',
+      'page-assigned-leads': 'Assigned Leads',
+      'page-job-detail': 'Job Details',
+      'page-job-photos': 'Job Photos',
+      'page-inspection-capture': 'Inspection',
+      'page-photo-files': 'Photo Files',
+      'page-photo-file-detail': 'Photo Details',
+      'page-start-inspection': 'Start Inspection',
+      'page-start-inspection-workflow': 'Inspection',
+      'page-start-inspection-step': 'Inspection',
+      'page-inspection-photo-review': 'Photo Review',
+      'page-lead-contingency-action': 'Contingency',
+      'page-inspection-report-preview': 'Property Photo Report',
+      'page-docusign': 'Forms & Signatures',
+      'page-saved-docs': 'Saved Documents',
+      'page-template-builder': 'Template Builder',
+      'page-job-documents': 'Documents',
+      'page-company': 'Company',
+      'page-payroll': 'Payroll',
+      'page-announcements': 'Announcements',
+      'page-zoom-meetings': 'Meetings',
+      'page-job-costing': 'Job Costing',
+      'page-job-file-viewer': 'File Viewer',
+      'page-ai': 'Hail Money AI',
+      'page-estimates': 'Estimates',
+      'page-est-drone': 'Drone Estimate',
+      'page-est-upload': 'Upload Estimate',
+      'page-est-manual': 'Manual Estimate',
+      'page-est-roof-materials': 'Roof Materials',
+      'page-est-siding-materials': 'Siding Materials',
+      'page-est-labor': 'Labor',
+      'page-all-leads': 'Leads',
+      'page-lead-detail': 'Lead Details',
+      'page-new-contact': 'New Contact',
+      'page-crm-contacts': 'Contacts',
+      'page-crm-leaderboard': 'Leaderboard',
+      'page-crm-reminder': 'Reminder',
+      'page-crm-task': 'Task',
+      'page-crm-pipeline': 'Pipeline',
+      'page-tasks': 'Tasks',
+      'page-crm-calendar': 'Calendar',
+      'page-crm-jobs': 'Jobs',
+      'page-crm-production': 'Production',
+      'page-crm-inspections': 'Inspections',
+      'page-crm-job-file': 'Job Folder',
+      'page-crm-financial-worksheet': 'Financial Worksheet',
+      'page-crm-job-profitability': 'Job Profitability',
+      'page-company-docs': 'Documents',
+      'page-crm-settings': 'Settings',
+      'page-owner-dashboard': 'Owner Dashboard',
+      'page-lead-inbox': 'Lead Inbox',
+      'page-assign-leads': 'Assign Leads',
+      'page-team-leads': 'Team Leads',
+      'page-my-assigned-leads': 'My Assigned Leads',
+      'page-office-lead': 'New Lead',
+      'page-field-lead': 'New Lead',
+      'page-crm-file-viewer': 'File Viewer',
+      'page-canvasser-lead': 'New Lead',
+      'page-canvasser-leads': 'Leads',
+      'page-canvasser-credits': 'Credits',
+      'page-rotation': 'Lead Rotation'
+    };
+
     function crmGetHeaderPageTitle(pageId) {
       var activePage = pageId ? document.getElementById(pageId) : null;
       var jobFileHeaderContext = crmGetJobFileHeaderContext(pageId);
-      if (jobFileHeaderContext) return jobFileHeaderContext.homeownerName;
-      if (pageId === 'page-lead-detail' && _crmCurrentLeadId) {
-        var contextLead = crmGetJobFileLeadById(_crmCurrentLeadId);
-        if (contextLead) return crmGetJobFileLeadName(contextLead);
+      if (jobFileHeaderContext) return crmFormatHeaderTitleText(jobFileHeaderContext.pageTitle || '');
+      var explicitTitle = String(activePage && activePage.getAttribute('data-crm-header-title') || '').trim();
+      if (explicitTitle) return crmFormatHeaderTitleText(explicitTitle);
+      if (pageId !== 'page-admin-placeholder' && CRM_CANONICAL_HEADER_TITLES[pageId]) {
+        return crmFormatHeaderTitleText(CRM_CANONICAL_HEADER_TITLES[pageId]);
       }
       var titleEl = crmGetHeaderTitleSource(pageId);
       if (titleEl) return crmFormatHeaderTitleText(titleEl.textContent || '');
-      return crmFormatHeaderTitleText(activePage && activePage.getAttribute('data-crm-header-title') || '');
+      return crmFormatHeaderTitleText(CRM_CANONICAL_HEADER_TITLES[pageId] || '');
     }
 
     function crmSyncSharedHeaderBody(pageId) {
@@ -66527,6 +66874,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         el.classList.remove('crm-shared-header-hidden');
       });
       if (!crmUsesStandardHeaderLayout(pageId)) return;
+      if (pageId === 'page-map') return;
       var page = document.getElementById(pageId);
       if (!page) return;
       var titleEl = crmGetHeaderTitleSource(pageId);
@@ -66576,8 +66924,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         headerTitleEl.hidden = !usesStandardHeader || !pageTitle || showInlineHeaderTitle;
       }
       if (contextHeaderTitleEl) {
-        contextHeaderTitleEl.textContent = jobFileHeaderContext ? jobFileHeaderContext.pageTitle : '';
-        contextHeaderTitleEl.hidden = !jobFileHeaderContext;
+        contextHeaderTitleEl.textContent = '';
+        contextHeaderTitleEl.hidden = true;
       }
       crmSyncSharedHeaderBody(pageId);
     }
