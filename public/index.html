@@ -25958,10 +25958,37 @@
       return best;
     }
 
+    function mapsFindNearbyHailReportAt(lat, lng, maxMiles) {
+      var dateStr = mapsNormalizeDate(mapsState.previewDate || '');
+      var points = dateStr && mapsState.lsrPointsByDate && mapsState.lsrPointsByDate[dateStr] || [];
+      var nearest = null;
+      (points || []).forEach(function (point) {
+        var pLat = Number(point && point.lat);
+        var pLng = Number(point && (point.lon != null ? point.lon : point.lng));
+        var hailIn = Number(point && (point.hail_in != null ? point.hail_in : point.hailIn)) || 0;
+        if (!isFinite(pLat) || !isFinite(pLng) || hailIn < 0.75) return;
+        var distMi = _haversineMi(Number(lat), Number(lng), pLat, pLng);
+        if (distMi > maxMiles) return;
+        if (!nearest || distMi < nearest.distMi) nearest = { hailIn: hailIn, distMi: distMi, point: point };
+      });
+      return nearest;
+    }
+
     function mapsGetHailHoverTextAt(lat, lng) {
       var band = mapsFindVerifiedHailSizeAt(lat, lng);
       if (!band || !Number.isFinite(band.displayValue) || band.displayValue <= 0) return '';
-      return 'Estimated ≥' + band.displayValue.toFixed(2) + '"';
+      var estimate = Number(band.displayValue);
+      var report = mapsFindNearbyHailReportAt(lat, lng, 5);
+      var supported = !!(report && report.hailIn >= estimate - 0.25);
+      if (estimate >= 2 && !supported) {
+        return report
+          ? 'Radar peak unverified • nearby report ' + report.hailIn.toFixed(2) + '"'
+          : 'Radar peak • exact size unverified';
+      }
+      if (supported) {
+        return 'Radar estimate ≥' + estimate.toFixed(2) + '" • ' + report.hailIn.toFixed(2) + '" report nearby';
+      }
+      return 'Radar estimate ≥' + estimate.toFixed(2) + '" • unconfirmed';
     }
 
     function mapsUpdateHailHoverReadoutAt(lat, lng) {
@@ -26040,6 +26067,7 @@
       var savedPreviewDate = mapsState.previewDate;
       var savedActiveDate = mapsState._activeHailHoverDate;
       var savedActiveBands = mapsState._activeHailHoverBands;
+      var savedLsrPointsByDate = mapsState.lsrPointsByDate;
       var savedMoveListener = mapsState._hailHoverMoveListener;
       var readout = document.getElementById('maps-hail-hover-readout');
       var savedReadoutText = readout ? readout.textContent : '';
@@ -26101,6 +26129,7 @@
         };
 
         mapsState.map = fakeMap;
+        mapsState.lsrPointsByDate = {};
         mapsState.previewDate = '2026-07-19';
         var loadedBands = [
           liveBand(0.50, 150, square(0, 0, 1, 1)),
@@ -26131,9 +26160,9 @@
         mapsRemoveHailHoverMoveListener();
 
         var result = {
-          pass: values.band050 === '0.50"'
-            && values.band125 === '1.25"'
-            && values.band150 === '1.50"'
+          pass: values.band050 === 'Radar estimate ≥0.50" • unconfirmed'
+            && values.band125 === 'Radar estimate ≥1.25" • unconfirmed'
+            && values.band150 === 'Radar estimate ≥1.50" • unconfirmed'
             && values.outside === ''
             && values.afterClear === ''
             && values.afterDateChange === ''
@@ -26152,6 +26181,7 @@
         mapsState.previewDate = savedPreviewDate;
         mapsState._activeHailHoverDate = savedActiveDate;
         mapsState._activeHailHoverBands = savedActiveBands;
+        mapsState.lsrPointsByDate = savedLsrPointsByDate;
         mapsState._hailHoverMoveListener = savedMoveListener;
         if (readout) readout.textContent = savedReadoutText;
       }
@@ -34314,7 +34344,7 @@ function mapsGoogleReady() {
       var hasHail = !!mapsState.dateHasHailReports[dateStr] || types.indexOf('hail') !== -1;
       var hasWind = !!mapsState.dateHasWindReports[dateStr] || types.indexOf('wind') !== -1 || types.indexOf('tornado') !== -1;
       if (hasPoly) {
-        return '<span class="storm-source-badge swath" title="Swath polygon saved">Swath</span>';
+        return '<span class="storm-source-badge swath" title="Radar-estimated hail swath; verify against reports before using an exact size">Radar swath</span>';
       }
       if (hasHail || hasWind) {
         return '<span class="storm-source-badge reports" title="Raw LSR reports — no swath saved yet">Reports only</span>';
@@ -34343,22 +34373,21 @@ function mapsGoogleReady() {
       var reportMaxHail = rawMaxHail == null ? NaN : Number(rawMaxHail);
       var polygonCardSummary = mapsState.polyHailSummaries && mapsState.polyHailSummaries[dateStr];
       var polygonMaxHail = Number(polygonCardSummary && polygonCardSummary.max);
-      var maxHail = Math.max(
-        Number.isFinite(reportMaxHail) ? reportMaxHail : 0,
-        Number.isFinite(polygonMaxHail) ? polygonMaxHail : 0
-      );
-      if (maxHail <= 0) maxHail = NaN;
+      var hasReportedHail = Number.isFinite(reportMaxHail) && reportMaxHail > 0;
+      var hasRadarHail = Number.isFinite(polygonMaxHail) && polygonMaxHail > 0;
       var hasHail = !!mapsState.dateHasHailReports[dateStr]
         || types.indexOf('hail') !== -1
         || types.indexOf('mixed') !== -1
-        || Number.isFinite(maxHail);
-      var hailState = hasHail
-        ? (Number.isFinite(maxHail)
-          ? ((Number.isFinite(polygonMaxHail) && polygonMaxHail >= (Number.isFinite(reportMaxHail) ? reportMaxHail : 0))
-            ? ('Highest mapped radar estimate: ' + maxHail + ' in')
-            : ('Largest reported hail: ' + maxHail + ' in'))
-          : 'Hail data available')
-        : 'No hail impact detected.';
+        || hasReportedHail
+        || hasRadarHail;
+      // A storm card is a field-facing summary. Show an exact number only when
+      // it came from a dated hail report; never substitute the largest radar
+      // pixel/band elsewhere in the storm.
+      var hailState = hasReportedHail
+        ? ('Largest hail report this date: ' + reportMaxHail.toFixed(2) + ' in')
+        : (hasRadarHail
+          ? 'Radar hail swath available • exact size unverified'
+          : (hasHail ? 'Hail reports available' : 'No hail impact detected.'));
       var pinButtonHtml = options.showPin === false
         ? ''
         : '<button type="button" class="maps-pin-btn' + (isPinned ? ' pinned' : '') + '" data-pin-date="' + dateStr + '" title="' + (isPinned ? 'Remove from Finder' : 'Save to Finder') + '" aria-label="' + (isPinned ? 'Remove from Finder' : 'Save to Finder') + '">' + (isPinned ? '&#9733;' : '&#9734;') + '</button>';
