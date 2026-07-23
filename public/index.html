@@ -5251,12 +5251,95 @@
       padding: 5px 12px; cursor: pointer; font-size: 13px; color: var(--muted); }
     .jf-doc-cat-back:hover { border-color: var(--accent-2); color: var(--text); }
     .jf-doc-cat-title { font-size: 16px; font-weight: 700; }
+
+    /* Map search, bare opacity slider, storm-card metrics, and hail verification */
+    body:not(.map-page-active) .maps-area-search-trigger,
+    body:not(.map-page-active) .maps-area-search-popover { display:none !important; }
+    .maps-area-search-trigger {
+      position:absolute; left:92px; top:50%; transform:translateY(-50%);
+      width:36px; height:36px; border:1px solid var(--border); border-radius:9px;
+      background:#e5e7eb; color:#111827; cursor:pointer; z-index:45;
+      display:flex; align-items:center; justify-content:center; font-size:18px;
+    }
+    .maps-area-search-popover {
+      display:none; position:fixed; left:82px; top:calc(var(--maps-topbar-h) + 8px);
+      z-index:100050; width:min(330px,calc(100vw - 24px)); padding:12px;
+      border:1px solid var(--border); border-radius:12px; background:var(--panel);
+      box-shadow:0 12px 30px rgba(0,0,0,.28);
+    }
+    .maps-area-search-popover.open { display:block; }
+    .maps-area-search-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .maps-area-search-grid label { display:flex; flex-direction:column; gap:4px; font-size:11px; font-weight:700; color:var(--muted); }
+    .maps-area-search-grid label:first-child { grid-column:1 / -1; }
+    .maps-area-search-grid input, .maps-area-search-grid select {
+      width:100%; min-height:36px; border:1px solid var(--border); border-radius:8px;
+      background:var(--panel-2); color:var(--text); padding:6px 8px; font:inherit;
+    }
+    .maps-area-search-go {
+      width:100%; margin-top:10px; min-height:38px; border:1px solid var(--accent);
+      border-radius:9px; background:var(--accent-2); color:var(--text); font-weight:800; cursor:pointer;
+    }
+    .maps-area-search-bottom {
+      display:none; position:absolute; left:50%; bottom:48px; transform:translateX(-50%);
+      z-index:26; width:min(760px,calc(100% - 28px)); max-height:190px; overflow:auto;
+      padding:10px 12px; border:1px solid rgba(255,255,255,.28); border-radius:12px;
+      background:rgba(20,23,30,.94); color:#fff; box-shadow:0 8px 28px rgba(0,0,0,.42);
+    }
+    .maps-area-search-bottom.open { display:block; }
+    .maps-area-search-steps { display:flex; justify-content:center; gap:28px; font-size:13px; font-weight:800; }
+    .maps-area-search-results-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .maps-area-search-dates { display:flex; gap:7px; flex-wrap:wrap; }
+    .maps-area-date-btn, .maps-area-combine-btn, .maps-area-redraw-btn {
+      min-height:34px; padding:6px 10px; border:1px solid #d4af37; border-radius:8px;
+      background:transparent; color:#fff; font-size:12px; font-weight:800; cursor:pointer;
+    }
+    .maps-area-combine-btn { background:#d4af37; color:#111; }
+    .storm-rank { font-size:11px; color:var(--accent); font-weight:800; }
+    #page-map .maps-opacity-ctrl {
+      top:auto !important; left:50% !important; right:auto !important; bottom:48px !important;
+      transform:translateX(-50%); z-index:25; display:block; padding:0 !important;
+      margin:0 !important; border:0 !important; border-radius:0 !important;
+      background:transparent !important; box-shadow:none !important;
+    }
+    #page-map .maps-opacity-slider {
+      display:block; width:150px; height:24px; margin:0; padding:0;
+      border:0; background:transparent; box-shadow:none; accent-color:#d4af37; cursor:pointer;
+    }
+    #page-map #maps-my-location-btn { position:absolute; right:150px; top:calc(var(--maps-topbar-h) + 10px); z-index:20; }
+    .prop-modal-kicker { font-size:12px; font-weight:900; color:var(--accent); text-transform:uppercase; letter-spacing:.08em; }
+    @media (max-width:700px) {
+      .maps-area-search-trigger { left:56px; }
+      .maps-area-search-popover { left:12px; }
+      .maps-area-search-steps { gap:12px; font-size:12px; }
+      #page-map #maps-my-location-btn { right:10px; top:calc(var(--maps-topbar-h) + 54px); }
+    }
+
   </style>
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <div class="topbar-left-spacer" aria-hidden="true"></div>
+      <button type="button" id="maps-area-search-trigger" class="maps-area-search-trigger" aria-label="Search storms by area" title="Search storms by area">&#128269;</button>
+      <div id="maps-area-search-popover" class="maps-area-search-popover">
+        <div class="maps-area-search-grid">
+          <label>Minimum hail size
+            <select id="maps-area-hail-size">
+              <option value="0.5">0.50&quot; and larger</option>
+              <option value="1">1.00&quot; and larger</option>
+              <option value="1.25">1.25&quot; and larger</option>
+              <option value="1.5">1.50&quot; and larger</option>
+              <option value="1.75">1.75&quot; and larger</option>
+              <option value="2">2.00&quot; and larger</option>
+              <option value="2.5">2.50&quot; and larger</option>
+              <option value="3">3.00&quot; and larger</option>
+            </select>
+          </label>
+          <label>Start date<input type="date" id="maps-area-start-date" /></label>
+          <label>End date<input type="date" id="maps-area-end-date" /></label>
+        </div>
+        <button type="button" id="maps-area-search-go" class="maps-area-search-go">Search</button>
+      </div>
       <div class="map-header-brand">
         <img class="app-top-hail-logo" src="./assets/hailmoney-logo.png?v=2" alt="Hail Money" draggable="false" />
         <div class="map-header-title">Hail Money</div>
@@ -5782,14 +5865,15 @@
                   <img id="prop-modal-img" src="" alt="Property" class="prop-modal-img" />
                 </div>
                 <div class="prop-modal-info">
+                  <div class="prop-modal-kicker">Hail Verification</div>
                   <div id="prop-modal-address" class="prop-modal-address">Selected Property</div>
                   <div id="prop-modal-hail-wind" class="prop-modal-hail-wind"></div>
                   <div class="prop-modal-demo-grid">
-                    <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Population Density</span><span id="pmd-pop-density" class="prop-modal-demo-val">Not found yet.</span></div>
+                    <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Population</span><span id="pmd-population" class="prop-modal-demo-val">Not found yet.</span></div>
                     <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Median Age</span><span id="pmd-median-age" class="prop-modal-demo-val">Not found yet.</span></div>
-                    <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Avg Household Income</span><span id="pmd-hh-income" class="prop-modal-demo-val">Not found yet.</span></div>
+                    <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Average Household Value</span><span id="pmd-house-value" class="prop-modal-demo-val">Not found yet.</span></div>
                     <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Average Income</span><span id="pmd-avg-income" class="prop-modal-demo-val">Not found yet.</span></div>
-                    <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Avg Households / Sq Mi</span><span id="pmd-hh-density" class="prop-modal-demo-val">Not found yet.</span></div>
+                    <div class="prop-modal-demo-item"><span class="prop-modal-demo-label">Average Households / Sq Mi</span><span id="pmd-hh-density" class="prop-modal-demo-val">Not found yet.</span></div>
                   </div>
                 </div>
                 <button type="button" id="prop-modal-close" class="prop-modal-close-btn">&times;</button>
@@ -5799,7 +5883,7 @@
                 <button type="button" id="prop-modal-wind-obs-btn" class="prop-modal-action-btn">Wind Observation</button>
               </div>
               <div class="prop-modal-action-row prop-modal-action-bottom">
-                <button type="button" id="prop-modal-campaign-btn" class="prop-modal-action-btn">Add Marker to Campaign</button>
+                <button type="button" id="prop-modal-campaign-btn" class="prop-modal-action-btn">Address Marker</button>
                 <button type="button" id="prop-modal-impact-dates-btn" class="prop-modal-action-btn">Show Impact Dates</button>
               </div>
             </div>
@@ -5910,6 +5994,12 @@
           <!-- Map Area -->
           <div class="maps-map-area">
             <div id="stormMap" class="maps-map-container"></div>
+            <div id="maps-area-search-bottom" class="maps-area-search-bottom" aria-live="polite">
+              <div id="maps-area-search-steps" class="maps-area-search-steps">
+                <span>Step 1: Position map</span><span>Step 2: Select region</span>
+              </div>
+              <div id="maps-area-search-results" style="display:none;"></div>
+            </div>
             <div class="maps-style-ctrl">
               <select id="mapStyleSelect" class="maps-style-select" style="position:relative;z-index:20;pointer-events:auto;">
                 <option value="roadmap">Map</option>
@@ -5927,28 +6017,11 @@
               <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#DC1E1E;border-color:#A01616;"></span>2&ndash; 2&frac12;&Prime;</div>
               <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#9419B4;border-color:#6B1080;"></span>2&frac12;&Prime; +</div>
             </div>
-            <!-- Layer Opacity + Visibility Control -->
+            <!-- Bare swath opacity slider -->
             <div class="maps-opacity-ctrl">
-              <button type="button" id="maps-opacity-btn" class="maps-opacity-btn" title="Layer Controls">&#9681;</button>
-              <button type="button" id="maps-my-location-btn" class="maps-location-btn" title="Go to my current location">My Location</button>
-              <div id="maps-opacity-slider-wrap" class="maps-opacity-slider-wrap maps-layer-panel">
-                <div class="maps-layer-row">
-                  <span class="maps-layer-label">Hail</span>
-                  <input type="range" id="maps-opacity-hail" class="maps-opacity-slider" min="0" max="100" value="30" />
-                  <span id="maps-opacity-hail-val" class="maps-opacity-val">30%</span>
-                </div>
-                <div class="maps-layer-row">
-                  <span class="maps-layer-label">Wind</span>
-                  <input type="range" id="maps-opacity-wind" class="maps-opacity-slider" min="0" max="100" value="0" />
-                  <span id="maps-opacity-wind-val" class="maps-opacity-val">0%</span>
-                </div>
-                <div class="maps-layer-row">
-                  <span class="maps-layer-label">Tornado</span>
-                  <input type="range" id="maps-opacity-tornado" class="maps-opacity-slider" min="0" max="100" value="30" />
-                  <span id="maps-opacity-tornado-val" class="maps-opacity-val">30%</span>
-                </div>
-              </div>
+              <input type="range" id="maps-opacity-master" class="maps-opacity-slider" min="0" max="100" value="55" aria-label="Swath opacity" />
             </div>
+            <button type="button" id="maps-my-location-btn" class="maps-location-btn" title="Go to my current location">My Location</button>
             <!-- Street Color Overlay Control -->
             <div class="maps-street-ctrl">
               <button type="button" id="maps-street-btn" class="maps-street-toggle-btn" title="Street Value Colors">&#127968;</button>
@@ -10668,7 +10741,9 @@
         lastError: null, lastFetchAt: null, aprilDates: []
       },
       swathToggles: { hail: true, wind: false, tornado: true },
-      typeOpacityScale: { hail: 0.30, wind: 0.00, tornado: 0.30 },
+      typeOpacityScale: { hail: 1.00, wind: 1.00, tornado: 1.00 },
+      stormCardMetrics: {},       // dateStr -> estimated impacted houses + overall rank
+      areaSearch: null,           // rectangle-search state
       stormPage: 0,              // current page index
       selectedProperty: null,    // { lat, lng, address, title }
       rawStormRows: {},          // dateStr -> raw row[] from storm_polygons (for nearby-storm search)
@@ -11058,22 +11133,24 @@
 
       // TODO(acs-demographics): populate modal demographic fields from Census ACS once tract/block-group enrichment is wired.
       // TODO(acs-demographics): persist ACS-derived values into property records so the modal can stay instant offline.
-      var popDensity = rawData.populationDensity || rawData.populationDensityPerSqMi || rawData.popDensity || '';
+      var population = rawData.population || rawData.totalPopulation || rawData.populationEstimate || '';
       var medianAge = rawData.medianAge || rawData.ageMedian || '';
-      var hhIncome = rawData.averageHouseholdIncome || rawData.avgHouseholdIncome || rawData.householdIncome || '';
-      var avgIncome = rawData.averageIncome || rawData.avgIncome || rawData.incomePerCapita || '';
+      var houseValue = rawData.averageHouseholdValue || rawData.averageHouseValue || rawData.avgHouseValue ||
+        rawData.homeValue || rawData.estimatedValue || rawData.propertyValue || '';
+      var avgIncome = rawData.averageIncome || rawData.avgIncome || rawData.averageHouseholdIncome ||
+        rawData.avgHouseholdIncome || rawData.householdIncome || rawData.incomePerCapita || '';
       var hhDensity = rawData.householdsPerSqMi || rawData.householdDensity || rawData.avgHouseholdsPerSqMi || '';
 
-      if (!hhIncome && rawData.neighborhoodMedianIncome) {
-        hhIncome = ppFormatDemographicMoney(rawData.neighborhoodMedianIncome, ' (median)');
+      houseValue = ppFormatDemographicMoney(houseValue, '');
+      if (!avgIncome && rawData.neighborhoodMedianIncome) {
+        avgIncome = ppFormatDemographicMoney(rawData.neighborhoodMedianIncome, ' (median)');
       } else {
-        hhIncome = ppFormatDemographicMoney(hhIncome, '');
+        avgIncome = ppFormatDemographicMoney(avgIncome, '');
       }
-      avgIncome = ppFormatDemographicMoney(avgIncome, '');
 
-      ppSetDemographicField('pmd-pop-density', ppFormatDemographicCount(popDensity, ' / sq mi'));
+      ppSetDemographicField('pmd-population', ppFormatDemographicCount(population, ''));
       ppSetDemographicField('pmd-median-age', medianAge ? String(medianAge) : '');
-      ppSetDemographicField('pmd-hh-income', hhIncome);
+      ppSetDemographicField('pmd-house-value', houseValue);
       ppSetDemographicField('pmd-avg-income', avgIncome);
       ppSetDemographicField('pmd-hh-density', ppFormatDemographicCount(hhDensity, ' / sq mi'));
     }
@@ -11310,6 +11387,7 @@
           ppWire();
           mapsWireMobileDrawers();
           mapsWireOpacityCtrl();
+          mapsWireAreaSearch();
           mapsWireSwathToggleCtrl();
           mapsWireStormTypeButtons();
           mapsWireStormSearch();
@@ -16663,7 +16741,11 @@
           badgeHtml = '<span class="storm-source-badge reports" title="Raw LSR reports — no swath saved yet">Reports only</span>';
         }
         var impactSummary = mapsGetStormImpactSummarySync(dateStr);
-        var impactLabel = mapsFormatHousingUnitLabel(impactSummary || null);
+        var cardMetric = mapsState.stormCardMetrics && mapsState.stormCardMetrics[dateStr];
+        var impactLabel = cardMetric
+          ? ('Impacted houses: ' + mapsAbbreviateCount(cardMetric.impactedHomesCount) + ' (est.)')
+          : mapsFormatHousingUnitLabel(impactSummary || null);
+        var rankLabel = cardMetric && cardMetric.rank ? ('Overall rank: #' + cardMetric.rank) : 'Overall rank: calculating';
         li.innerHTML =
           '<button type="button" class="maps-pin-btn' + (isPinned ? ' pinned' : '') +
           '" data-pin-date="' + dateStr + '" title="' + (isPinned ? 'Unpin' : 'Pin to saved') + '">&#x1F4CC;</button>' +
@@ -16672,6 +16754,7 @@
             '<span class="storm-label">' + dateStr + ' ' + badgeHtml + '</span>' +
             '<span class="storm-size">' + summaryHtml + '</span>' +
             '<span class="storm-home-count" data-impact-date="' + dateStr + '" style="font-size:11px;color:var(--muted);">' + impactLabel + '</span>' +
+            '<span class="storm-rank" data-rank-date="' + dateStr + '">' + rankLabel + '</span>' +
           '</div>';
         // Click row → preview this date
         li.addEventListener('click', function (e) {
@@ -16686,6 +16769,7 @@
         ul.appendChild(li);
       });
       mapsUpdatePagingButtons(page, maxPage);
+      mapsLoadStormCardMetrics();
       mapsPrimeStormImpactSummaries(pageDates);
       mapsRenderImpactTab();
       mapsRenderPinnedTab();
@@ -17319,13 +17403,99 @@
       return mapsAbbreviateCount(summary.impactedHomesCount) + ' homes impacted';
     }
 
+
+    function mapsSetStormRankText(dateStr, text) {
+      document.querySelectorAll('.storm-rank[data-rank-date="' + dateStr + '"]').forEach(function (el) {
+        el.textContent = text;
+      });
+    }
+
+    function mapsLoadStormCardMetrics() {
+      if (mapsState._stormCardMetricsLoaded) return Promise.resolve(mapsState.stormCardMetrics || {});
+      if (mapsState._stormCardMetricsPromise) return mapsState._stormCardMetricsPromise;
+      mapsState._stormCardMetricsPromise = (async function () {
+        var rows = [];
+        var pageSize = 1000;
+        for (var page = 0; page < 60; page++) {
+          var res = await sb.from('storm_polygons')
+            .select('event_date,storm_type,source_priority,swath_index,area_sq_mi,threshold_value,band_min,band_max,source_product')
+            .order('event_date', { ascending: false })
+            .range(page * pageSize, page * pageSize + pageSize - 1);
+          if (res && res.error) throw res.error;
+          var batch = res && Array.isArray(res.data) ? res.data : [];
+          rows = rows.concat(batch);
+          if (batch.length < pageSize) break;
+        }
+
+        var grouped = {};
+        rows.forEach(function (row, rowIndex) {
+          if (!row || String(row.source_product || '').toLowerCase() === 'no_swath') return;
+          var dateStr = String(row.event_date || '').slice(0, 10);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
+          var type = String(row.storm_type || 'hail').toLowerCase();
+          if (type === 'wind' || type === 'tornado') return;
+          var pri = isFinite(Number(row.source_priority)) ? Number(row.source_priority) : 99;
+          if (!grouped[dateStr] || pri < grouped[dateStr].priority) {
+            grouped[dateStr] = { priority: pri, rows: [] };
+          }
+          if (pri === grouped[dateStr].priority) grouped[dateStr].rows.push(Object.assign({ _rowIndex: rowIndex }, row));
+        });
+
+        var metrics = {};
+        Object.keys(grouped).forEach(function (dateStr) {
+          var areaBySwath = {};
+          var maxHail = 0;
+          grouped[dateStr].rows.forEach(function (row) {
+            var key = row.swath_index != null ? String(row.swath_index) : ('row-' + row._rowIndex);
+            var area = Math.max(0, Number(row.area_sq_mi) || 0);
+            areaBySwath[key] = Math.max(areaBySwath[key] || 0, area);
+            maxHail = Math.max(maxHail, Number(row.band_max) || 0, Number(row.band_min) || 0, Number(row.threshold_value) || 0);
+          });
+          var areaSqMi = Object.keys(areaBySwath).reduce(function (sum, key) { return sum + areaBySwath[key]; }, 0);
+          var impactedHomesCount = Math.max(0, Math.round(areaSqMi * 85));
+          metrics[dateStr] = {
+            dateStr: dateStr,
+            areaSqMi: areaSqMi,
+            maxHail: maxHail,
+            impactedHomesCount: impactedHomesCount,
+            housingEstimateConnected: true,
+            estimated: true,
+            score: maxHail * 1000000 + Math.log10(impactedHomesCount + 1) * 10000 + impactedHomesCount
+          };
+        });
+
+        Object.keys(metrics).sort(function (a, b) {
+          return metrics[b].score - metrics[a].score || b.localeCompare(a);
+        }).forEach(function (dateStr, index) {
+          metrics[dateStr].rank = index + 1;
+        });
+
+        mapsState.stormCardMetrics = metrics;
+        mapsState._stormCardMetricsLoaded = true;
+        Object.keys(metrics).forEach(function (dateStr) {
+          mapsSetStormImpactSummaryText(dateStr, 'Impacted houses: ' + mapsAbbreviateCount(metrics[dateStr].impactedHomesCount) + ' (est.)');
+          mapsSetStormRankText(dateStr, 'Overall rank: #' + metrics[dateStr].rank);
+        });
+        return metrics;
+      })().catch(function (err) {
+        console.warn('[storm-card-metrics] failed', err);
+        mapsState._stormCardMetricsLoaded = true;
+        return {};
+      });
+      return mapsState._stormCardMetricsPromise;
+    }
+
     function mapsGetStormImpactSummarySync(dateStr) {
       return mapsState.stormImpactSummaries && mapsState.stormImpactSummaries[dateStr] || null;
     }
 
     function mapsSetStormImpactSummaryText(dateStr, text) {
+      var metric = mapsState.stormCardMetrics && mapsState.stormCardMetrics[dateStr];
+      var finalText = metric
+        ? ('Impacted houses: ' + mapsAbbreviateCount(metric.impactedHomesCount) + ' (est.)')
+        : text;
       document.querySelectorAll('.storm-home-count[data-impact-date="' + dateStr + '"]').forEach(function (el) {
-        el.textContent = text;
+        el.textContent = finalText;
       });
     }
 
@@ -20211,44 +20381,327 @@
       });
     }
 
+
+    // ── Hail-size/date/rectangle storm search ──
+    var mapsAreaSearchState = {
+      drawingManager: null,
+      rectangle: null,
+      bounds: null,
+      dates: [],
+      clipOverlays: [],
+      minHail: 0.5,
+      startDate: '',
+      endDate: ''
+    };
+
+    function mapsAreaClearClippedSwaths() {
+      (mapsAreaSearchState.clipOverlays || []).forEach(function (overlay) {
+        try { overlay.setMap(null); } catch (_) {}
+      });
+      mapsAreaSearchState.clipOverlays = [];
+    }
+
+    function mapsAreaSetDefaultDates() {
+      var endEl = document.getElementById('maps-area-end-date');
+      var startEl = document.getElementById('maps-area-start-date');
+      if (!endEl || !startEl) return;
+      var today = new Date();
+      var yearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+      function iso(d) {
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+      }
+      if (!endEl.value) endEl.value = iso(today);
+      if (!startEl.value) startEl.value = iso(yearAgo);
+    }
+
+    function mapsAreaRenderResults(dates) {
+      var steps = document.getElementById('maps-area-search-steps');
+      var results = document.getElementById('maps-area-search-results');
+      if (steps) steps.style.display = 'none';
+      if (!results) return;
+      results.style.display = 'block';
+      if (!dates.length) {
+        results.innerHTML =
+          '<div class="maps-area-search-results-head"><strong>No matching storm dates in this region.</strong>' +
+          '<button type="button" class="maps-area-redraw-btn" id="maps-area-redraw-btn">Select Again</button></div>';
+      } else {
+        results.innerHTML =
+          '<div class="maps-area-search-results-head"><strong>' + dates.length + ' storm date' + (dates.length === 1 ? '' : 's') + ' found</strong>' +
+          '<div><button type="button" class="maps-area-redraw-btn" id="maps-area-redraw-btn">Select Again</button> ' +
+          '<button type="button" class="maps-area-combine-btn" id="maps-area-combine-btn">Combine</button></div></div>' +
+          '<div class="maps-area-search-dates">' +
+          dates.map(function (dateStr) {
+            return '<button type="button" class="maps-area-date-btn" data-area-date="' + dateStr + '">' + dateStr + '</button>';
+          }).join('') + '</div>';
+      }
+
+      results.querySelectorAll('[data-area-date]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          mapsAreaClearClippedSwaths();
+          Object.keys(mapsState.swathPolygons || {}).forEach(function (dateStr) { hideStormDate(dateStr); });
+          mapsState.previewDate = null;
+          mapsPreviewDate(button.getAttribute('data-area-date'));
+        });
+      });
+      var combineBtn = document.getElementById('maps-area-combine-btn');
+      if (combineBtn) combineBtn.addEventListener('click', mapsAreaCombineDates);
+      var redrawBtn = document.getElementById('maps-area-redraw-btn');
+      if (redrawBtn) redrawBtn.addEventListener('click', mapsAreaBeginRectangle);
+    }
+
+    function mapsAreaQuerySelectedRegion() {
+      var bounds = mapsAreaSearchState.bounds;
+      if (!bounds) return;
+      var ne = bounds.getNorthEast();
+      var sw = bounds.getSouthWest();
+      var results = document.getElementById('maps-area-search-results');
+      if (results) {
+        results.style.display = 'block';
+        results.innerHTML = '<div style="text-align:center;font-weight:800;padding:8px;">Finding storm dates…</div>';
+      }
+      var steps = document.getElementById('maps-area-search-steps');
+      if (steps) steps.style.display = 'none';
+
+      sb.from('hail_lsr_raw')
+        .select('event_date,lat,lon,hail_in')
+        .gte('event_date', mapsAreaSearchState.startDate)
+        .lte('event_date', mapsAreaSearchState.endDate)
+        .gte('lat', sw.lat()).lte('lat', ne.lat())
+        .gte('lon', sw.lng()).lte('lon', ne.lng())
+        .gte('hail_in', mapsAreaSearchState.minHail)
+        .order('event_date', { ascending: false })
+        .limit(20000)
+        .then(function (res) {
+          if (res && res.error) throw res.error;
+          var found = {};
+          (res && res.data || []).forEach(function (row) {
+            var dateStr = String(row.event_date || '').slice(0, 10);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) found[dateStr] = true;
+          });
+          mapsAreaSearchState.dates = Object.keys(found).sort().reverse();
+          mapsAreaRenderResults(mapsAreaSearchState.dates);
+        })
+        .catch(function (err) {
+          console.warn('[area-search] failed', err);
+          if (results) results.innerHTML = '<div style="color:#ffb4b4;font-weight:800;">Storm search could not load. Select the region again.</div>';
+        });
+    }
+
+    function mapsAreaBeginRectangle() {
+      if (!mapsState.map || !(google.maps.drawing && google.maps.drawing.DrawingManager)) return;
+      mapsAreaClearClippedSwaths();
+      var bottom = document.getElementById('maps-area-search-bottom');
+      var steps = document.getElementById('maps-area-search-steps');
+      var results = document.getElementById('maps-area-search-results');
+      if (bottom) bottom.classList.add('open');
+      if (steps) steps.style.display = 'flex';
+      if (results) results.style.display = 'none';
+      if (mapsAreaSearchState.rectangle) {
+        mapsAreaSearchState.rectangle.setMap(null);
+        mapsAreaSearchState.rectangle = null;
+      }
+      mapsAreaSearchState.drawingManager.setDrawingMode(google.maps.drawing.OverlayType.RECTANGLE);
+    }
+
+    function mapsAreaClipRing(ring, west, east, south, north) {
+      var points = (ring || []).map(function (point) { return [Number(point[0]), Number(point[1])]; })
+        .filter(function (point) { return isFinite(point[0]) && isFinite(point[1]); });
+      function clip(input, inside, intersect) {
+        var output = [];
+        if (!input.length) return output;
+        var previous = input[input.length - 1];
+        input.forEach(function (current) {
+          var currentInside = inside(current);
+          var previousInside = inside(previous);
+          if (currentInside) {
+            if (!previousInside) output.push(intersect(previous, current));
+            output.push(current);
+          } else if (previousInside) {
+            output.push(intersect(previous, current));
+          }
+          previous = current;
+        });
+        return output;
+      }
+      function vertical(x) {
+        return function (a, b) {
+          var t = (x - a[0]) / ((b[0] - a[0]) || 1e-12);
+          return [x, a[1] + (b[1] - a[1]) * t];
+        };
+      }
+      function horizontal(y) {
+        return function (a, b) {
+          var t = (y - a[1]) / ((b[1] - a[1]) || 1e-12);
+          return [a[0] + (b[0] - a[0]) * t, y];
+        };
+      }
+      points = clip(points, function (p) { return p[0] >= west; }, vertical(west));
+      points = clip(points, function (p) { return p[0] <= east; }, vertical(east));
+      points = clip(points, function (p) { return p[1] >= south; }, horizontal(south));
+      points = clip(points, function (p) { return p[1] <= north; }, horizontal(north));
+      return points;
+    }
+
+    function mapsAreaGeoJsonOuterRings(geojson) {
+      if (!geojson) return [];
+      if (typeof geojson === 'string') {
+        try { geojson = JSON.parse(geojson); } catch (_) { return []; }
+      }
+      if (geojson.type === 'Feature') return mapsAreaGeoJsonOuterRings(geojson.geometry);
+      if (geojson.type === 'FeatureCollection') {
+        return (geojson.features || []).reduce(function (all, feature) {
+          return all.concat(mapsAreaGeoJsonOuterRings(feature));
+        }, []);
+      }
+      if (geojson.type === 'Polygon') return geojson.coordinates && geojson.coordinates[0] ? [geojson.coordinates[0]] : [];
+      if (geojson.type === 'MultiPolygon') {
+        return (geojson.coordinates || []).map(function (polygon) { return polygon && polygon[0]; }).filter(Boolean);
+      }
+      return [];
+    }
+
+    function mapsAreaDrawClippedRows(dateStr, rows, bounds) {
+      var ne = bounds.getNorthEast();
+      var sw = bounds.getSouthWest();
+      var valid = (rows || []).filter(function (row) {
+        var type = String(row.storm_type || 'hail').toLowerCase();
+        return type !== 'wind' && type !== 'tornado' && row.polygon_geojson;
+      });
+      var bestPriority = valid.reduce(function (best, row) {
+        var pri = isFinite(Number(row.source_priority)) ? Number(row.source_priority) : 99;
+        return Math.min(best, pri);
+      }, 99);
+      valid.filter(function (row) {
+        var pri = isFinite(Number(row.source_priority)) ? Number(row.source_priority) : 99;
+        return pri === bestPriority;
+      }).forEach(function (row) {
+        var hail = Number(row.band_min) || Number(row.threshold_value) || Number(row.band_max) || 0.5;
+        var rgb = swathSeverityColor(hail);
+        var color = 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
+        mapsAreaGeoJsonOuterRings(row.polygon_geojson).forEach(function (ring) {
+          var clipped = mapsAreaClipRing(ring, sw.lng(), ne.lng(), sw.lat(), ne.lat());
+          if (clipped.length < 3) return;
+          var polygon = new google.maps.Polygon({
+            paths: clipped.map(function (point) { return { lat: point[1], lng: point[0] }; }),
+            map: mapsState.map,
+            fillColor: color,
+            fillOpacity: mapsState.swathOpacity,
+            strokeColor: color,
+            strokeOpacity: Math.min(1, mapsState.swathOpacity + 0.18),
+            strokeWeight: 1,
+            clickable: false,
+            zIndex: 700 + Math.round(hail * 10)
+          });
+          polygon._stormType = 'hail';
+          polygon._bandMin = hail;
+          mapsAreaSearchState.clipOverlays.push(polygon);
+        });
+      });
+    }
+
+    function mapsAreaCombineDates() {
+      var dates = mapsAreaSearchState.dates || [];
+      var bounds = mapsAreaSearchState.bounds;
+      if (!dates.length || !bounds) return;
+      mapsAreaClearClippedSwaths();
+      Object.keys(mapsState.swathPolygons || {}).forEach(function (dateStr) { hideStormDate(dateStr); });
+      var results = document.getElementById('maps-area-search-results');
+      if (results) results.insertAdjacentHTML('afterbegin', '<div id="maps-area-combine-loading" style="font-size:11px;color:#d4af37;margin-bottom:6px;">Combining swaths inside selected region…</div>');
+      Promise.all(dates.map(function (dateStr) {
+        return fetchStormPolygonsByDate(dateStr).then(function (rows) {
+          mapsAreaDrawClippedRows(dateStr, rows, bounds);
+        });
+      })).finally(function () {
+        var loading = document.getElementById('maps-area-combine-loading');
+        if (loading) loading.remove();
+        mapsApplySwathOpacity(mapsState.swathOpacity);
+      });
+    }
+
+    function mapsWireAreaSearch() {
+      var trigger = document.getElementById('maps-area-search-trigger');
+      var popover = document.getElementById('maps-area-search-popover');
+      var go = document.getElementById('maps-area-search-go');
+      if (!trigger || !popover || !go || !mapsState.map) return;
+      mapsAreaSetDefaultDates();
+
+      mapsAreaSearchState.drawingManager = new google.maps.drawing.DrawingManager({
+        drawingControl: false,
+        drawingMode: null,
+        rectangleOptions: {
+          editable: true,
+          draggable: true,
+          strokeColor: '#d4af37',
+          strokeOpacity: 1,
+          strokeWeight: 2,
+          fillColor: '#d4af37',
+          fillOpacity: 0.08,
+          clickable: false,
+          zIndex: 900
+        }
+      });
+      mapsAreaSearchState.drawingManager.setMap(mapsState.map);
+      google.maps.event.addListener(mapsAreaSearchState.drawingManager, 'rectanglecomplete', function (rectangle) {
+        if (mapsAreaSearchState.rectangle) mapsAreaSearchState.rectangle.setMap(null);
+        mapsAreaSearchState.rectangle = rectangle;
+        mapsAreaSearchState.bounds = rectangle.getBounds();
+        mapsAreaSearchState.drawingManager.setDrawingMode(null);
+        mapsAreaQuerySelectedRegion();
+      });
+
+      trigger.addEventListener('click', function (event) {
+        event.stopPropagation();
+        popover.classList.toggle('open');
+      });
+      popover.addEventListener('click', function (event) { event.stopPropagation(); });
+      document.addEventListener('click', function () { popover.classList.remove('open'); });
+      go.addEventListener('click', function () {
+        var start = document.getElementById('maps-area-start-date').value;
+        var end = document.getElementById('maps-area-end-date').value || start;
+        var minHail = Number(document.getElementById('maps-area-hail-size').value) || 0.5;
+        if (!start || !end) return;
+        if (start > end) { var swap = start; start = end; end = swap; }
+        mapsAreaSearchState.startDate = start;
+        mapsAreaSearchState.endDate = end;
+        mapsAreaSearchState.minHail = minHail;
+        popover.classList.remove('open');
+        mapsAreaBeginRectangle();
+      });
+      mapsState.areaSearch = mapsAreaSearchState;
+    }
+
     // ── Swath Opacity Control ──
     function mapsWireOpacityCtrl() {
       var App = mapsGetAppState();
-      var btn = document.getElementById('maps-opacity-btn');
-      var wrap = document.getElementById('maps-opacity-slider-wrap');
-      if (!btn || !wrap) return;
-
-      if (App.mapsOpacityCtrlBound) return;
+      var slider = document.getElementById('maps-opacity-master');
+      if (!slider || App.mapsOpacityCtrlBound) return;
       App.mapsOpacityCtrlBound = true;
 
-      btn.addEventListener('click', function () {
-        wrap.classList.toggle('open');
-      });
-      var locBtn = document.getElementById('maps-my-location-btn');
-      if (locBtn) {
-        locBtn.addEventListener('click', mapsHandleMyLocation);
-      }
-
-      ['hail', 'wind', 'tornado'].forEach(function (type) {
-        var slider = document.getElementById('maps-opacity-' + type);
-        var valEl = document.getElementById('maps-opacity-' + type + '-val');
-        if (!slider) return;
-        var raf = null;
-        slider.addEventListener('input', function () {
-          var pct = Number(slider.value);
-          if (valEl) valEl.textContent = pct + '%';
-          var scale = pct / 100;
-          if (!mapsState.typeOpacityScale) mapsState.typeOpacityScale = {};
-          mapsState.typeOpacityScale[type] = scale;
-          mapsState.swathToggles[type] = pct > 0;
-          applySwathToggles();
-          if (raf) cancelAnimationFrame(raf);
-          raf = requestAnimationFrame(function () {
-            mapsApplySwathOpacity(mapsState.swathOpacity != null ? mapsState.swathOpacity : 0.55);
-            raf = null;
+      mapsState.typeOpacityScale = { hail: 1, wind: 1, tornado: 1 };
+      mapsState.swathOpacity = Number(slider.value) / 100;
+      var raf = null;
+      slider.addEventListener('input', function () {
+        mapsState.swathOpacity = Number(slider.value) / 100;
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(function () {
+          mapsApplySwathOpacity(mapsState.swathOpacity);
+          (mapsAreaSearchState.clipOverlays || []).forEach(function (polygon) {
+            try {
+              polygon.setOptions({
+                fillOpacity: mapsState.swathOpacity,
+                strokeOpacity: Math.min(1, mapsState.swathOpacity + 0.18)
+              });
+            } catch (_) {}
           });
+          raf = null;
         });
       });
+
+      var locBtn = document.getElementById('maps-my-location-btn');
+      if (locBtn) locBtn.addEventListener('click', mapsHandleMyLocation);
     }
 
     function applySwathToggles(dateStr) {
@@ -21675,43 +22128,28 @@
         });
       }
 
-      // ── Add Marker to Campaign ──
-      var campaignBtn = document.getElementById('prop-modal-campaign-btn');
-      if (campaignBtn) {
-        campaignBtn.addEventListener('click', function () {
-          var prop = mapsState.selectedProperty;
-          ppClose();
-          showPage('page-campaigns');
-          campaignInit();
-          if (prop && prop.lat && prop.lng) {
-            setTimeout(function () {
-              if (typeof campaignAddPropertyMarker === 'function') {
-                campaignAddPropertyMarker(prop);
-              }
-            }, 600);
-          }
+      // ── Address Marker ──
+      function addSelectedAddressMarker() {
+        var prop = mapsState.selectedProperty;
+        if (!prop || !mapsState.map || !isFinite(Number(prop.lat)) || !isFinite(Number(prop.lng))) return;
+        mapsState.addressMarkers = mapsState.addressMarkers || [];
+        var marker = new google.maps.Marker({
+          map: mapsState.map,
+          position: { lat: Number(prop.lat), lng: Number(prop.lng) },
+          title: prop.address || mapsBuildPropertyDisplayTitle(prop),
+          animation: google.maps.Animation.DROP
         });
+        mapsState.addressMarkers.push(marker);
+        var hvOverlay = document.getElementById('hail-verify-modal-overlay');
+        if (hvOverlay) hvOverlay.style.display = 'none';
+        ppClose();
       }
 
-      // ── Add Address Marker (from hail verify modal) ──
+      var campaignBtn = document.getElementById('prop-modal-campaign-btn');
+      if (campaignBtn) campaignBtn.addEventListener('click', addSelectedAddressMarker);
+
       var hvAddMarkerBtn = document.getElementById('hv-add-marker-btn');
-      if (hvAddMarkerBtn) {
-        hvAddMarkerBtn.addEventListener('click', function () {
-          var hvOverlay = document.getElementById('hail-verify-modal-overlay');
-          if (hvOverlay) hvOverlay.style.display = 'none';
-          var prop = mapsState.selectedProperty;
-          ppClose();
-          showPage('page-campaigns');
-          campaignInit();
-          if (prop && prop.lat && prop.lng) {
-            setTimeout(function () {
-              if (typeof campaignAddPropertyMarker === 'function') {
-                campaignAddPropertyMarker(prop);
-              }
-            }, 600);
-          }
-        });
-      }
+      if (hvAddMarkerBtn) hvAddMarkerBtn.addEventListener('click', addSelectedAddressMarker);
 
       var dirBtn = document.getElementById('pp-directions');
       if (dirBtn) dirBtn.addEventListener('click', function () {
