@@ -32525,8 +32525,20 @@ function mapsGoogleReady() {
       mapsState.hailShadowSummaryByDate[mapsNormalizeDate(dateStr) || 'unknown'] = summary;
       if (mapsIsSwathDebugMode()) console.info('[HAIL-SHADOW-SUMMARY]', mapsNormalizeDate(dateStr), summary);
 
-      // Shadow mode is the safe default: preserve all currently visible rows
-      // while provenance is classified internally and accepted replacements are built.
+      // Swaths generated from official hail reports are the customer-facing source
+      // whenever they exist. Do not layer unreviewed radar thresholds over them:
+      // that can turn a locally reported 1.00-inch storm into a false 2.00-inch claim.
+      var reportCalibratedRows = hailRows.filter(function (row) {
+        var source = String(row && row.source || '').toLowerCase();
+        var product = String(row && row.source_product || '').toLowerCase();
+        return source === 'swath_render_saved' || product === 'rule_v1_bands';
+      });
+      if (reportCalibratedRows.length) {
+        summary.displayMode = 'official-report-calibrated';
+        return reportCalibratedRows;
+      }
+
+      // Radar geometry remains a fallback only when no official-report swath exists.
       if (!mapsAcceptedOnlyFeatureEnabled()) return hailRows;
 
       var candidates = hailRows.filter(function (row) {
@@ -33289,7 +33301,7 @@ function mapsGoogleReady() {
         rows = (rows || []).concat(mapsState.hailShadowReviewRowsByDate[mapsNormalizeDate(dateStr)] || []);
       }
       // Preferred saved corridor sources — exempt from oversized guard & fragment cleanup
-      var PREFERRED_CORRIDOR_SOURCES = ['corridor', 'nexrad_poc', 'mrms_mesh', 'synthesized_mesh', 'nexrad_iem'];
+      var PREFERRED_CORRIDOR_SOURCES = ['corridor', 'swath_render_saved', 'nexrad_poc', 'mrms_mesh', 'synthesized_mesh', 'nexrad_iem'];
       var _verboseDateLogs = MAPS_VERBOSE_DATE_LOGS;
       // Selected-date clicks no longer auto-focus the map, so skip dead fit-bounds bookkeeping here.
       var _trackFocusGeometry = false;
