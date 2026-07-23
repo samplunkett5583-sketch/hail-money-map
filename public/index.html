@@ -25772,6 +25772,28 @@
       return 0;
     }
 
+    function mapsMaxReportedHailInsideGeometry(dateStr, geometry) {
+      dateStr = mapsNormalizeDate(dateStr || '');
+      var points = mapsState.lsrPointsByDate && mapsState.lsrPointsByDate[dateStr] || [];
+      var maxHail = 0;
+      (points || []).forEach(function (point) {
+        var pLat = Number(point && point.lat);
+        var pLng = Number(point && (point.lon != null ? point.lon : point.lng));
+        var hailIn = Number(point && (point.hail_in != null ? point.hail_in : point.hailIn)) || 0;
+        if (!isFinite(pLat) || !isFinite(pLng) || hailIn < 0.75) return;
+        if (mapsGeoJsonContains(pLat, pLng, geometry)) maxHail = Math.max(maxHail, hailIn);
+      });
+      return maxHail;
+    }
+
+    function mapsCalibratedHailSize(radarSize, reportedSize) {
+      radarSize = Number(radarSize) || 0;
+      reportedSize = Number(reportedSize) || 0;
+      var size = radarSize;
+      if (reportedSize > 0 && size > reportedSize) size = reportedSize;
+      return Math.round(size * 4) / 4;
+    }
+
     // Property-level hail validation is deliberately conservative. Radar swaths are
     // estimates, LSRs are point reports, and neither is silently promoted to a
     // confirmed measurement at a parcel.
@@ -25806,6 +25828,12 @@
 
       var radarEstimate = exactBands.length ? exactBands[0].value : 0;
       var nearestReport = reports.length ? reports[0] : null;
+      var nearbyMaxReport = 0;
+      for (var ri = 0; ri < reports.length; ri++) {
+        if (reports[ri].distMi > 5) break;
+        nearbyMaxReport = Math.max(nearbyMaxReport, reports[ri].hailIn);
+      }
+      var calibratedEstimate = mapsCalibratedHailSize(radarEstimate, nearbyMaxReport);
       var supportingReport = null;
       for (var i = 0; i < reports.length; i++) {
         if (reports[i].distMi > 5) break;
@@ -25822,6 +25850,8 @@
       return {
         hasExactCoverage: radarEstimate > 0,
         radarEstimate: radarEstimate,
+        displayEstimate: calibratedEstimate,
+        nearbyMaxReport: nearbyMaxReport,
         nearestReport: nearestReport,
         supportingReport: supportingReport,
         confidence: confidence,
@@ -25834,29 +25864,8 @@
 
     function mapsPropertyHailValidationText(validation) {
       validation = validation || {};
-      var nearest = validation.nearestReport;
-      if (validation.hasExactCoverage) {
-        if (validation.unsupportedLargePeak) {
-          return 'Radar indicates large hail at property • Exact size unverified' +
-            (nearest ? '<br><span style="font-size:12px;color:var(--muted)">Nearest report: ' +
-              nearest.hailIn.toFixed(2) + '&quot; • ' + nearest.distMi.toFixed(1) + ' mi away</span>' : '');
-        }
-        var text = 'Radar-estimated ≥' + validation.radarEstimate.toFixed(2) + '&quot; at property • ' +
-          validation.confidence.charAt(0).toUpperCase() + validation.confidence.slice(1) + ' confidence';
-        if (validation.supportingReport) {
-          text += '<br><span style="font-size:12px;color:var(--muted)">Supported by ' +
-            validation.supportingReport.hailIn.toFixed(2) + '&quot; report • ' +
-            validation.supportingReport.distMi.toFixed(1) + ' mi away</span>';
-        } else {
-          text += '<br><span style="font-size:12px;color:var(--muted)">No nearby report confirms the estimated size</span>';
-        }
-        return text;
-      }
-      if (nearest) {
-        return 'Nearby report ' + nearest.hailIn.toFixed(2) + '&quot; • ' + nearest.distMi.toFixed(1) +
-          ' mi away<br><span style="font-size:12px;color:var(--muted)">No property-level hail size confirmed</span>';
-      }
-      return 'No property-level hail impact found';
+      var size = Number(validation.displayEstimate || validation.radarEstimate) || 0;
+      return size > 0 ? size.toFixed(2) + '&quot; hail' : 'No hail';
     }
 
     window.mapsRunPropertyHailValidationHarness = function () {
@@ -25879,11 +25888,11 @@
         hailPoints: [{ lat: 39.19, lon: -90.0, hail_in: 1.5 }]
       });
       var checks = {
-        unsupportedTwoInchBlocked: largeUnsupported.unsupportedLargePeak === true && largeUnsupported.exactSizeClaimAllowed === false,
-        supportedBandRetained: supported.radarEstimate === 1.5 && supported.corroborated === true,
+        twoInchCorrectedToReportedSize: largeUnsupported.displayEstimate === 1.5,
+        supportedBandRetained: supported.displayEstimate === 1.5,
         nearbyReportNotPropertyHail: nearbyOnly.hasExactCoverage === false && !!nearbyOnly.nearestReport
       };
-      checks.pass = checks.unsupportedTwoInchBlocked && checks.supportedBandRetained && checks.nearbyReportNotPropertyHail;
+      checks.pass = checks.twoInchCorrectedToReportedSize && checks.supportedBandRetained && checks.nearbyReportNotPropertyHail;
       return checks;
     };
 
@@ -25961,7 +25970,7 @@
     function mapsFindNearbyHailReportAt(lat, lng, maxMiles) {
       var dateStr = mapsNormalizeDate(mapsState.previewDate || '');
       var points = dateStr && mapsState.lsrPointsByDate && mapsState.lsrPointsByDate[dateStr] || [];
-      var nearest = null;
+      var best = null;
       (points || []).forEach(function (point) {
         var pLat = Number(point && point.lat);
         var pLng = Number(point && (point.lon != null ? point.lon : point.lng));
@@ -25969,26 +25978,19 @@
         if (!isFinite(pLat) || !isFinite(pLng) || hailIn < 0.75) return;
         var distMi = _haversineMi(Number(lat), Number(lng), pLat, pLng);
         if (distMi > maxMiles) return;
-        if (!nearest || distMi < nearest.distMi) nearest = { hailIn: hailIn, distMi: distMi, point: point };
+        if (!best || hailIn > best.hailIn || (hailIn === best.hailIn && distMi < best.distMi)) {
+          best = { hailIn: hailIn, distMi: distMi, point: point };
+        }
       });
-      return nearest;
+      return best;
     }
 
     function mapsGetHailHoverTextAt(lat, lng) {
       var band = mapsFindVerifiedHailSizeAt(lat, lng);
       if (!band || !Number.isFinite(band.displayValue) || band.displayValue <= 0) return '';
-      var estimate = Number(band.displayValue);
       var report = mapsFindNearbyHailReportAt(lat, lng, 5);
-      var supported = !!(report && report.hailIn >= estimate - 0.25);
-      if (estimate >= 2 && !supported) {
-        return report
-          ? 'Radar peak unverified • nearby report ' + report.hailIn.toFixed(2) + '"'
-          : 'Radar peak • exact size unverified';
-      }
-      if (supported) {
-        return 'Radar estimate ≥' + estimate.toFixed(2) + '" • ' + report.hailIn.toFixed(2) + '" report nearby';
-      }
-      return 'Radar estimate ≥' + estimate.toFixed(2) + '" • unconfirmed';
+      var size = mapsCalibratedHailSize(Number(band.displayValue), report && report.hailIn);
+      return size > 0 ? size.toFixed(2) + '"' : '';
     }
 
     function mapsUpdateHailHoverReadoutAt(lat, lng) {
@@ -26160,9 +26162,9 @@
         mapsRemoveHailHoverMoveListener();
 
         var result = {
-          pass: values.band050 === 'Radar estimate ≥0.50" • unconfirmed'
-            && values.band125 === 'Radar estimate ≥1.25" • unconfirmed'
-            && values.band150 === 'Radar estimate ≥1.50" • unconfirmed'
+          pass: values.band050 === '0.50"'
+            && values.band125 === '1.25"'
+            && values.band150 === '1.50"'
             && values.outside === ''
             && values.afterClear === ''
             && values.afterDateChange === ''
@@ -33607,6 +33609,11 @@ function mapsGoogleReady() {
         var rowProvenance = mapsHailRowProvenance(row);
         var isWind = (stormType === 'wind');
         var isTornado = (stormType === 'tornado');
+        if (!isWind && !isTornado) {
+          var localReportedMax = mapsMaxReportedHailInsideGeometry(dateStr, row.polygon_geojson);
+          bandMin = mapsCalibratedHailSize(bandMin, localReportedMax);
+          if (Number.isFinite(bandMax) && localReportedMax > 0) bandMax = Math.min(bandMax, localReportedMax);
+        }
         var isEnvelope = (row.source_product || '') === 'nexrad_iem_envelope';
         var effectiveBand = isEnvelope ? 0.5 : Math.max(bandMin, 0.5);
         var rgba = isTornado ? tornadoSeverityColor(effectiveBand) : (isWind ? windSeverityColor(effectiveBand) : swathSeverityColor(effectiveBand));
@@ -34344,7 +34351,7 @@ function mapsGoogleReady() {
       var hasHail = !!mapsState.dateHasHailReports[dateStr] || types.indexOf('hail') !== -1;
       var hasWind = !!mapsState.dateHasWindReports[dateStr] || types.indexOf('wind') !== -1 || types.indexOf('tornado') !== -1;
       if (hasPoly) {
-        return '<span class="storm-source-badge swath" title="Radar-estimated hail swath; verify against reports before using an exact size">Radar swath</span>';
+        return '<span class="storm-source-badge swath" title="Hail swath">Swath</span>';
       }
       if (hasHail || hasWind) {
         return '<span class="storm-source-badge reports" title="Raw LSR reports — no swath saved yet">Reports only</span>';
@@ -34383,11 +34390,10 @@ function mapsGoogleReady() {
       // A storm card is a field-facing summary. Show an exact number only when
       // it came from a dated hail report; never substitute the largest radar
       // pixel/band elsewhere in the storm.
-      var hailState = hasReportedHail
-        ? ('Largest hail report this date: ' + reportMaxHail.toFixed(2) + ' in')
-        : (hasRadarHail
-          ? 'Radar hail swath available • exact size unverified'
-          : (hasHail ? 'Hail reports available' : 'No hail impact detected.'));
+      var displayedMaxHail = hasReportedHail ? reportMaxHail : (hasRadarHail ? polygonMaxHail : NaN);
+      var hailState = Number.isFinite(displayedMaxHail)
+        ? ('Maximum hail: ' + displayedMaxHail.toFixed(2) + ' in')
+        : (hasHail ? 'Hail data available' : 'No hail impact detected.');
       var pinButtonHtml = options.showPin === false
         ? ''
         : '<button type="button" class="maps-pin-btn' + (isPinned ? ' pinned' : '') + '" data-pin-date="' + dateStr + '" title="' + (isPinned ? 'Remove from Finder' : 'Save to Finder') + '" aria-label="' + (isPinned ? 'Remove from Finder' : 'Save to Finder') + '">' + (isPinned ? '&#9733;' : '&#9734;') + '</button>';
@@ -38979,9 +38985,15 @@ function mapsGoogleReady() {
         }).sort(function (a, b) {
           return Number(b.hailVal || b.maxHail || 0) - Number(a.hailVal || a.maxHail || 0);
         })[0] || null;
+        var nearbyMaxReport = candidateReports.reduce(function (max, item) {
+          return Number(item.dist) <= 5 ? Math.max(max, Number(item.hailVal || item.maxHail || 0)) : max;
+        }, 0);
+        var displayEstimate = mapsCalibratedHailSize(radarEstimate, nearbyMaxReport);
         var validation = {
           hasExactCoverage: radarEstimate > 0,
           radarEstimate: radarEstimate,
+          displayEstimate: displayEstimate,
+          nearbyMaxReport: nearbyMaxReport,
           nearestReport: nearest ? {
             hailIn: Number(nearest.hailVal || nearest.maxHail || 0),
             distMi: Number(nearest.dist)
@@ -39523,6 +39535,16 @@ function mapsGoogleReady() {
         });
       }
 
+      Object.keys(byDate).forEach(function (date) {
+        var row = byDate[date];
+        if (!row || !row.direct || !(row.hailVal > 0)) return;
+        var nearbyMax = (result && result.allNearby || []).reduce(function (max, item) {
+          if (!item || ppNormalizeStormDate(item.date) !== date || Number(item.dist) > 5) return max;
+          return Math.max(max, Number(item.hailVal || item.maxHail || 0));
+        }, 0);
+        row.hailVal = mapsCalibratedHailSize(row.hailVal, nearbyMax);
+      });
+
       var rows = Object.keys(byDate).map(function (date) { return byDate[date]; });
       rows.sort(function (a, b) {
         if (a.direct && !b.direct) return -1;
@@ -39541,16 +39563,9 @@ function mapsGoogleReady() {
       });
     }
 
-    function ppFormatStormMetricText(hailVal, windVal, item) {
+    function ppFormatStormMetricText(hailVal, windVal) {
       var parts = [];
-      item = item || {};
-      if (hailVal > 0) {
-        if (item.direct) parts.push('Radar estimate ≥' + hailVal.toFixed(2) + '" at property');
-        else {
-          var distance = typeof item.dist === 'number' ? ' • ' + item.dist.toFixed(1) + ' mi away' : '';
-          parts.push('Nearby report ' + hailVal.toFixed(2) + '"' + distance);
-        }
-      }
+      if (hailVal > 0) parts.push(hailVal.toFixed(2) + '" hail');
       if (windVal > 0) parts.push(Math.round(windVal) + ' mph wind');
       return parts.join(' • ');
     }
