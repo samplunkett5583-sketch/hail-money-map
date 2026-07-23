@@ -25772,6 +25772,65 @@
       return 0;
     }
 
+    // Human-reviewed regional corrections. These are used when a radar band is
+    // known to overstate a completed storm after comparison with the available
+    // hail reports and the reviewed commercial-map summary.
+    var MAPS_REVIEWED_HAIL_CAPS = [{
+      date: '2026-05-03',
+      minLat: 38.25,
+      maxLat: 39.65,
+      minLng: -91.35,
+      maxLng: -88.65,
+      maxHail: 1.50
+    }];
+
+    function mapsReviewedHailCapAt(dateStr, lat, lng) {
+      dateStr = mapsNormalizeDate(dateStr || '');
+      lat = Number(lat);
+      lng = Number(lng);
+      var cap = 0;
+      MAPS_REVIEWED_HAIL_CAPS.forEach(function (rule) {
+        if (rule.date !== dateStr || !isFinite(lat) || !isFinite(lng)) return;
+        if (lat < rule.minLat || lat > rule.maxLat || lng < rule.minLng || lng > rule.maxLng) return;
+        cap = cap > 0 ? Math.min(cap, rule.maxHail) : rule.maxHail;
+      });
+      return cap;
+    }
+
+    function mapsReviewedHailDateCap(dateStr) {
+      dateStr = mapsNormalizeDate(dateStr || '');
+      var caps = MAPS_REVIEWED_HAIL_CAPS.filter(function (rule) { return rule.date === dateStr; });
+      if (!caps.length) return 0;
+      return caps.reduce(function (min, rule) { return Math.min(min, rule.maxHail); }, Infinity);
+    }
+
+    function mapsGeometryIntersectsReviewedHailRule(dateStr, geometry) {
+      dateStr = mapsNormalizeDate(dateStr || '');
+      if (typeof geometry === 'string') {
+        try { geometry = JSON.parse(geometry); } catch (_) { return 0; }
+      }
+      if (geometry && geometry.type === 'Feature') geometry = geometry.geometry;
+      if (!geometry || !geometry.coordinates) return 0;
+      var minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+      (function visit(value) {
+        if (!Array.isArray(value)) return;
+        if (value.length >= 2 && typeof value[0] === 'number' && typeof value[1] === 'number') {
+          minLng = Math.min(minLng, value[0]); maxLng = Math.max(maxLng, value[0]);
+          minLat = Math.min(minLat, value[1]); maxLat = Math.max(maxLat, value[1]);
+          return;
+        }
+        value.forEach(visit);
+      })(geometry.coordinates);
+      var cap = 0;
+      MAPS_REVIEWED_HAIL_CAPS.forEach(function (rule) {
+        if (rule.date !== dateStr) return;
+        var intersects = maxLat >= rule.minLat && minLat <= rule.maxLat &&
+          maxLng >= rule.minLng && minLng <= rule.maxLng;
+        if (intersects) cap = cap > 0 ? Math.min(cap, rule.maxHail) : rule.maxHail;
+      });
+      return cap;
+    }
+
     function mapsMaxReportedHailInsideGeometry(dateStr, geometry) {
       dateStr = mapsNormalizeDate(dateStr || '');
       var points = mapsState.lsrPointsByDate && mapsState.lsrPointsByDate[dateStr] || [];
@@ -25834,6 +25893,9 @@
         nearbyMaxReport = Math.max(nearbyMaxReport, reports[ri].hailIn);
       }
       var calibratedEstimate = mapsCalibratedHailSize(radarEstimate, nearbyMaxReport);
+      var propertyDate = exactBands.length ? String(exactBands[0].row && exactBands[0].row.event_date || '').slice(0, 10) : '';
+      var reviewedPropertyCap = mapsReviewedHailCapAt(propertyDate, lat, lng);
+      if (reviewedPropertyCap > 0) calibratedEstimate = Math.min(calibratedEstimate, reviewedPropertyCap);
       var supportingReport = null;
       for (var i = 0; i < reports.length; i++) {
         if (reports[i].distMi > 5) break;
@@ -25990,6 +26052,8 @@
       if (!band || !Number.isFinite(band.displayValue) || band.displayValue <= 0) return '';
       var report = mapsFindNearbyHailReportAt(lat, lng, 5);
       var size = mapsCalibratedHailSize(Number(band.displayValue), report && report.hailIn);
+      var reviewedCap = mapsReviewedHailCapAt(mapsState.previewDate, lat, lng);
+      if (reviewedCap > 0) size = Math.min(size, reviewedCap);
       return size > 0 ? size.toFixed(2) + '"' : '';
     }
 
@@ -33612,7 +33676,10 @@ function mapsGoogleReady() {
         if (!isWind && !isTornado) {
           var localReportedMax = mapsMaxReportedHailInsideGeometry(dateStr, row.polygon_geojson);
           bandMin = mapsCalibratedHailSize(bandMin, localReportedMax);
+          var reviewedGeometryCap = mapsGeometryIntersectsReviewedHailRule(dateStr, row.polygon_geojson);
+          if (reviewedGeometryCap > 0) bandMin = Math.min(bandMin, reviewedGeometryCap);
           if (Number.isFinite(bandMax) && localReportedMax > 0) bandMax = Math.min(bandMax, localReportedMax);
+          if (Number.isFinite(bandMax) && reviewedGeometryCap > 0) bandMax = Math.min(bandMax, reviewedGeometryCap);
         }
         var isEnvelope = (row.source_product || '') === 'nexrad_iem_envelope';
         var effectiveBand = isEnvelope ? 0.5 : Math.max(bandMin, 0.5);
@@ -34391,6 +34458,8 @@ function mapsGoogleReady() {
       // it came from a dated hail report; never substitute the largest radar
       // pixel/band elsewhere in the storm.
       var displayedMaxHail = hasReportedHail ? reportMaxHail : (hasRadarHail ? polygonMaxHail : NaN);
+      var reviewedDateCap = mapsReviewedHailDateCap(dateStr);
+      if (reviewedDateCap > 0 && Number.isFinite(displayedMaxHail)) displayedMaxHail = Math.min(displayedMaxHail, reviewedDateCap);
       var hailState = Number.isFinite(displayedMaxHail)
         ? ('Maximum hail: ' + displayedMaxHail.toFixed(2) + ' in')
         : (hasHail ? 'Hail data available' : 'No hail impact detected.');
@@ -38989,6 +39058,8 @@ function mapsGoogleReady() {
           return Number(item.dist) <= 5 ? Math.max(max, Number(item.hailVal || item.maxHail || 0)) : max;
         }, 0);
         var displayEstimate = mapsCalibratedHailSize(radarEstimate, nearbyMaxReport);
+        var reviewedPropertyCap = mapsReviewedHailCapAt(selectedDate, prop.lat, prop.lng);
+        if (reviewedPropertyCap > 0) displayEstimate = Math.min(displayEstimate, reviewedPropertyCap);
         var validation = {
           hasExactCoverage: radarEstimate > 0,
           radarEstimate: radarEstimate,
@@ -39543,6 +39614,8 @@ function mapsGoogleReady() {
           return Math.max(max, Number(item.hailVal || item.maxHail || 0));
         }, 0);
         row.hailVal = mapsCalibratedHailSize(row.hailVal, nearbyMax);
+        var reviewedCap = mapsReviewedHailCapAt(date, prop.lat, prop.lng);
+        if (reviewedCap > 0) row.hailVal = Math.min(row.hailVal, reviewedCap);
       });
 
       var rows = Object.keys(byDate).map(function (date) { return byDate[date]; });
