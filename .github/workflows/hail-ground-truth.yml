@@ -1,0 +1,74 @@
+name: Verify Hail Ground Truth
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Storm dates to verify
+        required: true
+        default: recent
+        type: choice
+        options:
+          - recent
+          - date
+          - all
+      date:
+        description: Exact date for date scope (YYYY-MM-DD)
+        required: false
+        type: string
+      limit:
+        description: Maximum dates for this run
+        required: true
+        default: "250"
+        type: string
+      offset:
+        description: Starting offset for all scope
+        required: true
+        default: "0"
+        type: string
+      force:
+        description: Recheck dates even if recently verified
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hail-ground-truth
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: gemini-3.6-flash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Verify recent storm dates
+        if: github.event_name == 'schedule' || inputs.scope == 'recent'
+        run: node scripts/verify_hail_ground_truth.mjs --days=3 --limit=50 --refresh-hours=12
+
+      - name: Verify one storm date
+        if: github.event_name == 'workflow_dispatch' && inputs.scope == 'date'
+        run: node scripts/verify_hail_ground_truth.mjs --date="${{ inputs.date }}" --force="${{ inputs.force }}"
+
+      - name: Backfill storm dates
+        if: github.event_name == 'workflow_dispatch' && inputs.scope == 'all'
+        run: node scripts/verify_hail_ground_truth.mjs --limit="${{ inputs.limit }}" --offset="${{ inputs.offset }}" --force="${{ inputs.force }}"
