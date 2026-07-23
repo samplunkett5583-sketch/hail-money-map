@@ -1,0 +1,488 @@
+#!/usr/bin/env node
+
+import crypto from "node:crypto";
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !GEMINI_API_KEY) {
+  console.error("Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or GEMINI_API_KEY");
+  process.exit(1);
+}
+
+const args = Object.fromEntries(
+  process.argv.slice(2).map((arg) => {
+    const [key, ...rest] = arg.replace(/^--/, "").split("=");
+    return [key, rest.length ? rest.join("=") : "true"];
+  }),
+);
+
+const dryRun = args["dry-run"] === "true";
+const force = args.force === "true";
+const refreshHours = positiveNumber(args["refresh-hours"], 12);
+const limit = Math.min(5000, positiveNumber(args.limit, 250));
+const offset = Math.max(0, Number(args.offset) || 0);
+const maxRegions = Math.min(20, positiveNumber(args["max-regions"], 12));
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false },
+});
+
+function positiveNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function asDate(value) {
+  const match = String(value || "").match(/^\d{4}-\d{2}-\d{2}/);
+  return match ? match[0] : "";
+}
+
+function validDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function haversineMiles(lat1, lon1, lat2, lon2) {
+  const rad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * rad;
+  const dLon = (lon2 - lon1) * rad;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
+      Math.sin(dLon / 2) ** 2;
+  return 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function sha(value) {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function hostname(value) {
+  try {
+    return new URL(value).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+function sourceConfidence(report) {
+  const host = hostname(report.source_url);
+  const kind = String(report.source_kind || "").toLowerCase();
+  const corroboration = Number(report.corroborating_sources) || 0;
+  if (
+    host === "weather.gov" || host.endsWith(".weather.gov") ||
+    host === "noaa.gov" || host.endsWith(".noaa.gov") ||
+    host === "nssl.noaa.gov" || host.endsWith(".nssl.noaa.gov") ||
+    host === "mesonet.agron.iastate.edu"
+  ) return 0.97;
+  if (host.endsWith(".gov") || kind === "emergency_management") return 0.92;
+  if (kind === "trained_spotter" || kind === "law_enforcement") return 0.88;
+  if (kind === "local_news" && report.explicit_measurement === true) return 0.82;
+  if (report.explicit_measurement === true && corroboration >= 2) return 0.80;
+  return 0.55;
+}
+
+function extractInteraction(response) {
+  const texts = [];
+  const citations = [];
+  for (const step of response?.steps || []) {
+    if (step?.type !== "model_output") continue;
+    for (const block of step.content || []) {
+      if (block?.type === "text" && block.text) texts.push(block.text);
+      for (const annotation of block?.annotations || []) {
+        if (annotation?.type === "url_citation" && annotation.url) {
+          citations.push({
+            url: annotation.url,
+            title: annotation.title || "",
+          });
+        }
+      }
+    }
+  }
+  return { text: texts.join("\n").trim(), citations };
+}
+
+function parseJson(text) {
+  const cleaned = text
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start >= 0 && end > start) return JSON.parse(cleaned.slice(start, end + 1));
+    throw new Error("Google-grounded response did not contain valid JSON");
+  }
+}
+
+async function getDates() {
+  const requestedDate = asDate(args.date);
+  if (requestedDate) {
+    if (!validDate(requestedDate)) throw new Error(`Invalid --date=${args.date}`);
+    return [requestedDate];
+  }
+
+  const days = Number(args.days);
+  let query = supabase
+    .from("storm_event_dates")
+    .select("event_date")
+    .order("event_date", { ascending: false });
+  if (Number.isFinite(days) && days > 0) {
+    const cutoff = new Date();
+    cutoff.setUTCDate(cutoff.getUTCDate() - Math.ceil(days));
+    query = query.gte("event_date", cutoff.toISOString().slice(0, 10));
+  }
+  const { data, error } = await query.range(offset, offset + limit - 1);
+  if (error) throw new Error(`Could not load storm dates: ${error.message}`);
+  return [...new Set((data || []).map((row) => asDate(row.event_date)).filter(validDate))];
+}
+
+async function getAnchors(date) {
+  const [lsrResult, radarResult] = await Promise.all([
+    supabase
+      .from("hail_lsr_raw")
+      .select("lat,lon,state,county,hail_in,source")
+      .eq("event_date", date)
+      .limit(5000),
+    supabase
+      .from("hail_radar_polygons")
+      .select("centroid_lat,centroid_lon,band_min,band_max")
+      .eq("event_date", date)
+      .limit(2000),
+  ]);
+  if (lsrResult.error) throw new Error(lsrResult.error.message);
+
+  const anchors = (lsrResult.data || []).map((row) => ({
+    lat: Number(row.lat),
+    lon: Number(row.lon),
+    state: row.state || "",
+    county: row.county || "",
+    hail: Number(row.hail_in) || 0,
+  }));
+  if (!radarResult.error) {
+    for (const row of radarResult.data || []) {
+      anchors.push({
+        lat: Number(row.centroid_lat),
+        lon: Number(row.centroid_lon),
+        state: "",
+        county: "",
+        hail: Number(row.band_max || row.band_min) || 0,
+      });
+    }
+  }
+  return anchors.filter((p) =>
+    Number.isFinite(p.lat) && Number.isFinite(p.lon) &&
+    p.lat >= 24 && p.lat <= 50 && p.lon >= -125 && p.lon <= -66
+  );
+}
+
+function buildRegions(anchors) {
+  const buckets = new Map();
+  for (const point of anchors) {
+    const key = `${Math.floor(point.lat / 2)}:${Math.floor(point.lon / 2)}`;
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(point);
+  }
+  return [...buckets.entries()]
+    .map(([key, points]) => {
+      const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+      const lon = points.reduce((sum, p) => sum + p.lon, 0) / points.length;
+      const states = [...new Set(points.map((p) => p.state).filter(Boolean))];
+      const counties = [...new Set(points.map((p) => p.county).filter(Boolean))].slice(0, 12);
+      const existingMax = Math.max(0, ...points.map((p) => p.hail));
+      return { key, lat, lon, states, counties, existingMax, anchors: points };
+    })
+    .sort((a, b) => b.existingMax - a.existingMax || b.anchors.length - a.anchors.length)
+    .slice(0, maxRegions);
+}
+
+async function searchGoogle(date, region) {
+  const place = [
+    region.states.length ? `states ${region.states.join(", ")}` : "",
+    region.counties.length ? `counties ${region.counties.join(", ")}` : "",
+    `near ${region.lat.toFixed(3)}, ${region.lon.toFixed(3)}`,
+  ].filter(Boolean).join("; ");
+  const prompt = `
+Find ground-observed hail reports for the calendar date ${date} in this region: ${place}.
+The current database maximum is ${region.existingMax.toFixed(2)} inches.
+
+Use Google Search. Look for explicit hailstone measurements from NWS/NOAA local
+storm reports, trained spotters, emergency management, law enforcement, public
+officials, and reputable local news. Search especially for larger measured hail
+that may be missing from the NOAA rows already in the database.
+
+Do not use radar-estimated hail size as a ground observation. Do not copy a
+forecast, warning threshold, or generic statement. Do not infer a size from
+damage. The source must explicitly state the observed hail size and location.
+Return only reports for ${date}. Deduplicate the same observation.
+
+Return JSON only:
+{
+  "reports": [{
+    "event_date": "YYYY-MM-DD",
+    "event_time_utc": "ISO timestamp or null",
+    "hail_inches": 1.75,
+    "city": "city or null",
+    "state": "2-letter state",
+    "county": "county or null",
+    "lat": 38.0,
+    "lon": -90.0,
+    "source_url": "direct supporting page URL",
+    "source_title": "page title",
+    "source_kind": "nws_noaa|trained_spotter|emergency_management|law_enforcement|local_news|other",
+    "explicit_measurement": true,
+    "corroborating_sources": 1,
+    "observation_text": "20 words or fewer stating the evidence"
+  }]
+}
+If no qualifying observation is found, return {"reports":[]}.
+`.trim();
+
+  const response = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/interactions",
+    {
+      method: "POST",
+      headers: {
+        "x-goog-api-key": GEMINI_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: GEMINI_MODEL,
+        input: prompt,
+        tools: [{ type: "google_search" }],
+      }),
+    },
+  );
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(`Gemini Google Search ${response.status}: ${JSON.stringify(body).slice(0, 500)}`);
+  }
+  const grounded = extractInteraction(body);
+  const parsed = parseJson(grounded.text);
+  return {
+    reports: Array.isArray(parsed?.reports) ? parsed.reports : [],
+    citations: grounded.citations,
+  };
+}
+
+function normalizeEvidence(date, report, region, citations) {
+  const hail = Number(report.hail_inches);
+  const lat = Number(report.lat);
+  const lon = Number(report.lon);
+  const url = String(report.source_url || "").trim();
+  if (
+    !Number.isFinite(hail) || !Number.isFinite(lat) || !Number.isFinite(lon) ||
+    !url.startsWith("https://")
+  ) return null;
+  const confidence = sourceConfidence(report);
+  const sourceHost = hostname(url);
+  const citationHosts = new Set(citations.map((citation) => hostname(citation.url)).filter(Boolean));
+  const hasMatchingCitation = [...citationHosts].some((citationHost) =>
+    citationHost === sourceHost ||
+    citationHost.endsWith(`.${sourceHost}`) ||
+    sourceHost.endsWith(`.${citationHost}`)
+  );
+  let rejection = "";
+  if (asDate(report.event_date) !== date) rejection = "wrong_date";
+  else if (!Number.isFinite(hail) || hail < 0.5 || hail > 8) rejection = "invalid_hail_size";
+  else if (!Number.isFinite(lat) || !Number.isFinite(lon)) rejection = "missing_coordinates";
+  else if (lat < 24 || lat > 50 || lon < -125 || lon > -66) rejection = "outside_conus";
+  else if (!url.startsWith("https://")) rejection = "missing_source_url";
+  else if (!hasMatchingCitation) rejection = "source_not_confirmed_by_google_citation";
+  else if (report.explicit_measurement !== true) rejection = "not_an_explicit_measurement";
+  else if (haversineMiles(lat, lon, region.lat, region.lon) > 175) rejection = "outside_search_region";
+  else if (confidence < 0.75) rejection = "insufficient_source_confidence";
+
+  const eventTime = report.event_time_utc &&
+      !Number.isNaN(Date.parse(report.event_time_utc))
+    ? new Date(report.event_time_utc).toISOString()
+    : `${date}T12:00:00.000Z`;
+  const id = `google-ground-${sha([
+    date, lat.toFixed(3), lon.toFixed(3), hail.toFixed(2), url,
+  ].join("|")).slice(0, 32)}`;
+  return {
+    id,
+    event_date: date,
+    event_time: eventTime,
+    lat,
+    lon,
+    hail_in: hail,
+    city: report.city || null,
+    state: String(report.state || "").toUpperCase().slice(0, 2) || null,
+    county: report.county || null,
+    source_url: url,
+    source_title: report.source_title || null,
+    source_kind: report.source_kind || "other",
+    observation_text: String(report.observation_text || "").slice(0, 240) || null,
+    confidence,
+    accepted: !rejection,
+    rejection_reason: rejection || null,
+    google_citations: citations,
+    raw: report,
+    verified_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+}
+
+async function recentRun(date) {
+  if (force) return false;
+  const { data, error } = await supabase
+    .from("hail_ground_truth_runs")
+    .select("status,completed_at")
+    .eq("event_date", date)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (data?.status !== "complete" || !data.completed_at) return false;
+  return Date.now() - Date.parse(data.completed_at) < refreshHours * 60 * 60 * 1000;
+}
+
+async function markRun(date, values) {
+  if (dryRun) return;
+  const { error } = await supabase.from("hail_ground_truth_runs").upsert({
+    event_date: date,
+    updated_at: new Date().toISOString(),
+    ...values,
+  });
+  if (error) throw new Error(error.message);
+}
+
+async function saveEvidence(evidence) {
+  if (dryRun || evidence.length === 0) return;
+  const { error } = await supabase
+    .from("hail_ground_truth_evidence")
+    .upsert(evidence, { onConflict: "id" });
+  if (error) throw new Error(`Evidence upsert failed: ${error.message}`);
+
+  const accepted = evidence.filter((row) => row.accepted).map((row) => ({
+    id: row.id,
+    event_time: row.event_time,
+    event_date: row.event_date,
+    lat: row.lat,
+    lon: row.lon,
+    hail_in: row.hail_in,
+    state: row.state,
+    county: row.county,
+    source: "GOOGLE_GROUNDED_SPOTTER",
+    raw: {
+      evidence_id: row.id,
+      source_url: row.source_url,
+      source_title: row.source_title,
+      source_kind: row.source_kind,
+      confidence: row.confidence,
+      observation_text: row.observation_text,
+      google_citations: row.google_citations,
+    },
+  }));
+  if (accepted.length) {
+    const { error: hailError } = await supabase
+      .from("hail_lsr_raw")
+      .upsert(accepted, { onConflict: "id" });
+    if (hailError) throw new Error(`Hail feed upsert failed: ${hailError.message}`);
+  }
+}
+
+async function regenerateSwath(date) {
+  if (dryRun) return;
+  const url = `${SUPABASE_URL}/functions/v1/swath-render?date=${date}&persist=1`;
+  const response = await fetch(url, {
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+  });
+  const body = await response.text();
+  if (!response.ok) {
+    throw new Error(`swath-render ${response.status}: ${body.slice(0, 500)}`);
+  }
+}
+
+async function processDate(date) {
+  if (await recentRun(date)) {
+    console.log(`[${date}] skipped; verified within ${refreshHours} hours`);
+    return;
+  }
+  const startedAt = new Date().toISOString();
+  await markRun(date, {
+    status: "running",
+    started_at: startedAt,
+    completed_at: null,
+    message: null,
+  });
+
+  try {
+    const anchors = await getAnchors(date);
+    const regions = buildRegions(anchors);
+    if (regions.length === 0) {
+      await markRun(date, {
+        status: "complete",
+        searched_regions: 0,
+        found_reports: 0,
+        accepted_reports: 0,
+        completed_at: new Date().toISOString(),
+        message: "No hail or radar anchors available",
+      });
+      console.log(`[${date}] no hail/radar anchors; skipped`);
+      return;
+    }
+
+    const evidence = [];
+    for (const [index, region] of regions.entries()) {
+      console.log(`[${date}] Google-grounded search ${index + 1}/${regions.length} near ${region.lat.toFixed(2)},${region.lon.toFixed(2)}`);
+      const result = await searchGoogle(date, region);
+      for (const report of result.reports) {
+        const normalized = normalizeEvidence(date, report, region, result.citations);
+        if (normalized) evidence.push(normalized);
+      }
+      if (index + 1 < regions.length) await sleep(500);
+    }
+    const unique = [...new Map(evidence.map((row) => [row.id, row])).values()];
+    await saveEvidence(unique);
+    const accepted = unique.filter((row) => row.accepted);
+    if (accepted.length) await regenerateSwath(date);
+    await markRun(date, {
+      status: "complete",
+      searched_regions: regions.length,
+      found_reports: unique.length,
+      accepted_reports: accepted.length,
+      completed_at: new Date().toISOString(),
+      message: dryRun ? "Dry run" : null,
+    });
+    console.log(`[${date}] found ${unique.length}; accepted ${accepted.length}`);
+  } catch (error) {
+    await markRun(date, {
+      status: "failed",
+      completed_at: new Date().toISOString(),
+      message: String(error).slice(0, 1000),
+    });
+    throw error;
+  }
+}
+
+async function main() {
+  const dates = await getDates();
+  console.log(`Verifying ${dates.length} storm date(s)${dryRun ? " (dry run)" : ""}`);
+  let failures = 0;
+  for (const [index, date] of dates.entries()) {
+    try {
+      await processDate(date);
+    } catch (error) {
+      failures += 1;
+      console.error(`[${date}] failed:`, error);
+    }
+    if (index + 1 < dates.length) await sleep(750);
+  }
+  if (failures) throw new Error(`${failures} storm date(s) failed verification`);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
