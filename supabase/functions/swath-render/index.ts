@@ -47,7 +47,21 @@ interface Pt {
   ts: number; // epoch ms (or 0)
 }
 
-function dbscan(points: Pt[], epsKm: number, minPts: number): number[] {
+interface ClusterOptions {
+  epsKm: number;
+  minPts: number;
+  maxTimeGapMs: number;
+  maxSeveritySearchKm: number;
+  minWidthKm: number;
+  allowAllPointsFallback: boolean;
+}
+
+function dbscan(
+  points: Pt[],
+  epsKm: number,
+  minPts: number,
+  maxTimeGapMs = 0,
+): number[] {
   const n = points.length;
   const labels = new Array<number>(n).fill(-1); // -1 = unvisited
   let clusterId = 0;
@@ -57,7 +71,14 @@ function dbscan(points: Pt[], epsKm: number, minPts: number): number[] {
     const p = points[idx];
     for (let j = 0; j < n; j++) {
       if (j === idx) continue;
-      if (haversineKm(p.lat, p.lon, points[j].lat, points[j].lon) <= epsKm) {
+      const q = points[j];
+      if (
+        maxTimeGapMs > 0 &&
+        p.ts > 0 &&
+        q.ts > 0 &&
+        Math.abs(p.ts - q.ts) > maxTimeGapMs
+      ) continue;
+      if (haversineKm(p.lat, p.lon, q.lat, q.lon) <= epsKm) {
         neighbors.push(j);
       }
     }
@@ -140,6 +161,7 @@ function perpSpread(
   dirLon: number,
   cluster: Pt[],
   maxDistKm: number,
+  minWidthKm: number,
 ): { widthKm: number; maxHail: number; count: number } {
   const perps: number[] = [];
   let maxHail = 0;
@@ -163,8 +185,7 @@ function perpSpread(
   perps.sort((a, b) => a - b);
   const pIdx = perps.length > 0 ? Math.min(perps.length - 1, Math.floor(perps.length * 0.85)) : 0;
   const repPerp = perps.length > 0 ? perps[pIdx] : 0;
-  // Floor at 12 km to match March-level visual coverage for sparse data
-  return { widthKm: Math.max(repPerp * 2, 12), maxHail, count };
+  return { widthKm: Math.max(repPerp * 2, minWidthKm), maxHail, count };
 }
 
 // ─── Build one corridor descriptor from a cluster of points ───
@@ -507,7 +528,11 @@ async function persistSavedStormPolygons(
   };
 }
 
-function buildCorridor(id: number, cluster: Pt[]): Corridor | null {
+function buildCorridor(
+  id: number,
+  cluster: Pt[],
+  options: ClusterOptions,
+): Corridor | null {
   if (cluster.length < 2) return null;
 
   // Sort by event_time when available, else by latitude (N→S storm motion assumption)
@@ -553,8 +578,11 @@ function buildCorridor(id: number, cluster: Pt[]): Corridor | null {
       centerline[centerline.length - 1][0],
     );
   const segLen = totalLen / (centerline.length || 1);
-  // Wider search radius for sparse clusters to produce March-level corridor coverage
-  const searchRadius = Math.max(30, segLen * 4, totalLen * 0.25);
+  // Keep severity local. A distant high report must not color a long weak corridor.
+  const searchRadius = Math.min(
+    options.maxSeveritySearchKm,
+    Math.max(6, segLen * 2),
+  );
 
   for (let i = 0; i < centerline.length; i++) {
     const cLon = centerline[i][0];
@@ -565,7 +593,15 @@ function buildCorridor(id: number, cluster: Pt[]): Corridor | null {
     const dirLat = next[1] - prev[1];
     const dirLon = next[0] - prev[0];
 
-    const spread = perpSpread(cLat, cLon, dirLat, dirLon, cluster, searchRadius);
+    const spread = perpSpread(
+      cLat,
+      cLon,
+      dirLat,
+      dirLon,
+      cluster,
+      searchRadius,
+      options.minWidthKm,
+    );
     widthProfile.push(spread.widthKm);
     severityProfile.push(spread.maxHail);
     if (spread.maxHail > maxHailIn) maxHailIn = spread.maxHail;
@@ -693,12 +729,34 @@ async function fetchStormPoints(
   return mapRowsToPoints(data as Record<string, unknown>[] | null | undefined, "magnitude");
 }
 
-function buildCorridorResult(raw: Pt[]): {
+function buildCorridorResult(
+  raw: Pt[],
+  stormType: SavedStormType,
+): {
   corridors: Corridor[];
   outliers: number[][];
   pointCount: number;
 } {
   if (raw.length === 0) return { corridors: [], outliers: [], pointCount: 0 };
+
+  const isHail = stormType === "hail";
+  const options: ClusterOptions = isHail
+    ? {
+        epsKm: 28,
+        minPts: 1,
+        maxTimeGapMs: 45 * 60 * 1000,
+        maxSeveritySearchKm: 12,
+        minWidthKm: 8,
+        allowAllPointsFallback: false,
+      }
+    : {
+        epsKm: 100,
+        minPts: 1,
+        maxTimeGapMs: 0,
+        maxSeveritySearchKm: 30,
+        minWidthKm: 12,
+        allowAllPointsFallback: true,
+      };
 
   if (raw.length === 1) {
     const p = raw[0];
@@ -707,7 +765,7 @@ function buildCorridorResult(raw: Pt[]): {
       corridors: [{
         id: 0,
         centerline: [[p.lon - offset, p.lat], [p.lon + offset, p.lat]],
-        widthProfile: [14, 14],
+        widthProfile: [options.minWidthKm, options.minWidthKm],
         severityProfile: [p.hail_in, p.hail_in],
         maxHailIn: p.hail_in,
         reportCount: 1,
@@ -719,8 +777,8 @@ function buildCorridorResult(raw: Pt[]): {
     };
   }
 
-  if (raw.length <= 3) {
-    const corr = buildCorridor(0, raw);
+  if (!isHail && raw.length <= 3) {
+    const corr = buildCorridor(0, raw, options);
     return {
       corridors: corr ? [corr] : [],
       outliers: [],
@@ -740,9 +798,15 @@ function buildCorridorResult(raw: Pt[]): {
   }
   nnDists.sort((a, b) => a - b);
   const medianNN = nnDists[Math.floor(nnDists.length / 2)];
-  const epsKm = Math.max(15, Math.min(100, medianNN * 4));
-  const minPts = Math.max(1, Math.min(2, Math.floor(raw.length * 0.05)));
-  const labels = dbscan(raw, epsKm, minPts);
+  const epsKm = isHail
+    ? Math.max(10, Math.min(options.epsKm, medianNN * 2))
+    : Math.max(15, Math.min(options.epsKm, medianNN * 4));
+  const labels = dbscan(
+    raw,
+    epsKm,
+    options.minPts,
+    options.maxTimeGapMs,
+  );
 
   const clusters = new Map<number, Pt[]>();
   const outliers: number[][] = [];
@@ -759,14 +823,18 @@ function buildCorridorResult(raw: Pt[]): {
   const corridors: Corridor[] = [];
   let cIdx = 0;
   for (const [, pts] of clusters) {
-    const corr = buildCorridor(cIdx, pts);
+    const corr = buildCorridor(cIdx, pts, options);
     if (corr) {
       corridors.push(corr);
       cIdx++;
     }
   }
-  if (corridors.length === 0 && raw.length >= 2) {
-    const corr = buildCorridor(0, raw);
+  if (
+    options.allowAllPointsFallback &&
+    corridors.length === 0 &&
+    raw.length >= 2
+  ) {
+    const corr = buildCorridor(0, raw, options);
     if (corr) corridors.push(corr);
   }
 
@@ -864,9 +932,9 @@ serve(async (req: Request) => {
       });
     }
 
-    const hailResult = buildCorridorResult(hailRaw);
-    const windResult = persistRequested ? buildCorridorResult(windRaw) : { corridors: [], outliers: [], pointCount: 0 };
-    const tornadoResult = persistRequested ? buildCorridorResult(tornadoRaw) : { corridors: [], outliers: [], pointCount: 0 };
+    const hailResult = buildCorridorResult(hailRaw, "hail");
+    const windResult = persistRequested ? buildCorridorResult(windRaw, "wind") : { corridors: [], outliers: [], pointCount: 0 };
+    const tornadoResult = persistRequested ? buildCorridorResult(tornadoRaw, "tornado") : { corridors: [], outliers: [], pointCount: 0 };
 
     const persistResult: PersistResult = persistRequested && adminSupabase
       ? await persistSavedStormPolygons(adminSupabase, date, [
