@@ -27919,6 +27919,16 @@
           App.mapsStormDatePreloadTiming.scheduleDelayMs = App.mapsStormDatePreloadTiming.startedAt - scheduledAt;
           App.mapsStormDatePreloadTiming.requestAndCacheMs = App.mapsStormDatePreloadTiming.completedAt - App.mapsStormDatePreloadTiming.startedAt;
           App.mapsStormDatePreloadTiming.source = result && result.source;
+          var preloadDates = result && Array.isArray(result.dates)
+            ? result.dates.slice(0, MAPS_STORM_DATE_BATCH_SIZE)
+            : [];
+          App.mapsStormDatePreloadTiming.rankingStartedAt = Date.now();
+          _fetchStormRankingSummaries(preloadDates).then(function () {
+            App.mapsStormDatePreloadTiming.rankingCompletedAt = Date.now();
+            App.mapsStormDatePreloadTiming.rankingMs =
+              App.mapsStormDatePreloadTiming.rankingCompletedAt -
+              App.mapsStormDatePreloadTiming.rankingStartedAt;
+          });
         }).catch(function () {});
       });
     }
@@ -28006,6 +28016,8 @@
       App.mapsStormDateIndexStages = [];
       App.mapsStormDateIndexLongestStage = null;
       App.mapsStormDateIndexResponse = null;
+      mapsState.stormRankingLoadedDates = {};
+      mapsState.stormRankingPendingDates = {};
     }
 
     // ── Custom roadmap style for the "Map" base layer; satellite and hybrid stay unstyled ──
