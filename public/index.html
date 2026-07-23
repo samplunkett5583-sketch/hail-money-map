@@ -27019,6 +27019,13 @@
         mapsMeasureSyncPhase('ticker-initialization', initHurricaneTicker);
         mapsState.ready = true;
         renderStormPanelActionButtons(document.getElementById('maps-storm-actions'));
+        // Load hail intensity and swath-count summaries used by the 1-5
+        // overall-impact ranking. The loader refreshes the visible cards when
+        // the data arrives, so rankings do not remain at the default 1.
+        if (!App.stormRankingSummariesRequested) {
+          App.stormRankingSummariesRequested = true;
+          _fetchPolyHailSummaries();
+        }
         // Default the selected storm date to today on first open of the Maps page.
         // mapsPreviewDate() draws whatever data exists for that date (or nothing,
         // if today has no storm data yet) — same pipeline as clicking a date row.
