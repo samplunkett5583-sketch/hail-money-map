@@ -33891,31 +33891,23 @@ function mapsGoogleReady() {
       var summary = mapsState.dateSummaries[dateStr] || {};
       var reportedHailMax = Number(summary.hail && summary.hail.max != null ? summary.hail.max : 0) || 0;
       var hailReportCount = Number(summary.hailReportCount || 0) || 0;
-      var impactSummary = mapsGetStormImpactSummarySync(dateStr);
-      var housingUnits = impactSummary && impactSummary.housingEstimateConnected
-        ? Number(impactSummary.impactedHomesCount || 0)
-        : 0;
 
-      // Roofing-opportunity scale:
-      // no confirmed 1-inch hail = no rating
-      // 1 = 1.00-1.24", 2 = 1.25-1.49", 3 = 1.50-1.99"
-      // 4 = 2.00-2.49" with a real footprint
-      // 5 = 2.50"+ with a dense/destructive footprint
+      // Roofing damage/opportunity scale based on confirmed maximum hail:
+      // under 1.00" = unrated
+      // 1.00-1.49" = 1
+      // 1.50-1.74" = 2
+      // 1.75-1.99" = 3
+      // 2.00-2.25" = 4
+      // above 2.25" = 5
       if (reportedHailMax < 1.00 || hailReportCount <= 0) {
         return { label:'Unrated', className:'severity-unrated', rating:null };
       }
 
       var rating = 1;
-      if (reportedHailMax >= 1.25) rating = 2;
-      if (reportedHailMax >= 1.50) rating = 3;
-
-      // Do not award the two highest tiers from one isolated large report.
-      if (reportedHailMax >= 2.00 && (hailReportCount >= 5 || housingUnits >= 25000)) {
-        rating = 4;
-      }
-      if (reportedHailMax >= 2.50 && (hailReportCount >= 10 || housingUnits >= 75000)) {
-        rating = 5;
-      }
+      if (reportedHailMax >= 1.50) rating = 2;
+      if (reportedHailMax >= 1.75) rating = 3;
+      if (reportedHailMax >= 2.00) rating = 4;
+      if (reportedHailMax > 2.25) rating = 5;
 
       var labels = {
         1: { label:'Light', className:'severity-light' },
