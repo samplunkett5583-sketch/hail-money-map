@@ -6557,6 +6557,34 @@
     #page-map .maps-storm-card-bottom-row { display:grid; grid-template-columns:1fr; gap:3px; }
     #page-map .maps-impact-line { color:#3e4954; font-size:11px; line-height:1.35; }
     #page-map .maps-impact-line strong { color:#20252a; }
+    #page-map .maps-overall-impact {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:#20252a;
+      font-size:14px;
+      line-height:26px;
+    }
+    #page-map .maps-impact-rating-badge {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:26px;
+      min-width:26px;
+      height:26px;
+      min-height:26px;
+      padding:0;
+      border-radius:5px;
+      color:#111;
+      font-size:13px;
+      font-weight:500;
+      line-height:1;
+    }
+    #page-map .maps-impact-rating-badge.severity-light { background:#fff200; }
+    #page-map .maps-impact-rating-badge.severity-moderate { background:#ffc400; }
+    #page-map .maps-impact-rating-badge.severity-elevated { background:#ff8a00; }
+    #page-map .maps-impact-rating-badge.severity-severe { background:#ff4d00; color:#fff; }
+    #page-map .maps-impact-rating-badge.severity-extreme { background:#f10d0d; color:#fff; }
     #page-map .storm-source-badge { justify-self:start; margin-top:2px; }
     #page-map .maps-panel-collapse-tab {
       top:calc(var(--maps-topbar-h) + 18px);
@@ -33813,7 +33841,10 @@ function mapsGoogleReady() {
           pinButtonHtml +
         '</div>' +
         '<div class="maps-storm-card-bottom-row">' +
-          '<div class="maps-impact-line"><strong>Storm ranking:</strong> ' + stormTone.rating + '/5</div>' +
+          '<div class="maps-impact-line maps-overall-impact">' +
+            '<span class="maps-impact-rating-badge ' + stormTone.className + '">' + stormTone.rating + '</span>' +
+            '<span>overall impact</span>' +
+          '</div>' +
           '<div class="maps-impact-line"><strong>Impacted housing units:</strong> <span class="storm-home-count" data-impact-date="' + dateStr + '">' + unitsLabel + '</span></div>' +
           '<div class="maps-impact-line">' + hailState + '</div>' +
           sourceBadge +
