@@ -27110,7 +27110,7 @@
         var dates = Object.keys(byDate);
         dates.forEach(function (d) {
           var entry = byDate[d];
-          mapsState.polyHailSummaries[d] = { min: entry.min, max: entry.max };
+          mapsState.polyHailSummaries[d] = { min: entry.min, max: entry.max, swathCount: entry.count };
           var srcStr = Object.keys(entry.sources).map(function (k) { return k + ':' + entry.sources[k]; }).join(',');
           hmDebugLog('[stormSummary] ' + d + ' hailRange=' + entry.min.toFixed(2) + '-' + entry.max.toFixed(2) +
             ' rows=' + entry.count + ' source=' + srcStr);
@@ -27235,6 +27235,8 @@
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
 
         var item = ensureDate(dateStr);
+        var dateSummary = dateSummaries[dateStr] || (dateSummaries[dateStr] = {});
+        dateSummary.sourceRowCount = (dateSummary.sourceRowCount || 0) + 1;
         var rawType = String((row && (row.event_type || row.storm_type || row.type || row.eventType)) || '').toLowerCase();
         var normalizedType = '';
         if (rawType.indexOf('hail') !== -1) normalizedType = 'hail';
@@ -27292,6 +27294,7 @@
         var reportCount = Number(row && row.report_count);
         if (Number.isFinite(reportCount) && reportCount > 0) {
           item.report_count = Math.max(item.report_count || 0, reportCount);
+          dateSummary.reportCount = Math.max(dateSummary.reportCount || 0, reportCount);
         }
       });
 
@@ -33718,29 +33721,50 @@ function mapsGoogleReady() {
       var hailMax = Number(polyHail && polyHail.max != null ? polyHail.max : summary.hail && summary.hail.max != null ? summary.hail.max : 0) || 0;
       var windMax = Number(summary.wind && summary.wind.max != null ? summary.wind.max : 0) || 0;
       var tornadoMax = Number(summary.tornado && summary.tornado.max != null ? summary.tornado.max : 0) || 0;
+      var reportCount = Number(summary.reportCount || summary.sourceRowCount || 0) || 0;
+      var swathCount = Number(polyHail && polyHail.swathCount || 0) || 0;
+      var impactSummary = mapsGetStormImpactSummarySync(dateStr);
+      var housingUnits = impactSummary && impactSummary.housingEstimateConnected
+        ? Number(impactSummary.impactedHomesCount || 0)
+        : 0;
 
-      // rating: simple 1-5 frontend impact score derived from the same
-      // hail/wind/tornado thresholds used for the severity label/color —
-      // no backend rating exists yet, so this is computed client-side only.
-      if (types.indexOf('tornado') !== -1 || tornadoMax > 0) {
-        return { label: 'Extreme', className: 'severity-extreme', rating: 5 };
+      function clampScore(value) {
+        return Math.max(1, Math.min(5, Number(value) || 1));
       }
-      if (hailMax >= 2.5 || windMax >= 110) {
-        return { label: 'Extreme', className: 'severity-extreme', rating: 5 };
+
+      // Intensity: 1" hail starts at rank 1 and each additional 0.5"
+      // raises the intensity tier. Damaging wind and tornado intensity can
+      // raise a mixed-storm score without lowering the hail score.
+      var hailScore = hailMax > 0 ? clampScore(Math.floor((hailMax - 1) / 0.5) + 1) : 1;
+      var windScore = windMax >= 110 ? 5 : windMax >= 90 ? 4 : windMax >= 73 ? 3 : windMax >= 58 ? 2 : 1;
+      var tornadoScore = (types.indexOf('tornado') !== -1 || tornadoMax > 0)
+        ? clampScore(Math.floor(tornadoMax) + 2)
+        : 1;
+      var intensityScore = Math.max(hailScore, windScore, tornadoScore);
+
+      // Report volume and saved-swath count are the reliable current proxies
+      // for storm breadth. Duration is intentionally excluded because the
+      // date index does not contain a trustworthy hail start/end duration.
+      var reportScore = reportCount >= 100 ? 5 : reportCount >= 40 ? 4 : reportCount >= 15 ? 3 : reportCount >= 5 ? 2 : 1;
+      var coverageScore = swathCount >= 25 ? 5 : swathCount >= 12 ? 4 : swathCount >= 6 ? 3 : swathCount >= 3 ? 2 : 1;
+      var weightedScore;
+
+      if (housingUnits > 0) {
+        var housingScore = housingUnits >= 500000 ? 5 : housingUnits >= 200000 ? 4 : housingUnits >= 75000 ? 3 : housingUnits >= 25000 ? 2 : 1;
+        weightedScore = (housingScore * 0.45) + (intensityScore * 0.35) + (reportScore * 0.15) + (coverageScore * 0.05);
+      } else {
+        weightedScore = (intensityScore * 0.60) + (reportScore * 0.25) + (coverageScore * 0.15);
       }
-      if (hailMax >= 2 || windMax >= 90) {
-        return { label: 'Severe', className: 'severity-severe', rating: 4 };
-      }
-      if (hailMax >= 1.5 || windMax >= 73) {
-        return { label: 'Elevated', className: 'severity-elevated', rating: 3 };
-      }
-      if (hailMax >= 1 || windMax >= 58) {
-        return { label: 'Moderate', className: 'severity-moderate', rating: 2 };
-      }
-      if (types.length) {
-        return { label: 'Light', className: 'severity-light', rating: 1 };
-      }
-      return { label: 'Pending', className: 'severity-light', rating: null };
+
+      var rating = clampScore(Math.round(weightedScore));
+      var labels = {
+        1: { label: 'Light', className: 'severity-light' },
+        2: { label: 'Moderate', className: 'severity-moderate' },
+        3: { label: 'Elevated', className: 'severity-elevated' },
+        4: { label: 'Severe', className: 'severity-severe' },
+        5: { label: 'Extreme', className: 'severity-extreme' }
+      };
+      return { label: labels[rating].label, className: labels[rating].className, rating: rating };
     }
 
     function mapsBuildStormSourceBadgeHtml(dateStr) {
@@ -33762,6 +33786,7 @@ function mapsGoogleReady() {
       var dateInfo = mapsGetStormCardDateInfo(dateStr);
       var impactSummary = mapsGetStormImpactSummarySync(dateStr);
       var unitsLabel = mapsFormatHousingUnitLabel(impactSummary || null);
+      var stormTone = mapsGetStormImpactTone(dateStr);
       var isPinned = mapsState.pinnedDates.indexOf(dateStr) !== -1;
       var sourceBadge = mapsBuildStormSourceBadgeHtml(dateStr);
       var types = mapsState.dateEventTypes[dateStr] || [];
@@ -33788,7 +33813,7 @@ function mapsGoogleReady() {
           pinButtonHtml +
         '</div>' +
         '<div class="maps-storm-card-bottom-row">' +
-          '<div class="maps-impact-line"><strong>Overall impact:</strong> Not calculated</div>' +
+          '<div class="maps-impact-line"><strong>Storm ranking:</strong> ' + stormTone.rating + '/5</div>' +
           '<div class="maps-impact-line"><strong>Impacted housing units:</strong> <span class="storm-home-count" data-impact-date="' + dateStr + '">' + unitsLabel + '</span></div>' +
           '<div class="maps-impact-line">' + hailState + '</div>' +
           sourceBadge +
