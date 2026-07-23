@@ -2009,14 +2009,27 @@
       font-weight:600;
     }
     .maps-impact-rating-badge {
-      min-height:22px;
-      height:22px;
-      min-width:22px;
-      width:22px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:24px;
+      height:24px;
+      min-width:29px;
+      width:29px;
       padding:0;
-      border-radius:7px;
-      font-size:12px;
+      border-radius:4px;
+      font-size:14px;
+      line-height:1;
+      font-weight:400;
+      color:#111;
       flex:0 0 auto;
+    }
+    .maps-storm-impact-label {
+      font-size:16px;
+      line-height:1;
+      color:#2f3136;
+      font-weight:400;
+      white-space:nowrap;
     }
     .maps-storm-impact-pill {
       display:inline-flex;
@@ -2052,6 +2065,12 @@
       background:#4c1d2f;
       color:#fff7f7;
     }
+    /* Overall-impact ranking colors: 1 (yellow) through 5 (purple). */
+    .maps-impact-rating-badge.impact-rank-1 { background:#f2ff00; color:#111; }
+    .maps-impact-rating-badge.impact-rank-2 { background:#ffad00; color:#111; }
+    .maps-impact-rating-badge.impact-rank-3 { background:#ff6a00; color:#111; }
+    .maps-impact-rating-badge.impact-rank-4 { background:#e52b2b; color:#fff; }
+    .maps-impact-rating-badge.impact-rank-5 { background:#6f214b; color:#fff; }
     .maps-pin-btn {
       align-self:flex-start;
       min-width:68px;
@@ -17138,7 +17157,7 @@
       var pinButtonHtml = options.showPin === false
         ? ''
         : '<button type="button" class="maps-pin-btn' + (isPinned ? ' pinned' : '') + '" data-pin-date="' + dateStr + '">' + pinLabel + '</button>';
-      var ratingHtml = '<span class="maps-storm-impact-pill maps-impact-rating-badge ' + tone.className + '" title="Impact rating: ' + tone.label + '">' + (tone.rating || '–') + '</span>';
+      var ratingHtml = '<span class="maps-storm-impact-pill maps-impact-rating-badge impact-rank-' + (tone.rating || 0) + '" title="Overall impact: ' + tone.label + '">' + (tone.rating || '–') + '</span>';
 
       return '' +
         '<div class="maps-storm-card-top">' +
@@ -17150,7 +17169,7 @@
         '</div>' +
         '<div class="maps-storm-card-bottom-row">' +
           ratingHtml +
-          '<span class="storm-home-count" data-impact-date="' + dateStr + '">' + unitsLabel + '</span>' +
+          '<span class="maps-storm-impact-label">overall impact</span>' +
           sourceBadge +
         '</div>';
     }
