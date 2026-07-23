@@ -5840,10 +5840,6 @@
       display:flex; align-items:center; gap:6px;
       pointer-events:auto;
     }
-    #page-map .maps-opacity-ctrl {
-      top:calc(var(--maps-topbar-h) + 56px); right:12px; left:auto; z-index:20;
-      pointer-events:auto;
-    }
     .maps-hurricane-ticker {
       position:fixed; left:0; right:0; bottom:0; height:36px;
       display:flex; align-items:center; justify-content:space-between;
@@ -5898,6 +5894,20 @@
     }
     .maps-opacity-val {
       font-size:11px; color:var(--muted); min-width:28px; text-align:center;
+    }
+    #page-map .maps-style-ctrl { display:none; }
+    #page-map .maps-opacity-ctrl {
+      position:absolute; top:auto; left:auto; right:58px; bottom:52px; z-index:30;
+      display:block; padding:0; border:0; background:transparent; box-shadow:none;
+      pointer-events:auto;
+    }
+    #page-map .maps-opacity-slider {
+      display:block; width:150px; height:22px; margin:0; padding:0;
+      accent-color:#1683ff; cursor:pointer; background:transparent;
+      filter:drop-shadow(0 1px 2px rgba(0,0,0,.55));
+    }
+    #page-map .maps-location-ctrl {
+      position:absolute; top:12px; right:12px; z-index:30; pointer-events:auto;
     }
     /* ── Street Color Overlay Control (Maps page) ── */
     .maps-street-ctrl {
@@ -6384,7 +6394,8 @@
       #page-map .maps-style-ctrl { top:calc(var(--maps-topbar-h) + 10px); right:10px; }
       #page-map #stormMap .gm-style-mtc,
       #page-map #stormMap .gm-style-mtc-bbw { margin-top: 10px !important; }
-      #page-map .maps-opacity-ctrl { top:calc(var(--maps-topbar-h) + 54px); right:10px; left:auto; }
+      #page-map .maps-opacity-ctrl { right:24px; bottom:112px; }
+      #page-map .maps-location-ctrl { top:10px; right:10px; }
       /* Bottom panel collapse handle */
       .maps-mobile-bar::before {
         content:''; position:absolute; top:-12px; left:50%; transform:translateX(-50%);
@@ -6493,7 +6504,7 @@
       backdrop-filter:none; -webkit-backdrop-filter:none;
     }
     #page-map .maps-panel-sticky-top::after { display:none; }
-    #page-map .maps-base-map-tabs { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid #d9dde2; background:#eef1f4; }
+    #page-map .maps-base-map-tabs { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid #d9dde2; background:#eef1f4; }
     #page-map .maps-base-map-tab {
       min-height:36px; border:0; border-right:1px solid #d9dde2; background:#eef1f4;
       color:#4d5964; font-size:12px; font-weight:800; cursor:pointer;
@@ -19188,6 +19199,7 @@
               <div class="maps-base-map-tabs" role="group" aria-label="Base map style">
                 <button type="button" class="maps-base-map-tab active" data-map-style="roadmap">Map</button>
                 <button type="button" class="maps-base-map-tab" data-map-style="satellite">Satellite</button>
+                <button type="button" class="maps-base-map-tab" data-map-style="hybrid">Hybrid</button>
               </div>
               <div class="maps-panel-section maps-panel-section-tabs">
                 <div id="stormSearchRow" class="maps-storm-search-row">
@@ -19425,27 +19437,12 @@
               <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#DC1E1E;border-color:#A01616;"></span>2&ndash; 2&frac12;&Prime;</div>
               <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#9419B4;border-color:#6B1080;"></span>2&frac12;&Prime; +</div>
             </div>
-            <!-- Layer Opacity + Visibility Control -->
+            <!-- Bare live swath opacity slider -->
             <div class="maps-opacity-ctrl">
-              <button type="button" id="maps-opacity-btn" class="maps-opacity-btn" title="Layer Controls">&#9681;</button>
+              <input type="range" id="maps-opacity-hail" class="maps-opacity-slider" min="0" max="100" value="55" aria-label="Swath opacity" title="Swath opacity" />
+            </div>
+            <div class="maps-location-ctrl">
               <button type="button" id="maps-my-location-btn" class="maps-location-btn" title="Go to my current location">My Location</button>
-              <div id="maps-opacity-slider-wrap" class="maps-opacity-slider-wrap maps-layer-panel">
-                <div class="maps-layer-row">
-                  <span class="maps-layer-label">Hail</span>
-                  <input type="range" id="maps-opacity-hail" class="maps-opacity-slider" min="0" max="100" value="30" />
-                  <span id="maps-opacity-hail-val" class="maps-opacity-val">30%</span>
-                </div>
-                <div class="maps-layer-row">
-                  <span class="maps-layer-label">Wind</span>
-                  <input type="range" id="maps-opacity-wind" class="maps-opacity-slider" min="0" max="100" value="0" />
-                  <span id="maps-opacity-wind-val" class="maps-opacity-val">0%</span>
-                </div>
-                <div class="maps-layer-row">
-                  <span class="maps-layer-label">Tornado</span>
-                  <input type="range" id="maps-opacity-tornado" class="maps-opacity-slider" min="0" max="100" value="30" />
-                  <span id="maps-opacity-tornado-val" class="maps-opacity-val">30%</span>
-                </div>
-              </div>
             </div>
             <!-- Go to Campaign / Draw Area Report: map controls, not storm-panel content -->
             <div id="maps-storm-actions" class="maps-side-actions"></div>
@@ -25678,8 +25675,9 @@
     };
     var MAPS_MAX_SELECT = 10;
     var MAPS_MIN_ZOOM = 4;
-    var MAPS_DEFAULT_CENTER = { lat: 39.2, lng: -96 };
-    var MAPS_DEFAULT_ZOOM = 5;
+    var MAPS_DEFAULT_CENTER = { lat: 38.6, lng: -97.0 };
+    var MAPS_DEFAULT_ZOOM = 4;
+    var MAPS_US_BOUNDS = { north: 50.0, south: 24.0, west: -125.0, east: -66.0 };
     var MAPS_STORM_DATE_BATCH_SIZE = 30;
     var MAPS_DATE_INDEX_MAX_DATES = 500;
     var STORM_DATE_CACHE_MS = 10 * 60 * 1000;
@@ -28372,9 +28370,10 @@ function mapsGoogleReady() {
     function mapsInstallMinimumZoomGuard(map) {
       if (!map || map._hailMoneyMinimumZoomGuardInstalled) return;
       map._hailMoneyMinimumZoomGuardInstalled = true;
-      map.setOptions({ minZoom: MAPS_MIN_ZOOM });
-      map.addListener('zoom_changed', function () { mapsClampMinimumZoom(map); });
-      map.addListener('idle', function () { mapsClampMinimumZoom(map); });
+      map.setOptions({
+        minZoom: MAPS_MIN_ZOOM,
+        restriction: { latLngBounds: MAPS_US_BOUNDS, strictBounds: false }
+      });
       mapsClampMinimumZoom(map);
     }
 
@@ -28403,6 +28402,9 @@ function mapsGoogleReady() {
           center: MAPS_DEFAULT_CENTER,
           zoom: MAPS_DEFAULT_ZOOM,
           minZoom: MAPS_MIN_ZOOM,
+          restriction: { latLngBounds: MAPS_US_BOUNDS, strictBounds: false },
+          renderingType: google.maps.RenderingType ? google.maps.RenderingType.RASTER : undefined,
+          isFractionalZoomEnabled: false,
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           styles: [],
           zoomControl: false,
@@ -28520,7 +28522,6 @@ function mapsGoogleReady() {
       google.maps.event.addListenerOnce(map, 'idle', applyMapBrightness);
       google.maps.event.addListener(map, 'tilesloaded', applyMapBrightness);
       google.maps.event.addListener(map, 'maptypeid_changed', applyMapBrightness);
-      google.maps.event.addListener(map, 'zoom_changed', function () { setTimeout(applyMapBrightness, 150); });
 
       map.addListener('maptypeid_changed', applyBaseMapStyle);
       applyBaseMapStyle();
@@ -33770,9 +33771,53 @@ function mapsGoogleReady() {
         });
       });
 
-      // ── Per-ring render: one google.maps.Polygon per outer ring (Hail Recon-like) ──
-      // One overlay per Polygon/MultiPolygon outer ring keeps counts sane and avoids
-      // the previous nexrad_iem cell explosion into tens of thousands of overlays.
+      // Batch same-style rings into a small number of persistent overlays. Thousands
+      // of individual Polygon objects make Google Maps drop/rebuild the swath during
+      // animated zoom. Batching keeps the same geometry and colors while the map moves.
+      var _overlayBatches = {};
+      _overlayDefs.forEach(function (def) {
+        var key = [
+          def.stormType, def.fill, Number(def.opacity).toFixed(3), def.zIndex,
+          def.bandMin, def.storedBandMin, def.storedBandMax, def.sourcePriority,
+          def.sourceClassification, def.qualityStatus, def.acceptedForCustomerDisplay,
+          def.source, def.sourceProduct, def.show
+        ].join('|');
+        var list = _overlayBatches[key] || (_overlayBatches[key] = []);
+        var batch = list.length ? list[list.length - 1] : null;
+        var incomingPaths = Array.isArray(def.paths) ? def.paths : [];
+        if (!batch || batch.paths.length + incomingPaths.length > 120) {
+          batch = Object.assign({}, def, {
+            paths: [],
+            canonicalGeometry: { type: 'FeatureCollection', features: [] },
+            canonicalBbox: { minLat: Infinity, maxLat: -Infinity, minLng: Infinity, maxLng: -Infinity },
+            rowIds: []
+          });
+          list.push(batch);
+        }
+        Array.prototype.push.apply(batch.paths, incomingPaths);
+        if (def.canonicalGeometry) {
+          if (def.canonicalGeometry.type === 'FeatureCollection') {
+            Array.prototype.push.apply(batch.canonicalGeometry.features, def.canonicalGeometry.features || []);
+          } else {
+            batch.canonicalGeometry.features.push({ type: 'Feature', properties: {}, geometry: def.canonicalGeometry });
+          }
+        }
+        if (def.canonicalBbox) {
+          batch.canonicalBbox.minLat = Math.min(batch.canonicalBbox.minLat, def.canonicalBbox.minLat);
+          batch.canonicalBbox.maxLat = Math.max(batch.canonicalBbox.maxLat, def.canonicalBbox.maxLat);
+          batch.canonicalBbox.minLng = Math.min(batch.canonicalBbox.minLng, def.canonicalBbox.minLng);
+          batch.canonicalBbox.maxLng = Math.max(batch.canonicalBbox.maxLng, def.canonicalBbox.maxLng);
+        }
+        if (def.rowId != null) batch.rowIds.push(def.rowId);
+      });
+      _overlayDefs = [];
+      Object.keys(_overlayBatches).forEach(function (key) {
+        (_overlayBatches[key] || []).forEach(function (batch) {
+          if (batch.paths.length) _overlayDefs.push(batch);
+        });
+      });
+
+      // ── Persistent batched render: far fewer Google Polygon objects ──
       var _t_polyBatch = performance.now();
       var _polygonsDrawn = 0;
       var _selectedDateVisible = (mapsState.selectedDates || []).indexOf(dateStr) !== -1;
@@ -33809,6 +33854,7 @@ function mapsGoogleReady() {
         _poly._canonicalHailDisplayValue = _poly._canonicalBandMin;
         _poly._sourcePriority = g.sourcePriority;
         _poly._sourceRowId = g.rowId;
+        _poly._sourceRowIds = g.rowIds || (g.rowId != null ? [g.rowId] : []);
         _poly._sourceProduct = g.sourceProduct;
         _poly._sourceClassification = g.sourceClassification;
         _poly._overlayCollection = 'swathPolygons';
@@ -38505,6 +38551,9 @@ function mapsGoogleReady() {
           var style = tab.getAttribute('data-map-style');
           if (!mapsState.map || !style) return;
           mapsState.map.setMapTypeId(style);
+          document.querySelectorAll('#page-map .maps-base-map-tab').forEach(function (item) {
+            item.classList.toggle('active', item === tab);
+          });
         });
       });
       requestAnimationFrame(function () { mapsEnsureVisibleMap(); });
@@ -38686,41 +38735,30 @@ function mapsGoogleReady() {
     // ── Swath Opacity Control ──
     function mapsWireOpacityCtrl() {
       var App = mapsGetAppState();
-      var btn = document.getElementById('maps-opacity-btn');
-      var wrap = document.getElementById('maps-opacity-slider-wrap');
-      if (!btn || !wrap) return;
-
-      if (App.mapsOpacityCtrlBound) return;
+      var slider = document.getElementById('maps-opacity-hail');
+      if (!slider || App.mapsOpacityCtrlBound) return;
       App.mapsOpacityCtrlBound = true;
 
-      btn.addEventListener('click', function () {
-        wrap.classList.toggle('open');
-      });
-      var locBtn = document.getElementById('maps-my-location-btn');
-      if (locBtn) {
-        locBtn.addEventListener('click', mapsHandleMyLocation);
-      }
+      var initialOpacity = Math.max(0, Math.min(1, Number(mapsState.swathOpacity) || 0.55));
+      slider.value = String(Math.round(initialOpacity * 100));
+      if (!mapsState.typeOpacityScale) mapsState.typeOpacityScale = {};
+      mapsState.typeOpacityScale.hail = 1;
+      mapsState.typeOpacityScale.wind = 1;
+      mapsState.typeOpacityScale.tornado = 1;
 
-      ['hail', 'wind', 'tornado'].forEach(function (type) {
-        var slider = document.getElementById('maps-opacity-' + type);
-        var valEl = document.getElementById('maps-opacity-' + type + '-val');
-        if (!slider) return;
-        var raf = null;
-        slider.addEventListener('input', function () {
-          var pct = Number(slider.value);
-          if (valEl) valEl.textContent = pct + '%';
-          var scale = pct / 100;
-          if (!mapsState.typeOpacityScale) mapsState.typeOpacityScale = {};
-          mapsState.typeOpacityScale[type] = scale;
-          mapsState.swathToggles[type] = pct > 0;
-          applySwathToggles();
-          if (raf) cancelAnimationFrame(raf);
-          raf = requestAnimationFrame(function () {
-            mapsApplySwathOpacity(mapsState.swathOpacity != null ? mapsState.swathOpacity : 0.55);
-            raf = null;
-          });
+      var raf = null;
+      slider.addEventListener('input', function () {
+        var opacity = Math.max(0, Math.min(1, Number(slider.value) / 100));
+        mapsState.swathOpacity = opacity;
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(function () {
+          mapsApplySwathOpacity(opacity);
+          raf = null;
         });
       });
+
+      var locBtn = document.getElementById('maps-my-location-btn');
+      if (locBtn) locBtn.addEventListener('click', mapsHandleMyLocation);
     }
 
     function applySwathToggles(dateStr) {
