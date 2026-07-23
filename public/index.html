@@ -27186,7 +27186,7 @@
       var hailUrl = SUPABASE_URL + '/rest/v1/hail_lsr_raw?event_date=in.(' + encodedDates + ')' +
         '&select=event_date,hail_in&order=event_date.desc&limit=10000';
       var polygonUrl = SUPABASE_URL + '/rest/v1/storm_polygons?event_date=in.(' + encodedDates + ')' +
-        '&source_product=neq.no_swath&select=event_date,storm_type,band_min,band_max,centroid_lat,centroid_lon,area_sq_mi' +
+        '&source_product=neq.no_swath&select=event_date,storm_type,band_min,band_max,centroid_lat,centroid_lon,area_sq_mi,source,swath_index' +
         '&order=event_date.desc&limit=10000';
       var impactUrl = SUPABASE_URL + '/rest/v1/impact_state_summary?event_date=in.(' + encodedDates + ')' +
         '&select=event_date,state,impacted_housing_units,center_lat,center_lon' +
@@ -27202,7 +27202,10 @@
       return Promise.all([
         fetchRows(hailUrl, 'hail report'),
         fetchRows(polygonUrl, 'storm polygon'),
-        fetchRows(impactUrl, 'housing impact')
+        fetchRows(impactUrl, 'housing impact').catch(function (err) {
+          hmDebugWarn('[stormRanking] Housing summary unavailable; using Census swath estimate:', err.message || err);
+          return [];
+        })
       ]).then(function (results) {
           var hailRows = results[0] || [];
           var polygonRows = results[1] || [];
@@ -27249,16 +27252,19 @@
             mapsState.dateHasPolygon[dateStr] = true;
           });
           mapsApplyValidatedHousingRows(dates, polygonRows, impactRows);
-          dates.forEach(function (dateStr) {
-            mapsState.stormRankingLoadedDates[dateStr] = true;
-            delete mapsState.stormRankingPendingDates[dateStr];
+          return mapsEstimateHousingFromStormPolygons(dates, polygonRows).then(function () {
+            dates.forEach(function (dateStr) {
+              mapsState.stormRankingLoadedDates[dateStr] = true;
+              delete mapsState.stormRankingPendingDates[dateStr];
+            });
+            hmDebugLog('[stormRanking] Loaded ' + hailRows.length + ' reports, ' +
+              polygonRows.length + ' polygon bands, and ' + impactRows.length +
+              ' verified housing rows; Census/swath exposure completed for ' +
+              dates.length + ' visible dates');
+            mapsRenderStormList({ refreshExisting:true });
+            mapsRenderPinnedTab();
+            return results;
           });
-          hmDebugLog('[stormRanking] Loaded ' + hailRows.length + ' reports, ' +
-            polygonRows.length + ' polygon bands, and ' + impactRows.length +
-            ' housing rows for ' + dates.length + ' visible dates');
-          mapsRenderStormList({ refreshExisting:true });
-          mapsRenderPinnedTab();
-          return results;
         })
         .catch(function (err) {
           dates.forEach(function (dateStr) { delete mapsState.stormRankingPendingDates[dateStr]; });
@@ -33963,6 +33969,174 @@ function mapsGoogleReady() {
       });
     }
 
+    function mapsGetCensusExposureCache() {
+      if (mapsState.censusExposureByPoint) return mapsState.censusExposureByPoint;
+      var cached = {};
+      try {
+        cached = JSON.parse(localStorage.getItem('hm_census_exposure_v1') || '{}') || {};
+      } catch (_) {}
+      mapsState.censusExposureByPoint = cached;
+      return cached;
+    }
+
+    function mapsSaveCensusExposureCache() {
+      try {
+        localStorage.setItem('hm_census_exposure_v1', JSON.stringify(mapsState.censusExposureByPoint || {}));
+      } catch (_) {}
+    }
+
+    function mapsFetchCensusTractExposure(lat, lon) {
+      var cache = mapsGetCensusExposureCache();
+      var pointKey = Number(lat).toFixed(2) + ',' + Number(lon).toFixed(2);
+      if (cache[pointKey] && Number.isFinite(Number(cache[pointKey].housingDensity))) {
+        return Promise.resolve(cache[pointKey]);
+      }
+      mapsState._censusExposurePromises = mapsState._censusExposurePromises || {};
+      if (mapsState._censusExposurePromises[pointKey]) {
+        return mapsState._censusExposurePromises[pointKey];
+      }
+
+      var geocoderUrl = 'https://geocoding.geo.census.gov/geocoder/geographies/coordinates?' +
+        'x=' + encodeURIComponent(lon) + '&y=' + encodeURIComponent(lat) +
+        '&benchmark=Public_AR_Current&vintage=Current_Current&format=json';
+
+      mapsState._censusExposurePromises[pointKey] = fetch(geocoderUrl)
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('Census geography HTTP ' + resp.status);
+          return resp.json();
+        })
+        .then(function (payload) {
+          var geographies = payload && payload.result && payload.result.geographies || {};
+          var tracts = geographies['Census Tracts'] || [];
+          var blocks = geographies['2020 Census Blocks'] || [];
+          var tract = tracts[0] || null;
+          var block = blocks[0] || null;
+          if (!tract) throw new Error('No Census tract for storm coordinate');
+
+          var stateCode = String(tract.STATE || tract.STATEFP || '').padStart(2, '0');
+          var countyCode = String(tract.COUNTY || tract.COUNTYFP || '').padStart(3, '0');
+          var tractCode = String(tract.TRACT || tract.TRACTCE || '');
+          var landSqMi = Math.max(0.01, (Number(tract.AREALAND) || 0) / 2589988.110336);
+          var isUrban = String(block && block.UR || '').toUpperCase() === 'U';
+          var fallbackDensity = isUrban ? 600 : 10;
+          if (!stateCode || !countyCode || !tractCode) {
+            return { housingDensity:fallbackDensity, isUrban:isUrban, source:'census-urban-rural' };
+          }
+
+          var acsUrl = 'https://api.census.gov/data/2024/acs/acs5?' +
+            'get=B25001_001E&for=tract:' + encodeURIComponent(tractCode) +
+            '&in=state:' + encodeURIComponent(stateCode) + '%20county:' + encodeURIComponent(countyCode);
+          return fetch(acsUrl)
+            .then(function (resp) {
+              if (!resp.ok) throw new Error('Census ACS HTTP ' + resp.status);
+              return resp.json();
+            })
+            .then(function (rows) {
+              var housingUnits = Number(rows && rows[1] && rows[1][0]);
+              var density = Number.isFinite(housingUnits) && housingUnits >= 0
+                ? housingUnits / landSqMi
+                : fallbackDensity;
+              return {
+                housingDensity:Math.max(0, density),
+                isUrban:isUrban,
+                tractGeoId:String(tract.GEOID || ''),
+                source:Number.isFinite(housingUnits) ? 'census-acs-tract' : 'census-urban-rural'
+              };
+            })
+            .catch(function () {
+              return { housingDensity:fallbackDensity, isUrban:isUrban, source:'census-urban-rural' };
+            });
+        })
+        .catch(function () {
+          // A restrained nationwide fallback still uses the real swath area,
+          // and prevents a temporary Census outage from making every card 1.
+          return { housingDensity:20, isUrban:false, source:'swath-area-fallback' };
+        })
+        .then(function (exposure) {
+          cache[pointKey] = exposure;
+          mapsSaveCensusExposureCache();
+          delete mapsState._censusExposurePromises[pointKey];
+          return exposure;
+        });
+
+      return mapsState._censusExposurePromises[pointKey];
+    }
+
+    // Estimate residential exposure from the real outer hail footprint. Nested
+    // hail bands are collapsed so the same homes are not counted repeatedly.
+    function mapsEstimateHousingFromStormPolygons(dateList, polygonRows) {
+      var requested = {};
+      (dateList || []).forEach(function (dateStr) { requested[dateStr] = true; });
+      var groupsByDate = {};
+
+      (polygonRows || []).forEach(function (row) {
+        var dateStr = String(row && row.event_date || '').slice(0, 10);
+        if (!requested[dateStr]) return;
+        var type = String(row.storm_type || '').toLowerCase();
+        if (type === 'wind' || type === 'tornado') return;
+        var hailSize = Math.max(Number(row.band_min) || 0, Number(row.band_max) || 0);
+        var lat = Number(row.centroid_lat), lon = Number(row.centroid_lon);
+        var areaSqMi = Math.max(0, Number(row.area_sq_mi) || 0);
+        if (hailSize < 1 || !Number.isFinite(lat) || !Number.isFinite(lon) || areaSqMi <= 0) return;
+
+        var dateGroups = groupsByDate[dateStr] || (groupsByDate[dateStr] = {});
+        var spatialKey = (Math.round(lat * 4) / 4).toFixed(2) + ',' +
+          (Math.round(lon * 4) / 4).toFixed(2);
+        var current = dateGroups[spatialKey];
+        if (!current || areaSqMi > current.areaSqMi) {
+          dateGroups[spatialKey] = {
+            lat:lat, lon:lon, areaSqMi:areaSqMi, hailSize:hailSize
+          };
+        } else {
+          current.hailSize = Math.max(current.hailSize, hailSize);
+        }
+      });
+
+      var jobs = [];
+      (dateList || []).forEach(function (dateStr) {
+        var existing = mapsGetStormImpactSummarySync(dateStr);
+        if (existing && existing.housingEstimateConnected) return;
+        var groups = Object.keys(groupsByDate[dateStr] || {}).map(function (key) {
+          return groupsByDate[dateStr][key];
+        }).sort(function (a, b) { return b.areaSqMi - a.areaSqMi; });
+        if (!groups.length) return;
+
+        var totalArea = groups.reduce(function (sum, group) { return sum + group.areaSqMi; }, 0);
+        // Sample the largest footprint's tract density, then apply it to the
+        // date's deduplicated outer-swath area.
+        jobs.push({
+          dateStr:dateStr,
+          sample:groups[0],
+          totalAreaSqMi:totalArea
+        });
+      });
+
+      var cursor = 0;
+      var workerCount = Math.min(6, jobs.length);
+      var workers = [];
+      function runNext() {
+        if (cursor >= jobs.length) return Promise.resolve();
+        var job = jobs[cursor++];
+        return mapsFetchCensusTractExposure(job.sample.lat, job.sample.lon)
+          .then(function (exposure) {
+            var estimatedHomes = Math.max(0, Math.round(
+              job.totalAreaSqMi * Math.max(0, Number(exposure.housingDensity) || 0)
+            ));
+            mapsStoreStormHousingImpact(
+              job.dateStr,
+              estimatedHomes,
+              true,
+              exposure.source === 'census-acs-tract'
+                ? 'census-swath-density-estimate'
+                : 'swath-area-estimate'
+            );
+          })
+          .then(runNext);
+      }
+      for (var i = 0; i < workerCount; i++) workers.push(runNext());
+      return Promise.all(workers);
+    }
+
     function mapsGetStormImpactTone(dateStr) {
       var summary = mapsState.dateSummaries[dateStr] || {};
       var reportedHailMax = Number(summary.hail && summary.hail.max != null ? summary.hail.max : 0) || 0;
@@ -34878,7 +35052,8 @@ function mapsGoogleReady() {
       //   - Parcel count API or paid property-data provider
       //   - FEMA / HUD housing unit raster for swath footprint
       if (!summary || !summary.housingEstimateConnected) return 'Not calculated';
-      return mapsAbbreviateCount(summary.impactedHomesCount) + ' units';
+      var isEstimate = /estimate/i.test(String(summary.housingImpactSource || ''));
+      return (isEstimate ? '~' : '') + mapsAbbreviateCount(summary.impactedHomesCount) + ' units';
     }
 
     function mapsGetStormImpactSummarySync(dateStr) {
