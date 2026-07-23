@@ -1,0 +1,70 @@
+name: Deploy swath renderer and regenerate July 21
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - ".github/workflows/deploy-swath-render-july-21.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-swath-render-july-21
+  cancel-in-progress: false
+
+jobs:
+  deploy-and-regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Check out merged renderer
+        uses: actions/checkout@v4
+
+      - name: Validate production credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_SERVICE_ROLE_KEY"
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          project_ref="$(node -e "console.log(new URL(process.env.SUPABASE_URL).hostname.split('.')[0])")"
+          test -n "$project_ref"
+          echo "PROJECT_REF=$project_ref" >> "$GITHUB_ENV"
+
+      - name: Deploy corrected swath-render function
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes supabase@latest functions deploy swath-render --project-ref "$PROJECT_REF"
+
+      - name: Regenerate July 21 2026 only
+        id: regenerate
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          status="$(curl --silent --show-error --output "$response_file" --write-out "%{http_code}" \
+            --request POST \
+            --header "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            --header "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            "$SUPABASE_URL/functions/v1/swath-render?date=2026-07-21&persist=true")"
+          test "$status" -ge 200
+          test "$status" -lt 300
+          node - "$response_file" <<'NODE'
+          const fs = require("fs");
+          const body = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+          if (body.error) throw new Error(body.error);
+          if (body.persisted !== true) throw new Error("July 21 swaths were not persisted");
+          console.log(JSON.stringify({
+            date: "2026-07-21",
+            persisted: body.persisted,
+            pointCount: body.pointCount ?? null,
+            corridorCount: Array.isArray(body.corridors) ? body.corridors.length : null
+          }));
+          NODE
