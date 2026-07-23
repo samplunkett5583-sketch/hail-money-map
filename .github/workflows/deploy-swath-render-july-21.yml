@@ -50,7 +50,7 @@ jobs:
           set -euo pipefail
           response_file="$(mktemp)"
           status="$(curl --silent --show-error --output "$response_file" --write-out "%{http_code}" \
-            --request POST \
+            --request GET \
             --header "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
             --header "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
             "$SUPABASE_URL/functions/v1/swath-render?date=2026-07-21&persist=true")"
