@@ -35181,14 +35181,17 @@ function mapsGoogleReady() {
     // Returns the label shown in Recent / Pinned tabs for a date's housing-unit impact.
     // housingEstimateConnected is false until a real Census / parcel data source is wired.
     function mapsFormatHousingUnitLabel(summary) {
-      // TODO(housing-units): replace placeholder once one of the following is wired:
-      //   - Census ACS block-group housing unit counts intersected with swath polygons
-      //   - City/county boundary × swath overlap with Census housing density
-      //   - Parcel count API or paid property-data provider
-      //   - FEMA / HUD housing unit raster for swath footprint
-      if (!summary || !summary.housingEstimateConnected) return 'Not calculated';
-      var isEstimate = /estimate/i.test(String(summary.housingImpactSource || ''));
-      return (isEstimate ? '~' : '') + mapsAbbreviateCount(summary.impactedHomesCount) + ' units';
+      // Recent-card housing counts stay hidden until an authoritative residential
+      // parcel/property source is intersected with the hail swath. Census-density,
+      // report-footprint, and other provisional estimates are not field-ready.
+      var source = String(summary && summary.housingImpactSource || '').toLowerCase();
+      var authoritative = !!(summary && summary.housingEstimateConnected) &&
+        (source.indexOf('regrid') !== -1 ||
+         source.indexOf('parcel_api') !== -1 ||
+         source.indexOf('property_api') !== -1 ||
+         source.indexOf('residential_parcels') !== -1);
+      if (!authoritative) return 'Pending property data';
+      return mapsAbbreviateCount(summary.impactedHomesCount) + ' units';
     }
 
     function mapsGetStormImpactSummarySync(dateStr) {
