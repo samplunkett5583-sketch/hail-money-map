@@ -25848,6 +25848,10 @@
       reportedSize = Number(reportedSize) || 0;
       var size = radarSize;
       if (reportedSize > 0 && size > reportedSize) size = reportedSize;
+      // A 2-inch-or-larger claim must not come from radar alone. Until a local
+      // hail report corroborates it, keep the displayed size at a conservative
+      // 1.50 inches instead of presenting an unsupported severe-hail value.
+      if (reportedSize <= 0 && size >= 2) size = 1.5;
       return Math.round(size * 4) / 4;
     }
 
@@ -37220,7 +37224,8 @@ function mapsGoogleReady() {
         var _stormApp = mapsGetAppState();
         var _stormClickT0 = Date.now();
         dateStr = mapsNormalizeDate(dateStr);
-        if (_stormApp.currentVisibleStormDate === dateStr && _stormApp.activeStormOverlays && _stormApp.activeStormOverlays.length) {
+        var _stormCalibrationReady = mapsState._hailCalibrationReady && mapsState._hailCalibrationReady[dateStr];
+        if (_stormApp.currentVisibleStormDate === dateStr && _stormApp.activeStormOverlays && _stormApp.activeStormOverlays.length && _stormCalibrationReady) {
           hmDebugLog('[loadStormDate] already visible', dateStr);
           return;
         }
@@ -37328,9 +37333,14 @@ function mapsGoogleReady() {
           });
         };
 
-        var _stormDrawSwathsAndFocus = async function (rows) {
+        var _stormDrawSwathsAndFocus = async function (rows, hailPoints) {
           if (_stormIsCanceled()) return { canceled: true, drew: false, swathN: 0, src: 'none', fitResult: null };
           rows = Array.isArray(rows) ? rows : [];
+          if (Array.isArray(hailPoints)) {
+            mapsState.lsrPointsByDate[dateStr] = hailPoints;
+            mapsState._hailCalibrationReady = mapsState._hailCalibrationReady || {};
+            mapsState._hailCalibrationReady[dateStr] = true;
+          }
           var _drawT0 = performance.now();
           mapsRemoveAiSwathForDate(dateStr);
           mapsRemoveHailFieldForDate(dateStr);
@@ -37384,10 +37394,14 @@ function mapsGoogleReady() {
 
         void (async function () {
           var cachedPts = mapsState.lsrPointsByDate[dateStr];
-          var needPoints = !mapsState.lsrPointsByDate.hasOwnProperty(dateStr);
+          var needPoints = !mapsState.lsrPointsByDate.hasOwnProperty(dateStr) || !Array.isArray(cachedPts);
           var existingPoints = Array.isArray(cachedPts) ? cachedPts : [];
           var existingWindPts = Array.isArray(mapsState.windPointsByDate[dateStr]) ? mapsState.windPointsByDate[dateStr] : [];
           var existingTornadoPts = Array.isArray(mapsState.tornadoPointsByDate[dateStr]) ? mapsState.tornadoPointsByDate[dateStr] : [];
+
+          if (mapsState._drawComplete[dateStr] && !(mapsState._hailCalibrationReady && mapsState._hailCalibrationReady[dateStr])) {
+            delete mapsState._drawComplete[dateStr];
+          }
 
           if (mapsState._drawComplete[dateStr]) {
             var existingPolys = mapsState.swathPolygons[dateStr];
@@ -37434,7 +37448,7 @@ function mapsGoogleReady() {
 
           function _stormGetPointsProm() {
             if (pointsProm) return pointsProm;
-            pointsProm = Array.isArray(cachedDateData.points)
+            pointsProm = Array.isArray(cachedDateData.points) && (cachedDateData.points.length || (mapsState._hailCalibrationReady && mapsState._hailCalibrationReady[dateStr]))
               ? Promise.resolve(cachedDateData.points)
               : needPoints
               ? fetchLsrPointsByDate(dateStr)
@@ -37580,12 +37594,14 @@ function mapsGoogleReady() {
             hmDebugLog('[loadStormDate] swaths from cache', dateStr);
             hmDebugLog('[loadStormDate] swath source', cachedSwathData.sourceName || 'stormSwathCache', 'rows', cachedSwathData.rows.length);
             cachedDateData.savedPolys = Array.isArray(cachedSwathData.savedPolys) ? cachedSwathData.savedPolys : (Array.isArray(cachedDateData.savedPolys) ? cachedDateData.savedPolys : []);
-            var cachedSwathDraw = await _stormDrawSwathsAndFocus(cachedSwathData.rows);
+            var cachedSwathPoints = Array.isArray(cachedDateData.points) && (cachedDateData.points.length || (mapsState._hailCalibrationReady && mapsState._hailCalibrationReady[dateStr]))
+              ? cachedDateData.points : await _stormGetPointsProm();
+            var cachedSwathDraw = await _stormDrawSwathsAndFocus(cachedSwathData.rows, cachedSwathPoints);
             if (cachedSwathDraw.canceled) return;
             await _stormFinishReports(
               cachedSwathDraw,
               cachedSwathData.rows,
-              Array.isArray(cachedDateData.points) ? cachedDateData.points : null,
+              cachedSwathPoints,
               Array.isArray(cachedDateData.windPts) ? cachedDateData.windPts : null,
               Array.isArray(cachedDateData.tornadoPts) ? cachedDateData.tornadoPts : null,
               true
@@ -37601,12 +37617,14 @@ function mapsGoogleReady() {
               savedPolys: Array.isArray(cachedDateData.savedPolys) ? cachedDateData.savedPolys : [],
               sourceName: cachedDateData.swathSourceName || 'stormDateDataCache'
             }, false);
-            var cachedDraw = await _stormDrawSwathsAndFocus(cachedDateData.meshRows);
+            var cachedMeshPoints = Array.isArray(cachedDateData.points) && (cachedDateData.points.length || (mapsState._hailCalibrationReady && mapsState._hailCalibrationReady[dateStr]))
+              ? cachedDateData.points : await _stormGetPointsProm();
+            var cachedDraw = await _stormDrawSwathsAndFocus(cachedDateData.meshRows, cachedMeshPoints);
             if (cachedDraw.canceled) return;
             await _stormFinishReports(
               cachedDraw,
               cachedDateData.meshRows,
-              Array.isArray(cachedDateData.points) ? cachedDateData.points : null,
+              cachedMeshPoints,
               Array.isArray(cachedDateData.windPts) ? cachedDateData.windPts : null,
               Array.isArray(cachedDateData.tornadoPts) ? cachedDateData.tornadoPts : null,
               true
@@ -37669,6 +37687,17 @@ function mapsGoogleReady() {
             swathSourceName = rows && rows.length ? 'synthesized_from_reports' : 'no_swaths';
           }
 
+          if (!Array.isArray(points)) {
+            var calibrationFetchStartedAt = Date.now();
+            points = await _stormGetPointsProm();
+            _stormTiming.reportFetchMs += Date.now() - calibrationFetchStartedAt;
+          }
+          points = Array.isArray(points) ? points : [];
+          mapsState.lsrPointsByDate[dateStr] = points;
+          mapsState._hailCalibrationReady = mapsState._hailCalibrationReady || {};
+          mapsState._hailCalibrationReady[dateStr] = true;
+          cachedDateData.points = points;
+
           if (_stormIsCanceled()) return;
 
           rows = Array.isArray(rows) ? rows : [];
@@ -37682,7 +37711,7 @@ function mapsGoogleReady() {
           }, rows.length === 0 && (!points || !points.length) && (!windPts || !windPts.length) && (!tornadoPts || !tornadoPts.length));
           mapsSetCachedStormDateData(dateStr, cachedDateData);
 
-          var drawResult = await _stormDrawSwathsAndFocus(rows);
+          var drawResult = await _stormDrawSwathsAndFocus(rows, points);
           if (drawResult.canceled) return;
 
           await _stormFinishReports(
