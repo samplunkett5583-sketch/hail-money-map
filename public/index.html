@@ -27024,7 +27024,7 @@
         // the data arrives, so rankings do not remain at the default 1.
         if (!App.stormRankingSummariesRequested) {
           App.stormRankingSummariesRequested = true;
-          _fetchPolyHailSummaries();
+          _fetchStormRankingSummaries();
         }
         // Default the selected storm date to today on first open of the Maps page.
         // mapsPreviewDate() draws whatever data exists for that date (or nothing,
@@ -27157,6 +27157,132 @@
       .catch(function (err) {
         hmDebugWarn('[stormSummary] Failed to fetch polygon hail summaries:', err.message || err);
       });
+    }
+
+    // Load the actual per-date hail, wind, tornado, report-volume, and
+    // swath-volume inputs used by the 1-5 overall-impact score. The fast date
+    // index intentionally contains dates only, so ranking from it alone makes
+    // every card fall back to 1.
+    function _fetchStormRankingSummaries() {
+      var headers = {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+        'Range-Unit': 'items'
+      };
+      var pageSize = 1000;
+      var maxPages = 40;
+
+      function fetchAll(path) {
+        var allRows = [];
+        function next(page) {
+          var from = page * pageSize;
+          var pageHeaders = Object.assign({}, headers, { Range: from + '-' + (from + pageSize - 1) });
+          return fetch(SUPABASE_URL + '/rest/v1/' + path, { headers: pageHeaders })
+            .then(function (resp) {
+              if (!resp.ok) throw new Error(path.split('?')[0] + ' ranking summary HTTP ' + resp.status);
+              return resp.json();
+            })
+            .then(function (rows) {
+              rows = Array.isArray(rows) ? rows : [];
+              allRows = allRows.concat(rows);
+              if (rows.length < pageSize || page + 1 >= maxPages) return allRows;
+              return next(page + 1);
+            });
+        }
+        return next(0);
+      }
+
+      var hailPath = 'hail_lsr_raw?select=event_date,hail_in&order=event_date.desc';
+      var stormPath = 'storm_lsr_raw?select=event_date,event_type,magnitude&order=event_date.desc';
+      var polygonPath = 'storm_polygons?source_product=neq.no_swath&select=event_date,storm_type,band_min,band_max&order=event_date.desc';
+
+      Promise.all([fetchAll(hailPath), fetchAll(stormPath), fetchAll(polygonPath)])
+        .then(function (results) {
+          var hailRows = results[0] || [];
+          var stormRows = results[1] || [];
+          var polygonRows = results[2] || [];
+          var summaries = mapsState.dateSummaries || (mapsState.dateSummaries = {});
+          var eventTypes = mapsState.dateEventTypes || (mapsState.dateEventTypes = {});
+          var polySummaries = mapsState.polyHailSummaries || (mapsState.polyHailSummaries = {});
+
+          function validDate(row) {
+            var d = String(row && row.event_date || '').slice(0, 10);
+            return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : '';
+          }
+          function addType(dateStr, type) {
+            var list = eventTypes[dateStr] || (eventTypes[dateStr] = []);
+            if (list.indexOf(type) === -1) list.push(type);
+          }
+          function addRange(dateStr, key, value) {
+            value = Number(value);
+            if (!Number.isFinite(value) || value <= 0) return;
+            var summary = summaries[dateStr] || (summaries[dateStr] = {});
+            var range = summary[key] || (summary[key] = { min:value, max:value });
+            range.min = Math.min(Number(range.min) || value, value);
+            range.max = Math.max(Number(range.max) || value, value);
+          }
+          function addReport(dateStr) {
+            var summary = summaries[dateStr] || (summaries[dateStr] = {});
+            summary.reportCount = (Number(summary.reportCount) || 0) + 1;
+          }
+
+          hailRows.forEach(function (row) {
+            var dateStr = validDate(row);
+            if (!dateStr) return;
+            mapsState.dateHasHailReports[dateStr] = true;
+            addType(dateStr, 'hail');
+            addRange(dateStr, 'hail', row.hail_in);
+            addReport(dateStr);
+          });
+
+          stormRows.forEach(function (row) {
+            var dateStr = validDate(row);
+            if (!dateStr) return;
+            var type = String(row.event_type || '').toLowerCase();
+            if (type.indexOf('tornado') !== -1) {
+              mapsState.dateHasWindReports[dateStr] = true;
+              addType(dateStr, 'tornado');
+              addRange(dateStr, 'tornado', row.magnitude);
+            } else if (type.indexOf('wind') !== -1) {
+              mapsState.dateHasWindReports[dateStr] = true;
+              addType(dateStr, 'wind');
+              addRange(dateStr, 'wind', row.magnitude);
+            } else if (type.indexOf('hail') !== -1) {
+              mapsState.dateHasHailReports[dateStr] = true;
+              addType(dateStr, 'hail');
+              addRange(dateStr, 'hail', row.magnitude);
+            }
+            addReport(dateStr);
+          });
+
+          polygonRows.forEach(function (row) {
+            var dateStr = validDate(row);
+            if (!dateStr) return;
+            var type = String(row.storm_type || '').toLowerCase();
+            if (type === 'wind' || type === 'tornado') return;
+            var minValue = Number(row.band_min);
+            var maxValue = Number(row.band_max);
+            if (!Number.isFinite(minValue) || minValue <= 0) minValue = maxValue;
+            if (!Number.isFinite(maxValue) || maxValue <= 0) maxValue = minValue;
+            if (!Number.isFinite(maxValue) || maxValue <= 0) return;
+            var poly = polySummaries[dateStr] || (polySummaries[dateStr] = {
+              min:minValue, max:maxValue, swathCount:0
+            });
+            poly.min = Math.min(Number(poly.min) || minValue, minValue);
+            poly.max = Math.max(Number(poly.max) || maxValue, maxValue);
+            poly.swathCount = (Number(poly.swathCount) || 0) + 1;
+            mapsState.dateHasPolygon[dateStr] = true;
+            addType(dateStr, 'hail');
+          });
+
+          hmDebugLog('[stormRanking] Loaded ' + hailRows.length + ' hail reports, ' +
+            stormRows.length + ' wind/tornado reports, and ' + polygonRows.length + ' swath rows');
+          mapsRenderStormList({ refreshExisting:true });
+          mapsRenderPinnedTab();
+        })
+        .catch(function (err) {
+          hmDebugWarn('[stormRanking] Failed to load ranking inputs:', err.message || err);
+        });
     }
 
     // ── Paginated fetch of event_date values from a single Supabase table ──
