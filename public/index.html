@@ -34908,18 +34908,41 @@ function mapsGoogleReady() {
         var abbr = (r.state || '').trim();
         if (!abbr) return;
         var label = mapsParseLsrCityName(r.city) || (r.county || '').trim();
-        if (!byState[abbr]) byState[abbr] = {};
-        if (label) byState[abbr][label.toLowerCase()] = true;
+        if (!byState[abbr]) {
+          byState[abbr] = {
+            places:{}, reportCount:0, maxHailSize:0,
+            latSum:0, lonSum:0, coordCount:0
+          };
+        }
+        var bucket = byState[abbr];
+        if (label) bucket.places[label.toLowerCase()] = true;
+        bucket.reportCount += 1;
+        var hailIn = Number(r.hail_in);
+        if (isFinite(hailIn) && hailIn > bucket.maxHailSize) bucket.maxHailSize = hailIn;
+        var lat = Number(r.lat), lon = Number(r.lon);
+        if (isFinite(lat) && isFinite(lon)) {
+          bucket.latSum += lat;
+          bucket.lonSum += lon;
+          bucket.coordCount += 1;
+        }
       });
       return Object.keys(byState).map(function (abbr) {
+        var bucket = byState[abbr];
         return {
           state: mapsStateFullName(abbr),
-          impacted_cities: Object.keys(byState[abbr]).length,
+          impacted_cities: Object.keys(bucket.places).length,
           impacted_housing_units: null,
-          center_lat: null, center_lon: null,
+          max_hail_size: bucket.maxHailSize || null,
+          report_count: bucket.reportCount,
+          center_lat: bucket.coordCount ? bucket.latSum / bucket.coordCount : null,
+          center_lon: bucket.coordCount ? bucket.lonSum / bucket.coordCount : null,
           _fallback: true
         };
-      }).sort(function (a, b) { return a.state.localeCompare(b.state); });
+      }).sort(function (a, b) {
+        return (Number(b.max_hail_size) || 0) - (Number(a.max_hail_size) || 0)
+          || (Number(b.report_count) || 0) - (Number(a.report_count) || 0)
+          || a.state.localeCompare(b.state);
+      });
     }
 
     // Groups reports by real city/town name first (never by county when a
@@ -34935,25 +34958,36 @@ function mapsGoogleReady() {
         var cityName = mapsParseLsrCityName(r.city);
         var county = (r.county || '').trim();
         var key = cityName ? ('c:' + cityName.toLowerCase()) : (county ? ('o:' + county.toLowerCase()) : ('p:' + lat.toFixed(2) + ',' + lon.toFixed(2)));
-        if (!byPlace[key]) byPlace[key] = { city: cityName || null, county: (!cityName && county) ? county : null, latSum: 0, lonSum: 0, n: 0, hailValues: [] };
-        var b = byPlace[key];
-        b.latSum += lat; b.lonSum += lon; b.n++;
+        if (!byPlace[key]) {
+          byPlace[key] = {
+            city:cityName || null,
+            county:(!cityName && county) ? county : null,
+            latSum:0, lonSum:0, n:0, hailValues:[]
+          };
+        }
+        var bucket = byPlace[key];
+        bucket.latSum += lat;
+        bucket.lonSum += lon;
+        bucket.n += 1;
         var hailIn = Number(r.hail_in);
-        if (isFinite(hailIn) && hailIn > 0) b.hailValues.push(hailIn);
+        if (isFinite(hailIn) && hailIn > 0) bucket.hailValues.push(hailIn);
       });
       return Object.keys(byPlace).map(function (key) {
-        var b = byPlace[key];
+        var bucket = byPlace[key];
         return {
-          city: b.city,
-          county: b.county ? (/county$/i.test(b.county) ? b.county : b.county + ' County') : null,
-          max_hail_size: b.hailValues.length ? Math.max.apply(null, b.hailValues) : null,
+          city: bucket.city,
+          county: bucket.county ? (/county$/i.test(bucket.county) ? bucket.county : bucket.county + ' County') : null,
+          max_hail_size: bucket.hailValues.length ? Math.max.apply(null, bucket.hailValues) : null,
+          report_count: bucket.n,
           impacted_housing_units: null,
-          center_lat: b.latSum / b.n,
-          center_lon: b.lonSum / b.n,
+          center_lat: bucket.latSum / bucket.n,
+          center_lon: bucket.lonSum / bucket.n,
           _fallback: true
         };
       }).sort(function (a, b) {
-        return (a.city || a.county || '').localeCompare(b.city || b.county || '');
+        return (Number(b.max_hail_size) || 0) - (Number(a.max_hail_size) || 0)
+          || (Number(b.report_count) || 0) - (Number(a.report_count) || 0)
+          || (a.city || a.county || '').localeCompare(b.city || b.county || '');
       });
     }
 
@@ -34975,22 +35009,55 @@ function mapsGoogleReady() {
     // Loads the state list: real impact_state_summary rows when they exist,
     // otherwise a temporary list derived from selected-date hail reports.
     async function mapsLoadImpactStates(dateStr) {
-      var rows = await mapsFetchImpactStateSummary(dateStr).catch(function () { return []; });
-      if (rows && rows.length) return rows;
-      var reports = await mapsGetImpactFallbackReports(dateStr);
+      var results = await Promise.all([
+        mapsGetImpactFallbackReports(dateStr).catch(function () { return []; }),
+        mapsFetchImpactStateSummary(dateStr).catch(function () { return []; })
+      ]);
+      var reports = results[0] || [];
+      var calculatedRows = results[1] || [];
       if (!reports.length) return [];
-      return mapsBuildFallbackStateList(reports);
+
+      // Actual dated hail reports decide which states belong in this storm.
+      // Calculated rows may enrich matching states, but can never introduce a
+      // different stale state such as New Hampshire on a Colorado event.
+      var states = mapsBuildFallbackStateList(reports);
+      states.forEach(function (state) {
+        var match = calculatedRows.find(function (row) {
+          return String(row.state || '').toLowerCase() === String(state.state || '').toLowerCase()
+            || mapsStateAbbr(String(row.state || '')) === mapsStateAbbr(String(state.state || ''));
+        });
+        if (!match) return;
+        if (match.impacted_housing_units != null) state.impacted_housing_units = match.impacted_housing_units;
+        if (match.impacted_cities != null) state.impacted_cities = Math.max(state.impacted_cities || 0, Number(match.impacted_cities) || 0);
+      });
+      return states;
     }
 
     // Loads the city list for one state: real impact_city_summary rows when
     // they exist, otherwise real city/town names (falling back to county
     // only when no city name is resolvable) derived from that state's hail reports.
     async function mapsLoadImpactCities(dateStr, stateName) {
-      var rows = await mapsFetchImpactCitySummary(dateStr, stateName).catch(function () { return []; });
-      if (rows && rows.length) return rows;
-      var reports = await mapsGetImpactFallbackReports(dateStr);
+      var results = await Promise.all([
+        mapsGetImpactFallbackReports(dateStr).catch(function () { return []; }),
+        mapsFetchImpactCitySummary(dateStr, stateName).catch(function () { return []; })
+      ]);
+      var reports = results[0] || [];
+      var calculatedRows = results[1] || [];
       if (!reports.length) return [];
-      return mapsBuildFallbackCityList(reports, stateName);
+
+      var cities = mapsBuildFallbackCityList(reports, stateName);
+      cities.forEach(function (city) {
+        var cityName = String(city.city || '').toLowerCase();
+        var countyName = String(city.county || '').replace(/\s+county$/i, '').toLowerCase();
+        var match = calculatedRows.find(function (row) {
+          var rowCity = String(row.city || '').toLowerCase();
+          var rowCounty = String(row.county || '').replace(/\s+county$/i, '').toLowerCase();
+          return (cityName && rowCity === cityName) || (!cityName && countyName && rowCounty === countyName);
+        });
+        if (!match) return;
+        if (match.impacted_housing_units != null) city.impacted_housing_units = match.impacted_housing_units;
+      });
+      return cities;
     }
 
     // Loads hail-size rows for one city's popup/panel breakdown — strictly
