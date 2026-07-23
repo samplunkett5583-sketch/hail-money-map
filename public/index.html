@@ -26890,6 +26890,7 @@
             mapsMeasureSyncPhase('maps-ensure-visible-map', mapsEnsureVisibleMap);
             mapsMarkNavigationTiming('initialization-finish');
             mapsFetchRecentDates().then(function () {
+              _fetchStormRankingSummaries((mapsState.stormDates || []).slice(0, MAPS_STORM_DATE_BATCH_SIZE));
               mapsMarkNavigationTiming('background-date-refresh-completed');
             }).catch(function () {
               mapsMarkNavigationTiming('background-date-refresh-completed');
@@ -27019,13 +27020,9 @@
         mapsMeasureSyncPhase('ticker-initialization', initHurricaneTicker);
         mapsState.ready = true;
         renderStormPanelActionButtons(document.getElementById('maps-storm-actions'));
-        // Load hail intensity and swath-count summaries used by the 1-5
-        // overall-impact ranking. The loader refreshes the visible cards when
-        // the data arrives, so rankings do not remain at the default 1.
-        if (!App.stormRankingSummariesRequested) {
-          App.stormRankingSummariesRequested = true;
-          _fetchStormRankingSummaries();
-        }
+        // Load rankings only for the first visible card batch. Older dates
+        // are enriched lazily as the user scrolls.
+        _fetchStormRankingSummaries((mapsState.stormDates || []).slice(0, MAPS_STORM_DATE_BATCH_SIZE));
         // Default the selected storm date to today on first open of the Maps page.
         // mapsPreviewDate() draws whatever data exists for that date (or nothing,
         // if today has no storm data yet) — same pipeline as clicking a date row.
@@ -27163,137 +27160,70 @@
     // swath-volume inputs used by the 1-5 overall-impact score. The fast date
     // index intentionally contains dates only, so ranking from it alone makes
     // every card fall back to 1.
-    function _fetchStormRankingSummaries() {
+    function _fetchStormRankingSummaries(dateList) {
+      var requestedDates = (Array.isArray(dateList) && dateList.length
+        ? dateList
+        : (mapsState.stormDates || []).slice(0, MAPS_STORM_DATE_BATCH_SIZE))
+        .map(mapsNormalizeDate)
+        .filter(Boolean);
+      mapsState.stormRankingLoadedDates = mapsState.stormRankingLoadedDates || {};
+      mapsState.stormRankingPendingDates = mapsState.stormRankingPendingDates || {};
+      var dates = requestedDates.filter(function (dateStr, index, all) {
+        return all.indexOf(dateStr) === index
+          && !mapsState.stormRankingLoadedDates[dateStr]
+          && !mapsState.stormRankingPendingDates[dateStr];
+      });
+      if (!dates.length) return Promise.resolve([]);
+
+      dates.forEach(function (dateStr) { mapsState.stormRankingPendingDates[dateStr] = true; });
+      var encodedDates = dates.map(function (dateStr) { return encodeURIComponent(dateStr); }).join(',');
+      var url = SUPABASE_URL + '/rest/v1/hail_lsr_raw?event_date=in.(' + encodedDates + ')' +
+        '&select=event_date,hail_in&order=event_date.desc&limit=10000';
       var headers = {
         apikey: SUPABASE_ANON_KEY,
         Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-        'Range-Unit': 'items'
+        'Range-Unit': 'items',
+        Range: '0-9999'
       };
-      var pageSize = 1000;
-      var maxPages = 40;
 
-      function fetchAll(path) {
-        var allRows = [];
-        function next(page) {
-          var from = page * pageSize;
-          var pageHeaders = Object.assign({}, headers, { Range: from + '-' + (from + pageSize - 1) });
-          return fetch(SUPABASE_URL + '/rest/v1/' + path, { headers: pageHeaders })
-            .then(function (resp) {
-              if (!resp.ok) throw new Error(path.split('?')[0] + ' ranking summary HTTP ' + resp.status);
-              return resp.json();
-            })
-            .then(function (rows) {
-              rows = Array.isArray(rows) ? rows : [];
-              allRows = allRows.concat(rows);
-              if (rows.length < pageSize || page + 1 >= maxPages) return allRows;
-              return next(page + 1);
-            });
-        }
-        return next(0);
-      }
-
-      var hailPath = 'hail_lsr_raw?select=event_date,hail_in&order=event_date.desc';
-      var stormPath = 'storm_lsr_raw?select=event_date,event_type,magnitude&order=event_date.desc';
-      var polygonPath = 'storm_polygons?source_product=neq.no_swath&select=event_date,storm_type,band_min,band_max,area_sq_mi,source,swath_index&order=event_date.desc';
-
-      Promise.all([fetchAll(hailPath), fetchAll(stormPath), fetchAll(polygonPath)])
-        .then(function (results) {
-          var hailRows = results[0] || [];
-          var stormRows = results[1] || [];
-          var polygonRows = results[2] || [];
+      return fetch(url, { headers:headers })
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('hail ranking summary HTTP ' + resp.status);
+          return resp.json();
+        })
+        .then(function (rows) {
+          rows = Array.isArray(rows) ? rows : [];
           var summaries = mapsState.dateSummaries || (mapsState.dateSummaries = {});
-          var eventTypes = mapsState.dateEventTypes || (mapsState.dateEventTypes = {});
-          var polySummaries = mapsState.polyHailSummaries || (mapsState.polyHailSummaries = {});
-
-          function validDate(row) {
-            var d = String(row && row.event_date || '').slice(0, 10);
-            return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : '';
-          }
-          function addType(dateStr, type) {
-            var list = eventTypes[dateStr] || (eventTypes[dateStr] = []);
-            if (list.indexOf(type) === -1) list.push(type);
-          }
-          function addRange(dateStr, key, value) {
-            value = Number(value);
-            if (!Number.isFinite(value) || value <= 0) return;
+          dates.forEach(function (dateStr) {
             var summary = summaries[dateStr] || (summaries[dateStr] = {});
-            var range = summary[key] || (summary[key] = { min:value, max:value });
-            range.min = Math.min(Number(range.min) || value, value);
-            range.max = Math.max(Number(range.max) || value, value);
-          }
-          function addReport(dateStr) {
+            summary.hailReportCount = 0;
+            summary.hail = null;
+          });
+          rows.forEach(function (row) {
+            var dateStr = String(row && row.event_date || '').slice(0, 10);
+            if (dates.indexOf(dateStr) === -1) return;
+            var hailIn = Number(row.hail_in);
+            if (!Number.isFinite(hailIn) || hailIn <= 0) return;
             var summary = summaries[dateStr] || (summaries[dateStr] = {});
-            summary.reportCount = (Number(summary.reportCount) || 0) + 1;
-          }
-
-          hailRows.forEach(function (row) {
-            var dateStr = validDate(row);
-            if (!dateStr) return;
+            summary.hailReportCount = (Number(summary.hailReportCount) || 0) + 1;
+            var range = summary.hail || (summary.hail = { min:hailIn, max:hailIn });
+            range.min = Math.min(Number(range.min) || hailIn, hailIn);
+            range.max = Math.max(Number(range.max) || hailIn, hailIn);
             mapsState.dateHasHailReports[dateStr] = true;
-            addType(dateStr, 'hail');
-            addRange(dateStr, 'hail', row.hail_in);
-            var hailSummary = summaries[dateStr] || (summaries[dateStr] = {});
-            hailSummary.hailReportCount = (Number(hailSummary.hailReportCount) || 0) + 1;
-            addReport(dateStr);
           });
-
-          stormRows.forEach(function (row) {
-            var dateStr = validDate(row);
-            if (!dateStr) return;
-            var type = String(row.event_type || '').toLowerCase();
-            if (type.indexOf('tornado') !== -1) {
-              mapsState.dateHasWindReports[dateStr] = true;
-              addType(dateStr, 'tornado');
-              addRange(dateStr, 'tornado', row.magnitude);
-            } else if (type.indexOf('wind') !== -1) {
-              mapsState.dateHasWindReports[dateStr] = true;
-              addType(dateStr, 'wind');
-              addRange(dateStr, 'wind', row.magnitude);
-            } else if (type.indexOf('hail') !== -1) {
-              mapsState.dateHasHailReports[dateStr] = true;
-              addType(dateStr, 'hail');
-              addRange(dateStr, 'hail', row.magnitude);
-            }
-            addReport(dateStr);
+          dates.forEach(function (dateStr) {
+            mapsState.stormRankingLoadedDates[dateStr] = true;
+            delete mapsState.stormRankingPendingDates[dateStr];
           });
-
-          polygonRows.forEach(function (row) {
-            var dateStr = validDate(row);
-            if (!dateStr) return;
-            var type = String(row.storm_type || '').toLowerCase();
-            if (type === 'wind' || type === 'tornado') return;
-            var minValue = Number(row.band_min);
-            var maxValue = Number(row.band_max);
-            if (!Number.isFinite(minValue) || minValue <= 0) minValue = maxValue;
-            if (!Number.isFinite(maxValue) || maxValue <= 0) maxValue = minValue;
-            if (!Number.isFinite(maxValue) || maxValue <= 0) return;
-            var poly = polySummaries[dateStr] || (polySummaries[dateStr] = {
-              min:minValue, max:maxValue, swathCount:0, areaSqMi:0, _footprintAreas:{}
-            });
-            poly.min = Math.min(Number(poly.min) || minValue, minValue);
-            poly.max = Math.max(Number(poly.max) || maxValue, maxValue);
-            poly.swathCount = (Number(poly.swathCount) || 0) + 1;
-            var footprintKey = String(row.source || 'unknown') + '|' + String(row.swath_index == null ? '0' : row.swath_index);
-            var footprintArea = Number(row.area_sq_mi);
-            if (Number.isFinite(footprintArea) && footprintArea > 0) {
-              poly._footprintAreas = poly._footprintAreas || {};
-              var previousArea = Number(poly._footprintAreas[footprintKey] || 0);
-              if (footprintArea > previousArea) {
-                poly._footprintAreas[footprintKey] = footprintArea;
-                poly.areaSqMi = (Number(poly.areaSqMi) || 0) + footprintArea - previousArea;
-              }
-            }
-            mapsState.dateHasPolygon[dateStr] = true;
-            addType(dateStr, 'hail');
-          });
-
-          hmDebugLog('[stormRanking] Loaded ' + hailRows.length + ' hail reports, ' +
-            stormRows.length + ' wind/tornado reports, and ' + polygonRows.length + ' swath rows');
+          hmDebugLog('[stormRanking] Loaded ' + rows.length + ' hail reports for ' + dates.length + ' visible dates');
           mapsRenderStormList({ refreshExisting:true });
           mapsRenderPinnedTab();
+          return rows;
         })
         .catch(function (err) {
+          dates.forEach(function (dateStr) { delete mapsState.stormRankingPendingDates[dateStr]; });
           hmDebugWarn('[stormRanking] Failed to load ranking inputs:', err.message || err);
+          return [];
         });
     }
 
@@ -34107,11 +34037,13 @@ function mapsGoogleReady() {
 
     function mapsAppendNextStormDateBatch() {
       if (mapsState.renderedStormDateCount >= mapsState.stormDates.length) return false;
+      var previousCount = mapsState.renderedStormDateCount;
       mapsState.renderedStormDateCount = Math.min(
         mapsState.stormDates.length,
         Math.max(MAPS_STORM_DATE_BATCH_SIZE, mapsState.renderedStormDateCount) + MAPS_STORM_DATE_BATCH_SIZE
       );
       mapsRenderStormList({ append:true, refreshExisting:false });
+      _fetchStormRankingSummaries(mapsState.stormDates.slice(previousCount, mapsState.renderedStormDateCount));
       return true;
     }
 
