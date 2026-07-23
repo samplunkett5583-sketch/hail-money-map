@@ -25772,6 +25772,121 @@
       return 0;
     }
 
+    // Property-level hail validation is deliberately conservative. Radar swaths are
+    // estimates, LSRs are point reports, and neither is silently promoted to a
+    // confirmed measurement at a parcel.
+    function mapsValidatePropertyHailAtCoordinate(prop, dataset) {
+      dataset = dataset || {};
+      var lat = Number(prop && prop.lat);
+      var lng = Number(prop && prop.lng);
+      var exactBands = [];
+      (dataset.rows || []).forEach(function (row) {
+        if (!row || !row.polygon_geojson) return;
+        var stormType = String(row.storm_type || 'hail').toLowerCase();
+        if (stormType === 'wind' || stormType === 'tornado') return;
+        if (!mapsGeoJsonContains(lat, lng, row.polygon_geojson)) return;
+        var value = mapsExtractHailValue(row);
+        if (value > 0) exactBands.push({ value: value, row: row });
+      });
+      exactBands.sort(function (a, b) { return b.value - a.value; });
+
+      var reports = [];
+      (dataset.hailPoints || []).forEach(function (point) {
+        var pLat = Number(point && point.lat);
+        var pLng = Number(point && (point.lon != null ? point.lon : point.lng));
+        var hailIn = Number(point && point.hail_in) || 0;
+        if (!isFinite(pLat) || !isFinite(pLng) || hailIn < 0.75) return;
+        reports.push({
+          point: point,
+          hailIn: hailIn,
+          distMi: _haversineMi(lat, lng, pLat, pLng)
+        });
+      });
+      reports.sort(function (a, b) { return a.distMi - b.distMi; });
+
+      var radarEstimate = exactBands.length ? exactBands[0].value : 0;
+      var nearestReport = reports.length ? reports[0] : null;
+      var supportingReport = null;
+      for (var i = 0; i < reports.length; i++) {
+        if (reports[i].distMi > 5) break;
+        if (radarEstimate > 0 && reports[i].hailIn >= radarEstimate - 0.25) {
+          if (!supportingReport || reports[i].hailIn > supportingReport.hailIn) supportingReport = reports[i];
+        }
+      }
+
+      var exactReport = !!(nearestReport && nearestReport.distMi <= 0.25);
+      var corroborated = !!supportingReport;
+      var unsupportedLargePeak = radarEstimate >= 2 && !corroborated;
+      var confidence = radarEstimate <= 0 ? 'none' :
+        (exactReport ? 'high' : (corroborated ? 'medium' : 'low'));
+      return {
+        hasExactCoverage: radarEstimate > 0,
+        radarEstimate: radarEstimate,
+        nearestReport: nearestReport,
+        supportingReport: supportingReport,
+        confidence: confidence,
+        corroborated: corroborated,
+        unsupportedLargePeak: unsupportedLargePeak,
+        exactSizeClaimAllowed: radarEstimate > 0 && !unsupportedLargePeak,
+        sourceLabel: radarEstimate > 0 ? 'Radar estimate' : (nearestReport ? 'Nearby ground report' : 'No hail evidence')
+      };
+    }
+
+    function mapsPropertyHailValidationText(validation) {
+      validation = validation || {};
+      var nearest = validation.nearestReport;
+      if (validation.hasExactCoverage) {
+        if (validation.unsupportedLargePeak) {
+          return 'Radar indicates large hail at property • Exact size unverified' +
+            (nearest ? '<br><span style="font-size:12px;color:var(--muted)">Nearest report: ' +
+              nearest.hailIn.toFixed(2) + '&quot; • ' + nearest.distMi.toFixed(1) + ' mi away</span>' : '');
+        }
+        var text = 'Radar-estimated ≥' + validation.radarEstimate.toFixed(2) + '&quot; at property • ' +
+          validation.confidence.charAt(0).toUpperCase() + validation.confidence.slice(1) + ' confidence';
+        if (validation.supportingReport) {
+          text += '<br><span style="font-size:12px;color:var(--muted)">Supported by ' +
+            validation.supportingReport.hailIn.toFixed(2) + '&quot; report • ' +
+            validation.supportingReport.distMi.toFixed(1) + ' mi away</span>';
+        } else {
+          text += '<br><span style="font-size:12px;color:var(--muted)">No nearby report confirms the estimated size</span>';
+        }
+        return text;
+      }
+      if (nearest) {
+        return 'Nearby report ' + nearest.hailIn.toFixed(2) + '&quot; • ' + nearest.distMi.toFixed(1) +
+          ' mi away<br><span style="font-size:12px;color:var(--muted)">No property-level hail size confirmed</span>';
+      }
+      return 'No property-level hail impact found';
+    }
+
+    window.mapsRunPropertyHailValidationHarness = function () {
+      var square = {
+        type: 'Polygon',
+        coordinates: [[[-90.2, 38.5], [-89.8, 38.5], [-89.8, 38.9], [-90.2, 38.9], [-90.2, 38.5]]]
+      };
+      var property = { lat: 38.7, lng: -90.0 };
+      var outside = { lat: 39.2, lng: -90.0 };
+      var largeUnsupported = mapsValidatePropertyHailAtCoordinate(property, {
+        rows: [{ storm_type: 'hail', polygon_geojson: square, band_min: 2.0 }],
+        hailPoints: [{ lat: 38.72, lon: -90.0, hail_in: 1.5 }]
+      });
+      var supported = mapsValidatePropertyHailAtCoordinate(property, {
+        rows: [{ storm_type: 'hail', polygon_geojson: square, band_min: 1.5 }],
+        hailPoints: [{ lat: 38.72, lon: -90.0, hail_in: 1.5 }]
+      });
+      var nearbyOnly = mapsValidatePropertyHailAtCoordinate(outside, {
+        rows: [{ storm_type: 'hail', polygon_geojson: square, band_min: 2.0 }],
+        hailPoints: [{ lat: 39.19, lon: -90.0, hail_in: 1.5 }]
+      });
+      var checks = {
+        unsupportedTwoInchBlocked: largeUnsupported.unsupportedLargePeak === true && largeUnsupported.exactSizeClaimAllowed === false,
+        supportedBandRetained: supported.radarEstimate === 1.5 && supported.corroborated === true,
+        nearbyReportNotPropertyHail: nearbyOnly.hasExactCoverage === false && !!nearbyOnly.nearestReport
+      };
+      checks.pass = checks.unsupportedTwoInchBlocked && checks.supportedBandRetained && checks.nearbyReportNotPropertyHail;
+      return checks;
+    };
+
     function mapsClearHailHoverReadout() {
       if (mapsState._hailHoverRaf) {
         cancelAnimationFrame(mapsState._hailHoverRaf);
@@ -25846,7 +25961,7 @@
     function mapsGetHailHoverTextAt(lat, lng) {
       var band = mapsFindVerifiedHailSizeAt(lat, lng);
       if (!band || !Number.isFinite(band.displayValue) || band.displayValue <= 0) return '';
-      return band.displayValue.toFixed(2) + '"';
+      return 'Estimated ≥' + band.displayValue.toFixed(2) + '"';
     }
 
     function mapsUpdateHailHoverReadoutAt(lat, lng) {
@@ -34213,10 +34328,12 @@ function mapsGoogleReady() {
       var impactSummary = mapsGetStormImpactSummarySync(dateStr);
       var unitsLabel = mapsFormatHousingUnitLabel(impactSummary || null);
       var stormTone = mapsGetStormImpactTone(dateStr);
-      var ratingLineHtml = stormTone.rating == null ? '' :
+      // Hold the numeric score until authoritative housing-unit counts have been
+      // intersected with the largest-hail swath for this storm.
+      var ratingLineHtml =
         '<div class="maps-impact-line maps-overall-impact">' +
-          '<span class="maps-impact-rating-badge ' + stormTone.className + '">' + stormTone.rating + '</span>' +
-          '<span>overall impact</span>' +
+          '<span class="maps-impact-rating-badge maps-impact-rating-pending">—</span>' +
+          '<span>rating pending swath validation</span>' +
         '</div>';
       var isPinned = mapsState.pinnedDates.indexOf(dateStr) !== -1;
       var sourceBadge = mapsBuildStormSourceBadgeHtml(dateStr);
@@ -34236,7 +34353,11 @@ function mapsGoogleReady() {
         || types.indexOf('mixed') !== -1
         || Number.isFinite(maxHail);
       var hailState = hasHail
-        ? (Number.isFinite(maxHail) ? ('Maximum hail: ' + maxHail + ' in') : 'Hail data available')
+        ? (Number.isFinite(maxHail)
+          ? ((Number.isFinite(polygonMaxHail) && polygonMaxHail >= (Number.isFinite(reportMaxHail) ? reportMaxHail : 0))
+            ? ('Highest mapped radar estimate: ' + maxHail + ' in')
+            : ('Largest reported hail: ' + maxHail + ' in'))
+          : 'Hail data available')
         : 'No hail impact detected.';
       var pinButtonHtml = options.showPin === false
         ? ''
@@ -35008,7 +35129,7 @@ function mapsGoogleReady() {
 
     function mapsGetPropertyImpactForDate(prop, dataset) {
       dataset = dataset || {};
-      var atLocationHail = 0;
+      var validation = mapsValidatePropertyHailAtCoordinate(prop, dataset);
       var atLocationWind = 0;
       var tornadoHit = false;
       (dataset.rows || []).forEach(function (row) {
@@ -35019,29 +35140,28 @@ function mapsGoogleReady() {
           atLocationWind = Math.max(atLocationWind, _windBandToMph(Number(row.band_min) || 0));
         } else if (stormType === 'tornado') {
           tornadoHit = true;
-        } else {
-          atLocationHail = Math.max(atLocationHail, mapsExtractHailValue(row));
         }
       });
 
-      var nearestHail = mapsFindNearestStormPoint(prop, dataset.hailPoints || [], function (point) {
+      var nearestHail = validation.nearestReport || mapsFindNearestStormPoint(prop, dataset.hailPoints || [], function (point) {
         return (Number(point && point.hail_in) || 0) >= 0.75;
       });
       var nearestWind = mapsFindNearestStormPoint(prop, dataset.windPoints || [], function (point) {
         return mapsPointWindMph(point) >= 58;
       });
 
-      var impacted = atLocationHail > 0 || atLocationWind >= 58 || tornadoHit ||
-        (!!nearestHail && nearestHail.distMi <= 1) ||
+      var impacted = validation.hasExactCoverage || atLocationWind >= 58 || tornadoHit ||
+        (!!nearestHail && Number(nearestHail.distMi) <= 1) ||
         (!!nearestWind && nearestWind.distMi <= 1);
 
       return {
         impacted: impacted,
-        atLocationHail: atLocationHail,
+        atLocationHail: validation.radarEstimate,
         atLocationWind: atLocationWind,
         tornadoHit: tornadoHit,
         nearestHail: nearestHail,
-        nearestWind: nearestWind
+        nearestWind: nearestWind,
+        hailValidation: validation
       };
     }
 
@@ -38804,71 +38924,62 @@ function mapsGoogleReady() {
           ' rawStormRows=' + Object.keys(mapsState.rawStormRows).length);
         console.log('[PROP-DEBUG] total candidate storm dates checked (DB+local): within1=' + result.within1.length + ' within5=' + result.within5.length);
 
-        // Check direct hits first (only works if swath polygons are loaded in memory)
-        var hits = stormHitTest(prop.lat, prop.lng);
-        console.log('[PROP-DEBUG] direct swath hits found: hail=' + (hits.hail ? hits.hail.hailIn + '"' : 'none') + ' wind=' + (hits.wind ? hits.wind.mph + 'mph' : 'none') + ' tornado=' + (hits.tornado ? hits.tornado.label : 'none'));
-        // Console logging for swath click
-        if (hits.hail) console.log('[swathClick] type=hail date=' + hits.hail.dateStr + ' value=' + hits.hail.hailIn + '" source=direct_hit');
-        if (hits.wind) console.log('[swathClick] type=wind date=' + hits.wind.dateStr + ' value=' + hits.wind.mph + 'mph source=' + (hits.wind.source || 'direct_hit'));
-        if (hits.tornado) console.log('[swathClick] type=tornado date=' + hits.tornado.dateStr + ' value=' + hits.tornado.label + ' source=direct_hit');
-        if (hits.hail && hits.hail.hailIn > 0) {
-          var rgba = swathSeverityColor(hits.hail.hailIn);
-          summaryEl.style.color = 'rgb(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ')';
-          summaryEl.innerHTML = hits.hail.hailIn.toFixed(2) + '" hail' + (hits.wind && hits.wind.mph > 0 ? '<br>' + hits.wind.mph.toFixed(0) + ' mph wind' : '');
-          console.log('[PROP-DEBUG] best property hit selected: direct swath hit ' + hits.hail.hailIn + '" on ' + hits.hail.dateStr);
-          console.log('[PROP-DEBUG] hail size chosen for summary: ' + hits.hail.hailIn);
-          return;
+        // Use only exact polygon containment for the parcel. Nearby reports stay nearby;
+        // interpolated fields and edge tolerances are never presented as property hail.
+        var preferredDate = mapsNormalizeDate(prop._selectedStormDate || mapsState.previewDate || '');
+        var directHail = (result.directHits || []).filter(function (item) {
+          return item && item.direct && Number(item.hailVal || item.maxHail || 0) > 0;
+        });
+        directHail.sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
+        var selectedDirect = directHail.find(function (item) {
+          return preferredDate && ppNormalizeStormDate(item.date) === preferredDate;
+        }) || directHail[0] || null;
+        var selectedDate = selectedDirect ? ppNormalizeStormDate(selectedDirect.date) : preferredDate;
+        var candidateReports = (result.allNearby || []).filter(function (item) {
+          return item && /^lsr/.test(String(item.source || '')) &&
+            Number(item.hailVal || item.maxHail || 0) > 0 &&
+            (!selectedDate || ppNormalizeStormDate(item.date) === selectedDate);
+        }).sort(function (a, b) { return Number(a.dist) - Number(b.dist); });
+        var nearest = candidateReports[0] || null;
+        var radarEstimate = selectedDirect ? Number(selectedDirect.hailVal || selectedDirect.maxHail || 0) : 0;
+        var supporting = candidateReports.filter(function (item) {
+          return Number(item.dist) <= 5 && Number(item.hailVal || item.maxHail || 0) >= radarEstimate - 0.25;
+        }).sort(function (a, b) {
+          return Number(b.hailVal || b.maxHail || 0) - Number(a.hailVal || a.maxHail || 0);
+        })[0] || null;
+        var validation = {
+          hasExactCoverage: radarEstimate > 0,
+          radarEstimate: radarEstimate,
+          nearestReport: nearest ? {
+            hailIn: Number(nearest.hailVal || nearest.maxHail || 0),
+            distMi: Number(nearest.dist)
+          } : null,
+          supportingReport: supporting ? {
+            hailIn: Number(supporting.hailVal || supporting.maxHail || 0),
+            distMi: Number(supporting.dist)
+          } : null,
+          corroborated: !!supporting,
+          unsupportedLargePeak: radarEstimate >= 2 && !supporting,
+          confidence: nearest && Number(nearest.dist) <= 0.25 ? 'high' : (supporting ? 'medium' : (radarEstimate > 0 ? 'low' : 'none'))
+        };
+        prop._hailValidation = validation;
+        summaryEl.style.color = validation.hasExactCoverage ? '#1f2937' : 'var(--muted)';
+        summaryEl.innerHTML = mapsPropertyHailValidationText(validation);
+
+        var exactWind = (result.directHits || []).reduce(function (max, item) {
+          return item && item.direct ? Math.max(max, Number(item.windVal) || 0) : max;
+        }, 0);
+        if (exactWind >= 58) {
+          summaryEl.innerHTML += '<br>' + Math.round(exactWind) + ' mph wind at property';
         }
-        // Wind-only direct hit (no hail at this location)
-        if (hits.wind && hits.wind.mph > 0) {
-          var wRgba = windSeverityColor(hits.wind.bandMin || 0.5);
-          summaryEl.style.color = 'rgb(' + wRgba[0] + ',' + wRgba[1] + ',' + wRgba[2] + ')';
-          summaryEl.textContent = hits.wind.mph.toFixed(0) + ' mph wind';
-          console.log('[PROP-DEBUG] best property hit selected: direct wind hit ' + hits.wind.mph + 'mph on ' + hits.wind.dateStr);
-          return;
-        }
-        // Tornado-only direct hit
-        if (hits.tornado) {
-          summaryEl.style.color = '#2E7D32';
-          summaryEl.textContent = '\u{1F32A}\uFE0F ' + hits.tornado.label;
-          console.log('[PROP-DEBUG] best property hit selected: direct tornado hit ' + hits.tornado.label + ' on ' + hits.tornado.dateStr);
-          return;
-        }
-        // Check within-1-mile bucket (includes direct polygon containment hits at dist=0)
-        if (result.within1.length) {
-          var best = result.within1[0];
-          for (var i = 1; i < result.within1.length; i++) {
-            if ((result.within1[i].hailVal || result.within1[i].maxHail || 0) > (best.hailVal || best.maxHail || 0)) best = result.within1[i];
-          }
-          var bestHail = best.hailVal || best.maxHail || 0;
-          if (bestHail > 0) {
-            var rgba2 = swathSeverityColor(bestHail);
-            summaryEl.style.color = 'rgb(' + rgba2[0] + ',' + rgba2[1] + ',' + rgba2[2] + ')';
-            summaryEl.textContent = bestHail.toFixed(2) + '" hail';
-            console.log('[PROP-DEBUG] best property hit selected: within 1mi ' + bestHail + '" on ' + best.date + ' dist=' + best.dist);
-            console.log('[PROP-DEBUG] hail size chosen for summary: ' + bestHail);
-            return;
-          }
-        }
-        // Check within-5-mile bucket
-        if (result.within5.length) {
-          var best5 = result.within5[0];
-          for (var j = 1; j < result.within5.length; j++) {
-            if ((result.within5[j].hailVal || result.within5[j].maxHail || 0) > (best5.hailVal || best5.maxHail || 0)) best5 = result.within5[j];
-          }
-          var best5Hail = best5.hailVal || best5.maxHail || 0;
-          if (best5Hail > 0) {
-            var rgba3 = swathSeverityColor(best5Hail);
-            summaryEl.style.color = 'rgb(' + rgba3[0] + ',' + rgba3[1] + ',' + rgba3[2] + ')';
-            summaryEl.textContent = best5Hail.toFixed(2) + '" hail';
-            console.log('[PROP-DEBUG] best property hit selected: within 5mi ' + best5Hail + '" on ' + best5.date);
-            console.log('[PROP-DEBUG] hail size chosen for summary: ' + best5Hail);
-            return;
-          }
-        }
-        summaryEl.style.color = 'var(--muted)';
-        summaryEl.textContent = 'No recent hail impact found';
-        console.log('[PROP-DEBUG] final hail summary: NO IMPACT FOUND — within1=' + result.within1.length + ' within5=' + result.within5.length + ' hailHit=' + !!(hits.hail) + ' swathPolyDates=' + Object.keys(mapsState.swathPolygons).join(','));
+        console.log('[PROP-VALIDATION]', {
+          property: { lat: prop.lat, lng: prop.lng },
+          date: selectedDate,
+          radarEstimate: radarEstimate,
+          confidence: validation.confidence,
+          unsupportedLargePeak: validation.unsupportedLargePeak,
+          nearestReport: validation.nearestReport
+        });
       }).catch(function (err) {
         console.error('[PROP-DEBUG] hail summary fetch FAILED:', err);
         if (summaryEl) { summaryEl.style.color = 'var(--muted)'; summaryEl.textContent = 'Storm lookup error'; }
@@ -39313,31 +39424,9 @@ function mapsGoogleReady() {
       var limit = options.limit == null ? 25 : options.limit;
       var includeAllCandidates = !!options.includeAllCandidates;
       var DAMAGING_WIND_MPH = 58;
-      var hits = stormHitTest(prop.lat, prop.lng);
-      var directRows = [];
-
-      if (hits.hail && hits.hail.hailIn > 0) {
-        directRows.push({
-          date: ppNormalizeStormDate(hits.hail.dateStr),
-          dist: 0,
-          hailVal: hits.hail.hailIn,
-          windVal: 0,
-          source: 'direct_hit',
-          direct: true
-        });
-      }
-      if (hits.wind && hits.wind.mph >= DAMAGING_WIND_MPH) {
-        directRows.push({
-          date: ppNormalizeStormDate(hits.wind.dateStr),
-          dist: 0,
-          hailVal: 0,
-          windVal: hits.wind.mph,
-          source: 'direct_hit',
-          direct: true
-        });
-      }
-
-      directRows = directRows.concat(result && result.directHits || []);
+      // Do not use stormHitTest here: that routine includes interpolation and
+      // proximity tolerances intended for map exploration, not parcel claims.
+      var directRows = [].concat(result && result.directHits || []);
 
       var byDate = {};
       directRows.forEach(function (item) {
@@ -39420,9 +39509,16 @@ function mapsGoogleReady() {
       });
     }
 
-    function ppFormatStormMetricText(hailVal, windVal) {
+    function ppFormatStormMetricText(hailVal, windVal, item) {
       var parts = [];
-      if (hailVal > 0) parts.push(hailVal.toFixed(2) + '" hail');
+      item = item || {};
+      if (hailVal > 0) {
+        if (item.direct) parts.push('Radar estimate ≥' + hailVal.toFixed(2) + '" at property');
+        else {
+          var distance = typeof item.dist === 'number' ? ' • ' + item.dist.toFixed(1) + ' mi away' : '';
+          parts.push('Nearby report ' + hailVal.toFixed(2) + '"' + distance);
+        }
+      }
       if (windVal > 0) parts.push(Math.round(windVal) + ' mph wind');
       return parts.join(' • ');
     }
@@ -39543,7 +39639,7 @@ function mapsGoogleReady() {
           var nearestPoint = nearestHail;
           if (nearestWind && (!nearestPoint || nearestWind.distMi < nearestPoint.distMi)) nearestPoint = nearestWind;
           if (atLocation.hailVal > 0 || atLocation.windVal >= 58 || (row && row.direct)) {
-            locationText = dateStr + ' - impact detected at this property';
+            locationText = dateStr + ' - mapped radar band covers this property; hail size is estimated';
           } else if (nearestPoint) {
             locationText = dateStr + ' - nearest verified report ' + mapsDistanceDirectionText(nearestPoint);
           } else if (row && typeof row.dist === 'number') {
@@ -39638,7 +39734,7 @@ function mapsGoogleReady() {
           prop._stormHistoryRows = rows;
           var html = '';
           (rows || []).forEach(function (item) {
-            var detailText = ppFormatStormMetricText(item.hailVal || 0, item.windVal || 0);
+            var detailText = ppFormatStormMetricText(item.hailVal || 0, item.windVal || 0, item);
             if (!detailText) return;
             html += '<div class="pp-storm-row" data-storm-date="' + item.date + '" style="background:rgba(120,120,120,0.10);border-left:3px solid rgba(120,120,120,0.7);padding:5px 10px;border-radius:6px;margin-bottom:4px;font-size:12px;cursor:pointer;transition:background 0.15s;">' +
               '<span style="font-weight:600;">' + item.date + '</span><br>' +
