@@ -27222,6 +27222,9 @@
           dates.forEach(function (dateStr) {
             var summary = summaries[dateStr] || (summaries[dateStr] = {});
             summary.hailReportCount = 0;
+            summary.damagingHailReportCount = 0;
+            summary.significantHailReportCount = 0;
+            summary.severeHailReportCount = 0;
             summary.hail = null;
             polygonSummaries[dateStr] = null;
           });
@@ -27232,6 +27235,9 @@
             if (!Number.isFinite(hailIn) || hailIn <= 0) return;
             var summary = summaries[dateStr] || (summaries[dateStr] = {});
             summary.hailReportCount = (Number(summary.hailReportCount) || 0) + 1;
+            if (hailIn >= 1.00) summary.damagingHailReportCount = (Number(summary.damagingHailReportCount) || 0) + 1;
+            if (hailIn >= 1.50) summary.significantHailReportCount = (Number(summary.significantHailReportCount) || 0) + 1;
+            if (hailIn >= 2.00) summary.severeHailReportCount = (Number(summary.severeHailReportCount) || 0) + 1;
             var range = summary.hail || (summary.hail = { min:hailIn, max:hailIn });
             range.min = Math.min(Number(range.min) || hailIn, hailIn);
             range.max = Math.max(Number(range.max) || hailIn, hailIn);
@@ -27525,7 +27531,28 @@
             entries:normalizedRows.length,
             bytes:normalizedPayloadText.length
           });
-          var result = _buildStormDateResultFromFastSource(normalizedRows, source.name);
+          // The fast distinct-date view can lag behind newly ingested reports.
+          // Merge the newest raw hail-report dates into it before rendering so
+          // a real storm day cannot disappear from Recent (for example 2026-06-22).
+          var recentHailRows = [];
+          try {
+            var recentHailRes = await sb.from('hail_lsr_raw')
+              .select('event_date')
+              .order('event_date', { ascending:false })
+              .limit(10000);
+            if (recentHailRes && !recentHailRes.error && Array.isArray(recentHailRes.data)) {
+              recentHailRows = recentHailRes.data.map(function (row) {
+                return { event_date:row.event_date, has_hail:true };
+              });
+            }
+          } catch (recentDateErr) {
+            console.warn('[fetchAllDates] raw hail date supplement failed', recentDateErr);
+          }
+
+          var result = _buildStormDateResultFromFastSource(
+            recentHailRows.concat(normalizedRows),
+            source.name + (recentHailRows.length ? '+hail_lsr_raw' : '')
+          );
           if (result.rows.length < 50) {
             console.warn('[fetchAllDates] date source returned too few dates', result.rows.length);
             continue;
@@ -27550,7 +27577,7 @@
       };
     }
 
-    var MAPS_DATE_INDEX_CACHE_VERSION = 1;
+    var MAPS_DATE_INDEX_CACHE_VERSION = 2;
     var MAPS_DATE_INDEX_TTL_MS = 5 * 60 * 1000;
     var MAPS_DATE_INDEX_STALE_FALLBACK_MS = 24 * 60 * 60 * 1000;
     var _mapsDateIndexStorageTimer = null;
@@ -33931,47 +33958,12 @@ function mapsGoogleReady() {
     // rows from another region (for example New Hampshire on a Colorado day)
     // from affecting the card, Impact tab, or ranking.
     function mapsApplyValidatedHousingRows(dateList, polygonRows, impactRows) {
-      var requested = {};
-      (dateList || []).forEach(function (dateStr) { requested[dateStr] = true; });
-      var polygonsByDate = {};
-      (polygonRows || []).forEach(function (row) {
-        var dateStr = String(row && row.event_date || '').slice(0, 10);
-        if (!requested[dateStr]) return;
-        var type = String(row.storm_type || '').toLowerCase();
-        if (type === 'wind' || type === 'tornado') return;
-        var lat = Number(row.centroid_lat), lon = Number(row.centroid_lon);
-        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
-        (polygonsByDate[dateStr] || (polygonsByDate[dateStr] = [])).push({
-          lat:lat, lon:lon, areaSqMi:Math.max(0, Number(row.area_sq_mi) || 0)
-        });
-      });
-
-      var totals = {};
-      var matches = {};
-      (impactRows || []).forEach(function (row) {
-        var dateStr = String(row && row.event_date || '').slice(0, 10);
-        var polygons = polygonsByDate[dateStr] || [];
-        var lat = Number(row.center_lat), lon = Number(row.center_lon);
-        var homes = Number(row.impacted_housing_units);
-        if (!requested[dateStr] || !polygons.length ||
-            !Number.isFinite(lat) || !Number.isFinite(lon) ||
-            !Number.isFinite(homes) || homes < 0) return;
-        var isNearStorm = polygons.some(function (polygon) {
-          var toleranceMiles = Math.max(200, Math.sqrt(polygon.areaSqMi || 0) * 4);
-          return mapsStormDistanceMiles(lat, lon, polygon.lat, polygon.lon) <= toleranceMiles;
-        });
-        if (!isNearStorm) return;
-        totals[dateStr] = (totals[dateStr] || 0) + homes;
-        matches[dateStr] = (matches[dateStr] || 0) + 1;
-      });
-
+      // Statewide summary rows are useful inside the selected-date Impact tab,
+      // but they are too broad for the compact Recent-card estimate. Do not add
+      // those state totals here; the report-footprint estimator below supplies
+      // a conservative nationwide comparison value from actual hail locations.
       (dateList || []).forEach(function (dateStr) {
-        mapsStoreStormHousingImpact(
-          dateStr,
-          totals[dateStr] || 0,
-          !!matches[dateStr],
-          matches[dateStr] ? 'validated-impact-summary' : null
-        );
+        mapsStoreStormHousingImpact(dateStr, 0, false, null);
       });
     }
 
@@ -34073,84 +34065,56 @@ function mapsGoogleReady() {
     function mapsEstimateHousingFromStormPolygons(dateList, polygonRows, hailRows) {
       var requested = {};
       (dateList || []).forEach(function (dateStr) { requested[dateStr] = true; });
-      var groupsByDate = {};
+      var footprintsByDate = {};
 
-      (polygonRows || []).forEach(function (row) {
-        var dateStr = String(row && row.event_date || '').slice(0, 10);
-        if (!requested[dateStr]) return;
-        var type = String(row.storm_type || '').toLowerCase();
-        if (type === 'wind' || type === 'tornado') return;
-        var hailSize = Math.max(Number(row.band_min) || 0, Number(row.band_max) || 0);
-        var lat = Number(row.centroid_lat), lon = Number(row.centroid_lon);
-        // Older saved swaths do not always have area_sq_mi populated. Give
-        // those rows a conservative 25-square-mile footprint instead of
-        // silently skipping the storm and forcing its rating to 1.
-        var areaSqMi = Math.max(1, Number(row.area_sq_mi) || 25);
-        if (hailSize < 1 || !Number.isFinite(lat) || !Number.isFinite(lon)) return;
-
-        var dateGroups = groupsByDate[dateStr] || (groupsByDate[dateStr] = {});
-        var spatialKey = (Math.round(lat * 4) / 4).toFixed(2) + ',' +
-          (Math.round(lon * 4) / 4).toFixed(2);
-        var current = dateGroups[spatialKey];
-        if (!current || areaSqMi > current.areaSqMi) {
-          dateGroups[spatialKey] = {
-            lat:lat, lon:lon, areaSqMi:areaSqMi, hailSize:hailSize
-          };
-        } else {
-          current.hailSize = Math.max(current.hailSize, hailSize);
-        }
-      });
-
-      // Reports-only dates still need an exposure footprint. Use the real
-      // report coordinates and a conservative three square miles per distinct
-      // report, capped to keep a busy reporting feed from exaggerating impact.
-      var reportsByDate = {};
+      // Count distinct damaging-hail report locations. One report represents a
+      // conservative one-square-mile impact footprint; nearby duplicate reports
+      // share a bucket so the same neighborhood is not counted repeatedly.
       (hailRows || []).forEach(function (row) {
         var dateStr = String(row && row.event_date || '').slice(0, 10);
         if (!requested[dateStr]) return;
         var hailSize = Number(row.hail_in) || 0;
         var lat = Number(row.lat), lon = Number(row.lon);
         if (hailSize < 1 || !Number.isFinite(lat) || !Number.isFinite(lon)) return;
-        var bucket = reportsByDate[dateStr] || (reportsByDate[dateStr] = {
-          count:0, lat:lat, lon:lon, maxHail:0
+        var bucket = footprintsByDate[dateStr] || (footprintsByDate[dateStr] = {
+          points:{}, sample:null, maxHail:0
         });
-        bucket.count += 1;
-        if (hailSize >= bucket.maxHail) {
+        var pointKey = (Math.round(lat * 20) / 20).toFixed(2) + ',' +
+          (Math.round(lon * 20) / 20).toFixed(2);
+        bucket.points[pointKey] = true;
+        if (!bucket.sample || hailSize > bucket.maxHail) {
+          bucket.sample = { lat:lat, lon:lon };
           bucket.maxHail = hailSize;
-          bucket.lat = lat;
-          bucket.lon = lon;
         }
       });
-      Object.keys(requested).forEach(function (dateStr) {
-        if (Object.keys(groupsByDate[dateStr] || {}).length) return;
-        var reports = reportsByDate[dateStr];
-        if (!reports || !reports.count) return;
-        groupsByDate[dateStr] = {
-          reportsOnly:{
-            lat:reports.lat,
-            lon:reports.lon,
-            areaSqMi:Math.min(400, Math.max(3, reports.count * 3)),
-            hailSize:reports.maxHail
-          }
+
+      // Very old polygon-only dates get a small fallback footprint instead of
+      // inheriting the full outer polygon area.
+      (polygonRows || []).forEach(function (row) {
+        var dateStr = String(row && row.event_date || '').slice(0, 10);
+        if (!requested[dateStr] || footprintsByDate[dateStr]) return;
+        var type = String(row.storm_type || '').toLowerCase();
+        var hailSize = Math.max(Number(row.band_min) || 0, Number(row.band_max) || 0);
+        var lat = Number(row.centroid_lat), lon = Number(row.centroid_lon);
+        if (type === 'wind' || type === 'tornado' || hailSize < 1 ||
+            !Number.isFinite(lat) || !Number.isFinite(lon)) return;
+        footprintsByDate[dateStr] = {
+          points:{ polygonOnly:true },
+          sample:{ lat:lat, lon:lon },
+          maxHail:hailSize,
+          polygonOnly:true
         };
       });
 
       var jobs = [];
       (dateList || []).forEach(function (dateStr) {
-        var existing = mapsGetStormImpactSummarySync(dateStr);
-        if (existing && existing.housingEstimateConnected) return;
-        var groups = Object.keys(groupsByDate[dateStr] || {}).map(function (key) {
-          return groupsByDate[dateStr][key];
-        }).sort(function (a, b) { return b.areaSqMi - a.areaSqMi; });
-        if (!groups.length) return;
-
-        var totalArea = groups.reduce(function (sum, group) { return sum + group.areaSqMi; }, 0);
-        // Sample the largest footprint's tract density, then apply it to the
-        // date's deduplicated outer-swath area.
+        var footprint = footprintsByDate[dateStr];
+        if (!footprint || !footprint.sample) return;
+        var distinctLocations = Object.keys(footprint.points || {}).length;
         jobs.push({
           dateStr:dateStr,
-          sample:groups[0],
-          totalAreaSqMi:totalArea
+          sample:footprint.sample,
+          totalAreaSqMi:footprint.polygonOnly ? 2 : Math.min(250, Math.max(1, distinctLocations))
         });
       });
 
@@ -34162,16 +34126,15 @@ function mapsGoogleReady() {
         var job = jobs[cursor++];
         return mapsFetchCensusTractExposure(job.sample.lat, job.sample.lon)
           .then(function (exposure) {
-            var estimatedHomes = Math.max(0, Math.round(
-              job.totalAreaSqMi * Math.max(0, Number(exposure.housingDensity) || 0)
-            ));
+            // A single urban tract must not be projected across a statewide
+            // polygon. Clamp the sampled density and use only report acreage.
+            var density = Math.min(1500, Math.max(0, Number(exposure.housingDensity) || 0));
+            var estimatedHomes = Math.max(0, Math.round(job.totalAreaSqMi * density));
             mapsStoreStormHousingImpact(
               job.dateStr,
               estimatedHomes,
               true,
-              exposure.source === 'census-acs-tract'
-                ? 'census-swath-density-estimate'
-                : 'swath-area-estimate'
+              'hail-report-footprint-estimate'
             );
           })
           .then(runNext);
@@ -34194,16 +34157,22 @@ function mapsGoogleReady() {
 
       var housingSummary = mapsGetStormImpactSummarySync(dateStr);
       var housingConnected = !!(housingSummary && housingSummary.housingEstimateConnected);
-      var exposureTier = mapsStormHousingExposureTier(
-        housingSummary && housingSummary.impactedHomesCount,
-        housingConnected
-      );
+      var impactedHomes = housingConnected
+        ? Math.max(0, Number(housingSummary.impactedHomesCount) || 0)
+        : 0;
+      var damagingReports = Number(summary.damagingHailReportCount || 0) || 0;
+      var significantReports = Number(summary.significantHailReportCount || 0) || 0;
+      var severeReports = Number(summary.severeHailReportCount || 0) || 0;
 
-      // Overall impact is work opportunity, not hail diameter alone.
-      // Multiplication makes both dimensions matter:
-      // 2.5"+ hail (severity 5) over rural exposure (tier 1) => impact 1;
-      // the same hail over 150k+ homes (tier 5) => impact 5.
-      var rating = Math.max(1, Math.ceil((severityTier * exposureTier) / 5));
+      // A high ranking requires a combination of hail size, repeated supporting
+      // reports, and residential exposure. One extreme report can no longer
+      // turn an otherwise ordinary nationwide date into a 5.
+      var rating = 1;
+      if (maximumHail >= 1.50 && significantReports >= 2 && impactedHomes >= 5000) rating = 2;
+      if (maximumHail >= 1.75 && significantReports >= 4 && impactedHomes >= 15000) rating = 3;
+      if (maximumHail >= 2.00 && severeReports >= 5 && impactedHomes >= 50000) rating = 4;
+      if (maximumHail >= 2.50 && severeReports >= 10 && impactedHomes >= 125000) rating = 5;
+
       var labels = {
         1: { label:'Light', className:'severity-light' },
         2: { label:'Moderate', className:'severity-moderate' },
@@ -34216,8 +34185,11 @@ function mapsGoogleReady() {
         className:labels[rating].className,
         rating:rating,
         severityTier:severityTier,
-        exposureTier:exposureTier,
-        housingEstimateConnected:housingConnected
+        exposureTier:mapsStormHousingExposureTier(impactedHomes, housingConnected),
+        housingEstimateConnected:housingConnected,
+        damagingReportCount:damagingReports,
+        significantReportCount:significantReports,
+        severeReportCount:severeReports
       };
     }
 
