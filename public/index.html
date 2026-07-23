@@ -25843,11 +25843,14 @@
       return maxHail;
     }
 
-    function mapsCalibratedHailSize(radarSize, reportedSize) {
+    function mapsCalibratedHailSize(radarSize, reportedSize, preferLocalReport) {
       radarSize = Number(radarSize) || 0;
       reportedSize = Number(reportedSize) || 0;
       var size = radarSize;
-      if (reportedSize > 0 && size > reportedSize) size = reportedSize;
+      // At an address or cursor location, the nearby official report controls
+      // the displayed value in either direction. Polygon rendering still uses
+      // the conservative default so one point cannot inflate an entire swath.
+      if (reportedSize > 0 && (preferLocalReport || size > reportedSize)) size = reportedSize;
       // A 2-inch-or-larger claim must not come from radar alone. Until a local
       // hail report corroborates it, keep the displayed size at a conservative
       // 1.50 inches instead of presenting an unsupported severe-hail value.
@@ -25894,7 +25897,7 @@
         if (reports[ri].distMi > 5) break;
         nearbyMaxReport = Math.max(nearbyMaxReport, reports[ri].hailIn);
       }
-      var calibratedEstimate = mapsCalibratedHailSize(radarEstimate, nearbyMaxReport);
+      var calibratedEstimate = mapsCalibratedHailSize(radarEstimate, nearbyMaxReport, true);
       var propertyDate = exactBands.length ? String(exactBands[0].row && exactBands[0].row.event_date || '').slice(0, 10) : '';
       var reviewedPropertyCap = mapsReviewedHailCapAt(propertyDate, lat, lng);
       if (reviewedPropertyCap > 0) calibratedEstimate = Math.min(calibratedEstimate, reviewedPropertyCap);
@@ -26053,7 +26056,7 @@
       var band = mapsFindVerifiedHailSizeAt(lat, lng);
       if (!band || !Number.isFinite(band.displayValue) || band.displayValue <= 0) return '';
       var report = mapsFindNearbyHailReportAt(lat, lng, 5);
-      var size = mapsCalibratedHailSize(Number(band.displayValue), report && report.hailIn);
+      var size = mapsCalibratedHailSize(Number(band.displayValue), report && report.hailIn, true);
       var reviewedCap = mapsReviewedHailCapAt(mapsState.previewDate, lat, lng);
       if (reviewedCap > 0) size = Math.min(size, reviewedCap);
       return size > 0 ? size.toFixed(2) + '"' : '';
@@ -39136,7 +39139,7 @@ function mapsGoogleReady() {
         var nearbyMaxReport = candidateReports.reduce(function (max, item) {
           return Number(item.dist) <= 5 ? Math.max(max, Number(item.hailVal || item.maxHail || 0)) : max;
         }, 0);
-        var displayEstimate = mapsCalibratedHailSize(radarEstimate, nearbyMaxReport);
+        var displayEstimate = mapsCalibratedHailSize(radarEstimate, nearbyMaxReport, true);
         var reviewedPropertyCap = mapsReviewedHailCapAt(selectedDate, prop.lat, prop.lng);
         if (reviewedPropertyCap > 0) displayEstimate = Math.min(displayEstimate, reviewedPropertyCap);
         var validation = {
@@ -39692,7 +39695,7 @@ function mapsGoogleReady() {
           if (!item || ppNormalizeStormDate(item.date) !== date || Number(item.dist) > 5) return max;
           return Math.max(max, Number(item.hailVal || item.maxHail || 0));
         }, 0);
-        row.hailVal = mapsCalibratedHailSize(row.hailVal, nearbyMax);
+        row.hailVal = mapsCalibratedHailSize(row.hailVal, nearbyMax, true);
         var reviewedCap = mapsReviewedHailCapAt(date, prop.lat, prop.lng);
         if (reviewedCap > 0) row.hailVal = Math.min(row.hailVal, reviewedCap);
       });
