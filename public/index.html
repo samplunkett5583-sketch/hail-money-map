@@ -27186,7 +27186,10 @@
       var hailUrl = SUPABASE_URL + '/rest/v1/hail_lsr_raw?event_date=in.(' + encodedDates + ')' +
         '&select=event_date,hail_in&order=event_date.desc&limit=10000';
       var polygonUrl = SUPABASE_URL + '/rest/v1/storm_polygons?event_date=in.(' + encodedDates + ')' +
-        '&source_product=neq.no_swath&select=event_date,storm_type,band_min,band_max' +
+        '&source_product=neq.no_swath&select=event_date,storm_type,band_min,band_max,centroid_lat,centroid_lon,area_sq_mi' +
+        '&order=event_date.desc&limit=10000';
+      var impactUrl = SUPABASE_URL + '/rest/v1/impact_state_summary?event_date=in.(' + encodedDates + ')' +
+        '&select=event_date,state,impacted_housing_units,center_lat,center_lon' +
         '&order=event_date.desc&limit=10000';
 
       function fetchRows(url, label) {
@@ -27198,10 +27201,12 @@
 
       return Promise.all([
         fetchRows(hailUrl, 'hail report'),
-        fetchRows(polygonUrl, 'storm polygon')
+        fetchRows(polygonUrl, 'storm polygon'),
+        fetchRows(impactUrl, 'housing impact')
       ]).then(function (results) {
           var hailRows = results[0] || [];
           var polygonRows = results[1] || [];
+          var impactRows = results[2] || [];
           var summaries = mapsState.dateSummaries || (mapsState.dateSummaries = {});
           var polygonSummaries = mapsState.polyHailSummaries || (mapsState.polyHailSummaries = {});
 
@@ -27243,12 +27248,14 @@
             poly.swathCount = (Number(poly.swathCount) || 0) + 1;
             mapsState.dateHasPolygon[dateStr] = true;
           });
+          mapsApplyValidatedHousingRows(dates, polygonRows, impactRows);
           dates.forEach(function (dateStr) {
             mapsState.stormRankingLoadedDates[dateStr] = true;
             delete mapsState.stormRankingPendingDates[dateStr];
           });
-          hmDebugLog('[stormRanking] Loaded ' + hailRows.length + ' reports and ' +
-            polygonRows.length + ' polygon bands for ' + dates.length + ' visible dates');
+          hmDebugLog('[stormRanking] Loaded ' + hailRows.length + ' reports, ' +
+            polygonRows.length + ' polygon bands, and ' + impactRows.length +
+            ' housing rows for ' + dates.length + ' visible dates');
           mapsRenderStormList({ refreshExisting:true });
           mapsRenderPinnedTab();
           return results;
@@ -33862,31 +33869,124 @@ function mapsGoogleReady() {
       };
     }
 
+    function mapsStormHailSeverityTier(maximumHail) {
+      maximumHail = Number(maximumHail) || 0;
+      if (maximumHail < 1.00) return 0;
+      if (maximumHail < 1.50) return 1;
+      if (maximumHail < 1.75) return 2;
+      if (maximumHail < 2.00) return 3;
+      if (maximumHail <= 2.25) return 4;
+      return 5;
+    }
+
+    function mapsStormHousingExposureTier(impactedHomes, connected) {
+      if (!connected) return 1;
+      impactedHomes = Math.max(0, Number(impactedHomes) || 0);
+      if (impactedHomes < 2500) return 1;
+      if (impactedHomes < 15000) return 2;
+      if (impactedHomes < 50000) return 3;
+      if (impactedHomes < 150000) return 4;
+      return 5;
+    }
+
+    function mapsStormDistanceMiles(lat1, lon1, lat2, lon2) {
+      var toRad = Math.PI / 180;
+      var dLat = (lat2 - lat1) * toRad;
+      var dLon = (lon2 - lon1) * toRad;
+      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
+    }
+
+    function mapsStoreStormHousingImpact(dateStr, impactedHomes, connected, source) {
+      mapsState.stormImpactSummaries = mapsState.stormImpactSummaries || {};
+      var existing = mapsState.stormImpactSummaries[dateStr] || {};
+      if (!connected && existing.housingEstimateConnected) return existing;
+      var next = Object.assign({}, existing, {
+        dateStr:dateStr,
+        housingEstimateConnected:!!connected,
+        impactedHomesCount:connected ? Math.max(0, Math.round(Number(impactedHomes) || 0)) : 0,
+        housingImpactSource:source || null
+      });
+      mapsState.stormImpactSummaries[dateStr] = next;
+      mapsSetStormImpactSummaryText(dateStr, mapsFormatHousingUnitLabel(next));
+      return next;
+    }
+
+    // Accept a precomputed Census housing row only when its geographic center
+    // is close to one of this date's real hail polygons. This prevents stale
+    // rows from another region (for example New Hampshire on a Colorado day)
+    // from affecting the card, Impact tab, or ranking.
+    function mapsApplyValidatedHousingRows(dateList, polygonRows, impactRows) {
+      var requested = {};
+      (dateList || []).forEach(function (dateStr) { requested[dateStr] = true; });
+      var polygonsByDate = {};
+      (polygonRows || []).forEach(function (row) {
+        var dateStr = String(row && row.event_date || '').slice(0, 10);
+        if (!requested[dateStr]) return;
+        var type = String(row.storm_type || '').toLowerCase();
+        if (type === 'wind' || type === 'tornado') return;
+        var lat = Number(row.centroid_lat), lon = Number(row.centroid_lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+        (polygonsByDate[dateStr] || (polygonsByDate[dateStr] = [])).push({
+          lat:lat, lon:lon, areaSqMi:Math.max(0, Number(row.area_sq_mi) || 0)
+        });
+      });
+
+      var totals = {};
+      var matches = {};
+      (impactRows || []).forEach(function (row) {
+        var dateStr = String(row && row.event_date || '').slice(0, 10);
+        var polygons = polygonsByDate[dateStr] || [];
+        var lat = Number(row.center_lat), lon = Number(row.center_lon);
+        var homes = Number(row.impacted_housing_units);
+        if (!requested[dateStr] || !polygons.length ||
+            !Number.isFinite(lat) || !Number.isFinite(lon) ||
+            !Number.isFinite(homes) || homes < 0) return;
+        var isNearStorm = polygons.some(function (polygon) {
+          var toleranceMiles = Math.max(200, Math.sqrt(polygon.areaSqMi || 0) * 4);
+          return mapsStormDistanceMiles(lat, lon, polygon.lat, polygon.lon) <= toleranceMiles;
+        });
+        if (!isNearStorm) return;
+        totals[dateStr] = (totals[dateStr] || 0) + homes;
+        matches[dateStr] = (matches[dateStr] || 0) + 1;
+      });
+
+      (dateList || []).forEach(function (dateStr) {
+        mapsStoreStormHousingImpact(
+          dateStr,
+          totals[dateStr] || 0,
+          !!matches[dateStr],
+          matches[dateStr] ? 'validated-impact-summary' : null
+        );
+      });
+    }
+
     function mapsGetStormImpactTone(dateStr) {
       var summary = mapsState.dateSummaries[dateStr] || {};
       var reportedHailMax = Number(summary.hail && summary.hail.max != null ? summary.hail.max : 0) || 0;
       var polygonSummary = mapsState.polyHailSummaries && mapsState.polyHailSummaries[dateStr];
       var polygonHailMax = Number(polygonSummary && polygonSummary.max || 0) || 0;
       var maximumHail = Math.max(reportedHailMax, polygonHailMax);
-      var hailReportCount = Number(summary.hailReportCount || 0) || 0;
+      var severityTier = mapsStormHailSeverityTier(maximumHail);
 
-      // Roofing damage/opportunity scale based on confirmed maximum hail:
-      // under 1.00" = unrated
-      // 1.00-1.49" = 1
-      // 1.50-1.74" = 2
-      // 1.75-1.99" = 3
-      // 2.00-2.25" = 4
-      // above 2.25" = 5
-      if (maximumHail < 1.00) {
+      if (!severityTier) {
         return { label:'Unrated', className:'severity-unrated', rating:null };
       }
 
-      var rating = 1;
-      if (maximumHail >= 1.50) rating = 2;
-      if (maximumHail >= 1.75) rating = 3;
-      if (maximumHail >= 2.00) rating = 4;
-      if (maximumHail > 2.25) rating = 5;
+      var housingSummary = mapsGetStormImpactSummarySync(dateStr);
+      var housingConnected = !!(housingSummary && housingSummary.housingEstimateConnected);
+      var exposureTier = mapsStormHousingExposureTier(
+        housingSummary && housingSummary.impactedHomesCount,
+        housingConnected
+      );
 
+      // Overall impact is work opportunity, not hail diameter alone.
+      // Multiplication makes both dimensions matter:
+      // 2.5"+ hail (severity 5) over rural exposure (tier 1) => impact 1;
+      // the same hail over 150k+ homes (tier 5) => impact 5.
+      var rating = Math.max(1, Math.ceil((severityTier * exposureTier) / 5));
       var labels = {
         1: { label:'Light', className:'severity-light' },
         2: { label:'Moderate', className:'severity-moderate' },
@@ -33894,7 +33994,14 @@ function mapsGoogleReady() {
         4: { label:'Severe', className:'severity-severe' },
         5: { label:'Extreme', className:'severity-extreme' }
       };
-      return { label:labels[rating].label, className:labels[rating].className, rating:rating };
+      return {
+        label:labels[rating].label,
+        className:labels[rating].className,
+        rating:rating,
+        severityTier:severityTier,
+        exposureTier:exposureTier,
+        housingEstimateConnected:housingConnected
+      };
     }
 
     function mapsBuildStormSourceBadgeHtml(dateStr) {
@@ -35185,14 +35292,28 @@ function mapsGoogleReady() {
         : mapsBuildFallbackStateList(reports);
       if (!states.length) return [];
 
+      var matchedHousingRows = 0;
+      var impactedHomesTotal = 0;
       states.forEach(function (state) {
         var match = calculatedRows.find(function (row) {
           return String(row.state || '').toLowerCase() === String(state.state || '').toLowerCase()
             || mapsStateAbbr(String(row.state || '')) === mapsStateAbbr(String(state.state || ''));
         });
-        if (!match) return;
-        if (match.impacted_housing_units != null) state.impacted_housing_units = match.impacted_housing_units;
+        var homes = Number(match && match.impacted_housing_units);
+        if (!match || !Number.isFinite(homes) || homes < 0) return;
+        state.impacted_housing_units = homes;
+        impactedHomesTotal += homes;
+        matchedHousingRows += 1;
       });
+
+      // State-name agreement with the reverse-geocoded polygon is a second,
+      // stronger geography check than the batch center-distance validation.
+      mapsStoreStormHousingImpact(
+        dateStr,
+        impactedHomesTotal,
+        matchedHousingRows > 0,
+        matchedHousingRows ? 'polygon-state-impact-summary' : null
+      );
       return states;
     }
 
@@ -35200,20 +35321,21 @@ function mapsGoogleReady() {
     // they exist, otherwise real city/town names (falling back to county
     // only when no city name is resolvable) derived from that state's hail reports.
     async function mapsLoadImpactCities(dateStr, stateName) {
-      var polygonRegions = await mapsFetchImpactPolygonRegions(dateStr);
-      if (polygonRegions && polygonRegions.length) {
-        return mapsBuildPolygonCityList(polygonRegions, stateName);
-      }
-
       var results = await Promise.all([
+        mapsFetchImpactPolygonRegions(dateStr),
         mapsGetImpactFallbackReports(dateStr).catch(function () { return []; }),
         mapsFetchImpactCitySummary(dateStr, stateName).catch(function () { return []; })
       ]);
-      var reports = results[0] || [];
-      var calculatedRows = results[1] || [];
-      if (!reports.length) return [];
+      var polygonRegions = results[0] || [];
+      var reports = results[1] || [];
+      var calculatedRows = results[2] || [];
+      var cities = polygonRegions.length
+        ? mapsBuildPolygonCityList(polygonRegions, stateName)
+        : mapsBuildFallbackCityList(reports, stateName);
+      if (!cities.length) return [];
 
-      var cities = mapsBuildFallbackCityList(reports, stateName);
+      // Keep polygon-derived locations authoritative, but attach real Census
+      // housing totals when the calculated city/county name agrees.
       cities.forEach(function (city) {
         var cityName = String(city.city || '').toLowerCase();
         var countyName = String(city.county || '').replace(/\s+county$/i, '').toLowerCase();
@@ -35222,7 +35344,8 @@ function mapsGoogleReady() {
           var rowCounty = String(row.county || '').replace(/\s+county$/i, '').toLowerCase();
           return (cityName && rowCity === cityName) || (!cityName && countyName && rowCounty === countyName);
         });
-        if (match && match.impacted_housing_units != null) city.impacted_housing_units = match.impacted_housing_units;
+        var homes = Number(match && match.impacted_housing_units);
+        if (match && Number.isFinite(homes) && homes >= 0) city.impacted_housing_units = homes;
       });
       return cities;
     }
