@@ -33,6 +33,27 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
 
+const STATE_NAMES = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas",
+  CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware",
+  FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho",
+  IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas",
+  KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi",
+  MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada",
+  NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York",
+  NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma",
+  OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island",
+  SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas",
+  UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington",
+  WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
+};
+
+function stateName(value) {
+  const code = String(value || "").toUpperCase();
+  return STATE_NAMES[code] || value || "";
+}
+
 function positiveNumber(value, fallback) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -217,8 +238,25 @@ function buildRegions(anchors) {
       const lon = points.reduce((sum, p) => sum + p.lon, 0) / points.length;
       const states = [...new Set(points.map((p) => p.state).filter(Boolean))];
       const counties = [...new Set(points.map((p) => p.county).filter(Boolean))].slice(0, 12);
+      const locationCounts = new Map();
+      for (const point of points) {
+        if (!point.county || !point.state) continue;
+        const key = `${point.county}|${point.state}`;
+        const current = locationCounts.get(key) || {
+          county: point.county,
+          state: point.state,
+          count: 0,
+          hail: 0,
+        };
+        current.count += 1;
+        current.hail = Math.max(current.hail, point.hail);
+        locationCounts.set(key, current);
+      }
+      const locations = [...locationCounts.values()]
+        .sort((a, b) => b.hail - a.hail || b.count - a.count)
+        .slice(0, 3);
       const existingMax = Math.max(0, ...points.map((p) => p.hail));
-      return { key, lat, lon, states, counties, existingMax, anchors: points };
+      return { key, lat, lon, states, counties, locations, existingMax, anchors: points };
     })
     .sort((a, b) => b.existingMax - a.existingMax || b.anchors.length - a.anchors.length)
     .slice(0, maxRegions);
@@ -231,10 +269,11 @@ async function searchGoogle(date, region) {
     day: "numeric",
     year: "numeric",
   }).format(new Date(`${date}T12:00:00Z`));
-  const place = [
-    ...region.counties.slice(0, 2).map((county) => `${county} County`),
-    ...region.states.slice(0, 2),
-  ].filter(Boolean).join(" ");
+  const place = region.locations.length
+    ? region.locations
+      .map((location) => `${location.county} County ${stateName(location.state)}`)
+      .join(" ")
+    : region.states.slice(0, 2).map(stateName).filter(Boolean).join(" ");
   const query = [
     humanDate,
     place,
@@ -286,8 +325,14 @@ async function searchGoogle(date, region) {
   if (candidates.length === 0) return { reports: [], citations };
 
   const regionDescription = [
-    region.states.length ? `states ${region.states.join(", ")}` : "",
-    region.counties.length ? `counties ${region.counties.join(", ")}` : "",
+    region.locations.length
+      ? `counties ${region.locations.map((location) =>
+        `${location.county} County, ${stateName(location.state)}`
+      ).join("; ")}`
+      : "",
+    !region.locations.length && region.states.length
+      ? `states ${region.states.map(stateName).join(", ")}`
+      : "",
     `near ${region.lat.toFixed(3)}, ${region.lon.toFixed(3)}`,
   ].filter(Boolean).join("; ");
   const prompt = `
