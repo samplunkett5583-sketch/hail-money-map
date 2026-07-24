@@ -225,14 +225,20 @@ function buildRegions(anchors) {
 }
 
 async function searchGoogle(date, region) {
+  const humanDate = new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(`${date}T12:00:00Z`));
   const place = [
-    ...region.counties.map((county) => `${county} County`),
-    ...region.states,
+    ...region.counties.slice(0, 2).map((county) => `${county} County`),
+    ...region.states.slice(0, 2),
   ].filter(Boolean).join(" ");
   const query = [
-    date,
+    humanDate,
     place,
-    "hail inches spotter storm report",
+    "hail size report",
   ].filter(Boolean).join(" ");
 
   const searchResponse = await fetch("https://google.serper.dev/search", {
@@ -288,6 +294,12 @@ Return only reports for ${date}. Deduplicate the same observation. Use only the
 information in the supplied results. Never invent a URL, measurement, date,
 location, coordinates, or source. If coordinates are not present, return null
 for lat and lon.
+
+Convert an explicitly reported standard hail-size description using this table:
+quarter=1.00, half dollar=1.25, ping pong=1.50, golf ball=1.75,
+hen egg=2.00, tennis ball=2.50, baseball=2.75, tea cup=3.00,
+softball=4.00, grapefruit=4.50 inches. This conversion is allowed only when the
+result explicitly says that description was observed or reported.
 
 Google Search results:
 ${JSON.stringify(candidates, null, 2)}
