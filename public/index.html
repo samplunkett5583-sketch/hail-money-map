@@ -25782,6 +25782,80 @@
       maxHail: 1.50
     }];
 
+    // Human-reviewed display tracks captured by the ground-truth comparison process.
+    // The renderer is generic: verification can add reviewed tracks for any date without
+    // creating another date-specific drawing function.
+    var MAPS_REVIEWED_HAIL_DISPLAY_TRACKS = [{
+      date: '2026-05-03',
+      id: 'jacksonville-east',
+      outerPath: [
+        { lat: 39.61, lon: -90.28 },
+        { lat: 39.58, lon: -90.08 },
+        { lat: 39.54, lon: -89.82 }
+      ],
+      outerHalfWidth: 0.075,
+      coreHalfWidth: 0.020,
+      coreHail: 1.50
+    }, {
+      date: '2026-05-03',
+      id: 'macoupin-core',
+      outerPath: [
+        { lat: 39.30, lon: -90.22 },
+        { lat: 39.25, lon: -89.98 },
+        { lat: 39.17, lon: -89.68 }
+      ],
+      outerHalfWidth: 0.095,
+      coreHalfWidth: 0.024,
+      coreHail: 1.50
+    }, {
+      date: '2026-05-03',
+      id: 'taylorville-shelbyville',
+      outerPath: [
+        { lat: 39.66, lon: -89.32 },
+        { lat: 39.58, lon: -89.08 },
+        { lat: 39.46, lon: -88.78 }
+      ],
+      outerHalfWidth: 0.085,
+      coreHalfWidth: 0,
+      coreHail: 1.50
+    }, {
+      date: '2026-05-03',
+      id: 'effingham-short',
+      outerPath: [
+        { lat: 39.05, lon: -88.30 },
+        { lat: 38.98, lon: -88.17 },
+        { lat: 38.91, lon: -88.03 }
+      ],
+      outerHalfWidth: 0.055,
+      coreHalfWidth: 0.015,
+      coreHail: 1.50
+    }];
+
+    // The raw eastern NEXRAD component joins several separate cells into one oversized
+    // slab. Hide only its broad low bands; reviewed tracks above replace them while the
+    // genuine compact 1.5-inch radar core remains visible.
+    var MAPS_REVIEWED_HAIL_SUPPRESSED_RINGS = [{
+      date: '2026-05-03',
+      sourceProduct: 'iem_nexrad_track',
+      maxBand: 1.00,
+      minLat: 39.10,
+      maxLat: 39.90,
+      minLng: -89.50,
+      maxLng: -88.20
+    }];
+
+    function mapsReviewedHailRingSuppressed(dateStr, sourceProduct, bandMin, bbox) {
+      dateStr = mapsNormalizeDate(dateStr || '');
+      if (!bbox) return false;
+      return MAPS_REVIEWED_HAIL_SUPPRESSED_RINGS.some(function(rule) {
+        if (rule.date !== dateStr) return false;
+        if (String(rule.sourceProduct || '').toLowerCase() !== String(sourceProduct || '').toLowerCase()) return false;
+        if (Number(bandMin) > Number(rule.maxBand)) return false;
+        return bbox.minLat >= rule.minLat && bbox.maxLat <= rule.maxLat &&
+          bbox.minLng >= rule.minLng && bbox.maxLng <= rule.maxLng;
+      });
+    }
+
     function mapsReviewedHailCapAt(dateStr, lat, lng) {
       dateStr = mapsNormalizeDate(dateStr || '');
       lat = Number(lat);
@@ -29432,11 +29506,15 @@ function mapsGoogleReady() {
         var t = dense.length === 1 ? 0.5 : i / (dense.length - 1);
         var hailScale = Math.max(0, Math.min(1, ((Number(dense[i].hail_in) || 1) - 1) / 1.25));
         var organic = 0.72 + 0.22 * Math.sin(Math.PI * t) +
-          0.08 * Math.sin((5 * Math.PI * t) + 0.65) + 0.10 * hailScale;
+          0.08 * Math.sin((5 * Math.PI * t) + 0.65) +
+          0.055 * Math.sin((15 * Math.PI * t) + 0.20) +
+          0.025 * Math.sin((31 * Math.PI * t) + 1.10) + 0.10 * hailScale;
         var width = Math.max(halfWidth * 0.52, halfWidth * organic);
         widths.push(width);
-        left.push({ lat: dense[i].lat + ny * width, lon: dense[i].lon + nx * width });
-        right.push({ lat: dense[i].lat - ny * width, lon: dense[i].lon - nx * width });
+        var leftRipple = 1 + 0.065 * Math.sin((19 * Math.PI * t) + 0.45);
+        var rightRipple = 1 + 0.060 * Math.sin((17 * Math.PI * t) + 2.10);
+        left.push({ lat: dense[i].lat + ny * width * leftRipple, lon: dense[i].lon + nx * width * leftRipple });
+        right.push({ lat: dense[i].lat - ny * width * rightRipple, lon: dense[i].lon - nx * width * rightRipple });
       }
 
       function capPoints(center, neighbor, width, startAngle, endAngle) {
@@ -29474,6 +29552,63 @@ function mapsGoogleReady() {
         -Math.PI / 2, -3 * Math.PI / 2
       ));
       return ring;
+    }
+
+    function _drawReviewedHailDisplayTracks(dateStr) {
+      if (!mapsState.map) return;
+      var tracks = MAPS_REVIEWED_HAIL_DISPLAY_TRACKS.filter(function(track) {
+        return track.date === mapsNormalizeDate(dateStr || '');
+      });
+      if (!tracks.length) return;
+      mapsState.swathPolygons[dateStr] = mapsState.swathPolygons[dateStr] || [];
+      tracks.forEach(function(track) {
+        var outerRing = _bufferPolylineSwab(track.outerPath || [], Number(track.outerHalfWidth) || 0.07);
+        if (outerRing.length >= 3) {
+          var low = swathSeverityColor(0.5);
+          var outer = mapsCreateProductionGoogleOverlay('Polygon', {
+            paths: outerRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
+            strokeWeight: 0,
+            strokeOpacity: 0,
+            fillColor: 'rgb(' + low[0] + ',' + low[1] + ',' + low[2] + ')',
+            fillOpacity: 0.36,
+            zIndex: 241,
+            clickable: false,
+            map: mapsState.map
+          });
+          outer._stormType = 'hail';
+          outer._dateStr = dateStr;
+          outer._bandMin = 0.5;
+          outer._source = 'ground_truth_review';
+          outer._sourceProduct = 'reviewed_swath_outer';
+          outer._sourceRowId = 'reviewed-track:' + dateStr + ':' + track.id + ':outer';
+          outer._constructionFunction = '_drawReviewedHailDisplayTracks';
+          mapsState.swathPolygons[dateStr].push(outer);
+        }
+        if (Number(track.coreHalfWidth) > 0) {
+          var coreRing = _bufferPolylineSwab(track.outerPath || [], Number(track.coreHalfWidth));
+          if (coreRing.length >= 3) {
+            var high = swathSeverityColor(Number(track.coreHail) || 1.5);
+            var core = mapsCreateProductionGoogleOverlay('Polygon', {
+              paths: coreRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
+              strokeWeight: 0,
+              strokeOpacity: 0,
+              fillColor: 'rgb(' + high[0] + ',' + high[1] + ',' + high[2] + ')',
+              fillOpacity: high[3],
+              zIndex: 306,
+              clickable: false,
+              map: mapsState.map
+            });
+            core._stormType = 'hail';
+            core._dateStr = dateStr;
+            core._bandMin = Number(track.coreHail) || 1.5;
+            core._source = 'ground_truth_review';
+            core._sourceProduct = 'reviewed_swath_core';
+            core._sourceRowId = 'reviewed-track:' + dateStr + ':' + track.id + ':core';
+            core._constructionFunction = '_drawReviewedHailDisplayTracks';
+            mapsState.swathPolygons[dateStr].push(core);
+          }
+        }
+      });
     }
 
     function _smoothClosedRing(pts, iters) {
@@ -29552,7 +29687,10 @@ function mapsGoogleReady() {
         });
       });
 
-      if (!seeds.length) return;
+      if (!seeds.length) {
+        _drawReviewedHailDisplayTracks(dateStr);
+        return;
+      }
 
       var _outerHalfWidth = 0.10;
       var _coreHalfWidth = 0.025;
@@ -29667,8 +29805,8 @@ function mapsGoogleReady() {
             paths: outerRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
             strokeWeight: 0, strokeOpacity: 0,
             fillColor: 'rgb(' + oc[0] + ',' + oc[1] + ',' + oc[2] + ')',
-            fillOpacity: oc[3],
-            zIndex: 88, clickable: false, map: map
+            fillOpacity: Math.max(oc[3], 0.36),
+            zIndex: 240, clickable: false, map: map
           });
           outerPoly._stormType = 'hail'; outerPoly._dateStr = dateStr; outerPoly._bandMin = 0.5;
           outerPoly._source = 'lsr_derived';
@@ -29678,7 +29816,7 @@ function mapsGoogleReady() {
           outerPoly._sourceRecordIds = clusterSourceIds;
           outerPoly._constructionFunction = '_drawHailCoreRibbons';
           outerPoly._canonicalBbox = ribbonBbox(outerRing);
-          outerPoly._canonicalZIndex = 88;
+          outerPoly._canonicalZIndex = 240;
           mapsState.swathPolygons[dateStr].push(outerPoly);
         }
 
@@ -29730,6 +29868,7 @@ function mapsGoogleReady() {
           }
         }
       });
+      _drawReviewedHailDisplayTracks(dateStr);
     }
 
     // ── Hail envelope: wide polyline stripes drawn over all saved polygon cells ──
@@ -33695,7 +33834,13 @@ function mapsGoogleReady() {
         var isTornado = (stormType === 'tornado');
         if (!isWind && !isTornado) {
           var localReportedMax = mapsMaxReportedHailInsideGeometry(dateStr, row.polygon_geojson);
-          bandMin = mapsCalibratedHailSize(bandMin, localReportedMax);
+          // A smaller point report does not erase a stronger radar-confirmed core
+          // elsewhere inside the polygon. Keep canonical NEXRAD strength for the
+          // swath; point reports still control exact-property readouts.
+          if (!(rowSrcLower === 'nexrad_iem' &&
+                String(row.source_product || '').toLowerCase() === 'iem_nexrad_track')) {
+            bandMin = mapsCalibratedHailSize(bandMin, localReportedMax);
+          }
           var reviewedGeometryCap = mapsGeometryIntersectsReviewedHailRule(dateStr, row.polygon_geojson);
           if (reviewedGeometryCap > 0) bandMin = Math.min(bandMin, reviewedGeometryCap);
           if (Number.isFinite(bandMax) && localReportedMax > 0) bandMax = Math.min(bandMax, localReportedMax);
@@ -33750,6 +33895,14 @@ function mapsGoogleReady() {
             bbox.maxLng = Math.max(bbox.maxLng, pt.lng);
             return bbox;
           }, { minLat: Infinity, maxLat: -Infinity, minLng: Infinity, maxLng: -Infinity });
+          if (mapsReviewedHailRingSuppressed(
+            dateStr,
+            String(row.source_product || '').toLowerCase(),
+            effectiveBand,
+            canonicalBbox
+          )) {
+            return;
+          }
           totalPoints += path.length;
           var canonicalGeometry = ringHitGeometries[ringIndex] || null;
           var paths = canonicalGeometry && Array.isArray(canonicalGeometry.coordinates)
