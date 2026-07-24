@@ -58,7 +58,8 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      GEMINI_MODEL: gemini-2.5-flash-lite
+      SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+      GEMINI_MODEL: gemini-3.5-flash-lite
 
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +76,7 @@ jobs:
 
       - name: Verify recent storm dates
         if: github.event_name != 'workflow_dispatch' || inputs.scope == 'recent'
-        run: node scripts/verify_hail_ground_truth.mjs --days=3 --limit=50 --refresh-hours=12
+        run: node scripts/verify_hail_ground_truth.mjs --days=3 --limit=50 --refresh-hours=24
 
       - name: Verify one storm date
         if: github.event_name == 'workflow_dispatch' && inputs.scope == 'date'
