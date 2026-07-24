@@ -190,7 +190,7 @@ async function getAnchors(date) {
   const [lsrResult, radarResult] = await Promise.all([
     supabase
       .from("hail_lsr_raw")
-      .select("lat,lon,state,county,hail_in,source")
+      .select("lat,lon,state,county,hail_in,source,raw")
       .eq("event_date", date)
       .limit(5000),
     supabase
@@ -206,6 +206,7 @@ async function getAnchors(date) {
     lon: Number(row.lon),
     state: row.state || "",
     county: row.county || "",
+    city: String(row.raw?.CITY || row.raw?.city || "").trim(),
     hail: Number(row.hail_in) || 0,
   }));
   if (!radarResult.error) {
@@ -215,6 +216,7 @@ async function getAnchors(date) {
         lon: Number(row.centroid_lon),
         state: "",
         county: "",
+        city: "",
         hail: Number(row.band_max || row.band_min) || 0,
       });
     }
@@ -241,8 +243,9 @@ function buildRegions(anchors) {
       const locationCounts = new Map();
       for (const point of points) {
         if (!point.county || !point.state) continue;
-        const key = `${point.county}|${point.state}`;
+        const key = `${point.city}|${point.county}|${point.state}`;
         const current = locationCounts.get(key) || {
+          city: point.city,
           county: point.county,
           state: point.state,
           count: 0,
@@ -271,7 +274,10 @@ async function searchGoogle(date, region) {
   }).format(new Date(`${date}T12:00:00Z`));
   const place = region.locations.length
     ? region.locations
-      .map((location) => `${location.county} County ${stateName(location.state)}`)
+      .map((location) => location.city
+        ? `${location.city} ${stateName(location.state)}`
+        : `${location.county} County ${stateName(location.state)}`
+      )
       .join(" ")
     : region.states.slice(0, 2).map(stateName).filter(Boolean).join(" ");
   const query = [
@@ -327,7 +333,9 @@ async function searchGoogle(date, region) {
   const regionDescription = [
     region.locations.length
       ? `counties ${region.locations.map((location) =>
-        `${location.county} County, ${stateName(location.state)}`
+        location.city
+          ? `${location.city}, ${location.county} County, ${stateName(location.state)}`
+          : `${location.county} County, ${stateName(location.state)}`
       ).join("; ")}`
       : "",
     !region.locations.length && region.states.length
