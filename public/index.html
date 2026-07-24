@@ -29440,14 +29440,15 @@ function mapsGoogleReady() {
     }
 
     // ── Core ribbon renderer: LSR-driven pale-yellow outer + orange core corridors ──
-    // For MRMS-heavy dates: wide filled swath bodies (outer 0.20°, core 0.06°) with smoothing.
-    // For other dates: narrow ribbons (outer 0.10°, core 0.025°) supplementing ground truth.
+    // These are local ground-report accents only. The saved storm polygons own long-track
+    // continuity, so this layer must never use their centroids to bridge independent cells.
     function _drawHailCoreRibbons(dateStr, hailPts, rows) {
       var map = mapsState.map;
       if (!map) return;
       mapsState.swathPolygons[dateStr] = mapsState.swathPolygons[dateStr] || [];
 
-      // Gather 1.0"+ seeds from LSR reports and mrms_mesh hail centroids
+      // Gather only actual ground reports. Mixing storm-polygon centroids into this point
+      // cloud caused chain-link clustering to invent sharp connectors between parallel tracks.
       var seeds = [];
       (hailPts || []).forEach(function(p) {
         var la = +p.lat, lo = +(p.lon || p.lng);
@@ -29455,141 +29456,14 @@ function mapsGoogleReady() {
         var h = +(p.hail_in || 0) || 1.0; // NWS-verified hail: treat unrecorded size as 1.0"
         seeds.push({ lat: la, lon: lo, hail_in: h, sourceId:p.id || p.report_id || p.source_record_id || null });
       });
-      (rows || []).forEach(function(r) {
-        var bmin = +(r.band_min || 0);
-        if (bmin < 1.0) return;
-        if ((r.storm_type || 'hail').toLowerCase() !== 'hail') return;
-        var la = +r.centroid_lat, lo = +r.centroid_lon;
-        if (!isFinite(la) || !isFinite(lo)) {
-          try {
-            var gj = r.polygon_geojson;
-            if (gj && typeof gj === 'string') gj = JSON.parse(gj);
-            var ring = null;
-            if (gj && gj.type === 'Polygon' && gj.coordinates && gj.coordinates[0]) ring = gj.coordinates[0];
-            else if (gj && gj.type === 'MultiPolygon' && gj.coordinates && gj.coordinates[0] && gj.coordinates[0][0]) ring = gj.coordinates[0][0];
-            if (ring && ring.length >= 3) {
-              var sla = 0, slo = 0;
-              for (var ri = 0; ri < ring.length; ri++) { sla += ring[ri][1]; slo += ring[ri][0]; }
-              la = sla / ring.length; lo = slo / ring.length;
-            }
-          } catch(e) {}
-        }
-        if (isFinite(la) && isFinite(lo)) seeds.push({ lat: la, lon: lo, hail_in: bmin, sourceId:r.id || r.proposal_id || null });
-      });
 
       if (!seeds.length) return;
 
-      var _mrmsHeavy = _isMrmsHeavyDate(rows);
-      var _outerHalfWidth = _mrmsHeavy ? 0.17 : 0.10;
-      var _coreHalfWidth = _mrmsHeavy ? 0.045 : 0.025;
-      // MRMS-heavy: tighter radius keeps parallel tracks separate; others use 0.25° default.
-      var clusters = _clusterByDistance(seeds, _mrmsHeavy ? 0.20 : 0.25);
-
-      // MRMS-heavy: bridge-merge clusters that share the same storm-track axis across short data gaps.
-      if (_mrmsHeavy) {
-        var _bm = true;
-        while (_bm) {
-          _bm = false;
-          for (var _bi = 0; _bi < clusters.length && !_bm; _bi++) {
-            var _ni = clusters[_bi].length, _cxi = 0, _cyi = 0;
-            clusters[_bi].forEach(function(p) { _cxi += p.lon; _cyi += p.lat; });
-            _cxi /= _ni; _cyi /= _ni;
-            var _sxi = 0, _sxyi = 0, _syi = 0;
-            clusters[_bi].forEach(function(p) { var dx = p.lon - _cxi, dy = p.lat - _cyi; _sxi += dx*dx; _sxyi += dx*dy; _syi += dy*dy; });
-            var _angi = 0.5 * Math.atan2(2 * _sxyi, _sxi - _syi);
-            var _aci = Math.cos(_angi), _asi = Math.sin(_angi);
-            if (_aci < 0) { _aci = -_aci; _asi = -_asi; }
-            for (var _bj = _bi + 1; _bj < clusters.length && !_bm; _bj++) {
-              var _minG = Infinity;
-              for (var _ai2 = 0; _ai2 < clusters[_bi].length; _ai2++) {
-                for (var _aj2 = 0; _aj2 < clusters[_bj].length; _aj2++) {
-                  var _dg = Math.sqrt(
-                    Math.pow(clusters[_bi][_ai2].lat - clusters[_bj][_aj2].lat, 2) +
-                    Math.pow(clusters[_bi][_ai2].lon - clusters[_bj][_aj2].lon, 2));
-                  if (_dg < _minG) _minG = _dg;
-                }
-              }
-              if (_minG > 0.60) continue;
-              var _nj = clusters[_bj].length, _cxj = 0, _cyj = 0;
-              clusters[_bj].forEach(function(p) { _cxj += p.lon; _cyj += p.lat; });
-              _cxj /= _nj; _cyj /= _nj;
-              var _sxj = 0, _sxyj = 0, _syj = 0;
-              clusters[_bj].forEach(function(p) { var dx = p.lon - _cxj, dy = p.lat - _cyj; _sxj += dx*dx; _sxyj += dx*dy; _syj += dy*dy; });
-              var _angj = 0.5 * Math.atan2(2 * _sxyj, _sxj - _syj);
-              var _acj = Math.cos(_angj), _asj = Math.sin(_angj);
-              if (_acj < 0) { _acj = -_acj; _asj = -_asj; }
-              if (Math.abs(_aci * _acj + _asi * _asj) < 0.72) continue;
-              var _ddx = _cxj - _cxi, _ddy = _cyj - _cyi;
-              var _cdd = Math.sqrt(_ddx * _ddx + _ddy * _ddy);
-              if (_cdd > 0.001) {
-                var _crs = Math.abs(_aci * _ddy - _asi * _ddx) / _cdd;
-                if (_crs > 0.30) continue;
-                if ((_crs * _cdd) > 0.20) continue;
-              }
-              clusters[_bi] = clusters[_bi].concat(clusters[_bj]);
-              clusters.splice(_bj, 1);
-              _bm = true;
-            }
-          }
-        }
-      }
-
-      // Non-MRMS-heavy dates: bridge-merge with looser parameters (MRMS-heavy already merged above).
-      if (!_mrmsHeavy) {
-        var _bChanged = true;
-        while (_bChanged) {
-          _bChanged = false;
-          for (var _ba = 0; _ba < clusters.length && !_bChanged; _ba++) {
-            var _na = clusters[_ba].length, _cxa = 0, _cya = 0;
-            clusters[_ba].forEach(function(p) { _cxa += p.lon; _cya += p.lat; });
-            _cxa /= _na; _cya /= _na;
-            var _sxxa = 0, _sxya = 0, _syya = 0;
-            clusters[_ba].forEach(function(p) {
-              var dx = p.lon - _cxa, dy = p.lat - _cya;
-              _sxxa += dx*dx; _sxya += dx*dy; _syya += dy*dy;
-            });
-            var _angA = 0.5 * Math.atan2(2*_sxya, _sxxa - _syya);
-            var _acA = Math.cos(_angA), _asA = Math.sin(_angA);
-            if (_acA < 0) { _acA = -_acA; _asA = -_asA; }
-
-            for (var _bb = _ba + 1; _bb < clusters.length && !_bChanged; _bb++) {
-              var _minD = Infinity;
-              for (var _ai = 0; _ai < clusters[_ba].length; _ai++) {
-                for (var _bi = 0; _bi < clusters[_bb].length; _bi++) {
-                  var _dd = Math.sqrt(
-                    Math.pow(clusters[_ba][_ai].lat - clusters[_bb][_bi].lat, 2) +
-                    Math.pow(clusters[_ba][_ai].lon - clusters[_bb][_bi].lon, 2)
-                  );
-                  if (_dd < _minD) _minD = _dd;
-                }
-              }
-              if (_minD > 0.70) continue;
-              var _nb = clusters[_bb].length, _cxb = 0, _cyb = 0;
-              clusters[_bb].forEach(function(p) { _cxb += p.lon; _cyb += p.lat; });
-              _cxb /= _nb; _cyb /= _nb;
-              var _sxxb = 0, _sxyb = 0, _syyb = 0;
-              clusters[_bb].forEach(function(p) {
-                var dx = p.lon - _cxb, dy = p.lat - _cyb;
-                _sxxb += dx*dx; _sxyb += dx*dy; _syyb += dy*dy;
-              });
-              var _angB = 0.5 * Math.atan2(2*_sxyb, _sxxb - _syyb);
-              var _acB = Math.cos(_angB), _asB = Math.sin(_angB);
-              if (_acB < 0) { _acB = -_acB; _asB = -_asB; }
-              var _dot = Math.abs(_acA * _acB + _asA * _asB);
-              if (_dot < 0.70) continue;
-              var _dcx = _cxb - _cxa, _dcy = _cyb - _cya;
-              var _cdist = Math.sqrt(_dcx * _dcx + _dcy * _dcy);
-              if (_cdist > 0.001) {
-                var _cross = Math.abs(_acA * _dcy - _asA * _dcx) / _cdist;
-                if (_cross > 0.55) continue;
-              }
-              clusters[_ba] = clusters[_ba].concat(clusters[_bb]);
-              clusters.splice(_bb, 1);
-              _bChanged = true;
-            }
-          }
-        }
-      }
+      var _outerHalfWidth = 0.10;
+      var _coreHalfWidth = 0.025;
+      // Roughly 12 miles: enough to join nearby reports from one cell, but deliberately
+      // too short to chain separate tracks together across report gaps.
+      var clusters = _clusterByDistance(seeds, 0.18);
 
       clusters.forEach(function(cluster, clusterIndex) {
         if (!cluster.length) return;
@@ -29621,19 +29495,6 @@ function mapsGoogleReady() {
           if (axCos < 0) { axCos = -axCos; axSin = -axSin; }
         }
 
-        // MRMS-heavy: skip tiny isolated vertical clusters (N-S MRMS cell extent, not storm tracks).
-        // Gated to very small point counts only — a genuine smaller/detached corridor segment
-        // (e.g. a short IA/NE/KS-style track) can also be narrow EW with more north-south lean,
-        // so requiring few points keeps this catching scan-line artifacts without dropping real data.
-        if (_mrmsHeavy && n <= 3) {
-          var _ewSp = 0, _nsSp = 0;
-          cluster.forEach(function(p) {
-            _ewSp = Math.max(_ewSp, Math.abs(p.lon - cx));
-            _nsSp = Math.max(_nsSp, Math.abs(p.lat - cy));
-          });
-          if (_ewSp * 2 < 0.08 && _nsSp > _ewSp) return;
-        }
-
         // Sort cluster along axis, deduplicate to clean centerline (min 0.010° gap)
         var sorted = cluster.slice().sort(function(a, b) {
           return ((a.lat - cy)*axSin + (a.lon - cx)*axCos) -
@@ -29655,16 +29516,9 @@ function mapsGoogleReady() {
             { lat: cl[0].lat + ext*axSin, lon: cl[0].lon + ext*axCos, hail_in: cl[0].hail_in }
           ];
         }
-        // MRMS-heavy: smooth centerline to remove MRMS grid zig-zags before buffering.
-        if (_mrmsHeavy && cl.length > 2) {
-          cl = _smoothCenterlinePts(cl, 6);
-        }
-
-        // Outer pale-yellow corridor: 0.20° half-width for MRMS-heavy (≈14 mi), 0.10° otherwise.
+        // Outer pale-yellow corridor around the local ground-report cluster.
         var oc = swathSeverityColor(0.5);
-        var outerRing = _mrmsHeavy
-          ? _bufferPolylineTapered(cl, _outerHalfWidth, 0.38, 0.028)
-          : _bufferPolyline(cl, _outerHalfWidth);
+        var outerRing = _bufferPolyline(cl, _outerHalfWidth);
         if (outerRing && outerRing.length >= 3) {
           var outerPoly = mapsCreateProductionGoogleOverlay('Polygon', {
             paths: outerRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
@@ -29685,7 +29539,7 @@ function mapsGoogleReady() {
           mapsState.swathPolygons[dateStr].push(outerPoly);
         }
 
-        // Orange core corridor (1.5"+ seeds only), z=305: visible narrow ribbon above mrms_mesh
+        // Orange core corridor (1.0"+ seeds only), z=305: visible narrow ribbon above mrms_mesh
         var coreSeedsRaw = cluster.filter(function(p) { return (p.hail_in || 0) >= 1.0; });
         if (coreSeedsRaw.length >= 1) {
           // Sort/deduplicate 1.5"+ points; fall back to cluster axis for isolated reports
@@ -29709,15 +29563,9 @@ function mapsGoogleReady() {
               { lat: cl15[0].lat + ext2*axSin, lon: cl15[0].lon + ext2*axCos }
             ];
           }
-          // MRMS-heavy: smooth core centerline to remove grid zig-zags.
-          if (_mrmsHeavy && cl15.length > 2) {
-            cl15 = _smoothCenterlinePts(cl15, 6);
-          }
-          // Half-width: 0.06° (≈4 mi) for MRMS-heavy — visible filled ribbon; 0.025° otherwise.
+          // Narrow local core around verified hail reports.
           var cc = swathSeverityColor(1.75);
-          var coreRing = _mrmsHeavy
-            ? _bufferPolylineTapered(cl15, _coreHalfWidth, 0.30, 0.012)
-            : _bufferPolyline(cl15, _coreHalfWidth);
+          var coreRing = _bufferPolyline(cl15, _coreHalfWidth);
           if (coreRing && coreRing.length >= 3) {
             var corePoly = mapsCreateProductionGoogleOverlay('Polygon', {
               paths: coreRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
