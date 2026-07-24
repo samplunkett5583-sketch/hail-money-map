@@ -29447,6 +29447,14 @@ function mapsGoogleReady() {
       if (!map) return;
       mapsState.swathPolygons[dateStr] = mapsState.swathPolygons[dateStr] || [];
 
+      // Canonical NEXRAD tracks already provide full multi-track geometry and are
+      // report-calibrated during saved-polygon drawing. Extra ribbons would duplicate
+      // that coverage or reconnect independent tracks.
+      var hasCanonicalTrack = (rows || []).some(function(r) {
+        return String(r && r.source_product || '').toLowerCase() === 'iem_nexrad_track';
+      });
+      if (hasCanonicalTrack) return;
+
       // Gather only actual ground reports. Mixing storm-polygon centroids into this point
       // cloud caused chain-link clustering to invent sharp connectors between parallel tracks.
       var seeds = [];
@@ -32376,14 +32384,23 @@ function mapsGoogleReady() {
       mapsState.hailShadowSummaryByDate[mapsNormalizeDate(dateStr) || 'unknown'] = summary;
       if (mapsIsSwathDebugMode()) console.info('[HAIL-SHADOW-SUMMARY]', mapsNormalizeDate(dateStr), summary);
 
-      // Swaths generated from official hail reports are the customer-facing source
-      // whenever they exist. Do not layer unreviewed radar thresholds over them:
-      // that can turn a locally reported 1.00-inch storm into a false 2.00-inch claim.
+      // Ground reports control magnitude, but they are isolated points and cannot supply
+      // the full storm-track footprint. When a NEXRAD track is available, use its geometry;
+      // mapsDrawSavedStormPolygonForDate calibrates each band against reports inside it.
       var reportCalibratedRows = hailRows.filter(function (row) {
         var source = String(row && row.source || '').toLowerCase();
         var product = String(row && row.source_product || '').toLowerCase();
         return source === 'swath_render_saved' || product === 'rule_v1_bands';
       });
+      var nexradTrackRows = hailRows.filter(function (row) {
+        var source = String(row && row.source || '').toLowerCase();
+        var product = String(row && row.source_product || '').toLowerCase();
+        return source === 'nexrad_iem' && product === 'iem_nexrad_track';
+      });
+      if (reportCalibratedRows.length && nexradTrackRows.length) {
+        summary.displayMode = 'radar-geometry-report-calibrated';
+        return nexradTrackRows;
+      }
       if (reportCalibratedRows.length) {
         summary.displayMode = 'official-report-calibrated';
         return reportCalibratedRows;
