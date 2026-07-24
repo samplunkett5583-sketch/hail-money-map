@@ -131,18 +131,55 @@ async function getDates() {
   }
 
   const days = Number(args.days);
-  let query = supabase
-    .from("storm_event_dates")
-    .select("event_date")
-    .order("event_date", { ascending: false });
-  if (Number.isFinite(days) && days > 0) {
-    const cutoff = new Date();
-    cutoff.setUTCDate(cutoff.getUTCDate() - Math.ceil(days));
-    query = query.gte("event_date", cutoff.toISOString().slice(0, 10));
+  const cutoff = Number.isFinite(days) && days > 0
+    ? (() => {
+        const value = new Date();
+        value.setUTCDate(value.getUTCDate() - Math.ceil(days));
+        return value.toISOString().slice(0, 10);
+      })()
+    : "";
+
+  const rpcResult = await supabase.rpc("get_storm_distinct_dates");
+  if (!rpcResult.error && Array.isArray(rpcResult.data)) {
+    const dates = [...new Set(
+      rpcResult.data
+        .map((row) => asDate(row.event_date))
+        .filter((date) => validDate(date) && (!cutoff || date >= cutoff)),
+    )].sort().reverse();
+    return dates.slice(offset, offset + limit);
   }
-  const { data, error } = await query.range(offset, offset + limit - 1);
-  if (error) throw new Error(`Could not load storm dates: ${error.message}`);
-  return [...new Set((data || []).map((row) => asDate(row.event_date)).filter(validDate))];
+
+  // Older deployments may not have the consolidated RPC. Build the date list
+  // from source tables instead of depending on an optional database view.
+  const tables = [
+    "hail_lsr_raw",
+    "storm_lsr_raw",
+    "storm_polygons",
+    "hail_radar_polygons",
+  ];
+  const found = new Set();
+  const errors = [];
+  for (const table of tables) {
+    let query = supabase
+      .from(table)
+      .select("event_date")
+      .order("event_date", { ascending: false });
+    if (cutoff) query = query.gte("event_date", cutoff);
+    const result = await query.range(0, 4999);
+    if (result.error) {
+      errors.push(`${table}: ${result.error.message}`);
+      continue;
+    }
+    for (const row of result.data || []) {
+      const date = asDate(row.event_date);
+      if (validDate(date)) found.add(date);
+    }
+  }
+  const dates = [...found].sort().reverse();
+  if (dates.length === 0 && errors.length === tables.length) {
+    throw new Error(`Could not load storm dates: ${errors.join("; ")}`);
+  }
+  return dates.slice(offset, offset + limit);
 }
 
 async function getAnchors(date) {
