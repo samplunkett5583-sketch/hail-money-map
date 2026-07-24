@@ -275,6 +275,14 @@ async function searchGoogle(date, region) {
       published: String(result.date || ""),
     }));
   const citations = candidates.map(({ url, title }) => ({ url, title }));
+  if (date === "2026-05-03") {
+    console.log(`[${date}] search query: ${query}`);
+    for (const candidate of candidates.slice(0, 8)) {
+      console.log(
+        `[${date}] result ${candidate.index}: ${candidate.title} | ${candidate.snippet}`,
+      );
+    }
+  }
   if (candidates.length === 0) return { reports: [], citations };
 
   const regionDescription = [
