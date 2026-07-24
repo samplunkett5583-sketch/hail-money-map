@@ -29447,13 +29447,11 @@ function mapsGoogleReady() {
       if (!map) return;
       mapsState.swathPolygons[dateStr] = mapsState.swathPolygons[dateStr] || [];
 
-      // Canonical NEXRAD tracks already provide full multi-track geometry and are
-      // report-calibrated during saved-polygon drawing. Extra ribbons would duplicate
-      // that coverage or reconnect independent tracks.
+      // Canonical NEXRAD tracks provide the yellow footprint. Ground-report ribbons
+      // add only time-ordered verified cores that radar geometry can miss.
       var hasCanonicalTrack = (rows || []).some(function(r) {
         return String(r && r.source_product || '').toLowerCase() === 'iem_nexrad_track';
       });
-      if (hasCanonicalTrack) return;
 
       // Gather only actual ground reports. Mixing storm-polygon centroids into this point
       // cloud caused chain-link clustering to invent sharp connectors between parallel tracks.
@@ -29462,16 +29460,71 @@ function mapsGoogleReady() {
         var la = +p.lat, lo = +(p.lon || p.lng);
         if (!isFinite(la) || !isFinite(lo)) return;
         var h = +(p.hail_in || 0) || 1.0; // NWS-verified hail: treat unrecorded size as 1.0"
-        seeds.push({ lat: la, lon: lo, hail_in: h, sourceId:p.id || p.report_id || p.source_record_id || null });
+        var eventMs = Date.parse(p.event_time || p.eventTime || p.datetime || '');
+        seeds.push({
+          lat: la,
+          lon: lo,
+          hail_in: h,
+          eventMs: isFinite(eventMs) ? eventMs : null,
+          sourceId:p.id || p.report_id || p.source_record_id || null
+        });
       });
 
       if (!seeds.length) return;
 
       var _outerHalfWidth = 0.10;
       var _coreHalfWidth = 0.025;
-      // Roughly 12 miles: enough to join nearby reports from one cell, but deliberately
-      // too short to chain separate tracks together across report gaps.
-      var clusters = _clusterByDistance(seeds, 0.18);
+      var clusters;
+      if (hasCanonicalTrack) {
+        // Connect strong ground reports only when their timing and motion are physically
+        // consistent. This joins a continuing west-to-east cell across a report gap
+        // (for example Troy → Alton) without joining intersecting or parallel storms.
+        var strongTimed = seeds.filter(function(p) {
+          return p.hail_in >= 1.0 && p.eventMs != null;
+        }).sort(function(a, b) { return a.eventMs - b.eventMs; });
+        var neighbors = strongTimed.map(function() { return []; });
+        for (var ti = 0; ti < strongTimed.length; ti++) {
+          for (var tj = ti + 1; tj < strongTimed.length; tj++) {
+            var a = strongTimed[ti], b = strongTimed[tj];
+            var minutes = (b.eventMs - a.eventMs) / 60000;
+            if (minutes > 75) break;
+            if (minutes <= 0) continue;
+            var dLat = b.lat - a.lat;
+            var dLon = b.lon - a.lon;
+            // These report-to-report cores follow the prevailing eastward storm motion.
+            if (dLon < -0.05) continue;
+            if (Math.abs(dLat) > 0.20 + Math.abs(dLon) * 0.15) continue;
+            var meanLat = (a.lat + b.lat) / 2 * Math.PI / 180;
+            var miles = 69 * Math.sqrt(dLat * dLat + Math.pow(dLon * Math.cos(meanLat), 2));
+            var speedMph = miles / (minutes / 60);
+            if (speedMph > 100) continue;
+            neighbors[ti].push(tj);
+            neighbors[tj].push(ti);
+          }
+        }
+        var seen = new Array(strongTimed.length);
+        clusters = [];
+        for (var si = 0; si < strongTimed.length; si++) {
+          if (seen[si]) continue;
+          var stack = [si], component = [];
+          seen[si] = true;
+          while (stack.length) {
+            var current = stack.pop();
+            component.push(strongTimed[current]);
+            neighbors[current].forEach(function(nextIndex) {
+              if (!seen[nextIndex]) {
+                seen[nextIndex] = true;
+                stack.push(nextIndex);
+              }
+            });
+          }
+          if (component.length >= 2) clusters.push(component);
+        }
+      } else {
+        // Roughly 12 miles: enough to join nearby reports from one cell, but deliberately
+        // too short to chain separate tracks together across report gaps.
+        clusters = _clusterByDistance(seeds, 0.18);
+      }
 
       clusters.forEach(function(cluster, clusterIndex) {
         if (!cluster.length) return;
@@ -33568,7 +33621,16 @@ function mapsGoogleReady() {
         }
         var isEnvelope = (row.source_product || '') === 'nexrad_iem_envelope';
         var effectiveBand = isEnvelope ? 0.5 : Math.max(bandMin, 0.5);
-        var rgba = isTornado ? tornadoSeverityColor(effectiveBand) : (isWind ? windSeverityColor(effectiveBand) : swathSeverityColor(effectiveBand));
+        // HailRecon-style NEXRAD cores begin at the 1-inch radar band. Keep the
+        // underlying value at 1.00" for labels/clicks, but render that nested core
+        // amber so it remains distinct from the pale-yellow outer footprint.
+        var visualBand = (!isWind && !isTornado &&
+          rowSrcLower === 'nexrad_iem' &&
+          String(row.source_product || '').toLowerCase() === 'iem_nexrad_track' &&
+          effectiveBand >= 1.0 && effectiveBand < 1.25)
+          ? 1.5
+          : effectiveBand;
+        var rgba = isTornado ? tornadoSeverityColor(effectiveBand) : (isWind ? windSeverityColor(effectiveBand) : swathSeverityColor(visualBand));
         var segFill   = 'rgb(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ')';
         if (_verboseDateLogs) {
           hmDebugLog('[SWATH-DRAW] id=' + (row.id || ri) +
