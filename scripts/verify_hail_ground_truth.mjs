@@ -226,14 +226,13 @@ function buildRegions(anchors) {
 
 async function searchGoogle(date, region) {
   const place = [
-    ...region.counties.map((county) => `"${county}"`),
+    ...region.counties.map((county) => `${county} County`),
     ...region.states,
   ].filter(Boolean).join(" ");
   const query = [
-    `"${date}"`,
+    date,
     place,
-    'hail ("inch" OR "inches" OR "quarter" OR "golf ball" OR "baseball" OR "softball")',
-    "(spotter OR NWS OR NOAA OR storm report OR emergency management OR local news)",
+    "hail inches spotter storm report",
   ].filter(Boolean).join(" ");
 
   const searchResponse = await fetch("https://google.serper.dev/search", {
