@@ -5,13 +5,11 @@ import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !GEMINI_API_KEY || !SERPER_API_KEY) {
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SERPER_API_KEY) {
   console.error(
-    "Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY, or SERPER_API_KEY",
+    "Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or SERPER_API_KEY",
   );
   process.exit(1);
 }
@@ -110,21 +108,6 @@ function sourceConfidence(report) {
   if (kind === "local_news" && report.explicit_measurement === true) return 0.82;
   if (report.explicit_measurement === true && corroboration >= 2) return 0.80;
   return 0.55;
-}
-
-function parseJson(text) {
-  const cleaned = text
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const start = cleaned.indexOf("{");
-    const end = cleaned.lastIndexOf("}");
-    if (start >= 0 && end > start) return JSON.parse(cleaned.slice(start, end + 1));
-    throw new Error("Hail evidence response did not contain valid JSON");
-  }
 }
 
 const HAIL_SIZE_WORDS = {
@@ -410,133 +393,12 @@ async function searchGoogle(date, region) {
       published: String(result.date || ""),
     }));
   const citations = candidates.map(({ url, title }) => ({ url, title }));
-  if (date === "2026-05-03") {
-    console.log(`[${date}] search query: ${query}`);
-    for (const candidate of candidates.slice(0, 8)) {
-      console.log(
-        `[${date}] result ${candidate.index}: ${candidate.title} | ${candidate.snippet}`,
-      );
-    }
-  }
   if (candidates.length === 0) return { reports: [], citations };
   const directReports = directSearchReports(date, humanDate, region, candidates);
   if (directReports.length > 0) {
     console.log(`[${date}] extracted ${directReports.length} explicit Google result report(s)`);
-    return { reports: directReports, citations };
   }
-
-  const regionDescription = [
-    region.locations.length
-      ? `counties ${region.locations.map((location) =>
-        location.city
-          ? `${location.city}, ${location.county} County, ${stateName(location.state)}`
-          : `${location.county} County, ${stateName(location.state)}`
-      ).join("; ")}`
-      : "",
-    !region.locations.length && region.states.length
-      ? `states ${region.states.map(stateName).join(", ")}`
-      : "",
-    `near ${region.lat.toFixed(3)}, ${region.lon.toFixed(3)}`,
-  ].filter(Boolean).join("; ");
-  const prompt = `
-Review the supplied Google Search results for ground-observed hail reports on
-${date} in this region: ${regionDescription}.
-The current database maximum is ${region.existingMax.toFixed(2)} inches.
-
-Do not use radar-estimated hail size as a ground observation. Do not copy a
-forecast, warning threshold, or generic statement. Do not infer a size from
-damage. The source must explicitly state the observed hail size and location.
-Return only reports for ${date}. Deduplicate the same observation. Use only the
-information in the supplied results. Never invent a URL, measurement, date,
-location, coordinates, or source. If coordinates are not present, return null
-for lat and lon.
-
-Convert an explicitly reported standard hail-size description using this table:
-quarter=1.00, half dollar=1.25, ping pong=1.50, golf ball=1.75,
-hen egg=2.00, tennis ball=2.50, baseball=2.75, tea cup=3.00,
-softball=4.00, grapefruit=4.50 inches. This conversion is allowed only when the
-result explicitly says that description was observed or reported.
-
-Google Search results:
-${JSON.stringify(candidates, null, 2)}
-
-Return JSON only:
-{
-  "reports": [{
-    "event_date": "YYYY-MM-DD",
-    "event_time_utc": "ISO timestamp or null",
-    "hail_inches": 1.75,
-    "city": "city or null",
-    "state": "2-letter state",
-    "county": "county or null",
-    "lat": "number or null",
-    "lon": "number or null",
-    "source_result_index": 1,
-    "source_kind": "nws_noaa|trained_spotter|emergency_management|law_enforcement|local_news|other",
-    "explicit_measurement": true,
-    "corroborating_sources": 1,
-    "observation_text": "20 words or fewer stating the evidence"
-  }]
-}
-If no qualifying observation is found, return {"reports":[]}.
-`.trim();
-
-  let response;
-  let body = {};
-  for (let attempt = 1; attempt <= 4; attempt += 1) {
-    response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "x-goog-api-key": GEMINI_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0.1,
-          },
-        }),
-      },
-    );
-    body = await response.json().catch(() => ({}));
-    if (response.ok) break;
-    const retryable = response.status === 429 || response.status === 503;
-    if (!retryable || attempt === 4) break;
-    const delay = 2000 * (2 ** (attempt - 1));
-    console.warn(
-      `[${date}] Gemini ${response.status}; retrying evidence review in ${delay / 1000}s (${attempt}/4)`,
-    );
-    await sleep(delay);
-  }
-  if (!response.ok) {
-    console.warn(
-      `[${date}] Gemini evidence review unavailable (${response.status}); continuing with direct Google result evidence`,
-    );
-    return { reports: [], citations };
-  }
-  const text = (body?.candidates?.[0]?.content?.parts || [])
-    .map((part) => part?.text || "")
-    .join("\n")
-    .trim();
-  const parsed = parseJson(text);
-  const reports = (Array.isArray(parsed?.reports) ? parsed.reports : [])
-    .map((report) => {
-      const source = candidates[Number(report.source_result_index) - 1];
-      if (!source) return null;
-      return {
-        ...report,
-        source_url: source.url,
-        source_title: source.title,
-      };
-    })
-    .filter(Boolean);
-  return {
-    reports,
-    citations,
-  };
+  return { reports: directReports, citations };
 }
 
 async function addCoordinates(report) {
