@@ -386,24 +386,36 @@ Return JSON only:
 If no qualifying observation is found, return {"reports":[]}.
 `.trim();
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-    {
-      method: "POST",
-      headers: {
-        "x-goog-api-key": GEMINI_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.1,
+  let response;
+  let body = {};
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "x-goog-api-key": GEMINI_API_KEY,
+          "Content-Type": "application/json",
         },
-      }),
-    },
-  );
-  const body = await response.json().catch(() => ({}));
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.1,
+          },
+        }),
+      },
+    );
+    body = await response.json().catch(() => ({}));
+    if (response.ok) break;
+    const retryable = response.status === 429 || response.status === 503;
+    if (!retryable || attempt === 4) break;
+    const delay = 2000 * (2 ** (attempt - 1));
+    console.warn(
+      `[${date}] Gemini ${response.status}; retrying evidence review in ${delay / 1000}s (${attempt}/4)`,
+    );
+    await sleep(delay);
+  }
   if (!response.ok) {
     throw new Error(`Gemini evidence review ${response.status}: ${JSON.stringify(body).slice(0, 500)}`);
   }
