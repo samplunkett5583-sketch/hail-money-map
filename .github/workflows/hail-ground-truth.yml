@@ -10,7 +10,7 @@ on:
       - "scripts/verify_hail_ground_truth.mjs"
       - "supabase/migrations/20260723_create_hail_ground_truth.sql"
   schedule:
-    - cron: "17 */3 * * *"
+    - cron: "17 6 * * *"
   workflow_dispatch:
     inputs:
       scope:
