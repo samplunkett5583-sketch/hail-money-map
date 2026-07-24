@@ -6,10 +6,13 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+const SERPER_API_KEY = process.env.SERPER_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !GEMINI_API_KEY) {
-  console.error("Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or GEMINI_API_KEY");
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !GEMINI_API_KEY || !SERPER_API_KEY) {
+  console.error(
+    "Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY, or SERPER_API_KEY",
+  );
   process.exit(1);
 }
 
@@ -88,26 +91,6 @@ function sourceConfidence(report) {
   return 0.55;
 }
 
-function extractInteraction(response) {
-  const texts = [];
-  const citations = [];
-  for (const step of response?.steps || []) {
-    if (step?.type !== "model_output") continue;
-    for (const block of step.content || []) {
-      if (block?.type === "text" && block.text) texts.push(block.text);
-      for (const annotation of block?.annotations || []) {
-        if (annotation?.type === "url_citation" && annotation.url) {
-          citations.push({
-            url: annotation.url,
-            title: annotation.title || "",
-          });
-        }
-      }
-    }
-  }
-  return { text: texts.join("\n").trim(), citations };
-}
-
 function parseJson(text) {
   const cleaned = text
     .replace(/^```(?:json)?\s*/i, "")
@@ -119,7 +102,7 @@ function parseJson(text) {
     const start = cleaned.indexOf("{");
     const end = cleaned.lastIndexOf("}");
     if (start >= 0 && end > start) return JSON.parse(cleaned.slice(start, end + 1));
-    throw new Error("Google-grounded response did not contain valid JSON");
+    throw new Error("Hail evidence response did not contain valid JSON");
   }
 }
 
@@ -243,23 +226,72 @@ function buildRegions(anchors) {
 
 async function searchGoogle(date, region) {
   const place = [
+    ...region.counties.map((county) => `"${county}"`),
+    ...region.states,
+  ].filter(Boolean).join(" ");
+  const query = [
+    `"${date}"`,
+    place,
+    'hail ("inch" OR "inches" OR "quarter" OR "golf ball" OR "baseball" OR "softball")',
+    "(spotter OR NWS OR NOAA OR storm report OR emergency management OR local news)",
+  ].filter(Boolean).join(" ");
+
+  const searchResponse = await fetch("https://google.serper.dev/search", {
+    method: "POST",
+    headers: {
+      "X-API-KEY": SERPER_API_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      q: query,
+      gl: "us",
+      hl: "en",
+      num: 20,
+    }),
+  });
+  const searchBody = await searchResponse.json().catch(() => ({}));
+  if (!searchResponse.ok) {
+    throw new Error(
+      `Google Search provider ${searchResponse.status}: ${JSON.stringify(searchBody).slice(0, 500)}`,
+    );
+  }
+  const candidates = [...(searchBody.organic || []), ...(searchBody.news || [])]
+    .filter((result) =>
+      typeof result?.link === "string" &&
+      result.link.startsWith("https://") &&
+      (result.title || result.snippet)
+    )
+    .slice(0, 20)
+    .map((result, index) => ({
+      index: index + 1,
+      title: String(result.title || "").slice(0, 300),
+      url: result.link,
+      snippet: String(result.snippet || "").slice(0, 1000),
+      published: String(result.date || ""),
+    }));
+  const citations = candidates.map(({ url, title }) => ({ url, title }));
+  if (candidates.length === 0) return { reports: [], citations };
+
+  const regionDescription = [
     region.states.length ? `states ${region.states.join(", ")}` : "",
     region.counties.length ? `counties ${region.counties.join(", ")}` : "",
     `near ${region.lat.toFixed(3)}, ${region.lon.toFixed(3)}`,
   ].filter(Boolean).join("; ");
   const prompt = `
-Find ground-observed hail reports for the calendar date ${date} in this region: ${place}.
+Review the supplied Google Search results for ground-observed hail reports on
+${date} in this region: ${regionDescription}.
 The current database maximum is ${region.existingMax.toFixed(2)} inches.
-
-Use Google Search. Look for explicit hailstone measurements from NWS/NOAA local
-storm reports, trained spotters, emergency management, law enforcement, public
-officials, and reputable local news. Search especially for larger measured hail
-that may be missing from the NOAA rows already in the database.
 
 Do not use radar-estimated hail size as a ground observation. Do not copy a
 forecast, warning threshold, or generic statement. Do not infer a size from
 damage. The source must explicitly state the observed hail size and location.
-Return only reports for ${date}. Deduplicate the same observation.
+Return only reports for ${date}. Deduplicate the same observation. Use only the
+information in the supplied results. Never invent a URL, measurement, date,
+location, coordinates, or source. If coordinates are not present, return null
+for lat and lon.
+
+Google Search results:
+${JSON.stringify(candidates, null, 2)}
 
 Return JSON only:
 {
@@ -270,10 +302,9 @@ Return JSON only:
     "city": "city or null",
     "state": "2-letter state",
     "county": "county or null",
-    "lat": 38.0,
-    "lon": -90.0,
-    "source_url": "direct supporting page URL",
-    "source_title": "page title",
+    "lat": "number or null",
+    "lon": "number or null",
+    "source_result_index": 1,
     "source_kind": "nws_noaa|trained_spotter|emergency_management|law_enforcement|local_news|other",
     "explicit_measurement": true,
     "corroborating_sources": 1,
@@ -284,7 +315,7 @@ If no qualifying observation is found, return {"reports":[]}.
 `.trim();
 
   const response = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/interactions",
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
     {
       method: "POST",
       headers: {
@@ -292,21 +323,67 @@ If no qualifying observation is found, return {"reports":[]}.
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: GEMINI_MODEL,
-        input: prompt,
-        tools: [{ type: "google_search" }],
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.1,
+        },
       }),
     },
   );
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(`Gemini Google Search ${response.status}: ${JSON.stringify(body).slice(0, 500)}`);
+    throw new Error(`Gemini evidence review ${response.status}: ${JSON.stringify(body).slice(0, 500)}`);
   }
-  const grounded = extractInteraction(body);
-  const parsed = parseJson(grounded.text);
+  const text = (body?.candidates?.[0]?.content?.parts || [])
+    .map((part) => part?.text || "")
+    .join("\n")
+    .trim();
+  const parsed = parseJson(text);
+  const reports = (Array.isArray(parsed?.reports) ? parsed.reports : [])
+    .map((report) => {
+      const source = candidates[Number(report.source_result_index) - 1];
+      if (!source) return null;
+      return {
+        ...report,
+        source_url: source.url,
+        source_title: source.title,
+      };
+    })
+    .filter(Boolean);
   return {
-    reports: Array.isArray(parsed?.reports) ? parsed.reports : [],
-    citations: grounded.citations,
+    reports,
+    citations,
+  };
+}
+
+async function addCoordinates(report) {
+  const lat = Number(report.lat);
+  const lon = Number(report.lon);
+  if (Number.isFinite(lat) && Number.isFinite(lon)) return report;
+  const location = [
+    report.city,
+    report.county ? `${report.county} County` : "",
+    report.state,
+    "USA",
+  ].filter(Boolean).join(", ");
+  if (!location || !report.state) return report;
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=us&limit=1&q=${encodeURIComponent(location)}`,
+    {
+      headers: {
+        "User-Agent": "HailMoneyMap/1.0 (hail-ground-truth-verification)",
+      },
+    },
+  );
+  if (!response.ok) return report;
+  const results = await response.json().catch(() => []);
+  const match = Array.isArray(results) ? results[0] : null;
+  if (!match) return report;
+  return {
+    ...report,
+    lat: Number(match.lat),
+    lon: Number(match.lon),
   };
 }
 
@@ -472,11 +549,13 @@ async function processDate(date) {
 
     const evidence = [];
     for (const [index, region] of regions.entries()) {
-      console.log(`[${date}] Google-grounded search ${index + 1}/${regions.length} near ${region.lat.toFixed(2)},${region.lon.toFixed(2)}`);
+      console.log(`[${date}] Google result search ${index + 1}/${regions.length} near ${region.lat.toFixed(2)},${region.lon.toFixed(2)}`);
       const result = await searchGoogle(date, region);
       for (const report of result.reports) {
-        const normalized = normalizeEvidence(date, report, region, result.citations);
+        const located = await addCoordinates(report);
+        const normalized = normalizeEvidence(date, located, region, result.citations);
         if (normalized) evidence.push(normalized);
+        if (located !== report) await sleep(1100);
       }
       if (index + 1 < regions.length) await sleep(500);
     }
