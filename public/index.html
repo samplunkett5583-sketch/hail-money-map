@@ -28889,17 +28889,16 @@ function mapsGoogleReady() {
     // ── Severity → color (hail: pale-yellow → orange → red → magenta/purple) ──
     // Nested-swath ramp matches HailTrace: outer/light=yellow, inner/core=purple
     function swathSeverityColor(hailIn) {
-      // Severity ramp: low end (pale yellow/yellow/gold) uses a pale HailRecon-style
-      // yellow hue (not dark gold/brown) but at a higher opacity so it stays clearly
-      // visible at 100%; orange/red/purple keep their existing stronger hues.
+      // Severity ramp: use HailTrace-style pale, translucent yellow for the footprint.
+      // Stronger nested bands retain amber/orange so the damaging core stays distinct.
       if (hailIn >= 3.00) return [123,  31, 162, 0.65]; // #7b1fa2 purple
       if (hailIn >= 2.50) return [179,  38,  31, 0.62]; // #b3261f deep red
       if (hailIn >= 2.00) return [224,  57,  44, 0.60]; // #e0392c red-orange
       if (hailIn >= 1.75) return [242, 112,  10, 0.58]; // #f2700a orange
-      if (hailIn >= 1.50) return [255, 195,  77, 0.57]; // #ffc34d amber
-      if (hailIn >= 1.25) return [255, 215,  64, 0.55]; // #ffd740 gold
-      if (hailIn >= 1.00) return [255, 236,  92, 0.50]; // #ffec5c yellow
-      return                     [255, 241, 118, 0.40]; // #fff176 pale yellow (< 1.0")
+      if (hailIn >= 1.50) return [255, 190,  64, 0.54]; // #ffbe40 amber
+      if (hailIn >= 1.25) return [248, 216,  92, 0.42]; // #f8d85c soft gold
+      if (hailIn >= 1.00) return [250, 235, 123, 0.34]; // #faeb7b pale yellow
+      return                     [255, 248, 166, 0.28]; // #fff8a6 palest yellow
     }
 
     function _swathHailOpacityFloor(hailIn) {
@@ -29394,6 +29393,89 @@ function mapsGoogleReady() {
       return left.concat(right);
     }
 
+    // Build a rounded, naturally varying "swab" around a report centerline.
+    // Unlike the legacy constant-width buffer, this has curved joins, soft bulbous
+    // sections and round caps, so verified cores do not look like ruler-drawn bars.
+    function _bufferPolylineSwab(pts, halfWidth) {
+      if (!pts || pts.length < 2) return [];
+      var dense = [];
+      for (var si = 0; si < pts.length - 1; si++) {
+        var a = pts[si], b = pts[si + 1];
+        var segLen = Math.sqrt(Math.pow(b.lon - a.lon, 2) + Math.pow(b.lat - a.lat, 2));
+        var steps = Math.max(2, Math.min(16, Math.ceil(segLen / 0.045)));
+        for (var sj = 0; sj < steps; sj++) {
+          var st = sj / steps;
+          dense.push({
+            lat: a.lat + (b.lat - a.lat) * st,
+            lon: a.lon + (b.lon - a.lon) * st,
+            hail_in: (Number(a.hail_in) || 1) +
+              ((Number(b.hail_in) || 1) - (Number(a.hail_in) || 1)) * st
+          });
+        }
+      }
+      dense.push({
+        lat: pts[pts.length - 1].lat,
+        lon: pts[pts.length - 1].lon,
+        hail_in: Number(pts[pts.length - 1].hail_in) || 1
+      });
+      dense = _smoothCenterlinePts(dense, 2);
+
+      var left = [], right = [], widths = [];
+      for (var i = 0; i < dense.length; i++) {
+        var prev = dense[Math.max(0, i - 1)];
+        var next = dense[Math.min(dense.length - 1, i + 1)];
+        var dx = next.lon - prev.lon;
+        var dy = next.lat - prev.lat;
+        var len = Math.sqrt(dx * dx + dy * dy) || 0.001;
+        var nx = -dy / len;
+        var ny = dx / len;
+        var t = dense.length === 1 ? 0.5 : i / (dense.length - 1);
+        var hailScale = Math.max(0, Math.min(1, ((Number(dense[i].hail_in) || 1) - 1) / 1.25));
+        var organic = 0.72 + 0.22 * Math.sin(Math.PI * t) +
+          0.08 * Math.sin((5 * Math.PI * t) + 0.65) + 0.10 * hailScale;
+        var width = Math.max(halfWidth * 0.52, halfWidth * organic);
+        widths.push(width);
+        left.push({ lat: dense[i].lat + ny * width, lon: dense[i].lon + nx * width });
+        right.push({ lat: dense[i].lat - ny * width, lon: dense[i].lon - nx * width });
+      }
+
+      function capPoints(center, neighbor, width, startAngle, endAngle) {
+        var dx = neighbor.lon - center.lon;
+        var dy = neighbor.lat - center.lat;
+        var len = Math.sqrt(dx * dx + dy * dy) || 0.001;
+        var ux = dx / len, uy = dy / len;
+        var nx = -uy, ny = ux;
+        var cap = [];
+        var capSteps = 8;
+        for (var ci = 1; ci <= capSteps; ci++) {
+          var angle = startAngle + (endAngle - startAngle) * (ci / capSteps);
+          cap.push({
+            lat: center.lat + (uy * Math.cos(angle) + ny * Math.sin(angle)) * width,
+            lon: center.lon + (ux * Math.cos(angle) + nx * Math.sin(angle)) * width
+          });
+        }
+        return cap;
+      }
+
+      var ring = left.slice();
+      var endCenter = dense[dense.length - 1];
+      var endPrev = dense[dense.length - 2];
+      var endForward = {
+        lat: endCenter.lat + (endCenter.lat - endPrev.lat),
+        lon: endCenter.lon + (endCenter.lon - endPrev.lon)
+      };
+      Array.prototype.push.apply(ring, capPoints(
+        endCenter, endForward, widths[widths.length - 1],
+        Math.PI / 2, -Math.PI / 2
+      ));
+      Array.prototype.push.apply(ring, right.slice().reverse());
+      Array.prototype.push.apply(ring, capPoints(
+        dense[0], dense[1], widths[0],
+        -Math.PI / 2, -3 * Math.PI / 2
+      ));
+      return ring;
+    }
+
     function _smoothClosedRing(pts, iters) {
       if (!pts || pts.length < 3) return pts || [];
       var poly = pts.slice();
@@ -29579,7 +29661,7 @@ function mapsGoogleReady() {
         }
         // Outer pale-yellow corridor around the local ground-report cluster.
         var oc = swathSeverityColor(0.5);
-        var outerRing = _bufferPolyline(cl, _outerHalfWidth);
+        var outerRing = _bufferPolylineSwab(cl, _outerHalfWidth);
         if (outerRing && outerRing.length >= 3) {
           var outerPoly = mapsCreateProductionGoogleOverlay('Polygon', {
             paths: outerRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
@@ -29626,7 +29708,7 @@ function mapsGoogleReady() {
           }
           // Narrow local core around verified hail reports.
           var cc = swathSeverityColor(1.75);
-          var coreRing = _bufferPolyline(cl15, _coreHalfWidth);
+          var coreRing = _bufferPolylineSwab(cl15, _coreHalfWidth);
           if (coreRing && coreRing.length >= 3) {
             var corePoly = mapsCreateProductionGoogleOverlay('Polygon', {
               paths: coreRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
@@ -33621,16 +33703,10 @@ function mapsGoogleReady() {
         }
         var isEnvelope = (row.source_product || '') === 'nexrad_iem_envelope';
         var effectiveBand = isEnvelope ? 0.5 : Math.max(bandMin, 0.5);
-        // HailRecon-style NEXRAD cores begin at the 1-inch radar band. Keep the
-        // underlying value at 1.00" for labels/clicks, but render that nested core
-        // amber so it remains distinct from the pale-yellow outer footprint.
-        var visualBand = (!isWind && !isTornado &&
-          rowSrcLower === 'nexrad_iem' &&
-          String(row.source_product || '').toLowerCase() === 'iem_nexrad_track' &&
-          effectiveBand >= 1.0 && effectiveBand < 1.25)
-          ? 1.5
-          : effectiveBand;
-        var rgba = isTornado ? tornadoSeverityColor(effectiveBand) : (isWind ? windSeverityColor(effectiveBand) : swathSeverityColor(visualBand));
+        // Keep the full 1-inch radar footprint pale yellow. Promoting the entire
+        // nested band to amber created broad orange slabs; only the smaller 1.5"+
+        // geometry and the ground-verified organic ribbons should be orange.
+        var rgba = isTornado ? tornadoSeverityColor(effectiveBand) : (isWind ? windSeverityColor(effectiveBand) : swathSeverityColor(effectiveBand));
         var segFill   = 'rgb(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ')';
         if (_verboseDateLogs) {
           hmDebugLog('[SWATH-DRAW] id=' + (row.id || ri) +
