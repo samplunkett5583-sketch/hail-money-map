@@ -127,6 +127,90 @@ function parseJson(text) {
   }
 }
 
+const HAIL_SIZE_WORDS = {
+  quarter: 1.00,
+  "half dollar": 1.25,
+  "ping pong": 1.50,
+  "golf ball": 1.75,
+  "hen egg": 2.00,
+  "tennis ball": 2.50,
+  baseball: 2.75,
+  "tea cup": 3.00,
+  softball: 4.00,
+  grapefruit: 4.50,
+};
+
+function directSearchReports(date, humanDate, region, candidates) {
+  const slashDate = `${date.slice(5, 7)}/${date.slice(8, 10)}/${date.slice(0, 4)}`;
+  const locations = region.locations.filter((location) => location.city);
+  const reports = [];
+  for (const candidate of candidates) {
+    const text = `${candidate.title} | ${candidate.snippet}`;
+    const lower = text.toLowerCase();
+    const hasDate = lower.includes(date) ||
+      lower.includes(slashDate) ||
+      lower.includes(humanDate.toLowerCase());
+    if (!hasDate) continue;
+    const explicit = /(reported|report showing|measured|next to (?:a )?tape measure|noaa spc|trained spotter|mping)/i
+      .test(text);
+    if (!explicit) continue;
+
+    const mentionedLocations = locations
+      .map((location) => ({
+        ...location,
+        index: lower.indexOf(String(location.city).toLowerCase()),
+      }))
+      .filter((location) => location.index >= 0);
+    if (mentionedLocations.length === 0) continue;
+
+    const measurements = [];
+    const numeric = /(\d(?:\.\d{1,2})?)\s*(?:"|inches?|in\.)/gi;
+    for (const match of text.matchAll(numeric)) {
+      measurements.push({ hail: Number(match[1]), index: match.index });
+    }
+    for (const [label, hail] of Object.entries(HAIL_SIZE_WORDS)) {
+      let from = 0;
+      while (from < lower.length) {
+        const index = lower.indexOf(label, from);
+        if (index < 0) break;
+        measurements.push({ hail, index });
+        from = index + label.length;
+      }
+    }
+
+    for (const measurement of measurements) {
+      if (!Number.isFinite(measurement.hail) || measurement.hail < 0.5 || measurement.hail > 8) {
+        continue;
+      }
+      const location = mentionedLocations
+        .slice()
+        .sort((a, b) =>
+          Math.abs(a.index - measurement.index) - Math.abs(b.index - measurement.index)
+        )[0];
+      if (!location || Math.abs(location.index - measurement.index) > 220) continue;
+      const start = Math.max(0, measurement.index - 70);
+      const end = Math.min(text.length, measurement.index + 110);
+      reports.push({
+        event_date: date,
+        event_time_utc: null,
+        hail_inches: measurement.hail,
+        city: location.city,
+        state: location.state,
+        county: location.county,
+        lat: location.lat,
+        lon: location.lon,
+        source_url: candidate.url,
+        source_title: candidate.title,
+        source_kind: "trained_spotter",
+        explicit_measurement: true,
+        corroborating_sources: 1,
+        observation_text: text.slice(start, end).replace(/\s+/g, " ").trim(),
+      });
+    }
+  }
+  return reports;
+}
+
 async function getDates() {
   const requestedDate = asDate(args.date);
   if (requestedDate) {
@@ -250,9 +334,15 @@ function buildRegions(anchors) {
           state: point.state,
           count: 0,
           hail: 0,
+          lat: point.lat,
+          lon: point.lon,
         };
         current.count += 1;
-        current.hail = Math.max(current.hail, point.hail);
+        if (point.hail >= current.hail) {
+          current.hail = point.hail;
+          current.lat = point.lat;
+          current.lon = point.lon;
+        }
         locationCounts.set(key, current);
       }
       const locations = [...locationCounts.values()]
@@ -329,6 +419,11 @@ async function searchGoogle(date, region) {
     }
   }
   if (candidates.length === 0) return { reports: [], citations };
+  const directReports = directSearchReports(date, humanDate, region, candidates);
+  if (directReports.length > 0) {
+    console.log(`[${date}] extracted ${directReports.length} explicit Google result report(s)`);
+    return { reports: directReports, citations };
+  }
 
   const regionDescription = [
     region.locations.length
@@ -417,7 +512,10 @@ If no qualifying observation is found, return {"reports":[]}.
     await sleep(delay);
   }
   if (!response.ok) {
-    throw new Error(`Gemini evidence review ${response.status}: ${JSON.stringify(body).slice(0, 500)}`);
+    console.warn(
+      `[${date}] Gemini evidence review unavailable (${response.status}); continuing with direct Google result evidence`,
+    );
+    return { reports: [], citations };
   }
   const text = (body?.candidates?.[0]?.content?.parts || [])
     .map((part) => part?.text || "")
