@@ -74,8 +74,12 @@ jobs:
       - name: Apply ground-truth database schema
         run: node scripts/apply_hail_ground_truth_migration.mjs
 
+      - name: Test known Alton storm date
+        if: github.event_name == 'push'
+        run: node scripts/verify_hail_ground_truth.mjs --date="2026-05-03" --force=true
+
       - name: Verify recent storm dates
-        if: github.event_name != 'workflow_dispatch' || inputs.scope == 'recent'
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.scope == 'recent')
         run: node scripts/verify_hail_ground_truth.mjs --days=3 --limit=50 --refresh-hours=24
 
       - name: Verify one storm date
