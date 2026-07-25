@@ -29492,7 +29492,7 @@ function mapsGoogleReady() {
         lon: pts[pts.length - 1].lon,
         hail_in: Number(pts[pts.length - 1].hail_in) || 1
       });
-      dense = _smoothCenterlinePts(dense, 2);
+      dense = _smoothCenterlinePts(dense, 1);
 
       var left = [], right = [], widths = [];
       for (var i = 0; i < dense.length; i++) {
@@ -29505,14 +29505,17 @@ function mapsGoogleReady() {
         var ny = dx / len;
         var t = dense.length === 1 ? 0.5 : i / (dense.length - 1);
         var hailScale = Math.max(0, Math.min(1, ((Number(dense[i].hail_in) || 1) - 1) / 1.25));
-        var organic = 0.72 + 0.22 * Math.sin(Math.PI * t) +
-          0.08 * Math.sin((5 * Math.PI * t) + 0.65) +
-          0.055 * Math.sin((15 * Math.PI * t) + 0.20) +
-          0.025 * Math.sin((31 * Math.PI * t) + 1.10) + 0.10 * hailScale;
-        var width = Math.max(halfWidth * 0.52, halfWidth * organic);
+        var organic = 0.62 + 0.28 * Math.sin(Math.PI * t) +
+          0.16 * Math.sin((3 * Math.PI * t) + 0.35) +
+          0.10 * Math.sin((7 * Math.PI * t) + 0.65) +
+          0.040 * Math.sin((15 * Math.PI * t) + 0.20) +
+          0.018 * Math.sin((31 * Math.PI * t) + 1.10) + 0.26 * hailScale;
+        var width = Math.max(halfWidth * 0.38, halfWidth * organic);
         widths.push(width);
-        var leftRipple = 1 + 0.065 * Math.sin((19 * Math.PI * t) + 0.45);
-        var rightRipple = 1 + 0.060 * Math.sin((17 * Math.PI * t) + 2.10);
+        var leftRipple = 1 + 0.070 * Math.sin((19 * Math.PI * t) + 0.45) +
+          0.025 * Math.sin((37 * Math.PI * t) + 1.25);
+        var rightRipple = 1 + 0.065 * Math.sin((17 * Math.PI * t) + 2.10) +
+          0.022 * Math.sin((35 * Math.PI * t) + 0.30);
         left.push({ lat: dense[i].lat + ny * width * leftRipple, lon: dense[i].lon + nx * width * leftRipple });
         right.push({ lat: dense[i].lat - ny * width * rightRipple, lon: dense[i].lon - nx * width * rightRipple });
       }
@@ -29524,7 +29527,7 @@ function mapsGoogleReady() {
         var ux = dx / len, uy = dy / len;
         var nx = -uy, ny = ux;
         var cap = [];
-        var capSteps = 8;
+        var capSteps = 5;
         for (var ci = 1; ci <= capSteps; ci++) {
           var angle = startAngle + (endAngle - startAngle) * (ci / capSteps);
           cap.push({
@@ -29692,8 +29695,8 @@ function mapsGoogleReady() {
         return;
       }
 
-      var _outerHalfWidth = 0.10;
-      var _coreHalfWidth = 0.025;
+      var _outerHalfWidth = 0.18;
+      var _coreHalfWidth = 0.115;
       var clusters;
       if (hasCanonicalTrack) {
         // Connect strong ground reports only when their timing and motion are physically
@@ -29805,8 +29808,8 @@ function mapsGoogleReady() {
             paths: outerRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
             strokeWeight: 0, strokeOpacity: 0,
             fillColor: 'rgb(' + oc[0] + ',' + oc[1] + ',' + oc[2] + ')',
-            fillOpacity: Math.max(oc[3], 0.36),
-            zIndex: 240, clickable: false, map: map
+            fillOpacity: Math.max(oc[3], 0.30),
+            zIndex: 220, clickable: false, map: map
           });
           outerPoly._stormType = 'hail'; outerPoly._dateStr = dateStr; outerPoly._bandMin = 0.5;
           outerPoly._source = 'lsr_derived';
@@ -29816,7 +29819,7 @@ function mapsGoogleReady() {
           outerPoly._sourceRecordIds = clusterSourceIds;
           outerPoly._constructionFunction = '_drawHailCoreRibbons';
           outerPoly._canonicalBbox = ribbonBbox(outerRing);
-          outerPoly._canonicalZIndex = 240;
+          outerPoly._canonicalZIndex = 220;
           mapsState.swathPolygons[dateStr].push(outerPoly);
         }
 
