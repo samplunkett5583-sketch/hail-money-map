@@ -29616,39 +29616,39 @@ function mapsGoogleReady() {
         right.push({ lat: dense[i].lat - ny * width * rightRipple, lon: dense[i].lon - nx * width * rightRipple });
       }
 
-      function capPoints(center, neighbor, width, startAngle, endAngle) {
-        var dx = neighbor.lon - center.lon;
-        var dy = neighbor.lat - center.lat;
-        var len = Math.sqrt(dx * dx + dy * dy) || 0.001;
-        var ux = dx / len, uy = dy / len;
-        var nx = -uy, ny = ux;
-        var cap = [];
-        var capSteps = 7;
-        for (var ci = 1; ci <= capSteps; ci++) {
-          var angle = startAngle + (endAngle - startAngle) * (ci / capSteps);
-          cap.push({
-            lat: center.lat + (uy * Math.cos(angle) + ny * Math.sin(angle)) * width,
-            lon: center.lon + (ux * Math.cos(angle) + nx * Math.sin(angle)) * width
-          });
-        }
-        return cap;
+      // Join each side with a blunt, visibly uneven cross-cut. The old semicircle
+      // made every report swath look machine-rounded even when its sidewalls varied.
+      function handCutPoints(from, to, tangentLat, tangentLon, width, reversePattern) {
+        var len = Math.sqrt(tangentLat * tangentLat + tangentLon * tangentLon) || 0.001;
+        var unitLat = tangentLat / len;
+        var unitLon = tangentLon / len;
+        var offsets = reversePattern
+          ? [-0.16, 0.10, -0.23, 0.17, -0.08]
+          : [0.13, -0.19, 0.08, -0.24, 0.15];
+        return offsets.map(function(offset, index) {
+          var ratio = (index + 1) / (offsets.length + 1);
+          return {
+            lat: from.lat + (to.lat - from.lat) * ratio + unitLat * width * offset,
+            lon: from.lon + (to.lon - from.lon) * ratio + unitLon * width * offset
+          };
+        });
       }
 
       var ring = left.slice();
-      var endCenter = dense[dense.length - 1];
-      var endPrev = dense[dense.length - 2];
-      var endForward = {
-        lat: endCenter.lat + (endCenter.lat - endPrev.lat),
-        lon: endCenter.lon + (endCenter.lon - endPrev.lon)
-      };
-      Array.prototype.push.apply(ring, capPoints(
-        endCenter, endForward, widths[widths.length - 1],
-        Math.PI / 2, -Math.PI / 2
+      var lastIndex = dense.length - 1;
+      var endForwardLat = dense[lastIndex].lat - dense[lastIndex - 1].lat;
+      var endForwardLon = dense[lastIndex].lon - dense[lastIndex - 1].lon;
+      Array.prototype.push.apply(ring, handCutPoints(
+        left[lastIndex], right[lastIndex],
+        endForwardLat, endForwardLon,
+        widths[lastIndex], false
       ));
       Array.prototype.push.apply(ring, right.slice().reverse());
-      Array.prototype.push.apply(ring, capPoints(
-        dense[0], dense[1], widths[0],
-        -Math.PI / 2, -3 * Math.PI / 2
+      Array.prototype.push.apply(ring, handCutPoints(
+        right[0], left[0],
+        dense[0].lat - dense[1].lat,
+        dense[0].lon - dense[1].lon,
+        widths[0], true
       ));
       return ring;
     }
