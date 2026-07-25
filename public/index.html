@@ -26083,6 +26083,50 @@
       return checks;
     };
 
+    function mapsSetHailHoverCursor(isOverSwath) {
+      var overSwath = !!isOverSwath;
+      if (mapsState._hailHoverCursorOverSwath === overSwath) return;
+      mapsState._hailHoverCursorOverSwath = overSwath;
+      var cursor = overSwath ? 'pointer' : 'grab';
+      if (mapsState.map && typeof mapsState.map.setOptions === 'function') {
+        try {
+          mapsState.map.setOptions({
+            draggableCursor: cursor,
+            draggingCursor: 'grabbing'
+          });
+        } catch (_) {}
+      }
+    }
+
+    function mapsAttachHailHoverCoverage(polygon, ring, bandMin, bandMax, displayValue, sourcePriority, zIndex) {
+      if (!polygon || !Array.isArray(ring) || ring.length < 3) return polygon;
+      var coords = ring.map(function(point) {
+        var lat = Number(point && point.lat);
+        var lng = Number(point && (point.lng != null ? point.lng : point.lon));
+        return [lng, lat];
+      }).filter(function(coord) {
+        return isFinite(coord[0]) && isFinite(coord[1]);
+      });
+      if (coords.length < 3) return polygon;
+      var first = coords[0], last = coords[coords.length - 1];
+      if (first[0] !== last[0] || first[1] !== last[1]) coords.push(first.slice());
+      polygon._hailHoverCoverage = true;
+      polygon._canonicalGeometry = { type: 'Polygon', coordinates: [coords] };
+      polygon._canonicalBbox = coords.reduce(function(bbox, coord) {
+        bbox.minLat = Math.min(bbox.minLat, coord[1]);
+        bbox.maxLat = Math.max(bbox.maxLat, coord[1]);
+        bbox.minLng = Math.min(bbox.minLng, coord[0]);
+        bbox.maxLng = Math.max(bbox.maxLng, coord[0]);
+        return bbox;
+      }, { minLat: Infinity, maxLat: -Infinity, minLng: Infinity, maxLng: -Infinity });
+      polygon._canonicalBandMin = Number(bandMin) || 0.5;
+      polygon._canonicalBandMax = Number(bandMax);
+      polygon._canonicalHailDisplayValue = Number(displayValue) || polygon._canonicalBandMin;
+      polygon._sourcePriority = Number.isFinite(Number(sourcePriority)) ? Number(sourcePriority) : 50;
+      polygon._canonicalZIndex = Number.isFinite(Number(zIndex)) ? Number(zIndex) : 0;
+      return polygon;
+    }
+
     function mapsClearHailHoverReadout() {
       if (mapsState._hailHoverRaf) {
         cancelAnimationFrame(mapsState._hailHoverRaf);
@@ -26091,6 +26135,7 @@
       mapsState._hailHoverPendingLatLng = null;
       var readout = document.getElementById('maps-hail-hover-readout');
       if (readout && readout.textContent) readout.textContent = '';
+      mapsSetHailHoverCursor(false);
     }
 
     function mapsClearActiveHailHoverBands() {
@@ -26103,7 +26148,7 @@
       dateStr = mapsNormalizeDate(dateStr);
       var activeMap = mapsState.map;
       var bands = (Array.isArray(polygons) ? polygons : []).filter(function (polygon) {
-        if (!polygon || !polygon._verifiedHailCoverage || polygon._stormType !== 'hail') return false;
+        if (!polygon || (!polygon._verifiedHailCoverage && !polygon._hailHoverCoverage) || polygon._stormType !== 'hail') return false;
         if (!polygon._canonicalGeometry || !Number.isFinite(Number(polygon._canonicalBandMin))) return false;
         if (Number(polygon._canonicalBandMin) <= 0) return false;
         return typeof polygon.getMap !== 'function' || polygon.getMap() === activeMap;
@@ -26186,6 +26231,7 @@
       var text = mapsGetHailHoverTextAt(lat, lng);
       var readout = document.getElementById('maps-hail-hover-readout');
       if (readout) readout.textContent = text;
+      mapsSetHailHoverCursor(!!text);
       return text;
     }
 
@@ -28541,7 +28587,9 @@ function mapsGoogleReady() {
           rotateControl: false,
           clickableIcons: false,
           gestureHandling: 'greedy',
-          scrollwheel: true
+          scrollwheel: true,
+          draggableCursor: 'grab',
+          draggingCursor: 'grabbing'
         });
       });
       App.mapsGoogleMapInstanceCount = Number(App.mapsGoogleMapInstanceCount || 0) + 1;
@@ -29633,6 +29681,7 @@ function mapsGoogleReady() {
           outer._sourceProduct = 'reviewed_swath_outer';
           outer._sourceRowId = 'reviewed-track:' + dateStr + ':' + track.id + ':outer';
           outer._constructionFunction = '_drawReviewedHailDisplayTracks';
+          mapsAttachHailHoverCoverage(outer, outerRing, 0.5, 1.0, 0.5, 1, 241);
           mapsState.swathPolygons[dateStr].push(outer);
         }
         if (Number(track.coreHalfWidth) > 0) {
@@ -29656,6 +29705,15 @@ function mapsGoogleReady() {
             core._sourceProduct = 'reviewed_swath_core';
             core._sourceRowId = 'reviewed-track:' + dateStr + ':' + track.id + ':core';
             core._constructionFunction = '_drawReviewedHailDisplayTracks';
+            mapsAttachHailHoverCoverage(
+              core,
+              coreRing,
+              Number(track.coreHail) || 1.5,
+              Number(track.coreHail) || 1.5,
+              Number(track.coreHail) || 1.5,
+              1,
+              306
+            );
             mapsState.swathPolygons[dateStr].push(core);
           }
         }
@@ -29870,6 +29928,7 @@ function mapsGoogleReady() {
           outerPoly._constructionFunction = '_drawHailCoreRibbons';
           outerPoly._canonicalBbox = ribbonBbox(outerRing);
           outerPoly._canonicalZIndex = 240;
+          mapsAttachHailHoverCoverage(outerPoly, outerRing, 0.5, 1.0, 0.5, 20, 240);
           mapsState.swathPolygons[dateStr].push(outerPoly);
         }
 
@@ -29917,6 +29976,7 @@ function mapsGoogleReady() {
             corePoly._constructionFunction = '_drawHailCoreRibbons';
             corePoly._canonicalBbox = ribbonBbox(coreRing);
             corePoly._canonicalZIndex = 305;
+            mapsAttachHailHoverCoverage(corePoly, coreRing, 1.75, 1.75, 1.75, 20, 305);
             mapsState.swathPolygons[dateStr].push(corePoly);
           }
         }
@@ -30130,6 +30190,7 @@ function mapsGoogleReady() {
             zIndex: 75, clickable: false, map: mapsState.map
           });
           poly._stormType = 'hail'; poly._dateStr = dateStr; poly._bandMin = 0.5;
+          mapsAttachHailHoverCoverage(poly, expanded, 0.5, 1.0, 0.5, 60, 75);
           mapsState.swathPolygons[dateStr].push(poly);
         });
       });
@@ -30220,6 +30281,7 @@ function mapsGoogleReady() {
           zIndex: 70, clickable: false, map: mapsState.map
         });
         poly._stormType = 'hail'; poly._dateStr = dateStr; poly._bandMin = 0.5;
+        mapsAttachHailHoverCoverage(poly, corridorRing, 0.5, 1.0, 0.5, 60, 70);
         mapsState.swathPolygons[dateStr].push(poly);
       });
 
@@ -34093,8 +34155,11 @@ function mapsGoogleReady() {
           && (!mapsAcceptedOnlyFeatureEnabled() ||
               (g.acceptedForCustomerDisplay === true &&
                (g.sourceClassification === 'radar_estimate' ||
-                (g.sourceClassification === 'derived_corridor' && mapsState.showDerivedCorridors === true))))
+               (g.sourceClassification === 'derived_corridor' && mapsState.showDerivedCorridors === true))))
         );
+        // Cursor/readout hit testing follows every visible hail swath, even when a
+        // layer is an estimate rather than accepted property-level verification.
+        _poly._hailHoverCoverage = !!(_isHail && _poly._canonicalGeometry && _poly._canonicalBandMin != null);
         polys.push(_poly);
         _polygonsDrawn++;
         if (g.source === 'nexrad_iem') nexradIemPolygonsDrawn++;
@@ -37789,6 +37854,7 @@ function mapsGoogleReady() {
             // Orange core (z=305) adds narrow visible ribbons where 1.5"+ hail confirmed.
             _drawHailCoreRibbons(dateStr, points, rows);
             mapsApplySwathOpacity(mapsState.swathOpacity != null ? mapsState.swathOpacity : 0.55);
+            mapsSyncActiveHailHoverBands(dateStr, mapsState.swathPolygons[dateStr] || []);
 
             mapsState.lsrPointsByDate[dateStr] = points;
             mapsState.windPointsByDate[dateStr] = windPts;
