@@ -6491,6 +6491,14 @@
       color:#20252a; font-size:12px; font-weight:700; cursor:pointer; user-select:none;
     }
     #page-map .maps-options-check input { width:16px; height:16px; margin:0; accent-color:#2879bd; cursor:pointer; }
+    #page-map .maps-options-layer {
+      display:flex; align-items:center; gap:8px; width:100%; min-height:34px; padding:6px 4px; border:0; background:transparent;
+      color:#20252a; font:700 12px/1.2 inherit; text-align:left; cursor:pointer; user-select:none;
+    }
+    #page-map .maps-options-layer-icon { display:flex; align-items:center; justify-content:center; width:16px; color:#343a40; line-height:1; }
+    #page-map .maps-options-layer-icon svg { width:15px; height:18px; display:block; }
+    #page-map .maps-options-layer[aria-pressed="false"] { color:#7a828a; }
+    #page-map .maps-options-layer[aria-pressed="false"] .maps-options-layer-icon { color:#9aa1a8; }
     #page-map .maps-options-action { width:100%; background:#3d454d; }
     #page-map .maps-options-note { margin-top:8px; color:#64707c; font-size:10px; line-height:1.4; }
     body.map-page-active #page-map .maps-map-area {
@@ -19201,6 +19209,12 @@
                     <input type="checkbox" id="maps-show-hail-spotter-reports" />
                     <span>Show Hail Spotter Reports</span>
                   </label>
+                  <button type="button" id="maps-address-markers-btn" class="maps-options-layer" aria-pressed="true">
+                    <span class="maps-options-layer-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></svg>
+                    </span>
+                    <span>Address Markers</span>
+                  </button>
                   <button type="button" id="maps-fullscreen-btn" class="maps-options-action">Fullscreen map</button>
                   <div class="maps-options-note">Layer, location, campaign, and report controls appear at the right of the map.</div>
                 </div>
@@ -25647,6 +25661,8 @@
       spotterReportMarkersByDate: {}, // dateStr -> verified NWS ground-report markers
       spotterReportDrawGeneration: {},
       showHailSpotterReports: false,
+      campaignAddressMarkers: [],
+      showCampaignAddressMarkers: true,
       aiSwathOverlays: {},       // dateStr -> SwathCanvasOverlay instance (AI-generated)
       hailFieldOverlays: {},     // dateStr -> HailFieldOverlay instance (raster intensity field)
       hailBandPolygons: {},      // dateStr -> google.maps.Polygon[] (hail-size band hulls)
@@ -27465,6 +27481,7 @@
         mapsState.map.setZoom(sharedViewport.zoom);
         setTimeout(function() { _svSetting = false; }, 300);
       }
+      mapsRenderCampaignAddressMarkers();
       mapsMaybeStartMrmsReview();
     }
 
@@ -35596,6 +35613,82 @@ function mapsGoogleReady() {
       }
     }
 
+    function mapsClearCampaignAddressMarkers() {
+      (mapsState.campaignAddressMarkers || []).forEach(function (entry) {
+        try { if (entry.infoWindow) entry.infoWindow.close(); } catch (_) {}
+        try { if (entry.marker) entry.marker.setMap(null); } catch (_) {}
+      });
+      mapsState.campaignAddressMarkers = [];
+    }
+
+    function mapsCampaignAddressMarkerColor(status) {
+      return {
+        notint: '#E53E3E',
+        approved: '#38A169',
+        inspection: '#3182CE',
+        filed: '#9F7AEA',
+        noclaim: '#DD6B20',
+        nothome: '#718096',
+        goback: '#718096',
+        referral: '#718096',
+        note: '#FBBF24'
+      }[status] || '#718096';
+    }
+
+    function mapsRenderCampaignAddressMarkers() {
+      mapsClearCampaignAddressMarkers();
+      if (!mapsState.map || !mapsState.showCampaignAddressMarkers || !window.google || !google.maps) return;
+
+      mapsReadCampaignMarkers().forEach(function (saved) {
+        var lat = Number(saved && saved.lat);
+        var lng = Number(saved && saved.lng);
+        if (!isFinite(lat) || !isFinite(lng)) return;
+
+        var status = String(saved.status || '');
+        var color = mapsCampaignAddressMarkerColor(status);
+        var label = String(saved.label || 'Campaign Address');
+        var address = String(saved.address || '');
+        var marker = new google.maps.Marker({
+          position: { lat: lat, lng: lng },
+          map: mapsState.map,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: color,
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2.5,
+            scale: 10
+          },
+          title: address || label,
+          zIndex: 220
+        });
+        var infoWindow = new google.maps.InfoWindow({
+          content:
+            '<div style="font-family:system-ui;min-width:155px;padding:2px 0;">' +
+              '<strong style="font-size:13px;">' + mapsSpotterEscape(label) + '</strong>' +
+              (address ? '<div style="font-size:11px;color:#666;margin-top:5px;">' + mapsSpotterEscape(address) + '</div>' : '') +
+            '</div>'
+        });
+        marker.addListener('click', function () {
+          (mapsState.campaignAddressMarkers || []).forEach(function (entry) {
+            if (entry.infoWindow !== infoWindow) {
+              try { entry.infoWindow.close(); } catch (_) {}
+            }
+          });
+          infoWindow.open(mapsState.map, marker);
+        });
+        mapsState.campaignAddressMarkers.push({ marker: marker, infoWindow: infoWindow });
+      });
+    }
+
+    function mapsSetCampaignAddressMarkersVisible(show) {
+      mapsState.showCampaignAddressMarkers = !!show;
+      try { localStorage.setItem('hailMoneyShowCampaignAddressMarkers', show ? '1' : '0'); } catch (_) {}
+      mapsRenderCampaignAddressMarkers();
+      var button = document.getElementById('maps-address-markers-btn');
+      if (button) button.setAttribute('aria-pressed', show ? 'true' : 'false');
+    }
+
     function mapsGetTrackedProperties() {
       var seen = {};
       var out = [];
@@ -39095,6 +39188,7 @@ function mapsGoogleReady() {
       var optionsBtn = document.getElementById('maps-options-btn');
       var optionsMenu = document.getElementById('maps-options-menu');
       var spotterReportsCheckbox = document.getElementById('maps-show-hail-spotter-reports');
+      var addressMarkersBtn = document.getElementById('maps-address-markers-btn');
       var searchBtn = document.getElementById('maps-toolbar-search-btn');
       var searchInput = document.getElementById('stormSearchInput');
       var fullscreenBtn = document.getElementById('maps-fullscreen-btn');
@@ -39156,6 +39250,17 @@ function mapsGoogleReady() {
           mapsSetHailSpotterReportsVisible(spotterReportsCheckbox.checked);
         });
         spotterReportsCheckbox.dataset.mapsBindingCount = '1';
+      }
+
+      if (addressMarkersBtn) {
+        var savedAddressMarkerPreference = '1';
+        try { savedAddressMarkerPreference = localStorage.getItem('hailMoneyShowCampaignAddressMarkers') || '1'; } catch (_) {}
+        mapsState.showCampaignAddressMarkers = savedAddressMarkerPreference !== '0';
+        addressMarkersBtn.setAttribute('aria-pressed', mapsState.showCampaignAddressMarkers ? 'true' : 'false');
+        addressMarkersBtn.addEventListener('click', function () {
+          mapsSetCampaignAddressMarkersVisible(!mapsState.showCampaignAddressMarkers);
+        });
+        addressMarkersBtn.dataset.mapsBindingCount = '1';
       }
 
       if (searchBtn && searchInput) {
