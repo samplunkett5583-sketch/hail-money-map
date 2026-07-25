@@ -1,0 +1,37 @@
+name: Apply hail hover size fix once
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - .github/workflows/apply-hail-hover-size-fix-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: pr-43-storm-panel-style
+          fetch-depth: 0
+
+      - name: Apply verified hail hover size fix
+        env:
+          HAIL_HOVER_PATCH: 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
+        run: |
+          printf '%s' "$HAIL_HOVER_PATCH" | base64 --decode | gzip --decompress > /tmp/hail-hover.patch
+          git apply --check /tmp/hail-hover.patch
+          git apply /tmp/hail-hover.patch
+          grep -q "band300WithSmallerNearbyReport" public/index.html
+          grep -q "_canonicalHailDisplayValue" public/index.html
+          rm .github/workflows/apply-hail-hover-size-fix-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/index.html .github/workflows/apply-hail-hover-size-fix-once.yml
+          git commit -m "Keep hail hover sizes aligned with swath bands"
+          git push origin HEAD:pr-43-storm-panel-style
