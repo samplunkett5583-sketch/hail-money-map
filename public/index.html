@@ -29653,6 +29653,69 @@ function mapsGoogleReady() {
       return ring;
     }
 
+    // Give stored radar polygons the same uneven, independently cut edges used by
+    // reviewed and report-driven swaths. Canonical geometry remains unchanged for
+    // property accuracy and hover hit testing; this only shapes the visible outline.
+    function _handCutStoredHailPath(path, seedText) {
+      if (!Array.isArray(path) || path.length < 5) return path || [];
+      var pts = path.slice();
+      var last = pts[pts.length - 1];
+      var first = pts[0];
+      var isClosed = last && first &&
+        Math.abs(Number(last.lat) - Number(first.lat)) < 1e-9 &&
+        Math.abs(Number(last.lng) - Number(first.lng)) < 1e-9;
+      if (isClosed) pts.pop();
+      if (pts.length < 5) return path;
+
+      var seed = 2166136261;
+      String(seedText || '').split('').forEach(function(ch) {
+        seed ^= ch.charCodeAt(0);
+        seed = Math.imul(seed, 16777619);
+      });
+      var phase = (Math.abs(seed) % 6283) / 1000;
+      var center = pts.reduce(function(acc, pt) {
+        acc.lat += Number(pt.lat) || 0;
+        acc.lng += Number(pt.lng) || 0;
+        return acc;
+      }, { lat:0, lng:0 });
+      center.lat /= pts.length;
+      center.lng /= pts.length;
+
+      var minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+      pts.forEach(function(pt) {
+        minLat = Math.min(minLat, Number(pt.lat));
+        maxLat = Math.max(maxLat, Number(pt.lat));
+        minLng = Math.min(minLng, Number(pt.lng));
+        maxLng = Math.max(maxLng, Number(pt.lng));
+      });
+      var span = Math.max(maxLat - minLat, maxLng - minLng);
+      var amplitude = Math.max(0.0012, Math.min(0.0085, span * 0.018));
+
+      var shaped = pts.map(function(pt, index) {
+        var prev = pts[(index - 1 + pts.length) % pts.length];
+        var next = pts[(index + 1) % pts.length];
+        var dx = Number(next.lng) - Number(prev.lng);
+        var dy = Number(next.lat) - Number(prev.lat);
+        var len = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+        var nx = -dy / len;
+        var ny = dx / len;
+        var outward = ((Number(pt.lng) - center.lng) * nx + (Number(pt.lat) - center.lat) * ny) < 0 ? -1 : 1;
+        nx *= outward;
+        ny *= outward;
+        var t = index / pts.length;
+        var cut =
+          0.62 * Math.sin((Math.PI * 10 * t) + phase) +
+          0.27 * Math.sin((Math.PI * 26 * t) + phase * 1.7) +
+          0.11 * Math.sin((Math.PI * 54 * t) + phase * 0.6);
+        return {
+          lat: Number(pt.lat) + ny * amplitude * cut,
+          lng: Number(pt.lng) + nx * amplitude * cut
+        };
+      });
+      if (isClosed) shaped.push({ lat:shaped[0].lat, lng:shaped[0].lng });
+      return shaped;
+    }
+
     function _drawReviewedHailDisplayTracks(dateStr) {
       if (!mapsState.map) return;
       var tracks = MAPS_REVIEWED_HAIL_DISPLAY_TRACKS.filter(function(track) {
@@ -34027,6 +34090,12 @@ function mapsGoogleReady() {
                 }).filter(function (pt) { return isFinite(pt.lat) && isFinite(pt.lng); });
               }).filter(function (polygonPath) { return polygonPath.length >= 3; })
             : [path];
+          if (!isWind && !isTornado) {
+            var handCutSeed = [dateStr, row.id || ri, row.source_product || row.source || 'hail', effectiveBand, ringIndex].join(':');
+            paths = paths.map(function(polygonPath, pathIndex) {
+              return _handCutStoredHailPath(polygonPath, handCutSeed + ':' + pathIndex);
+            });
+          }
           if (_trackFocusGeometry) {
             path.forEach(function (pt) {
               if (pt.lat < _dateBbox.minLat) _dateBbox.minLat = pt.lat;
