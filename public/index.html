@@ -29608,54 +29608,31 @@ function mapsGoogleReady() {
           0.022 * Math.sin((31 * Math.PI * t) + 1.10 + shapePhase * 1.3) + 0.11 * hailScale;
         var width = Math.max(halfWidth * 0.44, halfWidth * organic);
         widths.push(width);
-        var leftRipple = 1 + 0.095 * Math.sin((19 * Math.PI * t) + 0.45 + shapePhase) +
-          0.032 * Math.sin((37 * Math.PI * t) + 1.25 + shapePhase * 0.8);
-        var rightRipple = 1 + 0.088 * Math.sin((17 * Math.PI * t) + 2.10 + shapePhase * 1.1) +
-          0.030 * Math.sin((35 * Math.PI * t) + 0.30 + shapePhase * 0.6);
+        // Roughen only the long sidewalls. Fade the ripple to zero at both
+        // endpoints so the existing end shape is left untouched.
+        var sideMask = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.38);
+        var leftRipple = 1 + sideMask * (
+          0.180 * Math.sin((13 * Math.PI * t) + 0.45 + shapePhase) +
+          0.085 * Math.sin((29 * Math.PI * t) + 1.25 + shapePhase * 0.8) +
+          0.040 * Math.sin((53 * Math.PI * t) + 0.70 + shapePhase * 1.2)
+        );
+        var rightRipple = 1 + sideMask * (
+          0.170 * Math.sin((11 * Math.PI * t) + 2.10 + shapePhase * 1.1) +
+          0.080 * Math.sin((27 * Math.PI * t) + 0.30 + shapePhase * 0.6) +
+          0.038 * Math.sin((49 * Math.PI * t) + 1.40 + shapePhase * 0.9)
+        );
         left.push({ lat: dense[i].lat + ny * width * leftRipple, lon: dense[i].lon + nx * width * leftRipple });
         right.push({ lat: dense[i].lat - ny * width * rightRipple, lon: dense[i].lon - nx * width * rightRipple });
       }
 
-      // Join each side with a blunt, visibly uneven cross-cut. The old semicircle
-      // made every report swath look machine-rounded even when its sidewalls varied.
-      function handCutPoints(from, to, tangentLat, tangentLon, width, reversePattern) {
-        var len = Math.sqrt(tangentLat * tangentLat + tangentLon * tangentLon) || 0.001;
-        var unitLat = tangentLat / len;
-        var unitLon = tangentLon / len;
-        var offsets = reversePattern
-          ? [-0.16, 0.10, -0.23, 0.17, -0.08]
-          : [0.13, -0.19, 0.08, -0.24, 0.15];
-        return offsets.map(function(offset, index) {
-          var ratio = (index + 1) / (offsets.length + 1);
-          return {
-            lat: from.lat + (to.lat - from.lat) * ratio + unitLat * width * offset,
-            lon: from.lon + (to.lon - from.lon) * ratio + unitLon * width * offset
-          };
-        });
-      }
-
-      var ring = left.slice();
-      var lastIndex = dense.length - 1;
-      var endForwardLat = dense[lastIndex].lat - dense[lastIndex - 1].lat;
-      var endForwardLon = dense[lastIndex].lon - dense[lastIndex - 1].lon;
-      Array.prototype.push.apply(ring, handCutPoints(
-        left[lastIndex], right[lastIndex],
-        endForwardLat, endForwardLon,
-        widths[lastIndex], false
-      ));
-      Array.prototype.push.apply(ring, right.slice().reverse());
-      Array.prototype.push.apply(ring, handCutPoints(
-        right[0], left[0],
-        dense[0].lat - dense[1].lat,
-        dense[0].lon - dense[1].lon,
-        widths[0], true
-      ));
-      return ring;
+      // Preserve the original straight end joins. The irregularity belongs on
+      // the two long sidewalls above, not on the front or rear end caps.
+      right.reverse();
+      return left.concat(right);
     }
 
-    // Give stored radar polygons the same uneven, independently cut edges used by
-    // reviewed and report-driven swaths. Canonical geometry remains unchanged for
-    // property accuracy and hover hit testing; this only shapes the visible outline.
+    // Roughen only the long sides of stored hail polygons. The first and last
+    // axial portions are protected so the front and rear ends keep their source shape.
     function _handCutStoredHailPath(path, seedText) {
       if (!Array.isArray(path) || path.length < 5) return path || [];
       var pts = path.slice();
@@ -29681,17 +29658,38 @@ function mapsGoogleReady() {
       center.lat /= pts.length;
       center.lng /= pts.length;
 
-      var minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+      // Find the polygon's long axis so we can distinguish sidewalls from end caps.
+      var sxx = 0, syy = 0, sxy = 0;
       pts.forEach(function(pt) {
-        minLat = Math.min(minLat, Number(pt.lat));
-        maxLat = Math.max(maxLat, Number(pt.lat));
-        minLng = Math.min(minLng, Number(pt.lng));
-        maxLng = Math.max(maxLng, Number(pt.lng));
+        var x = Number(pt.lng) - center.lng;
+        var y = Number(pt.lat) - center.lat;
+        sxx += x * x;
+        syy += y * y;
+        sxy += x * y;
       });
-      var span = Math.max(maxLat - minLat, maxLng - minLng);
-      var amplitude = Math.max(0.0012, Math.min(0.0085, span * 0.018));
+      var axisAngle = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+      var axisLng = Math.cos(axisAngle);
+      var axisLat = Math.sin(axisAngle);
+      var projections = pts.map(function(pt) {
+        return (Number(pt.lng) - center.lng) * axisLng +
+          (Number(pt.lat) - center.lat) * axisLat;
+      });
+      var minProjection = Math.min.apply(Math, projections);
+      var maxProjection = Math.max.apply(Math, projections);
+      var projectionSpan = Math.max(0.0001, maxProjection - minProjection);
+      var amplitude = Math.max(0.0018, Math.min(0.016, projectionSpan * 0.035));
 
       var shaped = pts.map(function(pt, index) {
+        var axialT = (projections[index] - minProjection) / projectionSpan;
+        var endDistance = Math.min(axialT, 1 - axialT);
+        // No movement in the outer 12% at either end; smoothly reach full
+        // side-edge texture by 23% of the polygon length.
+        var bodyMask = Math.max(0, Math.min(1, (endDistance - 0.12) / 0.11));
+        bodyMask = bodyMask * bodyMask * (3 - 2 * bodyMask);
+        if (bodyMask <= 0) {
+          return { lat:Number(pt.lat), lng:Number(pt.lng) };
+        }
+
         var prev = pts[(index - 1 + pts.length) % pts.length];
         var next = pts[(index + 1) % pts.length];
         var dx = Number(next.lng) - Number(prev.lng);
@@ -29699,17 +29697,18 @@ function mapsGoogleReady() {
         var len = Math.sqrt(dx * dx + dy * dy) || 0.0001;
         var nx = -dy / len;
         var ny = dx / len;
-        var outward = ((Number(pt.lng) - center.lng) * nx + (Number(pt.lat) - center.lat) * ny) < 0 ? -1 : 1;
+        var outward = ((Number(pt.lng) - center.lng) * nx +
+          (Number(pt.lat) - center.lat) * ny) < 0 ? -1 : 1;
         nx *= outward;
         ny *= outward;
-        var t = index / pts.length;
+
         var cut =
-          0.62 * Math.sin((Math.PI * 10 * t) + phase) +
-          0.27 * Math.sin((Math.PI * 26 * t) + phase * 1.7) +
-          0.11 * Math.sin((Math.PI * 54 * t) + phase * 0.6);
+          0.55 * Math.sin((Math.PI * 12 * axialT) + phase) +
+          0.30 * Math.sin((Math.PI * 30 * axialT) + phase * 1.7) +
+          0.15 * Math.sin((Math.PI * 62 * axialT) + phase * 0.6);
         return {
-          lat: Number(pt.lat) + ny * amplitude * cut,
-          lng: Number(pt.lng) + nx * amplitude * cut
+          lat: Number(pt.lat) + ny * amplitude * bodyMask * cut,
+          lng: Number(pt.lng) + nx * amplitude * bodyMask * cut
         };
       });
       if (isClosed) shaped.push({ lat:shaped[0].lat, lng:shaped[0].lng });
