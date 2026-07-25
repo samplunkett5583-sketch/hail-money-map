@@ -25787,6 +25787,40 @@
     // creating another date-specific drawing function.
     var MAPS_REVIEWED_HAIL_DISPLAY_TRACKS = [{
       date: '2026-05-03',
+      id: 'hawk-point-alton-east',
+      // Reviewed against the complete Recon track: the yellow footprint and orange
+      // core continue east of Alton instead of stopping at the last clustered report.
+      outerPath: [
+        { lat: 38.970, lon: -91.245, hail_in: 1.25 },
+        { lat: 38.985, lon: -91.125, hail_in: 1.75 },
+        { lat: 38.982, lon: -90.985, hail_in: 1.75 },
+        { lat: 38.973, lon: -90.825, hail_in: 1.50 },
+        { lat: 38.958, lon: -90.655, hail_in: 1.50 },
+        { lat: 38.942, lon: -90.480, hail_in: 1.50 },
+        { lat: 38.918, lon: -90.315, hail_in: 1.75 },
+        { lat: 38.898, lon: -90.165, hail_in: 2.00 },
+        { lat: 38.904, lon: -90.025, hail_in: 1.50 },
+        { lat: 38.918, lon: -89.875, hail_in: 1.25 },
+        { lat: 38.920, lon: -89.705, hail_in: 1.00 }
+      ],
+      corePath: [
+        { lat: 38.971, lon: -91.225, hail_in: 1.25 },
+        { lat: 38.987, lon: -91.120, hail_in: 1.75 },
+        { lat: 38.979, lon: -90.982, hail_in: 1.75 },
+        { lat: 38.968, lon: -90.820, hail_in: 1.50 },
+        { lat: 38.955, lon: -90.650, hail_in: 1.50 },
+        { lat: 38.936, lon: -90.475, hail_in: 1.50 },
+        { lat: 38.912, lon: -90.305, hail_in: 1.75 },
+        { lat: 38.896, lon: -90.155, hail_in: 2.00 },
+        { lat: 38.903, lon: -90.015, hail_in: 1.50 },
+        { lat: 38.916, lon: -89.865, hail_in: 1.25 },
+        { lat: 38.918, lon: -89.720, hail_in: 1.00 }
+      ],
+      outerHalfWidth: 0.090,
+      coreHalfWidth: 0.057,
+      coreHail: 1.50
+    }, {
+      date: '2026-05-03',
       id: 'jacksonville-east',
       outerPath: [
         { lat: 39.61, lon: -90.28 },
@@ -25842,6 +25876,17 @@
       maxLat: 39.90,
       minLng: -89.50,
       maxLng: -88.20
+    }, {
+      // Replace the smooth western orange slab with the reviewed nested track above.
+      // Keep the underlying pale-yellow radar footprint.
+      date: '2026-05-03',
+      sourceProduct: 'iem_nexrad_track',
+      minBand: 1.25,
+      maxBand: 2.00,
+      minLat: 38.60,
+      maxLat: 39.20,
+      minLng: -91.50,
+      maxLng: -89.45
     }];
 
     function mapsReviewedHailRingSuppressed(dateStr, sourceProduct, bandMin, bbox) {
@@ -25850,6 +25895,7 @@
       return MAPS_REVIEWED_HAIL_SUPPRESSED_RINGS.some(function(rule) {
         if (rule.date !== dateStr) return false;
         if (String(rule.sourceProduct || '').toLowerCase() !== String(sourceProduct || '').toLowerCase()) return false;
+        if (rule.minBand != null && Number(bandMin) < Number(rule.minBand)) return false;
         if (Number(bandMin) > Number(rule.maxBand)) return false;
         return bbox.minLat >= rule.minLat && bbox.maxLat <= rule.maxLat &&
           bbox.minLng >= rule.minLng && bbox.maxLng <= rule.maxLng;
@@ -29492,6 +29538,10 @@ function mapsGoogleReady() {
         hail_in: Number(pts[pts.length - 1].hail_in) || 1
       });
       dense = _smoothCenterlinePts(dense, 2);
+      var shapePhase = Math.abs(
+        ((Number(dense[0].lat) || 0) * 13.37 + (Number(dense[0].lon) || 0) * 7.91) %
+        (Math.PI * 2)
+      );
 
       var left = [], right = [], widths = [];
       for (var i = 0; i < dense.length; i++) {
@@ -29505,15 +29555,15 @@ function mapsGoogleReady() {
         var t = dense.length === 1 ? 0.5 : i / (dense.length - 1);
         var hailScale = Math.max(0, Math.min(1, ((Number(dense[i].hail_in) || 1) - 1) / 1.25));
         var organic = 0.58 + 0.28 * Math.sin(Math.PI * t) +
-          0.075 * Math.sin((5 * Math.PI * t) + 0.65) +
-          0.035 * Math.sin((15 * Math.PI * t) + 0.20) +
-          0.015 * Math.sin((31 * Math.PI * t) + 1.10) + 0.06 * hailScale;
+          0.090 * Math.sin((5 * Math.PI * t) + 0.65 + shapePhase) +
+          0.050 * Math.sin((15 * Math.PI * t) + 0.20 + shapePhase * 0.7) +
+          0.022 * Math.sin((31 * Math.PI * t) + 1.10 + shapePhase * 1.3) + 0.11 * hailScale;
         var width = Math.max(halfWidth * 0.44, halfWidth * organic);
         widths.push(width);
-        var leftRipple = 1 + 0.045 * Math.sin((19 * Math.PI * t) + 0.45) +
-          0.015 * Math.sin((37 * Math.PI * t) + 1.25);
-        var rightRipple = 1 + 0.042 * Math.sin((17 * Math.PI * t) + 2.10) +
-          0.014 * Math.sin((35 * Math.PI * t) + 0.30);
+        var leftRipple = 1 + 0.095 * Math.sin((19 * Math.PI * t) + 0.45 + shapePhase) +
+          0.032 * Math.sin((37 * Math.PI * t) + 1.25 + shapePhase * 0.8);
+        var rightRipple = 1 + 0.088 * Math.sin((17 * Math.PI * t) + 2.10 + shapePhase * 1.1) +
+          0.030 * Math.sin((35 * Math.PI * t) + 0.30 + shapePhase * 0.6);
         left.push({ lat: dense[i].lat + ny * width * leftRipple, lon: dense[i].lon + nx * width * leftRipple });
         right.push({ lat: dense[i].lat - ny * width * rightRipple, lon: dense[i].lon - nx * width * rightRipple });
       }
@@ -29586,7 +29636,7 @@ function mapsGoogleReady() {
           mapsState.swathPolygons[dateStr].push(outer);
         }
         if (Number(track.coreHalfWidth) > 0) {
-          var coreRing = _bufferPolylineSwab(track.outerPath || [], Number(track.coreHalfWidth));
+          var coreRing = _bufferPolylineSwab(track.corePath || track.outerPath || [], Number(track.coreHalfWidth));
           if (coreRing.length >= 3) {
             var high = swathSeverityColor(Number(track.coreHail) || 1.5);
             var core = mapsCreateProductionGoogleOverlay('Polygon', {
