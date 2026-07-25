@@ -32917,9 +32917,9 @@ function mapsGoogleReady() {
       mapsState.hailShadowSummaryByDate[mapsNormalizeDate(dateStr) || 'unknown'] = summary;
       if (mapsIsSwathDebugMode()) console.info('[HAIL-SHADOW-SUMMARY]', mapsNormalizeDate(dateStr), summary);
 
-      // Ground reports control magnitude, but they are isolated points and cannot supply
-      // the full storm-track footprint. When a NEXRAD track is available, use its geometry;
-      // mapsDrawSavedStormPolygonForDate calibrates each band against reports inside it.
+      // Pick one canonical hail product for the entire date. Mixing products is what
+      // created the visibly different swath styles on one map (MRMS cells beside smooth
+      // NEXRAD bars and report-derived ribbons).
       var reportCalibratedRows = hailRows.filter(function (row) {
         var source = String(row && row.source || '').toLowerCase();
         var product = String(row && row.source_product || '').toLowerCase();
@@ -32930,8 +32930,11 @@ function mapsGoogleReady() {
         var product = String(row && row.source_product || '').toLowerCase();
         return source === 'nexrad_iem' && product === 'iem_nexrad_track';
       });
-      if (reportCalibratedRows.length && nexradTrackRows.length) {
-        summary.displayMode = 'radar-geometry-report-calibrated';
+      var reviewedDate = MAPS_REVIEWED_HAIL_DISPLAY_TRACKS.some(function (track) {
+        return track.date === mapsNormalizeDate(dateStr || '');
+      });
+      if (reviewedDate && reportCalibratedRows.length && nexradTrackRows.length) {
+        summary.displayMode = 'reviewed-radar-geometry';
         return nexradTrackRows;
       }
       if (reportCalibratedRows.length) {
@@ -32939,8 +32942,35 @@ function mapsGoogleReady() {
         return reportCalibratedRows;
       }
 
-      // Radar geometry remains a fallback only when no official-report swath exists.
-      if (!mapsAcceptedOnlyFeatureEnabled()) return hailRows;
+      // Prefer the natural-edged MRMS polygons whenever they are available. Do not
+      // draw thin NEXRAD track bars on top of or beside them.
+      var mrmsRows = hailRows.filter(function (row) {
+        return String(row && row.source || '').toLowerCase() === 'mrms_mesh';
+      });
+      if (mrmsRows.length) {
+        summary.displayMode = 'mrms-canonical';
+        return mrmsRows;
+      }
+
+      // Radar geometry remains a fallback only when no official-report or MRMS
+      // product exists. Keep the fallback to one source/product family.
+      if (!mapsAcceptedOnlyFeatureEnabled()) {
+        var legacyGroups = {};
+        hailRows.forEach(function (row) {
+          var key = String(row && row.source || '').toLowerCase() + '|' +
+            String(row && row.source_product || '').toLowerCase();
+          (legacyGroups[key] || (legacyGroups[key] = [])).push(row);
+        });
+        var legacyRanked = Object.keys(legacyGroups).map(function (key) {
+          return legacyGroups[key];
+        }).sort(function (a, b) {
+          var pa = Number(a[0] && a[0].source_priority); if (!isFinite(pa)) pa = 999;
+          var pb = Number(b[0] && b[0].source_priority); if (!isFinite(pb)) pb = 999;
+          return pa - pb || b.length - a.length;
+        });
+        summary.displayMode = 'single-legacy-product';
+        return legacyRanked[0] || [];
+      }
 
       var candidates = hailRows.filter(function (row) {
         if (!row || String(row.storm_type || 'hail').toLowerCase() !== 'hail') return false;
@@ -38351,19 +38381,14 @@ function mapsGoogleReady() {
             windPts = Array.isArray(windPts) ? windPts : [];
             tornadoPts = Array.isArray(tornadoPts) ? tornadoPts : [];
 
-            // Fallback-only layers: only run when no mrms_mesh saved polygons exist for this date.
-            // When rows has mrms_mesh data, mapsDrawSavedStormPolygonForDate already drew the
-            // HailRecon-style swaths — adding blobs/envelopes/corridors on top duplicates them.
-            var _hasMrmsRows = !!(rows && rows.length);
-            var _mrmsHeavyDate = _isMrmsHeavyDate(rows);
-            if (!_hasMrmsRows) {
-              _drawSmallHailLayer(dateStr, rows, points);
-              _drawHailEnvelope(dateStr, rows, points);
-            } else if (_mrmsHeavyDate) {
-              // MRMS-heavy: draw expanded cell coverage for broad pale-yellow background wash.
-              _drawSmallHailLayer(dateStr, rows, points);
-            }
-            if (!_hasMrmsRows) {
+            // One hail renderer per date. Saved polygons own the complete swath whenever
+            // they exist. Only the cell fallback runs when no saved geometry exists.
+            // Do not stack smooth envelopes or LSR ribbons over either renderer.
+            var _hasSavedHailRows = !!(rows && rows.some(function (row) {
+              return String(row && row.storm_type || 'hail').toLowerCase() === 'hail' &&
+                !!(row.polygon_geojson || row.geometry);
+            }));
+            if (!_hasSavedHailRows) {
               var _corridorHailPts = (points || []).slice();
               (rows || []).forEach(function(row) {
                 if (_corridorHailPts.length >= 300) return;
@@ -38395,10 +38420,9 @@ function mapsGoogleReady() {
               mapsDrawWeakFallbackCorridors(dateStr, _corridorHailPts, windPts, tornadoPts);
             }
 
-            // Narrow core ribbons: supplement mrms_mesh with LSR-driven corridors.
-            // Outer pale-yellow (z=88) fills gaps in radar coverage.
-            // Orange core (z=305) adds narrow visible ribbons where 1.5"+ hail confirmed.
-            _drawHailCoreRibbons(dateStr, points, rows);
+            // Preserve the already-approved May 3 human-reviewed tracks without enabling
+            // the generic smooth ribbon renderer for every other storm.
+            _drawReviewedHailDisplayTracks(dateStr);
             mapsApplySwathOpacity(mapsState.swathOpacity != null ? mapsState.swathOpacity : 0.55);
             mapsSyncActiveHailHoverBands(dateStr, mapsState.swathPolygons[dateStr] || []);
 
