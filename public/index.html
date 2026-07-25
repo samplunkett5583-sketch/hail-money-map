@@ -25793,6 +25793,9 @@
       // Reviewed against the complete Recon track: the yellow footprint and orange
       // core continue east of Alton instead of stopping at the last clustered report.
       outerPath: [
+        { lat: 38.950, lon: -91.650, hail_in: 1.00 },
+        { lat: 38.958, lon: -91.500, hail_in: 1.00 },
+        { lat: 38.965, lon: -91.365, hail_in: 1.00 },
         { lat: 38.970, lon: -91.245, hail_in: 1.25 },
         { lat: 38.985, lon: -91.125, hail_in: 1.75 },
         { lat: 38.982, lon: -90.985, hail_in: 1.75 },
@@ -25806,6 +25809,8 @@
         { lat: 38.920, lon: -89.705, hail_in: 1.00 }
       ],
       corePath: [
+        { lat: 38.955, lon: -91.525, hail_in: 1.00 },
+        { lat: 38.963, lon: -91.390, hail_in: 1.00 },
         { lat: 38.971, lon: -91.225, hail_in: 1.25 },
         { lat: 38.987, lon: -91.120, hail_in: 1.75 },
         { lat: 38.979, lon: -90.982, hail_in: 1.75 },
@@ -25818,8 +25823,11 @@
         { lat: 38.916, lon: -89.865, hail_in: 1.25 },
         { lat: 38.918, lon: -89.720, hail_in: 1.00 }
       ],
-      outerHalfWidth: 0.090,
-      coreHalfWidth: 0.057,
+      // Three nested verified bands: 1/2-inch yellow footprint, 1-inch
+      // light-orange band, and 1 1/2-inch dark-orange core.
+      outerHalfWidth: 0.135,
+      oneInchHalfWidth: 0.088,
+      coreHalfWidth: 0.048,
       coreHail: 1.50
     }, {
       date: '2026-05-03',
@@ -29065,10 +29073,10 @@ function mapsGoogleReady() {
       if (hailIn >= 2.50) return [179,  38,  31, 0.62]; // #b3261f deep red
       if (hailIn >= 2.00) return [224,  57,  44, 0.60]; // #e0392c red-orange
       if (hailIn >= 1.75) return [242, 112,  10, 0.58]; // #f2700a orange
-      if (hailIn >= 1.50) return [255, 190,  64, 0.54]; // #ffbe40 amber
-      if (hailIn >= 1.25) return [248, 216,  92, 0.42]; // #f8d85c soft gold
-      if (hailIn >= 1.00) return [250, 235, 123, 0.34]; // #faeb7b pale yellow
-      return                     [249, 246, 200, 0.36]; // #f9f6c8 screenshot-matched light yellow
+      if (hailIn >= 1.50) return [226, 137,  28, 0.58]; // #e2891c dark orange
+      if (hailIn >= 1.25) return [239, 174,  54, 0.50]; // #efae36 medium orange
+      if (hailIn >= 1.00) return [247, 208, 112, 0.44]; // #f7d070 light orange
+      return                     [249, 246, 200, 0.42]; // #f9f6c8 screenshot-matched half-inch yellow
     }
 
     function _swathScaledDisplayOpacity(globalOpacity, baseOpacity, bandMin, stormType) {
@@ -29735,6 +29743,46 @@ function mapsGoogleReady() {
           outer._constructionFunction = '_drawReviewedHailDisplayTracks';
           mapsAttachHailHoverCoverage(outer, outerRing, 0.5, 1.0, 0.5, 1, 241);
           mapsState.swathPolygons[dateStr].push(outer);
+        }
+        // Every reviewed hail track gets a distinct 1-inch layer between the
+        // half-inch footprint and the 1 1/2-inch core. If a review does not
+        // provide a custom width, derive it from the two verified boundaries.
+        var oneInchHalfWidth = Number(track.oneInchHalfWidth);
+        if (!(oneInchHalfWidth > 0)) {
+          var reviewedOuterWidth = Number(track.outerHalfWidth) || 0.07;
+          var reviewedCoreWidth = Number(track.coreHalfWidth) || 0;
+          oneInchHalfWidth = reviewedCoreWidth > 0
+            ? Math.max(reviewedCoreWidth * 1.35, reviewedOuterWidth * 0.68)
+            : reviewedOuterWidth * 0.62;
+        }
+        oneInchHalfWidth = Math.min(oneInchHalfWidth, (Number(track.outerHalfWidth) || oneInchHalfWidth) * 0.82);
+        if (oneInchHalfWidth > 0) {
+          var oneInchRing = _bufferPolylineSwab(
+            track.oneInchPath || track.corePath || track.outerPath || [],
+            oneInchHalfWidth
+          );
+          if (oneInchRing.length >= 3) {
+            var oneInchColor = swathSeverityColor(1.0);
+            var oneInch = mapsCreateProductionGoogleOverlay('Polygon', {
+              paths: oneInchRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
+              strokeWeight: 0,
+              strokeOpacity: 0,
+              fillColor: 'rgb(' + oneInchColor[0] + ',' + oneInchColor[1] + ',' + oneInchColor[2] + ')',
+              fillOpacity: oneInchColor[3],
+              zIndex: 274,
+              clickable: false,
+              map: mapsState.map
+            });
+            oneInch._stormType = 'hail';
+            oneInch._dateStr = dateStr;
+            oneInch._bandMin = 1.0;
+            oneInch._source = 'ground_truth_review';
+            oneInch._sourceProduct = 'reviewed_swath_one_inch';
+            oneInch._sourceRowId = 'reviewed-track:' + dateStr + ':' + track.id + ':one-inch';
+            oneInch._constructionFunction = '_drawReviewedHailDisplayTracks';
+            mapsAttachHailHoverCoverage(oneInch, oneInchRing, 1.0, 1.5, 1.0, 1, 274);
+            mapsState.swathPolygons[dateStr].push(oneInch);
+          }
         }
         if (Number(track.coreHalfWidth) > 0) {
           var coreRing = _bufferPolylineSwab(track.corePath || track.outerPath || [], Number(track.coreHalfWidth));
