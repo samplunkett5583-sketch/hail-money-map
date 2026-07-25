@@ -26233,9 +26233,12 @@
         if (!mapsGeoJsonContains(lat, lng, band.geometry)) continue;
         var bandMin = band.bandMin;
         var zIndex = band.zIndex;
-        if (!best || band.sourcePriority < best.sourcePriority ||
-            (band.sourcePriority === best.sourcePriority && (zIndex > best.zIndex ||
-            (zIndex === best.zIndex && bandMin > best.bandMin)))) {
+        // Match the number to the color the user is actually pointing at.
+        // Higher hail bands render above lower bands, so visual z-order must
+        // win before source priority when multiple saved polygons overlap.
+        if (!best || zIndex > best.zIndex ||
+            (zIndex === best.zIndex && (bandMin > best.bandMin ||
+            (bandMin === best.bandMin && band.sourcePriority < best.sourcePriority)))) {
           best = { bandMin: bandMin, bandMax: band.bandMax, displayValue: band.displayValue, sourcePriority: band.sourcePriority, zIndex: zIndex };
         }
       }
@@ -26263,10 +26266,11 @@
     function mapsGetHailHoverTextAt(lat, lng) {
       var band = mapsFindVerifiedHailSizeAt(lat, lng);
       if (!band || !Number.isFinite(band.displayValue) || band.displayValue <= 0) return '';
-      var report = mapsFindNearbyHailReportAt(lat, lng, 5);
-      var size = mapsCalibratedHailSize(Number(band.displayValue), report && report.hailIn, true);
-      var reviewedCap = mapsReviewedHailCapAt(mapsState.previewDate, lat, lng);
-      if (reviewedCap > 0) size = Math.min(size, reviewedCap);
+      // The rendered swath band already contains the date-specific calibrated
+      // hail size used to choose its color. Do not downgrade that band with a
+      // nearby point report or the generic radar-only cap: doing so made red
+      // and purple cores incorrectly read 1.50–1.75 inches on hover.
+      var size = Math.round(Number(band.displayValue) * 4) / 4;
       return size > 0 ? size.toFixed(2) + '"' : '';
     }
 
@@ -26414,7 +26418,13 @@
         var loadedBands = [
           liveBand(0.50, 150, square(0, 0, 1, 1)),
           liveBand(1.25, 225, square(1, 0, 2, 1)),
-          liveBand(1.50, 250, square(2, 0, 3, 1))
+          liveBand(1.50, 250, square(2, 0, 3, 1)),
+          liveBand(3.00, 400, square(3, 0, 4, 1))
+        ];
+        // A smaller nearby ground report must not relabel a visible 3-inch
+        // purple band as 1.75 inches.
+        mapsState.lsrPointsByDate['2026-07-19'] = [
+          { lat: 0.5, lon: 3.5, hail_in: 1.75 }
         ];
         mapsSyncActiveHailHoverBands('2026-07-19', loadedBands);
 
@@ -26422,7 +26432,8 @@
           band050: mapsGetHailHoverTextAt(0.5, 0.5),
           band125: mapsGetHailHoverTextAt(0.5, 1.5),
           band150: mapsGetHailHoverTextAt(0.5, 2.5),
-          outside: mapsGetHailHoverTextAt(0.5, 4.0)
+          band300WithSmallerNearbyReport: mapsGetHailHoverTextAt(0.5, 3.5),
+          outside: mapsGetHailHoverTextAt(0.5, 4.5)
         };
 
         mapsClearActiveHailHoverBands();
@@ -26443,6 +26454,7 @@
           pass: values.band050 === '0.50"'
             && values.band125 === '1.25"'
             && values.band150 === '1.50"'
+            && values.band300WithSmallerNearbyReport === '3.00"'
             && values.outside === ''
             && values.afterClear === ''
             && values.afterDateChange === ''
@@ -34279,7 +34291,11 @@ function mapsGoogleReady() {
         _poly._canonicalZIndex = g.zIndex;
         _poly._canonicalBandMin = (_isHail && Number.isFinite(g.storedBandMin) && g.storedBandMin > 0) ? g.storedBandMin : null;
         _poly._canonicalBandMax = (_isHail && Number.isFinite(g.storedBandMax) && g.storedBandMax > g.storedBandMin) ? g.storedBandMax : null;
-        _poly._canonicalHailDisplayValue = _poly._canonicalBandMin;
+        // Use the exact effective band that produced this polygon's visible
+        // color. This keeps every hover value synchronized with every storm
+        // in the Most Recent Storms list without changing swath geometry.
+        _poly._canonicalHailDisplayValue = (_isHail && Number.isFinite(g.bandMin) && g.bandMin > 0)
+          ? g.bandMin : _poly._canonicalBandMin;
         _poly._sourcePriority = g.sourcePriority;
         _poly._sourceRowId = g.rowId;
         _poly._sourceRowIds = g.rowIds || (g.rowId != null ? [g.rowId] : []);
