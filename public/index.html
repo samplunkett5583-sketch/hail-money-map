@@ -6491,16 +6491,8 @@
       color:#20252a; font-size:12px; font-weight:700; cursor:pointer; user-select:none;
     }
     #page-map .maps-options-check input { width:16px; height:16px; margin:0; accent-color:#2879bd; cursor:pointer; }
-    #page-map .maps-options-layer {
-      display:flex; align-items:center; gap:8px; width:100%; min-height:34px; padding:6px 4px; border:0; background:transparent;
-      color:#20252a; font:700 12px/1.2 inherit; text-align:left; cursor:pointer; user-select:none;
-    }
     #page-map .maps-options-layer-icon { display:flex; align-items:center; justify-content:center; width:16px; color:#343a40; line-height:1; }
-    #page-map .maps-options-layer-icon svg { width:15px; height:18px; display:block; }
-    #page-map .maps-options-layer[aria-pressed="false"] { color:#7a828a; }
-    #page-map .maps-options-layer[aria-pressed="false"] .maps-options-layer-icon { color:#9aa1a8; }
-    #page-map .maps-options-action { width:100%; background:#3d454d; }
-    #page-map .maps-options-note { margin-top:8px; color:#64707c; font-size:10px; line-height:1.4; }
+    #page-map .maps-options-layer-icon svg { width:13px; height:16px; display:block; }
     body.map-page-active #page-map .maps-map-area {
       top:var(--maps-topbar-h); bottom:var(--maps-tracker-h); height:auto; background:#e8edf1;
     }
@@ -19209,14 +19201,17 @@
                     <input type="checkbox" id="maps-show-hail-spotter-reports" />
                     <span>Show Hail Spotter Reports</span>
                   </label>
-                  <button type="button" id="maps-address-markers-btn" class="maps-options-layer" aria-pressed="true">
+                  <label class="maps-options-check" for="maps-show-campaign-address-markers">
+                    <input type="checkbox" id="maps-show-campaign-address-markers" checked />
                     <span class="maps-options-layer-icon" aria-hidden="true">
                       <svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></svg>
                     </span>
                     <span>Address Markers</span>
-                  </button>
-                  <button type="button" id="maps-fullscreen-btn" class="maps-options-action">Fullscreen map</button>
-                  <div class="maps-options-note">Layer, location, campaign, and report controls appear at the right of the map.</div>
+                  </label>
+                  <label class="maps-options-check" for="maps-show-wind-spotter-reports">
+                    <input type="checkbox" id="maps-show-wind-spotter-reports" />
+                    <span>Show Wind Spotter Reports</span>
+                  </label>
                 </div>
               </div>
               <button type="button" id="maps-toolbar-search-btn" class="maps-toolbar-btn maps-toolbar-btn-search">Search</button>
@@ -25661,6 +25656,9 @@
       spotterReportMarkersByDate: {}, // dateStr -> verified NWS ground-report markers
       spotterReportDrawGeneration: {},
       showHailSpotterReports: false,
+      windSpotterReportMarkersByDate: {}, // dateStr -> verified NWS wind-report markers
+      windSpotterReportDrawGeneration: {},
+      showWindSpotterReports: false,
       campaignAddressMarkers: [],
       showCampaignAddressMarkers: true,
       aiSwathOverlays: {},       // dateStr -> SwathCanvasOverlay instance (AI-generated)
@@ -35685,8 +35683,8 @@ function mapsGoogleReady() {
       mapsState.showCampaignAddressMarkers = !!show;
       try { localStorage.setItem('hailMoneyShowCampaignAddressMarkers', show ? '1' : '0'); } catch (_) {}
       mapsRenderCampaignAddressMarkers();
-      var button = document.getElementById('maps-address-markers-btn');
-      if (button) button.setAttribute('aria-pressed', show ? 'true' : 'false');
+      var checkbox = document.getElementById('maps-show-campaign-address-markers');
+      if (checkbox) checkbox.checked = !!show;
     }
 
     function mapsGetTrackedProperties() {
@@ -36871,6 +36869,137 @@ function mapsGoogleReady() {
       });
     }
 
+    function mapsWindSpotterReportIcon() {
+      if (mapsState._windSpotterReportIcon) return mapsState._windSpotterReportIcon;
+      var svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 38 38">' +
+          '<path d="M5 4h24l4 4v22l-5 5H10l-5-5Z" fill="#9d8b31" stroke="#5f5314" stroke-width="2"/>' +
+          '<path d="M9 28 27 10M12 30l3-3M25 12l3-3" stroke="#f5e7a0" stroke-width="2" stroke-linecap="round"/>' +
+          '<path d="M12 11v17M12 12l13 4-13 4Z" fill="#fff" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>' +
+          '<path d="M17 13.5v5M21.5 15v5" stroke="#9d8b31" stroke-width="1.3"/>' +
+        '</svg>';
+      mapsState._windSpotterReportIcon = {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+        scaledSize: new google.maps.Size(38, 38),
+        anchor: new google.maps.Point(19, 19)
+      };
+      return mapsState._windSpotterReportIcon;
+    }
+
+    function mapsWindSpotterMph(point) {
+      var value = point && (
+        point.magnitude != null ? point.magnitude :
+        point.speed != null ? point.speed :
+        point.mag_mph != null ? point.mag_mph :
+        point.wind_speed != null ? point.wind_speed :
+        point.wind_mph != null ? point.wind_mph :
+        point.props && point.props.MAGNITUDE
+      );
+      value = Number(value);
+      return isFinite(value) ? value : 0;
+    }
+
+    function mapsWindSpotterRemark(point) {
+      return String(point && (
+        point.remark || point.remarks || point.comments || point.comment ||
+        point.narrative || point.description || point.text ||
+        point.props && (point.props.REMARK || point.props.REMARKS)
+      ) || 'Wind report details unavailable.');
+    }
+
+    function mapsWindSpotterReportDetailHtml(dateStr, point, locationText) {
+      var mph = mapsWindSpotterMph(point);
+      var speedText = mph ? (Math.round(mph * 10) / 10).toString().replace(/\.0$/, '') + ' mph' : 'Speed unavailable';
+      var dateText = mapsSpotterReportDateText(dateStr, point);
+      var placeholder = '<span style="color:#89919a;font-weight:600;">API needed</span>';
+      return (
+        '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#20252a;width:min(760px,calc(100vw - 80px));padding:8px 6px 10px;">' +
+          '<div style="font-size:21px;line-height:1.2;text-align:center;margin:4px 0 14px;">' + mapsSpotterEscape(locationText) + '</div>' +
+          '<div style="display:grid;grid-template-columns:minmax(150px,1fr) auto;gap:5px 14px;font-size:14px;line-height:1.35;max-width:390px;margin:0 auto;">' +
+            '<span style="text-align:right;">Population Density</span><b>' + placeholder + '</b>' +
+            '<span style="text-align:right;">Median Age</span><b>' + placeholder + '</b>' +
+            '<span style="text-align:right;">Avg Household Value</span><b>' + placeholder + '</b>' +
+            '<span style="text-align:right;">Average Income</span><b>' + placeholder + '</b>' +
+            '<span style="text-align:right;">Avg Households / Sq Mi</span><b>' + placeholder + '</b>' +
+          '</div>' +
+          '<div style="display:grid;grid-template-columns:180px 78px minmax(240px,1fr);margin-top:18px;border:1px solid #d9dde2;font-size:14px;">' +
+            '<div style="padding:11px 10px;border-right:1px solid #d9dde2;">' + mapsSpotterEscape(dateText) + '</div>' +
+            '<div style="padding:11px 8px;border-right:1px solid #d9dde2;text-align:center;font-weight:800;">' + mapsSpotterEscape(speedText) + '</div>' +
+            '<div style="padding:11px 10px;">' + mapsSpotterEscape(mapsWindSpotterRemark(point)) + '</div>' +
+          '</div>' +
+          '<div style="margin-top:8px;text-align:center;color:#6b737b;font-size:11px;">Verified National Weather Service ground report</div>' +
+        '</div>'
+      );
+    }
+
+    function mapsRemoveWindSpotterReportsForDate(dateStr) {
+      mapsState.windSpotterReportDrawGeneration[dateStr] = (mapsState.windSpotterReportDrawGeneration[dateStr] || 0) + 1;
+      var markers = mapsState.windSpotterReportMarkersByDate[dateStr];
+      if (markers) {
+        markers.forEach(function (marker) { try { marker.setMap(null); } catch (_) {} });
+        delete mapsState.windSpotterReportMarkersByDate[dateStr];
+      }
+    }
+
+    function mapsDrawWindSpotterReportsForDate(dateStr, points) {
+      mapsRemoveWindSpotterReportsForDate(dateStr);
+      var map = mapsState.map;
+      if (!mapsState.showWindSpotterReports || !map || !points || !points.length) return;
+      var markers = [];
+      mapsState.windSpotterReportMarkersByDate[dateStr] = markers;
+      var drawGeneration = mapsState.windSpotterReportDrawGeneration[dateStr];
+      var showOnMap = mapsState.selectedDates.indexOf(dateStr) !== -1 || mapsState.previewDate === dateStr;
+      var detailInfo = mapsState._windSpotterDetailInfoWindow || new google.maps.InfoWindow();
+      mapsState._windSpotterDetailInfoWindow = detailInfo;
+
+      mapsDrawInChunks(points, function (point) {
+        if (!mapsState.showWindSpotterReports || mapsState.windSpotterReportDrawGeneration[dateStr] !== drawGeneration) return;
+        var lat = Number(point.lat);
+        var lon = Number(point.lon);
+        if (!isFinite(lat) || !isFinite(lon)) return;
+        var locationText = mapsSpotterReportLocationText(point, lat, lon);
+        var marker = mapsCreateProductionGoogleOverlay('Marker', {
+          map: showOnMap ? map : null,
+          position: { lat: lat, lng: lon },
+          icon: mapsWindSpotterReportIcon(),
+          clickable: true,
+          zIndex: 1000000
+        });
+        marker.addListener('click', function () {
+          if (mapsState._activeSpotterDetailInfoWindow && mapsState._activeSpotterDetailInfoWindow !== detailInfo) {
+            try { mapsState._activeSpotterDetailInfoWindow.close(); } catch (_) {}
+          }
+          mapsState._activeSpotterDetailInfoWindow = detailInfo;
+          detailInfo.setContent(mapsWindSpotterReportDetailHtml(dateStr, point, point._windSpotterAddress || locationText));
+          try { detailInfo.open(map, marker); } catch (_) {}
+
+          if (point._windSpotterGeocodeResolved || !(window.google && google.maps && google.maps.Geocoder)) return;
+          point._windSpotterGeocodeResolved = true;
+          try {
+            new google.maps.Geocoder().geocode({ location: { lat: lat, lng: lon } }, function (results, status) {
+              if (status !== 'OK' || !results || !results[0]) return;
+              point._windSpotterAddress = results[0].formatted_address || locationText;
+              detailInfo.setContent(mapsWindSpotterReportDetailHtml(dateStr, point, point._windSpotterAddress));
+            });
+          } catch (_) {}
+        });
+        markers.push(marker);
+      }, 150);
+    }
+
+    function mapsSetWindSpotterReportsVisible(visible) {
+      mapsState.showWindSpotterReports = !!visible;
+      try { localStorage.setItem('hailMoneyShowWindSpotterReports', visible ? '1' : '0'); } catch (_) {}
+      Object.keys(mapsState.windSpotterReportMarkersByDate).forEach(mapsRemoveWindSpotterReportsForDate);
+      if (!mapsState.showWindSpotterReports) {
+        try { if (mapsState._windSpotterDetailInfoWindow) mapsState._windSpotterDetailInfoWindow.close(); } catch (_) {}
+        return;
+      }
+      Object.keys(mapsState.windPointsByDate).forEach(function (dateStr) {
+        mapsDrawWindSpotterReportsForDate(dateStr, mapsState.windPointsByDate[dateStr] || []);
+      });
+    }
+
     // ── Draw point circles for ONE date, store per-date ──
     function mapsDrawPointsForDate(dateStr, points) {
       // Remove any existing point overlays for this date first
@@ -36965,6 +37094,8 @@ function mapsGoogleReady() {
       mapsRemovePointsForDate(dateStr);
       // Remove optional verified NWS hail spotter report markers
       mapsRemoveSpotterReportsForDate(dateStr);
+      // Remove optional verified NWS wind spotter report markers
+      mapsRemoveWindSpotterReportsForDate(dateStr);
       // Clear cached point data
       delete mapsState.lsrPointsByDate[dateStr];
       delete mapsState.windPointsByDate[dateStr];
@@ -37025,6 +37156,13 @@ function mapsGoogleReady() {
           try { marker.setMap(show ? map : null); } catch (_) {}
         });
       });
+      // Hide/show verified NWS wind spotter report markers
+      Object.keys(mapsState.windSpotterReportMarkersByDate).forEach(function (d) {
+        var show = mapsState.showWindSpotterReports && mapsState.selectedDates.indexOf(d) !== -1;
+        mapsState.windSpotterReportMarkersByDate[d].forEach(function (marker) {
+          try { marker.setMap(show ? map : null); } catch (_) {}
+        });
+      });
       // Hide/show hail band polygons
       Object.keys(mapsState.hailBandPolygons).forEach(function (d) {
         var show = mapsState.selectedDates.indexOf(d) !== -1;
@@ -37059,7 +37197,7 @@ function mapsGoogleReady() {
         mapsState.swathPolygons, mapsState.swathCenterlines,
         mapsState.hailBandPolygons, mapsState.windBandPolygons,
         mapsState.tornadoBandPolygons, mapsState.pointOverlaysByDate,
-        mapsState.spotterReportMarkersByDate
+        mapsState.spotterReportMarkersByDate, mapsState.windSpotterReportMarkersByDate
       ];
       arrStores.forEach(function(store) {
         Object.keys(store).forEach(function(d) {
@@ -38057,6 +38195,8 @@ function mapsGoogleReady() {
 
         var _stormShowExistingRenderedDate = async function (rowsForSummary, points, windPts, tornadoPts, cachedLabel) {
           rebuildVisibleStormOverlays();
+          mapsDrawSpotterReportsForDate(dateStr, points || []);
+          mapsDrawWindSpotterReportsForDate(dateStr, windPts || []);
           mapsSyncActiveHailHoverBands(dateStr, mapsState.swathPolygons[dateStr] || []);
           applySwathToggles(dateStr);
           mapsRememberVisibleStormDate(dateStr);
@@ -38249,6 +38389,8 @@ function mapsGoogleReady() {
             mapsState.lsrPointsByDate[dateStr] = points;
             mapsState.windPointsByDate[dateStr] = windPts;
             mapsState.tornadoPointsByDate[dateStr] = tornadoPts;
+            mapsDrawSpotterReportsForDate(dateStr, points);
+            mapsDrawWindSpotterReportsForDate(dateStr, windPts);
             cachedDateData.points = points;
             cachedDateData.windPts = windPts;
             cachedDateData.tornadoPts = tornadoPts;
@@ -38633,6 +38775,7 @@ function mapsGoogleReady() {
         mapsState.windPointsByDate[dateStr] = windPts;
         mapsState.tornadoPointsByDate[dateStr] = tornadoPts;
         mapsDrawSpotterReportsForDate(dateStr, points);
+        mapsDrawWindSpotterReportsForDate(dateStr, windPts);
         if (!cachedDateData) {
           cachedDateData = {
             savedPolys: savedPolys,
@@ -39188,11 +39331,10 @@ function mapsGoogleReady() {
       var optionsBtn = document.getElementById('maps-options-btn');
       var optionsMenu = document.getElementById('maps-options-menu');
       var spotterReportsCheckbox = document.getElementById('maps-show-hail-spotter-reports');
-      var addressMarkersBtn = document.getElementById('maps-address-markers-btn');
+      var windSpotterReportsCheckbox = document.getElementById('maps-show-wind-spotter-reports');
+      var addressMarkersCheckbox = document.getElementById('maps-show-campaign-address-markers');
       var searchBtn = document.getElementById('maps-toolbar-search-btn');
       var searchInput = document.getElementById('stormSearchInput');
-      var fullscreenBtn = document.getElementById('maps-fullscreen-btn');
-      var mapArea = document.querySelector('#page-map .maps-map-area');
 
       function selectDate(dateStr) {
         if (!dateStr) return;
@@ -39252,15 +39394,26 @@ function mapsGoogleReady() {
         spotterReportsCheckbox.dataset.mapsBindingCount = '1';
       }
 
-      if (addressMarkersBtn) {
+      if (windSpotterReportsCheckbox) {
+        var savedWindSpotterPreference = '0';
+        try { savedWindSpotterPreference = localStorage.getItem('hailMoneyShowWindSpotterReports') || '0'; } catch (_) {}
+        windSpotterReportsCheckbox.checked = savedWindSpotterPreference === '1';
+        mapsState.showWindSpotterReports = windSpotterReportsCheckbox.checked;
+        windSpotterReportsCheckbox.addEventListener('change', function () {
+          mapsSetWindSpotterReportsVisible(windSpotterReportsCheckbox.checked);
+        });
+        windSpotterReportsCheckbox.dataset.mapsBindingCount = '1';
+      }
+
+      if (addressMarkersCheckbox) {
         var savedAddressMarkerPreference = '1';
         try { savedAddressMarkerPreference = localStorage.getItem('hailMoneyShowCampaignAddressMarkers') || '1'; } catch (_) {}
         mapsState.showCampaignAddressMarkers = savedAddressMarkerPreference !== '0';
-        addressMarkersBtn.setAttribute('aria-pressed', mapsState.showCampaignAddressMarkers ? 'true' : 'false');
-        addressMarkersBtn.addEventListener('click', function () {
-          mapsSetCampaignAddressMarkersVisible(!mapsState.showCampaignAddressMarkers);
+        addressMarkersCheckbox.checked = mapsState.showCampaignAddressMarkers;
+        addressMarkersCheckbox.addEventListener('change', function () {
+          mapsSetCampaignAddressMarkersVisible(addressMarkersCheckbox.checked);
         });
-        addressMarkersBtn.dataset.mapsBindingCount = '1';
+        addressMarkersCheckbox.dataset.mapsBindingCount = '1';
       }
 
       if (searchBtn && searchInput) {
@@ -39271,13 +39424,6 @@ function mapsGoogleReady() {
           requestAnimationFrame(function () { searchInput.focus(); });
         });
         searchBtn.dataset.mapsBindingCount = '1';
-      }
-
-      if (fullscreenBtn && mapArea) {
-        fullscreenBtn.addEventListener('click', function () {
-          var request = mapArea.requestFullscreen || mapArea.webkitRequestFullscreen;
-          if (request) request.call(mapArea);
-        });
       }
 
       document.querySelectorAll('#page-map .maps-base-map-tab').forEach(function (tab) {
