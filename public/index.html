@@ -28781,13 +28781,13 @@ function mapsGoogleReady() {
 
     function hailInToColor(hailIn) {
       var h = Number(hailIn);
-      if (!isFinite(h)) return '#ffd700';
+      if (!isFinite(h)) return '#f9f6c8';
       if (h >= 3)   return '#9419b4'; // deep purple
       if (h >= 2.5) return '#c81e78'; // magenta
       if (h >= 2)   return '#dc1e1e'; // red
       if (h >= 1.5) return '#f06400'; // dark orange
-      if (h >= 1)   return '#faaa0a'; // orange-yellow
-      return '#ffd700';               // yellow (≤1")
+      if (h > 1)    return '#faaa0a'; // light orange (>1.00" to <1.50")
+      return '#f9f6c8';               // light yellow (0.50" through 1.00")
     }
 
     function drawLsrPointsOnMap(points) {
@@ -29067,16 +29067,14 @@ function mapsGoogleReady() {
     // ── Severity → color (hail: pale-yellow → orange → red → magenta/purple) ──
     // Nested-swath ramp matches HailTrace: outer/light=yellow, inner/core=purple
     function swathSeverityColor(hailIn) {
-      // Severity ramp: use HailTrace-style pale, translucent yellow for the footprint.
-      // Stronger nested bands retain amber/orange so the damaging core stays distinct.
+      // One shared Hail Recon-matched palette for every swath renderer.
+      // Exact 1.00-inch coverage stays yellow; the orange band begins above 1.00.
       if (hailIn >= 3.00) return [123,  31, 162, 0.65]; // #7b1fa2 purple
       if (hailIn >= 2.50) return [179,  38,  31, 0.62]; // #b3261f deep red
-      if (hailIn >= 2.00) return [224,  57,  44, 0.60]; // #e0392c red-orange
-      if (hailIn >= 1.75) return [242, 112,  10, 0.58]; // #f2700a orange
-      if (hailIn >= 1.50) return [226, 137,  28, 0.58]; // #e2891c dark orange
-      if (hailIn >= 1.25) return [239, 174,  54, 0.50]; // #efae36 medium orange
-      if (hailIn >= 1.00) return [247, 208, 112, 0.44]; // #f7d070 light orange
-      return                     [249, 246, 200, 0.42]; // #f9f6c8 screenshot-matched half-inch yellow
+      if (hailIn >= 2.00) return [220,  30,  30, 0.60]; // #dc1e1e red
+      if (hailIn >= 1.50) return [240, 100,   0, 0.58]; // #f06400 dark orange
+      if (hailIn >  1.00) return [250, 170,  10, 0.50]; // #faaa0a light orange
+      return                     [249, 246, 200, 0.42]; // #f9f6c8 light yellow
     }
 
     function _swathScaledDisplayOpacity(globalOpacity, baseOpacity, bandMin, stormType) {
@@ -29141,7 +29139,7 @@ function mapsGoogleReady() {
     // Hail size → color band (RGB).  Used by HailFieldOverlay.
     // Nested ramp: yellow → orange-yellow → dark orange → red → purple
     var HAIL_FIELD_BANDS = [
-      { min: 0.00, max: 1.00, r: 255, g: 215, b:   0 }, // yellow       #FFD700
+      { min: 0.00, max: 1.00, r: 249, g: 246, b: 200 }, // light yellow #F9F6C8
       { min: 1.00, max: 1.50, r: 250, g: 170, b:  10 }, // orange-yellow #FAAA0A
       { min: 1.50, max: 2.00, r: 240, g: 100, b:   0 }, // dark orange  #F06400
       { min: 2.00, max: 2.50, r: 220, g:  30, b:  30 }, // red          #DC1E1E
@@ -29433,7 +29431,7 @@ function mapsGoogleReady() {
     // ══════════════════════════════════════════════════════════════
 
     var HAIL_SIZE_BANDS = [
-      { threshold: 0.50, label: '\u00BD\u2013 1\u2033',    fill: '#FFD700', stroke: '#B8960F' },  // yellow
+      { threshold: 0.50, label: '\u00BD\u2013 1\u2033',    fill: '#F9F6C8', stroke: '#D7D3A6' },  // light yellow
       { threshold: 1.00, label: '1\u2013 1\u00BD\u2033',   fill: '#FAAA0A', stroke: '#C88808' },  // orange-yellow
       { threshold: 1.50, label: '1\u00BD\u2013 2\u2033',   fill: '#F06400', stroke: '#B84C00' },  // dark orange
       { threshold: 2.00, label: '2\u2013 2\u00BD\u2033',   fill: '#DC1E1E', stroke: '#A01616' },  // red
@@ -29762,7 +29760,7 @@ function mapsGoogleReady() {
             oneInchHalfWidth
           );
           if (oneInchRing.length >= 3) {
-            var oneInchColor = swathSeverityColor(1.0);
+            var oneInchColor = swathSeverityColor(1.25);
             var oneInch = mapsCreateProductionGoogleOverlay('Polygon', {
               paths: oneInchRing.map(function(p) { return { lat: p.lat, lng: p.lon }; }),
               strokeWeight: 0,
