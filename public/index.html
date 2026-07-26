@@ -34220,7 +34220,10 @@ function mapsGoogleReady() {
                 }).filter(function (pt) { return isFinite(pt.lat) && isFinite(pt.lng); });
               }).filter(function (polygonPath) { return polygonPath.length >= 3; })
             : [path];
-          if (!isWind && !isTornado) {
+          // Canonical MRMS polygons already preserve the radar grid's natural,
+          // irregular boundary. Do not add the older synthetic sine-wave edge
+          // treatment; it can round a compact high-hail cell into a smooth blob.
+          if (!isWind && !isTornado && rowSrcLower !== 'mrms_mesh') {
             var handCutSeed = [dateStr, row.id || ri, row.source_product || row.source || 'hail', effectiveBand, ringIndex].join(':');
             paths = paths.map(function(polygonPath, pathIndex) {
               return _handCutStoredHailPath(polygonPath, handCutSeed + ':' + pathIndex);

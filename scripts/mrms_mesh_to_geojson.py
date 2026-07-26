@@ -96,11 +96,9 @@ def polygonize_mask(mask, dataset, source_srs):
             area = area_sq_mi(candidate)
             if area < MIN_AREA_SQ_MI:
                 continue
-            # Preserve the radar-grid edge character. This removes only sub-cell
-            # stair steps and never buffers, rounds, bridges, or convex-hulls.
-            simplified = candidate.SimplifyPreserveTopology(0.002)
-            if simplified and not simplified.IsEmpty():
-                candidate = simplified
+            # Keep the native cell boundary. Simplifying even by a small amount
+            # turns short, irregular high-hail tracks into straight diagonal
+            # edges and rounded-looking blobs at normal map zoom levels.
             geometries.append((candidate, area))
     return geometries
 

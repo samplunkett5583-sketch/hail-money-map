@@ -2,7 +2,7 @@
 /**
  * ingest_mrms_batch.mjs
  *
- * Runs MRMS MESH ingest for every storm date in the database.
+ * Runs MRMS MESH ingest for every hail date in the database.
  * Skips dates that already have mrms_mesh rows (use --force to re-ingest).
  *
  * Usage:
@@ -10,6 +10,7 @@
  *   node scripts/ingest_mrms_batch.mjs --force        # re-ingest all
  *   node scripts/ingest_mrms_batch.mjs --limit=10     # first N dates only
  *   node scripts/ingest_mrms_batch.mjs --start=2026-01-01  # from date onward
+ *   node scripts/ingest_mrms_batch.mjs --shard-index=0 --shard-count=6
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -42,21 +43,64 @@ const args = Object.fromEntries(
 const force = args.force === true || args.force === "true";
 const limitArg = args.limit ? parseInt(args.limit, 10) : Infinity;
 const startArg = args.start ? String(args.start) : null;
+const shardCount = Math.max(1, parseInt(args["shard-count"] || "1", 10));
+const shardIndex = Math.max(0, parseInt(args["shard-index"] || "0", 10));
+
+if (!Number.isInteger(shardCount) || !Number.isInteger(shardIndex) || shardIndex >= shardCount) {
+  console.error("[MRMS-BATCH] Invalid shard selection");
+  process.exit(1);
+}
 
 async function getAllStormDates() {
-  // Collect unique dates from hail_lsr_raw + storm_lsr_raw + storm_polygons
-  const sets = await Promise.all([
-    sb.from("hail_lsr_raw").select("event_date").order("event_date", { ascending: false }),
-    sb.from("storm_lsr_raw").select("event_date").order("event_date", { ascending: false }),
-    sb.from("storm_polygons").select("event_date").order("event_date", { ascending: false }),
-  ]);
-
+  // Supabase limits a normal select to 1,000 rows. The previous unpaginated
+  // query therefore saw only 61 dates because polygon-heavy dates consumed
+  // the first page. Walk every page and keep only dates backed by hail data.
   const dateSet = new Set();
-  for (const { data } of sets) {
-    for (const row of data || []) {
-      if (row.event_date && /^\d{4}-\d{2}-\d{2}$/.test(row.event_date)) {
-        dateSet.add(row.event_date);
+
+  async function addPagedDates(buildQuery, label) {
+    const pageSize = 1000;
+    let rawRows = 0;
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await buildQuery()
+        .order("event_date", { ascending: false })
+        .range(from, from + pageSize - 1);
+      if (error) throw new Error(`${label} date query failed: ${error.message}`);
+      const rows = data || [];
+      rawRows += rows.length;
+      for (const row of rows) {
+        const eventDate = String(row.event_date || "").slice(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) dateSet.add(eventDate);
       }
+      if (rows.length < pageSize) break;
+    }
+    console.log(`[MRMS-BATCH] ${label}: ${rawRows} raw rows`);
+  }
+
+  await addPagedDates(
+    () => sb.from("hail_lsr_raw").select("event_date"),
+    "hail_lsr_raw",
+  );
+  await addPagedDates(
+    () => sb.from("storm_polygons")
+      .select("event_date")
+      .eq("storm_type", "hail")
+      .neq("source", "mrms_mesh")
+      .neq("source_product", "no_swath"),
+    "legacy hail polygons",
+  );
+
+  // A date may have canonical rows but no remaining legacy rows. Retain it in
+  // the complete date inventory so --force still rebuilds every hail date.
+  await addPagedDates(
+    () => sb.from("storm_polygons")
+      .select("event_date")
+      .eq("source", "mrms_mesh"),
+    "canonical MRMS polygons",
+  );
+
+  for (const date of Array.from(dateSet)) {
+    if (!date) {
+      dateSet.delete(date);
     }
   }
 
@@ -64,11 +108,24 @@ async function getAllStormDates() {
 }
 
 async function getIngestedDates() {
-  const { data } = await sb
-    .from("storm_polygons")
-    .select("event_date")
-    .eq("source", "mrms_mesh");
-  return new Set((data || []).map((r) => r.event_date));
+  const pageSize = 1000;
+  const ingested = new Set();
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await sb
+      .from("storm_polygons")
+      .select("event_date")
+      .eq("source", "mrms_mesh")
+      .order("event_date", { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (error) throw new Error(`Canonical date query failed: ${error.message}`);
+    const rows = data || [];
+    rows.forEach((row) => {
+      const eventDate = String(row.event_date || "").slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) ingested.add(eventDate);
+    });
+    if (rows.length < pageSize) break;
+  }
+  return ingested;
 }
 
 function runIngest(dateStr, forceRun) {
@@ -112,6 +169,7 @@ async function getRowCount(dateStr) {
 async function main() {
   console.log("[MRMS-BATCH] ═══ Starting MRMS MESH batch ingest ═══");
   console.log("[MRMS-BATCH] force=" + force + " limit=" + limitArg + " start=" + (startArg || "none"));
+  console.log("[MRMS-BATCH] shard=" + shardIndex + "/" + shardCount);
 
   const allDates = await getAllStormDates();
   const ingested = await getIngestedDates();
@@ -122,6 +180,7 @@ async function main() {
   let workDates = allDates;
   if (startArg) workDates = workDates.filter((d) => d >= startArg);
   if (!force) workDates = workDates.filter((d) => !ingested.has(d));
+  workDates = workDates.filter((_, index) => index % shardCount === shardIndex);
   if (isFinite(limitArg)) workDates = workDates.slice(0, limitArg);
 
   console.log("[MRMS-BATCH] Dates to process:  " + workDates.length);
