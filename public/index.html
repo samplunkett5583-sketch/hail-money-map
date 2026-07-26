@@ -27327,6 +27327,7 @@
             mapsMeasureSyncPhase('maps-ensure-visible-map', mapsEnsureVisibleMap);
             mapsMarkNavigationTiming('initialization-finish');
             mapsFetchRecentDates().then(function () {
+              mapsPreviewMostRecentStormOnOpen();
               _fetchStormRankingSummaries((mapsState.stormDates || []).slice(0, MAPS_STORM_DATE_BATCH_SIZE));
               mapsMarkNavigationTiming('background-date-refresh-completed');
             }).catch(function () {
@@ -27335,6 +27336,14 @@
           }, 0);
         });
       });
+      return true;
+    }
+
+    function mapsPreviewMostRecentStormOnOpen() {
+      var page = document.getElementById('page-map');
+      var mostRecentDate = mapsState.stormDates && mapsState.stormDates[0];
+      if (!page || !page.classList.contains('active') || !mapsState.map || !mostRecentDate) return false;
+      mapsPreviewDate(mostRecentDate);
       return true;
     }
 
@@ -27457,6 +27466,7 @@
         mapsMeasureSyncPhase('ticker-initialization', initHurricaneTicker);
         mapsState.ready = true;
         renderStormPanelActionButtons(document.getElementById('maps-storm-actions'));
+        mapsPreviewMostRecentStormOnOpen();
         // Load rankings only for the first visible card batch. Older dates
         // are enriched lazily as the user scrolls.
         _fetchStormRankingSummaries((mapsState.stormDates || []).slice(0, MAPS_STORM_DATE_BATCH_SIZE));
