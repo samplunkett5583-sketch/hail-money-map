@@ -26,7 +26,15 @@ assert(source.includes('.from("hail_radar_days")'),
 assert(!source.includes('sb.from("storm_lsr_raw").select("event_date")'),
   "Wind-only report dates must not be treated as hail dates");
 assert(source.includes("index % shardCount === shardIndex"),
-  "Full backfill must partition missing dates into independent shards");
+  "Full backfill must partition dates into independent shards");
+const shardAssignment = source.indexOf(
+  "workDates = workDates.filter((_, index) => index % shardCount === shardIndex)",
+);
+const completedDateFilter = source.indexOf(
+  "workDates = workDates.filter((d) => !ingested.has(d))",
+);
+assert(shardAssignment >= 0 && completedDateFilter >= 0 && shardAssignment < completedDateFilter,
+  "Dates must receive a permanent shard before completed dates are removed");
 
 const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 assert(html.includes("rowSrcLower !== 'mrms_mesh'"),
