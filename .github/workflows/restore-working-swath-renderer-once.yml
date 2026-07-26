@@ -1,0 +1,39 @@
+name: Restore working swath renderer once
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - .github/workflows/restore-working-swath-renderer-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: pr-43-storm-panel-style
+          fetch-depth: 0
+
+      - name: Restore previously working swath renderer
+        env:
+          RESTORE_SWATH_PATCH: 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
+        run: |
+          printf '%s' "$RESTORE_SWATH_PATCH" | base64 --decode | gzip --decompress > /tmp/restore-swath.patch
+          git apply --check /tmp/restore-swath.patch
+          git apply /tmp/restore-swath.patch
+          grep -q "radar-geometry-report-calibrated" public/index.html
+          grep -q "_drawHailCoreRibbons(dateStr, points, rows)" public/index.html
+          grep -q "band300WithSmallerNearbyReport" public/index.html
+          if grep -q "mrms-canonical" public/index.html; then exit 1; fi
+          rm .github/workflows/restore-working-swath-renderer-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/index.html .github/workflows/restore-working-swath-renderer-once.yml
+          git commit -m "Restore working hail swath renderer"
+          git push origin HEAD:pr-43-storm-panel-style
