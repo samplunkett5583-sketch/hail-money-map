@@ -162,6 +162,7 @@ async function main() {
   console.log("\n[MRMS-BATCH] ═══ DONE ═══");
   console.log("[MRMS-BATCH] ok=" + ok + " fail=" + fail + " skip=" + skip +
     " total=" + workDates.length);
+  if (fail > 0) process.exitCode = 1;
 }
 
 main().catch((err) => {
