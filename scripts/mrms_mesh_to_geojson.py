@@ -54,7 +54,9 @@ def area_sq_mi(wgs84_geometry):
 
 
 def iter_polygon_parts(geometry):
-    flat = ogr.wkbFlatten(geometry.GetGeometryType())
+    geometry_type = geometry.GetGeometryType()
+    flatten = getattr(ogr, "wkbFlatten", None)
+    flat = flatten(geometry_type) if flatten else ogr.GT_Flatten(geometry_type)
     if flat == ogr.wkbPolygon:
         yield geometry
     elif flat == ogr.wkbMultiPolygon:
