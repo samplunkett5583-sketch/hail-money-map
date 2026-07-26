@@ -295,6 +295,19 @@ function radarRows(rows) {
 async function persistRows(client, dateIso, rows) {
   if (!rows.length) throw new Error("MRMS conversion returned zero displayable polygons");
 
+  const maxMeshIn = rows.reduce((maximum, row) => {
+    const value = Number.isFinite(row.band_max) ? row.band_max : row.band_min;
+    return Math.max(maximum, Number(value) || 0);
+  }, 0);
+  const { error: dayError } = await client
+    .from("hail_radar_days")
+    .upsert({
+      event_date: dateIso,
+      max_mesh_in: maxMeshIn,
+      source: "mrms_mesh",
+    }, { onConflict: "event_date" });
+  if (dayError) throw new Error(`hail_radar_days upsert failed: ${dayError.message}`);
+
   // Only replace this product after the new complete result exists in memory.
   for (const table of ["storm_polygons", "hail_radar_polygons"]) {
     const { error } = await client
