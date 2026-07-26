@@ -71,10 +71,11 @@ async function getIngestedDates() {
   return new Set((data || []).map((r) => r.event_date));
 }
 
-function runIngest(dateStr) {
+function runIngest(dateStr, forceRun) {
   return new Promise((resolve) => {
     const scriptPath = path.join(__dirname, "ingest_mrms_swaths.mjs");
     const args = ["--date=" + dateStr];
+    if (forceRun) args.push("--force");
     const child = spawn("node", [scriptPath, ...args], {
       env: { ...process.env },
       stdio: ["ignore", "pipe", "pipe"],
@@ -137,7 +138,7 @@ async function main() {
     let errMsg = "none";
 
     try {
-      const result = await runIngest(d);
+      const result = await runIngest(d, force);
       if (result.code !== 0) {
         errMsg = "exit-code=" + result.code;
         fail++;

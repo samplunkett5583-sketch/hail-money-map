@@ -32917,6 +32917,20 @@ function mapsGoogleReady() {
       mapsState.hailShadowSummaryByDate[mapsNormalizeDate(dateStr) || 'unknown'] = summary;
       if (mapsIsSwathDebugMode()) console.info('[HAIL-SHADOW-SUMMARY]', mapsNormalizeDate(dateStr), summary);
 
+      // A real MRMS MESH grid is the authoritative hail footprint. Never stack
+      // buffered NEXRAD tracks, report corridors, or another radar product on
+      // top of it: that was the source of the multiple incompatible swath
+      // styles and the oversized smooth ribbons.
+      var canonicalMrmsRows = hailRows.filter(function (row) {
+        var source = String(row && row.source || '').toLowerCase();
+        var product = String(row && row.source_product || '').toLowerCase();
+        return source === 'mrms_mesh' && product.indexOf('mesh') !== -1;
+      });
+      if (canonicalMrmsRows.length) {
+        summary.displayMode = 'canonical-mrms-mesh';
+        return canonicalMrmsRows;
+      }
+
       // Ground reports control magnitude, but they are isolated points and cannot supply
       // the full storm-track footprint. When a NEXRAD track is available, use its geometry;
       // mapsDrawSavedStormPolygonForDate calibrates each band against reports inside it.
@@ -32940,7 +32954,42 @@ function mapsGoogleReady() {
       }
 
       // Radar geometry remains a fallback only when no official-report swath exists.
-      if (!mapsAcceptedOnlyFeatureEnabled()) return hailRows;
+      // Select exactly one product family. Returning every row here stacked
+      // unrelated generators from the same date into one visual.
+      if (!mapsAcceptedOnlyFeatureEnabled()) {
+        var legacyGroups = {};
+        hailRows.forEach(function (row) {
+          var source = String(row && row.source || 'unknown').toLowerCase();
+          var product = String(row && row.source_product || 'unknown').toLowerCase();
+          var key = source + '|' + product;
+          (legacyGroups[key] || (legacyGroups[key] = [])).push(row);
+        });
+        var sourceRank = {
+          'manual': 1,
+          'hailtrace': 2,
+          'swath_render_saved': 3,
+          'nexrad_iem': 4,
+          'nexrad_poc': 5,
+          'swdi': 6,
+          'mrms': 7
+        };
+        var selectedLegacy = Object.keys(legacyGroups).map(function (key) {
+          return legacyGroups[key];
+        }).sort(function (left, right) {
+          var leftSource = String(left[0] && left[0].source || '').toLowerCase();
+          var rightSource = String(right[0] && right[0].source || '').toLowerCase();
+          var leftRank = sourceRank[leftSource] || 99;
+          var rightRank = sourceRank[rightSource] || 99;
+          if (leftRank !== rightRank) return leftRank - rightRank;
+          var leftPriority = Number(left[0] && left[0].source_priority);
+          var rightPriority = Number(right[0] && right[0].source_priority);
+          if (!isFinite(leftPriority)) leftPriority = 999;
+          if (!isFinite(rightPriority)) rightPriority = 999;
+          return leftPriority - rightPriority;
+        })[0] || [];
+        summary.displayMode = selectedLegacy.length ? 'single-legacy-product' : 'none';
+        return selectedLegacy;
+      }
 
       var candidates = hailRows.filter(function (row) {
         if (!row || String(row.storm_type || 'hail').toLowerCase() !== 'hail') return false;
@@ -38351,19 +38400,18 @@ function mapsGoogleReady() {
             windPts = Array.isArray(windPts) ? windPts : [];
             tornadoPts = Array.isArray(tornadoPts) ? tornadoPts : [];
 
-            // Fallback-only layers: only run when no mrms_mesh saved polygons exist for this date.
-            // When rows has mrms_mesh data, mapsDrawSavedStormPolygonForDate already drew the
-            // HailRecon-style swaths — adding blobs/envelopes/corridors on top duplicates them.
-            var _hasMrmsRows = !!(rows && rows.length);
-            var _mrmsHeavyDate = _isMrmsHeavyDate(rows);
-            if (!_hasMrmsRows) {
+            // Fallback-only layers run only when no saved hail geometry exists.
+            // Saved polygons already define the complete footprint; adding
+            // envelopes or report ribbons changes their shape and style.
+            var _hasSavedHailGeometry = (rows || []).some(function(row) {
+              return String(row && row.storm_type || 'hail').toLowerCase() === 'hail' &&
+                !!(row.polygon_geojson || row.geometry);
+            });
+            if (!_hasSavedHailGeometry) {
               _drawSmallHailLayer(dateStr, rows, points);
               _drawHailEnvelope(dateStr, rows, points);
-            } else if (_mrmsHeavyDate) {
-              // MRMS-heavy: draw expanded cell coverage for broad pale-yellow background wash.
-              _drawSmallHailLayer(dateStr, rows, points);
             }
-            if (!_hasMrmsRows) {
+            if (!_hasSavedHailGeometry) {
               var _corridorHailPts = (points || []).slice();
               (rows || []).forEach(function(row) {
                 if (_corridorHailPts.length >= 300) return;
@@ -38395,10 +38443,13 @@ function mapsGoogleReady() {
               mapsDrawWeakFallbackCorridors(dateStr, _corridorHailPts, windPts, tornadoPts);
             }
 
-            // Narrow core ribbons: supplement mrms_mesh with LSR-driven corridors.
-            // Outer pale-yellow (z=88) fills gaps in radar coverage.
-            // Orange core (z=305) adds narrow visible ribbons where 1.5"+ hail confirmed.
-            _drawHailCoreRibbons(dateStr, points, rows);
+            if (!_hasSavedHailGeometry) {
+              _drawHailCoreRibbons(dateStr, points, rows);
+            } else {
+              // Keep the already-approved May 3 reviewed overlay, but do not
+              // manufacture a second report ribbon on other saved products.
+              _drawReviewedHailDisplayTracks(dateStr);
+            }
             mapsApplySwathOpacity(mapsState.swathOpacity != null ? mapsState.swathOpacity : 0.55);
             mapsSyncActiveHailHoverBands(dateStr, mapsState.swathPolygons[dateStr] || []);
 
@@ -38823,43 +38874,18 @@ function mapsGoogleReady() {
           mapsRemoveRefSwathForDate(dateStr);
 
           var drew = mapsDrawSavedStormPolygonForDate(dateStr, rows);
-          // Layer 1 (z=70-75): pale-yellow broad base from polygon expansion + LSR corridors
-          _drawSmallHailLayer(dateStr, rows, points);
-          // Layer 1b (z=500): wide polyline envelopes from centroids + LSR
-          _drawHailEnvelope(dateStr, rows, points);
-          // Layer 2: broad hail fills already drawn above (z=150-400)
-          // Layer 3 (z=600-604): corridor cells for ALL dates.
-          // Supplement sparse LSR points with synthetic hail locations from polygon centroids
-          // so MRMS-rich dates (e.g. 2026-05-03) also render yellow/orange core streaks.
-          var corridorHailPts = (points || []).slice();
-          (rows || []).forEach(function(row) {
-            if (corridorHailPts.length >= 300) return;
-            if ((row.storm_type || 'hail').toLowerCase() !== 'hail') return;
-            var bmin = Number(row.band_min) || 0;
-            if (bmin < 0.5) return;
-            var clat = Number(row.centroid_lat), clon = Number(row.centroid_lon);
-            if (!isFinite(clat) || !isFinite(clon)) {
-              try {
-                var gjr = row.polygon_geojson;
-                if (gjr && typeof gjr === 'string') gjr = JSON.parse(gjr);
-                if (gjr) {
-                  var ring0 = null;
-                  if (gjr.type === 'Polygon' && gjr.coordinates && gjr.coordinates[0]) ring0 = gjr.coordinates[0];
-                  else if (gjr.type === 'MultiPolygon' && gjr.coordinates && gjr.coordinates[0] && gjr.coordinates[0][0]) ring0 = gjr.coordinates[0][0];
-                  else if (gjr.type === 'Feature' && gjr.geometry && gjr.geometry.coordinates && gjr.geometry.coordinates[0]) ring0 = gjr.geometry.coordinates[0];
-                  else if (gjr.type === 'FeatureCollection' && gjr.features && gjr.features[0] && gjr.features[0].geometry && gjr.features[0].geometry.coordinates && gjr.features[0].geometry.coordinates[0]) ring0 = gjr.features[0].geometry.coordinates[0];
-                  if (ring0 && ring0.length >= 3) {
-                    var sla = 0, slo = 0;
-                    for (var ri = 0; ri < ring0.length; ri++) { sla += ring0[ri][1]; slo += ring0[ri][0]; }
-                    clat = sla / ring0.length; clon = slo / ring0.length;
-                  }
-                }
-              } catch(e2) {}
-            }
-            if (!isFinite(clat) || !isFinite(clon)) return;
-            corridorHailPts.push({ lat: clat, lon: clon, hail_in: bmin });
+          var hasSavedHailGeometry = (rows || []).some(function(row) {
+            return String(row && row.storm_type || 'hail').toLowerCase() === 'hail' &&
+              !!(row.polygon_geojson || row.geometry);
           });
-          mapsDrawWeakFallbackCorridors(dateStr, corridorHailPts, windPts, tornadoPts);
+          if (!hasSavedHailGeometry) {
+            _drawSmallHailLayer(dateStr, rows, points);
+            _drawHailEnvelope(dateStr, rows, points);
+            mapsDrawWeakFallbackCorridors(dateStr, points || [], windPts, tornadoPts);
+            _drawHailCoreRibbons(dateStr, points, rows);
+          } else {
+            _drawReviewedHailDisplayTracks(dateStr);
+          }
           var _drawStats = (mapsState._savedDrawQuality || {})[dateStr] || {};
           hmDebugLog('[loadStormDate] date', dateStr, {
             polygonsLoaded: Number(_drawStats.polygonsLoaded || rows.length || 0),
