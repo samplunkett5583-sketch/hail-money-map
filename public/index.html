@@ -25709,9 +25709,9 @@
       renderedStormDateCount: 0
     };
     var MAPS_MAX_SELECT = 10;
-    var MAPS_MIN_ZOOM = 4;
+    var MAPS_MIN_ZOOM = 5;
     var MAPS_DEFAULT_CENTER = { lat: 38.6, lng: -97.0 };
-    var MAPS_DEFAULT_ZOOM = 4;
+    var MAPS_DEFAULT_ZOOM = 5;
     var MAPS_US_BOUNDS = { north: 50.0, south: 24.0, west: -125.0, east: -66.0 };
     var MAPS_STORM_DATE_BATCH_SIZE = 30;
     var MAPS_DATE_INDEX_MAX_DATES = 500;
@@ -26128,6 +26128,11 @@
 
     function mapsSetHailHoverCursor(isOverSwath) {
       var overSwath = !!isOverSwath;
+      var gesture = mapsState._mapPointerGesture;
+      // Do not change Google Maps interaction options while a pointer is down.
+      // Re-applying draggableCursor during a drag can interrupt the pan gesture
+      // and leave the map displaying the closed-hand cursor after release.
+      if (gesture && (gesture.pointerDown || gesture.dragging)) return;
       if (mapsState._hailHoverCursorOverSwath === overSwath) return;
       mapsState._hailHoverCursorOverSwath = overSwath;
       var cursor = overSwath ? 'pointer' : 'grab';
@@ -26315,6 +26320,8 @@
       if (!page || !mapEl || !mapsState.map || !window.google || !google.maps) return;
 
       mapsReplaceHailHoverMoveListener(mapsState.map, function (event) {
+        var gesture = mapsState._mapPointerGesture;
+        if (gesture && (gesture.pointerDown || gesture.dragging)) return;
         if (!event || !event.latLng || !page.classList.contains('active')) {
           mapsClearHailHoverReadout();
           return;
@@ -28642,8 +28649,7 @@ function mapsGoogleReady() {
           zoom: MAPS_DEFAULT_ZOOM,
           minZoom: MAPS_MIN_ZOOM,
           restriction: { latLngBounds: MAPS_US_BOUNDS, strictBounds: false },
-          renderingType: google.maps.RenderingType ? google.maps.RenderingType.RASTER : undefined,
-          isFractionalZoomEnabled: false,
+          isFractionalZoomEnabled: true,
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           styles: [],
           zoomControl: false,
@@ -28667,6 +28673,71 @@ function mapsGoogleReady() {
       mapsInstallMinimumZoomGuard(map);
       mapsWireHailHoverReadout();
       hmDebugLog('[HMM] native map wheel zoom restored');
+
+      // Keep pan gestures separate from property clicks. Google can emit a map
+      // click after a short drag, especially when hover-driven cursor options
+      // changed during the gesture. Track actual pointer travel and suppress
+      // only the click produced by that drag.
+      var mapPointerGesture = mapsState._mapPointerGesture = {
+        pointerDown: false,
+        dragging: false,
+        moved: false,
+        downX: 0,
+        downY: 0,
+        suppressClickUntil: 0
+      };
+      function resetMapPointerGesture(suppressClick) {
+        if (suppressClick || mapPointerGesture.moved || mapPointerGesture.dragging) {
+          mapPointerGesture.suppressClickUntil = Date.now() + 450;
+        }
+        mapPointerGesture.pointerDown = false;
+        mapPointerGesture.dragging = false;
+        mapPointerGesture.moved = false;
+        mapsState._hailHoverCursorOverSwath = null;
+        mapsSetHailHoverCursor(false);
+      }
+      mapEl.addEventListener('pointerdown', function (event) {
+        if (event.button != null && event.button !== 0) return;
+        mapPointerGesture.pointerDown = true;
+        mapPointerGesture.dragging = false;
+        mapPointerGesture.moved = false;
+        mapPointerGesture.downX = Number(event.clientX) || 0;
+        mapPointerGesture.downY = Number(event.clientY) || 0;
+      }, true);
+      mapEl.addEventListener('pointermove', function (event) {
+        if (!mapPointerGesture.pointerDown || mapPointerGesture.moved) return;
+        var dx = (Number(event.clientX) || 0) - mapPointerGesture.downX;
+        var dy = (Number(event.clientY) || 0) - mapPointerGesture.downY;
+        if ((dx * dx) + (dy * dy) >= 25) mapPointerGesture.moved = true;
+      }, true);
+      mapEl.addEventListener('pointerup', function () {
+        resetMapPointerGesture(false);
+      }, true);
+      mapEl.addEventListener('pointercancel', function () {
+        resetMapPointerGesture(true);
+      }, true);
+      map.addListener('dragstart', function () {
+        mapPointerGesture.dragging = true;
+        mapPointerGesture.moved = true;
+        if (mapsState._hailHoverRaf) {
+          cancelAnimationFrame(mapsState._hailHoverRaf);
+          mapsState._hailHoverRaf = null;
+        }
+        mapsState._hailHoverPendingLatLng = null;
+        var readout = document.getElementById('maps-hail-hover-readout');
+        if (readout) readout.textContent = '';
+      });
+      map.addListener('dragend', function () {
+        resetMapPointerGesture(true);
+      });
+      window.addEventListener('blur', function () {
+        if (mapPointerGesture.pointerDown || mapPointerGesture.dragging) resetMapPointerGesture(true);
+      });
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden && (mapPointerGesture.pointerDown || mapPointerGesture.dragging)) {
+          resetMapPointerGesture(true);
+        }
+      });
 
       function applyBaseMapStyle() {
         if (map.getMapTypeId() === 'roadmap') {
@@ -28771,6 +28842,12 @@ function mapsGoogleReady() {
       var _mapClickInfoWindow = null; // kept for backward compat close calls
 
       map.addListener('click', function (e) {
+        var gesture = mapsState._mapPointerGesture;
+        if (gesture && (gesture.pointerDown || gesture.dragging || gesture.moved ||
+            Date.now() < Number(gesture.suppressClickUntil || 0))) {
+          gesture.moved = false;
+          return;
+        }
         // Close any open hail InfoWindows first
         try {
           (window._lsrInfoWindows || []).forEach(function (iw) { try { iw.close(); } catch (_) {} });
@@ -33763,8 +33840,10 @@ function mapsGoogleReady() {
       // Preferred saved corridor sources — exempt from oversized guard & fragment cleanup
       var PREFERRED_CORRIDOR_SOURCES = ['corridor', 'swath_render_saved', 'nexrad_poc', 'mrms_mesh', 'synthesized_mesh', 'nexrad_iem'];
       var _verboseDateLogs = MAPS_VERBOSE_DATE_LOGS;
-      // Selected-date clicks no longer auto-focus the map, so skip dead fit-bounds bookkeeping here.
-      var _trackFocusGeometry = false;
+      // Retain the complete selected-date footprint so opening Maps and changing
+      // dates can frame every visible swath instead of staying at the far-out
+      // default view or focusing only one detached cell.
+      var _trackFocusGeometry = true;
 
       // Cache raw rows for nearby-storm radius search in property panel
       mapsState.rawStormRows[dateStr] = rows || [];
@@ -34150,6 +34229,9 @@ function mapsGoogleReady() {
         var rowProvenance = mapsHailRowProvenance(row);
         var isWind = (stormType === 'wind');
         var isTornado = (stormType === 'tornado');
+        var _showRow = ((stormType === 'wind' && mapsState.swathToggles.wind) ||
+          (stormType === 'tornado' && mapsState.swathToggles.tornado) ||
+          ((stormType !== 'wind' && stormType !== 'tornado') && mapsState.swathToggles.hail));
         if (!isWind && !isTornado) {
           var localReportedMax = mapsMaxReportedHailInsideGeometry(dateStr, row.polygon_geojson);
           // A smaller point report does not erase a stronger radar-confirmed core
@@ -34191,15 +34273,12 @@ function mapsGoogleReady() {
         // Wind draws below hail; tornado draws above both.
         var segZIndex = isTornado ? 3000 + Math.round(effectiveBand * 100) : (isWind ? 50 : 100) + Math.round(effectiveBand * 100);
 
-        _accumulateFocusCandidate(row, stormType, ringArrays, effectiveBand);
+        if (_showRow) _accumulateFocusCandidate(row, stormType, ringArrays, effectiveBand);
 
         if (_verboseDateLogs) {
           hmDebugLog('[render] date=' + dateStr + ' source=' + rowSrcLower + ' polygon-count=' + ringArrays.length + ' render-path=canonical');
         }
 
-        var _showRow = ((stormType === 'wind' && mapsState.swathToggles.wind) ||
-          (stormType === 'tornado' && mapsState.swathToggles.tornado) ||
-          ((stormType !== 'wind' && stormType !== 'tornado') && mapsState.swathToggles.hail));
         ringArrays.forEach(function (ring, ringIndex) {
           if (!Array.isArray(ring) || ring.length < 3) return;
           var path = ring.map(function (coord) {
@@ -34239,7 +34318,7 @@ function mapsGoogleReady() {
               return _handCutStoredHailPath(polygonPath, handCutSeed + ':' + pathIndex);
             });
           }
-          if (_trackFocusGeometry) {
+          if (_trackFocusGeometry && _showRow) {
             path.forEach(function (pt) {
               if (pt.lat < _dateBbox.minLat) _dateBbox.minLat = pt.lat;
               if (pt.lat > _dateBbox.maxLat) _dateBbox.maxLat = pt.lat;
@@ -37448,7 +37527,8 @@ function mapsGoogleReady() {
           });
           function _focusFinalizeFit() {
             var zoom = Number(map.getZoom()) || 6;
-            var clamped = Math.max(6, Math.min(9, zoom));
+            var minimumFitZoom = focusedOnlyOneCluster ? 6 : MAPS_MIN_ZOOM;
+            var clamped = Math.max(minimumFitZoom, Math.min(9, zoom));
             if (clamped !== zoom) {
               google.maps.event.addListenerOnce(map, 'idle', _focusFinalizeFit);
               map.setZoom(clamped);
@@ -37475,7 +37555,8 @@ function mapsGoogleReady() {
 
       var _focusCached = mapsState._fitBoundsCache[dateStr];
       if (_focusCached && String(_focusCached.propertyKey || '') === _focusPropertyKey) {
-        var _focusCachedZoom = Math.max(6, Math.min(9, Number(_focusCached.zoom) || map.getZoom() || 6));
+        var _focusCachedMinimum = _focusCached.focusedOnlyOneCluster === false ? MAPS_MIN_ZOOM : 6;
+        var _focusCachedZoom = Math.max(_focusCachedMinimum, Math.min(9, Number(_focusCached.zoom) || map.getZoom() || 6));
         try {
           map.setCenter(_focusCached.center);
           map.setZoom(_focusCachedZoom);
@@ -37492,6 +37573,16 @@ function mapsGoogleReady() {
         .concat(mapsState.lsrPointsByDate[dateStr] || [])
         .concat(mapsState.windPointsByDate[dateStr] || [])
         .concat(mapsState.tornadoPointsByDate[dateStr] || []);
+
+      // Normal date selection frames the full saved swath footprint. Property
+      // context still uses the nearest/best cluster behavior below.
+      var _focusDateBbox = mapsState._dateBbox && mapsState._dateBbox[dateStr];
+      if (!_hasPropertyContext && _focusDateBbox && _focusDateBbox.hasAny) {
+        var _focusAllSwathsBounds = new google.maps.LatLngBounds();
+        _focusAllSwathsBounds.extend({ lat: _focusDateBbox.minLat, lng: _focusDateBbox.minLon });
+        _focusAllSwathsBounds.extend({ lat: _focusDateBbox.maxLat, lng: _focusDateBbox.maxLon });
+        return _focusFitAndCache(_focusAllSwathsBounds, 'all-selected-date-swaths', false);
+      }
 
       var _focusRawCandidates = Array.isArray(mapsState.focusCandidatesByDate[dateStr])
         ? mapsState.focusCandidatesByDate[dateStr]
@@ -40105,10 +40196,13 @@ function mapsGoogleReady() {
       if (_ppNearbyCache[cacheKey]) return _ppNearbyCache[cacheKey];
 
       var degPerMi = 1 / 69.0;
-      var latMin = (prop.lat - 1.5).toFixed(6);
-      var latMax = (prop.lat + 1.5).toFixed(6);
-      var lonMin = (prop.lng - 1.5).toFixed(6);
-      var lonMax = (prop.lng + 1.5).toFixed(6);
+      var polygonBoxMi = 55;
+      var polygonDLat = polygonBoxMi * degPerMi;
+      var polygonDLon = polygonDLat / Math.max(0.25, Math.cos(prop.lat * Math.PI / 180));
+      var latMin = (prop.lat - polygonDLat).toFixed(6);
+      var latMax = (prop.lat + polygonDLat).toFixed(6);
+      var lonMin = (prop.lng - polygonDLon).toFixed(6);
+      var lonMax = (prop.lng + polygonDLon).toFixed(6);
 
       // Query saved storm_polygons around the property and verify actual containment.
       var url = SUPABASE_URL + '/rest/v1/storm_polygons?' +
