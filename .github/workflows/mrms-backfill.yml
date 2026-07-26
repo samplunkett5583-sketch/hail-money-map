@@ -1,12 +1,59 @@
-name: MRMS Backfill Swaths
+name: Backfill Canonical MRMS Swaths
 
 on:
   workflow_dispatch:
+    inputs:
+      start:
+        description: "Oldest storm date to include (YYYY-MM-DD, blank for all)"
+        required: false
+        type: string
+      limit:
+        description: "Maximum dates in this run"
+        required: true
+        default: "500"
+        type: string
+      force:
+        description: "Replace dates that already have canonical MRMS polygons"
+        required: true
+        default: true
+        type: boolean
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  retired:
-    name: Legacy workflow retired
+  backfill:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+
     steps:
-      - name: Explain replacement
-        run: echo "Legacy multi-month MRMS backfill is retired; use the current ingestion workflows."
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install GDAL grid tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdal-bin python3-gdal python3-numpy
+          /usr/bin/python3 -c "from osgeo import gdal, ogr; import numpy"
+
+      - name: Regenerate storm-date swaths
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          QGIS_PYTHON: /usr/bin/python3
+          BACKFILL_START: ${{ inputs.start }}
+          BACKFILL_LIMIT: ${{ inputs.limit }}
+          FORCE_REBUILD: ${{ inputs.force }}
+        run: |
+          ARGS=("--limit=$BACKFILL_LIMIT")
+          if [ -n "$BACKFILL_START" ]; then ARGS+=("--start=$BACKFILL_START"); fi
+          if [ "$FORCE_REBUILD" = "true" ]; then ARGS+=("--force"); fi
+          node scripts/ingest_mrms_batch.mjs "${ARGS[@]}"
