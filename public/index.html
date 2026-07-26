@@ -25682,6 +25682,7 @@
       hailShadowReviewRowsByDate: {},
       /* source-tracking: populated by _fetchLsr90DayDates */
       dateHasPolygon: {},          // dateStr -> true if storm_polygons has a row
+      dateHasCanonicalHailSwath: {}, // dateStr -> true when an authoritative radar/reviewed hail footprint exists
       dateHasHailReports: {},      // dateStr -> true if hail_lsr_raw has a row
       dateHasWindReports: {},      // dateStr -> true if storm_lsr_raw has a row
       debugSourceCounts: {         // diagnostic counts from last fetch
@@ -27334,8 +27335,11 @@
             mapsMeasureSyncPhase('maps-ensure-visible-map', mapsEnsureVisibleMap);
             mapsMarkNavigationTiming('initialization-finish');
             mapsFetchRecentDates().then(function () {
+              return mapsWaitForStormRankingSummaries(
+                (mapsState.stormDates || []).slice(0, MAPS_STORM_DATE_BATCH_SIZE)
+              );
+            }).then(function () {
               mapsPreviewMostRecentStormOnOpen();
-              _fetchStormRankingSummaries((mapsState.stormDates || []).slice(0, MAPS_STORM_DATE_BATCH_SIZE));
               mapsMarkNavigationTiming('background-date-refresh-completed');
             }).catch(function () {
               mapsMarkNavigationTiming('background-date-refresh-completed');
@@ -27348,9 +27352,22 @@
 
     function mapsPreviewMostRecentStormOnOpen() {
       var page = document.getElementById('page-map');
-      var mostRecentDate = mapsState.stormDates && mapsState.stormDates[0];
+      var stormDates = mapsState.stormDates || [];
+      var mostRecentDate = stormDates.find(function (dateStr) {
+        return mapsState.dateHasCanonicalHailSwath &&
+          mapsState.dateHasCanonicalHailSwath[dateStr] === true;
+      }) || stormDates.find(function (dateStr) {
+        return mapsState.dateHasPolygon && mapsState.dateHasPolygon[dateStr] === true;
+      }) || stormDates[0];
       if (!page || !page.classList.contains('active') || !mapsState.map || !mostRecentDate) return false;
-      mapsPreviewDate(mostRecentDate);
+      // Re-run the normal loader if the card was selected before its geometry
+      // summary finished loading. mapsDrawDate safely deduplicates an in-flight
+      // request and restores/refits an already cached swath.
+      if (mapsState.previewDate === mostRecentDate) {
+        mapsDrawDate(mostRecentDate);
+      } else {
+        mapsPreviewDate(mostRecentDate);
+      }
       return true;
     }
 
@@ -27473,7 +27490,11 @@
         mapsMeasureSyncPhase('ticker-initialization', initHurricaneTicker);
         mapsState.ready = true;
         renderStormPanelActionButtons(document.getElementById('maps-storm-actions'));
-        mapsPreviewMostRecentStormOnOpen();
+        var newestKnownDate = mapsState.stormDates && mapsState.stormDates[0];
+        if (newestKnownDate && mapsState.stormRankingLoadedDates &&
+            mapsState.stormRankingLoadedDates[newestKnownDate]) {
+          mapsPreviewMostRecentStormOnOpen();
+        }
         // Load rankings only for the first visible card batch. Older dates
         // are enriched lazily as the user scrolls.
         _fetchStormRankingSummaries((mapsState.stormDates || []).slice(0, MAPS_STORM_DATE_BATCH_SIZE));
@@ -27682,6 +27703,7 @@
             summary.severeHailReportCount = 0;
             summary.hail = null;
             polygonSummaries[dateStr] = null;
+            mapsState.dateHasCanonicalHailSwath[dateStr] = false;
           });
           hailRows.forEach(function (row) {
             var dateStr = String(row && row.event_date || '').slice(0, 10);
@@ -27717,6 +27739,11 @@
             poly.max = Math.max(Number(poly.max) || hailValue, hailValue);
             poly.swathCount = (Number(poly.swathCount) || 0) + 1;
             mapsState.dateHasPolygon[dateStr] = true;
+            var source = String(row.source || '').toLowerCase();
+            if (source === 'mrms_mesh' || source === 'mrms' ||
+                source === 'manual' || source === 'hailtrace') {
+              mapsState.dateHasCanonicalHailSwath[dateStr] = true;
+            }
           });
           mapsApplyValidatedHousingRows(dates, polygonRows, impactRows);
           return mapsEstimateHousingFromStormPolygons(dates, polygonRows, hailRows).then(function () {
@@ -27738,6 +27765,28 @@
           hmDebugWarn('[stormRanking] Failed to load ranking inputs:', err.message || err);
           return [];
         });
+    }
+
+    function mapsWaitForStormRankingSummaries(dateList) {
+      var dates = (dateList || []).map(mapsNormalizeDate).filter(Boolean);
+      return _fetchStormRankingSummaries(dates).then(function () {
+        return new Promise(function (resolve) {
+          var checks = 0;
+          function finishWhenSettled() {
+            var stillLoading = dates.some(function (dateStr) {
+              return mapsState.stormRankingPendingDates &&
+                mapsState.stormRankingPendingDates[dateStr] === true;
+            });
+            if (!stillLoading || checks >= 200) {
+              resolve();
+              return;
+            }
+            checks++;
+            setTimeout(finishWhenSettled, 50);
+          }
+          finishWhenSettled();
+        });
+      });
     }
 
     // ── Paginated fetch of event_date values from a single Supabase table ──
@@ -28617,8 +28666,7 @@ function mapsGoogleReady() {
       if (!map || map._hailMoneyMinimumZoomGuardInstalled) return;
       map._hailMoneyMinimumZoomGuardInstalled = true;
       map.setOptions({
-        minZoom: MAPS_MIN_ZOOM,
-        restriction: { latLngBounds: MAPS_US_BOUNDS, strictBounds: false }
+        minZoom: MAPS_MIN_ZOOM
       });
       mapsClampMinimumZoom(map);
     }
@@ -28648,7 +28696,6 @@ function mapsGoogleReady() {
           center: MAPS_DEFAULT_CENTER,
           zoom: MAPS_DEFAULT_ZOOM,
           minZoom: MAPS_MIN_ZOOM,
-          restriction: { latLngBounds: MAPS_US_BOUNDS, strictBounds: false },
           isFractionalZoomEnabled: true,
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           styles: [],
