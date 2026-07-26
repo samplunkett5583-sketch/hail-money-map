@@ -1,18 +1,20 @@
-name: NEXRAD Track Polygon Ingest
+name: Canonical MRMS Hail Swaths
 
 on:
   workflow_dispatch:
     inputs:
       dates:
-        description: 'Specific dates to process (comma-separated YYYY-MM-DD), or leave blank for --batch'
+        description: "Specific SPC storm dates (comma-separated YYYY-MM-DD)"
         required: false
+        type: string
       force:
-        description: 'Re-process dates that already have polygons'
-        required: false
-        default: 'false'
+        description: "Replace existing canonical MRMS polygons"
+        required: true
+        default: true
+        type: boolean
   schedule:
-    # Run daily at 08:00 UTC (after overnight storms finish at 06Z)
-    - cron: "0 8 * * *"
+    # The prior SPC day is complete at 12Z. Allow two hours for the archive.
+    - cron: "0 14 * * *"
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -20,7 +22,9 @@ env:
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -32,21 +36,33 @@ jobs:
           node-version: 24
           cache: npm
 
-      - name: Install deps
+      - name: Install Node dependencies
         run: npm ci
 
-      - name: Run NEXRAD track polygon ingest
+      - name: Install GDAL grid tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdal-bin python3-gdal python3-numpy
+          /usr/bin/python3 -c "from osgeo import gdal, ogr; import numpy"
+
+      - name: Build canonical hail swaths
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          QGIS_PYTHON: /usr/bin/python3
+          REQUESTED_DATES: ${{ inputs.dates }}
+          FORCE_REBUILD: ${{ inputs.force }}
         run: |
-          if [ -n "${{ github.event.inputs.dates }}" ]; then
-            # Manual run with specific dates
-            IFS=',' read -ra DATES <<< "${{ github.event.inputs.dates }}"
-            node scripts/ingest_iem_nexrad_tracks.mjs "${DATES[@]}"
-          elif [ "${{ github.event.inputs.force }}" = "true" ]; then
-            node scripts/ingest_iem_nexrad_tracks.mjs --batch --force --days=7
+          if [ -n "$REQUESTED_DATES" ]; then
+            IFS=',' read -ra DATES <<< "$REQUESTED_DATES"
           else
-            # Daily cron: look back 7 days for any new dates missing polygons
-            node scripts/ingest_iem_nexrad_tracks.mjs --batch --days=7
+            DATES=("$(date -u -d 'yesterday' +%F)")
           fi
+          for STORM_DATE in "${DATES[@]}"; do
+            STORM_DATE="$(echo "$STORM_DATE" | xargs)"
+            ARGS=("--date=$STORM_DATE")
+            if [ "$FORCE_REBUILD" = "true" ] || [ "${{ github.event_name }}" = "schedule" ]; then
+              ARGS+=("--force")
+            fi
+            node scripts/ingest_mrms_swaths.mjs "${ARGS[@]}"
+          done
