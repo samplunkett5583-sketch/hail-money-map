@@ -17,10 +17,12 @@ assert(source.includes(".range(from, from + pageSize - 1)"),
   "MRMS batch date collection must paginate Supabase rows");
 assert((source.match(/\.range\(from, from \+ pageSize - 1\)/g) || []).length >= 2,
   "Both the hail-date inventory and ingested-date lookup must paginate");
-assert(source.includes('.eq("storm_type", "hail")'),
-  "MRMS batch must select hail polygons only");
-assert(source.includes('.neq("source", "mrms_mesh")'),
-  "Legacy hail-date query must not rescan canonical MRMS rows");
+assert(source.includes('sb.from("hail_lsr_raw").select("event_date")'),
+  "MRMS batch must build its date inventory from verified hail reports");
+assert(!source.includes('"legacy hail polygons"'),
+  "Hail-date inventory must not scan the large legacy polygon table");
+assert(source.includes('.from("hail_radar_days")'),
+  "Ingested-date lookup must use the compact canonical date table");
 assert(!source.includes('sb.from("storm_lsr_raw").select("event_date")'),
   "Wind-only report dates must not be treated as hail dates");
 assert(source.includes("index % shardCount === shardIndex"),
