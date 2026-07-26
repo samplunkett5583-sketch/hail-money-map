@@ -53,8 +53,8 @@ if (!Number.isInteger(shardCount) || !Number.isInteger(shardIndex) || shardIndex
 
 async function getAllStormDates() {
   // Supabase limits a normal select to 1,000 rows. The previous unpaginated
-  // query therefore saw only 61 dates because polygon-heavy dates consumed
-  // the first page. Walk every page and keep only dates backed by hail data.
+  // query missed hail dates. Walk every hail-report page instead of scanning
+  // the much larger polygon tables, which can exceed the statement timeout.
   const dateSet = new Set();
 
   async function addPagedDates(buildQuery, label) {
@@ -80,23 +80,6 @@ async function getAllStormDates() {
     () => sb.from("hail_lsr_raw").select("event_date"),
     "hail_lsr_raw",
   );
-  await addPagedDates(
-    () => sb.from("storm_polygons")
-      .select("event_date")
-      .eq("storm_type", "hail")
-      .neq("source", "mrms_mesh")
-      .neq("source_product", "no_swath"),
-    "legacy hail polygons",
-  );
-
-  // A date may have canonical rows but no remaining legacy rows. Retain it in
-  // the complete date inventory so --force still rebuilds every hail date.
-  await addPagedDates(
-    () => sb.from("storm_polygons")
-      .select("event_date")
-      .eq("source", "mrms_mesh"),
-    "canonical MRMS polygons",
-  );
 
   for (const date of Array.from(dateSet)) {
     if (!date) {
@@ -112,7 +95,7 @@ async function getIngestedDates() {
   const ingested = new Set();
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await sb
-      .from("storm_polygons")
+      .from("hail_radar_days")
       .select("event_date")
       .eq("source", "mrms_mesh")
       .order("event_date", { ascending: false })
