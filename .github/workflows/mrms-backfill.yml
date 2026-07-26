@@ -8,14 +8,14 @@ on:
         required: false
         type: string
       limit:
-        description: "Maximum dates in this run"
+        description: "Maximum dates per shard"
         required: true
-        default: "500"
+        default: "100"
         type: string
       force:
         description: "Replace dates that already have canonical MRMS polygons"
         required: true
-        default: true
+        default: false
         type: boolean
 
 env:
@@ -25,6 +25,10 @@ jobs:
   backfill:
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
     permissions:
       contents: read
 
@@ -52,8 +56,14 @@ jobs:
           BACKFILL_START: ${{ inputs.start }}
           BACKFILL_LIMIT: ${{ inputs.limit }}
           FORCE_REBUILD: ${{ inputs.force }}
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_COUNT: "6"
         run: |
-          ARGS=("--limit=$BACKFILL_LIMIT")
+          ARGS=(
+            "--limit=$BACKFILL_LIMIT"
+            "--shard-index=$SHARD_INDEX"
+            "--shard-count=$SHARD_COUNT"
+          )
           if [ -n "$BACKFILL_START" ]; then ARGS+=("--start=$BACKFILL_START"); fi
           if [ "$FORCE_REBUILD" = "true" ]; then ARGS+=("--force"); fi
           node scripts/ingest_mrms_batch.mjs "${ARGS[@]}"
