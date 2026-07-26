@@ -160,10 +160,13 @@ async function main() {
   console.log("[MRMS-BATCH] Total storm dates: " + allDates.length);
   console.log("[MRMS-BATCH] Already ingested:  " + ingested.size);
 
+  // Assign each date to a permanent shard before removing completed dates.
+  // If the ingested set is filtered first, concurrent jobs see a changing list
+  // and the same date can move between shards while the workflow is running.
   let workDates = allDates;
   if (startArg) workDates = workDates.filter((d) => d >= startArg);
-  if (!force) workDates = workDates.filter((d) => !ingested.has(d));
   workDates = workDates.filter((_, index) => index % shardCount === shardIndex);
+  if (!force) workDates = workDates.filter((d) => !ingested.has(d));
   if (isFinite(limitArg)) workDates = workDates.slice(0, limitArg);
 
   console.log("[MRMS-BATCH] Dates to process:  " + workDates.length);
