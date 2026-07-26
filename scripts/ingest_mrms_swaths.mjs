@@ -274,15 +274,21 @@ async function insertChunks(client, table, rows) {
 function radarRows(rows) {
   return rows.map((row) => ({
     event_date: row.event_date,
+    threshold_in: row.band_min,
+    geojson: row.polygon_geojson,
     source: row.source,
     source_product: row.source_product,
+    source_priority: row.source_priority,
+    threshold_value: row.band_min,
     band_min: row.band_min,
     band_max: row.band_max,
     polygon_geojson: row.polygon_geojson,
+    geometry: row.polygon_geojson,
     centroid_lat: row.centroid_lat,
     centroid_lon: row.centroid_lon,
     area_sq_mi: row.area_sq_mi,
     swath_index: row.swath_index,
+    storm_type: row.storm_type,
   }));
 }
 
