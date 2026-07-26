@@ -2,6 +2,11 @@ name: Publish approved Maps opening fix
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - .github/workflows/codex-publish-map-opening.yml
 
 permissions:
   contents: write
