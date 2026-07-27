@@ -26289,11 +26289,14 @@
     function mapsGetHailHoverTextAt(lat, lng) {
       var band = mapsFindVerifiedHailSizeAt(lat, lng);
       if (!band || !Number.isFinite(band.displayValue) || band.displayValue <= 0) return '';
-      // The rendered swath band already contains the date-specific calibrated
-      // hail size used to choose its color. Do not downgrade that band with a
-      // nearby point report or the generic radar-only cap: doing so made red
-      // and purple cores incorrectly read 1.50–1.75 inches on hover.
-      var size = Math.round(Number(band.displayValue) * 4) / 4;
+      // A nearby official ground report controls the number shown at the
+      // cursor. This also protects older cached geometry from presenting an
+      // unsupported radar peak as a verified hail size.
+      var nearbyReport = mapsFindNearbyHailReportAt(lat, lng, 5);
+      var size = mapsCalibratedHailSize(
+        Number(band.displayValue),
+        nearbyReport ? Number(nearbyReport.hailIn) : 0
+      );
       return size > 0 ? size.toFixed(2) + '"' : '';
     }
 
@@ -26446,8 +26449,8 @@
           liveBand(1.50, 250, square(2, 0, 3, 1)),
           liveBand(3.00, 400, square(3, 0, 4, 1))
         ];
-        // A smaller nearby ground report must not relabel a visible 3-inch
-        // purple band as 1.75 inches.
+        // A nearby official report controls the field-facing hover value even
+        // when an older radar band was stored at a larger estimate.
         mapsState.lsrPointsByDate['2026-07-19'] = [
           { lat: 0.5, lon: 3.5, hail_in: 1.75 }
         ];
@@ -26479,7 +26482,7 @@
           pass: values.band050 === '0.50"'
             && values.band125 === '1.25"'
             && values.band150 === '1.50"'
-            && values.band300WithSmallerNearbyReport === '3.00"'
+            && values.band300WithSmallerNearbyReport === '1.75"'
             && values.outside === ''
             && values.afterClear === ''
             && values.afterDateChange === ''
@@ -28726,7 +28729,7 @@ function mapsGoogleReady() {
           rotateControl: false,
           clickableIcons: false,
           gestureHandling: 'greedy',
-          scrollwheel: false,
+          scrollwheel: true,
           draggableCursor: 'grab',
           draggingCursor: 'grabbing'
         });
@@ -28739,7 +28742,7 @@ function mapsGoogleReady() {
       App.map = map;
       mapsInstallMinimumZoomGuard(map);
       mapsWireHailHoverReadout();
-      hmDebugLog('[HMM] fast cursor-centered map wheel zoom enabled');
+      hmDebugLog('[HMM] native smooth cursor-centered map wheel zoom enabled');
 
       // Keep pan gestures separate from property clicks. Google can emit a map
       // click after a short drag, especially when hover-driven cursor options
@@ -28816,77 +28819,6 @@ function mapsGoogleReady() {
           map.setOptions({ styles: [] });
         }
       }
-
-      var wheelZoomFrame = null;
-      var wheelTargetZoom = null;
-      var wheelAnchorWorld = null;
-      var wheelCursorOffsetX = 0;
-      var wheelCursorOffsetY = 0;
-
-      // Fast wheel zoom that keeps the geographic point beneath the mouse
-      // fixed beneath the mouse. A physical wheel notch moves 1.5 zoom levels;
-      // small trackpad deltas remain fractional for precise stopping.
-      mapEl.addEventListener('wheel', function (e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-
-        var projection = map.getProjection();
-        var center = map.getCenter();
-        var currentZoom = Number(map.getZoom());
-        if (!projection || !center || !Number.isFinite(currentZoom) ||
-            typeof projection.fromLatLngToPoint !== 'function' ||
-            typeof projection.fromPointToLatLng !== 'function') return;
-
-        var rect = mapEl.getBoundingClientRect();
-        wheelCursorOffsetX = (Number(e.clientX) || 0) - rect.left - rect.width / 2;
-        wheelCursorOffsetY = (Number(e.clientY) || 0) - rect.top - rect.height / 2;
-
-        // Google Maps Projection world points are already expressed in the
-        // 256px zoom-zero world. Only the zoom multiplier belongs here.
-        // Multiplying by 256 again made the camera zoom around map center.
-        var currentScale = Math.pow(2, currentZoom);
-        var centerWorld = projection.fromLatLngToPoint(center);
-        wheelAnchorWorld = new google.maps.Point(
-          centerWorld.x + wheelCursorOffsetX / currentScale,
-          centerWorld.y + wheelCursorOffsetY / currentScale
-        );
-
-        var deltaPixels = Number(e.deltaY) || 0;
-        if (e.deltaMode === 1) deltaPixels *= 32;
-        else if (e.deltaMode === 2) deltaPixels *= Math.max(320, rect.height);
-        if (!deltaPixels) return;
-
-        var direction = deltaPixels < 0 ? 1 : -1;
-        var magnitude = Math.abs(deltaPixels);
-        var zoomStep = magnitude >= 40
-          ? 1.0
-          : Math.max(0.08, Math.min(0.6, magnitude * 0.025));
-        var startingZoom = Number.isFinite(wheelTargetZoom) ? wheelTargetZoom : currentZoom;
-        wheelTargetZoom = Math.max(MAPS_MIN_ZOOM, Math.min(21, startingZoom + direction * zoomStep));
-
-        if (wheelZoomFrame) return;
-        wheelZoomFrame = requestAnimationFrame(function () {
-          wheelZoomFrame = null;
-          var targetZoom = wheelTargetZoom;
-          wheelTargetZoom = null;
-          if (!wheelAnchorWorld || !Number.isFinite(targetZoom)) return;
-
-          var targetScale = Math.pow(2, targetZoom);
-          var targetCenterPoint = new google.maps.Point(
-            wheelAnchorWorld.x - wheelCursorOffsetX / targetScale,
-            wheelAnchorWorld.y - wheelCursorOffsetY / targetScale
-          );
-          var targetCenter = projection.fromPointToLatLng(targetCenterPoint, true);
-          if (!targetCenter) return;
-
-          if (typeof map.moveCamera === 'function') {
-            map.moveCamera({ center: targetCenter, zoom: targetZoom });
-          } else {
-            map.setCenter(targetCenter);
-            map.setZoom(targetZoom);
-          }
-        });
-      }, { passive: false, capture: true });
 
       var lastSwathVisibilityZoomBand = null;
 
@@ -29859,7 +29791,7 @@ function mapsGoogleReady() {
     // Roughen only the long sides of stored hail polygons. The first and last
     // axial portions are protected so the front and rear ends keep their source shape.
     function _handCutStoredHailPath(path, seedText) {
-      if (!Array.isArray(path) || path.length < 5) return path || [];
+      if (!Array.isArray(path) || path.length < 4) return path || [];
       var pts = path.slice();
       var last = pts[pts.length - 1];
       var first = pts[0];
@@ -29867,7 +29799,7 @@ function mapsGoogleReady() {
         Math.abs(Number(last.lat) - Number(first.lat)) < 1e-9 &&
         Math.abs(Number(last.lng) - Number(first.lng)) < 1e-9;
       if (isClosed) pts.pop();
-      if (pts.length < 5) return path;
+      if (pts.length < 3) return path;
 
       var seed = 2166136261;
       String(seedText || '').split('').forEach(function(ch) {
@@ -29904,8 +29836,35 @@ function mapsGoogleReady() {
       var projectionSpan = Math.max(0.0001, maxProjection - minProjection);
       var amplitude = Math.max(0.0018, Math.min(0.016, projectionSpan * 0.035));
 
-      var shaped = pts.map(function(pt, index) {
-        var axialT = (projections[index] - minProjection) / projectionSpan;
+      // Stored legacy corridors are often only four rectangle corners. Add
+      // intermediate sidewall vertices before shaping so those straight edges
+      // receive the same hand-cut treatment as newer detailed polygons.
+      var dense = [];
+      var targetStep = Math.max(0.008, Math.min(0.035, projectionSpan / 36));
+      pts.forEach(function(pt, index) {
+        var next = pts[(index + 1) % pts.length];
+        var dx = Number(next.lng) - Number(pt.lng);
+        var dy = Number(next.lat) - Number(pt.lat);
+        var segmentLength = Math.sqrt(dx * dx + dy * dy);
+        var segmentProjection = Math.abs(dx * axisLng + dy * axisLat);
+        var steps = segmentProjection > projectionSpan * 0.16
+          ? Math.max(1, Math.min(48, Math.ceil(segmentLength / targetStep)))
+          : 1;
+        for (var stepIndex = 0; stepIndex < steps; stepIndex++) {
+          var segmentT = stepIndex / steps;
+          dense.push({
+            lat: Number(pt.lat) + dy * segmentT,
+            lng: Number(pt.lng) + dx * segmentT
+          });
+        }
+      });
+
+      var denseProjections = dense.map(function(pt) {
+        return (Number(pt.lng) - center.lng) * axisLng +
+          (Number(pt.lat) - center.lat) * axisLat;
+      });
+      var shaped = dense.map(function(pt, index) {
+        var axialT = (denseProjections[index] - minProjection) / projectionSpan;
         var endDistance = Math.min(axialT, 1 - axialT);
         // No movement in the outer 12% at either end; smoothly reach full
         // side-edge texture by 23% of the polygon length.
@@ -29915,8 +29874,8 @@ function mapsGoogleReady() {
           return { lat:Number(pt.lat), lng:Number(pt.lng) };
         }
 
-        var prev = pts[(index - 1 + pts.length) % pts.length];
-        var next = pts[(index + 1) % pts.length];
+        var prev = dense[(index - 1 + dense.length) % dense.length];
+        var next = dense[(index + 1) % dense.length];
         var dx = Number(next.lng) - Number(prev.lng);
         var dy = Number(next.lat) - Number(prev.lat);
         var len = Math.sqrt(dx * dx + dy * dy) || 0.0001;
@@ -29928,9 +29887,9 @@ function mapsGoogleReady() {
         ny *= outward;
 
         var cut =
-          0.55 * Math.sin((Math.PI * 12 * axialT) + phase) +
-          0.30 * Math.sin((Math.PI * 30 * axialT) + phase * 1.7) +
-          0.15 * Math.sin((Math.PI * 62 * axialT) + phase * 0.6);
+          0.55 * Math.sin((Math.PI * 11 * axialT) + phase) +
+          0.30 * Math.sin((Math.PI * 27 * axialT) + phase * 1.7) +
+          0.15 * Math.sin((Math.PI * 59 * axialT) + phase * 0.6);
         return {
           lat: Number(pt.lat) + ny * amplitude * bodyMask * cut,
           lng: Number(pt.lng) + nx * amplitude * bodyMask * cut
@@ -34406,13 +34365,11 @@ function mapsGoogleReady() {
           ((stormType !== 'wind' && stormType !== 'tornado') && mapsState.swathToggles.hail));
         if (!isWind && !isTornado) {
           var localReportedMax = mapsMaxReportedHailInsideGeometry(dateStr, row.polygon_geojson);
-          // A smaller point report does not erase a stronger radar-confirmed core
-          // elsewhere inside the polygon. Keep canonical NEXRAD strength for the
-          // swath; point reports still control exact-property readouts.
-          if (!(rowSrcLower === 'nexrad_iem' &&
-                String(row.source_product || '').toLowerCase() === 'iem_nexrad_track')) {
-            bandMin = mapsCalibratedHailSize(bandMin, localReportedMax);
-          }
+          // Official ground reports control displayed magnitude for every
+          // geometry source, including NEXRAD tracks. The radar supplies the
+          // footprint; it cannot promote that footprint above the verified
+          // hail measured inside it.
+          bandMin = mapsCalibratedHailSize(bandMin, localReportedMax);
           var reviewedGeometryCap = mapsGeometryIntersectsReviewedHailRule(dateStr, row.polygon_geojson);
           if (reviewedGeometryCap > 0) bandMin = Math.min(bandMin, reviewedGeometryCap);
           if (Number.isFinite(bandMax) && localReportedMax > 0) bandMax = Math.min(bandMax, localReportedMax);
@@ -34481,10 +34438,10 @@ function mapsGoogleReady() {
                 }).filter(function (pt) { return isFinite(pt.lat) && isFinite(pt.lng); });
               }).filter(function (polygonPath) { return polygonPath.length >= 3; })
             : [path];
-          // Canonical MRMS polygons already preserve the radar grid's natural,
-          // irregular boundary. Do not add the older synthetic sine-wave edge
-          // treatment; it can round a compact high-hail cell into a smooth blob.
-          if (!isWind && !isTornado && rowSrcLower !== 'mrms_mesh') {
+          // Apply the same hand-cut sidewall treatment to every hail source.
+          // Compact MRMS cells retain their end shape; long stored corridors
+          // no longer fall back to perfectly straight, smooth sides.
+          if (!isWind && !isTornado) {
             var handCutSeed = [dateStr, row.id || ri, row.source_product || row.source || 'hail', effectiveBand, ringIndex].join(':');
             paths = paths.map(function(polygonPath, pathIndex) {
               return _handCutStoredHailPath(polygonPath, handCutSeed + ':' + pathIndex);
