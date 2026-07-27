@@ -19212,6 +19212,10 @@
                     <input type="checkbox" id="maps-show-wind-spotter-reports" />
                     <span>Show Wind Spotter Reports</span>
                   </label>
+                  <label class="maps-options-check" for="maps-show-wind-heat-map">
+                    <input type="checkbox" id="maps-show-wind-heat-map" />
+                    <span>Wind Heat Map</span>
+                  </label>
                 </div>
               </div>
               <button type="button" id="maps-toolbar-search-btn" class="maps-toolbar-btn maps-toolbar-btn-search">Search</button>
@@ -25659,6 +25663,8 @@
       windSpotterReportMarkersByDate: {}, // dateStr -> verified NWS wind-report markers
       windSpotterReportDrawGeneration: {},
       showWindSpotterReports: false,
+      windHeatOverlaysByDate: {}, // dateStr -> weighted NWS wind heat overlay
+      showWindHeatMap: false,
       campaignAddressMarkers: [],
       showCampaignAddressMarkers: true,
       aiSwathOverlays: {},       // dateStr -> SwathCanvasOverlay instance (AI-generated)
@@ -37204,6 +37210,171 @@ function mapsGoogleReady() {
       });
     }
 
+    function mapsWindHeatColor(intensity) {
+      var stops = [
+        [0.00, [35, 128, 255]],
+        [0.24, [40, 73, 216]],
+        [0.46, [101, 42, 176]],
+        [0.64, [202, 47, 111]],
+        [0.80, [244, 136, 35]],
+        [0.92, [249, 224, 64]],
+        [1.00, [191, 255, 92]]
+      ];
+      var value = Math.max(0, Math.min(1, Number(intensity) || 0));
+      for (var i = 1; i < stops.length; i++) {
+        if (value > stops[i][0]) continue;
+        var left = stops[i - 1];
+        var right = stops[i];
+        var span = right[0] - left[0] || 1;
+        var mix = (value - left[0]) / span;
+        return [
+          Math.round(left[1][0] + (right[1][0] - left[1][0]) * mix),
+          Math.round(left[1][1] + (right[1][1] - left[1][1]) * mix),
+          Math.round(left[1][2] + (right[1][2] - left[1][2]) * mix)
+        ];
+      }
+      return stops[stops.length - 1][1];
+    }
+
+    function mapsCreateWindHeatOverlay(map, points) {
+      if (!(window.google && google.maps && google.maps.OverlayView) || !map) return null;
+      var overlay = new google.maps.OverlayView();
+      overlay.points_ = (points || []).map(function (point) {
+        var lat = Number(point && point.lat);
+        var lng = Number(point && (point.lon != null ? point.lon : point.lng));
+        var mph = mapsWindSpotterMph(point);
+        if (!isFinite(lat) || !isFinite(lng) || !isFinite(mph) || mph < 35 || mph > 150) return null;
+        return {
+          position: new google.maps.LatLng(lat, lng),
+          weight: Math.max(0.32, Math.min(1, (mph - 45) / 55))
+        };
+      }).filter(Boolean);
+
+      overlay.onAdd = function () {
+        var div = document.createElement('div');
+        div.className = 'maps-wind-heat-overlay';
+        div.style.cssText = 'position:absolute;pointer-events:none;overflow:hidden;';
+        var canvas = document.createElement('canvas');
+        canvas.style.cssText = 'display:block;width:100%;height:100%;opacity:.78;';
+        div.appendChild(canvas);
+        overlay.div_ = div;
+        overlay.canvas_ = canvas;
+        overlay.getPanes().overlayLayer.appendChild(div);
+      };
+
+      overlay.draw = function () {
+        if (!overlay.div_ || !overlay.canvas_ || !overlay.points_.length) return;
+        if (overlay.drawFrame_) cancelAnimationFrame(overlay.drawFrame_);
+        overlay.drawFrame_ = requestAnimationFrame(function () {
+          overlay.drawFrame_ = null;
+          var projection = overlay.getProjection();
+          var bounds = map.getBounds();
+          if (!projection || !bounds) return;
+          var southWest = projection.fromLatLngToDivPixel(bounds.getSouthWest());
+          var northEast = projection.fromLatLngToDivPixel(bounds.getNorthEast());
+          if (!southWest || !northEast) return;
+          var width = Math.max(1, Math.round(northEast.x - southWest.x));
+          var height = Math.max(1, Math.round(southWest.y - northEast.y));
+          if (width > 5000 || height > 5000) return;
+
+          overlay.div_.style.left = Math.round(southWest.x) + 'px';
+          overlay.div_.style.top = Math.round(northEast.y) + 'px';
+          overlay.div_.style.width = width + 'px';
+          overlay.div_.style.height = height + 'px';
+
+          var scale = Math.min(0.72, 900 / Math.max(width, height));
+          scale = Math.max(0.42, scale);
+          var pixelWidth = Math.max(1, Math.round(width * scale));
+          var pixelHeight = Math.max(1, Math.round(height * scale));
+          var canvas = overlay.canvas_;
+          canvas.width = pixelWidth;
+          canvas.height = pixelHeight;
+          var intensityCanvas = document.createElement('canvas');
+          intensityCanvas.width = pixelWidth;
+          intensityCanvas.height = pixelHeight;
+          var intensityContext = intensityCanvas.getContext('2d', { willReadFrequently: true });
+          if (!intensityContext) return;
+          intensityContext.globalCompositeOperation = 'lighter';
+
+          var zoom = Number(map.getZoom()) || MAPS_DEFAULT_ZOOM;
+          var radius = Math.max(24, Math.min(76, 31 + (zoom - 5) * 5)) * scale;
+          overlay.points_.forEach(function (point) {
+            var pixel = projection.fromLatLngToDivPixel(point.position);
+            if (!pixel) return;
+            var x = (pixel.x - southWest.x) * scale;
+            var y = (pixel.y - northEast.y) * scale;
+            if (x < -radius || y < -radius || x > pixelWidth + radius || y > pixelHeight + radius) return;
+            var gradient = intensityContext.createRadialGradient(x, y, 0, x, y, radius);
+            gradient.addColorStop(0, 'rgba(0,0,0,' + (0.44 * point.weight).toFixed(3) + ')');
+            gradient.addColorStop(0.28, 'rgba(0,0,0,' + (0.31 * point.weight).toFixed(3) + ')');
+            gradient.addColorStop(0.62, 'rgba(0,0,0,' + (0.13 * point.weight).toFixed(3) + ')');
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+            intensityContext.fillStyle = gradient;
+            intensityContext.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+          });
+
+          var image = intensityContext.getImageData(0, 0, pixelWidth, pixelHeight);
+          var pixels = image.data;
+          for (var p = 0; p < pixels.length; p += 4) {
+            var alpha = pixels[p + 3];
+            if (alpha < 3) {
+              pixels[p + 3] = 0;
+              continue;
+            }
+            var normalized = Math.min(1, alpha / 185);
+            var color = mapsWindHeatColor(normalized);
+            pixels[p] = color[0];
+            pixels[p + 1] = color[1];
+            pixels[p + 2] = color[2];
+            pixels[p + 3] = Math.round(Math.min(218, 30 + normalized * 205));
+          }
+          var context = canvas.getContext('2d');
+          if (!context) return;
+          context.clearRect(0, 0, pixelWidth, pixelHeight);
+          context.putImageData(image, 0, 0);
+        });
+      };
+
+      overlay.onRemove = function () {
+        if (overlay.drawFrame_) cancelAnimationFrame(overlay.drawFrame_);
+        overlay.drawFrame_ = null;
+        if (overlay.div_ && overlay.div_.parentNode) overlay.div_.parentNode.removeChild(overlay.div_);
+        overlay.div_ = null;
+        overlay.canvas_ = null;
+      };
+
+      overlay.setMap(map);
+      return overlay;
+    }
+
+    function mapsRemoveWindHeatForDate(dateStr) {
+      var overlay = mapsState.windHeatOverlaysByDate[dateStr];
+      if (!overlay) return;
+      try { overlay.setMap(null); } catch (_) {}
+      delete mapsState.windHeatOverlaysByDate[dateStr];
+    }
+
+    function mapsDrawWindHeatForDate(dateStr, points) {
+      mapsRemoveWindHeatForDate(dateStr);
+      var map = mapsState.map;
+      if (!mapsState.showWindHeatMap || !map || !points || !points.length) return;
+      var overlay = mapsCreateWindHeatOverlay(map, points);
+      if (!overlay || !overlay.points_ || !overlay.points_.length) return;
+      mapsState.windHeatOverlaysByDate[dateStr] = overlay;
+      var show = mapsState.selectedDates.indexOf(dateStr) !== -1 || mapsState.previewDate === dateStr;
+      if (!show) overlay.setMap(null);
+    }
+
+    function mapsSetWindHeatMapVisible(visible) {
+      mapsState.showWindHeatMap = !!visible;
+      try { localStorage.setItem('hailMoneyShowWindHeatMap', visible ? '1' : '0'); } catch (_) {}
+      Object.keys(mapsState.windHeatOverlaysByDate).forEach(mapsRemoveWindHeatForDate);
+      if (!mapsState.showWindHeatMap) return;
+      Object.keys(mapsState.windPointsByDate).forEach(function (dateStr) {
+        mapsDrawWindHeatForDate(dateStr, mapsState.windPointsByDate[dateStr] || []);
+      });
+    }
+
     // ── Draw point circles for ONE date, store per-date ──
     function mapsDrawPointsForDate(dateStr, points) {
       // Remove any existing point overlays for this date first
@@ -37300,6 +37471,8 @@ function mapsGoogleReady() {
       mapsRemoveSpotterReportsForDate(dateStr);
       // Remove optional verified NWS wind spotter report markers
       mapsRemoveWindSpotterReportsForDate(dateStr);
+      // Remove optional NWS wind heat map
+      mapsRemoveWindHeatForDate(dateStr);
       // Clear cached point data
       delete mapsState.lsrPointsByDate[dateStr];
       delete mapsState.windPointsByDate[dateStr];
@@ -37367,6 +37540,11 @@ function mapsGoogleReady() {
           try { marker.setMap(show ? map : null); } catch (_) {}
         });
       });
+      // Hide/show NWS wind heat maps
+      Object.keys(mapsState.windHeatOverlaysByDate).forEach(function (d) {
+        var show = mapsState.showWindHeatMap && mapsState.selectedDates.indexOf(d) !== -1;
+        try { mapsState.windHeatOverlaysByDate[d].setMap(show ? map : null); } catch (_) {}
+      });
       // Hide/show hail band polygons
       Object.keys(mapsState.hailBandPolygons).forEach(function (d) {
         var show = mapsState.selectedDates.indexOf(d) !== -1;
@@ -37412,11 +37590,16 @@ function mapsGoogleReady() {
         });
       });
       // Instance-based overlay stores: hide/destroy then delete key
-      var instStores = [mapsState.aiSwathOverlays, mapsState.hailFieldOverlays, mapsState.refSwathOverlays];
+      var instStores = [mapsState.aiSwathOverlays, mapsState.hailFieldOverlays, mapsState.refSwathOverlays, mapsState.windHeatOverlaysByDate];
       instStores.forEach(function(store) {
         Object.keys(store).forEach(function(d) {
           if (keepDates.indexOf(d) !== -1) return;
-          try { var ov = store[d]; if (ov.hide) ov.hide(); else if (ov.destroy) ov.destroy(); } catch(_){}
+          try {
+            var ov = store[d];
+            if (ov.hide) ov.hide();
+            else if (ov.destroy) ov.destroy();
+            else if (ov.setMap) ov.setMap(null);
+          } catch(_){}
           delete store[d];
           if (removed.indexOf(d) === -1) removed.push(d);
         });
@@ -38413,6 +38596,7 @@ function mapsGoogleReady() {
           rebuildVisibleStormOverlays();
           mapsDrawSpotterReportsForDate(dateStr, points || []);
           mapsDrawWindSpotterReportsForDate(dateStr, windPts || []);
+          mapsDrawWindHeatForDate(dateStr, windPts || []);
           mapsSyncActiveHailHoverBands(dateStr, mapsState.swathPolygons[dateStr] || []);
           applySwathToggles(dateStr);
           mapsRememberVisibleStormDate(dateStr);
@@ -38609,6 +38793,7 @@ function mapsGoogleReady() {
             mapsState.tornadoPointsByDate[dateStr] = tornadoPts;
             mapsDrawSpotterReportsForDate(dateStr, points);
             mapsDrawWindSpotterReportsForDate(dateStr, windPts);
+            mapsDrawWindHeatForDate(dateStr, windPts);
             cachedDateData.points = points;
             cachedDateData.windPts = windPts;
             cachedDateData.tornadoPts = tornadoPts;
@@ -38994,6 +39179,7 @@ function mapsGoogleReady() {
         mapsState.tornadoPointsByDate[dateStr] = tornadoPts;
         mapsDrawSpotterReportsForDate(dateStr, points);
         mapsDrawWindSpotterReportsForDate(dateStr, windPts);
+        mapsDrawWindHeatForDate(dateStr, windPts);
         if (!cachedDateData) {
           cachedDateData = {
             savedPolys: savedPolys,
@@ -39525,6 +39711,7 @@ function mapsGoogleReady() {
       var optionsMenu = document.getElementById('maps-options-menu');
       var spotterReportsCheckbox = document.getElementById('maps-show-hail-spotter-reports');
       var windSpotterReportsCheckbox = document.getElementById('maps-show-wind-spotter-reports');
+      var windHeatMapCheckbox = document.getElementById('maps-show-wind-heat-map');
       var addressMarkersCheckbox = document.getElementById('maps-show-campaign-address-markers');
       var searchBtn = document.getElementById('maps-toolbar-search-btn');
       var searchInput = document.getElementById('stormSearchInput');
@@ -39596,6 +39783,17 @@ function mapsGoogleReady() {
           mapsSetWindSpotterReportsVisible(windSpotterReportsCheckbox.checked);
         });
         windSpotterReportsCheckbox.dataset.mapsBindingCount = '1';
+      }
+
+      if (windHeatMapCheckbox) {
+        var savedWindHeatPreference = '0';
+        try { savedWindHeatPreference = localStorage.getItem('hailMoneyShowWindHeatMap') || '0'; } catch (_) {}
+        windHeatMapCheckbox.checked = savedWindHeatPreference === '1';
+        mapsState.showWindHeatMap = windHeatMapCheckbox.checked;
+        windHeatMapCheckbox.addEventListener('change', function () {
+          mapsSetWindHeatMapVisible(windHeatMapCheckbox.checked);
+        });
+        windHeatMapCheckbox.dataset.mapsBindingCount = '1';
       }
 
       if (addressMarkersCheckbox) {
