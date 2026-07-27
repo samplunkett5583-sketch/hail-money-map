@@ -1,0 +1,46 @@
+name: Live NEXRAD Hail Swaths
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Storm date to refresh (YYYY-MM-DD; blank for today)"
+        required: false
+        type: string
+  schedule:
+    # Keep the active UTC storm day current instead of waiting for the
+    # completed 24-hour MRMS archive on the following day.
+    - cron: "2,17,32,47 * * * *"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: live-nexrad-hail-swaths
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Refresh active storm tracks
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          REQUESTED_DATE: ${{ inputs.date }}
+        run: |
+          STORM_DATE="${REQUESTED_DATE:-$(date -u +%F)}"
+          node scripts/ingest_iem_nexrad_tracks.mjs "$STORM_DATE"

@@ -26342,7 +26342,7 @@
 
       mapsReplaceHailHoverMoveListener(mapsState.map, function (event) {
         var gesture = mapsState._mapPointerGesture;
-        if (gesture && (gesture.pointerDown || gesture.dragging)) return;
+        if (mapsState._mapCameraMoving || (gesture && (gesture.pointerDown || gesture.dragging))) return;
         if (!event || !event.latLng || !page.classList.contains('active')) {
           mapsClearHailHoverReadout();
           return;
@@ -28820,21 +28820,22 @@ function mapsGoogleReady() {
         }
       }
 
-      var lastSwathVisibilityZoomBand = null;
-
       // Track viewport changes → shared state
+      map.addListener('zoom_changed', function() {
+        mapsState._mapCameraMoving = true;
+        if (mapsState._hailHoverRaf) {
+          cancelAnimationFrame(mapsState._hailHoverRaf);
+          mapsState._hailHoverRaf = null;
+        }
+        mapsState._hailHoverPendingLatLng = null;
+      });
       map.addListener('idle', function() {
+        mapsState._mapCameraMoving = false;
         if (_svSetting) return;
         var c = map.getCenter();
         sharedViewport.lat = c.lat();
         sharedViewport.lng = c.lng();
         sharedViewport.zoom = map.getZoom();
-        var settledZoom = Number(map.getZoom());
-        var visibilityZoomBand = settledZoom <= 5 ? 'national' : (settledZoom < 6.5 ? 'regional' : 'local');
-        if (visibilityZoomBand !== lastSwathVisibilityZoomBand) {
-          lastSwathVisibilityZoomBand = visibilityZoomBand;
-          mapsApplySwathOpacity(mapsState.swathOpacity);
-        }
       });
 
       // Keep base maps unfiltered so roadmap styling and satellite imagery render normally.
@@ -28999,17 +29000,41 @@ function mapsGoogleReady() {
       try { if (points && points.length) map.fitBounds(bounds, 40); } catch (e) {}
     }
 
-    function mapsDedupedDateDetailRequest(key, requestFactory) {
+    function mapsIsLiveStormDate(dateStr) {
+      var normalized = mapsNormalizeDate(dateStr);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized || '')) return false;
+      var parts = normalized.split('-').map(Number);
+      var stormDay = new Date(parts[0], parts[1] - 1, parts[2]);
+      var now = new Date();
+      var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      var ageDays = Math.floor((today.getTime() - stormDay.getTime()) / 86400000);
+      return ageDays >= 0 && ageDays <= 2;
+    }
+
+    function mapsDedupedDateDetailRequest(key, requestFactory, cacheOptions) {
       mapsState._dateDetailRequestCache = mapsState._dateDetailRequestCache || {};
+      mapsState._dateDetailRequestCacheTimes = mapsState._dateDetailRequestCacheTimes || {};
       mapsState._dateDetailRequestsInFlight = mapsState._dateDetailRequestsInFlight || {};
+      cacheOptions = cacheOptions || {};
       if (Object.prototype.hasOwnProperty.call(mapsState._dateDetailRequestCache, key)) {
-        return Promise.resolve(mapsState._dateDetailRequestCache[key]);
+        var cachedResult = mapsState._dateDetailRequestCache[key];
+        var cachedAt = Number(mapsState._dateDetailRequestCacheTimes[key]) || 0;
+        var isEmptyResult = Array.isArray(cachedResult) && cachedResult.length === 0;
+        var maxAgeMs = isEmptyResult
+          ? Number(cacheOptions.emptyMaxAgeMs)
+          : Number(cacheOptions.maxAgeMs);
+        if (!Number.isFinite(maxAgeMs) || (cachedAt && Date.now() - cachedAt <= maxAgeMs)) {
+          return Promise.resolve(cachedResult);
+        }
+        delete mapsState._dateDetailRequestCache[key];
+        delete mapsState._dateDetailRequestCacheTimes[key];
       }
       if (mapsState._dateDetailRequestsInFlight[key]) {
         return mapsState._dateDetailRequestsInFlight[key];
       }
       var request = Promise.resolve().then(requestFactory).then(function (result) {
         mapsState._dateDetailRequestCache[key] = result;
+        mapsState._dateDetailRequestCacheTimes[key] = Date.now();
         return result;
       });
       mapsState._dateDetailRequestsInFlight[key] = request;
@@ -29039,7 +29064,7 @@ function mapsGoogleReady() {
             return points;
           });
         });
-      });
+      }, mapsIsLiveStormDate(dateDash) ? { maxAgeMs: 60000, emptyMaxAgeMs: 15000 } : null);
     }
 
     // Fallback: query hail_lsr_raw table directly via REST API
@@ -29085,7 +29110,7 @@ function mapsGoogleReady() {
           console.warn('[Maps] hail_lsr_raw REST fetch failed:', err);
           return [];
         });
-      });
+      }, mapsIsLiveStormDate(dateDash) ? { maxAgeMs: 60000, emptyMaxAgeMs: 15000 } : null);
     }
 
     function mapsGetSwaths() {
@@ -29209,7 +29234,7 @@ function mapsGoogleReady() {
           console.warn('[fetchStormPolygons] fetch failed for ' + normalizedDate + ':', err);
           return [];
         });
-      });
+      }, mapsIsLiveStormDate(normalizedDate) ? { maxAgeMs: 60000, emptyMaxAgeMs: 15000 } : null);
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -29226,7 +29251,7 @@ function mapsGoogleReady() {
       if (hailIn >= 2.00) return [220,  30,  30, 0.60]; // #dc1e1e red
       if (hailIn >= 1.50) return [226, 137,  28, 0.58]; // #e2891c Hail Recon dark orange
       if (hailIn >  1.00) return [239, 174,  54, 0.50]; // #efae36 Hail Recon light orange
-      return                     [255, 245, 157, 0.42]; // #fff59d Hail Recon light yellow
+      return                     [255, 245, 157, 0.60]; // #fff59d Hail Recon light yellow
     }
 
     function _swathScaledDisplayOpacity(globalOpacity, baseOpacity, bandMin, stormType) {
@@ -29247,13 +29272,10 @@ function mapsGoogleReady() {
         var tHigh = Math.max(0, Math.min(1, (clampedOpacity - anchor) / (1 - anchor)));
         displayOpacity = base + (1 - base) * Math.pow(tHigh, 0.88);
       }
-      // Small storm footprints need more contrast at a national view. Boost
-      // only the far-zoom display alpha; geometry and the opacity slider remain
-      // unchanged at normal working zoom levels.
-      var mapZoom = mapsState.map && typeof mapsState.map.getZoom === 'function'
-        ? Number(mapsState.map.getZoom()) : MAPS_DEFAULT_ZOOM;
-      var farZoomBoost = mapZoom <= 5 ? 1.38 : (mapZoom < 6.5 ? 1.16 : 1);
-      return Math.min(1, displayOpacity * farZoomBoost);
+      // Keep opacity independent of camera zoom. Rewriting thousands of paths
+      // at zoom-band boundaries made the swaths disappear while the camera
+      // caught up with the wheel gesture.
+      return Math.min(1, displayOpacity);
     }
 
     function _swathScaledStrokeOpacity(globalOpacity, baseStrokeOpacity, bandMin, stormType, fillOpacity) {
@@ -29834,7 +29856,16 @@ function mapsGoogleReady() {
       var minProjection = Math.min.apply(Math, projections);
       var maxProjection = Math.max.apply(Math, projections);
       var projectionSpan = Math.max(0.0001, maxProjection - minProjection);
-      var amplitude = Math.max(0.0018, Math.min(0.016, projectionSpan * 0.035));
+      var perpendicularProjections = pts.map(function(pt) {
+        return (Number(pt.lng) - center.lng) * -axisLat +
+          (Number(pt.lat) - center.lat) * axisLng;
+      });
+      var perpendicularSpan = Math.max(0.001,
+        Math.max.apply(Math, perpendicularProjections) -
+        Math.min.apply(Math, perpendicularProjections));
+      var amplitude = Math.max(0.0025, Math.min(0.035,
+        projectionSpan * 0.05,
+        perpendicularSpan * 0.24));
 
       // Stored legacy corridors are often only four rectangle corners. Add
       // intermediate sidewall vertices before shaping so those straight edges
@@ -29897,6 +29928,48 @@ function mapsGoogleReady() {
       });
       if (isClosed) shaped.push({ lat:shaped[0].lat, lng:shaped[0].lng });
       return shaped;
+    }
+
+    function _widenStoredHailPath(path, widthFactor) {
+      if (!Array.isArray(path) || path.length < 4 || !(widthFactor > 1)) return path || [];
+      var pts = path.slice();
+      var first = pts[0], last = pts[pts.length - 1];
+      var isClosed = first && last &&
+        Math.abs(Number(first.lat) - Number(last.lat)) < 1e-9 &&
+        Math.abs(Number(first.lng) - Number(last.lng)) < 1e-9;
+      if (isClosed) pts.pop();
+      if (pts.length < 3) return path;
+
+      var center = pts.reduce(function(acc, pt) {
+        acc.lat += Number(pt.lat) || 0;
+        acc.lng += Number(pt.lng) || 0;
+        return acc;
+      }, { lat:0, lng:0 });
+      center.lat /= pts.length;
+      center.lng /= pts.length;
+      var sxx = 0, syy = 0, sxy = 0;
+      pts.forEach(function(pt) {
+        var x = Number(pt.lng) - center.lng;
+        var y = Number(pt.lat) - center.lat;
+        sxx += x * x;
+        syy += y * y;
+        sxy += x * y;
+      });
+      var angle = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+      var axisLng = Math.cos(angle), axisLat = Math.sin(angle);
+      var perpLng = -axisLat, perpLat = axisLng;
+      var widened = pts.map(function(pt) {
+        var dx = Number(pt.lng) - center.lng;
+        var dy = Number(pt.lat) - center.lat;
+        var along = dx * axisLng + dy * axisLat;
+        var across = (dx * perpLng + dy * perpLat) * widthFactor;
+        return {
+          lat: center.lat + along * axisLat + across * perpLat,
+          lng: center.lng + along * axisLng + across * perpLng
+        };
+      });
+      if (isClosed) widened.push({ lat:widened[0].lat, lng:widened[0].lng });
+      return widened;
     }
 
     function _drawReviewedHailDisplayTracks(dateStr) {
@@ -31493,7 +31566,7 @@ function mapsGoogleReady() {
           console.warn('[Maps] storm-lsr-by-date ' + stormType + ' fetch failed:', err && err.message || err);
           return [];
         });
-      });
+      }, mapsIsLiveStormDate(dateStr) ? { maxAgeMs: 60000, emptyMaxAgeMs: 15000 } : null);
     }
 
     // ── Fetch swath descriptor from edge function ──
@@ -33893,13 +33966,13 @@ function mapsGoogleReady() {
     }
 
     function mapsSimplifySwathRenderPath(path) {
-      if (!Array.isArray(path) || path.length <= 600) return path;
+      if (!Array.isArray(path) || path.length <= 220) return path;
       var points = path.slice();
       var first = points[0];
       var last = points[points.length - 1];
       var isClosed = !!(first && last && first.lat === last.lat && first.lng === last.lng);
       if (isClosed) points.pop();
-      if (points.length <= 600) return path;
+      if (points.length <= 220) return path;
 
       var meanLat = points.reduce(function (sum, point) {
         return sum + Number(point.lat || 0);
@@ -33952,9 +34025,9 @@ function mapsGoogleReady() {
 
       // Rendering uses a visually lossless sub-pixel simplification while hover
       // and property validation retain the untouched canonical GeoJSON.
-      var tolerance = 0.00035;
+      var tolerance = 0.00018;
       var simplified = simplifyWithTolerance(tolerance);
-      while (simplified.length > 900 && tolerance < 0.01) {
+      while (simplified.length > 360 && tolerance < 0.012) {
         tolerance *= 1.6;
         simplified = simplifyWithTolerance(tolerance);
       }
@@ -34446,6 +34519,11 @@ function mapsGoogleReady() {
             paths = paths.map(function(polygonPath, pathIndex) {
               return _handCutStoredHailPath(polygonPath, handCutSeed + ':' + pathIndex);
             });
+            if (effectiveBand <= 1.0) {
+              paths = paths.map(function(polygonPath) {
+                return _widenStoredHailPath(polygonPath, 1.38);
+              });
+            }
           }
           paths = paths.map(mapsSimplifySwathRenderPath);
           if (_trackFocusGeometry && _showRow) {
@@ -34496,7 +34574,7 @@ function mapsGoogleReady() {
         var list = _overlayBatches[key] || (_overlayBatches[key] = []);
         var batch = list.length ? list[list.length - 1] : null;
         var incomingPaths = Array.isArray(def.paths) ? def.paths : [];
-        if (!batch || batch.paths.length + incomingPaths.length > 120) {
+        if (!batch || batch.paths.length + incomingPaths.length > 200) {
           batch = Object.assign({}, def, {
             paths: [],
             canonicalGeometry: { type: 'FeatureCollection', features: [] },
@@ -35534,7 +35612,12 @@ function mapsGoogleReady() {
       mapsState.dateHasWindReports = {};
       mapsState._drawComplete      = {};  // bust draw cache so re-click re-fetches
       mapsState._dateDetailRequestCache = {};
-      mapsFetchRecentDates(true);
+      mapsState._dateDetailRequestCacheTimes = {};
+      return mapsFetchRecentDates(true).then(function () {
+        if (mapsState.previewDate && mapsIsLiveStormDate(mapsState.previewDate)) {
+          mapsDrawDate(mapsState.previewDate);
+        }
+      });
     }
 
     // clearStormLayers: remove every non-pinned overlay from the map
@@ -35554,7 +35637,7 @@ function mapsGoogleReady() {
       dateStr = mapsNormalizeDate(dateStr);
       var App = mapsGetAppState();
       var statusEl = document.getElementById('maps-storm-status');
-      if (App.currentVisibleStormDate === dateStr && App.activeStormOverlays && App.activeStormOverlays.length) {
+      if (!mapsIsLiveStormDate(dateStr) && App.currentVisibleStormDate === dateStr && App.activeStormOverlays && App.activeStormOverlays.length) {
         hmDebugLog('[loadStormDate] already visible', dateStr);
         if (statusEl) { statusEl.className = 'maps-status-msg'; statusEl.textContent = dateStr + ' already visible.'; }
         return;
@@ -35627,7 +35710,10 @@ function mapsGoogleReady() {
       var headerDatePicker = document.getElementById('maps-date-picker');
       if (headerDatePicker) headerDatePicker.value = dateStr;
 
-      if (mapsState.previewDate === dateStr) return;
+      if (mapsState.previewDate === dateStr) {
+        if (mapsIsLiveStormDate(dateStr)) mapsDrawDate(dateStr);
+        return;
+      }
       mapsClearActiveHailHoverBands();
 
       if (mapsState.previewDate && mapsState.pinnedDates.indexOf(mapsState.previewDate) === -1) {
@@ -38517,8 +38603,9 @@ function mapsGoogleReady() {
         var _stormApp = mapsGetAppState();
         var _stormClickT0 = Date.now();
         dateStr = mapsNormalizeDate(dateStr);
+        var _stormIsLiveDate = mapsIsLiveStormDate(dateStr);
         var _stormCalibrationReady = mapsState._hailCalibrationReady && mapsState._hailCalibrationReady[dateStr];
-        if (_stormApp.currentVisibleStormDate === dateStr && _stormApp.activeStormOverlays && _stormApp.activeStormOverlays.length && _stormCalibrationReady) {
+        if (!_stormIsLiveDate && _stormApp.currentVisibleStormDate === dateStr && _stormApp.activeStormOverlays && _stormApp.activeStormOverlays.length && _stormCalibrationReady) {
           hmDebugLog('[loadStormDate] already visible', dateStr);
           return;
         }
@@ -38690,11 +38777,14 @@ function mapsGoogleReady() {
 
         void (async function () {
           var cachedPts = mapsState.lsrPointsByDate[dateStr];
-          var needPoints = !mapsState.lsrPointsByDate.hasOwnProperty(dateStr) || !Array.isArray(cachedPts);
+          var needPoints = _stormIsLiveDate || !mapsState.lsrPointsByDate.hasOwnProperty(dateStr) || !Array.isArray(cachedPts);
           var existingPoints = Array.isArray(cachedPts) ? cachedPts : [];
           var existingWindPts = Array.isArray(mapsState.windPointsByDate[dateStr]) ? mapsState.windPointsByDate[dateStr] : [];
           var existingTornadoPts = Array.isArray(mapsState.tornadoPointsByDate[dateStr]) ? mapsState.tornadoPointsByDate[dateStr] : [];
 
+          if (_stormIsLiveDate) {
+            delete mapsState._drawComplete[dateStr];
+          }
           if (mapsState._drawComplete[dateStr] && !(mapsState._hailCalibrationReady && mapsState._hailCalibrationReady[dateStr])) {
             delete mapsState._drawComplete[dateStr];
           }
@@ -38720,7 +38810,7 @@ function mapsGoogleReady() {
             (swathCls && mapsState.swathPolygons[dateStr] && mapsState.swathPolygons[dateStr].length) ||
             (mapsState.swathCenterlines[dateStr] && mapsState.swathCenterlines[dateStr].length)
           );
-          if (hasSavedSwathOverlays && !needPoints) {
+          if (!_stormIsLiveDate && hasSavedSwathOverlays && !needPoints) {
             await _stormShowExistingRenderedDate(
               (mapsState.rawStormRows && mapsState.rawStormRows[dateStr]) || [],
               existingPoints,
@@ -38744,7 +38834,7 @@ function mapsGoogleReady() {
 
           function _stormGetPointsProm() {
             if (pointsProm) return pointsProm;
-            pointsProm = Array.isArray(cachedDateData.points) && (cachedDateData.points.length || (mapsState._hailCalibrationReady && mapsState._hailCalibrationReady[dateStr]))
+            pointsProm = !_stormIsLiveDate && Array.isArray(cachedDateData.points) && (cachedDateData.points.length || (mapsState._hailCalibrationReady && mapsState._hailCalibrationReady[dateStr]))
               ? Promise.resolve(cachedDateData.points)
               : needPoints
               ? fetchLsrPointsByDate(dateStr)
@@ -38892,7 +38982,7 @@ function mapsGoogleReady() {
             hmDebugLog('[loadStormDate] complete ' + dateStr + ' in ' + (Date.now() - _stormClickT0) + 'ms');
           }
 
-          if (cachedSwathData && Array.isArray(cachedSwathData.rows) && cachedSwathData.rows.length) {
+          if (!_stormIsLiveDate && cachedSwathData && Array.isArray(cachedSwathData.rows) && cachedSwathData.rows.length) {
             hmDebugLog('[loadStormDate] swaths from cache', dateStr);
             hmDebugLog('[loadStormDate] swath source', cachedSwathData.sourceName || 'stormSwathCache', 'rows', cachedSwathData.rows.length);
             cachedDateData.savedPolys = Array.isArray(cachedSwathData.savedPolys) ? cachedSwathData.savedPolys : (Array.isArray(cachedDateData.savedPolys) ? cachedDateData.savedPolys : []);
@@ -38911,7 +39001,7 @@ function mapsGoogleReady() {
             return;
           }
 
-          if (Array.isArray(cachedDateData.meshRows) && cachedDateData.meshRows.length) {
+          if (!_stormIsLiveDate && Array.isArray(cachedDateData.meshRows) && cachedDateData.meshRows.length) {
             hmDebugLog('[loadStormDate] using cache', dateStr);
             hmDebugLog('[loadStormDate] swath source', cachedDateData.swathSourceName || 'stormDateDataCache', 'rows', cachedDateData.meshRows.length);
             mapsSetCachedStormSwaths(dateStr, {
@@ -38934,10 +39024,10 @@ function mapsGoogleReady() {
             return;
           }
 
-          var cachedRows = mapsState.rawStormRows && mapsState.rawStormRows[dateStr] && mapsState.rawStormRows[dateStr].length > 0
+          var cachedRows = !_stormIsLiveDate && mapsState.rawStormRows && mapsState.rawStormRows[dateStr] && mapsState.rawStormRows[dateStr].length > 0
             ? mapsState.rawStormRows[dateStr]
             : null;
-          var savedPolyProm = Array.isArray(cachedDateData.savedPolys) && cachedDateData.savedPolys.length
+          var savedPolyProm = !_stormIsLiveDate && Array.isArray(cachedDateData.savedPolys) && cachedDateData.savedPolys.length
             ? Promise.resolve(cachedDateData.savedPolys)
             : cachedRows
             ? Promise.resolve(cachedRows)
@@ -38961,9 +39051,9 @@ function mapsGoogleReady() {
           savedPolys = Array.isArray(savedPolys) ? savedPolys : [];
           cachedDateData.savedPolys = savedPolys;
 
-          var points = Array.isArray(cachedDateData.points) ? cachedDateData.points : null;
-          var windPts = Array.isArray(cachedDateData.windPts) ? cachedDateData.windPts : null;
-          var tornadoPts = Array.isArray(cachedDateData.tornadoPts) ? cachedDateData.tornadoPts : null;
+          var points = !_stormIsLiveDate && Array.isArray(cachedDateData.points) ? cachedDateData.points : null;
+          var windPts = !_stormIsLiveDate && Array.isArray(cachedDateData.windPts) ? cachedDateData.windPts : null;
+          var tornadoPts = !_stormIsLiveDate && Array.isArray(cachedDateData.tornadoPts) ? cachedDateData.tornadoPts : null;
           var rows = null;
           var swathSourceName = cachedRows ? 'storm_polygons_memory' : 'storm_polygons';
 
