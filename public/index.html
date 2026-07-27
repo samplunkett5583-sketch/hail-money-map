@@ -28721,7 +28721,7 @@ function mapsGoogleReady() {
           rotateControl: false,
           clickableIcons: false,
           gestureHandling: 'greedy',
-          scrollwheel: true,
+          scrollwheel: false,
           draggableCursor: 'grab',
           draggingCursor: 'grabbing'
         });
@@ -28734,7 +28734,7 @@ function mapsGoogleReady() {
       App.map = map;
       mapsInstallMinimumZoomGuard(map);
       mapsWireHailHoverReadout();
-      hmDebugLog('[HMM] native map wheel zoom restored');
+      hmDebugLog('[HMM] fast cursor-centered map wheel zoom enabled');
 
       // Keep pan gestures separate from property clicks. Google can emit a map
       // click after a short drag, especially when hover-driven cursor options
@@ -28812,67 +28812,73 @@ function mapsGoogleReady() {
         }
       }
 
-      var wheelZoomTimeout = null;
+      var wheelZoomFrame = null;
       var wheelTargetZoom = null;
-      var wheelTargetFromZoom = null;
-      var wheelTargetCursor = null;
-      var cursorOverlay = new google.maps.OverlayView();
-      cursorOverlay.onAdd = function () {};
-      cursorOverlay.draw = function () {};
-      cursorOverlay.onRemove = function () {};
-      cursorOverlay.setMap(map);
+      var wheelAnchorWorld = null;
+      var wheelCursorOffsetX = 0;
+      var wheelCursorOffsetY = 0;
 
-      if (false) {
-        // Cursor-centered slow wheel zoom — 0.25 steps, debounced and keeps the pointer target stable
-        mapEl.addEventListener('wheel', function (e) {
-          if (e.ctrlKey) return; // allow browser pinch-zoom pass-through on trackpad
-          e.preventDefault();
-          e.stopPropagation();
-          var rect = mapEl.getBoundingClientRect();
-          var cursorX = e.clientX - rect.left;
-          var cursorY = e.clientY - rect.top;
-          var cursorLatLng = null;
-          var proj = cursorOverlay.getProjection();
-          if (proj && typeof google.maps.Point === 'function') {
-            cursorLatLng = proj.fromContainerPixelToLatLng(new google.maps.Point(cursorX, cursorY));
+      // Fast wheel zoom that keeps the geographic point beneath the mouse
+      // fixed beneath the mouse. A physical wheel notch moves 1.5 zoom levels;
+      // small trackpad deltas remain fractional for precise stopping.
+      mapEl.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        var projection = map.getProjection();
+        var center = map.getCenter();
+        var currentZoom = Number(map.getZoom());
+        if (!projection || !center || !Number.isFinite(currentZoom) ||
+            typeof projection.fromLatLngToPoint !== 'function' ||
+            typeof projection.fromPointToLatLng !== 'function') return;
+
+        var rect = mapEl.getBoundingClientRect();
+        wheelCursorOffsetX = (Number(e.clientX) || 0) - rect.left - rect.width / 2;
+        wheelCursorOffsetY = (Number(e.clientY) || 0) - rect.top - rect.height / 2;
+
+        var currentScale = 256 * Math.pow(2, currentZoom);
+        var centerWorld = projection.fromLatLngToPoint(center);
+        wheelAnchorWorld = new google.maps.Point(
+          centerWorld.x + wheelCursorOffsetX / currentScale,
+          centerWorld.y + wheelCursorOffsetY / currentScale
+        );
+
+        var deltaPixels = Number(e.deltaY) || 0;
+        if (e.deltaMode === 1) deltaPixels *= 32;
+        else if (e.deltaMode === 2) deltaPixels *= Math.max(320, rect.height);
+        if (!deltaPixels) return;
+
+        var direction = deltaPixels < 0 ? 1 : -1;
+        var magnitude = Math.abs(deltaPixels);
+        var zoomStep = magnitude >= 40
+          ? 1.5
+          : Math.max(0.08, Math.min(0.6, magnitude * 0.025));
+        var startingZoom = Number.isFinite(wheelTargetZoom) ? wheelTargetZoom : currentZoom;
+        wheelTargetZoom = Math.max(MAPS_MIN_ZOOM, Math.min(21, startingZoom + direction * zoomStep));
+
+        if (wheelZoomFrame) return;
+        wheelZoomFrame = requestAnimationFrame(function () {
+          wheelZoomFrame = null;
+          var targetZoom = wheelTargetZoom;
+          wheelTargetZoom = null;
+          if (!wheelAnchorWorld || !Number.isFinite(targetZoom)) return;
+
+          var targetScale = 256 * Math.pow(2, targetZoom);
+          var targetCenterPoint = new google.maps.Point(
+            wheelAnchorWorld.x - wheelCursorOffsetX / targetScale,
+            wheelAnchorWorld.y - wheelCursorOffsetY / targetScale
+          );
+          var targetCenter = projection.fromPointToLatLng(targetCenterPoint, true);
+          if (!targetCenter) return;
+
+          if (typeof map.moveCamera === 'function') {
+            map.moveCamera({ center: targetCenter, zoom: targetZoom });
+          } else {
+            map.setCenter(targetCenter);
+            map.setZoom(targetZoom);
           }
-          if (!cursorLatLng) {
-            var bounds = map.getBounds();
-            if (bounds) {
-              var ne = bounds.getNorthEast();
-              var sw = bounds.getSouthWest();
-              var fx = cursorX / rect.width;
-              var fy = cursorY / rect.height;
-              cursorLatLng = new google.maps.LatLng(
-                ne.lat() - fy * (ne.lat() - sw.lat()),
-                sw.lng() + fx * (ne.lng() - sw.lng())
-              );
-            }
-          }
-          var oldZoom = map.getZoom();
-          if (typeof oldZoom !== 'number' || isNaN(oldZoom)) return;
-          var minZoom = MAPS_MIN_ZOOM;
-          var maxZoom = typeof map.maxZoom === 'number' ? map.maxZoom : 21;
-          var nextZoom = Math.max(minZoom, Math.min(maxZoom, oldZoom + (e.deltaY < 0 ? 0.25 : -0.25)));
-          wheelTargetZoom = nextZoom;
-          wheelTargetFromZoom = oldZoom;
-          wheelTargetCursor = cursorLatLng;
-          clearTimeout(wheelZoomTimeout);
-          wheelZoomTimeout = setTimeout(function () {
-            if (wheelTargetCursor) {
-              var center = map.getCenter();
-              var scale = Math.pow(2, wheelTargetZoom - wheelTargetFromZoom);
-              var newCenter = new google.maps.LatLng(
-                wheelTargetCursor.lat() + (center.lat() - wheelTargetCursor.lat()) / scale,
-                wheelTargetCursor.lng() + (center.lng() - wheelTargetCursor.lng()) / scale
-              );
-              map.setCenter(newCenter);
-            }
-            map.setZoom(wheelTargetZoom);
-          }, 700);
-        }, { passive: false, capture: true });
-        hmDebugLog('[HMM] restored slow wheel zoom attached');
-      }
+        });
+      }, { passive: false, capture: true });
 
       // Track viewport changes → shared state
       map.addListener('idle', function() {
