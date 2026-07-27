@@ -5282,6 +5282,16 @@
       z-index: 0;
       pointer-events: auto;
     }
+    /* Cursor state is visual only. Updating google.maps.Map options while the
+       camera is moving interrupts native wheel zoom and pan inertia. */
+    #page-map #stormMap.maps-over-hail-swath .gm-style,
+    #page-map #stormMap.maps-over-hail-swath .gm-style * {
+      cursor: pointer !important;
+    }
+    #page-map #stormMap.maps-map-dragging .gm-style,
+    #page-map #stormMap.maps-map-dragging .gm-style * {
+      cursor: grabbing !important;
+    }
     body.map-page-active #page-map .maps-map-area {
       top: var(--maps-topbar-h);
       bottom: 36px;
@@ -26136,20 +26146,19 @@
     function mapsSetHailHoverCursor(isOverSwath) {
       var overSwath = !!isOverSwath;
       var gesture = mapsState._mapPointerGesture;
-      // Do not change Google Maps interaction options while a pointer is down.
-      // Re-applying draggableCursor during a drag can interrupt the pan gesture
-      // and leave the map displaying the closed-hand cursor after release.
-      if (gesture && (gesture.pointerDown || gesture.dragging)) return;
+      var mapEl = document.getElementById('stormMap');
+      // Cursor changes must never call map.setOptions(). Google treats that as a
+      // live interaction update, which can restart an animated wheel zoom or pan.
+      // A CSS-only state keeps the native camera gesture completely uninterrupted.
+      if (gesture && (gesture.pointerDown || gesture.dragging)) {
+        if (mapEl) mapEl.classList.add('maps-map-dragging');
+        return;
+      }
       if (mapsState._hailHoverCursorOverSwath === overSwath) return;
       mapsState._hailHoverCursorOverSwath = overSwath;
-      var cursor = overSwath ? 'pointer' : 'grab';
-      if (mapsState.map && typeof mapsState.map.setOptions === 'function') {
-        try {
-          mapsState.map.setOptions({
-            draggableCursor: cursor,
-            draggingCursor: 'grabbing'
-          });
-        } catch (_) {}
+      if (mapEl) {
+        mapEl.classList.toggle('maps-over-hail-swath', overSwath);
+        mapEl.classList.remove('maps-map-dragging');
       }
     }
 
@@ -28747,6 +28756,7 @@ function mapsGoogleReady() {
         mapPointerGesture.dragging = false;
         mapPointerGesture.moved = false;
         mapsState._hailHoverCursorOverSwath = null;
+        mapEl.classList.remove('maps-map-dragging');
         mapsSetHailHoverCursor(false);
       }
       mapEl.addEventListener('pointerdown', function (event) {
@@ -28756,6 +28766,7 @@ function mapsGoogleReady() {
         mapPointerGesture.moved = false;
         mapPointerGesture.downX = Number(event.clientX) || 0;
         mapPointerGesture.downY = Number(event.clientY) || 0;
+        mapEl.classList.add('maps-map-dragging');
       }, true);
       mapEl.addEventListener('pointermove', function (event) {
         if (!mapPointerGesture.pointerDown || mapPointerGesture.moved) return;
@@ -28772,6 +28783,7 @@ function mapsGoogleReady() {
       map.addListener('dragstart', function () {
         mapPointerGesture.dragging = true;
         mapPointerGesture.moved = true;
+        mapEl.classList.add('maps-map-dragging');
         if (mapsState._hailHoverRaf) {
           cancelAnimationFrame(mapsState._hailHoverRaf);
           mapsState._hailHoverRaf = null;
@@ -33885,6 +33897,77 @@ function mapsGoogleReady() {
       }
     }
 
+    function mapsSimplifySwathRenderPath(path) {
+      if (!Array.isArray(path) || path.length <= 600) return path;
+      var points = path.slice();
+      var first = points[0];
+      var last = points[points.length - 1];
+      var isClosed = !!(first && last && first.lat === last.lat && first.lng === last.lng);
+      if (isClosed) points.pop();
+      if (points.length <= 600) return path;
+
+      var meanLat = points.reduce(function (sum, point) {
+        return sum + Number(point.lat || 0);
+      }, 0) / points.length;
+      var lngScale = Math.max(0.2, Math.cos(meanLat * Math.PI / 180));
+
+      function simplifyWithTolerance(tolerance) {
+        var keep = new Uint8Array(points.length);
+        keep[0] = 1;
+        keep[points.length - 1] = 1;
+        var stack = [[0, points.length - 1]];
+        var toleranceSq = tolerance * tolerance;
+        while (stack.length) {
+          var segment = stack.pop();
+          var startIndex = segment[0];
+          var endIndex = segment[1];
+          var start = points[startIndex];
+          var end = points[endIndex];
+          var ax = Number(start.lng) * lngScale;
+          var ay = Number(start.lat);
+          var bx = Number(end.lng) * lngScale;
+          var by = Number(end.lat);
+          var dx = bx - ax;
+          var dy = by - ay;
+          var lengthSq = dx * dx + dy * dy;
+          var maxDistanceSq = -1;
+          var maxIndex = -1;
+          for (var i = startIndex + 1; i < endIndex; i++) {
+            var px = Number(points[i].lng) * lngScale;
+            var py = Number(points[i].lat);
+            var t = lengthSq > 0 ? ((px - ax) * dx + (py - ay) * dy) / lengthSq : 0;
+            t = Math.max(0, Math.min(1, t));
+            var qx = ax + t * dx;
+            var qy = ay + t * dy;
+            var ddx = px - qx;
+            var ddy = py - qy;
+            var distanceSq = ddx * ddx + ddy * ddy;
+            if (distanceSq > maxDistanceSq) {
+              maxDistanceSq = distanceSq;
+              maxIndex = i;
+            }
+          }
+          if (maxIndex > startIndex && maxDistanceSq > toleranceSq) {
+            keep[maxIndex] = 1;
+            stack.push([startIndex, maxIndex], [maxIndex, endIndex]);
+          }
+        }
+        return points.filter(function (_, index) { return keep[index] === 1; });
+      }
+
+      // Rendering uses a visually lossless sub-pixel simplification while hover
+      // and property validation retain the untouched canonical GeoJSON.
+      var tolerance = 0.00035;
+      var simplified = simplifyWithTolerance(tolerance);
+      while (simplified.length > 900 && tolerance < 0.01) {
+        tolerance *= 1.6;
+        simplified = simplifyWithTolerance(tolerance);
+      }
+      if (simplified.length < 3) return path;
+      if (isClosed) simplified.push(simplified[0]);
+      return simplified;
+    }
+
     function mapsDrawSavedStormPolygonForDate(dateStr, rows) {
       mapsClearActiveHailHoverBands();
       if (mapsIsSwathDebugMode()) {
@@ -34371,6 +34454,7 @@ function mapsGoogleReady() {
               return _handCutStoredHailPath(polygonPath, handCutSeed + ':' + pathIndex);
             });
           }
+          paths = paths.map(mapsSimplifySwathRenderPath);
           if (_trackFocusGeometry && _showRow) {
             path.forEach(function (pt) {
               if (pt.lat < _dateBbox.minLat) _dateBbox.minLat = pt.lat;
