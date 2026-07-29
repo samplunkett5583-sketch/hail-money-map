@@ -16214,7 +16214,7 @@
         }
 
         // ── Render-time safety guard: skip impossible polygons ──
-        // Preferred corridor sources are exempt from oversized guard
+        // Only hail corridors may exceed the size limit. Wind and tornado rows must always pass the guard.
         var allLats = [], allLons = [];
         ringArrays.forEach(function (ring) {
           if (!Array.isArray(ring)) return;
@@ -16224,9 +16224,12 @@
           var bboxLatSpan = Math.max.apply(null, allLats) - Math.min.apply(null, allLats);
           var bboxLonSpan = Math.max.apply(null, allLons) - Math.min.apply(null, allLons);
           var storedArea = Number(row.area_sq_mi) || 0;
-          if (!isPreferred && (bboxLatSpan > 3.0 || bboxLonSpan > 3.0 || storedArea > 800)) {
+          var guardStormType = String(row.storm_type || 'hail').toLowerCase();
+          var mayExceedGenericSizeLimit = isPreferred && guardStormType === 'hail';
+          if (!mayExceedGenericSizeLimit && (bboxLatSpan > 3.0 || bboxLonSpan > 3.0 || storedArea > 800)) {
             hmDebugWarn('[drawSavedPoly] SKIP oversized row ' + (row.id || ri) +
-              ' src=' + row.source + ' reason=oversized bboxLat=' + bboxLatSpan.toFixed(2) +
+              ' src=' + row.source + ' type=' + guardStormType +
+              ' reason=oversized bboxLat=' + bboxLatSpan.toFixed(2) +
               '° bboxLon=' + bboxLonSpan.toFixed(2) + '° area=' + storedArea + 'mi²');
             _rejectedInvalidGeom++;
             return;
