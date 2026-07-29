@@ -3839,10 +3839,37 @@ async function fetchSavedSwathPolygonsByDate(dateDash){
   const rows=JSON.parse(raw);return Array.isArray(rows)?rows:[];
 }
 function normalizeSavedSwathGeometry(geometry){if(!geometry)return null;if(typeof geometry==="string"){try{return normalizeSavedSwathGeometry(JSON.parse(geometry));}catch{return null;}}if(geometry.type==="FeatureCollection"||geometry.type==="Feature")return geometry;if(geometry.type==="Polygon"||geometry.type==="MultiPolygon")return{type:"Feature",geometry,properties:{}};return null;}
+function getSavedSwathBounds(geo){
+  const lats=[],lons=[];
+  const collect=value=>{
+    if(!Array.isArray(value))return;
+    if(value.length>=2&&Number.isFinite(Number(value[0]))&&Number.isFinite(Number(value[1]))){lons.push(Number(value[0]));lats.push(Number(value[1]));return;}
+    value.forEach(collect);
+  };
+  if(geo?.type==="FeatureCollection"){(geo.features||[]).forEach(feature=>collect(feature?.geometry?.coordinates));}
+  else if(geo?.type==="Feature")collect(geo.geometry?.coordinates);
+  else collect(geo?.coordinates);
+  if(!lats.length)return null;
+  return{latSpan:Math.max(...lats)-Math.min(...lats),lonSpan:Math.max(...lons)-Math.min(...lons)};
+}
+function shouldRejectOversizedSavedSwath(row,geo){
+  const bounds=getSavedSwathBounds(geo);if(!bounds)return false;
+  const stormType=String(row?.storm_type||"hail").toLowerCase();
+  const source=String(row?.source||"").toLowerCase();
+  const preferredHailSources=["corridor","nexrad_poc","mrms_mesh","synthesized_mesh","nexrad_iem"];
+  const mayExceedGenericSizeLimit=stormType==="hail"&&preferredHailSources.includes(source);
+  const area=Number(row?.area_sq_mi)||0;
+  const oversized=bounds.latSpan>3||bounds.lonSpan>3||area>800;
+  if(!mayExceedGenericSizeLimit&&oversized){
+    console.warn("[SAVED_SWATH] skipped oversized row",row?.id,{stormType,source,latSpan:bounds.latSpan,lonSpan:bounds.lonSpan,areaSqMi:area});
+    return true;
+  }
+  return false;
+}
 async function loadSavedSwaths(dateDash,layer){
   if(!dateDash||!layer||typeof layer.addGeoJson!=="function")return 0;
   const rows=await fetchSavedSwathPolygonsByDate(dateDash);let added=0;
-  for(const row of rows){const geo=normalizeSavedSwathGeometry(row?.polygon_geojson);if(!geo)continue;const rowProps={dateDash,event_date:row.event_date,storm_type:row.storm_type,source:row.source,source_product:row.source_product,source_priority:row.source_priority,swath_index:row.swath_index,band_min:row.band_min,band_max:row.band_max,threshold_value:row.threshold_value};try{if(geo.type==="FeatureCollection"){geo.features=(geo.features||[]).map(feature=>({...feature,properties:{...(feature.properties||{}),...rowProps}}));added+=layer.addGeoJson(geo).length;}else{geo.properties={...(geo.properties||{}),...rowProps};added+=layer.addGeoJson(geo).length;}}catch(e){console.warn("[SAVED_SWATH] failed to add row",row?.id,e);}}
+  for(const row of rows){const geo=normalizeSavedSwathGeometry(row?.polygon_geojson);if(!geo||shouldRejectOversizedSavedSwath(row,geo))continue;const rowProps={dateDash,event_date:row.event_date,storm_type:row.storm_type,source:row.source,source_product:row.source_product,source_priority:row.source_priority,swath_index:row.swath_index,band_min:row.band_min,band_max:row.band_max,threshold_value:row.threshold_value};try{if(geo.type==="FeatureCollection"){geo.features=(geo.features||[]).map(feature=>({...feature,properties:{...(feature.properties||{}),...rowProps}}));added+=layer.addGeoJson(geo).length;}else{geo.properties={...(geo.properties||{}),...rowProps};added+=layer.addGeoJson(geo).length;}}catch(e){console.warn("[SAVED_SWATH] failed to add row",row?.id,e);}}
   console.log("[SAVED_SWATH] added features:",added,"date:",dateDash);return added;
 }
 
