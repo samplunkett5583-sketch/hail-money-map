@@ -6503,6 +6503,24 @@
     #page-map .maps-options-check input { width:16px; height:16px; margin:0; accent-color:#2879bd; cursor:pointer; }
     #page-map .maps-options-layer-icon { display:flex; align-items:center; justify-content:center; width:16px; color:#343a40; line-height:1; }
     #page-map .maps-options-layer-icon svg { width:13px; height:16px; display:block; }
+    #page-map .maps-options-submenu-toggle {
+      display:flex; align-items:center; gap:8px; width:100%; min-height:34px; padding:6px 4px;
+      border:0; background:transparent; color:#20252a; font-size:12px; font-weight:700;
+      text-align:left; cursor:pointer;
+    }
+    #page-map .maps-options-submenu-toggle:hover { background:#f2f5f7; }
+    #page-map .maps-options-submenu-caret { margin-left:auto; font-size:14px; transition:transform .15s ease; }
+    #page-map .maps-options-submenu-toggle[aria-expanded="true"] .maps-options-submenu-caret { transform:rotate(90deg); }
+    #page-map .maps-address-marker-menu {
+      margin:2px 0 6px; padding:6px 8px; border:1px solid #d8dde2; border-radius:6px; background:#f7f9fa;
+      max-height:260px; overflow-y:auto;
+    }
+    #page-map .maps-address-marker-menu[hidden] { display:none; }
+    #page-map .maps-address-marker-menu .maps-options-check { min-height:29px; padding:4px 2px; font-size:11px; }
+    #page-map .maps-address-marker-menu .maps-options-check:first-child {
+      margin-bottom:3px; padding-bottom:7px; border-bottom:1px solid #d8dde2; font-weight:800;
+    }
+    #page-map .maps-marker-status-dot { width:10px; height:10px; border-radius:50%; flex:0 0 10px; box-shadow:0 0 0 1px rgba(0,0,0,.18); }
     body.map-page-active #page-map .maps-map-area {
       top:var(--maps-topbar-h); bottom:var(--maps-tracker-h); height:auto; background:#e8edf1;
     }
@@ -19207,16 +19225,40 @@
               <div class="maps-toolbar-menu-wrap">
                 <button type="button" id="maps-options-btn" class="maps-toolbar-btn maps-toolbar-btn-options" aria-expanded="false" aria-controls="maps-options-menu">Map Options</button>
                 <div id="maps-options-menu" class="maps-options-menu" hidden>
-                  <label class="maps-options-check" for="maps-show-hail-spotter-reports">
-                    <input type="checkbox" id="maps-show-hail-spotter-reports" />
-                    <span>Show Hail Spotter Reports</span>
+                  <label class="maps-options-check" for="maps-show-wind-swaths">
+                    <input type="checkbox" id="maps-show-wind-swaths" />
+                    <span>Wind Swaths</span>
                   </label>
-                  <label class="maps-options-check" for="maps-show-campaign-address-markers">
-                    <input type="checkbox" id="maps-show-campaign-address-markers" checked />
+                  <label class="maps-options-check" for="maps-show-tornado-routes">
+                    <input type="checkbox" id="maps-show-tornado-routes" />
+                    <span>Tornado Routes</span>
+                  </label>
+                  <button type="button" id="maps-address-markers-btn" class="maps-options-submenu-toggle" aria-expanded="false" aria-controls="maps-address-marker-menu">
                     <span class="maps-options-layer-icon" aria-hidden="true">
                       <svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></svg>
                     </span>
                     <span>Address Markers</span>
+                    <span class="maps-options-submenu-caret" aria-hidden="true">&#8250;</span>
+                  </button>
+                  <div id="maps-address-marker-menu" class="maps-address-marker-menu" hidden>
+                    <label class="maps-options-check" for="maps-show-campaign-address-markers">
+                      <input type="checkbox" id="maps-show-campaign-address-markers" checked />
+                      <span>All Address Markers</span>
+                    </label>
+                    <label class="maps-options-check"><input type="checkbox" data-maps-marker-status="nothome" checked /><span class="maps-marker-status-dot" style="background:#718096;"></span><span>Not Home</span></label>
+                    <label class="maps-options-check"><input type="checkbox" data-maps-marker-status="notint" checked /><span class="maps-marker-status-dot" style="background:#E53E3E;"></span><span>Not Interested</span></label>
+                    <label class="maps-options-check"><input type="checkbox" data-maps-marker-status="inspection" checked /><span class="maps-marker-status-dot" style="background:#3182CE;"></span><span>Did Inspection</span></label>
+                    <label class="maps-options-check"><input type="checkbox" data-maps-marker-status="noclaim" checked /><span class="maps-marker-status-dot" style="background:#DD6B20;"></span><span>No Claim Filed</span></label>
+                    <label class="maps-options-check"><input type="checkbox" data-maps-marker-status="filed" checked /><span class="maps-marker-status-dot" style="background:#9F7AEA;"></span><span>Filed Claim</span></label>
+                    <label class="maps-options-check"><input type="checkbox" data-maps-marker-status="goback" checked /><span class="maps-marker-status-dot" style="background:#718096;"></span><span>Go Back Again</span></label>
+                    <label class="maps-options-check"><input type="checkbox" data-maps-marker-status="approved" checked /><span class="maps-marker-status-dot" style="background:#38A169;"></span><span>Got Approved</span></label>
+                    <label class="maps-options-check"><input type="checkbox" data-maps-marker-status="referral" checked /><span class="maps-marker-status-dot" style="background:#718096;"></span><span>Got Referral</span></label>
+                    <label class="maps-options-check"><input type="checkbox" data-maps-marker-status="note" checked /><span class="maps-marker-status-dot" style="background:#FBBF24;"></span><span>Notes</span></label>
+                    <label class="maps-options-check"><input type="checkbox" data-maps-marker-status="other" checked /><span class="maps-marker-status-dot" style="background:#718096;"></span><span>Other</span></label>
+                  </div>
+                  <label class="maps-options-check" for="maps-show-hail-spotter-reports">
+                    <input type="checkbox" id="maps-show-hail-spotter-reports" />
+                    <span>Show Hail Spotter Reports</span>
                   </label>
                   <label class="maps-options-check" for="maps-show-wind-spotter-reports">
                     <input type="checkbox" id="maps-show-wind-spotter-reports" />
@@ -25677,6 +25719,10 @@
       showWindHeatMap: false,
       campaignAddressMarkers: [],
       showCampaignAddressMarkers: true,
+      campaignAddressMarkerStatuses: {
+        nothome: true, notint: true, inspection: true, noclaim: true, filed: true,
+        goback: true, approved: true, referral: true, note: true, other: true
+      },
       aiSwathOverlays: {},       // dateStr -> SwathCanvasOverlay instance (AI-generated)
       hailFieldOverlays: {},     // dateStr -> HailFieldOverlay instance (raster intensity field)
       hailBandPolygons: {},      // dateStr -> google.maps.Polygon[] (hail-size band hulls)
@@ -25705,7 +25751,7 @@
         fromEdge: 0, fromHailLsr: 0, fromWindLsr: 0, fromPolygons: 0, total: 0,
         lastError: null, lastFetchAt: null, aprilDates: []
       },
-      swathToggles: { hail: true, wind: false, tornado: true },
+      swathToggles: { hail: true, wind: false, tornado: false },
       typeOpacityScale: { hail: 0.30, wind: 0.00, tornado: 0.30 },
       selectedProperty: null,    // { lat, lng, address, title }
       rawStormRows: {},          // dateStr -> raw row[] from storm_polygons (for nearby-storm search)
@@ -25749,6 +25795,7 @@
 
     var MAPS_PINNED_DATES_KEY = 'hmm_maps_pinned_dates_v1';
     var MAPS_CAMPAIGN_MARKERS_KEY = 'hmm_campaign_markers_v2';
+    var MAPS_CAMPAIGN_MARKER_FILTERS_KEY = 'hmm_maps_campaign_marker_filters_v1';
     var _mapsApiKeyCache = null;
 
     function mapsReadPinnedDates() {
@@ -34374,7 +34421,7 @@ function mapsGoogleReady() {
         }
 
         // ── Render-time safety guard: skip impossible polygons ──
-        // Preferred corridor sources are exempt from oversized guard
+        // Only hail corridors may exceed the size limit. Wind and tornado rows must always pass the guard.
         var allLats = [], allLons = [];
         ringArrays.forEach(function (ring) {
           if (!Array.isArray(ring)) return;
@@ -34384,9 +34431,12 @@ function mapsGoogleReady() {
           var bboxLatSpan = Math.max.apply(null, allLats) - Math.min.apply(null, allLats);
           var bboxLonSpan = Math.max.apply(null, allLons) - Math.min.apply(null, allLons);
           var storedArea = Number(row.area_sq_mi) || 0;
-          if (!isPreferred && (bboxLatSpan > 3.0 || bboxLonSpan > 3.0 || storedArea > 800)) {
+          var guardStormType = String(row.storm_type || 'hail').toLowerCase();
+          var mayExceedGenericSizeLimit = isPreferred && guardStormType === 'hail';
+          if (!mayExceedGenericSizeLimit && (bboxLatSpan > 3.0 || bboxLonSpan > 3.0 || storedArea > 800)) {
             hmDebugWarn('[drawSavedPoly] SKIP oversized row ' + (row.id || ri) +
-              ' src=' + row.source + ' reason=oversized bboxLat=' + bboxLatSpan.toFixed(2) +
+              ' src=' + row.source + ' type=' + guardStormType +
+              ' reason=oversized bboxLat=' + bboxLatSpan.toFixed(2) +
               '° bboxLon=' + bboxLonSpan.toFixed(2) + '° area=' + storedArea + 'mi²');
             _rejectedInvalidGeom++;
             return;
@@ -35984,6 +36034,38 @@ function mapsGoogleReady() {
       }
     }
 
+    function mapsDefaultCampaignAddressMarkerStatuses() {
+      return {
+        nothome: true, notint: true, inspection: true, noclaim: true, filed: true,
+        goback: true, approved: true, referral: true, note: true, other: true
+      };
+    }
+
+    function mapsReadCampaignAddressMarkerStatuses() {
+      var statuses = mapsDefaultCampaignAddressMarkerStatuses();
+      try {
+        var saved = JSON.parse(localStorage.getItem(MAPS_CAMPAIGN_MARKER_FILTERS_KEY) || '{}');
+        Object.keys(statuses).forEach(function (status) {
+          if (typeof saved[status] === 'boolean') statuses[status] = saved[status];
+        });
+      } catch (_) {}
+      return statuses;
+    }
+
+    function mapsPersistCampaignAddressMarkerStatuses() {
+      try {
+        localStorage.setItem(
+          MAPS_CAMPAIGN_MARKER_FILTERS_KEY,
+          JSON.stringify(mapsState.campaignAddressMarkerStatuses || mapsDefaultCampaignAddressMarkerStatuses())
+        );
+      } catch (_) {}
+    }
+
+    function mapsCampaignAddressMarkerStatusKey(status) {
+      status = String(status || '').toLowerCase();
+      return Object.prototype.hasOwnProperty.call(mapsDefaultCampaignAddressMarkerStatuses(), status) ? status : 'other';
+    }
+
     function mapsClearCampaignAddressMarkers() {
       (mapsState.campaignAddressMarkers || []).forEach(function (entry) {
         try { if (entry.infoWindow) entry.infoWindow.close(); } catch (_) {}
@@ -36016,6 +36098,9 @@ function mapsGoogleReady() {
         if (!isFinite(lat) || !isFinite(lng)) return;
 
         var status = String(saved.status || '');
+        var statusKey = mapsCampaignAddressMarkerStatusKey(status);
+        var visibleStatuses = mapsState.campaignAddressMarkerStatuses || mapsDefaultCampaignAddressMarkerStatuses();
+        if (!visibleStatuses[statusKey]) return;
         var color = mapsCampaignAddressMarkerColor(status);
         var label = String(saved.label || 'Campaign Address');
         var address = String(saved.address || '');
@@ -36058,6 +36143,35 @@ function mapsGoogleReady() {
       mapsRenderCampaignAddressMarkers();
       var checkbox = document.getElementById('maps-show-campaign-address-markers');
       if (checkbox) checkbox.checked = !!show;
+    }
+
+    function mapsSyncCampaignAddressMarkerControls() {
+      var statuses = mapsState.campaignAddressMarkerStatuses || mapsDefaultCampaignAddressMarkerStatuses();
+      var statusInputs = Array.prototype.slice.call(document.querySelectorAll('#maps-address-marker-menu [data-maps-marker-status]'));
+      statusInputs.forEach(function (input) {
+        input.checked = statuses[input.getAttribute('data-maps-marker-status')] !== false;
+      });
+      var enabledCount = statusInputs.filter(function (input) { return input.checked; }).length;
+      var allCheckbox = document.getElementById('maps-show-campaign-address-markers');
+      if (allCheckbox) {
+        allCheckbox.checked = statusInputs.length > 0 && enabledCount === statusInputs.length;
+        allCheckbox.indeterminate = enabledCount > 0 && enabledCount < statusInputs.length;
+      }
+    }
+
+    function mapsSetCampaignAddressMarkerStatus(status, show) {
+      status = mapsCampaignAddressMarkerStatusKey(status);
+      if (!mapsState.campaignAddressMarkerStatuses) {
+        mapsState.campaignAddressMarkerStatuses = mapsDefaultCampaignAddressMarkerStatuses();
+      }
+      mapsState.campaignAddressMarkerStatuses[status] = !!show;
+      mapsState.showCampaignAddressMarkers = Object.keys(mapsState.campaignAddressMarkerStatuses).some(function (key) {
+        return mapsState.campaignAddressMarkerStatuses[key];
+      });
+      try { localStorage.setItem('hailMoneyShowCampaignAddressMarkers', mapsState.showCampaignAddressMarkers ? '1' : '0'); } catch (_) {}
+      mapsPersistCampaignAddressMarkerStatuses();
+      mapsSyncCampaignAddressMarkerControls();
+      mapsRenderCampaignAddressMarkers();
     }
 
     function mapsGetTrackedProperties() {
@@ -39876,10 +39990,15 @@ function mapsGoogleReady() {
       var nextBtn = document.getElementById('maps-next-date-btn');
       var optionsBtn = document.getElementById('maps-options-btn');
       var optionsMenu = document.getElementById('maps-options-menu');
+      var windSwathsCheckbox = document.getElementById('maps-show-wind-swaths');
+      var tornadoRoutesCheckbox = document.getElementById('maps-show-tornado-routes');
       var spotterReportsCheckbox = document.getElementById('maps-show-hail-spotter-reports');
       var windSpotterReportsCheckbox = document.getElementById('maps-show-wind-spotter-reports');
       var windHeatMapCheckbox = document.getElementById('maps-show-wind-heat-map');
+      var addressMarkersBtn = document.getElementById('maps-address-markers-btn');
+      var addressMarkerMenu = document.getElementById('maps-address-marker-menu');
       var addressMarkersCheckbox = document.getElementById('maps-show-campaign-address-markers');
+      var addressMarkerStatusCheckboxes = document.querySelectorAll('#maps-address-marker-menu [data-maps-marker-status]');
       var searchBtn = document.getElementById('maps-toolbar-search-btn');
       var searchInput = document.getElementById('stormSearchInput');
 
@@ -39930,6 +40049,32 @@ function mapsGoogleReady() {
         optionsBtn.dataset.mapsBindingCount = '1';
       }
 
+      if (windSwathsCheckbox) {
+        var savedWindSwathsPreference = '0';
+        try { savedWindSwathsPreference = localStorage.getItem('hailMoneyShowWindSwaths') || '0'; } catch (_) {}
+        windSwathsCheckbox.checked = savedWindSwathsPreference === '1';
+        mapsState.swathToggles.wind = windSwathsCheckbox.checked;
+        windSwathsCheckbox.addEventListener('change', function () {
+          mapsState.swathToggles.wind = windSwathsCheckbox.checked;
+          try { localStorage.setItem('hailMoneyShowWindSwaths', windSwathsCheckbox.checked ? '1' : '0'); } catch (_) {}
+          applySwathToggles();
+        });
+        windSwathsCheckbox.dataset.mapsBindingCount = '1';
+      }
+
+      if (tornadoRoutesCheckbox) {
+        var savedTornadoRoutesPreference = '0';
+        try { savedTornadoRoutesPreference = localStorage.getItem('hailMoneyShowTornadoRoutes') || '0'; } catch (_) {}
+        tornadoRoutesCheckbox.checked = savedTornadoRoutesPreference === '1';
+        mapsState.swathToggles.tornado = tornadoRoutesCheckbox.checked;
+        tornadoRoutesCheckbox.addEventListener('change', function () {
+          mapsState.swathToggles.tornado = tornadoRoutesCheckbox.checked;
+          try { localStorage.setItem('hailMoneyShowTornadoRoutes', tornadoRoutesCheckbox.checked ? '1' : '0'); } catch (_) {}
+          applySwathToggles();
+        });
+        tornadoRoutesCheckbox.dataset.mapsBindingCount = '1';
+      }
+
       if (spotterReportsCheckbox) {
         var savedSpotterPreference = '0';
         try { savedSpotterPreference = localStorage.getItem('hailMoneyShowSpotterReports') || '0'; } catch (_) {}
@@ -39963,16 +40108,48 @@ function mapsGoogleReady() {
         windHeatMapCheckbox.dataset.mapsBindingCount = '1';
       }
 
+      if (addressMarkersBtn && addressMarkerMenu) {
+        addressMarkersBtn.addEventListener('click', function () {
+          var open = addressMarkerMenu.hidden;
+          addressMarkerMenu.hidden = !open;
+          addressMarkersBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+        addressMarkersBtn.dataset.mapsBindingCount = '1';
+      }
+
       if (addressMarkersCheckbox) {
         var savedAddressMarkerPreference = '1';
         try { savedAddressMarkerPreference = localStorage.getItem('hailMoneyShowCampaignAddressMarkers') || '1'; } catch (_) {}
-        mapsState.showCampaignAddressMarkers = savedAddressMarkerPreference !== '0';
-        addressMarkersCheckbox.checked = mapsState.showCampaignAddressMarkers;
+        mapsState.campaignAddressMarkerStatuses = mapsReadCampaignAddressMarkerStatuses();
+        if (savedAddressMarkerPreference === '0') {
+          Object.keys(mapsState.campaignAddressMarkerStatuses).forEach(function (status) {
+            mapsState.campaignAddressMarkerStatuses[status] = false;
+          });
+        }
+        mapsState.showCampaignAddressMarkers = Object.keys(mapsState.campaignAddressMarkerStatuses).some(function (status) {
+          return mapsState.campaignAddressMarkerStatuses[status];
+        });
+        mapsSyncCampaignAddressMarkerControls();
         addressMarkersCheckbox.addEventListener('change', function () {
-          mapsSetCampaignAddressMarkersVisible(addressMarkersCheckbox.checked);
+          var showAll = addressMarkersCheckbox.checked;
+          Object.keys(mapsState.campaignAddressMarkerStatuses).forEach(function (status) {
+            mapsState.campaignAddressMarkerStatuses[status] = showAll;
+          });
+          mapsState.showCampaignAddressMarkers = showAll;
+          try { localStorage.setItem('hailMoneyShowCampaignAddressMarkers', showAll ? '1' : '0'); } catch (_) {}
+          mapsPersistCampaignAddressMarkerStatuses();
+          mapsSyncCampaignAddressMarkerControls();
+          mapsRenderCampaignAddressMarkers();
         });
         addressMarkersCheckbox.dataset.mapsBindingCount = '1';
       }
+
+      addressMarkerStatusCheckboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+          mapsSetCampaignAddressMarkerStatus(checkbox.getAttribute('data-maps-marker-status'), checkbox.checked);
+        });
+        checkbox.dataset.mapsBindingCount = '1';
+      });
 
       if (searchBtn && searchInput) {
         searchBtn.addEventListener('click', function () {
