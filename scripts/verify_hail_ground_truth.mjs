@@ -23,6 +23,7 @@ const args = Object.fromEntries(
 
 const dryRun = args["dry-run"] === "true";
 const force = args.force === "true";
+const unverifiedOnly = args.unverified === "true";
 const refreshHours = positiveNumber(args["refresh-hours"], 12);
 const limit = Math.min(5000, positiveNumber(args.limit, 250));
 const offset = Math.max(0, Number(args.offset) || 0);
@@ -210,14 +211,47 @@ async function getDates() {
       })()
     : "";
 
+  async function selectDates(values) {
+    let dates = [...new Set(
+      (values || []).map((row) => asDate(
+        typeof row === "string" ? row : row?.event_date || row?.date || row?.eventDate,
+      )).filter((date) => validDate(date) && (!cutoff || date >= cutoff)),
+    )].sort().reverse();
+
+    if (unverifiedOnly && dates.length) {
+      const completed = await supabase
+        .from("hail_ground_truth_runs")
+        .select("event_date")
+        .eq("status", "complete")
+        .range(0, 4999);
+      if (completed.error) throw new Error(completed.error.message);
+      const completedDates = new Set((completed.data || []).map((row) => asDate(row.event_date)));
+      dates = dates.filter((date) => !completedDates.has(date));
+    }
+    return dates.slice(offset, offset + limit);
+  }
+
+  const completeIndexResult = await supabase.rpc("get_hail_ground_truth_dates");
+  if (!completeIndexResult.error && Array.isArray(completeIndexResult.data)) {
+    return selectDates(completeIndexResult.data);
+  }
+
+  const jsonResult = await supabase.rpc("get_storm_dates_json");
+  if (!jsonResult.error && jsonResult.data != null) {
+    let payload = jsonResult.data;
+    if (typeof payload === "string") {
+      try { payload = JSON.parse(payload); } catch { payload = []; }
+    }
+    if (!Array.isArray(payload)) {
+      payload = payload?.rows || payload?.data || payload?.dates || payload?.event_dates || [];
+    }
+    const dates = await selectDates(payload);
+    if (dates.length || unverifiedOnly) return dates;
+  }
+
   const rpcResult = await supabase.rpc("get_storm_distinct_dates");
   if (!rpcResult.error && Array.isArray(rpcResult.data)) {
-    const dates = [...new Set(
-      rpcResult.data
-        .map((row) => asDate(row.event_date))
-        .filter((date) => validDate(date) && (!cutoff || date >= cutoff)),
-    )].sort().reverse();
-    return dates.slice(offset, offset + limit);
+    return selectDates(rpcResult.data);
   }
 
   // Older deployments may not have the consolidated RPC. Build the date list
@@ -250,11 +284,11 @@ async function getDates() {
   if (dates.length === 0 && errors.length === tables.length) {
     throw new Error(`Could not load storm dates: ${errors.join("; ")}`);
   }
-  return dates.slice(offset, offset + limit);
+  return selectDates(dates);
 }
 
 async function getAnchors(date) {
-  const [lsrResult, radarResult] = await Promise.all([
+  const [lsrResult, radarResult, savedResult] = await Promise.all([
     supabase
       .from("hail_lsr_raw")
       .select("lat,lon,state,county,hail_in,source,raw")
@@ -265,6 +299,12 @@ async function getAnchors(date) {
       .select("centroid_lat,centroid_lon,band_min,band_max")
       .eq("event_date", date)
       .limit(2000),
+    supabase
+      .from("storm_polygons")
+      .select("centroid_lat,centroid_lon,band_min,band_max,state,county,city,storm_type")
+      .eq("event_date", date)
+      .ilike("storm_type", "hail")
+      .limit(5000),
   ]);
   if (lsrResult.error) throw new Error(lsrResult.error.message);
 
@@ -284,6 +324,18 @@ async function getAnchors(date) {
         state: "",
         county: "",
         city: "",
+        hail: Number(row.band_max || row.band_min) || 0,
+      });
+    }
+  }
+  if (!savedResult.error) {
+    for (const row of savedResult.data || []) {
+      anchors.push({
+        lat: Number(row.centroid_lat),
+        lon: Number(row.centroid_lon),
+        state: row.state || "",
+        county: row.county || "",
+        city: row.city || "",
         hail: Number(row.band_max || row.band_min) || 0,
       });
     }

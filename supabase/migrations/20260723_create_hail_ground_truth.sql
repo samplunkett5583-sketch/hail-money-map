@@ -50,3 +50,26 @@ alter table public.hail_ground_truth_runs enable row level security;
 grant all on public.hail_ground_truth_evidence to service_role;
 grant all on public.hail_ground_truth_runs to service_role;
 
+-- Complete, uncapped verification queue. The browser-oriented storm-date
+-- endpoint intentionally returns a limited recent list and cannot drive a
+-- historical ground-truth backfill.
+create or replace function public.get_hail_ground_truth_dates()
+returns table (event_date date)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select d.event_date
+  from (
+    select event_date from public.hail_lsr_raw
+    union
+    select event_date from public.storm_polygons
+  ) d
+  where d.event_date is not null
+  order by d.event_date desc;
+$$;
+
+revoke all on function public.get_hail_ground_truth_dates() from public;
+grant execute on function public.get_hail_ground_truth_dates() to service_role;
+

@@ -3,6 +3,7 @@ name: Verify Hail Ground Truth
 on:
   push:
     branches:
+      - master
       - pr-43-storm-panel-style
     paths:
       - ".github/workflows/hail-ground-truth.yml"
@@ -74,7 +75,11 @@ jobs:
 
       - name: Verify recent storm dates
         if: github.event_name == 'push' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.scope == 'recent')
-        run: node scripts/verify_hail_ground_truth.mjs --days=3 --limit=50 --refresh-hours=24
+        run: node scripts/verify_hail_ground_truth.mjs --days=7 --limit=100 --refresh-hours=24
+
+      - name: Advance historical ground-truth backlog
+        if: github.event_name == 'schedule'
+        run: node scripts/verify_hail_ground_truth.mjs --unverified=true --limit=20 --max-regions=8
 
       - name: Verify one storm date
         if: github.event_name == 'workflow_dispatch' && inputs.scope == 'date'
@@ -82,4 +87,4 @@ jobs:
 
       - name: Backfill storm dates
         if: github.event_name == 'workflow_dispatch' && inputs.scope == 'all'
-        run: node scripts/verify_hail_ground_truth.mjs --limit="${{ inputs.limit }}" --offset="${{ inputs.offset }}" --force="${{ inputs.force }}"
+        run: node scripts/verify_hail_ground_truth.mjs --limit="${{ inputs.limit }}" --offset="${{ inputs.offset }}" --force="${{ inputs.force }}" --unverified="${{ !inputs.force }}"
