@@ -20,7 +20,7 @@
     },
     "ui": {
       "enabled": true,
-      "port": 4402
+      "port": 4403
     }
   }
 }

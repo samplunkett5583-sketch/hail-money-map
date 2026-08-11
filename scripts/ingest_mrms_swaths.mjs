@@ -20,7 +20,7 @@
 import { execFile } from "node:child_process";
 import { createGunzip } from "node:zlib";
 import { createReadStream, createWriteStream } from "node:fs";
-import { access, mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
+import { access, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -204,17 +204,75 @@ async function findQgisPython() {
   );
 }
 
-async function runContourHelper(python, gribPath, outputPath) {
+async function runContourHelper(python, gribPath, outputPath, anchorsPath) {
   const args = [CONTOUR_HELPER, "--input", gribPath, "--output", outputPath];
+  if (anchorsPath) args.push("--anchors", anchorsPath);
   const options = {
     cwd: SCRIPT_DIR,
     windowsHide: true,
     maxBuffer: 20 * 1024 * 1024,
-    shell: process.platform === "win32" && /\.bat$/i.test(python),
   };
-  const { stdout, stderr } = await execFileAsync(python, args, options);
+  let stdout;
+  let stderr;
+  if (process.platform === "win32" && /\.bat$/i.test(python)) {
+    const quoteForPowerShell = (value) => `'${String(value).replaceAll("'", "''")}'`;
+    const command = `& ${[python, ...args].map(quoteForPowerShell).join(" ")}`;
+    ({ stdout, stderr } = await execFileAsync(
+      "powershell.exe",
+      ["-NoProfile", "-NonInteractive", "-Command", command],
+      options,
+    ));
+  } else {
+    ({ stdout, stderr } = await execFileAsync(python, args, options));
+  }
   if (stdout.trim()) process.stdout.write(stdout);
   if (stderr.trim()) process.stderr.write(stderr);
+}
+
+async function loadGroundAnchors(client, dateIso) {
+  const [lsrResult, evidenceResult] = await Promise.all([
+    client
+      .from("hail_lsr_raw")
+      .select("lat,lon,hail_in,source")
+      .eq("event_date", dateIso)
+      .gte("hail_in", 0.5)
+      .limit(5000),
+    client
+      .from("hail_ground_truth_evidence")
+      .select("lat,lon,hail_in,confidence")
+      .eq("event_date", dateIso)
+      .eq("accepted", true)
+      .gte("confidence", 0.75)
+      .limit(1000),
+  ]);
+  if (lsrResult.error) throw new Error(`hail_lsr_raw anchors failed: ${lsrResult.error.message}`);
+  const anchors = [];
+  for (const row of lsrResult.data || []) {
+    anchors.push({
+      lat:Number(row.lat),
+      lon:Number(row.lon),
+      hail_in:Number(row.hail_in),
+      confidence:/google_grounded/i.test(String(row.source || "")) ? 0.8 : 0.95,
+    });
+  }
+  if (!evidenceResult.error) {
+    for (const row of evidenceResult.data || []) {
+      anchors.push({
+        lat:Number(row.lat),
+        lon:Number(row.lon),
+        hail_in:Number(row.hail_in),
+        confidence:Number(row.confidence),
+      });
+    }
+  }
+  const unique = new Map();
+  for (const anchor of anchors) {
+    if (![anchor.lat, anchor.lon, anchor.hail_in, anchor.confidence].every(Number.isFinite)) continue;
+    const key = `${anchor.lat.toFixed(3)}|${anchor.lon.toFixed(3)}|${anchor.hail_in.toFixed(2)}`;
+    const previous = unique.get(key);
+    if (!previous || anchor.confidence > previous.confidence) unique.set(key, anchor);
+  }
+  return [...unique.values()];
 }
 
 function makeRows(payload, eventDate, sourceFile) {
@@ -361,18 +419,22 @@ async function main() {
 
   const dateIso = String(args.date || "");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) {
-    throw new Error("Usage: node scripts/ingest_mrms_swaths.mjs --date=YYYY-MM-DD [--force]");
+    throw new Error("Usage: node scripts/ingest_mrms_swaths.mjs --date=YYYY-MM-DD [--force] [--output=rows.json]");
   }
 
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !supabaseKey) {
+  const outputOnly = Boolean(args.output);
+  if (!outputOnly && (!supabaseUrl || !supabaseKey)) {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
   }
-  const { createClient } = await import("@supabase/supabase-js");
-  const client = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+  let client = null;
+  if (supabaseUrl && supabaseKey) {
+    const { createClient } = await import("@supabase/supabase-js");
+    client = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+  }
 
-  if (!args.force) {
+  if (client && !args.force) {
     const { count, error } = await client
       .from("storm_polygons")
       .select("id", { count: "exact", head: true })
@@ -405,12 +467,26 @@ async function main() {
     const python = await findQgisPython();
     console.log(`[MRMS] Contouring real hail grid with ${python}`);
     const outputPath = path.join(workDir, "mesh-polygons.json");
-    await runContourHelper(python, gribPath, outputPath);
+    let groundAnchors = client ? await loadGroundAnchors(client, dateIso) : [];
+    if (args.anchors) {
+      const anchorPayload = JSON.parse(await readFile(path.resolve(String(args.anchors)), "utf8"));
+      groundAnchors = Array.isArray(anchorPayload) ? anchorPayload : (anchorPayload.anchors || []);
+    }
+    const anchorsPath = path.join(workDir, "ground-anchors.json");
+    await writeFile(anchorsPath, JSON.stringify({ anchors:groundAnchors }), "utf8");
+    console.log(`[MRMS] Calibrating with ${groundAnchors.length} verified ground anchor(s)`);
+    await runContourHelper(python, gribPath, outputPath, anchorsPath);
     const payload = JSON.parse(await readFile(outputPath, "utf8"));
     const rows = makeRows(payload, dateIso, chosen.filename);
     console.log(`[MRMS] Built ${rows.length} canonical hail-band polygon(s)`);
-    await persistRows(client, dateIso, rows);
-    console.log(`[MRMS] Saved ${rows.length} mrms_mesh polygon(s) for ${dateIso}`);
+    if (outputOnly) {
+      const outputFile = path.resolve(String(args.output));
+      await writeFile(outputFile, JSON.stringify({ date:dateIso, rows }), "utf8");
+      console.log(`[MRMS] Wrote ${rows.length} row(s) to ${outputFile}`);
+    } else {
+      await persistRows(client, dateIso, rows);
+      console.log(`[MRMS] Saved ${rows.length} mrms_mesh polygon(s) for ${dateIso}`);
+    }
   } finally {
     await rm(workDir, { recursive: true, force: true });
   }

@@ -3700,9 +3700,6 @@
         column-gap: 8px;
       }
 
-      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .current-pipeline-connector {
-    }
-
     @media (max-width: 720px) {
       body.main-menu-page-active #page-main-menu .hm-dashboard-ref .wrap {
         flex-direction: column;
@@ -7602,6 +7599,25 @@
     }
     #page-crm-pipeline .crm-pipeline-preview-notes {
       white-space: pre-wrap;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-photo-field {
+      padding: 9px;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-photo {
+      width: 100%;
+      max-height: 236px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      display: block;
+      margin-top: 4px;
+    }
+    #page-crm-pipeline .crm-pipeline-preview-photo-name {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+      word-break: break-word;
     }
     #page-crm-pipeline .crm-pipeline-list-empty {
       padding: 28px 18px;
@@ -13383,6 +13399,35 @@
     .fl-photo-btn:hover { background: #f0f5ff; }
     .fl-btn-icon { display: inline-flex; width: 18px; height: 18px; }
     .fl-btn-icon svg { width: 100%; height: 100%; }
+    .fl-location-photo-preview-wrap {
+      margin-top: 10px;
+      border: 1px solid #d8dbe0;
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 8px;
+    }
+    .fl-location-photo-preview-wrap[hidden] { display: none; }
+    .fl-location-photo-preview {
+      display: block;
+      width: 100%;
+      max-height: 220px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #e9ebef;
+      background: #f5f6f8;
+    }
+    .fl-location-photo-status {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #667085;
+      word-break: break-word;
+    }
+    .fl-assignment-note {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: #667085;
+      font-weight: 600;
+    }
 
     .fl-help-btn {
       width: 20px; height: 20px; border-radius: 50%;
@@ -20591,6 +20636,117 @@
     #page-my-assigned-leads .crm-empty-state{background:transparent!important;border:0!important}    /* Hail Money photo-project workspace. */
     #page-photo-files,#page-photo-file-detail{background:linear-gradient(180deg,#e9c55d,#d7a832)!important}.hm-photo-workspace{width:min(1180px,calc(100% - 28px));margin:14px auto 28px}.hm-photo-workspace-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;background:rgba(255,255,255,.2);border:1px solid rgba(112,78,10,.28);border-radius:14px 14px 0 0}.hm-photo-ice-title{position:relative;isolation:isolate;width:max-content;margin:0;color:#303644;font:800 20px/1.1 "Times New Roman",serif;text-transform:uppercase}.hm-photo-ice-title:before{content:'';position:absolute;z-index:-1;inset:-10px -22px;clip-path:polygon(0 29%,15% 5%,39% 10%,56% 0,77% 8%,100% 31%,93% 58%,97% 81%,72% 93%,51% 86%,31% 100%,7% 79%,10% 53%);background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(191,199,204,.35));filter:brightness(.8);opacity:.9}.hm-photo-primary-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.hm-photo-project-surface{position:relative;isolation:isolate;min-height:480px;padding:14px;background:transparent;border:1px solid rgba(114,91,31,.2);border-top:0;border-radius:0 0 12px 12px;overflow:hidden}.hm-photo-project-surface:before{content:'';position:absolute;z-index:0;inset:0;background:url('./assets/hailmoney-logo.png?v=2') no-repeat center top;background-size:min(760px,82%) auto}.hm-photo-project-surface:after{content:'';position:absolute;z-index:1;inset:0;background:rgba(255,255,255,.78)}.hm-photo-project-surface>*{position:relative;z-index:2}.hm-photo-filter-row{display:flex;gap:10px;align-items:center;margin-bottom:12px}.hm-photo-filter-row input{flex:1;min-width:180px;padding:10px 12px;border:1px solid #cbd2dd;border-radius:8px}.hm-photo-status-tabs{display:flex;gap:5px}.hm-photo-status-tabs button{padding:8px 12px;border:1px solid #c99b2e;border-radius:18px;background:#fff;cursor:pointer}.hm-photo-status-tabs button.active{background:#1b1b2e;color:#fff}.hm-photo-project-list{display:grid;gap:9px}.hm-photo-project-row{display:grid;grid-template-columns:72px minmax(180px,1fr) repeat(3,minmax(70px,auto)) 260px;gap:12px;align-items:center;padding:10px;background:rgba(255,255,255,.9);border:1px solid #d8dde6;border-radius:10px;cursor:pointer}.hm-photo-project-thumb{width:72px;height:54px;object-fit:cover;border-radius:7px;background:#e7ebef}.hm-photo-project-name{font-weight:800}.hm-photo-project-address,.hm-photo-project-stat{font-size:12px;color:#667085}.hm-photo-project-strip{display:flex;gap:4px;justify-content:flex-end}.hm-photo-project-strip img{width:46px;height:38px;object-fit:cover;border-radius:4px}.hm-photo-modal{position:fixed;z-index:9999;inset:0;display:grid;place-items:center;padding:18px;background:rgba(12,14,25,.62)}.hm-photo-modal[hidden]{display:none!important}.hm-photo-modal-card{position:relative;width:min(440px,100%);padding:22px;background:#fff;border-radius:12px;box-shadow:0 22px 60px rgba(0,0,0,.3)}.hm-photo-modal-card h2{margin:0 0 16px}.hm-photo-modal-card label{display:grid;gap:5px;margin:10px 0;font-weight:700}.hm-photo-modal-card input{padding:10px;border:1px solid #cbd2dd;border-radius:7px}.hm-photo-modal-x{position:absolute;right:10px;top:8px;border:0;background:none;font-size:24px;cursor:pointer}.hm-photo-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.hm-photo-library-card{width:min(700px,100%)}.hm-photo-detail-meta{margin-bottom:12px;font-weight:700}.hm-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}.hm-photo-card{position:relative;overflow:hidden;background:#fff;border:1px solid #ccd3dc;border-radius:8px;cursor:pointer}.hm-photo-card img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}.hm-photo-card span{display:block;padding:7px;font-size:12px}.hm-photo-markup-badge{position:absolute!important;right:6px;top:6px;padding:4px 6px!important;background:#ffd21f;border-radius:10px;font-weight:800}.hm-markup-shell{min-height:calc(100vh - 110px);padding:10px;background:#151525}.hm-markup-toolbar{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:8px}.hm-markup-toolbar select{padding:8px}.hm-markup-stage{display:grid;place-items:center;overflow:auto;height:calc(100vh - 175px)}#hm-markup-canvas{max-width:100%;max-height:100%;background:#fff;touch-action:none;box-shadow:0 0 0 1px #555}.hm-photo-template-row{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #ddd}@media(max-width:850px){.hm-photo-project-row{grid-template-columns:58px 1fr auto}.hm-photo-project-row>.hm-photo-project-stat{display:none}.hm-photo-project-strip{grid-column:2/-1;justify-content:flex-start}.hm-photo-workspace-head,.hm-photo-filter-row{align-items:stretch;flex-direction:column}}
     .hm-inspection-photo-menu{width:calc(100% - 12px);margin:0 6px 7px;padding:6px;border:1px solid #c99b2e;border-radius:6px;background:#fff;font-size:12px}
+
+    /* ── Photo Report Builder / Preview / Picker / Chat ── */
+    #page-photo-report-builder,#page-photo-report-preview{background:linear-gradient(180deg,#e9c55d,#d7a832)!important}
+    .phr-workspace{width:min(1180px,calc(100% - 28px));margin:14px auto 28px}
+    .phr-toolbar{display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,.2);border:1px solid rgba(112,78,10,.28);border-radius:14px 14px 0 0}
+    .phr-toolbar-title{flex:1;font:800 18px/1.1 "Times New Roman",serif;text-transform:uppercase;color:#303644}
+    .phr-step-indicator{font-size:12px;font-weight:700;color:#725d2a}
+    .phr-card{position:relative;isolation:isolate;padding:22px;background:rgba(255,255,255,.92);border:1px solid rgba(114,91,31,.2);border-top:0;border-radius:0 0 12px 12px;min-height:480px}
+    .phr-step-label{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#8a6d22;margin-bottom:6px}
+    .phr-step-heading{font-size:24px;font-weight:800;color:#1f2937;margin-bottom:18px}
+    .phr-title-input{width:100%;max-width:560px;padding:14px 16px;border:1px solid #cbd2dd;border-radius:10px;font-size:18px}
+    .phr-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
+    .phr-section{border:1px solid #d8dde6;border-radius:12px;padding:14px;margin-bottom:14px;background:#fff}
+    .phr-section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+    .phr-section-title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .phr-section-number{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8a6d22;background:rgba(212,168,66,.14);padding:4px 8px;border-radius:6px}
+    .phr-section-title-input{min-width:220px;flex:1;padding:9px 11px;border:1px solid #cbd2dd;border-radius:8px;font-size:15px;font-weight:700}
+    .phr-section-tools{display:flex;gap:6px;flex-wrap:wrap}
+    .phr-section-tools .btn{padding:6px 10px;font-size:12px}
+    .phr-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:12px 0}
+    .phr-photo{background:#f8fafc;border:1px solid #d8dde6;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:8px}
+    .phr-photo-thumb{aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:#eef1f5;display:grid;place-items:center}
+    .phr-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .phr-photo-desc{width:100%;padding:7px 9px;border:1px solid #cbd2dd;border-radius:7px;font-size:12px}
+    .phr-photo-tools{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+    .phr-photo-tools .btn{padding:4px 8px;font-size:11px}
+    .phr-empty-photos{color:#667085;font-size:13px;grid-column:1/-1;padding:8px 0}
+    .phr-section-add-row{margin:6px 0 4px}
+    .phr-options-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .phr-option-group{border:1px solid #d8dde6;border-radius:12px;padding:14px}
+    .phr-option-group-title{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8a6d22;margin-bottom:10px}
+    .phr-option{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;color:#1f2937;cursor:pointer}
+    .phr-option input{width:16px;height:16px;accent-color:#b88722}
+    .phr-custom-notes-row{display:grid;gap:6px;margin-top:16px}
+    .phr-custom-notes-row label{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8a6d22}
+    .phr-custom-notes{min-height:90px;padding:10px;border:1px solid #cbd2dd;border-radius:8px;resize:vertical;font-size:13px}
+    .phr-picker-overlay{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:18px;background:rgba(12,14,25,.62)}
+    .phr-picker-overlay[hidden]{display:none!important}
+    .phr-picker-card{width:min(860px,100%);max-height:84vh;display:flex;flex-direction:column;background:#fff;border-radius:14px;box-shadow:0 22px 60px rgba(0,0,0,.32);overflow:hidden}
+    .phr-picker-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 20px;border-bottom:1px solid #e3e8f0}
+    .phr-picker-head h2{margin:0;font-size:17px;font-weight:800;color:#1f2937}
+    .phr-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;padding:16px 20px;overflow-y:auto}
+    .phr-picker-photo{position:relative;border:2px solid #d8dde6;border-radius:10px;background:#fff;padding:0;overflow:hidden;cursor:pointer;aspect-ratio:4/3}
+    .phr-picker-photo img{width:100%;height:100%;object-fit:cover;display:block}
+    .phr-picker-photo.selected{border-color:#b88722;box-shadow:0 0 0 2px rgba(184,135,34,.35)}
+    .phr-picker-check{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:999px;background:#fff;border:2px solid #b88722;display:grid;place-items:center;font-size:13px;font-weight:900;color:#b88722}
+    .phr-picker-actions{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #e3e8f0}
+    .phr-preview-toolbar{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,.2);border:1px solid rgba(112,78,10,.28);border-radius:14px 14px 0 0;flex-wrap:wrap}
+    .phr-preview-toolbar-title{flex:1;font:800 18px/1.1 "Times New Roman",serif;text-transform:uppercase;color:#303644;min-width:0}
+    .phr-preview-stages{background:#fff;border:1px solid rgba(114,91,31,.2);border-top:0;border-radius:0 0 12px 12px;padding:18px;min-height:400px}
+    .phr-pdf-page{width:100%;max-width:820px;margin:0 auto 18px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.18);page-break-after:always}
+    .phr-cover-page{display:grid;place-items:center;min-height:600px;padding:40px 32px}
+    .phr-cover-inner{width:100%;text-align:center}
+    .phr-cover-logo{max-height:90px;max-width:220px;object-fit:contain;margin:0 auto 14px}
+    .phr-cover-company{font-size:24px;font-weight:800;color:#1f2937;margin:4px 0}
+    .phr-cover-company-info{font-size:13px;color:#5f6673;margin-bottom:22px}
+    .phr-cover-title{font-size:32px;font-weight:800;color:#111827;margin:20px 0 6px}
+    .phr-cover-rule{width:160px;height:4px;background:#b88722;margin:16px auto 22px;border-radius:99px}
+    .phr-cover-details{display:grid;gap:8px;max-width:430px;margin:0 auto;text-align:left}
+    .phr-cover-row{display:flex;gap:12px;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef1f5}
+    .phr-cover-label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a6d22;flex:0 0 140px}
+    .phr-cover-value{font-size:14px;font-weight:600;color:#111827;text-align:right}
+    .phr-cover-notes{margin-top:18px;padding:12px 14px;background:#f8fafc;border:1px solid #e3e8f0;border-radius:8px;font-size:13px;color:#374151}
+    .phr-pdf-page{min-height:600px;padding:34px 30px;position:relative;box-sizing:border-box}
+    .phr-pdf-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:10px;border-bottom:2px solid #b88722;margin-bottom:14px}
+    .phr-pdf-head-logo{height:34px;width:auto;object-fit:contain}
+    .phr-pdf-head-title{font-size:15px;font-weight:800;color:#111827}
+    .phr-pdf-head-address,.phr-pdf-head-rep{font-size:11px;color:#5f6673}
+    .phr-pdf-section-title{font-size:18px;font-weight:800;color:#1f2937;margin-bottom:12px}
+    .phr-pdf-photo-grid{display:grid;gap:12px;width:100%}
+    .phr-pdf-photo-grid-1{grid-template-columns:1fr}
+    .phr-pdf-photo-grid-2{grid-template-columns:1fr 1fr}
+    .phr-pdf-photo-grid-4{grid-template-columns:1fr 1fr}
+    .phr-pdf-photo{position:relative;display:flex;flex-direction:column;gap:6px;min-width:0}
+    .phr-pdf-photo img{width:100%;height:100%;object-fit:contain;border:1px solid #e3e8f0;border-radius:6px;background:#f8fafc}
+    .phr-pdf-photo-num{position:absolute;top:6px;left:6px;z-index:2;min-width:24px;height:24px;padding:0 5px;border-radius:999px;background:rgba(17,24,39,.78);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800}
+    .phr-pdf-photo-desc{font-size:12px;color:#374151;line-height:1.35}
+    .phr-pdf-foot{position:absolute;left:30px;right:30px;bottom:14px;display:flex;justify-content:space-between;font-size:11px;color:#8a8f99;border-top:1px solid #eef1f5;padding-top:6px}
+    .phr-preview-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .hm-photo-detail-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+    .hm-photo-detail-tabs button{padding:8px 14px;border:1px solid #c99b2e;border-radius:18px;background:#fff;cursor:pointer;font-weight:600;font-size:12px;color:#303644}
+    .hm-photo-detail-tabs button.active{background:#1b1b2e;color:#fff;border-color:#1b1b2e}
+    .hm-photo-detail-tab{display:none}
+    .hm-photo-detail-tab.active{display:block}
+    .hm-photo-reports-list{display:grid;gap:8px}
+    .hm-photo-report-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.95);border:1px solid #d8dde6;border-radius:10px;flex-wrap:wrap}
+    .hm-photo-report-row-main{display:flex;align-items:center;gap:10px;flex:1;min-width:200px;cursor:pointer}
+    .hm-photo-report-icon{font-size:22px}
+    .hm-photo-report-row strong{display:block;font-size:14px;color:#1f2937}
+    .hm-photo-report-date{display:block;font-size:11px;color:#667085;margin-top:2px}
+    .phr-empty-reports{color:#667085;font-size:13px;padding:10px 0}
+    .hm-photo-chat{display:flex;flex-direction:column;gap:10px;max-width:680px}
+    .hm-photo-chat-head{font-weight:800;font-size:14px;color:#303644}
+    .hm-photo-chat-list{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;padding-right:4px}
+    .hm-photo-chat-empty{color:#667085;font-size:13px}
+    .hm-photo-chat-msg{background:rgba(255,255,255,.95);border:1px solid #d8dde6;border-radius:10px;padding:9px 12px}
+    .hm-photo-chat-msg-meta{display:flex;justify-content:space-between;font-size:11px;color:#667085;margin-bottom:3px}
+    .hm-photo-chat-msg-body{font-size:13px;color:#1f2937;white-space:pre-wrap;word-break:break-word}
+    .hm-photo-chat-composer{display:flex;gap:8px}
+    .hm-photo-chat-composer input{flex:1;padding:10px 12px;border:1px solid #cbd2dd;border-radius:8px;font-size:13px}
+    @media print{
+      body *{visibility:hidden}
+      #page-photo-report-preview, #page-photo-report-preview *{visibility:visible}
+      #page-photo-report-preview{position:absolute;left:0;top:0;width:100%}
+      .phr-preview-toolbar,.phr-preview-actions{display:none!important}
+      .phr-pdf-page{box-shadow:none;margin:0 auto;page-break-after:always;max-width:100%}
+      .phr-pdf-page:last-child{page-break-after:auto}
+      .phr-pdf-landscape{page:landscape}
+    }
+    @page{size:letter portrait;margin:10mm}
+    @page landscape{size:letter landscape;margin:8mm}
 </style>
 </head>
 <body>
@@ -21969,19 +22125,52 @@
       <section id="page-photo-files" class="page" data-crm-header-title="Photos">
         <div class="hm-photo-workspace">
           <div class="hm-photo-workspace-head"><h1 class="hm-photo-ice-title">Projects</h1><div class="hm-photo-primary-actions"><button class="btn btn-primary" type="button" id="hm-photo-create-project">Create Project</button><button class="btn" type="button" id="hm-photo-upload-project">Upload Photos</button><button class="btn" type="button" id="hm-photo-reports">Reports</button><button class="btn" type="button" id="hm-photo-templates">Templates</button><input type="file" id="hm-photo-standalone-upload" accept="image/*" multiple hidden /></div></div>
-          <div class="hm-photo-project-surface"><div class="hm-photo-filter-row"><input type="search" id="photo-files-search" placeholder="Search projects, addresses, or people" /><div class="hm-photo-status-tabs"><button class="active" type="button" data-photo-status="all">All</button><button type="button" data-photo-status="in-progress">In Progress</button><button type="button" data-photo-status="complete">Complete</button></div></div><div id="photo-files-list" class="hm-photo-project-list"></div></div>
+          <div class="hm-photo-project-surface"><div class="hm-photo-filter-row"><input type="search" id="photo-files-search" placeholder="Search projects, addresses, or people" /></div><div id="photo-files-list" class="hm-photo-project-list"></div></div>
         </div>
         <div class="hm-photo-modal" id="hm-photo-project-modal" hidden><div class="hm-photo-modal-card"><button class="hm-photo-modal-x" type="button" data-photo-modal-close>&times;</button><h2>Create Photo Project</h2><label>Project Name<input id="hm-photo-project-name" type="text" placeholder="Project or homeowner name" /></label><label>Property Address<input id="hm-photo-project-address" type="text" placeholder="Street, city, state, ZIP" /></label><label>Assigned To<input id="hm-photo-project-assignee" type="text" placeholder="Team member" /></label><div class="hm-photo-modal-actions"><button class="btn" type="button" data-photo-modal-close>Cancel</button><button class="btn btn-primary" type="button" id="hm-photo-project-save">Create Project</button></div></div></div>
         <div class="hm-photo-modal" id="hm-photo-library-modal" hidden><div class="hm-photo-modal-card hm-photo-library-card"><button class="hm-photo-modal-x" type="button" data-photo-library-close>&times;</button><h2 id="hm-photo-library-title">Reports</h2><div id="hm-photo-library-content"></div></div></div>
       </section>
 
       <section id="page-photo-file-detail" class="page" data-crm-header-title="Photo Project">
-        <div class="hm-photo-workspace hm-photo-detail-workspace"><div class="hm-photo-workspace-head"><div><h1 class="hm-photo-ice-title" id="pf-detail-title">Photo Project</h1><p id="pf-detail-subtitle"></p></div><div class="hm-photo-primary-actions"><button class="btn" type="button" id="pf-detail-back">Back</button><button class="btn" type="button" id="hm-pf-take-photo">Take Pictures</button><button class="btn" type="button" id="hm-pf-upload-photo">Upload Photos</button><button class="btn btn-primary" type="button" id="pf-detail-report">Create Report</button><input type="file" id="hm-pf-camera-input" accept="image/*" capture="environment" multiple hidden /><input type="file" id="hm-pf-upload-input" accept="image/*" multiple hidden /></div></div><div class="hm-photo-project-surface"><div id="pf-detail-meta" class="hm-photo-detail-meta"></div><div id="pf-detail-grid" class="hm-photo-grid"></div></div></div>
+        <div class="hm-photo-workspace hm-photo-detail-workspace"><div class="hm-photo-workspace-head"><div><h1 class="hm-photo-ice-title" id="pf-detail-title">Photo Project</h1><p id="pf-detail-subtitle"></p></div><div class="hm-photo-primary-actions"><button class="btn" type="button" id="pf-detail-back">Back</button><button class="btn" type="button" id="hm-pf-take-photo">Take Pictures</button><button class="btn" type="button" id="hm-pf-upload-photo">Upload Photos</button><button class="btn btn-primary" type="button" id="pf-detail-report">Create Report</button><input type="file" id="hm-pf-camera-input" accept="image/*" capture="environment" multiple hidden /><input type="file" id="hm-pf-upload-input" accept="image/*" multiple hidden /></div></div><div class="hm-photo-project-surface"><div id="pf-detail-meta" class="hm-photo-detail-meta"></div><div class="hm-photo-detail-tabs" id="pf-detail-tabs"><button class="active" type="button" data-hm-tab="photos">Photos</button><button type="button" data-hm-tab="reports">Reports</button><button type="button" data-hm-tab="chat">Photos Chat</button></div><div id="pf-detail-tab-photos" class="hm-photo-detail-tab active"><div id="pf-detail-grid" class="hm-photo-grid"></div></div><div id="pf-detail-tab-reports" class="hm-photo-detail-tab"><div id="pf-reports-surface"></div></div><div id="pf-detail-tab-chat" class="hm-photo-detail-tab"><div id="pf-chat-surface"></div></div></div></div>
       </section>
 
       <section id="page-photo-markup" class="page" data-crm-header-title="Photo Markup">
         <div class="hm-markup-shell"><div class="hm-markup-toolbar"><button class="btn" type="button" id="hm-markup-back">Back</button><select id="hm-markup-tool"><option value="pen">Pen</option><option value="line">Line</option><option value="arrow">Arrow</option><option value="circle">Circle</option><option value="rectangle">Rectangle</option><option value="text">Text</option></select><input id="hm-markup-color" type="color" value="#ffd21f" /><button class="btn" type="button" id="hm-markup-undo">Undo</button><button class="btn" type="button" id="hm-markup-clear">Clear</button><button class="btn btn-primary" type="button" id="hm-markup-save">Save Markup</button></div><div class="hm-markup-stage"><canvas id="hm-markup-canvas"></canvas></div></div>
       </section>
+
+      <!-- ── Photo Report Builder ── -->
+      <section id="page-photo-report-builder" class="page" data-crm-header-title="Report Builder">
+        <div class="phr-workspace">
+          <div id="phr-content"></div>
+        </div>
+      </section>
+
+      <!-- ── Photo Report Preview / PDF ── -->
+      <section id="page-photo-report-preview" class="page" data-crm-header-title="Property Photo Report">
+        <div class="phr-workspace">
+          <div class="phr-preview-toolbar">
+            <button class="btn" type="button" id="phr-preview-back">Back</button>
+            <div class="phr-preview-toolbar-title" id="phr-preview-title">Property Photo Report</div>
+            <div class="phr-preview-actions">
+              <button class="btn" type="button" id="phr-preview-print">Save as PDF</button>
+            </div>
+          </div>
+          <div class="phr-preview-stages" id="phr-preview-pages"></div>
+        </div>
+      </section>
+
+      <!-- ── Report Photo Picker ── -->
+      <div class="phr-picker-overlay" id="phr-picker-overlay" hidden>
+        <div class="phr-picker-card">
+          <div class="phr-picker-head"><h2 id="phr-picker-title">Add Photos</h2><button class="btn" type="button" id="phr-picker-close">&times;</button></div>
+          <div class="phr-picker-grid" id="phr-picker-grid"></div>
+          <div class="phr-picker-actions">
+            <button class="btn" type="button" id="phr-picker-cancel">Cancel</button>
+            <button class="btn btn-primary" type="button" id="phr-picker-confirm">Confirm</button>
+          </div>
+        </div>
+      </div>
       <section id="page-start-inspection" class="page">
         <div class="inspection-wrap" style="max-width:540px;margin:0 auto;padding:0 12px 40px;">
           <h1 class="page-title" id="inspection-title">Start Inspection</h1>
@@ -25318,6 +25507,10 @@
                         Add Location Photo
                       </button>
                       <input type="file" id="fl-location-photo" accept="image/*" style="display:none;" />
+                      <div id="fl-location-photo-preview-wrap" class="fl-location-photo-preview-wrap" hidden>
+                        <img id="fl-location-photo-preview" class="fl-location-photo-preview" alt="Location photo preview" />
+                        <div id="fl-location-photo-status" class="fl-location-photo-status"></div>
+                      </div>
                     </div>
                   </section>
 
@@ -25407,6 +25600,7 @@
                     </div>
                     <div class="fl-help-popover" id="fl-assign-help-popover" hidden>Choose who this lead is assigned to and, if known, the initial appointment window. You can leave these blank and schedule later.</div>
                     <div class="fl-card-body">
+                      <div class="fl-assignment-note">Primary assignment is automatically set to the authenticated creator.</div>
                       <div class="fl-assign-row">
                         <div class="fl-field fl-wide">
                           <label>Assign to</label>
@@ -60476,6 +60670,48 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       el.style.display = text ? 'block' : 'none';
     }
 
+    var _crmPipelinePreviewLocationPhotoUrl = '';
+
+    function crmRevokePipelinePreviewLocationPhotoUrl() {
+      if (!_crmPipelinePreviewLocationPhotoUrl) return;
+      try { URL.revokeObjectURL(_crmPipelinePreviewLocationPhotoUrl); } catch (_) {}
+      _crmPipelinePreviewLocationPhotoUrl = '';
+    }
+
+    function crmGetLatestLeadLocationPhotoMeta(leadId) {
+      leadId = String(leadId || '').trim();
+      if (!leadId) return null;
+      var files = crmGetLeadFilesFor(leadId).filter(function (file) { return file && file.type === 'location_photo'; });
+      if (!files.length) return null;
+      files.sort(function (a, b) {
+        return String(b.uploadedAt || '').localeCompare(String(a.uploadedAt || ''));
+      });
+      return files[0] || null;
+    }
+
+    function crmHydratePipelinePreviewLocationPhoto(leadId) {
+      var slot = document.getElementById('crm-pipeline-location-photo-slot');
+      if (!slot) {
+        crmRevokePipelinePreviewLocationPhotoUrl();
+        return;
+      }
+      slot.innerHTML = '';
+      slot.hidden = true;
+      crmRevokePipelinePreviewLocationPhotoUrl();
+      var meta = crmGetLatestLeadLocationPhotoMeta(leadId);
+      if (!meta || !meta.storageKey) return;
+      crmOpenFilesDb(function (dbErr, db) {
+        if (dbErr || !db || !slot.isConnected) return;
+        crmDbGetBlob(db, meta.storageKey, function (blobErr, blob) {
+          if (blobErr || !blob || !slot.isConnected) return;
+          crmRevokePipelinePreviewLocationPhotoUrl();
+          _crmPipelinePreviewLocationPhotoUrl = URL.createObjectURL(blob);
+          slot.innerHTML = '<img class="crm-pipeline-preview-photo" src="' + _crmPipelinePreviewLocationPhotoUrl + '" alt="Location photo" />';
+          slot.hidden = false;
+        });
+      });
+    }
+
     function crmGetPipelinePreviewData(entry) {
       var lead = entry && entry.lead ? entry.lead : (entry || {});
       var jobData = typeof crmGetLeadJobFileData === 'function' ? crmGetLeadJobFileData(lead) : null;
@@ -60523,6 +60759,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
       var lead = entry.lead;
       var preview = crmGetPipelinePreviewData(entry);
+      var locationPhotoMeta = crmGetLatestLeadLocationPhotoMeta(lead.id);
       var notes = preview.notes;
       var html = '<div class="crm-pipeline-preview-inner' + (_pipelinePreviewEditMode ? ' crm-pipeline-preview-edit-mode' : '') + '">';
       html += '<div class="crm-pipeline-preview-top"><div><div class="crm-pipeline-preview-name">' + crmEscapeHtml(preview.displayName) + '</div><div class="crm-pipeline-preview-address">' + crmEscapeHtml(preview.address) + '</div></div><div class="crm-pipeline-preview-stage">' + crmEscapeHtml(preview.displayStage) + '</div></div>';
@@ -60552,6 +60789,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         html += crmRenderPipelinePreviewControlField('Source', select('crm-pipeline-edit-source', crmBuildPipelineLeadSourceOptions(preview.leadSource), !canEditLead));
         html += crmRenderPipelinePreviewField('Created', preview.createdLabel || '-');
         html += crmRenderPipelinePreviewField('Created By', preview.createdByName || '-');
+        if (locationPhotoMeta) {
+          html += '<div class="crm-pipeline-preview-field full crm-pipeline-preview-photo-field"><div class="crm-pipeline-preview-label">Location Photo</div><div id="crm-pipeline-location-photo-slot" hidden></div>' +
+            '<div class="crm-pipeline-preview-photo-name">' + crmEscapeHtml(locationPhotoMeta.fileName || 'Location photo') + '</div></div>';
+        }
         html += crmRenderPipelinePreviewControlField('Insurance Company', input('crm-pipeline-edit-insurance-company', 'text', preview.insuranceCompany, !canEditLead));
         html += crmRenderPipelinePreviewControlField('Claim Number', input('crm-pipeline-edit-claim-number', 'text', preview.claimNumber, !canEditLead));
         if (preview.policyNumber) html += crmRenderPipelinePreviewControlField('Policy Number', input('crm-pipeline-edit-policy-number', 'text', preview.policyNumber, !canEditLead));
@@ -60591,6 +60832,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       html += crmRenderPipelinePreviewField('Source', crmGetLeadSourceDisplayLabel(preview.leadSource) || '-');
       html += crmRenderPipelinePreviewField('Created', preview.createdLabel || '-');
       html += crmRenderPipelinePreviewField('Created By', preview.createdByName || '-');
+      if (locationPhotoMeta) {
+        html += '<div class="crm-pipeline-preview-field full crm-pipeline-preview-photo-field"><div class="crm-pipeline-preview-label">Location Photo</div><div id="crm-pipeline-location-photo-slot" hidden></div>' +
+          '<div class="crm-pipeline-preview-photo-name">' + crmEscapeHtml(locationPhotoMeta.fileName || 'Location photo') + '</div></div>';
+      }
       html += crmRenderPipelinePreviewField('Insurance Company', preview.insuranceCompany || '-');
       html += crmRenderPipelinePreviewField('Claim Number', preview.claimNumber || '-');
       extraFields.forEach(function (field) {
@@ -60829,6 +61074,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         html += '</div>';
       }
       board.innerHTML = html;
+      if (hasPreviewSelection && selectedEntry && selectedEntry.lead) crmHydratePipelinePreviewLocationPhoto(selectedEntry.lead.id);
+      else crmRevokePipelinePreviewLocationPhotoUrl();
       var pipelineCenter = board.closest('.center');
       if (pipelineCenter) pipelineCenter.classList.toggle('has-pipeline-selection', hasPreviewSelection);
       crmRenderPipelineCompanyStrip();
@@ -74354,6 +74601,32 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       };
     }
 
+    var _crmFieldLeadLocationPhotoPreviewUrl = '';
+
+    function crmClearFieldLeadLocationPhotoPreviewUrl() {
+      if (!_crmFieldLeadLocationPhotoPreviewUrl) return;
+      try { URL.revokeObjectURL(_crmFieldLeadLocationPhotoPreviewUrl); } catch (_) {}
+      _crmFieldLeadLocationPhotoPreviewUrl = '';
+    }
+
+    function crmSetFieldLeadLocationPhotoPreview(file) {
+      var wrap = document.getElementById('fl-location-photo-preview-wrap');
+      var img = document.getElementById('fl-location-photo-preview');
+      var status = document.getElementById('fl-location-photo-status');
+      if (!wrap || !img || !status) return;
+      crmClearFieldLeadLocationPhotoPreviewUrl();
+      if (!file) {
+        img.removeAttribute('src');
+        status.textContent = '';
+        wrap.hidden = true;
+        return;
+      }
+      _crmFieldLeadLocationPhotoPreviewUrl = URL.createObjectURL(file);
+      img.src = _crmFieldLeadLocationPhotoPreviewUrl;
+      status.textContent = String(file.name || 'Location photo selected').trim() || 'Location photo selected';
+      wrap.hidden = false;
+    }
+
     function crmPopulateFieldLeadAssignTo() {
       var sel = document.getElementById('fl-assignTo');
       if (!sel) return;
@@ -74365,12 +74638,26 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       sel.innerHTML = optionsHtml;
       var secondarySel = document.getElementById('fl-secondaryAssignTo');
       if (secondarySel) secondarySel.innerHTML = optionsHtml;
+      var currentRole = String(typeof crmGetRole === 'function' ? crmGetRole() : '').trim();
       var authenticatedName = typeof crmGetCurrentUserName === 'function' ? String(crmGetCurrentUserName() || '').trim() : '';
-      var defaultMember = String(typeof crmGetRole === 'function' ? crmGetRole() : '').trim() === 'Sales Rep'
+      var defaultMember = currentRole === 'Sales Rep'
         ? reps.filter(function (m) { return String(m.name || '').trim().toLowerCase() === authenticatedName.toLowerCase(); })[0]
         : null;
       sel.value = defaultMember ? defaultMember.id : '';
       if (secondarySel) secondarySel.value = '';
+
+      var assignField = document.querySelector('#page-field-lead .fl-assign-row .fl-field.fl-wide');
+      var assignClearBtn = document.getElementById('fl-assignTo-clear');
+      var assignmentNote = document.querySelector('#page-field-lead .fl-assignment-note');
+      if (currentRole === 'Sales Rep') {
+        if (assignField) assignField.style.display = 'none';
+        if (assignClearBtn) assignClearBtn.style.display = 'none';
+        if (assignmentNote) assignmentNote.style.display = '';
+      } else {
+        if (assignField) assignField.style.display = '';
+        if (assignClearBtn) assignClearBtn.style.display = '';
+        if (assignmentNote) assignmentNote.style.display = 'none';
+      }
     }
 
     var CRM_FIELD_LEAD_DAMAGE_AREAS = [
@@ -74823,6 +75110,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var contingencyInput = document.getElementById('fl-contingency-pdf'); if (contingencyInput) contingencyInput.value = '';
       var contingencyConfirmed = document.getElementById('fl-contingency-confirmed'); if (contingencyConfirmed) contingencyConfirmed.checked = false;
       var locationPhotoInput = document.getElementById('fl-location-photo'); if (locationPhotoInput) locationPhotoInput.value = '';
+      crmSetFieldLeadLocationPhotoPreview(null);
       ['fl-roof','fl-gutters','fl-siding','fl-windows','fl-fence','fl-other'].forEach(function (id) {
         var cb = document.getElementById(id); if (cb) cb.checked = false;
       });
@@ -74950,6 +75238,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var addPhotoInput = document.getElementById('fl-location-photo');
       if (addPhotoBtn && addPhotoInput) {
         addPhotoBtn.addEventListener('click', function () { addPhotoInput.click(); });
+        addPhotoInput.addEventListener('change', function () {
+          var file = (addPhotoInput.files && addPhotoInput.files[0]) ? addPhotoInput.files[0] : null;
+          crmSetFieldLeadLocationPhotoPreview(file);
+        });
       }
 
       function setPrimaryButtonState(btn, selected) {
@@ -75037,7 +75329,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var splitCommissionEnabled = fc('fl-splitCommissionEnabled');
       var primaryCommissionPercent = Number(fv('fl-primaryCommissionPercent') || 0);
       var secondaryCommissionPercent = splitCommissionEnabled ? Number(fv('fl-secondaryCommissionPercent') || 0) : 0;
-      var primaryAssignedRepId = fv('fl-assignTo');
+      var currentRole = String(crmGetRole() || '').trim();
+      var isSalesRepUser = currentRole === 'Sales Rep';
+      var currentMember = typeof crmGetCurrentTeamMember === 'function' ? crmGetCurrentTeamMember() : null;
+      var creatorUserId = String(currentMember && currentMember.id || crmGetCurrentUserId() || '').trim();
+      var creatorDisplayName = String(crmGetCurrentUserName() || currentRep || currentMember && currentMember.name || '').trim();
+      var creatorRepMember = crmLookupTeamMemberById(creatorUserId) || crmLookupTeamMemberByName(creatorDisplayName || currentRep || '');
+      var primaryAssignedRepId = isSalesRepUser ? String(creatorRepMember && creatorRepMember.id || creatorUserId || '').trim() : fv('fl-assignTo');
       var secondaryAssignedRepId = splitCommissionEnabled ? fv('fl-secondaryAssignTo') : '';
       if (primaryCommissionPercent <= 0 || (splitCommissionEnabled && secondaryCommissionPercent <= 0) ||
           primaryCommissionPercent + secondaryCommissionPercent !== 100) {
@@ -75045,7 +75343,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         valMsg.style.display = 'block';
         return;
       }
-      if (splitCommissionEnabled && (!primaryAssignedRepId || !secondaryAssignedRepId || primaryAssignedRepId === secondaryAssignedRepId)) {
+      var invalidSplitForSalesRep = splitCommissionEnabled && (!secondaryAssignedRepId || (primaryAssignedRepId && primaryAssignedRepId === secondaryAssignedRepId));
+      var invalidSplitForAdmin = splitCommissionEnabled && (!primaryAssignedRepId || !secondaryAssignedRepId || primaryAssignedRepId === secondaryAssignedRepId);
+      if ((isSalesRepUser && invalidSplitForSalesRep) || (!isSalesRepUser && invalidSplitForAdmin)) {
         valMsg.textContent = 'Select two different assigned reps for a split commission.';
         valMsg.style.display = 'block';
         return;
@@ -75067,29 +75367,35 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       });
       var stateVal = (fv('fl-state') || '').toUpperCase().slice(0, 2);
       var photoFiles = Array.prototype.slice.call((document.getElementById('fl-inspect-photos') || {}).files || []);
+      var locationPhotoFile = ((document.getElementById('fl-location-photo') || {}).files || [])[0] || null;
       var contingencyFile = ((document.getElementById('fl-contingency-pdf') || {}).files || [])[0] || null;
       var contingencyConfirmed = !!((document.getElementById('fl-contingency-confirmed') || {}).checked);
       var fieldLeadState = crmGetFieldLeadSaveState(photoFiles, contingencyFile, contingencyConfirmed);
       var canvasserMember = crmLookupTeamMemberById(fv('fl-canvasser'));
-      var assignToMember = fv('fl-assignTo') ? crmLookupTeamMemberById(fv('fl-assignTo')) : null;
+      var assignToMember = !isSalesRepUser && fv('fl-assignTo') ? crmLookupTeamMemberById(fv('fl-assignTo')) : null;
       var secondaryAssignToMember = secondaryAssignedRepId ? crmLookupTeamMemberById(secondaryAssignedRepId) : null;
-      var authenticatedRepName = crmGetRole() === 'Sales Rep' ? (crmGetCurrentUserName() || '') : '';
-      var primaryAssignedRepName = assignToMember ? assignToMember.name : authenticatedRepName;
-      var repMember = assignToMember || crmLookupTeamMemberByName(authenticatedRepName || currentRep || '');
+      var authenticatedRepName = isSalesRepUser ? creatorDisplayName : '';
+      var primaryAssignedRepName = isSalesRepUser
+        ? String(creatorRepMember && creatorRepMember.name || creatorDisplayName || '').trim()
+        : (assignToMember ? assignToMember.name : authenticatedRepName);
+      var repMember = isSalesRepUser
+        ? (creatorRepMember || crmLookupTeamMemberByName(primaryAssignedRepName || creatorDisplayName || currentRep || ''))
+        : (assignToMember || crmLookupTeamMemberByName(authenticatedRepName || currentRep || ''));
       var pendingInspection = crmGetPendingInspectionRecord();
       var lead = {
         id: crmGenId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
         leadType: 'field_lead',
         assignmentStatus: 'Assigned',
         assignedRep: primaryAssignedRepName,
-        assignedRepId: repMember ? repMember.id : '',
+        assignedRepId: isSalesRepUser ? String(primaryAssignedRepId || '').trim() : (repMember ? repMember.id : ''),
         primaryAssignedRep: primaryAssignedRepName,
         primaryCommissionPercent: primaryCommissionPercent,
         secondaryAssignedRep: secondaryAssignToMember ? secondaryAssignToMember.name : '',
         secondaryCommissionPercent: splitCommissionEnabled ? secondaryCommissionPercent : 0,
         splitCommissionEnabled: splitCommissionEnabled,
-        createdByName: crmGetCurrentUserName() || currentRep || '',
-        createdByRole: 'Sales Rep',
+        createdByName: creatorDisplayName || currentRep || '',
+        createdByUserId: creatorUserId,
+        createdByRole: currentRole || 'Sales Rep',
         firstName: fv('fl-firstName'), lastName: fv('fl-lastName'),
         companyName: fv('fl-companyName'), crossReference: '',
         phone: primaryPhone ? primaryPhone.value : fv('fl-phone'), phoneExt: primaryPhone ? primaryPhone.extension : fv('fl-phoneExt'), phoneType: primaryPhone ? primaryPhone.type : fv('fl-phoneType'), phoneOptInSms: fc('fl-phoneOptInSms'),
@@ -75118,7 +75424,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         concerns: concerns, stage: 'Lead',
         contingencyStatus: fieldLeadState.contingencyStatus,
         manualStageOverride: false, convertedToJob: false,
-        activityNotes: [{ text: 'Field lead created', author: currentRep || 'Rep', ts: new Date().toISOString() }]
+        activityNotes: [{ text: 'Field lead created', author: creatorDisplayName || currentRep || 'Rep', ts: new Date().toISOString() }]
       };
       crmAttachPendingInspectionToLead(lead, pendingInspection);
       var leads = crmGetLeads();
@@ -75154,8 +75460,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var contingencyFilesToSave = fieldLeadState.contingencyStatus === 'missing'
         ? []
         : (contingencyFile ? [contingencyFile] : []);
-      crmSaveFilesToDb(lead.id, 'inspection_photo', photoFiles, function () {
-        crmSaveFilesToDb(lead.id, 'signed_contingency', contingencyFilesToSave, function () {});
+      var locationPhotoFilesToSave = locationPhotoFile ? [locationPhotoFile] : [];
+      crmSaveFilesToDb(lead.id, 'location_photo', locationPhotoFilesToSave, function () {
+        crmSaveFilesToDb(lead.id, 'inspection_photo', photoFiles, function () {
+          crmSaveFilesToDb(lead.id, 'signed_contingency', contingencyFilesToSave, function () {});
+        });
       });
       setTimeout(function () {
         savedMsg.style.display = 'none';
@@ -79414,29 +79723,53 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   var currentProjectId='', statusFilter='all', uploadAfterCreate=false;
   var markup={projectId:'',index:-1,canvas:null,ctx:null,image:null,undo:[],drawing:false,start:null,base:null};
   function esc(v){return typeof crmEscapeHtml==='function'?crmEscapeHtml(String(v||'')):String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-  function projects(){return getPhotoFiles().map(function(p){p.status=p.status||'in-progress';p.createdBy=p.createdBy||p.assignedRep||'';p.photos=Array.isArray(p.photos)?p.photos:[];return p;});}
+  function projects(){return getPhotoFiles().map(function(p){p.createdBy=p.createdBy||p.assignedRep||'';p.photos=Array.isArray(p.photos)?p.photos:[];return p;});}
   function save(ps){savePhotoFiles(ps);}
   function find(id){return projects().filter(function(p){return p.id===id;})[0]||null;}
-  function photoSrc(photo,cb){if(photo.storagePath&&typeof window.hmPhotoSignedUrl==='function'){window.hmPhotoSignedUrl(photo.storagePath).then(cb).catch(function(){cb('');});return;}if(photo.fullUrl){cb(photo.fullUrl);return;}if(photo.imageKey){getPhotoBlob(photo.imageKey).then(function(b){cb(b?URL.createObjectURL(b):'');});return;}cb('');}
+  function photoSrc(photo,cb){
+    function photoSrcRemote(photo,cb){
+      if(photo.storagePath&&typeof window.hmPhotoSignedUrl==='function'){
+        window.hmPhotoSignedUrl(photo.storagePath).then(cb).catch(function(){cb(photo.fullUrl||'');});
+        return;
+      }
+      if(photo.fullUrl){cb(photo.fullUrl);return;}
+      cb('');
+    }
+    if(photo.imageKey&&typeof getPhotoBlob==='function'){
+      getPhotoBlob(photo.imageKey).then(function(b){
+        if(b){cb(URL.createObjectURL(b));return;}
+        photoSrcRemote(photo,cb);
+      }).catch(function(){photoSrcRemote(photo,cb);});
+      return;
+    }
+    photoSrcRemote(photo,cb);
+  }
   function canSee(p){var role=typeof crmGetRole==='function'?crmGetRole():'';if(role==='Restricted'){var n=typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'';return p.createdBy===n||p.assignedRep===n;}return role!=='Canvasser';}
   function projectAddress(p){return [p.street,p.city,p.state,p.zip].filter(Boolean).join(', ');}
-  function render(filter){filter=String(filter||document.getElementById('photo-files-search').value||'').toLowerCase();var list=document.getElementById('photo-files-list');if(!list)return;var ps=projects().filter(canSee).filter(function(p){var hay=[p.homeownerName,p.projectName,projectAddress(p),p.assignedRep].join(' ').toLowerCase();return(!filter||hay.indexOf(filter)>=0)&&(statusFilter==='all'||p.status===statusFilter);}).sort(function(a,b){return String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||''));});if(!ps.length){list.innerHTML='<div class="crm-empty-state">No photo projects found.</div>';return;}list.innerHTML=ps.map(function(p){return '<div class="hm-photo-project-row" data-hm-project="'+esc(p.id)+'"><div class="hm-photo-project-thumb" data-hm-thumb="'+esc(p.id)+'"></div><div><div class="hm-photo-project-name">'+esc(p.projectName||p.homeownerName||'Untitled Project')+'</div><div class="hm-photo-project-address">'+esc(projectAddress(p)||'No address entered')+'</div><div class="hm-photo-project-address">'+esc(p.assignedRep||p.createdBy||'Unassigned')+'</div></div><div class="hm-photo-project-stat"><b>'+p.photos.length+'</b><br>Photos</div><div class="hm-photo-project-stat"><b>'+esc(p.status==='complete'?'Complete':'In Progress')+'</b><br>Status</div><div class="hm-photo-project-stat"><b>'+esc(new Date(p.updatedAt||p.createdAt||Date.now()).toLocaleDateString())+'</b><br>Updated</div><div class="hm-photo-project-strip" data-hm-strip="'+esc(p.id)+'"></div></div>';}).join('');list.querySelectorAll('[data-hm-project]').forEach(function(row){row.onclick=function(){open(this.dataset.hmProject);};});ps.forEach(function(p){p.photos.slice(0,5).forEach(function(ph,i){photoSrc(ph,function(src){if(!src)return;var img=document.createElement('img');img.src=src;img.alt='';var strip=list.querySelector('[data-hm-strip="'+CSS.escape(p.id)+'"]');if(strip)strip.appendChild(img);if(i===0){var th=list.querySelector('[data-hm-thumb="'+CSS.escape(p.id)+'"]');if(th){th.innerHTML='';var ti=document.createElement('img');ti.className='hm-photo-project-thumb';ti.src=src;th.appendChild(ti);}}});});});
+  function render(filter){filter=String(filter||document.getElementById('photo-files-search').value||'').toLowerCase();var list=document.getElementById('photo-files-list');if(!list)return;var ps=projects().filter(canSee).filter(function(p){var hay=[p.homeownerName,p.projectName,projectAddress(p),p.assignedRep].join(' ').toLowerCase();return(!filter||hay.indexOf(filter)>=0);}).sort(function(a,b){return String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||''));});if(!ps.length){list.innerHTML='<div class="crm-empty-state">No photo projects found.</div>';return;}var isAdmin=typeof crmGetRole==='function'&&['Admin','Owner'].indexOf(crmGetRole())!==-1;list.innerHTML=ps.map(function(p){var adminDel=isAdmin?'<button class="btn" type="button" data-hm-delete-project="'+esc(p.id)+'" title="Delete project">Delete</button>':'';return '<div class="hm-photo-project-row" data-hm-project="'+esc(p.id)+'"><div class="hm-photo-project-thumb" data-hm-thumb="'+esc(p.id)+'"></div><div><div class="hm-photo-project-name">'+esc(p.projectName||p.homeownerName||'Untitled Project')+'</div><div class="hm-photo-project-address">'+esc(projectAddress(p)||'No address entered')+'</div><div class="hm-photo-project-address">'+esc(p.assignedRep||p.createdBy||'Unassigned')+'</div></div><div class="hm-photo-project-stat"><b>'+p.photos.length+'</b><br>Photos</div><div class="hm-photo-project-stat"><b>'+esc(new Date(p.updatedAt||p.createdAt||Date.now()).toLocaleDateString())+'</b><br>Updated</div><div class="hm-photo-project-strip" data-hm-strip="'+esc(p.id)+'"></div>'+adminDel+'</div>';}).join('');list.querySelectorAll('[data-hm-project]').forEach(function(row){row.addEventListener('click',function(e){if(e.target&&e.target.closest('[data-hm-delete-project]'))return;open(row.dataset.hmProject);});});list.querySelectorAll('[data-hm-delete-project]').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();var pid=btn.getAttribute('data-hm-delete-project');if(!confirm('Delete this photo project and all of its photos? This cannot be undone.'))return;var ps=projects().filter(function(x){return x.id!==pid;});save(ps);render();});});ps.forEach(function(p){p.photos.slice(0,5).forEach(function(ph,i){photoSrc(ph,function(src){if(!src)return;var img=document.createElement('img');img.src=src;img.alt='';var strip=list.querySelector('[data-hm-strip="'+CSS.escape(p.id)+'"]');if(strip)strip.appendChild(img);if(i===0){var th=list.querySelector('[data-hm-thumb="'+CSS.escape(p.id)+'"]');if(th){th.innerHTML='';var ti=document.createElement('img');ti.className='hm-photo-project-thumb';ti.src=src;th.appendChild(ti);}}});});});
   }
   window.renderPhotoFiles=renderPhotoFiles=render;
-  function open(id){var p=find(id);if(!p)return;currentProjectId=id;document.getElementById('pf-detail-title').textContent=p.projectName||p.homeownerName||'Photo Project';document.getElementById('pf-detail-subtitle').textContent=projectAddress(p);document.getElementById('pf-detail-meta').innerHTML=p.photos.length+' photos &nbsp;•&nbsp; '+(p.status==='complete'?'Complete':'In Progress')+' &nbsp; <button class="btn" type="button" id="hm-photo-toggle-status">Mark '+(p.status==='complete'?'In Progress':'Complete')+'</button>';var grid=document.getElementById('pf-detail-grid');grid.innerHTML=p.photos.length?'':'<div class="crm-empty-state">No photos yet. Take pictures or upload photos to begin.</div>';p.photos.forEach(function(ph,i){var c=document.createElement('button');c.type='button';c.className='hm-photo-card';c.innerHTML='<div style="aspect-ratio:4/3;display:grid;place-items:center">Loading…</div><span>'+esc(ph.name||'Photo')+'</span>'+(ph.markedUp?'<span class="hm-photo-markup-badge">Marked up</span>':'');c.onclick=function(){openMarkup(id,i);};grid.appendChild(c);photoSrc(ph,function(src){if(src){var im=document.createElement('img');im.src=src;im.alt=ph.name||'Photo';c.replaceChild(im,c.firstChild);}});});showPage('page-photo-file-detail');var toggle=document.getElementById('hm-photo-toggle-status');if(toggle)toggle.onclick=function(){var ps=projects();ps.forEach(function(x){if(x.id===id){x.status=x.status==='complete'?'in-progress':'complete';x.updatedAt=new Date().toISOString();}});save(ps);open(id);};}
+  function switchTab(tab){currentProjectId=currentProjectId||'';document.querySelectorAll('#pf-detail-tabs [data-hm-tab]').forEach(function(btn){btn.classList.toggle('active',btn.getAttribute('data-hm-tab')===tab);});['photos','reports','chat'].forEach(function(t){var el=document.getElementById('pf-detail-tab-'+t);if(el)el.classList.toggle('active',t===tab);});if(tab==='reports'&&typeof window.renderPhotoProjectReports==='function'&&currentProjectId)window.renderPhotoProjectReports(currentProjectId);if(tab==='chat'&&typeof window.renderPhotoProjectChat==='function'&&currentProjectId)window.renderPhotoProjectChat(currentProjectId);}
+  function open(id){var p=find(id);if(!p)return;currentProjectId=id;document.getElementById('pf-detail-title').textContent=p.projectName||p.homeownerName||'Photo Project';document.getElementById('pf-detail-subtitle').textContent=projectAddress(p);var dateStr=p.updatedAt||p.createdAt?new Date(p.updatedAt||p.createdAt).toLocaleDateString():'';document.getElementById('pf-detail-meta').innerHTML=p.photos.length+(p.photos.length===1?' photo':' photos')+(dateStr?' &nbsp;•&nbsp; '+dateStr:'');var grid=document.getElementById('pf-detail-grid');grid.innerHTML=p.photos.length?'':'<div class="crm-empty-state">No photos yet. Take pictures or upload photos to begin.</div>';p.photos.forEach(function(ph,i){var c=document.createElement('button');c.type='button';c.className='hm-photo-card';c.innerHTML='<div style="aspect-ratio:4/3;display:grid;place-items:center">Loading…</div><span>'+esc(ph.name||'Photo')+'</span>'+(ph.markedUp?'<span class="hm-photo-markup-badge">Marked up</span>':'');c.onclick=function(){openMarkup(id,i);};grid.appendChild(c);photoSrc(ph,function(src){if(src){var im=document.createElement('img');im.src=src;im.alt=ph.name||'Photo';c.replaceChild(im,c.firstChild);}});});showPage('page-photo-file-detail');switchTab('photos');var tabs=document.getElementById('pf-detail-tabs');if(tabs&&!tabs._wired){tabs._wired=true;tabs.addEventListener('click',function(e){var btn=e.target.closest?e.target.closest('[data-hm-tab]'):null;if(btn)switchTab(btn.getAttribute('data-hm-tab'));});}}
   window.openPhotoFileDetail=openPhotoFileDetail=open;
   function addFiles(id,files){var p=find(id);if(!p||!files||!files.length)return;var chain=Promise.resolve();Array.from(files).forEach(function(f){chain=chain.then(function(){var key='photo_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);return savePhotoBlob(key,f).then(function(){p.photos.push({imageKey:key,name:f.name||'photo.jpg',takenAt:new Date().toISOString(),createdBy:typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():''});});});});chain.then(function(){p.updatedAt=new Date().toISOString();var ps=projects().filter(function(x){return x.id!==id;});ps.push(p);save(ps);open(id);showUploadToast(p.photos.length+' photos saved to project');});}
   function showModal(id,on){document.getElementById(id).hidden=!on;}
   document.getElementById('hm-photo-create-project').onclick=function(){uploadAfterCreate=false;showModal('hm-photo-project-modal',true);};
   document.getElementById('hm-photo-upload-project').onclick=function(){uploadAfterCreate=true;showModal('hm-photo-project-modal',true);};
   document.querySelectorAll('[data-photo-modal-close]').forEach(function(b){b.onclick=function(){showModal('hm-photo-project-modal',false);};});
-  document.getElementById('hm-photo-project-save').onclick=function(){var name=document.getElementById('hm-photo-project-name').value.trim();var addr=document.getElementById('hm-photo-project-address').value.trim();if(!name&&!addr){showUploadToast('Enter a project name or address');return;}var parts=addr.split(',').map(function(x){return x.trim();});var p={id:'pf_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),projectName:name||addr,homeownerName:name,street:parts[0]||'',city:parts[1]||'',state:parts[2]||'',zip:parts[3]||'',assignedRep:document.getElementById('hm-photo-project-assignee').value.trim(),createdBy:typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),status:'in-progress',photos:[]};var ps=projects();ps.push(p);save(ps);currentProjectId=p.id;showModal('hm-photo-project-modal',false);document.getElementById('hm-photo-project-name').value='';document.getElementById('hm-photo-project-address').value='';document.getElementById('hm-photo-project-assignee').value='';if(uploadAfterCreate)document.getElementById('hm-photo-standalone-upload').click();else open(p.id);};
+  document.getElementById('hm-photo-project-save').onclick=function(){var name=document.getElementById('hm-photo-project-name').value.trim();var addr=document.getElementById('hm-photo-project-address').value.trim();if(!name&&!addr){showUploadToast('Enter a project name or address');return;}var parts=addr.split(',').map(function(x){return x.trim();});var ps=projects();var existing=null;var streetKey=parts[0]?String(parts[0]).toLowerCase().replace(/\s+/g,' ').trim():'';ps.forEach(function(x){if(!existing&&streetKey&&x.street&&String(x.street).toLowerCase().replace(/\s+/g,' ').trim()===streetKey)existing=x;if(!existing&&name&&x.homeownerName&&String(x.homeownerName).toLowerCase()===String(name).toLowerCase())existing=x;});if(existing){currentProjectId=existing.id;showModal('hm-photo-project-modal',false);document.getElementById('hm-photo-project-name').value='';document.getElementById('hm-photo-project-address').value='';document.getElementById('hm-photo-project-assignee').value='';showUploadToast('A photo project already exists for this homeowner.');if(uploadAfterCreate)document.getElementById('hm-photo-standalone-upload').click();else open(existing.id);return;}var p={id:'pf_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),projectName:name||addr,homeownerName:name,street:parts[0]||'',city:parts[1]||'',state:parts[2]||'',zip:parts[3]||'',assignedRep:document.getElementById('hm-photo-project-assignee').value.trim(),createdBy:typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),photos:[]};ps.push(p);save(ps);currentProjectId=p.id;showModal('hm-photo-project-modal',false);document.getElementById('hm-photo-project-name').value='';document.getElementById('hm-photo-project-address').value='';document.getElementById('hm-photo-project-assignee').value='';if(uploadAfterCreate)document.getElementById('hm-photo-standalone-upload').click();else open(p.id);};
   document.getElementById('hm-photo-standalone-upload').onchange=function(){addFiles(currentProjectId,this.files);this.value='';};
   document.getElementById('hm-pf-take-photo').onclick=function(){document.getElementById('hm-pf-camera-input').click();};document.getElementById('hm-pf-upload-photo').onclick=function(){document.getElementById('hm-pf-upload-input').click();};document.getElementById('hm-pf-camera-input').onchange=function(){addFiles(currentProjectId,this.files);this.value='';};document.getElementById('hm-pf-upload-input').onchange=function(){addFiles(currentProjectId,this.files);this.value='';};
   document.querySelectorAll('[data-photo-status]').forEach(function(b){b.onclick=function(){statusFilter=this.dataset.photoStatus;document.querySelectorAll('[data-photo-status]').forEach(function(x){x.classList.toggle('active',x===b);});render();};});
   function library(type){var modal=document.getElementById('hm-photo-library-modal'),title=document.getElementById('hm-photo-library-title'),body=document.getElementById('hm-photo-library-content');title.textContent=type==='templates'?'Report Templates':'Photo Reports';if(type==='templates'){var ts=JSON.parse(localStorage.getItem('hm_photo_templates_v1')||'["Inspection Report","Damage Report","Progress Report"]');body.innerHTML=ts.map(function(t){return '<div class="hm-photo-template-row"><b>'+esc(t)+'</b><button class="btn" type="button">Use Template</button></div>';}).join('')+'<button class="btn btn-primary" id="hm-add-template" type="button" style="margin-top:12px">Create Template</button>';setTimeout(function(){document.getElementById('hm-add-template').onclick=function(){var n=prompt('Template name');if(n){ts.push(n);localStorage.setItem('hm_photo_templates_v1',JSON.stringify(ts));library('templates');}};},0);}else{var rs=JSON.parse(localStorage.getItem('hm_photo_reports_v1')||'[]');body.innerHTML=rs.length?rs.map(function(x){return '<div class="hm-photo-template-row"><div><b>'+esc(x.name)+'</b><div>'+esc(new Date(x.createdAt).toLocaleString())+'</div></div><span>'+x.photoCount+' photos</span></div>';}).join(''):'<div class="crm-empty-state">No photo reports created yet.</div>';}showModal('hm-photo-library-modal',true);}
   document.getElementById('hm-photo-reports').onclick=function(){library('reports');};document.getElementById('hm-photo-templates').onclick=function(){library('templates');};document.querySelector('[data-photo-library-close]').onclick=function(){showModal('hm-photo-library-modal',false);};
-  var reportBtn=document.getElementById('pf-detail-report');var reportClone=reportBtn.cloneNode(true);reportBtn.parentNode.replaceChild(reportClone,reportBtn);reportClone.onclick=function(){var p=find(currentProjectId);if(!p)return;var rs=JSON.parse(localStorage.getItem('hm_photo_reports_v1')||'[]');rs.push({id:'report_'+Date.now(),projectId:p.id,name:(p.projectName||p.homeownerName||'Project')+' Photo Report',photoCount:p.photos.length,createdAt:new Date().toISOString()});localStorage.setItem('hm_photo_reports_v1',JSON.stringify(rs));showUploadToast('Photo report created');};
+  var reportBtn=document.getElementById('pf-detail-report');var reportClone=reportBtn.cloneNode(true);reportBtn.parentNode.replaceChild(reportClone,reportBtn);reportClone.onclick=function(){if(!currentProjectId)return;if(typeof window.hmPhotoReports!=='undefined'&&typeof window.hmPhotoReports.openBuilder==='function'){window.hmPhotoReports.openBuilder(currentProjectId);}else{showUploadToast('Report builder is not ready yet.');}};
+  document.getElementById('phr-preview-back').addEventListener('click',function(){if(currentProjectId){open(currentProjectId);}else{showPage('page-photo-files');}});
+  document.getElementById('phr-preview-print').addEventListener('click',function(){if(typeof window.hmPhotoReports!=='undefined'&&typeof window.hmPhotoReports.printReport==='function')window.hmPhotoReports.printReport();});
+  document.getElementById('phr-picker-confirm').addEventListener('click',function(){if(typeof window.hmPhotoReports!=='undefined'&&typeof window.hmPhotoReports.confirmPhotoPicker==='function')window.hmPhotoReports.confirmPhotoPicker();});
+  document.getElementById('phr-picker-cancel').addEventListener('click',function(){if(typeof window.hmPhotoReports!=='undefined'&&typeof window.hmPhotoReports.cancelPhotoPicker==='function')window.hmPhotoReports.cancelPhotoPicker();});
+  document.getElementById('phr-picker-close').addEventListener('click',function(){if(typeof window.hmPhotoReports!=='undefined'&&typeof window.hmPhotoReports.cancelPhotoPicker==='function')window.hmPhotoReports.cancelPhotoPicker();});
+  document.getElementById('phr-picker-overlay').addEventListener('click',function(e){if(e.target===this&&typeof window.hmPhotoReports!=='undefined'&&typeof window.hmPhotoReports.cancelPhotoPicker==='function')window.hmPhotoReports.cancelPhotoPicker();});
   function drawArrow(ctx,x1,y1,x2,y2){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();var a=Math.atan2(y2-y1,x2-x1),s=18;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-s*Math.cos(a-.5),y2-s*Math.sin(a-.5));ctx.moveTo(x2,y2);ctx.lineTo(x2-s*Math.cos(a+.5),y2-s*Math.sin(a+.5));ctx.stroke();}
   function pos(e){var r=markup.canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*markup.canvas.width/r.width,y:(e.clientY-r.top)*markup.canvas.height/r.height};}
   function restore(){markup.ctx.clearRect(0,0,markup.canvas.width,markup.canvas.height);markup.ctx.drawImage(markup.image,0,0,markup.canvas.width,markup.canvas.height);markup.undo.forEach(function(d){markup.ctx.putImageData(d,0,0);});}

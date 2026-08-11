@@ -17,15 +17,19 @@ except ImportError as exc:
 
 gdal.UseExceptions()
 
-BANDS_INCHES = [0.50, 1.00, 1.25, 1.50, 1.75, 2.00, 2.50, 3.00]
+BANDS_INCHES = [round(value / 4, 2) for value in range(3, 17)]
 MIN_AREA_SQ_MI = 0.50
 SQ_METERS_PER_SQ_MILE = 2_589_988.110336
+METERS_PER_MILE = 1609.344
+GROUND_ANCHOR_RADIUS_MILES = 22.0
+GROUND_ANCHOR_SIGMA_MILES = 8.0
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--anchors")
     return parser.parse_args()
 
 
@@ -64,7 +68,142 @@ def iter_polygon_parts(geometry):
             yield geometry.GetGeometryRef(idx)
 
 
-def polygonize_mask(mask, dataset, source_srs):
+def smooth_geometry(wgs84_geometry, band_min):
+    """Round cell stair-steps without inventing a new storm footprint."""
+    equal_area = osr.SpatialReference()
+    equal_area.ImportFromEPSG(5070)
+    equal_area.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
+    wgs84 = osr.SpatialReference()
+    wgs84.ImportFromEPSG(4326)
+    wgs84.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
+    projected = wgs84_geometry.Clone()
+    projected.Transform(osr.CoordinateTransformation(wgs84, equal_area))
+    # Keep the broad 0.75" footprint close to the radar observation. Apply
+    # progressively stronger rounding only to the nested orange/red cores,
+    # where individual MRMS pixels are most visually obvious.
+    interior_strength = max(0.0, min(3.0, (float(band_min) - 0.75) / 0.25))
+    closing_meters = 650 + (interior_strength * 165)
+    simplify_meters = 180 + (interior_strength * 55)
+    smoothed = projected.Buffer(closing_meters).Buffer(-closing_meters)
+    if not smoothed or smoothed.IsEmpty():
+        smoothed = projected
+    simplified = smoothed.SimplifyPreserveTopology(simplify_meters)
+    if simplified and not simplified.IsEmpty():
+        smoothed = simplified
+    smoothed.Transform(osr.CoordinateTransformation(equal_area, wgs84))
+    return smoothed
+
+
+def clean_mask(mask):
+    """Remove isolated grid specks and fill tiny holes before polygonizing."""
+    current = mask.astype(np.uint8)
+    padded = np.pad(current, 1, mode="constant")
+    neighbors = np.zeros_like(current, dtype=np.uint8)
+    for row_offset in range(3):
+        for col_offset in range(3):
+            if row_offset == 1 and col_offset == 1:
+                continue
+            neighbors += padded[
+                row_offset:row_offset + current.shape[0],
+                col_offset:col_offset + current.shape[1],
+            ]
+    cleaned = current.copy()
+    cleaned[(current == 0) & (neighbors >= 6)] = 1
+    cleaned[(current == 1) & (neighbors <= 1)] = 0
+    return cleaned
+
+
+def source_to_pixel(dataset, source_x, source_y):
+    inverse = gdal.InvGeoTransform(dataset.GetGeoTransform())
+    if inverse is None:
+        return None
+    # GDAL bindings differ by version: some return the six coefficients
+    # directly, while older builds return (success, coefficients).
+    if (
+        len(inverse) == 2
+        and isinstance(inverse[0], (bool, int))
+        and isinstance(inverse[1], (tuple, list))
+    ):
+        if not inverse[0]:
+            return None
+        inverse = inverse[1]
+    pixel = inverse[0] + inverse[1] * source_x + inverse[2] * source_y
+    line = inverse[3] + inverse[4] * source_x + inverse[5] * source_y
+    return int(round(pixel)), int(round(line))
+
+
+def apply_ground_anchors(values, dataset, source_srs, anchors):
+    """Use verified reports as local size anchors inside the radar footprint."""
+    if not anchors:
+        return values
+    rows, cols = values.shape
+    original = values.copy()
+    correction_sum = np.zeros_like(values, dtype=np.float32)
+    weight_sum = np.zeros_like(values, dtype=np.float32)
+    wgs84 = osr.SpatialReference()
+    wgs84.ImportFromEPSG(4326)
+    wgs84.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
+    transform = None
+    if source_srs:
+        source_srs.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
+        if not source_srs.IsSame(wgs84):
+            transform = osr.CoordinateTransformation(wgs84, source_srs)
+    geo = dataset.GetGeoTransform()
+    cell_miles = max(abs(geo[1]), abs(geo[5]))
+    if source_srs and source_srs.IsGeographic():
+        cell_miles *= 69.0
+    else:
+        cell_miles /= METERS_PER_MILE
+    cell_miles = max(cell_miles, 0.05)
+    radius_cells = max(1, int(math.ceil(GROUND_ANCHOR_RADIUS_MILES / cell_miles)))
+    sigma_cells = max(1.0, GROUND_ANCHOR_SIGMA_MILES / cell_miles)
+    accepted = 0
+    for anchor in anchors:
+        try:
+            lat = float(anchor["lat"])
+            lon = float(anchor["lon"])
+            hail_mm = float(anchor["hail_in"]) * 25.4
+            confidence = max(0.0, min(1.0, float(anchor.get("confidence", 0.9))))
+        except (KeyError, TypeError, ValueError):
+            continue
+        point = ogr.Geometry(ogr.wkbPoint)
+        point.AddPoint(lon, lat)
+        if transform:
+            point.Transform(transform)
+        pixel_line = source_to_pixel(dataset, point.GetX(), point.GetY())
+        if not pixel_line:
+            continue
+        pixel, line = pixel_line
+        if line < 0 or line >= rows or pixel < 0 or pixel >= cols:
+            continue
+        radar_mm = float(original[line, pixel])
+        if not math.isfinite(radar_mm) or radar_mm < 12.7:
+            # Reports calibrate a radar-defined footprint; they do not create a
+            # new swath where MRMS detected no hail-producing storm.
+            continue
+        delta = max(-50.8, min(50.8, hail_mm - radar_mm))
+        row_min, row_max = max(0, line - radius_cells), min(rows, line + radius_cells + 1)
+        col_min, col_max = max(0, pixel - radius_cells), min(cols, pixel + radius_cells + 1)
+        yy, xx = np.ogrid[row_min:row_max, col_min:col_max]
+        distance_sq = (yy - line) ** 2 + (xx - pixel) ** 2
+        weights = np.exp(-distance_sq / (2 * sigma_cells ** 2)).astype(np.float32)
+        weights[distance_sq > radius_cells ** 2] = 0
+        weights *= confidence
+        correction_sum[row_min:row_max, col_min:col_max] += weights * delta
+        weight_sum[row_min:row_max, col_min:col_max] += weights
+        accepted += 1
+    calibrated = values.copy()
+    affected = weight_sum > 0
+    calibrated[affected] += correction_sum[affected] / weight_sum[affected]
+    calibrated[np.isfinite(original) & (original < 12.7)] = original[
+        np.isfinite(original) & (original < 12.7)
+    ]
+    calibrated[calibrated < 0] = 0
+    print(f"[MRMS-CALIBRATION] applied {accepted} verified ground anchor(s)", flush=True)
+    return calibrated
+
+
+def polygonize_mask(mask, dataset, source_srs, band_min):
     rows, cols = mask.shape
     memory = gdal.GetDriverByName("MEM").Create("", cols, rows, 1, gdal.GDT_Byte)
     memory.SetGeoTransform(dataset.GetGeoTransform())
@@ -92,13 +231,10 @@ def polygonize_mask(mask, dataset, source_srs):
         if not wgs84_geometry.IsValid():
             wgs84_geometry = wgs84_geometry.MakeValid()
         for part in iter_polygon_parts(wgs84_geometry):
-            candidate = part.Clone()
+            candidate = smooth_geometry(part, band_min)
             area = area_sq_mi(candidate)
             if area < MIN_AREA_SQ_MI:
                 continue
-            # Keep the native cell boundary. Simplifying even by a small amount
-            # turns short, irregular high-hail tracks into straight diagonal
-            # edges and rounded-looking blobs at normal map zoom levels.
             geometries.append((candidate, area))
     return geometries
 
@@ -126,15 +262,24 @@ def main():
     if projection:
         source_srs = osr.SpatialReference()
         source_srs.ImportFromWkt(projection)
+    anchors = []
+    if args.anchors:
+        with open(args.anchors, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+            anchors = payload if isinstance(payload, list) else payload.get("anchors", [])
+    values = apply_ground_anchors(values, dataset, source_srs, anchors)
 
     features = []
     for index, band_min in enumerate(BANDS_INCHES):
         band_max = BANDS_INCHES[index + 1] if index + 1 < len(BANDS_INCHES) else None
         threshold_mm = band_min * 25.4
         mask = np.where(np.isfinite(values) & (values >= threshold_mm), 1, 0).astype(np.uint8)
+        mask = clean_mask(mask)
+        if band_min >= 1.00:
+            mask = clean_mask(mask)
         if not np.any(mask):
             continue
-        for geometry, area in polygonize_mask(mask, dataset, source_srs):
+        for geometry, area in polygonize_mask(mask, dataset, source_srs, band_min):
             centroid = geometry.Centroid()
             props = {
                 "band_min": band_min,
