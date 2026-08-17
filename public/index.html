@@ -18952,6 +18952,56 @@
     #page-estimates .menu-row-title { font-size:14px; line-height:1.2; margin-bottom:3px; font-weight:700; }
     #page-estimates .menu-row-desc { color:#5f5540; font-size:12px; line-height:1.3; }
     .estimate-utility-grid { display:grid; grid-template-columns:1fr; gap:9px; }
+    body.estimates-page-active #page-estimates,
+    body.estimates-page-active #page-estimates .crm-dashboard-mini-body {
+      background:linear-gradient(180deg,#f1d474 0%,#e5b93f 58%,#d99a27 100%);
+    }
+    #page-estimates .estimates-dashboard-grid { grid-template-columns:1fr; }
+    #page-estimates .estimates-scope-panel,
+    #page-estimates .estimates-tools-panel { display:none; }
+    #page-estimates .estimates-glass-field {
+      position:relative;
+      padding:20px 18px 18px;
+      border:1px solid rgba(115,82,17,.32);
+      border-radius:14px;
+      background:rgba(255,255,255,.25);
+      box-shadow:0 8px 22px rgba(89,57,5,.12);
+      backdrop-filter:blur(2px);
+      -webkit-backdrop-filter:blur(2px);
+    }
+    #page-estimates .estimates-ice-title {
+      position:relative;
+      isolation:isolate;
+      width:max-content;
+      margin:0 0 18px 4px;
+      color:#075f83;
+      font:900 19px/1.1 "Times New Roman",serif;
+      text-decoration:underline;
+      text-transform:uppercase;
+      letter-spacing:.02em;
+    }
+    #page-estimates .estimates-ice-title::before {
+      content:'';
+      position:absolute;
+      z-index:-1;
+      top:50%;
+      left:-12px;
+      width:205px;
+      height:42px;
+      transform:translateY(-50%) rotate(-1.3deg);
+      clip-path:polygon(0 29%,15% 5%,39% 10%,56% 0,77% 8%,100% 31%,93% 58%,97% 81%,72% 93%,51% 86%,31% 100%,7% 79%,10% 53%);
+      background:linear-gradient(112deg,transparent 0 18%,rgba(255,255,255,.62) 19% 23%,transparent 24% 48%,rgba(184,190,194,.2) 49% 52%,transparent 53%),radial-gradient(ellipse at 28% 30%,rgba(255,255,255,.78),transparent 38%),linear-gradient(145deg,rgba(255,255,255,.7),rgba(225,229,232,.42));
+      filter:brightness(.82) contrast(1.08) drop-shadow(0 1px 1px rgba(56,64,72,.2));
+      opacity:.94;
+      pointer-events:none;
+    }
+    #page-estimates .estimates-method-box {
+      padding:14px;
+      border:1px solid #d7d9e0;
+      border-radius:10px;
+      background:#fff;
+      box-shadow:0 5px 14px rgba(23,25,45,.08);
+    }
     .estimate-utility-grid .menu-row { min-height:62px !important; }
     @media (max-width: 620px) {
       .est-scope-palette { grid-template-columns: 1fr; }
@@ -18961,8 +19011,10 @@
       .estimates-intro { padding:18px; }
     }
     /* Estimates standard CRM shell */
-    body.estimates-page-active #page-estimates { background:#eef1f4; }
-    body.estimates-page-active #page-estimates .crm-dashboard-mini-body { position:relative; isolation:isolate; align-content:start; padding:12px var(--crm-shell-pad-x) 14px; background:#eef1f4; overflow:hidden; }
+    body.estimates-page-active > .app-shell > .screen { overflow:hidden !important; }
+    body.estimates-page-active #page-estimates { height:calc(100dvh - var(--crm-shell-header-h)); min-height:0; background:linear-gradient(180deg,#f1d474 0%,#e5b93f 58%,#d99a27 100%); overflow-x:hidden; overflow-y:scroll !important; overscroll-behavior-y:contain; scrollbar-gutter:stable; }
+    body.estimates-page-active #page-estimates .crm-dashboard-mini-layout { min-height:100%; height:auto; }
+    body.estimates-page-active #page-estimates .crm-dashboard-mini-body { position:relative; isolation:isolate; align-content:start; min-height:max-content; padding:12px var(--crm-shell-pad-x) 80px; background:transparent; overflow:visible; }
     body.estimates-page-active #page-estimates .crm-dashboard-mini-body::before { content:''; position:fixed; top:calc(var(--crm-shell-header-h) + 12px); right:0; bottom:0; left:var(--crm-shell-rail-w); z-index:0; background:url('./assets/hailmoney-logo.png?v=2') no-repeat center top; background-size:var(--crm-shared-watermark-size) auto; pointer-events:none; }
     body.estimates-page-active #page-estimates .crm-dashboard-mini-body > * { position:relative; z-index:1; }
     body.estimates-page-active .topbar-left { overflow:visible !important; }
@@ -23028,25 +23080,27 @@
           </section>
 
           <div class="estimates-dashboard-grid">
-          <section class="main-menu-card estimates-panel estimates-method-panel">
-            <div class="estimates-panel-heading"><div><h2>Estimate method</h2><p>Choose how to start the estimate.</p></div></div>
-            <div class="menu-list estimate-path-grid">
-              <button class="menu-row" type="button" id="est-source-ai">
-                <div class="menu-row-title">AI Estimate</div>
-                <div class="menu-row-desc">Enter an address to build measurements, materials, ABC pricing, labor, and a complete retail estimate</div>
-              </button>
-              <button class="menu-row" type="button" id="est-source-drone">
-                <div class="menu-row-title">Drone</div>
-                <div class="menu-row-desc">Upload drone photos for measurement extraction</div>
-              </button>
-              <button class="menu-row" type="button" id="est-source-upload">
-                <div class="menu-row-title">Upload Measurement Report</div>
-                <div class="menu-row-desc">Import from Hover, EagleView, Roofr, or other report</div>
-              </button>
-              <button class="menu-row" type="button" id="est-source-manual">
-                <div class="menu-row-title">Manual Entry</div>
-                <div class="menu-row-desc">Enter measurements by hand</div>
-              </button>
+          <section class="estimates-panel estimates-method-panel estimates-glass-field">
+            <h2 class="estimates-ice-title">Estimate Method</h2>
+            <div class="estimates-method-box">
+              <div class="menu-list estimate-path-grid">
+                <button class="menu-row" type="button" id="est-source-ai">
+                  <div class="menu-row-title">AI Estimate</div>
+                  <div class="menu-row-desc">Enter an address to build measurements, materials, ABC pricing, labor, and a complete retail estimate</div>
+                </button>
+                <button class="menu-row" type="button" id="est-source-drone">
+                  <div class="menu-row-title">Drone</div>
+                  <div class="menu-row-desc">Upload drone photos for measurement extraction</div>
+                </button>
+                <button class="menu-row" type="button" id="est-source-upload">
+                  <div class="menu-row-title">Measurement Report Upload</div>
+                  <div class="menu-row-desc">Import from Hover, EagleView, Roofr, or other report</div>
+                </button>
+                <button class="menu-row" type="button" id="est-source-manual">
+                  <div class="menu-row-title">Manual</div>
+                  <div class="menu-row-desc">Enter measurements by hand</div>
+                </button>
+              </div>
             </div>
           </section>
 
