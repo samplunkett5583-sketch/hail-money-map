@@ -105,7 +105,7 @@ vm.runInNewContext([
 assert.doesNotThrow(() => context.mapsWireAreaSearch(), 'Money Maps must initialize without google.maps.drawing');
 assert.ok(context.mapsAreaSearchState.rectangleDrawer instanceof MockDrawer);
 assert.equal(drawerOptions.adapter.options.isolatedData, true);
-assert.equal(drawerOptions.modes[0].options.drawInteraction, 'drag');
+assert.equal(drawerOptions.modes[0].options.drawInteraction, 'click-drag');
 assert.equal(drawerOptions.modes[0].options.styles.fillColor, '#d4af37');
 
 context.mapsAreaBeginRectangle();
