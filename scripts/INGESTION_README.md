@@ -43,10 +43,10 @@ Add these secrets:
 | Secret Name | Description | Where to Find |
 |-------------|-------------|---------------|
 | `SUPABASE_URL` | Your Supabase project URL | Supabase Dashboard → Settings → API → Project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (NOT anon key) | Supabase Dashboard → Settings → API → service_role secret |
+| `SUPABASE_SECRET_KEY` | Server-side `sb_secret_` key (NOT anon/publishable) | Secure repository secret / Supabase API Keys |
 | `NOAA_PROXY_BASE` (optional) | NOAA proxy URL | Default: https://noaaplsrproxy-jzyejnppqa-uc.a.run.app |
 
-⚠️ **IMPORTANT**: Use the **service_role** key, NOT the anon key. Service role bypasses RLS.
+⚠️ **IMPORTANT**: Use a server-only `sb_secret_` key, never the anon/publishable key. The scripts send it only as `apikey`; never expose it to browser code or logs.
 
 ### 4. Enable GitHub Actions
 
@@ -71,7 +71,7 @@ node scripts/ingest-monthly-hail.mjs --month=2025-04 --dry-run
 ```bash
 # Set environment variables
 export SUPABASE_URL="https://your-project.supabase.co"
-export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+export SUPABASE_SECRET_KEY="load-securely-from-your-secret-manager"
 
 # Run ingestion
 node scripts/ingest-monthly-hail.mjs --month=2025-04
@@ -125,7 +125,7 @@ GROUP BY source;
 
 ## Troubleshooting
 
-### "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY"
+### "Missing SUPABASE_URL or SUPABASE_SECRET_KEY"
 
 - Verify secrets are set in GitHub repo settings
 - Check secret names are exact (case-sensitive)
@@ -133,7 +133,7 @@ GROUP BY source;
 ### "Supabase upsert failed: new row violates row-level security"
 
 - You're using the anon key instead of service_role key
-- Service role key bypasses RLS
+- The server secret key bypasses RLS and must remain server-side
 
 ### "NOAA Fetch failed: HTTP 429"
 

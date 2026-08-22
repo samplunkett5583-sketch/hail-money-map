@@ -17,21 +17,23 @@
  *
  * Env vars:
  *   SUPABASE_URL
- *   SUPABASE_SERVICE_ROLE_KEY
+ *   SUPABASE_SECRET_KEY
  */
 
 import { createClient } from "@supabase/supabase-js";
 import polygonClipping from "polygon-clipping";
+import { getSupabaseServerKey, supabaseServerFetch } from "./supabase-server-auth.mjs";
 
 // ── Env / args ──────────────────────────────────────────────
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+const SUPABASE_KEY = getSupabaseServerKey();
+if (!SUPABASE_URL) {
+  console.error("Missing SUPABASE_URL or SUPABASE_SECRET_KEY");
   process.exit(1);
 }
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false },
+  global: { fetch: supabaseServerFetch(SUPABASE_KEY) },
 });
 
 // Date handling moved to entry point — supports single, multi, and batch modes

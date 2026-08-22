@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore - Supabase Edge Functions run on Deno and support URL imports.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import { getSupabaseServerKey, supabaseServerFetch } from "../_shared/supabase-server-auth.ts";
 
 declare const Deno: {
   env: { get(key: string): string | undefined };
@@ -27,8 +28,8 @@ serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-    const serviceRoleKey = Deno.env.get("SERVICE_ROLE_KEY");
-    const supabaseKey = serviceRoleKey ?? supabaseAnonKey;
+    const serverSecretKey = getSupabaseServerKey();
+    const supabaseKey = serverSecretKey || supabaseAnonKey;
 
     if (!supabaseUrl || !supabaseKey) {
       return json({ error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" }, 500);
@@ -45,13 +46,9 @@ serve(async (req: Request) => {
       return json({ error: "Invalid type. Use type=wind or type=tornado" }, 400);
     }
 
-    const globalHeaders: Record<string, string> = {};
-    const authHeader = req.headers.get("Authorization");
-    if (authHeader) globalHeaders["Authorization"] = authHeader;
-
     const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: { persistSession: false },
-      global: { headers: globalHeaders },
+      global: serverSecretKey ? { fetch: supabaseServerFetch(serverSecretKey) } : {},
     });
 
     const { data, error } = await supabase

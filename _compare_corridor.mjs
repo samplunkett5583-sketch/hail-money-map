@@ -1,10 +1,11 @@
 // Compare swath-render corridor descriptors vs stored polygon geometry for 2026-03-22
+import { getSupabaseServerKey, supabaseServerHeaders } from './scripts/supabase-server-auth.mjs';
 const url = 'https://ehegjhlkadtpnkborlbz.supabase.co';
-const key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZWdqaGxrYWR0cG5rYm9ybGJ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjcwNTY2NiwiZXhwIjoyMDgyMjgxNjY2fQ.KbEohwp-boV53yY31Ut3epMtN564STGsl9T9KtFeGLQ';
+const key = getSupabaseServerKey();
 
 // 1. Call swath-render for 2026-03-22 and see the corridor descriptors
 const swathResp = await fetch(`${url}/functions/v1/swath-render?date=2026-03-22`, {
-  headers: { Authorization: `Bearer ${key}`, apikey: key }
+  headers: supabaseServerHeaders(key)
 });
 const swathData = await swathResp.json();
 
@@ -31,7 +32,7 @@ for (const c of (swathData.corridors || [])) {
 // 2. Get stored polygon geometry for comparison
 console.log('\n=== STORED POLYGON GEOMETRY (storm_polygons) ===');
 const polyResp = await fetch(`${url}/rest/v1/storm_polygons?event_date=eq.2026-03-22&select=id,source,source_product,swath_index,area_sq_mi,polygon_geojson&order=swath_index.asc`, {
-  headers: { apikey: key, Authorization: `Bearer ${key}` }
+  headers: supabaseServerHeaders(key)
 });
 const polyRows = await polyResp.json();
 console.log('Stored rows:', polyRows.length);

@@ -5,21 +5,23 @@ import zlib from "node:zlib";
 import https from "node:https";
 import { createClient } from "@supabase/supabase-js";
 import { parse } from "csv-parse";
+import { getSupabaseServerKey, supabaseServerFetch } from "./supabase-server-auth.mjs";
 
 const NOAA_DIR = "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/";
 const NOAA_PROXY_BASE = process.env.NOAA_PROXY_BASE || "https://noaaplsrproxy-jzyejnppqa-uc.a.run.app";
 const BATCH_SIZE = 500;
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_SECRET_KEY = getSupabaseServerKey();
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+if (!SUPABASE_URL) {
+  console.error("Missing SUPABASE_URL or SUPABASE_SECRET_KEY");
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
   auth: { persistSession: false },
+  global: { fetch: supabaseServerFetch(SUPABASE_SECRET_KEY) },
 });
 
 function sleep(ms) {

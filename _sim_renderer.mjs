@@ -1,11 +1,12 @@
+import { getSupabaseServerKey, supabaseServerHeaders } from './scripts/supabase-server-auth.mjs';
 const url='https://ehegjhlkadtpnkborlbz.supabase.co';
-const key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZWdqaGxrYWR0cG5rYm9ybGJ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjcwNTY2NiwiZXhwIjoyMDgyMjgxNjY2fQ.KbEohwp-boV53yY31Ut3epMtN564STGsl9T9KtFeGLQ';
+const key=getSupabaseServerKey();
 
 const VALID_SWATH_SOURCES = ['hailtrace', 'mrms', 'swdi', 'manual', 'corridor', 'nexrad_poc', 'nexrad_iem'];
 const PREFERRED_CORRIDOR_SOURCES = ['corridor', 'nexrad_iem', 'nexrad_poc'];
 
 const res = await fetch(url+'/rest/v1/storm_polygons?event_date=eq.2026-03-22&order=source_priority.asc,created_at.desc&select=id,source,source_product,source_priority,swath_index,area_sq_mi,centroid_lat,centroid_lon,polygon_geojson',{
-  headers:{apikey:key,Authorization:'Bearer '+key}
+  headers:supabaseServerHeaders(key)
 });
 const rows = await res.json();
 if (!Array.isArray(rows)) { console.log('API error:', JSON.stringify(rows).substring(0,500)); process.exit(1); }

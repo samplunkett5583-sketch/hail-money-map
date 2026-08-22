@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore - Supabase Edge Functions run on Deno and support URL imports.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import { getSupabaseServerKey, supabaseServerFetch } from "../_shared/supabase-server-auth.ts";
 
 declare const Deno: {
   env: { get(key: string): string | undefined };
@@ -34,13 +35,11 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 function getSupabaseClient() {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  const serviceRoleKey =
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-    Deno.env.get("SERVICE_ROLE_KEY") ??
-    "";
-  if (!supabaseUrl || !serviceRoleKey) return null;
-  return createClient(supabaseUrl, serviceRoleKey, {
+  const serverSecretKey = getSupabaseServerKey();
+  if (!supabaseUrl || !serverSecretKey) return null;
+  return createClient(supabaseUrl, serverSecretKey, {
     auth: { persistSession: false },
+    global: { fetch: supabaseServerFetch(serverSecretKey) },
   });
 }
 

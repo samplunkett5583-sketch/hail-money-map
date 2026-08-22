@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 import { createClient } from "@supabase/supabase-js";
-const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {auth:{persistSession:false}});
+import { getSupabaseServerKey, supabaseServerFetch } from "./supabase-server-auth.mjs";
+const secretKey = getSupabaseServerKey();
+const sb = createClient(process.env.SUPABASE_URL, secretKey, {
+  auth: { persistSession: false },
+  global: { fetch: supabaseServerFetch(secretKey) },
+});
 
 const {data} = await sb.from('storm_polygons')
   .select('swath_index,centroid_lat,centroid_lon,area_sq_mi,band_min,band_max,band_label,polygon_geojson')

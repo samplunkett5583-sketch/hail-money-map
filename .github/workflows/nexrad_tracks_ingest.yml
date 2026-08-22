@@ -38,7 +38,7 @@ jobs:
       - name: Run NEXRAD track polygon ingest
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
           if [ -n "${{ github.event.inputs.dates }}" ]; then
             # Manual run with specific dates

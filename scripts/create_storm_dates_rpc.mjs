@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // One-shot script to create the get_storm_distinct_dates() RPC in Supabase.
 // Run: node scripts/create_storm_dates_rpc.mjs
+import { getSupabaseServerKey, supabaseServerHeaders } from './supabase-server-auth.mjs';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_SECRET_KEY = getSupabaseServerKey();
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+if (!SUPABASE_URL) {
+  console.error('Missing SUPABASE_URL or SUPABASE_SECRET_KEY');
   process.exit(1);
 }
 
@@ -61,7 +62,7 @@ GRANT EXECUTE ON FUNCTION public.get_storm_distinct_dates() TO service_role;
 const managementUrl = `https://api.supabase.com/v1/projects/${projectRef}/database/query`;
 
 // The Supabase Management API uses a personal access token, not the service role key.
-// Fall back to direct PostgREST rpc/query via the service role key if the management
+// Fall back to direct PostgREST RPC via the server secret key if the management
 // API token is not available (it requires a different env var: SUPABASE_ACCESS_TOKEN).
 const accessToken = process.env.SUPABASE_ACCESS_TOKEN;
 
@@ -93,10 +94,7 @@ async function tryManagementApi() {
 async function tryRestRpc() {
   // Try calling the function to check if it already exists
   const testResp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_storm_distinct_dates?limit=1`, {
-    headers: {
-      apikey: SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-    },
+    headers: supabaseServerHeaders(SUPABASE_SECRET_KEY),
   });
   if (testResp.ok) {
     console.log('[create-rpc] get_storm_distinct_dates already exists and is callable.');

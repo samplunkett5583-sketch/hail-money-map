@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore - Supabase Edge Functions run on Deno and support URL imports.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import { getSupabaseServerKey, supabaseServerFetch } from "../_shared/supabase-server-auth.ts";
 
 declare const Deno: {
   env: { get(key: string): string | undefined };
@@ -872,10 +873,8 @@ serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-    const serviceRoleKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-      Deno.env.get("SERVICE_ROLE_KEY");
-    const supabaseKey = serviceRoleKey ?? supabaseAnonKey;
+    const serverSecretKey = getSupabaseServerKey();
+    const supabaseKey = serverSecretKey || supabaseAnonKey;
 
     if (!supabaseUrl || !supabaseKey) {
       return json({ error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" }, 500);
@@ -889,7 +888,7 @@ serve(async (req: Request) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return json({ error: "Invalid date. Use date=YYYY-MM-DD" }, 400);
     }
-    if (persistRequested && !serviceRoleKey) {
+    if (persistRequested && !serverSecretKey) {
       return json({ error: "Missing service role key for storm_polygons persistence" }, 500);
     }
 
@@ -899,15 +898,19 @@ serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: { persistSession: false },
-      global: { headers: globalHeaders },
+      global: {
+        headers: globalHeaders,
+        ...(serverSecretKey ? { fetch: supabaseServerFetch(serverSecretKey) } : {}),
+      },
     });
 
     // Admin client WITHOUT forwarded user auth — service role bypasses RLS for server-side inserts.
     // The supabase client above forwards the caller's Authorization header, which limits it to anon
     // permissions even when supabaseKey is the service role key. adminSupabase uses only the key.
-    const adminSupabase = serviceRoleKey
-      ? createClient(supabaseUrl, serviceRoleKey, {
+    const adminSupabase = serverSecretKey
+      ? createClient(supabaseUrl, serverSecretKey, {
           auth: { persistSession: false },
+          global: { fetch: supabaseServerFetch(serverSecretKey) },
         })
       : null;
 

@@ -15,13 +15,13 @@
 import { createClient } from "@supabase/supabase-js";
 import https from "node:https";
 import http from "node:http";
+import { getSupabaseServerKey, supabaseServerFetch, supabaseServerHeaders } from "./supabase-server-auth.mjs";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const SUPABASE_KEY = getSupabaseServerKey();
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("[regen] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+if (!SUPABASE_URL) {
+  console.error("[regen] Missing SUPABASE_URL or SUPABASE_SECRET_KEY");
   process.exit(1);
 }
 
@@ -34,6 +34,7 @@ const args = Object.fromEntries(
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false },
+  global: { fetch: supabaseServerFetch(SUPABASE_KEY) },
 });
 
 function httpGetJson(url) {
@@ -42,10 +43,7 @@ function httpGetJson(url) {
     const req = mod.get(
       url,
       {
-        headers: {
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          apikey: SUPABASE_KEY,
-        },
+        headers: supabaseServerHeaders(SUPABASE_KEY),
       },
       (res) => {
         if (

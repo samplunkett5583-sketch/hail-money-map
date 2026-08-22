@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 15
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     steps:
       - name: Check out merged renderer
@@ -31,7 +31,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$SUPABASE_URL"
-          test -n "$SUPABASE_SERVICE_ROLE_KEY"
+          test -n "$SUPABASE_SECRET_KEY"
           test -n "$SUPABASE_ACCESS_TOKEN"
           project_ref="$(node -e "console.log(new URL(process.env.SUPABASE_URL).hostname.split('.')[0])")"
           test -n "$project_ref"
@@ -51,8 +51,7 @@ jobs:
           response_file="$(mktemp)"
           status="$(curl --silent --show-error --output "$response_file" --write-out "%{http_code}" \
             --request GET \
-            --header "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-            --header "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            --header "apikey: $SUPABASE_SECRET_KEY" \
             "$SUPABASE_URL/functions/v1/swath-render?date=2026-07-21&persist=true")"
           test "$status" -ge 200
           test "$status" -lt 300

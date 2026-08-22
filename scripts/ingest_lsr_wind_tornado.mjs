@@ -6,17 +6,19 @@
 import crypto from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { parse } from "csv-parse/sync";
+import { getSupabaseServerKey, supabaseServerFetch, supabaseServerHeaders } from "./supabase-server-auth.mjs";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_SECRET_KEY = getSupabaseServerKey();
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+if (!SUPABASE_URL) {
+  console.error("Missing SUPABASE_URL or SUPABASE_SECRET_KEY");
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
   auth: { persistSession: false },
+  global: { fetch: supabaseServerFetch(SUPABASE_SECRET_KEY) },
 });
 
 function ymd(date) { return date.toISOString().slice(0, 10); }
@@ -167,10 +169,7 @@ async function main() {
     console.log(`[INGEST] recent swath generation attempted ${d}`);
     try {
       const resp = await fetch(`${SWATH_RENDER_URL}?date=${d}&persist=1`, {
-        headers: {
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-        },
+        headers: supabaseServerHeaders(SUPABASE_SECRET_KEY),
       });
       if (resp.ok) {
         const body = await resp.json();
