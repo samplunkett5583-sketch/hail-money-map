@@ -47,7 +47,7 @@ serve(async (req: Request) => {
       auth: { persistSession: false },
       global: {
         headers: globalHeaders,
-        ...(serverSecretKey ? { fetch: supabaseServerFetch(serverSecretKey) } : {}),
+        fetch: supabaseServerFetch(supabaseKey),
       },
     });
 

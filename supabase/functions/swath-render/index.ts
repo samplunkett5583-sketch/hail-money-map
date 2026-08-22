@@ -886,10 +886,6 @@ serve(async (req: Request) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return json({ error: "Invalid date. Use date=YYYY-MM-DD" }, 400);
     }
-    if (persistRequested && !serverSecretKey) {
-      return json({ error: "Missing service role key for storm_polygons persistence" }, 500);
-    }
-
     const globalHeaders: Record<string, string> = {};
     const authHeader = req.headers.get("Authorization");
     if (authHeader) globalHeaders["Authorization"] = authHeader;
@@ -898,19 +894,17 @@ serve(async (req: Request) => {
       auth: { persistSession: false },
       global: {
         headers: globalHeaders,
-        ...(serverSecretKey ? { fetch: supabaseServerFetch(serverSecretKey) } : {}),
+        fetch: supabaseServerFetch(supabaseKey),
       },
     });
 
     // Admin client WITHOUT forwarded user auth — service role bypasses RLS for server-side inserts.
     // The supabase client above forwards the caller's Authorization header, which limits it to anon
     // permissions even when supabaseKey is the service role key. adminSupabase uses only the key.
-    const adminSupabase = serverSecretKey
-      ? createClient(supabaseUrl, serverSecretKey, {
-          auth: { persistSession: false },
-          global: { fetch: supabaseServerFetch(serverSecretKey) },
-        })
-      : null;
+    const adminSupabase = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+      global: { fetch: supabaseServerFetch(supabaseKey) },
+    });
 
     const hailRaw = await fetchHailPoints(supabase, date);
     const windRaw = persistRequested ? await fetchStormPoints(supabase, date, "wind") : [];

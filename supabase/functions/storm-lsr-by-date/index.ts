@@ -46,7 +46,7 @@ serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: { persistSession: false },
-      global: serverSecretKey ? { fetch: supabaseServerFetch(serverSecretKey) } : {},
+      global: { fetch: supabaseServerFetch(supabaseKey) },
     });
 
     const { data, error } = await supabase
