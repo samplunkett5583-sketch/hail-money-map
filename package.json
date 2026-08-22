@@ -9,7 +9,8 @@
     "security:secrets:all": "node scripts/check-secret-redaction.mjs --include-untracked && node scripts/test-supabase-server-auth.mjs",
     "import:open-properties": "node scripts/import-open-property-data.mjs",
     "import:property-overrides": "node scripts/import-property-value-overrides.mjs",
-    "test:property-targeting": "node scripts/test-open-property-targeting.mjs && node scripts/test-property-provider-architecture.mjs && node scripts/test-property-campaign-edge.mjs && node scripts/test-property-campaign-ui.mjs && node scripts/test-money-maps-property-search.mjs && node scripts/test-money-maps-layer-ownership.mjs"
+    "test:property-targeting": "node scripts/test-open-property-targeting.mjs && node scripts/test-property-provider-architecture.mjs && node scripts/test-property-campaign-edge.mjs && node scripts/test-property-campaign-ui.mjs && node scripts/test-money-maps-property-search.mjs && node scripts/test-money-maps-layer-ownership.mjs",
+    "test:money-maps-authority": "node scripts/test-money-maps-swath-authority.mjs && node scripts/test-money-maps-ticker.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",

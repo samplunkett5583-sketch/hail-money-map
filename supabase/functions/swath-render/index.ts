@@ -46,6 +46,7 @@ interface Pt {
   hail_in: number;
   event_time: string | null;
   ts: number; // epoch ms (or 0)
+  sourceTable: string;
 }
 
 interface ClusterOptions {
@@ -199,6 +200,7 @@ interface Corridor {
   reportCount: number;
   eventStartUtc: string | null;
   eventEndUtc: string | null;
+  sourceTables: string[];
 }
 
 interface SavedBand {
@@ -447,6 +449,12 @@ async function persistSavedStormPolygons(
         Number(corridor.maxHailIn) || 0,
         ...(corridor.severityProfile || []).map((value) => Number(value) || 0),
       );
+      const observedSeverities = (corridor.severityProfile || [])
+        .map((value) => Number(value) || 0)
+        .filter((value) => value > 0);
+      const observedMinSeverity = observedSeverities.length
+        ? Math.min(...observedSeverities)
+        : corridorMaxSeverity;
       const effectiveMaxSeverity = corridorMaxSeverity > 0
         ? corridorMaxSeverity
         : batch.fallbackSeverity;
@@ -485,8 +493,15 @@ async function persistSavedStormPolygons(
               source_model: "rule_v1",
               saved_source: SAVED_SWATH_SOURCE,
               storm_type: batch.stormType,
+              event_date: date,
               corridor_id: corridor.id,
               report_count: corridor.reportCount,
+              observation_count: corridor.reportCount,
+              source_table: corridor.sourceTables.join(","),
+              generation_method: "rule_v1_report_corridor",
+              observed_hail_min: batch.stormType === "hail" ? observedMinSeverity : null,
+              observed_hail_max: batch.stormType === "hail" ? corridorMaxSeverity : null,
+              generated_at: new Date().toISOString(),
             },
           },
           centroid_lat: weightedLat / totalAreaSqMi,
@@ -653,12 +668,14 @@ function buildCorridor(
     reportCount: cluster.length,
     eventStartUtc,
     eventEndUtc,
+    sourceTables: Array.from(new Set(cluster.map((point) => point.sourceTable))).sort(),
   };
 }
 
 function mapRowsToPoints(
   data: Record<string, unknown>[] | null | undefined,
   severityKey: "hail_in" | "magnitude",
+  sourceTable: string,
 ): Pt[] {
   return (data ?? [])
     .map((r: Record<string, unknown>) => ({
@@ -667,6 +684,7 @@ function mapRowsToPoints(
       hail_in: Number(r[severityKey]) || 0,
       event_time: r.event_time ? String(r.event_time) : null,
       ts: r.event_time ? new Date(String(r.event_time)).getTime() : 0,
+      sourceTable,
     }))
     .filter(
       (p: Pt) =>
@@ -688,7 +706,7 @@ async function fetchHailPoints(
     .order("event_time", { ascending: true });
   if (error) throw new Error(error.message);
 
-  let raw = mapRowsToPoints(data as Record<string, unknown>[] | null | undefined, "hail_in");
+  let raw = mapRowsToPoints(data as Record<string, unknown>[] | null | undefined, "hail_in", "hail_lsr_raw");
   if (raw.length > 0) return raw;
 
   const { data: hrData, error: hrErr } = await supabase
@@ -697,20 +715,9 @@ async function fetchHailPoints(
     .eq("event_date", date)
     .order("event_time", { ascending: true });
   if (!hrErr && hrData && hrData.length > 0) {
-    raw = mapRowsToPoints(hrData as Record<string, unknown>[] | null | undefined, "hail_in");
+    raw = mapRowsToPoints(hrData as Record<string, unknown>[] | null | undefined, "hail_in", "hail_reports");
   }
   if (raw.length > 0) return raw;
-
-  const synthetic = MARCH_2026_SYNTHETIC[date];
-  if (synthetic && synthetic.length > 0) {
-    return synthetic.map((s) => ({
-      lat: s.lat,
-      lon: s.lon,
-      hail_in: s.hail_in,
-      event_time: null,
-      ts: 0,
-    }));
-  }
 
   return [];
 }
@@ -727,7 +734,7 @@ async function fetchStormPoints(
     .eq("event_type", stormType)
     .order("event_time", { ascending: true });
   if (error) throw new Error(error.message);
-  return mapRowsToPoints(data as Record<string, unknown>[] | null | undefined, "magnitude");
+  return mapRowsToPoints(data as Record<string, unknown>[] | null | undefined, "magnitude", "storm_lsr_raw");
 }
 
 function buildCorridorResult(
@@ -841,28 +848,6 @@ function buildCorridorResult(
 
   return { corridors, outliers, pointCount: raw.length };
 }
-
-// ─── March 2026 reference-image-derived anchor points ───
-// For dates without IEM/SPC hail data, these provide approximate locations
-// extracted from HailTrace reference images so the map isn't blank.
-const MARCH_2026_SYNTHETIC: Record<string, Array<{ lat: number; lon: number; hail_in: number }>> = {
-  // Mar 14 – tiny spots near West Palm Beach / SE FL (SPC: 0 hail reports)
-  "2026-03-14": [
-    { lat: 26.72, lon: -80.10, hail_in: 1.0 },
-    { lat: 26.68, lon: -80.06, hail_in: 1.0 },
-  ],
-  // Mar 24 – tiny isolated spots near Orlando / east-central FL (SPC: 0 reports)
-  "2026-03-24": [
-    { lat: 28.52, lon: -81.35, hail_in: 1.0 },
-    { lat: 28.48, lon: -81.30, hail_in: 1.0 },
-  ],
-  // Mar 29 – tiny spots near Tucson AZ + south toward Nogales (SPC: 0 reports)
-  "2026-03-29": [
-    { lat: 32.22, lon: -110.95, hail_in: 1.0 },
-    { lat: 32.15, lon: -110.90, hail_in: 1.0 },
-    { lat: 31.65, lon: -111.00, hail_in: 1.0 },
-  ],
-};
 
 // ─── Main handler ───
 serve(async (req: Request) => {

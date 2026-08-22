@@ -1,0 +1,37 @@
+{
+  "eventDate": "2026-05-03",
+  "eventTimeUtcRange": ["2026-05-04T03:55:00Z", "2026-05-04T04:06:00Z"],
+  "eventLocalTimezone": "America/Chicago",
+  "sourceTable": "hail_lsr_raw",
+  "authoritativeObservationCount": 9,
+  "altonDiagnostic": { "lat": 38.93, "lon": -90.19, "hailIn": 1.5, "coveredByReportDerivedRows": true },
+  "observations": [
+    { "id": "bd08dfb06715bb33861790df8a758a2d9502fbeccda305584c98643b5c81eca4", "lat": 38.91, "lon": -90.15, "hailIn": 1.0, "source": "LSR" },
+    { "id": "1431f57cf0a0b1a5305cde9a2a24f58ed406b71d49c84a6567eebb1bb41f4d66", "lat": 38.92, "lon": -90.21, "hailIn": 1.0, "source": "LSR" },
+    { "id": "9f2eaf7987ee283ea704a00512e546d7e8feada64cbd18259aeee678e60ab8e7", "lat": 38.93, "lon": -90.19, "hailIn": 1.5, "source": "LSR" },
+    { "id": "8d76fd0546feb147fd77154705e1271031956c5c2af8d5e73a7630b63337a692", "lat": 38.92, "lon": -90.19, "hailIn": 0.7, "source": "LSR" },
+    { "id": "f17a30eda436664fb5efd27d3b10cd619dae174c1668588dc1dacd7868945bc4", "lat": 38.91, "lon": -90.20, "hailIn": 2.0, "source": "LSR" },
+    { "id": "1860d4aaa10c7f8c189c395d34871eaf9dd8c9d9018933ebfaa55d7610c10b7f", "lat": 38.91, "lon": -90.04, "hailIn": 1.5, "source": "LSR" },
+    { "id": "d7f0620460afc202e74a2c92cd1f63e9ac40d24261835730e3aba974effa151b", "lat": 38.91, "lon": -90.05, "hailIn": 1.0, "source": "LSR" },
+    { "id": "118c4253f0f21bb302b4c3e76ba17e894d60924a6c3d8bc2a32533b8a597ebc9", "lat": 38.91, "lon": -90.13, "hailIn": 1.75, "source": "LSR" },
+    { "id": "a94acb2e6a254f8cc2f405cfbde0bcba8555f468dd3144cd56ffb760f3cc937f", "lat": 38.95, "lon": -90.19, "hailIn": 1.75, "source": "LSR" }
+  ],
+  "reportDerivedRows": [
+    { "id": "2f6a2ef1-cd20-4eb6-8283-4efba3687a3b", "index": 0, "band": [0.5, 1.0], "reportCount": 4, "geometrySha256": "00dc22e43e6b48290e48c4097eb4f4e4f20ce8bc9feae66c895bc6e053765b57", "bounds": [-91.2084599836791, 38.933548592965266, -90.96922937213876, 39.03576974339076] },
+    { "id": "e4e48829-1eab-4d88-9ac1-23bb5b822904", "index": 1, "band": [1.0, 1.5], "reportCount": 4, "geometrySha256": "b3d091b2c4f0372e88fbe319d3d830a90bce535c95fff73cb818546b6dee96d6", "bounds": [-91.16795515912337, 38.94145077288328, -91.00766745504399, 39.02790039984479] },
+    { "id": "d917ba35-1e40-4aee-8f21-bdfbb9b1e90d", "index": 2, "band": [1.5, 2.0], "reportCount": 4, "geometrySha256": "a9437537b4499d07822a27f7141e351bc1e8a8d4226d5f740a8eae243c1dae58", "bounds": [-91.167149942634, 38.94863457280875, -91.00221486121222, 39.01875407567107] },
+    { "id": "a89e0586-54c4-44ac-96d8-6946a79c5a79", "index": 3, "band": [0.5, 1.0], "reportCount": 9, "geometrySha256": "1708c4deb8aee0c866f3598d80b1de3bb626ae996310a7fbdff2e9a8f3e49dd5", "bounds": [-90.19781246762021, 38.88229640533675, -90.08832358319174, 38.96023986740346] },
+    { "id": "f1251a6e-62fa-45bc-994b-005bf7f1ec41", "index": 4, "band": [1.0, 1.5], "reportCount": 9, "geometrySha256": "2834d2f1aaf8a3a4fb995962d44287593eda17fc97352c45b349e9bffa52c6bc", "bounds": [-90.18692179770873, 38.88985786282934, -90.10881502633565, 38.952335273658036] },
+    { "id": "418dad12-93fa-401e-b725-9dba75d38abe", "index": 5, "band": [1.5, 2.0], "reportCount": 9, "geometrySha256": "69169e742a378718a5eb27668bb09f29de3660779e31b4ce3942ddebe14848f2", "bounds": [-90.18130843928964, 38.896702102040386, -90.11648137138464, 38.94514927934401] },
+    { "id": "fc25c859-06c9-431a-856f-7d281f98df8a", "index": 6, "band": [2.0, 2.5], "reportCount": 9, "geometrySha256": "c5957b0ece2077580b96fdfcf22b70b882d1b0e71a965c64c5399dd2cc97961c", "bounds": [-90.18106243304882, 38.907435221774726, -90.14578145141577, 38.93940048389279] }
+  ],
+  "rejectedBroadRadar": {
+    "id": "cec3627d-c155-45c2-98ec-c9107976d314",
+    "source": "nexrad_iem",
+    "product": "iem_nexrad_track",
+    "geometrySha256": "ad4604022d87737b05cd85a57a7c921242c517bfa1b486b7dda56b302554fbec",
+    "bounds": [-92.98325761554155, 38.479124599413514, -87.85684835004717, 40.2177688282979],
+    "areaSqMi": 6298.8,
+    "containsAltonDiagnostic": false
+  }
+}

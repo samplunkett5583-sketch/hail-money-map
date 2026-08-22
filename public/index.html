@@ -2013,7 +2013,9 @@
       display:inline-block; white-space:nowrap; padding-left:100%;
       animation:hmmticker 58s linear infinite;
     }
-    .maps-hurricane-ticker:hover .maps-hurricane-ticker-scroll {
+    .maps-hurricane-ticker:hover .maps-hurricane-ticker-scroll,
+    .maps-hurricane-ticker:focus-within .maps-hurricane-ticker-scroll,
+    .maps-hurricane-ticker.is-paused .maps-hurricane-ticker-scroll {
       animation-play-state:paused;
     }
     .maps-hurricane-ticker-link {
@@ -2023,6 +2025,11 @@
     @keyframes hmmticker {
       0% { transform: translateX(0%); }
       100% { transform: translateX(-100%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .maps-hurricane-ticker-scroll {
+        animation:none !important; padding-left:0; transform:none !important;
+      }
     }
     .maps-opacity-btn {
       width:36px; height:36px; border:none; border-radius:8px;
@@ -6049,7 +6056,7 @@
             </div>
           </div>
         </div>
-        <div class="maps-hurricane-ticker" id="maps-hurricane-ticker">
+        <div class="maps-hurricane-ticker" id="maps-hurricane-ticker" tabindex="0" aria-label="Hurricane center and severe weather alerts">
           <div class="maps-hurricane-ticker-label">🌀 HURRICANE CENTER</div>
           <div class="maps-hurricane-ticker-body">
             <div id="maps-hurricane-ticker-text" class="maps-hurricane-ticker-scroll">Loading hurricane and severe weather status…</div>
@@ -8986,24 +8993,89 @@
     // Both writers go through applyTickerText() so there's only ever one
     // DOM update path, one animation restart, and one duration calculation.
     var hmmTickerSegments = { nhc: '', severe: '' };
+    var hmmTickerPauseReasons = {};
+    var hmmTickerDirty = false;
+    var HMM_TICKER_PIXELS_PER_SECOND = 18;
+
+    function hmmTickerIsPaused() {
+      return Object.keys(hmmTickerPauseReasons).some(function (reason) {
+        return hmmTickerPauseReasons[reason] === true;
+      });
+    }
+
+    function hmmTickerShouldDeferUpdates() {
+      return Object.keys(hmmTickerPauseReasons).some(function (reason) {
+        return reason !== 'reduced-motion' && hmmTickerPauseReasons[reason] === true;
+      });
+    }
+
+    function hmmTickerSetPause(reason, paused) {
+      var ticker = document.getElementById('maps-hurricane-ticker');
+      hmmTickerPauseReasons[reason] = !!paused;
+      var isPaused = hmmTickerIsPaused();
+      if (ticker) ticker.classList.toggle('is-paused', isPaused);
+      if (!hmmTickerShouldDeferUpdates() && hmmTickerDirty) applyTickerTextNow();
+    }
 
     function applyTickerText() {
+      // While the user is hovering (and the ticker is CSS-paused), defer the
+      // DOM/content update instead of restarting mid-hover — restarting would
+      // reset the scroll to frame 0 (mostly off-screen, per the padding-left
+      // marquee trick) and make the paused ticker appear to blank out, then
+      // jump/accelerate once the mouse leaves. Apply it once, cleanly, on
+      // mouseleave instead (see hmmTickerWireHover below).
+      if (hmmTickerShouldDeferUpdates()) {
+        hmmTickerDirty = true;
+        return;
+      }
+      applyTickerTextNow();
+    }
+
+    function applyTickerTextNow() {
       var textEl = document.getElementById('maps-hurricane-ticker-text');
       if (!textEl) return;
       var text = [hmmTickerSegments.nhc, hmmTickerSegments.severe].filter(function (value) { return !!value; }).join(' • ');
       if (!text) return;
       textEl.textContent = text;
-      // translateX(-100%) is relative to the element's own width (text width
-      // plus the 100%-of-container left padding), so a fixed CSS duration
-      // makes short messages crawl and long ones race. Derive the duration
-      // from that same width so on-screen speed stays constant, then clamp
-      // to a medium-readable band so it never goes too fast or too slow.
-      var travelPx = textEl.offsetWidth;
-      var hmmTickerDuration = Math.min(65, Math.max(50, travelPx / 55));
-      textEl.style.animation = 'none';
-      void textEl.offsetWidth;
-      textEl.style.animation = '';
-      textEl.style.animationDuration = hmmTickerDuration.toFixed(1) + 's';
+      // translateX(-100%) is relative to this element's measured travel width.
+      // Use one deliberately slow pixels-per-second target so short and long
+      // alerts move at the same readable speed; only duration changes.
+      var travelPx = textEl.scrollWidth || textEl.offsetWidth;
+      var oldDuration = Math.min(89.7, Math.max(69, travelPx / 40));
+      var oldPixelsPerSecond = oldDuration > 0 ? travelPx / oldDuration : 40;
+      var hmmTickerDuration = travelPx / HMM_TICKER_PIXELS_PER_SECOND;
+      textEl._hmmTickerTravelPx = travelPx;
+      textEl._hmmTickerPreviousPixelsPerSecond = oldPixelsPerSecond;
+      textEl._hmmTickerPixelsPerSecond = HMM_TICKER_PIXELS_PER_SECOND;
+      textEl.style.animationDuration = hmmTickerDuration.toFixed(3) + 's';
+    }
+
+    // Pure CSS animation-play-state already pauses/resumes at the exact same
+    // position and rate (no JS needed for that). This listener only exists to
+    // flush a content update that arrived while hovering — applied once, the
+    // instant the mouse leaves, so the resumed scroll is never mid-restart.
+    function hmmTickerWireHover() {
+      var ticker = document.getElementById('maps-hurricane-ticker');
+      if (!ticker || ticker._hmmHoverWired) return;
+      ticker._hmmHoverWired = true;
+      ticker.addEventListener('mouseenter', function () { hmmTickerSetPause('hover', true); });
+      ticker.addEventListener('mouseleave', function () { hmmTickerSetPause('hover', false); });
+      ticker.addEventListener('focusin', function () { hmmTickerSetPause('focus', true); });
+      ticker.addEventListener('focusout', function (event) {
+        if (!ticker.contains(event.relatedTarget)) hmmTickerSetPause('focus', false);
+      });
+      ticker.addEventListener('pointerdown', function () { hmmTickerSetPause('press', true); });
+      ['pointerup', 'pointercancel'].forEach(function (eventName) {
+        ticker.addEventListener(eventName, function () { hmmTickerSetPause('press', false); });
+      });
+      window.addEventListener('pointerup', function () { hmmTickerSetPause('press', false); });
+      var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+      function syncReducedMotion() { hmmTickerSetPause('reduced-motion', !!(reducedMotion && reducedMotion.matches)); }
+      if (reducedMotion) {
+        if (typeof reducedMotion.addEventListener === 'function') reducedMotion.addEventListener('change', syncReducedMotion);
+        else if (typeof reducedMotion.addListener === 'function') reducedMotion.addListener(syncReducedMotion);
+      }
+      syncReducedMotion();
     }
 
     function extractHurricaneFields(title, description) {
@@ -9211,6 +9283,7 @@
     function initHurricaneTicker() {
       if (initHurricaneTicker._started) return;
       initHurricaneTicker._started = true;
+      hmmTickerWireHover();
       refreshHurricaneTicker();
       refreshSevereWeatherTicker();
       setInterval(refreshHurricaneTicker, 15 * 60 * 1000);
@@ -15173,6 +15246,48 @@
     // ── Draw saved storm polygons from Supabase ──
     // Only valid primary swath sources are drawn. Legacy point-built rows are excluded.
     var VALID_SWATH_SOURCES = ['hailtrace', 'mrms', 'swdi', 'manual', 'nexrad_poc', 'nexrad_iem', 'swath_render_saved', 'mrms_mesh'];
+    function mapsHailRowProvenance(row) {
+      var gj = row && (row.polygon_geojson || row.geometry);
+      if (typeof gj === 'string') { try { gj = JSON.parse(gj); } catch (_) { gj = null; } }
+      var properties = gj && gj.type === 'Feature' ? (gj.properties || {}) : {};
+      var explicit = properties.hailProvenance || properties.hail_provenance || null;
+      if (explicit) return explicit;
+      var source = String(row && row.source || properties.saved_source || '').toLowerCase();
+      var product = String(row && row.source_product || '').toLowerCase();
+      var reportCount = Number(properties.observation_count != null ? properties.observation_count : properties.report_count);
+      if (source === 'swath_render_saved' && product === 'rule_v1_bands' && reportCount > 0) {
+        return {
+          sourceClassification:'official_report_derived_coverage',
+          eventDate:mapsNormalizeDate(row && row.event_date || properties.event_date || ''),
+          sourceTable:properties.source_table || 'hail_lsr_raw',
+          generationMethod:properties.generation_method || properties.source_model || 'rule_v1_report_corridor',
+          observationCount:reportCount,
+          observedHailMin:Number(properties.observed_hail_min),
+          observedHailMax:Number(properties.observed_hail_max),
+          generatedAt:properties.generated_at || null,
+          qualityStatus:'report_evidence_present',
+          provenanceComplete:!!(properties.source_table && properties.generated_at)
+        };
+      }
+      return null;
+    }
+
+    function mapsSelectHailCoverageRows(rows, dateStr) {
+      var hailRows = (rows || []).filter(function (row) {
+        return row && String(row.storm_type || 'hail').toLowerCase() === 'hail';
+      });
+      var reportCalibratedRows = hailRows.filter(function (row) {
+        var source = String(row && row.source || '').toLowerCase();
+        var product = String(row && row.source_product || '').toLowerCase();
+        var provenance = mapsHailRowProvenance(row);
+        return source === 'swath_render_saved' && product === 'rule_v1_bands' &&
+          !!(row.polygon_geojson || row.geometry) && provenance && Number(provenance.observationCount) > 0;
+      });
+      if (reportCalibratedRows.length) {
+        return reportCalibratedRows;
+      }
+      return hailRows;
+    }
     var FAST_RASTER_SWATH_MODE = false;
 
     // ── HailTrace feature flag — set to true to re-enable HailTrace fetch/draw ──
@@ -15964,10 +16079,14 @@
         return false;
       }
 
-      // Use saved storm_polygons rows the same way for every date.
-      // Do not reject rows by source name here.
-      // If the row came back from storm_polygons and has geometry, let it compete by priority.
-      var validRows = (rows || []).filter(function (r) {
+      // Keep the current renderer for every storm type. For hail, prefer only
+      // evidence-backed report-derived coverage when the selected date has it;
+      // otherwise retain the existing saved-row behavior unchanged.
+      var nonHailRows = (rows || []).filter(function (row) {
+        return row && String(row.storm_type || 'hail').toLowerCase() !== 'hail';
+      });
+      var selectedHailRows = mapsSelectHailCoverageRows(rows || [], dateStr);
+      var validRows = nonHailRows.concat(selectedHailRows).filter(function (r) {
         if (!r) return false;
         if (!r.polygon_geojson && !r.geometry) return false;
         return true;
