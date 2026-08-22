@@ -8720,8 +8720,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry&v=weekly" async defer></script>
   <script src="demo_swaths.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/terra-draw@1.32.3/dist/terra-draw.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/terra-draw-google-maps-adapter@1.6.1/dist/terra-draw-google-maps-adapter.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -20503,7 +20505,7 @@
 
     // ── Hail-size/date/rectangle storm search ──
     var mapsAreaSearchState = {
-      drawingManager: null,
+      rectangleDrawer: null,
       rectangle: null,
       bounds: null,
       dates: [],
@@ -20610,7 +20612,7 @@
     }
 
     function mapsAreaBeginRectangle() {
-      if (!mapsState.map || !(google.maps.drawing && google.maps.drawing.DrawingManager)) return;
+      if (!mapsState.map || !mapsAreaSearchState.rectangleDrawer) return;
       mapsAreaClearClippedSwaths();
       var bottom = document.getElementById('maps-area-search-bottom');
       var steps = document.getElementById('maps-area-search-steps');
@@ -20622,7 +20624,8 @@
         mapsAreaSearchState.rectangle.setMap(null);
         mapsAreaSearchState.rectangle = null;
       }
-      mapsAreaSearchState.drawingManager.setDrawingMode(google.maps.drawing.OverlayType.RECTANGLE);
+      if (!mapsAreaSearchState.rectangleDrawer.enabled) mapsAreaSearchState.rectangleDrawer.start();
+      mapsAreaSearchState.rectangleDrawer.setMode('rectangle');
     }
 
     function mapsAreaClipRing(ring, west, east, south, north) {
@@ -20747,10 +20750,43 @@
       if (!trigger || !popover || !go || !mapsState.map) return;
       mapsAreaSetDefaultDates();
 
-      mapsAreaSearchState.drawingManager = new google.maps.drawing.DrawingManager({
-        drawingControl: false,
-        drawingMode: null,
-        rectangleOptions: {
+      if (!window.terraDraw || !window.terraDrawGoogleMapsAdapter) {
+        console.error('[area-search] Terra Draw failed to load');
+        return;
+      }
+      mapsAreaSearchState.rectangleDrawer = new window.terraDraw.TerraDraw({
+        adapter: new window.terraDrawGoogleMapsAdapter.TerraDrawGoogleMapsAdapter({
+          lib: google.maps,
+          map: mapsState.map,
+          isolatedData: true
+        }),
+        modes: [new window.terraDraw.TerraDrawRectangleMode({
+          drawInteraction: 'drag',
+          styles: {
+            fillColor: '#d4af37',
+            fillOpacity: 0.08,
+            outlineColor: '#d4af37',
+            outlineOpacity: 1,
+            outlineWidth: 2
+          }
+        })]
+      });
+      mapsAreaSearchState.rectangleDrawer.on('finish', function (featureId) {
+        var feature = mapsAreaSearchState.rectangleDrawer.getSnapshotFeature(featureId);
+        var ring = feature && feature.geometry && feature.geometry.type === 'Polygon'
+          ? feature.geometry.coordinates[0]
+          : [];
+        if (ring.length < 4) return;
+        var bounds = new google.maps.LatLngBounds();
+        ring.forEach(function (coordinate) {
+          bounds.extend({ lat: Number(coordinate[1]), lng: Number(coordinate[0]) });
+        });
+        mapsAreaSearchState.rectangleDrawer.removeFeatures([featureId]);
+        mapsAreaSearchState.rectangleDrawer.setMode('static');
+        if (mapsAreaSearchState.rectangle) mapsAreaSearchState.rectangle.setMap(null);
+        mapsAreaSearchState.rectangle = new google.maps.Rectangle({
+          map: mapsState.map,
+          bounds: bounds,
           editable: true,
           draggable: true,
           strokeColor: '#d4af37',
@@ -20760,14 +20796,8 @@
           fillOpacity: 0.08,
           clickable: false,
           zIndex: 900
-        }
-      });
-      mapsAreaSearchState.drawingManager.setMap(mapsState.map);
-      google.maps.event.addListener(mapsAreaSearchState.drawingManager, 'rectanglecomplete', function (rectangle) {
-        if (mapsAreaSearchState.rectangle) mapsAreaSearchState.rectangle.setMap(null);
-        mapsAreaSearchState.rectangle = rectangle;
-        mapsAreaSearchState.bounds = rectangle.getBounds();
-        mapsAreaSearchState.drawingManager.setDrawingMode(null);
+        });
+        mapsAreaSearchState.bounds = bounds;
         mapsAreaQuerySelectedRegion();
       });
 
