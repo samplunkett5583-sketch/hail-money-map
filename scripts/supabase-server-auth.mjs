@@ -1,7 +1,7 @@
 export function getSupabaseServerKey(environment = process.env) {
-  const key = String(environment.SUPABASE_SECRET_KEY || '').trim()
+  const key = String(environment.HM_SUPABASE_SERVER_KEY || environment.SUPABASE_SECRET_KEY || '').trim()
   if (!key.startsWith('sb_secret_')) {
-    throw new Error('SUPABASE_SECRET_KEY must be a server-side sb_secret key')
+    throw new Error('A server-side sb_secret key is required')
   }
   return key
 }

@@ -9,6 +9,9 @@ function environmentValue(readEnvironment: EnvironmentReader, name: string) {
 export function getSupabaseServerKey(
   readEnvironment: EnvironmentReader = (name) => Deno.env.get(name),
 ) {
+  const deployedSecret = environmentValue(readEnvironment, 'HM_SUPABASE_SERVER_KEY')
+  if (deployedSecret.startsWith('sb_secret_')) return deployedSecret
+
   const directSecret = environmentValue(readEnvironment, 'SUPABASE_SECRET_KEY')
   if (directSecret.startsWith('sb_secret_')) return directSecret
 

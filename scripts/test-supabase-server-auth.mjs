@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { getSupabaseServerKey, supabaseServerFetch, supabaseServerHeaders } from './supabase-server-auth.mjs'
 
 const fakeSecret = ['sb', 'secret', 'unit', 'test'].join('_')
+assert.equal(getSupabaseServerKey({ HM_SUPABASE_SERVER_KEY: fakeSecret }), fakeSecret)
 assert.equal(getSupabaseServerKey({ SUPABASE_SECRET_KEY: fakeSecret }), fakeSecret)
 assert.throws(() => getSupabaseServerKey({ SUPABASE_SECRET_KEY: 'legacy.jwt.value' }))
 
@@ -29,6 +30,7 @@ await guardedFetch('https://example.invalid', {
 assert.equal(capturedHeaders.get('Authorization'), 'Bearer legitimate-user-jwt')
 
 const edgeHelper = readFileSync('supabase/functions/_shared/supabase-server-auth.ts', 'utf8')
+assert.match(edgeHelper, /HM_SUPABASE_SERVER_KEY/)
 assert.match(edgeHelper, /SUPABASE_SECRET_KEYS/)
 assert.match(edgeHelper, /HM_SUPABASE_SECRET_NAME/)
 assert.match(edgeHelper, /headers\.delete\('Authorization'\)/)
