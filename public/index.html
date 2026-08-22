@@ -16013,8 +16013,8 @@
       // Preferred saved corridor sources — exempt from oversized guard & fragment cleanup
       var PREFERRED_CORRIDOR_SOURCES = ['corridor', 'nexrad_poc', 'mrms_mesh', 'synthesized_mesh', 'nexrad_iem'];
       var _verboseDateLogs = MAPS_VERBOSE_DATE_LOGS;
-      // Selected-date clicks no longer auto-focus the map, so skip dead fit-bounds bookkeeping here.
-      var _trackFocusGeometry = false;
+      // Keep selected geometry bounds so the visible date flow can focus the rendered swaths.
+      var _trackFocusGeometry = true;
 
       // Cache raw rows for nearby-storm radius search in property panel
       mapsState.rawStormRows[dateStr] = rows || [];
@@ -18483,6 +18483,14 @@
         });
       }
 
+      var _focusDateBbox = mapsState._dateBbox && mapsState._dateBbox[dateStr];
+      if (!_hasPropertyContext && _focusDateBbox && _focusDateBbox.hasAny) {
+        var _focusDateBounds = new google.maps.LatLngBounds();
+        _focusDateBounds.extend({ lat: _focusDateBbox.minLat, lng: _focusDateBbox.minLon });
+        _focusDateBounds.extend({ lat: _focusDateBbox.maxLat, lng: _focusDateBbox.maxLon });
+        return _focusFitAndCache(_focusDateBounds, 'selected-date-swaths', false);
+      }
+
       var _focusReportPoints = []
         .concat(mapsState.lsrPointsByDate[dateStr] || [])
         .concat(mapsState.windPointsByDate[dateStr] || [])
@@ -19243,12 +19251,14 @@
             ms: _totalElapsed
           });
           hmDebugLog('[loadStormDate] swaths visible ' + dateStr + ' in ' + _totalElapsed + 'ms');
+          var fitResult = drew ? await fitMapToStormDate(dateStr) : null;
+          _stormTiming.focusMs = Date.now() - _stormClickT0 - _totalElapsed;
           return {
             canceled: _stormIsCanceled(),
             drew: drew,
             swathN: swathN,
             src: src,
-            fitResult: null
+            fitResult: fitResult
           };
         };
 

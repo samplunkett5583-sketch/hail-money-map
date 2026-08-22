@@ -97,6 +97,7 @@ assert.equal(context.mapsHailRowProvenance(reportRows[3]).eventDate, fixture.eve
 
 const savedRendererBody = extractFunction('mapsDrawSavedStormPolygonForDate');
 assert.match(savedRendererBody, /mapsSelectHailCoverageRows\(rows \|\| \[\], dateStr\)/, 'the saved renderer must use the authoritative selector');
+assert.match(savedRendererBody, /var _trackFocusGeometry = true;/, 'selected-date rendering must retain combined swath bounds for automatic focus');
 const campaignSyncBody = extractFunction('cmpSyncSwaths');
 assert.match(campaignSyncBody, /mapsState\.swathPolygons/, 'Campaign must clone the already-selected visible swaths from Maps');
 
@@ -110,6 +111,63 @@ assert.match(html, /function purgeNonPinnedDateOverlays\(/, 'date lifecycle must
 assert.match(html, /function mapsRemovePointsForDate\(/, 'date lifecycle must retain per-date overlay cleanup');
 assert.doesNotMatch(html, /MAPS_REVIEWED_HAIL_DISPLAY_TRACKS\s*=\s*\[(?!\s*\])/, 'browser-authored display tracks must remain disabled');
 assert.doesNotMatch(fs.readFileSync(new URL('../supabase/functions/swath-render/index.ts', import.meta.url), 'utf8'), /MARCH_2026_SYNTHETIC/, 'synthetic reference-image anchors must not produce real swaths');
+
+const datePickerBody = extractFunction('mapsWireDatePicker');
+assert.match(datePickerBody, /loadStormDate\(val\)/, 'the visible date control must trigger the normal storm-date load');
+const drawDateBody = extractFunction('mapsDrawDate');
+assert.match(drawDateBody, /drew \? await fitMapToStormDate\(dateStr\) : null/, 'the normal date load must await viewport focus after attaching saved swaths');
+const focusBody = extractFunction('fitMapToStormDate');
+assert.match(focusBody, /mapsState\._dateBbox && mapsState\._dateBbox\[dateStr\]/, 'viewport focus must use the combined selected-date geometry bounds');
+assert.match(focusBody, /'selected-date-swaths'/, 'combined selected-date focus must be distinguishable in diagnostics');
+
+class TestBounds {
+  constructor() { this.points = []; }
+  extend(point) { this.points.push({ lat: Number(point.lat), lng: Number(point.lng) }); return this; }
+  getNorthEast() { return { lat: () => Math.max(...this.points.map((p) => p.lat)), lng: () => Math.max(...this.points.map((p) => p.lng)) }; }
+  getSouthWest() { return { lat: () => Math.min(...this.points.map((p) => p.lat)), lng: () => Math.min(...this.points.map((p) => p.lng)) }; }
+  getCenter() {
+    const ne = this.getNorthEast();
+    const sw = this.getSouthWest();
+    return { lat: () => (ne.lat() + sw.lat()) / 2, lng: () => (ne.lng() + sw.lng()) / 2 };
+  }
+  contains() { return true; }
+}
+const finalMap = {
+  zoom: 5,
+  center: { lat: () => 39.2, lng: () => -96 },
+  fitBoundsCalls: [],
+  fitBounds(bounds) { this.fitBoundsCalls.push(bounds); this.center = bounds.getCenter(); this.zoom = 8; },
+  getZoom() { return this.zoom; },
+  setZoom(value) { this.zoom = value; },
+  getCenter() { return this.center; },
+  setCenter(value) { this.center = { lat: () => value.lat, lng: () => value.lng }; },
+};
+const flowState = {
+  map: finalMap,
+  selectedProperty: null,
+  _fitBoundsCache: {},
+  _dateBbox: { [fixture.eventDate]: { minLat: 38.78, maxLat: 39.02, minLon: -90.32, maxLon: -89.98, hasAny: true } },
+  lsrPointsByDate: {}, windPointsByDate: {}, tornadoPointsByDate: {}, focusCandidatesByDate: {}, aiSwathOverlays: {}, refSwathOverlays: {},
+};
+const flowContext = vm.createContext({
+  console,
+  mapsState: flowState,
+  mapsNormalizeDate: (value) => String(value || '').slice(0, 10),
+  google: {
+    maps: {
+      LatLngBounds: TestBounds,
+      LatLng: class { constructor(lat, lng) { this._lat = lat; this._lng = lng; } lat() { return this._lat; } lng() { return this._lng; } },
+      event: { addListenerOnce(_map, _event, callback) { callback(); } },
+    },
+  },
+});
+vm.runInContext(focusBody, flowContext);
+const fitResult = await flowContext.fitMapToStormDate(fixture.eventDate);
+assert.equal(finalMap.fitBoundsCalls.length, 1, 'untouched nationwide/default view must fit once after May 3 selection');
+assert.equal(fitResult.source, 'selected-date-swaths');
+assert.ok(finalMap.getCenter().lat() > 38.7 && finalMap.getCenter().lat() < 39.1, 'final center must contain the selected Madison County geometry');
+assert.ok(finalMap.getCenter().lng() > -90.4 && finalMap.getCenter().lng() < -89.9, 'final center must contain the selected Alton-area geometry');
+assert.ok(finalMap.getZoom() >= 6 && finalMap.getZoom() <= 9, 'final zoom must leave nationwide view and make selected swaths visible');
 
 console.log('Money Maps May 3 authority fixture passed:', {
   date: fixture.eventDate,
