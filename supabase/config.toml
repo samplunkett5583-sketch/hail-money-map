@@ -390,5 +390,9 @@ verify_jwt = false
 verify_jwt = false
 [functions.storm-lsr-by-date]
 verify_jwt = false
+[functions.property-campaign-search]
+verify_jwt = false
+[functions.zillow-property]
+verify_jwt = false
 [functions.hail-near-point]
 verify_jwt = false
