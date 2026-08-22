@@ -98,6 +98,7 @@ assert.equal(context.mapsHailRowProvenance(reportRows[3]).eventDate, fixture.eve
 const savedRendererBody = extractFunction('mapsDrawSavedStormPolygonForDate');
 assert.match(savedRendererBody, /mapsSelectHailCoverageRows\(rows \|\| \[\], dateStr\)/, 'the saved renderer must use the authoritative selector');
 assert.match(savedRendererBody, /var _trackFocusGeometry = true;/, 'selected-date rendering must retain combined swath bounds for automatic focus');
+assert.match(savedRendererBody, /_trackFocusGeometry && stormType === 'hail'/, 'automatic focus bounds must exclude non-hail rows without changing their overlays');
 const campaignSyncBody = extractFunction('cmpSyncSwaths');
 assert.match(campaignSyncBody, /mapsState\.swathPolygons/, 'Campaign must clone the already-selected visible swaths from Maps');
 

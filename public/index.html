@@ -16432,7 +16432,7 @@
           }).filter(function (pt) { return isFinite(pt.lat) && isFinite(pt.lng); });
           if (path.length < 3) return;
           totalPoints += path.length;
-          if (_trackFocusGeometry) {
+          if (_trackFocusGeometry && stormType === 'hail') {
             path.forEach(function (pt) {
               if (pt.lat < _dateBbox.minLat) _dateBbox.minLat = pt.lat;
               if (pt.lat > _dateBbox.maxLat) _dateBbox.maxLat = pt.lat;
