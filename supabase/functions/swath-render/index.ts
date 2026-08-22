@@ -872,12 +872,10 @@ serve(async (req: Request) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-    const serverSecretKey = getSupabaseServerKey();
-    const supabaseKey = serverSecretKey || supabaseAnonKey;
+    const supabaseKey = getSupabaseServerKey();
 
     if (!supabaseUrl || !supabaseKey) {
-      return json({ error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" }, 500);
+      return json({ error: "Missing SUPABASE_URL or server secret" }, 500);
     }
 
     const url = new URL(req.url);

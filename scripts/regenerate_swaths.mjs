@@ -6,7 +6,7 @@
  * to rebuild storm_polygons with the improved broad-corridor generator.
  *
  * Usage:
- *   SUPABASE_URL=... SUPABASE_ANON_KEY=... node scripts/regenerate_swaths.mjs
+ *   SUPABASE_URL=... SUPABASE_SECRET_KEY=... node scripts/regenerate_swaths.mjs
  *   node scripts/regenerate_swaths.mjs --date=2026-05-31   # single date
  *   node scripts/regenerate_swaths.mjs --limit=10          # first N dates (newest first)
  *   node scripts/regenerate_swaths.mjs --since=2026-01-01  # dates on/after this date
