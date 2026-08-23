@@ -51894,6 +51894,27 @@ function mapsGoogleReady() {
             var polys = mapsState.swathPolygons[dateStr];
             if (!Array.isArray(polys)) return;
             polys.forEach(function(srcPoly) {
+              if (typeof srcPoly.getPath === 'function' && typeof srcPoly.getPaths !== 'function') {
+                var srcPath = srcPoly.getPath();
+                var path = [];
+                srcPath.forEach(function(ll) {
+                  path.push({ lat: ll.lat(), lng: ll.lng() });
+                  bounds.extend(ll);
+                  hasBounds = true;
+                });
+                var lineClone = new google.maps.Polyline({
+                  path: path, map: map,
+                  geodesic: !!srcPoly.get('geodesic'),
+                  strokeColor: srcPoly.get('strokeColor') || srcPoly.strokeColor || '#FFD700',
+                  strokeOpacity: srcPoly.get('strokeOpacity') != null ? srcPoly.get('strokeOpacity') : 0.6,
+                  strokeWeight: srcPoly.get('strokeWeight') || 1,
+                  clickable: false,
+                  zIndex: srcPoly.get('zIndex') || 5
+                });
+                cmpSwathOverlays.push(lineClone);
+                count++;
+                return;
+              }
               var srcPaths = srcPoly.getPaths();
               var paths = [];
               srcPaths.forEach(function(srcPath) {
