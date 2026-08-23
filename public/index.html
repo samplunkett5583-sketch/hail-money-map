@@ -31884,7 +31884,7 @@ function mapsGoogleReady() {
       var queryT0 = performance.now();
 
       return mapsDedupedDateDetailRequest('storm-polygons:' + normalizedDate, function () {
-        return fetch(url, {
+        return fetch(canonicalUrl, {
         headers: {
           apikey: SUPABASE_ANON_KEY,
           Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
