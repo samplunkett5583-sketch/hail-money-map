@@ -21523,7 +21523,7 @@
                     <button type="button" class="maps-options-style-choice" data-map-style="satellite">Satellite</button>
                     <button type="button" class="maps-options-style-choice" data-map-style="hybrid">Hybrid</button>
                   </div>
-                  <button type="button" id="maps-go-campaign-btn" class="maps-options-action-btn">Go to Campaign</button>
+                  <button type="button" id="maps-go-campaign-btn" class="maps-options-action-btn" aria-pressed="false">Campaign Mode: Off</button>
                   <button type="button" id="maps-start-inspection-btn" class="maps-options-action-btn">Start Inspection</button>
                   <label class="maps-options-check" for="maps-show-hail-spotter-reports">
                     <input type="checkbox" id="maps-show-hail-spotter-reports" />
@@ -21841,6 +21841,7 @@
           <!-- Map Area -->
           <div class="maps-map-area">
             <div id="stormMap" class="maps-map-container"></div>
+            <aside id="maps-campaign-panel" class="maps-campaign-panel" hidden aria-label="Campaign Mode controls"><div class="maps-campaign-panel-title">Campaign Mode</div><div id="maps-campaign-development-notice" class="maps-campaign-development-notice" hidden>Development property data — open-data estimates</div><div id="maps-campaign-production-lock" hidden>Production property data requires an enabled company add-on and an approved licensed provider.</div><div class="maps-campaign-section-label">Drag a marker onto a house</div><div id="maps-campaign-status-pins" class="maps-campaign-status-pins" aria-label="Campaign house markers"></div><label for="maps-campaign-min-value">Minimum home value</label><div class="maps-campaign-value-row"><span>$</span><input id="maps-campaign-min-value" type="number" min="0" step="10000" inputmode="numeric" placeholder="300,000" aria-label="Minimum home value" /><button id="maps-campaign-apply" type="button">Apply</button></div><div id="maps-campaign-results" class="maps-campaign-results" aria-live="polite">Show a storm swath, enter a minimum value, and press Apply.</div><div class="maps-campaign-actions"><button id="maps-campaign-clear-markers" type="button">Clear Markers</button></div><div class="maps-campaign-help">Value tags remain visible while you pan and zoom. Property verification opens only when you zoom to a specific house.</div></aside>
             <aside id="maps-mrms-review-panel" class="maps-mrms-review-panel" hidden aria-label="Local MRMS review controls">
               <div class="maps-mrms-review-controls">
                 <input id="maps-mrms-review-opacity" class="maps-mrms-review-opacity" type="range" min="0" max="100" value="100" aria-label="Swath opacity" />
@@ -29532,23 +29533,138 @@
       };
     }
 
-    function mapsCollectActiveOverlayRefs(dateStr) {
-      var refs = [];
-      [
-        mapsState.swathPolygons[dateStr],
-        mapsState.swathCenterlines[dateStr],
-        mapsState.pointOverlaysByDate[dateStr],
-        mapsState.hailBandPolygons[dateStr],
-        mapsState.windBandPolygons[dateStr],
-        mapsState.tornadoBandPolygons[dateStr]
-      ].forEach(function (list) {
-        if (Array.isArray(list) && list.length) refs = refs.concat(list);
-      });
-      if (mapsState.aiSwathOverlays[dateStr]) refs.push(mapsState.aiSwathOverlays[dateStr]);
-      if (mapsState.hailFieldOverlays[dateStr]) refs.push(mapsState.hailFieldOverlays[dateStr]);
-      if (mapsState.refSwathOverlays[dateStr]) refs.push(mapsState.refSwathOverlays[dateStr]);
-      return refs;
+    function mapsStormOverlayIsVisible(overlay) {
+      if (!overlay) return false;
+      try {
+        if (typeof overlay.getVisible === 'function' && overlay.getVisible() === false) return false;
+        if (typeof overlay.getMap === 'function') return overlay.getMap() === mapsState.map;
+      } catch (_) {}
+      var element = overlay.canvas_ || overlay.div_ || null;
+      if (element && element.style && element.style.display === 'none') return false;
+      return !!(overlay.map === mapsState.map || overlay.map_ === mapsState.map || element);
     }
+
+    function mapsStormOverlayDescriptor(collection, dateStr, overlay) {
+      var stormType = String(overlay && overlay._stormType || 'hail').toLowerCase();
+      var source = String(overlay && overlay._source || '').toLowerCase();
+      var sourceProduct = String(overlay && overlay._sourceProduct || '').toLowerCase();
+      var constructionFunction = String(overlay && overlay._constructionFunction || '');
+      var isSavedProviderGeometry = constructionFunction === 'mapsDrawSavedStormPolygonForDate' &&
+        !!(overlay && overlay._canonicalGeometry) && VALID_SWATH_SOURCES.indexOf(source) !== -1;
+      var isAreaSearchProviderGeometry = collection === 'areaSearchOverlays' &&
+        !!(overlay && overlay._canonicalGeometry) && VALID_SWATH_SOURCES.indexOf(source) !== -1;
+      var isSwath = collection === 'swathPolygons' || collection === 'swathCenterlines' ||
+        collection === 'areaSearchOverlays' || collection === 'aiSwathOverlays' ||
+        collection === 'hailFieldOverlays' || collection === 'hailBandPolygons' ||
+        collection === 'windBandPolygons' || collection === 'tornadoBandPolygons' ||
+        collection === 'refSwathOverlays';
+      return {
+        overlay: overlay,
+        collection: collection,
+        date: mapsNormalizeDate(dateStr || (overlay && overlay._dateStr) || ''),
+        stormType: stormType,
+        source: source || null,
+        sourceProduct: sourceProduct || null,
+        provenance: (overlay && overlay._provenance) || null,
+        sourceRowIds: (overlay && overlay._sourceRowIds) ||
+          (overlay && overlay._sourceRowId != null ? [overlay._sourceRowId] : []),
+        constructionFunction: constructionFunction || null,
+        visible: mapsStormOverlayIsVisible(overlay),
+        isSwath: isSwath,
+        legitimate: !isSwath || isSavedProviderGeometry || isAreaSearchProviderGeometry
+      };
+    }
+
+    function mapsBuildActiveStormOverlayRegistry(dateStr) {
+      dateStr = mapsNormalizeDate(dateStr || '');
+      var registry = [];
+      function addList(collection, list, fallbackDate) {
+        (Array.isArray(list) ? list : []).forEach(function (overlay) {
+          if (!overlay) return;
+          var overlayDate = fallbackDate === null
+            ? mapsNormalizeDate(overlay._dateStr || '')
+            : mapsNormalizeDate(fallbackDate || dateStr);
+          registry.push(mapsStormOverlayDescriptor(collection, overlayDate, overlay));
+        });
+      }
+      addList('swathPolygons', mapsState.swathPolygons[dateStr], dateStr);
+      addList('swathCenterlines', mapsState.swathCenterlines[dateStr], dateStr);
+      addList('pointOverlaysByDate', mapsState.pointOverlaysByDate[dateStr], dateStr);
+      addList('hailBandPolygons', mapsState.hailBandPolygons[dateStr], dateStr);
+      addList('windBandPolygons', mapsState.windBandPolygons[dateStr], dateStr);
+      addList('tornadoBandPolygons', mapsState.tornadoBandPolygons[dateStr], dateStr);
+      addList('spotterReportMarkersByDate', mapsState.spotterReportMarkersByDate[dateStr], dateStr);
+      addList('windSpotterReportMarkersByDate', mapsState.windSpotterReportMarkersByDate[dateStr], dateStr);
+      ['aiSwathOverlays', 'hailFieldOverlays', 'refSwathOverlays'].forEach(function (collection) {
+        var overlay = mapsState[collection] && mapsState[collection][dateStr];
+        if (overlay) registry.push(mapsStormOverlayDescriptor(collection, dateStr, overlay));
+      });
+      if (mapsState._areaSearchModeActive) addList('areaSearchOverlays', mapsState.areaSearchOverlays, null);
+      return registry;
+    }
+
+    function mapsGeometryParts(geometry) {
+      if (typeof geometry === 'string') { try { geometry = JSON.parse(geometry); } catch (_) { return []; } }
+      if (!geometry) return [];
+      if (geometry.type === 'FeatureCollection') {
+        return (geometry.features || []).reduce(function (all, feature) {
+          return all.concat(mapsGeometryParts(feature));
+        }, []);
+      }
+      if (geometry.type === 'Feature') return mapsGeometryParts(geometry.geometry);
+      return (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon') ? [geometry] : [];
+    }
+
+    function mapsCollectActiveLegitimateHailSwaths() {
+      var App = mapsGetAppState();
+      var dateStr = mapsNormalizeDate(App.currentVisibleStormDate || mapsState.previewDate || '');
+      var registry = mapsBuildActiveStormOverlayRegistry(dateStr);
+      App.activeStormOverlayRegistry = registry;
+      var output = [], seen = {};
+      registry.forEach(function (entry, entryIndex) {
+        if (!entry.visible || !entry.legitimate || !entry.isSwath || entry.stormType !== 'hail') return;
+        mapsGeometryParts(entry.overlay && entry.overlay._canonicalGeometry).forEach(function (geometry, geometryIndex) {
+          var rowIds = entry.sourceRowIds || [];
+          var id = [entry.date || 'unknown-date', entry.source || 'unknown-source',
+            entry.sourceProduct || 'unknown-product', rowIds.join(',') || 'no-row-id', entryIndex, geometryIndex].join(':');
+          if (seen[id]) return;
+          seen[id] = true;
+          output.push({
+            id: id,
+            date: entry.date || null,
+            source: entry.source,
+            sourceProduct: entry.sourceProduct,
+            provenance: entry.provenance,
+            sourceRowIds: rowIds,
+            layer: entry.collection,
+            geometry: geometry
+          });
+        });
+      });
+      return output;
+    }
+
+    function mapsCollectActiveOverlayRefs(dateStr) {
+      return mapsBuildActiveStormOverlayRegistry(dateStr).map(function (entry) { return entry.overlay; });
+    }
+
+    window.mapsCollectActiveLegitimateHailSwaths = mapsCollectActiveLegitimateHailSwaths;
+    window.mapsActiveStormOverlayRegistry = function () {
+      var App = mapsGetAppState();
+      return (App.activeStormOverlayRegistry || []).map(function (entry) {
+        return {
+          collection: entry.collection,
+          date: entry.date,
+          stormType: entry.stormType,
+          source: entry.source,
+          sourceProduct: entry.sourceProduct,
+          sourceRowIds: entry.sourceRowIds,
+          constructionFunction: entry.constructionFunction,
+          visible: entry.visible,
+          legitimate: entry.legitimate
+        };
+      });
+    };
 
     function mapsDrawInChunks(items, drawOne, chunkSize) {
       items = Array.isArray(items) ? items : [];
@@ -79853,6 +79969,99 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   document.getElementById('hm-markup-canvas').addEventListener('pointerdown',function(e){if(!markup.ctx)return;var tool=document.getElementById('hm-markup-tool').value,p=pos(e);markup.undo.push(markup.ctx.getImageData(0,0,this.width,this.height));if(markup.undo.length>15)markup.undo.shift();if(tool==='text'){var t=prompt('Text to add');if(t){markup.ctx.fillStyle=document.getElementById('hm-markup-color').value;markup.ctx.font='bold 32px Arial';markup.ctx.fillText(t,p.x,p.y);}return;}markup.drawing=true;markup.start=p;markup.base=markup.ctx.getImageData(0,0,this.width,this.height);this.setPointerCapture(e.pointerId);});
   document.getElementById('hm-markup-canvas').addEventListener('pointermove',function(e){if(!markup.drawing)return;var tool=document.getElementById('hm-markup-tool').value,p=pos(e);markup.ctx.strokeStyle=document.getElementById('hm-markup-color').value;markup.ctx.lineWidth=6;markup.ctx.lineCap='round';if(tool==='pen'){markup.ctx.beginPath();markup.ctx.moveTo(markup.start.x,markup.start.y);markup.ctx.lineTo(p.x,p.y);markup.ctx.stroke();markup.start=p;}else preview(tool,markup.start,p);});document.getElementById('hm-markup-canvas').addEventListener('pointerup',function(){markup.drawing=false;});
   document.getElementById('hm-markup-undo').onclick=function(){if(markup.undo.length&&markup.ctx)markup.ctx.putImageData(markup.undo.pop(),0,0);};document.getElementById('hm-markup-clear').onclick=function(){if(markup.ctx){markup.undo=[];markup.ctx.drawImage(markup.image,0,0,markup.canvas.width,markup.canvas.height);}};window.hmOpenInspectionMarkup=function(index){openMarkup('__inspection__',index);};document.getElementById('hm-markup-back').onclick=function(){if(markup.projectId==='__inspection__')showPage('page-inspection-capture');else open(markup.projectId);};document.getElementById('hm-markup-save').onclick=function(){if(!markup.canvas)return;markup.canvas.toBlob(function(blob){var key='markup_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);savePhotoBlob(key,blob).then(function(){if(markup.projectId==='__inspection__'){if(_inspectionSession&&_inspectionSession.photos[markup.index]){_inspectionSession.photos[markup.index].imageKey=key;_inspectionSession.photos[markup.index].markedUp=true;}showPage('page-inspection-capture');}else{var ps=projects();ps.forEach(function(p){if(p.id===markup.projectId&&p.photos[markup.index]){p.photos[markup.index].imageKey=key;p.photos[markup.index].fullUrl='';p.photos[markup.index].markedUp=true;p.updatedAt=new Date().toISOString();}});save(ps);open(markup.projectId);}showUploadToast('Photo markup saved');});},'image/jpeg',.92);};
+})();
+</script>
+<style id="maps-campaign-mode-styles">
+.maps-campaign-panel{position:absolute;top:54px;right:14px;z-index:18;width:350px;padding:14px;border:1px solid rgba(120,82,12,.34);border-radius:12px;background:rgba(255,250,230,.96);box-shadow:0 8px 24px rgba(0,0,0,.2);font:600 13px/1.35 system-ui,sans-serif;color:#29323b;backdrop-filter:blur(7px)}.maps-campaign-panel[hidden]{display:none!important}.maps-campaign-panel-title{font-size:17px;font-weight:800;color:#8a5a00;margin-bottom:10px}.maps-campaign-development-notice{margin:-4px 0 10px;padding:5px 7px;border:1px solid rgba(37,99,235,.25);border-radius:7px;background:rgba(219,234,254,.75);color:#1e3a8a;font-size:10px;font-weight:800}.maps-campaign-section-label{margin:0 0 6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#59636c}.maps-campaign-status-pins{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:14px}.maps-campaign-status-pins .campaign-header-pin{display:flex!important;width:100%;min-width:0;height:38px;padding:4px 5px;gap:4px;background:#202238;color:#fff}.maps-campaign-status-pins .knock-label{white-space:normal;font-size:9px}.maps-campaign-status-pins .knock-icon{width:20px;height:20px;flex-basis:20px}.maps-campaign-panel label{display:block;margin-bottom:5px;font-size:13px;font-weight:800}.maps-campaign-value-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px}.maps-campaign-value-row input{min-width:0;padding:9px;border:1px solid #b9a578;border-radius:7px;background:#fff;font-size:14px}.maps-campaign-value-row button{padding:9px 12px;border:0;border-radius:7px;background:#d69a19;color:#fff;font-weight:800;cursor:pointer}.maps-campaign-results{margin-top:9px;font-weight:700}.maps-campaign-actions{display:flex;justify-content:flex-end;margin-top:10px}.maps-campaign-actions #maps-campaign-clear-markers{padding:8px 12px;border:1px solid rgba(174,39,39,.55);border-radius:7px;background:#fff5f5;color:#9b1c1c;font-weight:800;cursor:pointer}.maps-campaign-actions #maps-campaign-clear-markers:hover{background:#ffe4e4}.maps-campaign-help{margin-top:7px;font-size:11px;font-weight:500;color:#59636c}body.maps-campaign-mode #campaign-header-pins-left{display:none!important}.maps-campaign-drag-over{outline:4px dashed #d69a19;outline-offset:-4px}@media(max-width:700px){.maps-campaign-panel{left:8px;right:8px;top:48px;width:auto}.maps-campaign-status-pins{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+<script id="maps-campaign-mode-script">
+(function(){
+'use strict';var active=false,gold=[],wired=false,campaignRows=[],renderGeneration=0,zoomListener=null,infoWindow=null,lastMinimum=null,lastComplete=false;
+function num(v){if(v==null||v==='')return null;var n=Number(String(v).replace(/[^0-9.-]/g,''));return isFinite(n)?n:null}
+function clearGold(){renderGeneration++;gold.forEach(function(x){try{x.setMap(null)}catch(_){}});gold=[]}
+function clearPropertyResults(){campaignRows=[];lastMinimum=null;lastComplete=false;clearGold()}
+function esc(s){return String(s||'').replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function propertyValueText(value){value=Math.round(Number(value)||0);if(value>=1000000){var millions=Math.round(value/100000)/10;return'$'+String(millions).replace(/\.0$/,'')+'M'}return'$'+Math.round(value/1000)+'K'}
+function propertyValueTagIcon(value){var text=propertyValueText(value),width=Math.max(54,24+text.length*9),height=31;var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'"><rect x="1" y="1" width="'+(width-2)+'" height="24" rx="7" fill="#202238" stroke="#d9a328" stroke-width="2"/><path d="M'+(width/2-5)+' 24 L'+(width/2)+' 30 L'+(width/2+5)+' 24 Z" fill="#202238" stroke="#d9a328" stroke-width="1.5"/><text x="'+(width/2)+'" y="17" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="800" fill="#ffd75a">'+text+'</text></svg>';return{url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),scaledSize:new google.maps.Size(width,height),anchor:new google.maps.Point(width/2,height)}}
+function campaignSafeErrorMessage(message){return String(message||'Property lookup failed').replace(/((?:api[-_ ]?key|authorization|token)\s*[:=]\s*)[^\s,;]+/gi,'$1[redacted]').slice(0,320)}
+function campaignPointInRing(lng,lat,ring){var inside=false;if(!Array.isArray(ring)||ring.length<3)return false;for(var i=0,j=ring.length-1;i<ring.length;j=i++){var xi=Number(ring[i][0]),yi=Number(ring[i][1]),xj=Number(ring[j][0]),yj=Number(ring[j][1]);if(!isFinite(xi)||!isFinite(yi)||!isFinite(xj)||!isFinite(yj))continue;var intersect=((yi>lat)!==(yj>lat))&&(lng<(xj-xi)*(lat-yi)/((yj-yi)||1e-12)+xi);if(intersect)inside=!inside}return inside}
+function campaignPointInGeometry(lng,lat,geometry){if(!geometry)return false;if(geometry.type==='Feature')return campaignPointInGeometry(lng,lat,geometry.geometry);if(geometry.type==='FeatureCollection')return(geometry.features||[]).some(function(feature){return campaignPointInGeometry(lng,lat,feature)});var polygons=geometry.type==='Polygon'?[geometry.coordinates]:(geometry.type==='MultiPolygon'?geometry.coordinates:[]);return polygons.some(function(polygon){if(!polygon||!campaignPointInRing(lng,lat,polygon[0]))return false;for(var i=1;i<polygon.length;i++){if(campaignPointInRing(lng,lat,polygon[i]))return false}return true})}
+function campaignInsideActiveSwath(lat,lng,swaths){return(swaths||[]).some(function(swath){return campaignPointInGeometry(lng,lat,swath.geometry)})}
+function campaignIsDevelopment(){return location.hostname==='localhost'||location.hostname==='127.0.0.1'||new URLSearchParams(location.search||'').get('mapsDebug')==='1'}
+function campaignIsAdminDeveloper(){var role=typeof crmGetRole==='function'?String(crmGetRole()||'').toLowerCase():'';return campaignIsDevelopment()&&(role==='owner'||role==='admin')}
+function campaignUpdateDevelopmentNotice(text){var notice=document.getElementById('maps-campaign-development-notice');if(!notice)return;notice.hidden=!campaignIsAdminDeveloper();if(text&&campaignIsAdminDeveloper())notice.textContent=String(text)}
+function campaignActiveSwaths(){return typeof window.mapsCollectActiveLegitimateHailSwaths==='function'?window.mapsCollectActiveLegitimateHailSwaths():[]}
+async function campaignFetchProperties(swaths,min){
+  var user=window.auth&&window.auth.currentUser,token=user?await user.getIdToken(false):'';
+  if(!token)throw new Error('Sign in to an authorized company workspace before using Campaign Mode.');
+  var payload={swaths:swaths,minimum_value:min,page_size:1000,provider_mode:'development'};
+  var response=await fetch(SUPABASE_URL+'/functions/v1/property-campaign-search',{method:'POST',headers:{apikey:SUPABASE_ANON_KEY,Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  var raw=await response.text(),data=null;
+  try{data=raw?JSON.parse(raw):{}}catch(_){data={error:'The property service returned an unreadable response.'}}
+  var message=campaignSafeErrorMessage(data&&data.error||data&&data.message||response.statusText||'Property lookup failed');
+  if(!response.ok){console.error('[Campaign property search HTTP]',{status:response.status,operation:data&&data.operation||'swath-property-search',batch:data&&data.batch||null,page:data&&data.page||null,message:message});throw new Error('HTTP '+response.status+': '+message)}
+  if(!data||data.success!==true||!Array.isArray(data.properties)){console.error('[Campaign property search schema]',{status:response.status,message:message});throw new Error('HTTP '+response.status+': '+message)}
+  campaignUpdateDevelopmentNotice(data.developmentNotice);
+  return data;
+}
+function campaignSourceText(summary){if(!summary||typeof summary!=='object')return'Cached Overture Maps, ACS and FHFA inputs';var parts=[];if(summary.structureSource)parts.push(String(summary.structureSource)+(summary.structureRelease?' '+summary.structureRelease:''));if(Array.isArray(summary.estimateSources))summary.estimateSources.forEach(function(source){if(source&&source.source)parts.push(String(source.source)+(source.vintage?' '+source.vintage:'')+(source.period?' '+source.period:''))});if(summary.overrideSource)parts.push(String(summary.overrideSource));return parts.length?parts.join(' • '):'Cached Overture Maps, ACS and FHFA inputs'}
+function campaignValueDetailsHtml(row){
+  var value=Number(row.hailMoneyEstimatedValue!=null?row.hailMoneyEstimatedValue:row.estimatedMarketValue),low=Number(row.lowEstimate),high=Number(row.highEstimate),date=row.calculationDate?new Date(row.calculationDate).toLocaleDateString():'Unavailable';
+  var source=esc(campaignSourceText(row.sourceSummary));
+  return '<div style="max-width:300px;font:13px/1.4 system-ui,sans-serif"><strong>'+esc(row.address||'Residential property')+'</strong><div style="margin-top:5px;font-size:16px;font-weight:800;color:#8a5a00">Hail Money estimate: '+esc(propertyValueText(value))+'</div><div>Estimated range: '+esc(propertyValueText(low))+'–'+esc(propertyValueText(high))+'</div><div>Confidence: '+esc(row.confidence||'Low')+'</div><div>Calculation date: '+esc(date)+'</div><div>Method: '+esc(row.valuationMethod||'Open-data modeled estimate')+'</div><div style="margin-top:4px;color:#59636c">Source summary: '+source+'</div><div style="margin-top:6px;font-weight:800">Targeting estimate—not an appraisal</div></div>';
+}
+function campaignClusterIcon(count){var text=String(count)+' homes',width=Math.max(68,28+text.length*8),height=31;var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'"><rect x="1" y="1" width="'+(width-2)+'" height="25" rx="9" fill="#202238" stroke="#d9a328" stroke-width="2"/><text x="'+(width/2)+'" y="18" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="800" fill="#ffd75a">'+text+'</text></svg>';return{url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),scaledSize:new google.maps.Size(width,height),anchor:new google.maps.Point(width/2,height/2)}}
+function renderCampaignRows(){
+  clearGold();if(!active||!mapsState||!mapsState.map||!campaignRows.length)return;var generation=renderGeneration,map=mapsState.map,zoom=Number(map.getZoom()||0),rows=campaignRows.slice();
+  if(zoom<13){var cell=360/(Math.pow(2,zoom)*4),groups={};rows.forEach(function(row){var lat=Number(row.latitude),lng=Number(row.longitude),key=Math.floor(lat/cell)+':'+Math.floor(lng/cell),group=groups[key]||(groups[key]={lat:0,lng:0,count:0,rows:[]});group.lat+=lat;group.lng+=lng;group.count++;group.rows.push(row)});Object.keys(groups).forEach(function(key){var group=groups[key],position={lat:group.lat/group.count,lng:group.lng/group.count},marker=new google.maps.Marker({position:position,map:map,icon:campaignClusterIcon(group.count),title:group.count+' qualifying homes — zoom in to see every Hail Money estimate',zIndex:1000090});marker.addListener('click',function(){map.panTo(position);map.setZoom(Math.max(13,zoom+2))});gold.push(marker)});return}
+  var index=0;function batch(){if(generation!==renderGeneration)return;var stop=Math.min(rows.length,index+150);for(;index<stop;index++){var row=rows[index],lat=Number(row.latitude),lng=Number(row.longitude),value=Number(row.hailMoneyEstimatedValue!=null?row.hailMoneyEstimatedValue:row.estimatedMarketValue);var marker=new google.maps.Marker({position:{lat:lat,lng:lng},map:map,icon:propertyValueTagIcon(value),title:(row.address||'Residential property')+' • Hail Money estimate: '+propertyValueText(value),clickable:true,zIndex:1000100});(function(m,r){m.addListener('click',function(){if(!infoWindow)infoWindow=new google.maps.InfoWindow();infoWindow.setContent(campaignValueDetailsHtml(r));infoWindow.open({map:map,anchor:m})})})(marker,row);gold.push(marker)}if(index<rows.length)requestAnimationFrame(batch)}batch()
+}
+async function render(){
+  clearPropertyResults();
+  if(!active||!window.mapsState||!mapsState.map||!window.google||!google.maps)return;
+  var input=document.getElementById('maps-campaign-min-value'),out=document.getElementById('maps-campaign-results'),min=num(input&&input.value);
+  if(min==null){out.textContent='Enter a minimum home value.';return}
+  var swaths=campaignActiveSwaths();
+  if(!swaths.length){out.textContent='Load a legitimate hail swath first. Hail Spotter markers and fallback shapes are not property-search areas.';return}
+  var started=Date.now();
+  out.textContent='Searching cached open property data inside every active hail swath…';
+  var progressTimer=setInterval(function(){var seconds=Math.max(1,Math.round((Date.now()-started)/1000));out.textContent='Searching '+swaths.length+' active hail '+(swaths.length===1?'swath':'swaths')+' in Supabase and preparing every qualifying card… '+seconds+'s';},1000);
+  try{
+    var data=await campaignFetchProperties(swaths,min),rows=data.properties||[],allComplete=data.complete===true;
+    var count=0,seen={},accepted=[];
+    rows.forEach(function(r){
+      var lat=Number(r.latitude),lng=Number(r.longitude),value=Number(r.hailMoneyEstimatedValue!=null?r.hailMoneyEstimatedValue:r.estimatedMarketValue);
+      if(!isFinite(lat)||!isFinite(lng)||!isFinite(value)||value<min||!campaignInsideActiveSwath(lat,lng,swaths))return;
+      var key=String(r.id||r.address||'')+'|'+lat.toFixed(5)+'|'+lng.toFixed(5);
+      if(seen[key])return;
+      seen[key]=true;
+      accepted.push(r);count++;
+    });
+    campaignRows=accepted;lastMinimum=min;lastComplete=allComplete;renderCampaignRows();
+    var diagnostics=Object.assign({},data.diagnostics||{}, {uniquePriceMarkersCreated:count,serverClientQualifyingCountMatch:Number(data.diagnostics&&data.diagnostics.uniqueQualifyingProperties)===count});
+    window.mapsCampaignLastResult={properties:rows,tags:count,minimumValue:min,complete:allComplete,diagnostics:diagnostics,diagnosticTable:data.diagnosticTable||[],diagnosticAddresses:data.diagnosticAddresses||[]};
+    if(campaignIsDevelopment()){console.info('[Campaign diagnostics]',window.mapsCampaignLastResult.diagnostics);if(data.diagnosticTable&&console.table)console.table(data.diagnosticTable);if(data.diagnosticAddresses&&console.table)console.table(data.diagnosticAddresses)}
+    var finalText=allComplete
+      ? count+' '+(count===1?'home':'homes')+' inside the active hail swaths have Hail Money estimated values at or above $'+Math.round(min).toLocaleString()+'.'
+      : 'Partial coverage: '+count+' qualifying '+(count===1?'home':'homes')+' found. Open property-data coverage is still being prepared for part of the active swaths.';
+    if(!allComplete&&data.importJob&&data.importJob.status)finalText+=' Import status: '+campaignSafeErrorMessage(data.importJob.status)+(Number(data.importJob.records_inserted)>0?' • '+Number(data.importJob.records_inserted).toLocaleString()+' estimates cached':'')+'.';
+    if(count!==rows.length)finalText+=' '+(rows.length-count)+' returned record'+(rows.length-count===1?' was':'s were')+' rejected by the client containment/deduplication check.';
+    out.textContent=finalText;
+  }catch(error){
+    var message=campaignSafeErrorMessage(error&&error.message||'property-data request failed');
+    console.error('[Campaign property search failed]',{message:message,error:error});
+    out.textContent='Property values could not load. '+message;
+  }finally{clearInterval(progressTimer)}
+}
+function movePins(){var host=document.getElementById('campaign-header-pins-left'),src=document.getElementById('cmpKnockPanel');if(!host||!src||host.children.length)return;Array.prototype.slice.call(src.querySelectorAll('.knock-btn')).forEach(function(b){b.classList.add('campaign-header-pin');b.draggable=true;b.title='Drag '+(b.dataset.label||'status')+' onto a house';host.appendChild(b)})}
+function populatePanelPins(){var panel=document.getElementById('maps-campaign-status-pins');if(!panel)return;panel.innerHTML='';var seen={};var buttons=document.querySelectorAll('#campaign-header-pins-left .campaign-header-pin,#cmpKnockPanel .knock-btn');Array.prototype.forEach.call(buttons,function(source){var status=source.dataset.status||'';if(!status||seen[status])return;seen[status]=true;var b=source.cloneNode(true);b.removeAttribute('id');b.classList.add('campaign-header-pin');b.draggable=true;b.title='Drag '+(b.dataset.label||'this marker')+' onto a house';panel.appendChild(b)})}
+function saveDrop(lat,lng,status,label){var key='hmm_campaign_markers_v2',a=[];try{a=JSON.parse(localStorage.getItem(key)||'[]');if(!Array.isArray(a))a=[]}catch(_){a=[]}a.push({lat:lat,lng:lng,status:status||'note',label:label||'Campaign Address',address:'',createdAt:new Date().toISOString()});localStorage.setItem(key,JSON.stringify(a));if(typeof mapsRenderCampaignAddressMarkers==='function'){mapsState.showCampaignAddressMarkers=true;mapsRenderCampaignAddressMarkers()}if(typeof showUploadToast==='function')showUploadToast((label||'Door result')+' saved')}
+function clearMarkers(){if(!window.confirm('Clear all campaign markers and property-value cards from the map?'))return;clearPropertyResults();try{localStorage.setItem('hmm_campaign_markers_v2','[]')}catch(_){}if(typeof window.campaignClearAllMarkers==='function')window.campaignClearAllMarkers();if(typeof mapsClearCampaignAddressMarkers==='function')mapsClearCampaignAddressMarkers();if(window._mapsSearchMarker){try{window._mapsSearchMarker.setMap(null);window._mapsSearchMarker.setPosition(null)}catch(_){}}if(window._mapsMyLocationMarker){try{window._mapsMyLocationMarker.setMap(null);window._mapsMyLocationMarker.setPosition(null)}catch(_){}}if(typeof mapsState!=='undefined')mapsState.selectedProperty=null;if(typeof ppClose==='function')ppClose();populatePanelPins();var out=document.getElementById('maps-campaign-results');if(out)out.textContent='All campaign markers and property-value cards cleared.';if(typeof showUploadToast==='function')showUploadToast('Campaign markers cleared')}
+function wireDrop(){if(wired)return;var el=document.getElementById('stormMap');if(!el)return;wired=true;var status='',label='';document.addEventListener('dragstart',function(e){var b=e.target.closest&&e.target.closest('.campaign-header-pin');if(!active||!b)return;status=b.dataset.status||'note';label=b.dataset.label||'Door result'});el.addEventListener('dragover',function(e){if(!active||!status)return;e.preventDefault();el.classList.add('maps-campaign-drag-over')});el.addEventListener('dragleave',function(){el.classList.remove('maps-campaign-drag-over')});el.addEventListener('drop',function(e){e.preventDefault();el.classList.remove('maps-campaign-drag-over');if(!active||!status||!mapsState.map)return;var b=mapsState.map.getBounds(),r=el.getBoundingClientRect();if(!b)return;var ne=b.getNorthEast(),sw=b.getSouthWest(),lat=ne.lat()-((e.clientY-r.top)/r.height)*(ne.lat()-sw.lat()),lng=sw.lng()+((e.clientX-r.left)/r.width)*(ne.lng()-sw.lng());saveDrop(lat,lng,status,label);status='';label=''})}
+function setActive(on){active=!!on;document.body.classList.toggle('maps-campaign-mode',active);var panel=document.getElementById('maps-campaign-panel'),btn=document.getElementById('maps-go-campaign-btn');if(panel)panel.hidden=!active;if(btn){btn.textContent='Campaign Mode: '+(active?'On':'Off');btn.setAttribute('aria-pressed',String(active))}if(active){campaignUpdateDevelopmentNotice('Development property data — open-data estimates');movePins();populatePanelPins();wireDrop();if(!zoomListener&&mapsState&&mapsState.map)zoomListener=mapsState.map.addListener('zoom_changed',function(){if(active&&campaignRows.length)renderCampaignRows()});var out=document.getElementById('maps-campaign-results');if(out&&!gold.length)out.textContent='Enter a minimum home value and press Apply.'}else clearPropertyResults()}
+window.mapsSetCampaignMode=setActive;
+document.addEventListener('click',function(e){var go=e.target.closest&&e.target.closest('#maps-go-campaign-btn');if(go){e.preventDefault();e.stopImmediatePropagation();setActive(!active);return}var apply=e.target.closest&&e.target.closest('#maps-campaign-apply');if(apply){e.preventDefault();render();return}var clear=e.target.closest&&e.target.closest('#maps-campaign-clear-markers');if(clear){e.preventDefault();clearMarkers();return}var old=e.target.closest&&e.target.closest('#open-campaigns');if(old){e.preventDefault();e.stopImmediatePropagation();if(typeof showPage==='function')showPage('page-map');setTimeout(function(){setActive(true)},350)}},true);
+document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.target&&e.target.id==='maps-campaign-min-value'){e.preventDefault();render()}});
 })();
 </script></body>
 </html>
