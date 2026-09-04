@@ -18825,28 +18825,41 @@
     }
     /* Estimates — professional CRM workspace and composable scope */
     #page-estimates,
-    #page-est-ai {
+    #page-est-ai,
+    #page-est-ai-processing,
+    #page-est-ai-result {
       background: linear-gradient(145deg, #17192d 0%, #202239 58%, #17192d 100%);
       color: #fff;
       min-height: 100%;
     }
     #page-estimates .placeholder-wrap,
-    #page-est-ai .placeholder-wrap {
+    #page-est-ai .placeholder-wrap,
+    #page-est-ai-processing .placeholder-wrap,
+    #page-est-ai-result .placeholder-wrap {
       max-width: 1120px;
       padding-bottom: 48px;
     }
     #page-estimates .page-title,
-    #page-est-ai .page-title { color: #f2c85f; }
+    #page-est-ai .page-title,
+    #page-est-ai-processing .page-title,
+    #page-est-ai-result .page-title { color: #f2c85f; }
     #page-estimates .page-subtitle,
-    #page-est-ai .page-subtitle { color: #e7dfca; }
+    #page-est-ai .page-subtitle,
+    #page-est-ai-processing .page-subtitle,
+    #page-est-ai-result .page-subtitle { color: #e7dfca; }
     #page-estimates .main-menu-card,
     #page-est-ai .main-menu-card,
+    #page-est-ai-processing .main-menu-card,
+    #page-est-ai-result .main-menu-card,
     #page-estimates .estimates-gold-card {
       background: #fffdf7;
       border: 1px solid rgba(201,157,62,.55);
       box-shadow: 0 12px 28px rgba(0,0,0,.18);
       color: #17192d;
     }
+    #page-est-ai [hidden],
+    #page-est-ai-processing [hidden],
+    #page-est-ai-result [hidden] { display:none !important; }
     .estimates-workspace { display:grid; gap:12px; }
     .estimates-intro { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; padding:22px 24px; border:1px solid rgba(201,157,62,.45); border-radius:14px; background:#202239; box-shadow:0 14px 32px rgba(0,0,0,.2); }
     .estimates-intro h1 { margin:0 0 5px; color:#fff; font-size:25px; }
@@ -18957,8 +18970,19 @@
       background:linear-gradient(180deg,#f1d474 0%,#e5b93f 58%,#d99a27 100%);
     }
     #page-estimates .estimates-dashboard-grid { grid-template-columns:1fr; }
-    #page-estimates .estimates-scope-panel,
+    #page-estimates .estimates-dashboard-grid,
     #page-estimates .estimates-tools-panel { display:none; }
+    #page-estimates [hidden] { display:none !important; }
+    #page-estimates .estimates-creation-flow { display:grid; gap:12px; width:min(920px,100%); margin:0 auto; }
+    #page-estimates .estimates-flow-step { border:1px solid rgba(115,82,17,.32); background:rgba(255,253,247,.94); box-shadow:0 8px 22px rgba(89,57,5,.12); }
+    #page-estimates .estimates-choice-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    #page-estimates .estimates-choice-grid-two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    #page-estimates [data-est-measurement-source].is-selected { border-color:#c99d3e; background:#fff8e5; box-shadow:inset 4px 0 0 #d4a93e; }
+    #page-estimates .estimates-provider-panel { display:grid; gap:10px; margin-top:12px; padding:12px; border:1px solid #d7d9e0; border-radius:8px; background:#f7f7f8; color:#17192d; }
+    #page-estimates .estimates-provider-panel strong { display:block; font-size:13px; }
+    #page-estimates .estimates-provider-panel > div > span { display:block; margin-top:3px; color:#666879; font-size:12px; }
+    #page-estimates .estimates-provider-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 11px; border:1px solid #dedfe5; border-radius:7px; background:#fff; font-size:13px; font-weight:700; }
+    #page-estimates .estimates-provider-row .estimates-provider-status { display:inline-flex; margin:0; padding:4px 8px; border-radius:999px; background:#eeeff3; color:#696c79; font-size:11px; font-weight:700; }
     #page-estimates .estimates-glass-field {
       position:relative;
       padding:20px 18px 18px;
@@ -19003,11 +19027,108 @@
       box-shadow:0 5px 14px rgba(23,25,45,.08);
     }
     .estimate-utility-grid .menu-row { min-height:62px !important; }
+    .est-ai-workspace { color:#17192d; }
+    .est-ai-setup-card { margin-bottom:14px; }
+    .est-ai-address-grid { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(145px,.8fr) minmax(110px,.5fr); gap:10px; }
+    .est-ai-field { display:grid; gap:5px; color:#17192d; font-size:11px; font-weight:800; letter-spacing:.025em; }
+    .est-ai-field-wide { grid-column:1/-1; }
+    .est-ai-field .field-input { width:100%; min-width:0; margin:0; }
+    .est-ai-field [aria-invalid="true"] { border-color:#a32626; box-shadow:0 0 0 2px rgba(163,38,38,.12); }
+    .est-ai-inline-status { color:#666879; font-size:12px; line-height:1.4; }
+    .est-ai-inline-status.is-error { color:#a32626; }
+    .est-ai-inline-status.is-success { color:#217346; }
+    .est-ai-abc-row { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .est-ai-abc-actions { display:flex; flex:0 0 auto; gap:8px; }
+    .est-ai-abc-selection { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+    .est-ai-abc-selection .field-input { width:100%; margin-top:5px; }
+    .est-ai-start-button { width:100%; min-height:48px; margin-bottom:14px; font-size:15px; font-weight:800; }
+    .est-ai-start-button:disabled { cursor:not-allowed; opacity:.55; }
+    .est-ai-saved-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:9px 0; border-top:1px solid #e2dccd; }
+    .est-ai-saved-row:first-child { border-top:0; padding-top:0; }
+    .est-ai-saved-row strong,.est-ai-saved-row span { display:block; }
+    .est-ai-saved-row span { margin-top:2px; color:#666879; font-size:12px; }
+    .est-ai-processing-card,.est-ai-photo-request,.est-ai-result-card,.est-ai-result-header { margin-bottom:14px; }
+    .est-ai-processing-status { margin-bottom:10px; color:#17192d; font-size:14px; font-weight:700; }
+    .est-ai-progress-track { height:9px; overflow:hidden; border-radius:999px; background:#e2e3e8; }
+    .est-ai-progress-track span { display:block; width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#b8831e,#e0b541); transition:width .25s ease; }
+    .est-ai-progress-list { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin:14px 0 0; padding:0; list-style:none; }
+    .est-ai-progress-list li { display:flex; gap:8px; min-width:0; padding:10px; border:1px solid #dddfe5; border-radius:8px; background:#f7f7f8; }
+    .est-ai-progress-list li > span { display:grid; place-items:center; flex:0 0 25px; height:25px; border-radius:50%; background:#e4e5e9; font-size:12px; font-weight:800; }
+    .est-ai-progress-list li strong,.est-ai-progress-list li small { display:block; }
+    .est-ai-progress-list li strong { font-size:12px; }
+    .est-ai-progress-list li small { margin-top:3px; color:#707381; font-size:11px; }
+    .est-ai-progress-list li.is-active { border-color:#c99d3e; background:#fff9e8; }
+    .est-ai-progress-list li.is-complete > span { background:#217346; color:#fff; }
+    .est-ai-progress-list li.is-failed { border-color:#b94040; background:#fff4f4; }
+    .est-ai-progress-list li.is-failed > span { background:#a32626; color:#fff; }
+    .est-ai-processing-actions { display:flex; justify-content:flex-end; margin-top:12px; }
+    .est-ai-photo-request > p,.est-ai-photo-request li { color:#343746; font-size:13px; line-height:1.45; }
+    .est-ai-photo-actions { display:flex; gap:8px; margin:12px 0; }
+    .est-ai-photo-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:10px; }
+    .est-ai-photo-card { overflow:hidden; border:1px solid #d7d9e0; border-radius:8px; background:#fff; }
+    .est-ai-photo-card img { display:block; width:100%; height:105px; object-fit:cover; background:#eee; }
+    .est-ai-photo-card-body { display:grid; gap:6px; padding:8px; }
+    .est-ai-photo-card-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; font-weight:700; }
+    .est-ai-photo-progress { height:6px; overflow:hidden; border-radius:99px; background:#e4e5e9; }
+    .est-ai-photo-progress span { display:block; width:0; height:100%; background:#c99d3e; }
+    .est-ai-photo-card-actions { display:flex; gap:5px; }
+    .est-ai-photo-card-actions button { flex:1; padding:5px; border:1px solid #d4d6dd; border-radius:5px; background:#fff; cursor:pointer; font-size:10px; }
+    .est-ai-photo-request > .btn-primary { width:100%; margin-top:12px; }
+    .est-ai-modal-backdrop { position:fixed; inset:0; z-index:1900; display:grid; place-items:center; padding:18px; background:rgba(12,14,28,.72); }
+    .est-ai-modal-card { width:min(560px,100%); max-height:calc(100dvh - 36px); overflow:auto; padding:22px; border:1px solid #c99d3e; border-radius:14px; background:#fffdf7; box-shadow:0 24px 70px rgba(0,0,0,.42); color:#17192d; }
+    .est-ai-modal-kicker { color:#956817; font-size:11px; font-weight:900; letter-spacing:.09em; }
+    .est-ai-modal-card h2 { margin:6px 0; font-size:21px; }
+    .est-ai-modal-card > p { font-size:15px; line-height:1.5; }
+    .est-ai-question-options { display:grid; gap:8px; margin:14px 0; }
+    .est-ai-question-options button { padding:10px 12px; border:1px solid #d5d7de; border-radius:7px; background:#fff; color:#17192d; cursor:pointer; text-align:left; font-weight:700; }
+    .est-ai-question-options button.is-selected { border-color:#c99d3e; background:#fff7dc; box-shadow:inset 4px 0 0 #c99d3e; }
+    .est-ai-modal-actions { display:flex; justify-content:space-between; gap:8px; margin-top:16px; }
+    .est-ai-result-header { display:flex; justify-content:space-between; gap:24px; }
+    .est-ai-result-header h2 { margin:0; font-size:22px; }
+    .est-ai-result-header p { margin:5px 0 0; color:#555968; }
+    .est-ai-result-header dl { display:grid; grid-template-columns:auto auto; align-content:start; gap:5px 14px; margin:0; font-size:12px; }
+    .est-ai-result-header dt { color:#666879; }
+    .est-ai-result-header dd { margin:0; font-weight:700; text-align:right; }
+    .est-ai-measurement-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:9px; }
+    .est-ai-measurement-card { padding:10px; border:1px solid #dcdee4; border-radius:8px; background:#f8f8fa; }
+    .est-ai-measurement-card strong,.est-ai-measurement-card span,.est-ai-measurement-card small { display:block; }
+    .est-ai-measurement-card span { margin:6px 0; font-size:16px; font-weight:800; }
+    .est-ai-measurement-card small { color:#686b78; line-height:1.35; }
+    .est-ai-confidence-needs-verification { color:#a05d00 !important; }
+    .est-ai-table-wrap { overflow-x:auto; }
+    .est-ai-line-table { width:100%; min-width:1000px; border-collapse:collapse; }
+    .est-ai-line-table th,.est-ai-line-table td { padding:7px; border-bottom:1px solid #e0e1e5; text-align:left; vertical-align:top; font-size:11px; }
+    .est-ai-line-table th { color:#555968; font-weight:800; }
+    .est-ai-line-table input,.est-ai-line-table select { width:100%; min-width:70px; padding:7px; border:1px solid #cfd1d8; border-radius:5px; background:#fff; font:inherit; }
+    .est-ai-line-table td:first-child input { min-width:190px; }
+    .est-ai-remove-line { border:0; background:transparent; color:#a32626; cursor:pointer; font-size:19px; }
+    .est-ai-empty-state { padding:20px; color:#686b78; text-align:center; font-size:13px; }
+    .est-ai-totals { display:flex; justify-content:flex-end; align-items:flex-start; gap:30px; margin-top:14px; }
+    .est-ai-totals > label { display:grid; gap:5px; width:120px; font-size:11px; font-weight:800; }
+    .est-ai-totals dl { width:min(290px,100%); margin:0; }
+    .est-ai-totals dl div { display:flex; justify-content:space-between; gap:20px; padding:5px 0; }
+    .est-ai-totals dd { margin:0; font-weight:700; }
+    .est-ai-totals .grand { margin-top:5px; padding-top:10px; border-top:2px solid #17192d; font-size:16px; font-weight:900; }
+    .est-ai-assumption { display:flex; gap:8px; margin-bottom:8px; padding:9px; border:1px solid #ead6a8; border-radius:7px; background:#fff9e8; color:#5a471f; font-size:12px; }
+    .est-ai-save-row { display:flex; justify-content:flex-end; align-items:center; gap:14px; color:#e7dfca; }
+    .est-ai-save-row .btn { min-width:170px; }
     @media (max-width: 620px) {
       .est-scope-palette { grid-template-columns: 1fr; }
       .est-scope-source { min-height: 50px; }
       .estimates-scope-row, .estimates-dashboard-grid { grid-template-columns:1fr; }
       .estimate-path-grid { grid-template-columns:1fr; }
+      #page-estimates .estimates-choice-grid,
+      #page-estimates .estimates-choice-grid-two { grid-template-columns:1fr; }
+      #page-estimates .estimates-provider-row { align-items:flex-start; flex-direction:column; }
+      .est-ai-address-grid,.est-ai-abc-selection { grid-template-columns:1fr; }
+      .est-ai-field-wide { grid-column:auto; }
+      .est-ai-abc-row,.est-ai-result-header,.est-ai-totals { align-items:stretch; flex-direction:column; }
+      .est-ai-abc-actions { width:100%; }
+      .est-ai-abc-row .btn { flex:1; }
+      .est-ai-progress-list { grid-template-columns:1fr; }
+      .est-ai-photo-actions,.est-ai-modal-actions,.est-ai-save-row { flex-direction:column; }
+      .est-ai-photo-actions .btn,.est-ai-modal-actions .btn,.est-ai-save-row .btn { width:100%; }
+      .est-ai-totals > label,.est-ai-totals dl { width:100%; }
       .estimates-intro { padding:18px; }
     }
     /* Estimates standard CRM shell */
@@ -20967,9 +21088,6 @@
               </button>
               <button class="nav-item" type="button" data-dashboard-action="map" aria-label="Map">
                 <span class="dash-icon" data-dash-icon="map" aria-hidden="true"></span><span class="nav-label">Map</span>
-              </button>
-              <button class="nav-item" type="button" data-dashboard-action="campaigns" aria-label="Campaigns">
-                <span class="dash-icon" data-dash-icon="speakerphone" aria-hidden="true"></span><span class="nav-label">Campaign</span>
               </button>
               <button class="nav-item" type="button" data-dashboard-action="estimates" aria-label="Estimates">
                 <span class="dash-icon" data-dash-icon="file-dollar" aria-hidden="true"></span><span class="nav-label">Estimates</span>
@@ -23068,42 +23186,40 @@
           <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
           <div class="crm-dashboard-mini-body estimates-workspace">
 
-          <section class="main-menu-card estimates-gold-card estimates-panel estimates-scope-panel">
-            <div class="estimates-panel-heading"><div><h2>Project scope</h2><p>Select one or more parts of the property to estimate.</p></div></div>
-            <div class="estimates-scope-row">
-              <div id="est-scope-options" class="est-scope-palette">
-                <button class="est-scope-source is-selected" type="button" draggable="true" data-est-scope="roof" aria-pressed="true">Roof</button>
-                <button class="est-scope-source" type="button" draggable="true" data-est-scope="siding" aria-pressed="false">Siding</button>
-                <button class="est-scope-source" type="button" draggable="true" data-est-scope="gutters" aria-pressed="false">Gutters</button>
+          <div class="estimates-creation-flow" aria-label="Create an estimate">
+            <section class="estimates-panel estimates-flow-step" id="est-property-step">
+              <div class="estimates-panel-heading"><div><h2>What type of property is this?</h2><p>Choose one property type to begin the estimate.</p></div></div>
+              <div class="estimates-choice-grid estimates-choice-grid-two" role="group" aria-label="Property type">
+                <button class="est-scope-source" type="button" data-est-property-type="residential" aria-pressed="false">Residential</button>
+                <button class="est-scope-source" type="button" data-est-property-type="commercial" aria-pressed="false">Commercial</button>
               </div>
-              <div id="est-scope-dropzone" class="est-scope-dropzone" role="group" aria-label="Selected measurement scope"></div>
-            </div>
-          </section>
+            </section>
+
+            <section class="estimates-panel estimates-flow-step" id="est-trade-step" hidden>
+              <div class="estimates-panel-heading"><div><h2>What are you estimating?</h2><p>Select one trade for this estimate.</p></div></div>
+              <div class="estimates-choice-grid" role="group" aria-label="Estimate trade">
+                <button class="est-scope-source" type="button" data-est-scope="roof" aria-pressed="false">Roof</button>
+                <button class="est-scope-source" type="button" data-est-scope="siding" aria-pressed="false">Siding</button>
+                <button class="est-scope-source" type="button" data-est-scope="gutters" aria-pressed="false">Gutters</button>
+              </div>
+            </section>
+
+            <section class="estimates-panel estimates-flow-step" id="est-measurement-step" hidden>
+              <div class="estimates-panel-heading"><div><h2>How would you like to acquire your measurements for this estimate?</h2><p>Select one measurement method to continue.</p></div></div>
+              <div class="estimate-path-grid">
+                <button class="menu-row" type="button" id="est-source-ai" data-est-measurement-source="ai" aria-pressed="false"><div class="menu-row-title">AI Measurements</div><div class="menu-row-desc">Use Hail Money AI to begin the existing measurement and estimate process</div></button>
+                <button class="menu-row" type="button" id="est-source-drone" data-est-measurement-source="drone" aria-pressed="false"><div class="menu-row-title">Drone Measurements</div><div class="menu-row-desc">Upload drone photos for measurement extraction</div></button>
+                <button class="menu-row" type="button" id="est-source-upload" data-est-measurement-source="upload" aria-pressed="false"><div class="menu-row-title">Upload My Own Measurements</div><div class="menu-row-desc">Import a measurement report you already have</div></button>
+                <button class="menu-row" type="button" id="est-source-online" data-est-measurement-source="online" aria-pressed="false" aria-expanded="false"><div class="menu-row-title">Order Measurements Online</div><div class="menu-row-desc">Choose a connected measurement provider</div></button>
+              </div>
+              <div class="estimates-provider-panel" id="est-online-providers" hidden>
+                <div><strong>Connected measurement providers</strong><span>Provider ordering will be available here when a connection is enabled.</span></div>
+                <div class="estimates-provider-row" aria-label="EagleView provider connection status"><span>EagleView</span><span class="estimates-provider-status">Connection coming later</span></div>
+              </div>
+            </section>
+          </div>
 
           <div class="estimates-dashboard-grid">
-          <section class="estimates-panel estimates-method-panel estimates-glass-field">
-            <h2 class="estimates-ice-title">Estimate Method</h2>
-            <div class="estimates-method-box">
-              <div class="menu-list estimate-path-grid">
-                <button class="menu-row" type="button" id="est-source-ai">
-                  <div class="menu-row-title">AI Estimate</div>
-                  <div class="menu-row-desc">Enter an address to build measurements, materials, ABC pricing, labor, and a complete retail estimate</div>
-                </button>
-                <button class="menu-row" type="button" id="est-source-drone">
-                  <div class="menu-row-title">Drone</div>
-                  <div class="menu-row-desc">Upload drone photos for measurement extraction</div>
-                </button>
-                <button class="menu-row" type="button" id="est-source-upload">
-                  <div class="menu-row-title">Measurement Report Upload</div>
-                  <div class="menu-row-desc">Import from Hover, EagleView, Roofr, or other report</div>
-                </button>
-                <button class="menu-row" type="button" id="est-source-manual">
-                  <div class="menu-row-title">Manual</div>
-                  <div class="menu-row-desc">Enter measurements by hand</div>
-                </button>
-              </div>
-            </div>
-          </section>
 
           <section class="main-menu-card estimates-panel estimates-tools-panel">
             <div class="estimates-panel-heading"><div><h2>Estimating tools</h2><p>Open individual calculators and material worksheets.</p></div></div>
@@ -23129,77 +23245,128 @@
 
       <section id="page-est-ai" class="page">
         <div class="placeholder-wrap">
-          <h1 class="page-title">AI Estimate</h1>
+          <h1 class="page-title">AI Measurements</h1>
           <p class="page-subtitle" id="est-ai-scope-label">Scope: Select a measurement scope</p>
           <div class="page-actions">
             <button class="btn" type="button" id="back-from-est-ai">Back</button>
           </div>
-          <section class="main-menu-card estimates-gold-card" style="margin-bottom:14px;">
+          <section class="main-menu-card estimates-gold-card est-ai-setup-card">
             <div class="est-section-label">PROPERTY ADDRESS</div>
-            <p class="est-scope-help">Enter the property address. AI Estimate will use the selected scope to prepare the complete retail estimate.</p>
-            <div id="est-abc-connection-card" style="margin:0 0 14px;padding:12px;border:1px solid #c49a3a;border-radius:8px;background:#fff9e8;">
-              <div style="font-size:12px;font-weight:800;margin-bottom:5px;">ABC SUPPLY PRICING</div>
-              <div id="est-abc-status" style="font-size:12px;line-height:1.4;margin-bottom:9px;">Connect your myABCsupply account to use your branch-specific material prices.</div>
-              <button class="btn" type="button" id="est-abc-connect" style="width:100%;">Connect ABC Supply</button>
-              <div id="est-abc-selection" hidden style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                <label style="font-size:11px;font-weight:800;">SHIP-TO ACCOUNT
-                  <select class="field-input" id="est-abc-account" style="width:100%;margin-top:4px;"></select>
-                </label>
-                <label style="font-size:11px;font-weight:800;">ABC BRANCH
-                  <select class="field-input" id="est-abc-branch" style="width:100%;margin-top:4px;"></select>
-                </label>
+            <p class="est-scope-help">Enter the complete property address. Hail Money will use only verified property information returned by connected services.</p>
+            <div class="est-ai-address-grid">
+              <label class="est-ai-field est-ai-field-wide">STREET ADDRESS
+                <input class="field-input" type="text" id="est-ai-street" autocomplete="street-address" placeholder="Street address" />
+              </label>
+              <label class="est-ai-field">CITY
+                <input class="field-input" type="text" id="est-ai-city" autocomplete="address-level2" placeholder="City" />
+              </label>
+              <label class="est-ai-field">STATE
+                <select class="field-input" id="est-ai-state" autocomplete="address-level1"><option value="">Select State</option><option value="AL">Alabama</option><option value="AK">Alaska</option><option value="AZ">Arizona</option><option value="AR">Arkansas</option><option value="CA">California</option><option value="CO">Colorado</option><option value="CT">Connecticut</option><option value="DE">Delaware</option><option value="DC">Washington, DC</option><option value="FL">Florida</option><option value="GA">Georgia</option><option value="HI">Hawaii</option><option value="ID">Idaho</option><option value="IL">Illinois</option><option value="IN">Indiana</option><option value="IA">Iowa</option><option value="KS">Kansas</option><option value="KY">Kentucky</option><option value="LA">Louisiana</option><option value="ME">Maine</option><option value="MD">Maryland</option><option value="MA">Massachusetts</option><option value="MI">Michigan</option><option value="MN">Minnesota</option><option value="MS">Mississippi</option><option value="MO">Missouri</option><option value="MT">Montana</option><option value="NE">Nebraska</option><option value="NV">Nevada</option><option value="NH">New Hampshire</option><option value="NJ">New Jersey</option><option value="NM">New Mexico</option><option value="NY">New York</option><option value="NC">North Carolina</option><option value="ND">North Dakota</option><option value="OH">Ohio</option><option value="OK">Oklahoma</option><option value="OR">Oregon</option><option value="PA">Pennsylvania</option><option value="RI">Rhode Island</option><option value="SC">South Carolina</option><option value="SD">South Dakota</option><option value="TN">Tennessee</option><option value="TX">Texas</option><option value="UT">Utah</option><option value="VT">Vermont</option><option value="VA">Virginia</option><option value="WA">Washington</option><option value="WV">West Virginia</option><option value="WI">Wisconsin</option><option value="WY">Wyoming</option></select>
+              </label>
+              <label class="est-ai-field">ZIP CODE
+                <input class="field-input" type="text" id="est-ai-zip" autocomplete="postal-code" inputmode="numeric" maxlength="10" placeholder="ZIP Code" />
+              </label>
+            </div>
+            <div id="est-ai-address-status" class="est-ai-inline-status" aria-live="polite">Complete all address fields to continue.</div>
+          </section>
+          <section class="main-menu-card estimates-gold-card est-ai-setup-card" id="est-abc-connection-card">
+            <div class="est-section-label" id="est-abc-heading">ABC Supply not connected</div>
+            <div class="est-ai-abc-row">
+              <div>
+                <div id="est-abc-status" class="est-ai-inline-status" aria-live="polite">Complete the property address to check your ABC Supply connection.</div>
+              </div>
+              <div class="est-ai-abc-actions">
+                <button class="btn" type="button" id="est-abc-retry" hidden>Retry</button>
+                <button class="btn" type="button" id="est-abc-connect" disabled>Connect ABC Supply</button>
               </div>
             </div>
-            <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(150px,1fr) 110px;gap:8px;align-items:end;">
-              <label style="grid-column:1/-1;font-size:12px;font-weight:800;">STREET ADDRESS
-                <input class="field-input" type="text" id="est-ai-street" autocomplete="off" placeholder="Street address" style="width:100%;margin-top:4px;" />
-              </label>
-              <label style="font-size:12px;font-weight:800;">CITY
-                <input class="field-input" type="text" id="est-ai-city" autocomplete="off" placeholder="City" style="width:100%;margin-top:4px;" />
-              </label>
-              <label style="font-size:12px;font-weight:800;">STATE
-                <select class="field-input" id="est-ai-state" autocomplete="address-level1" style="width:100%;margin-top:4px;"><option value="">Select State</option><option value="AL">Alabama</option><option value="AK">Alaska</option><option value="AZ">Arizona</option><option value="AR">Arkansas</option><option value="CA">California</option><option value="CO">Colorado</option><option value="CT">Connecticut</option><option value="DE">Delaware</option><option value="DC">Washington, DC</option><option value="FL">Florida</option><option value="GA">Georgia</option><option value="HI">Hawaii</option><option value="ID">Idaho</option><option value="IL">Illinois</option><option value="IN">Indiana</option><option value="IA">Iowa</option><option value="KS">Kansas</option><option value="KY">Kentucky</option><option value="LA">Louisiana</option><option value="ME">Maine</option><option value="MD">Maryland</option><option value="MA">Massachusetts</option><option value="MI">Michigan</option><option value="MN">Minnesota</option><option value="MS">Mississippi</option><option value="MO">Missouri</option><option value="MT">Montana</option><option value="NE">Nebraska</option><option value="NV">Nevada</option><option value="NH">New Hampshire</option><option value="NJ">New Jersey</option><option value="NM">New Mexico</option><option value="NY">New York</option><option value="NC">North Carolina</option><option value="ND">North Dakota</option><option value="OH">Ohio</option><option value="OK">Oklahoma</option><option value="OR">Oregon</option><option value="PA">Pennsylvania</option><option value="RI">Rhode Island</option><option value="SC">South Carolina</option><option value="SD">South Dakota</option><option value="TN">Tennessee</option><option value="TX">Texas</option><option value="UT">Utah</option><option value="VT">Vermont</option><option value="VA">Virginia</option><option value="WA">Washington</option><option value="WV">West Virginia</option><option value="WI">Wisconsin</option><option value="WY">Wyoming</option></select>
-              </label>
-              <label style="font-size:12px;font-weight:800;">ZIP
-                <input class="field-input" type="text" id="est-ai-zip" autocomplete="off" inputmode="numeric" maxlength="10" placeholder="ZIP" style="width:100%;margin-top:4px;" />
-              </label>
+            <div id="est-abc-selection" hidden class="est-ai-abc-selection">
+                <label style="font-size:11px;font-weight:800;">SHIP-TO ACCOUNT
+                <select class="field-input" id="est-abc-account"></select>
+                </label>
+                <label style="font-size:11px;font-weight:800;">ABC BRANCH
+                <select class="field-input" id="est-abc-branch"></select>
+                </label>
             </div>
-            <button class="btn btn-primary" type="button" id="est-ai-generate" style="width:100%;margin-top:12px;">Start AI Estimate</button>
           </section>
-          <section class="main-menu-card estimates-gold-card" id="est-abc-products" hidden style="margin-bottom:14px;">
-            <div class="est-section-label">ABC MATERIAL PRICING</div>
-            <p class="est-scope-help">Search products from the selected ABC branch, enter the estimate quantity, and add the account-specific price.</p>
-            <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-bottom:8px;">
-              <input class="field-input" type="search" id="est-abc-product-search" placeholder="Search shingles, underlayment, flashing, vents…" />
-              <button class="btn" type="button" id="est-abc-product-search-btn">Search</button>
-            </div>
-            <select class="field-input" id="est-abc-product-results" style="width:100%;margin-bottom:8px;" disabled>
-              <option value="">Search ABC products first</option>
-            </select>
-            <div style="display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px;">
-              <label style="font-size:11px;font-weight:800;">QUANTITY
-                <input class="field-input" type="number" id="est-abc-product-quantity" min="1" step="1" value="1" style="width:100%;margin-top:4px;" />
-              </label>
-              <button class="btn btn-primary" type="button" id="est-abc-price-add" style="align-self:end;" disabled>Get Price &amp; Add</button>
-            </div>
-            <div id="est-abc-product-status" style="font-size:12px;line-height:1.4;margin-top:8px;"></div>
-            <div id="est-abc-priced-list" style="margin-top:12px;"></div>
+          <button class="btn btn-primary est-ai-start-button" type="button" id="est-ai-generate" disabled>Start AI Estimate</button>
+          <section class="main-menu-card estimates-gold-card est-ai-setup-card" id="est-ai-saved-panel" hidden>
+            <div class="est-section-label">SAVED AI ESTIMATES</div>
+            <div id="est-ai-saved-list"></div>
           </section>
-          <section class="main-menu-card estimates-gold-card" id="est-ai-estimator-panel" style="scroll-margin-top:140px;">
-            <div class="est-section-label">AI ESTIMATOR</div>
-            <div id="est-ai-chat" style="min-height:150px;max-height:320px;overflow:auto;padding:10px;border:1px solid #c49a3a;border-radius:8px;background:#fff9e8;font-size:13px;line-height:1.5;">
-              <div style="margin-bottom:8px;"><strong>Hail Money AI:</strong> Enter the property address to begin. I’ll inspect available property imagery and data first. I’ll ask only for details that cannot be determined reliably.</div>
-            </div>
-            <div id="est-ai-quick-replies" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
-            <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:9px;">
-              <textarea class="field-input" id="est-ai-chat-input" rows="2" placeholder="Answer the estimator or add job details…" style="resize:vertical;"></textarea>
-              <button class="btn" type="button" id="est-ai-chat-send">Send</button>
-            </div>
+        </div>
+      </section>
+
+      <section id="page-est-ai-processing" class="page">
+        <div class="placeholder-wrap est-ai-workspace">
+          <h1 class="page-title">Preparing AI Estimate</h1>
+          <p class="page-subtitle" id="est-ai-processing-context">Waiting for an address.</p>
+          <div class="page-actions"><button class="btn" type="button" id="back-from-est-ai-processing">Back to Address</button></div>
+          <section class="main-menu-card estimates-gold-card est-ai-processing-card">
+            <div class="est-section-label">ESTIMATE PROGRESS</div>
+            <div id="est-ai-processing-status" class="est-ai-processing-status" role="status" aria-live="polite">Ready to begin.</div>
+            <div class="est-ai-progress-track"><span id="est-ai-progress-bar"></span></div>
+            <ol class="est-ai-progress-list" id="est-ai-progress-list">
+              <li data-est-ai-step="property"><span>1</span><div><strong>Property information</strong><small>Waiting</small></div></li>
+              <li data-est-ai-step="measurements"><span>2</span><div><strong>Measurements</strong><small>Waiting</small></div></li>
+              <li data-est-ai-step="imagery"><span>3</span><div><strong>Exterior imagery</strong><small>Waiting</small></div></li>
+              <li data-est-ai-step="pricing"><span>4</span><div><strong>Pricing and estimate</strong><small>Waiting</small></div></li>
+            </ol>
+            <div class="est-ai-processing-actions"><button class="btn" type="button" id="est-ai-retry" hidden>Retry</button></div>
+          </section>
+          <section class="main-menu-card estimates-gold-card est-ai-photo-request" id="est-ai-photo-request" hidden>
+            <div class="est-section-label">ADDITIONAL PHOTOS NEEDED</div>
+            <p id="est-ai-photo-explanation">The estimator needs specific views before it can continue.</p>
+            <ul id="est-ai-photo-requirements"></ul>
             <input type="file" id="est-ai-photo-files" accept="image/*" multiple hidden />
-            <button class="btn" type="button" id="est-ai-photo-upload" style="width:100%;margin-top:9px;">Upload Property or Roof Photos</button>
-            <div id="est-ai-photo-status" style="font-size:12px;margin-top:6px;color:#5d5646;">If web imagery is missing, outdated, or blocked by heavy tree coverage, the AI will request the specific photos it needs.</div>
-            <div id="est-ai-status" style="font-size:12px;line-height:1.45;margin-top:9px;color:#2d2a22;"></div>
+            <input type="file" id="est-ai-camera-file" accept="image/*" capture="environment" hidden />
+            <div class="est-ai-photo-actions"><button class="btn" type="button" id="est-ai-photo-upload">Choose Photos</button><button class="btn" type="button" id="est-ai-camera-capture">Use Camera</button></div>
+            <div id="est-ai-photo-gallery" class="est-ai-photo-gallery"></div>
+            <div id="est-ai-photo-status" class="est-ai-inline-status" aria-live="polite"></div>
+            <button class="btn btn-primary" type="button" id="est-ai-photo-continue" hidden>Upload Photos and Continue</button>
           </section>
+        </div>
+        <div class="est-ai-modal-backdrop" id="est-ai-question-modal" hidden role="dialog" aria-modal="true" aria-labelledby="est-ai-question-title">
+          <section class="est-ai-modal-card">
+            <div class="est-ai-modal-kicker">AI ESTIMATOR</div>
+            <h2 id="est-ai-question-title">Additional information needed</h2>
+            <div id="est-ai-question-progress" class="est-ai-inline-status"></div>
+            <p id="est-ai-question-text"></p>
+            <div id="est-ai-question-options" class="est-ai-question-options"></div>
+            <label class="est-ai-field" id="est-ai-question-custom-wrap">YOUR ANSWER<textarea class="field-input" id="est-ai-question-input" rows="3" placeholder="Enter the requested information"></textarea></label>
+            <div class="est-ai-modal-actions"><button class="btn" type="button" id="est-ai-question-cancel">Back to Address</button><button class="btn btn-primary" type="button" id="est-ai-question-continue" disabled>Continue</button></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="page-est-ai-result" class="page">
+        <div class="placeholder-wrap est-ai-workspace">
+          <h1 class="page-title">AI Estimate</h1>
+          <p class="page-subtitle" id="est-ai-result-subtitle">Editable estimate</p>
+          <div class="page-actions"><button class="btn" type="button" id="back-from-est-ai-result">Back to Estimates</button></div>
+          <section class="main-menu-card estimates-gold-card est-ai-result-header">
+            <div><div class="est-section-label">ESTIMATE</div><h2 id="est-ai-result-number">—</h2><p id="est-ai-result-address">—</p></div>
+            <dl id="est-ai-result-meta"></dl>
+          </section>
+          <section class="main-menu-card estimates-gold-card est-ai-result-card">
+            <div class="estimates-panel-heading"><div><h2>Measurement summary</h2><p>Every AI-derived value includes its source and confidence.</p></div></div>
+            <div id="est-ai-measurement-summary" class="est-ai-measurement-summary"></div>
+          </section>
+          <section class="main-menu-card estimates-gold-card est-ai-result-card">
+            <div class="estimates-panel-heading"><div><h2>Detailed line items</h2><p>Review and edit all quantities and pricing before saving.</p></div><button class="btn" type="button" id="est-ai-add-line">Add Line Item</button></div>
+            <div class="est-ai-table-wrap"><table class="est-ai-line-table"><thead><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Material</th><th>Labor</th><th>Waste %</th><th>Source / confidence</th><th>Total</th><th></th></tr></thead><tbody id="est-ai-line-items"></tbody></table></div>
+            <div id="est-ai-line-empty" class="est-ai-empty-state">No verified line items are available. Add a line item manually or retry when estimating integrations are connected.</div>
+            <div class="est-ai-totals">
+              <label>Tax rate %<input class="field-input" id="est-ai-tax-rate" type="number" min="0" step="0.01" value="0" /></label>
+              <dl><div><dt>Subtotal</dt><dd id="est-ai-subtotal">$0.00</dd></div><div><dt>Tax</dt><dd id="est-ai-tax-total">$0.00</dd></div><div class="grand"><dt>Grand total</dt><dd id="est-ai-grand-total">$0.00</dd></div></dl>
+            </div>
+          </section>
+          <section class="main-menu-card estimates-gold-card est-ai-result-card">
+            <div class="estimates-panel-heading"><div><h2>Notes, assumptions, and verification</h2><p>Confirm all flagged values before presenting this estimate.</p></div></div>
+            <div id="est-ai-assumptions"></div>
+            <label class="est-ai-field">ESTIMATE NOTES<textarea class="field-input" id="est-ai-notes" rows="5" placeholder="Add project notes, exclusions, assumptions, or confirmation details"></textarea></label>
+          </section>
+          <div class="est-ai-save-row"><div id="est-ai-save-status" aria-live="polite"></div><button class="btn btn-primary" type="button" id="est-ai-save">Save Estimate</button></div>
         </div>
       </section>
 
@@ -24019,9 +24186,6 @@
               </button>
               <button class="nav-item" type="button" data-dashboard-action="map" aria-label="Map">
                 <span class="dash-icon" data-dash-icon="map" aria-hidden="true"></span><span class="nav-label">Map</span>
-              </button>
-              <button class="nav-item" type="button" data-dashboard-action="campaigns" aria-label="Campaigns">
-                <span class="dash-icon" data-dash-icon="speakerphone" aria-hidden="true"></span><span class="nav-label">Campaign</span>
               </button>
               <button class="nav-item" type="button" data-dashboard-action="estimates" aria-label="Estimates">
                 <span class="dash-icon" data-dash-icon="file-dollar" aria-hidden="true"></span><span class="nav-label">Estimates</span>
@@ -32071,12 +32235,13 @@ function mapsGoogleReady() {
     // Nested-swath ramp matches HailTrace: outer/light=yellow, inner/core=purple
     function swathSeverityColor(hailIn) {
       // One shared Hail Recon-matched palette for every swath renderer.
-      // Exact 1.00-inch coverage stays yellow; the orange band begins above 1.00.
+      // Hail at or below 1.50 inches stays yellow; severity colors begin only above 1.50.
       if (hailIn >= 3.00) return [123,  31, 162, 0.65]; // #7b1fa2 purple
-      if (hailIn >= 2.50) return [179,  38,  31, 0.62]; // #b3261f deep red
-      if (hailIn >= 2.00) return [220,  30,  30, 0.60]; // #dc1e1e red
-      if (hailIn >= 1.50) return [226, 137,  28, 0.58]; // #e2891c Hail Recon dark orange
-      if (hailIn >  1.00) return [239, 174,  54, 0.50]; // #efae36 Hail Recon light orange
+      if (hailIn >= 2.50) return [220,  30,  30, 0.62]; // #dc1e1e red
+      if (hailIn >= 2.00) return [220,  75,  30, 0.60]; // #dc4b1e orange-red
+      if (hailIn >= 1.74) return [226, 137,  28, 0.58]; // #e2891c darker orange
+      if (hailIn >  1.50) return [239, 174,  54, 0.56]; // #efae36 light orange
+      if (hailIn >= 1.50) return [249, 231, 107, 0.60]; // #f9e76b subtle 1.5-inch yellow
       return                     [255, 245, 157, 0.60]; // #fff59d Hail Recon light yellow
     }
 
@@ -32441,10 +32606,13 @@ function mapsGoogleReady() {
 
     var HAIL_SIZE_BANDS = [
       { threshold: 0.50, label: '\u00BD\u2013 1\u2033',    fill: '#FFF59D', stroke: '#D7CD72' },  // light yellow
-      { threshold: 1.00, label: '1\u2013 1\u00BD\u2033',   fill: '#EFAE36', stroke: '#C58A24' },  // light orange
-      { threshold: 1.50, label: '1\u00BD\u2013 2\u2033',   fill: '#E2891C', stroke: '#B66B16' },  // dark orange
-      { threshold: 2.00, label: '2\u2013 2\u00BD\u2033',   fill: '#DC1E1E', stroke: '#A01616' },  // red
-      { threshold: 2.50, label: '2\u00BD\u2033 +',          fill: '#9419B4', stroke: '#6B1080' }   // deep purple
+      { threshold: 1.00, label: '1\u2013 1\u00BD\u2033',   fill: '#FFF59D', stroke: '#D7CD72' },  // light yellow
+      { threshold: 1.50, label: '1\u00BD\u2013 1.74\u2033', fill: '#F9E76B', stroke: '#D8C45A' },  // subtle yellow
+      { threshold: 1.500001, label: '> 1\u00BD\u2013 1.74\u2033', fill: '#EFAE36', stroke: '#C58A24' }, // light orange
+      { threshold: 1.74, label: '1.74\u2013 2\u2033',       fill: '#E2891C', stroke: '#B66B16' },  // darker orange
+      { threshold: 2.00, label: '2\u2013 2\u00BD\u2033',   fill: '#DC4B1E', stroke: '#A83917' },  // orange-red
+      { threshold: 2.50, label: '2\u00BD\u2013 3\u2033',   fill: '#DC1E1E', stroke: '#A01616' },  // red
+      { threshold: 3.00, label: '3\u2033 +',                fill: '#7B1FA2', stroke: '#581170' }   // purple
     ];
     var MAPS_INCOMING_HAIL_SWATH_STYLE_START_DATE = '2026-07-29';
 
@@ -38101,14 +38269,14 @@ function mapsGoogleReady() {
       var significantReports = Number(summary.significantHailReportCount || 0) || 0;
       var severeReports = Number(summary.severeHailReportCount || 0) || 0;
 
-      // A high ranking requires a combination of hail size, repeated supporting
-      // reports, and residential exposure. One extreme report can no longer
-      // turn an otherwise ordinary nationwide date into a 5.
-      var rating = 1;
-      if (maximumHail >= 1.50 && significantReports >= 2 && impactedHomes >= 5000) rating = 2;
-      if (maximumHail >= 1.75 && significantReports >= 4 && impactedHomes >= 15000) rating = 3;
-      if (maximumHail >= 2.00 && severeReports >= 5 && impactedHomes >= 50000) rating = 4;
-      if (maximumHail >= 2.50 && severeReports >= 10 && impactedHomes >= 125000) rating = 5;
+      // Hail severity sets the highest possible rating, while residential
+      // exposure controls how far the storm advances toward that ceiling.
+      // Low-exposure storms stay at 1 until hail reaches 3 inches. At 3+ inches,
+      // extreme hail adds one level: under 2,500 units rates 2, above 2,500
+      // rates 3, and above 15,000 rates 4 (subject to the hail ceiling).
+      var exposureTier = mapsStormHousingExposureTier(impactedHomes, housingConnected);
+      var extremeHailBonus = maximumHail >= 3.00 ? 1 : 0;
+      var rating = Math.max(1, Math.min(severityTier, exposureTier + extremeHailBonus));
 
       var labels = {
         1: { label:'Light', className:'severity-light' },
@@ -38122,7 +38290,7 @@ function mapsGoogleReady() {
         className:labels[rating].className,
         rating:rating,
         severityTier:severityTier,
-        exposureTier:mapsStormHousingExposureTier(impactedHomes, housingConnected),
+        exposureTier:exposureTier,
         housingEstimateConnected:housingConnected,
         damagingReportCount:damagingReports,
         significantReportCount:significantReports,
@@ -38150,12 +38318,11 @@ function mapsGoogleReady() {
       var impactSummary = mapsGetStormImpactSummarySync(dateStr);
       var unitsLabel = mapsFormatHousingUnitLabel(impactSummary || null);
       var stormTone = mapsGetStormImpactTone(dateStr);
-      // Hold the numeric score until authoritative housing-unit counts have been
-      // intersected with the largest-hail swath for this storm.
+      var ratingText = stormTone.rating == null ? '—' : String(stormTone.rating);
       var ratingLineHtml =
         '<div class="maps-impact-line maps-overall-impact">' +
-          '<span class="maps-impact-rating-badge maps-impact-rating-pending">—</span>' +
-          '<span>rating pending swath validation</span>' +
+          '<span class="maps-impact-rating-badge ' + stormTone.className + '" data-impact-rating-date="' + dateStr + '" title="' + stormTone.label + ' rating">' + ratingText + '</span>' +
+          '<span class="storm-home-count" data-impact-date="' + dateStr + '">' + unitsLabel + '</span>' +
         '</div>';
       var isPinned = mapsState.pinnedDates.indexOf(dateStr) !== -1;
       var sourceBadge = mapsBuildStormSourceBadgeHtml(dateStr);
@@ -38195,7 +38362,6 @@ function mapsGoogleReady() {
         '</div>' +
         '<div class="maps-storm-card-bottom-row">' +
           ratingLineHtml +
-          '<div class="maps-impact-line"><strong>Impacted housing units:</strong> <span class="storm-home-count" data-impact-date="' + dateStr + '">' + unitsLabel + '</span></div>' +
           '<div class="maps-impact-line">' + hailState + '</div>' +
           sourceBadge +
         '</div>';
@@ -39110,19 +39276,19 @@ function mapsGoogleReady() {
     }
 
     // Returns the label shown in Recent / Pinned tabs for a date's housing-unit impact.
-    // housingEstimateConnected is false until a real Census / parcel data source is wired.
+    // Census values are explicitly estimates of homes inside the verified hail
+    // footprint. They are not a claim that every home has confirmed damage.
     function mapsFormatHousingUnitLabel(summary) {
-      // Recent-card housing counts stay hidden until an authoritative residential
-      // parcel/property source is intersected with the hail swath. Census-density,
-      // report-footprint, and other provisional estimates are not field-ready.
       var source = String(summary && summary.housingImpactSource || '').toLowerCase();
-      var authoritative = !!(summary && summary.housingEstimateConnected) &&
+      var estimated = !!(summary && summary.housingEstimateConnected) &&
         (source.indexOf('regrid') !== -1 ||
          source.indexOf('parcel_api') !== -1 ||
          source.indexOf('property_api') !== -1 ||
-         source.indexOf('residential_parcels') !== -1);
-      if (!authoritative) return 'Pending property data';
-      return mapsAbbreviateCount(summary.impactedHomesCount) + ' units';
+         source.indexOf('residential_parcels') !== -1 ||
+         source.indexOf('census') !== -1 ||
+         source.indexOf('footprint-estimate') !== -1);
+      if (!estimated) return '';
+      return mapsAbbreviateCount(summary.impactedHomesCount) + ' housing units';
     }
 
     function mapsGetStormImpactSummarySync(dateStr) {
@@ -39132,6 +39298,12 @@ function mapsGoogleReady() {
     function mapsSetStormImpactSummaryText(dateStr, text) {
       document.querySelectorAll('.storm-home-count[data-impact-date="' + dateStr + '"]').forEach(function (el) {
         el.textContent = text;
+      });
+      var tone = mapsGetStormImpactTone(dateStr);
+      document.querySelectorAll('[data-impact-rating-date="' + dateStr + '"]').forEach(function (el) {
+        el.className = 'maps-impact-rating-badge ' + tone.className;
+        el.textContent = tone.rating == null ? '—' : String(tone.rating);
+        el.title = tone.label + ' rating';
       });
     }
 
@@ -45238,39 +45410,112 @@ function mapsGoogleReady() {
 
     // ── Estimates ──
     // ABC Supply connection used by Estimates
+    var abcEstimateRequestState = { status: 'idle', addressKey: '', lastError: null };
+    function abcIntegrationIsConfigured() {
+      return window.HAIL_MONEY_ABC_SUPPLY_ENABLED !== false;
+    }
+    function abcUsesFunctionsEmulator() {
+      return window.HAIL_MONEY_USE_FUNCTIONS_EMULATOR === true ||
+        ((location.hostname === '127.0.0.1' || location.hostname === 'localhost') && location.port === '5500');
+    }
     function abcFunctionUrl(functionName) {
-      var local = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
-      return local ? 'http://127.0.0.1:5015/hailmoneymap/us-central1/' + functionName : 'https://us-central1-hailmoneymap.cloudfunctions.net/' + functionName;
+      return abcUsesFunctionsEmulator()
+        ? 'http://127.0.0.1:5015/hailmoneymap/us-central1/' + functionName
+        : 'https://us-central1-hailmoneymap.cloudfunctions.net/' + functionName;
     }
     async function abcGetFirebaseToken() {
-      if (!window.auth) throw new Error('Hail Money authentication is not available. Refresh the page and try again.');
+      if (!window.auth) {
+        var unavailableError = new Error('Hail Money authentication is not available. Refresh the page and try again.');
+        unavailableError.code = 'authentication';
+        throw unavailableError;
+      }
       var user = window.auth.currentUser;
       if (!user) {
         var credential = await window.auth.signInAnonymously();
         user = credential && credential.user ? credential.user : window.auth.currentUser;
       }
-      if (!user) throw new Error('Hail Money could not establish the secure ABC session.');
+      if (!user) {
+        var sessionError = new Error('Hail Money could not establish the secure ABC session.');
+        sessionError.code = 'authentication';
+        throw sessionError;
+      }
       return user.getIdToken(true);
     }
     async function abcRequest(functionName, options) {
       var requestOptions = Object.assign({}, options || {});
-      var local = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
       var requestHeaders = Object.assign({}, requestOptions.headers || {}, { 'Content-Type': 'application/json' });
-      if (!local) {
+      if (!abcUsesFunctionsEmulator()) {
         var token = await abcGetFirebaseToken();
         requestHeaders.Authorization = 'Bearer ' + token;
       }
       requestOptions.headers = requestHeaders;
-      var response = await fetch(abcFunctionUrl(functionName), requestOptions);
-      var data = await response.json().catch(function () { return {}; });
-      if (!response.ok) throw new Error(data.error || ('ABC Supply request failed (' + response.status + ').'));
-      return data;
+      requestOptions.cache = 'no-store';
+      var requestUrl = abcFunctionUrl(functionName);
+      try {
+        var response = await fetch(requestUrl, requestOptions);
+        var data = await response.json().catch(function () { return {}; });
+        if (!response.ok) {
+          var responseError = new Error(data.error || ('ABC Supply request failed (' + response.status + ').'));
+          responseError.status = response.status;
+          responseError.code = response.status === 404 ? 'route_unavailable' : response.status === 409 ? 'not_connected' : response.status === 401 || response.status === 403 ? 'authentication' : response.status === 429 || response.status >= 500 ? 'temporary' : 'request_failed';
+          throw responseError;
+        }
+        return data;
+      } catch (error) {
+        if (!error.code) error.code = 'network_failure';
+        console.error('[ABC Supply request failed]', {
+          functionName: functionName,
+          requestUrl: requestUrl,
+          method: String(requestOptions.method || 'GET').toUpperCase(),
+          status: error.status || null,
+          code: error.code,
+          message: error.message || String(error)
+        });
+        throw error;
+      }
     }
     function abcSetEstimateStatus(message, isError) {
       var status = document.getElementById('est-abc-status');
       if (!status) return;
       status.textContent = message;
-      status.style.color = isError ? '#a32626' : '#2d2a22';
+      status.classList.toggle('is-error', !!isError);
+      status.classList.toggle('is-success', !isError && /connected/i.test(String(message || '')));
+    }
+    function abcEstimatePrerequisites() {
+      var street = String((document.getElementById('est-ai-street') || {}).value || '').trim();
+      var city = String((document.getElementById('est-ai-city') || {}).value || '').trim();
+      var state = String((document.getElementById('est-ai-state') || {}).value || '').trim();
+      var zip = String((document.getElementById('est-ai-zip') || {}).value || '').trim();
+      var propertyType = (typeof currentEstimate !== 'undefined' && currentEstimate.propertyType) || (typeof estimateCreationState !== 'undefined' && estimateCreationState.propertyType) || '';
+      var trade = (typeof currentEstimate !== 'undefined' && currentEstimate.measurementScope) || (typeof estimateCreationState !== 'undefined' && estimateCreationState.activeEstimate && estimateCreationState.activeEstimate.trade) || '';
+      var ready = street.length >= 3 && city.length >= 2 && /^[A-Z]{2}$/.test(state) && /^\d{5}(?:-\d{4})?$/.test(zip) && /^(residential|commercial)$/.test(propertyType) && /^(roof|siding|gutters)$/.test(trade);
+      return { ready: ready, key: [street, city, state, zip, propertyType, trade].join('|') };
+    }
+    function abcSetEstimateRequestState(status, message, isError) {
+      abcEstimateRequestState.status = status;
+      var retry = document.getElementById('est-abc-retry');
+      var connect = document.getElementById('est-abc-connect');
+      var heading = document.getElementById('est-abc-heading');
+      var showRetry = status === 'temporary_failure';
+      if (retry) retry.hidden = !showRetry;
+      if (heading) heading.textContent = status === 'connected' ? 'ABC Supply Pricing' : 'ABC Supply not connected';
+      if (connect) {
+        connect.disabled = status === 'checking' || status === 'connected' || !abcEstimatePrerequisites().ready;
+        connect.textContent = status === 'connected' ? 'ABC Supply Connected' : 'Connect ABC Supply';
+      }
+      abcSetEstimateStatus(message, isError);
+      if (typeof estAiValidateAddress === 'function') estAiValidateAddress(false, true);
+    }
+    function abcResetEstimateConnection(message) {
+      abcEstimateShipTos = [];
+      abcEstimateRequestState = { status: 'idle', addressKey: '', lastError: null };
+      var accountSelect = document.getElementById('est-abc-account');
+      var branchSelect = document.getElementById('est-abc-branch');
+      var selection = document.getElementById('est-abc-selection');
+      if (accountSelect) { accountSelect.innerHTML = ''; accountSelect.disabled = true; }
+      if (branchSelect) { branchSelect.innerHTML = ''; branchSelect.disabled = true; }
+      if (selection) selection.hidden = true;
+      abcSetEstimateRequestState('idle', message || 'Complete the property address to check your ABC Supply connection.', false);
     }
     function abcCountAccounts(value, depth) {
       if (depth > 4 || value == null) return 0;
@@ -45286,6 +45531,33 @@ function mapsGoogleReady() {
       return 0;
     }
     var abcEstimateShipTos = [];
+    function abcFindAccountRows(value, depth) {
+      if (depth > 5 || value == null) return [];
+      if (Array.isArray(value)) return value;
+      if (typeof value !== 'object') return [];
+      var keys = ['shipTos', 'accounts', 'items', 'results', 'records', 'data'];
+      for (var i = 0; i < keys.length; i++) {
+        if (Array.isArray(value[keys[i]])) return value[keys[i]];
+        if (value[keys[i]] && typeof value[keys[i]] === 'object') {
+          var nested = abcFindAccountRows(value[keys[i]], depth + 1);
+          if (nested.length) return nested;
+        }
+      }
+      return [];
+    }
+    function abcNormalizeAccount(account) {
+      account = account && typeof account === 'object' ? account : {};
+      var rawBranches = Array.isArray(account.branches) ? account.branches : Array.isArray(account.locations) ? account.locations : [];
+      if (!rawBranches.length && (account.branchNumber || account.homeBranchNumber)) rawBranches = [{ number: account.branchNumber || account.homeBranchNumber, name: account.branchName || account.homeBranchName, homeBranch: true }];
+      return Object.assign({}, account, {
+        number: account.number || account.accountNumber || account.shipToNumber || account.id || '',
+        name: account.name || account.accountName || account.shipToName || 'ABC Ship-To',
+        status: account.status || account.accountStatus || 'active',
+        isSellable: account.isSellable !== false,
+        address: account.address || account.shippingAddress || {},
+        branches: rawBranches.map(function (branch) { return Object.assign({}, branch, { number: branch.number || branch.branchNumber || branch.id || '', name: branch.name || branch.branchName || branch.locationName || '', homeBranch: branch.homeBranch === true || branch.isHomeBranch === true }); })
+      });
+    }
     function abcPopulateEstimateBranches(account) {
       var branchSelect = document.getElementById('est-abc-branch');
       if (!branchSelect) return;
@@ -45307,7 +45579,7 @@ function mapsGoogleReady() {
       var accountSelect = document.getElementById('est-abc-account');
       var selection = document.getElementById('est-abc-selection');
       if (!accountSelect || !selection) return 0;
-      var shipTos = data && Array.isArray(data.shipTos) ? data.shipTos : [];
+      var shipTos = abcFindAccountRows(data, 0).map(abcNormalizeAccount);
       abcEstimateShipTos = shipTos.filter(function (account) {
         return account && account.isSellable !== false && String(account.status || 'active').toLowerCase() === 'active';
       });
@@ -45326,39 +45598,72 @@ function mapsGoogleReady() {
       accountSelect.onchange = function () {
         var selected = abcEstimateShipTos[accountSelect.selectedIndex] || null;
         abcPopulateEstimateBranches(selected);
+        if (typeof estAiValidateAddress === 'function') estAiValidateAddress(false, true);
       };
       abcPopulateEstimateBranches(abcEstimateShipTos[0] || null);
+      var branchSelect = document.getElementById('est-abc-branch');
+      if (branchSelect) branchSelect.onchange = function () { if (typeof estAiValidateAddress === 'function') estAiValidateAddress(false, true); };
       return abcEstimateShipTos.length;
     }
-    async function abcLoadEstimateAccounts() {
-      abcSetEstimateStatus('Checking ABC Supply connection…', false);
+    async function abcLoadEstimateAccounts(force) {
+      var prerequisites = abcEstimatePrerequisites();
+      if (!prerequisites.ready) {
+        abcResetEstimateConnection('Complete the property address to check your ABC Supply connection.');
+        return null;
+      }
+      if (!abcIntegrationIsConfigured()) {
+        abcEstimateRequestState.addressKey = prerequisites.key;
+        abcSetEstimateRequestState('integration_unavailable', 'ABC Supply not connected — this project has no configured ABC OAuth/API integration. No supplier prices were loaded.', true);
+        return null;
+      }
+      if (!force && abcEstimateRequestState.addressKey === prerequisites.key && ['checking', 'connected', 'not_connected', 'integration_unavailable'].indexOf(abcEstimateRequestState.status) >= 0) return null;
+      abcEstimateRequestState.addressKey = prerequisites.key;
+      abcSetEstimateRequestState('checking', 'Checking ABC Supply connection…', false);
       try {
         var data = await abcRequest('abcAccounts', { method: 'GET' });
         var count = abcPopulateEstimateAccounts(data);
-        abcSetEstimateStatus('ABC Supply connected' + (count ? ' — ' + count + ' eligible Ship-To account' + (count === 1 ? '' : 's') + ' available.' : ' — no eligible Ship-To accounts were returned.'), count === 0);
-        var connect = document.getElementById('est-abc-connect');
-        if (connect) {
-          connect.textContent = 'ABC Supply Connected';
-          connect.disabled = true;
-        }
+        if (count) abcSetEstimateRequestState('connected', 'ABC Supply connected — ' + count + ' eligible Ship-To account' + (count === 1 ? '' : 's') + ' available.', false);
+        else abcSetEstimateRequestState('not_connected', 'ABC Supply not connected — no eligible Ship-To accounts were returned. AI Estimate can continue without supplier pricing.', true);
         return data;
       } catch (error) {
-        abcSetEstimateStatus(error.message || 'Connect your ABC Supply account to continue.', true);
-        var connect = document.getElementById('est-abc-connect');
-        if (connect) {
-          connect.textContent = 'Connect ABC Supply';
-          connect.disabled = false;
-        }
+        abcEstimateRequestState.lastError = { code: error.code || 'request_failed', status: error.status || null, message: error.message || String(error) };
+        console.error('[ABC Supply connection check failed]', { requestUrl: abcFunctionUrl('abcAccounts'), status: error.status || null, code: error.code || 'request_failed', message: error.message || String(error) });
+        var accountSelect = document.getElementById('est-abc-account');
+        var branchSelect = document.getElementById('est-abc-branch');
+        var selection = document.getElementById('est-abc-selection');
+        if (accountSelect) { accountSelect.innerHTML = ''; accountSelect.disabled = true; }
+        if (branchSelect) { branchSelect.innerHTML = ''; branchSelect.disabled = true; }
+        if (selection) selection.hidden = true;
+        if (error.code === 'not_connected') abcSetEstimateRequestState('not_connected', 'ABC Supply not connected. Connect an authorized myABCsupply account to use live supplier pricing.', true);
+        else if (error.code === 'route_unavailable') abcSetEstimateRequestState('integration_unavailable', 'ABC Supply not connected — the pricing service is not deployed.', true);
+        else if (error.code === 'authentication') abcSetEstimateRequestState('not_connected', 'ABC Supply not connected — sign in to Hail Money again before connecting supplier pricing.', true);
+        else abcSetEstimateRequestState('temporary_failure', 'ABC Supply not connected — the supplier service could not be reached. No prices were loaded. Retry is available.', true);
         return null;
       }
     }
     async function abcConnectEstimateAccount() {
-      abcSetEstimateStatus('Opening secure ABC Supply sign-in?', false);
+      if (!abcEstimatePrerequisites().ready) {
+        abcResetEstimateConnection('Complete the property address before connecting ABC Supply.');
+        return;
+      }
+      if (!abcIntegrationIsConfigured()) {
+        abcSetEstimateRequestState('integration_unavailable', 'ABC Supply not connected — an ABC client ID, client secret, and deployed OAuth service are required before authorization can open.', true);
+        return;
+      }
+      var popup = window.open('', 'hailmoney-abc-oauth', 'width=620,height=760,resizable=yes,scrollbars=yes');
+      if (!popup) {
+        abcSetEstimateRequestState('temporary_failure', 'ABC Supply not connected — allow pop-ups for Hail Money, then try again.', true);
+        return;
+      }
+      try {
+        popup.document.title = 'Connect ABC Supply';
+        popup.document.body.textContent = 'Opening secure ABC Supply sign-in…';
+      } catch (_) {}
+      abcSetEstimateRequestState('checking', 'Opening secure ABC Supply sign-in…', false);
       try {
         var data = await abcRequest('abcOAuthStart', { method: 'POST', body: '{}' });
         if (!data.authorizationUrl) throw new Error('ABC Supply did not return a sign-in address.');
-        var popup = window.open(data.authorizationUrl, 'hailmoney-abc-oauth', 'width=620,height=760,resizable=yes,scrollbars=yes');
-        if (!popup) throw new Error('Allow pop-ups for Hail Money, then try again.');
+        popup.location.replace(data.authorizationUrl);
         var popupWatcher = setInterval(function () {
           if (!popup || popup.closed) {
             clearInterval(popupWatcher);
@@ -45366,21 +45671,29 @@ function mapsGoogleReady() {
           }
         }, 1200);
       } catch (error) {
-        abcSetEstimateStatus(error.message || 'ABC Supply could not be opened.', true);
+        if (popup && !popup.closed) popup.close();
+        abcEstimateRequestState.lastError = { code: error.code || 'request_failed', status: error.status || null, message: error.message || String(error) };
+        if (error.code === 'route_unavailable') abcSetEstimateRequestState('integration_unavailable', 'ABC Supply not connected — the connection service is not deployed.', true);
+        else if (error.code === 'authentication') abcSetEstimateRequestState('not_connected', 'ABC Supply not connected — sign in to Hail Money again.', true);
+        else abcSetEstimateRequestState('temporary_failure', 'ABC Supply not connected — the OAuth service could not be reached. Retry is available.', true);
       }
     }
     var estAbcConnectButton = document.getElementById('est-abc-connect');
     if (estAbcConnectButton) estAbcConnectButton.addEventListener('click', abcConnectEstimateAccount);
+    var estAbcRetryButton = document.getElementById('est-abc-retry');
+    if (estAbcRetryButton) estAbcRetryButton.addEventListener('click', function () { abcLoadEstimateAccounts(true); });
     window.addEventListener('message', function (event) {
       var abcAllowedOrigins = [location.origin, 'https://hailmoneymap.web.app', 'https://hailmoneymap.firebaseapp.com'];
       if (abcAllowedOrigins.indexOf(event.origin) === -1 || !event.data || event.data.type !== 'hailmoney:abc-oauth') return;
-      if (event.data.ok) abcLoadEstimateAccounts();
+      if (event.data.ok) abcLoadEstimateAccounts(true);
       else abcSetEstimateStatus('ABC Supply was not connected. Try again.', true);
     });
 
     var currentEstimate = {
-      measurementSource: null,   // 'drone' | 'upload' | 'manual'
-      measurementScope: 'roof',  // 'roof' | 'roof_siding' | 'roof_siding_gutters'
+      propertyType: null,        // 'residential' | 'commercial'
+      measurementSource: null,   // 'ai' | 'drone' | 'upload' | 'online' | 'manual'
+      measurementScope: null,    // one trade: 'roof' | 'siding' | 'gutters'
+      tradeEstimates: [],        // completed single-trade estimates can be collected here later
       reportSource: null,        // 'hover' | 'eagleview' | 'roofr' | 'other'
       measurements: {
         roof: { squares: '', ridge: '', hip: '', rake: '', valley: '', starter: '', dripEdge: '', pitch: '' },
@@ -45395,6 +45708,12 @@ function mapsGoogleReady() {
         modifiers: { secondLayer: false, steepRoof: false, twoStory: false, premiumMaterial: false, slateSpecialty: false, custom: 0 },
         totalLabor: 0
       }
+    };
+
+    var estimateCreationState = {
+      propertyType: null,
+      activeEstimate: { propertyType: null, trade: null, measurementSource: null, measurementProvider: null },
+      tradeEstimates: currentEstimate.tradeEstimates
     };
 
     var EST_SCOPE_LABELS = {
@@ -45423,12 +45742,7 @@ function mapsGoogleReady() {
     };
 
     function getEstScope() {
-      var order = ['roof', 'siding', 'gutters'];
-      var selected = order.filter(function (scope) {
-        var button = document.querySelector('[data-est-scope="' + scope + '"]');
-        return button && button.getAttribute('aria-pressed') === 'true';
-      });
-      return selected.join('_');
+      return estimateCreationState.activeEstimate.trade || '';
     }
 
     function estScopeCategories(scope) {
@@ -45438,26 +45752,47 @@ function mapsGoogleReady() {
       return selected;
     }
 
-    function renderEstScopeSelection() {
-      var dropzone = document.getElementById('est-scope-dropzone');
-      var selected = estScopeCategories(getEstScope());
-      document.querySelectorAll('[data-est-scope]').forEach(function (button) {
-        var active = selected.indexOf(button.getAttribute('data-est-scope')) !== -1;
-        button.classList.toggle('is-selected', active);
-        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    function renderEstimateCreationFlow() {
+      var propertyType = estimateCreationState.propertyType;
+      var draft = estimateCreationState.activeEstimate;
+      document.querySelectorAll('[data-est-property-type]').forEach(function (button) {
+        var selected = button.getAttribute('data-est-property-type') === propertyType;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
       });
-      if (!dropzone) return;
-      dropzone.innerHTML = selected.length ? selected.map(function (scope) {
-        var label = scope.charAt(0).toUpperCase() + scope.slice(1);
-        return '<span class="est-scope-chip">' + label + '<button type="button" data-est-scope-remove="' + scope + '" aria-label="Remove ' + label + '">×</button></span>';
-      }).join('') : '<span class="est-scope-empty">No scope selected. Choose Roof, Siding, or Gutters above.</span>';
+      document.querySelectorAll('[data-est-scope]').forEach(function (button) {
+        var selected = button.getAttribute('data-est-scope') === draft.trade;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-est-measurement-source]').forEach(function (button) {
+        var selected = button.getAttribute('data-est-measurement-source') === draft.measurementSource;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      });
+      var tradeStep = document.getElementById('est-trade-step');
+      var measurementStep = document.getElementById('est-measurement-step');
+      var providers = document.getElementById('est-online-providers');
+      var onlineButton = document.getElementById('est-source-online');
+      if (tradeStep) tradeStep.hidden = !propertyType;
+      if (measurementStep) measurementStep.hidden = !draft.trade;
+      if (providers) providers.hidden = draft.measurementSource !== 'online';
+      if (onlineButton) onlineButton.setAttribute('aria-expanded', draft.measurementSource === 'online' ? 'true' : 'false');
     }
 
-    function setEstScopeSelected(scope, selected) {
-      var button = document.querySelector('[data-est-scope="' + scope + '"]');
-      if (!button) return;
-      button.setAttribute('aria-pressed', selected ? 'true' : 'false');
-      renderEstScopeSelection();
+    function resetEstimateCreationFlow(preservePropertyType) {
+      var propertyType = preservePropertyType ? estimateCreationState.propertyType : null;
+      estimateCreationState.propertyType = propertyType;
+      estimateCreationState.activeEstimate = { propertyType: propertyType, trade: null, measurementSource: null, measurementProvider: null };
+      currentEstimate.propertyType = propertyType;
+      currentEstimate.measurementScope = null;
+      currentEstimate.measurementSource = null;
+      currentEstimate.reportSource = null;
+      renderEstimateCreationFlow();
+    }
+
+    function startAnotherTradeEstimate() {
+      resetEstimateCreationFlow(true);
     }
 
     function renderEstManualFields() {
@@ -45478,6 +45813,8 @@ function mapsGoogleReady() {
     }
 
     function openEstimatePath(source) {
+      if (!estimateCreationState.propertyType || !estimateCreationState.activeEstimate.trade) return;
+      estimateCreationState.activeEstimate.measurementSource = source;
       currentEstimate.measurementSource = source;
       currentEstimate.measurementScope = getEstScope();
       var scopeText = 'Scope: ' + (EST_SCOPE_LABELS[currentEstimate.measurementScope] || 'No scope selected');
@@ -45488,7 +45825,9 @@ function mapsGoogleReady() {
           if (field) field.value = '';
         });
         showPage('page-est-ai');
-        abcLoadEstimateAccounts();
+        if (typeof estAiValidateAddress === 'function') estAiValidateAddress(false);
+        if (typeof estAiRenderSavedList === 'function') estAiRenderSavedList();
+        abcResetEstimateConnection('Complete the property address to check your ABC Supply connection.');
         if (typeof crmBindAddressAutocomplete === 'function') {
           crmBindAddressAutocomplete({ streetId: 'est-ai-street', cityId: 'est-ai-city', stateId: 'est-ai-state', zipId: 'est-ai-zip' });
         }
@@ -45506,172 +45845,485 @@ function mapsGoogleReady() {
     }
 
     document.getElementById('open-estimates').addEventListener('click', function () {
+      resetEstimateCreationFlow(false);
       showPage('page-estimates');
     });
     var backFromEstimates = document.getElementById('back-from-estimates');
     if (backFromEstimates) backFromEstimates.addEventListener('click', function () { showPage('page-main-menu'); });
+    document.querySelectorAll('[data-est-property-type]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var propertyType = this.getAttribute('data-est-property-type');
+        if (estimateCreationState.propertyType !== propertyType) {
+          estimateCreationState.propertyType = propertyType;
+          estimateCreationState.activeEstimate = { propertyType: propertyType, trade: null, measurementSource: null, measurementProvider: null };
+          currentEstimate.propertyType = propertyType;
+          currentEstimate.measurementScope = null;
+          currentEstimate.measurementSource = null;
+          currentEstimate.reportSource = null;
+        }
+        renderEstimateCreationFlow();
+      });
+    });
     document.querySelectorAll('[data-est-scope]').forEach(function (button) {
       button.addEventListener('click', function () {
-        var active = this.getAttribute('aria-pressed') === 'true';
-        setEstScopeSelected(this.getAttribute('data-est-scope'), !active);
+        var trade = this.getAttribute('data-est-scope');
+        if (estimateCreationState.activeEstimate.trade !== trade) {
+          estimateCreationState.activeEstimate.trade = trade;
+          estimateCreationState.activeEstimate.measurementSource = null;
+          estimateCreationState.activeEstimate.measurementProvider = null;
+          currentEstimate.measurementScope = trade;
+          currentEstimate.measurementSource = null;
+          currentEstimate.reportSource = null;
+        }
+        renderEstimateCreationFlow();
       });
-      button.addEventListener('dragstart', function (event) {
-        event.dataTransfer.setData('text/plain', this.getAttribute('data-est-scope'));
-      });
     });
-    var estScopeDropzone = document.getElementById('est-scope-dropzone');
-    estScopeDropzone.addEventListener('dragover', function (event) { event.preventDefault(); this.classList.add('is-over'); });
-    estScopeDropzone.addEventListener('dragleave', function () { this.classList.remove('is-over'); });
-    estScopeDropzone.addEventListener('drop', function (event) {
-      event.preventDefault(); this.classList.remove('is-over');
-      setEstScopeSelected(event.dataTransfer.getData('text/plain'), true);
-    });
-    estScopeDropzone.addEventListener('click', function (event) {
-      var remove = event.target.closest('[data-est-scope-remove]');
-      if (remove) setEstScopeSelected(remove.getAttribute('data-est-scope-remove'), false);
-    });
-    renderEstScopeSelection();
+    renderEstimateCreationFlow();
     document.getElementById('est-source-ai').addEventListener('click', function () { openEstimatePath('ai'); });
     document.getElementById('est-source-drone').addEventListener('click', function () { openEstimatePath('drone'); });
     document.getElementById('est-source-upload').addEventListener('click', function () { openEstimatePath('upload'); });
-    document.getElementById('est-source-manual').addEventListener('click', function () { openEstimatePath('manual'); });
+    document.getElementById('est-source-online').addEventListener('click', function () {
+      estimateCreationState.activeEstimate.measurementSource = 'online';
+      estimateCreationState.activeEstimate.measurementProvider = null;
+      currentEstimate.measurementSource = 'online';
+      currentEstimate.reportSource = null;
+      renderEstimateCreationFlow();
+    });
     document.getElementById('back-from-est-drone').addEventListener('click', function () { showPage('page-estimates'); });
     document.getElementById('back-from-est-upload').addEventListener('click', function () { showPage('page-estimates'); });
     document.getElementById('back-from-est-manual').addEventListener('click', function () { showPage('page-estimates'); });
+    var EST_AI_STORAGE_KEY = 'hailMoneyAiEstimatesV1';
     var estAiSession = null;
-    function estAiAppendMessage(role, message) {
-      var chat = document.getElementById('est-ai-chat');
-      if (!chat) return;
-      var row = document.createElement('div');
-      row.style.marginBottom = '8px';
-      var label = document.createElement('strong');
-      label.textContent = role === 'user' ? 'You: ' : 'Hail Money AI: ';
-      row.appendChild(label);
-      row.appendChild(document.createTextNode(String(message || '')));
-      chat.appendChild(row);
-      chat.scrollTop = chat.scrollHeight;
+    var estAiPhotoItems = [];
+    var estAiReplacePhotoIndex = -1;
+    var estAiProcessingToken = 0;
+
+    function estAiGetAdapter() {
+      return window.HailMoneyEstimateIntegration || null;
     }
-    function estAiSetStatus(message, isError) {
-      var status = document.getElementById('est-ai-status');
-      if (!status) return;
-      status.textContent = message || '';
-      status.style.color = isError ? '#a32626' : '#2d2a22';
+    function estAiReadAddress() {
+      var street = String((document.getElementById('est-ai-street') || {}).value || '').trim();
+      var city = String((document.getElementById('est-ai-city') || {}).value || '').trim();
+      var state = String((document.getElementById('est-ai-state') || {}).value || '').trim();
+      var zip = String((document.getElementById('est-ai-zip') || {}).value || '').trim();
+      return { street: street, city: city, state: state, zip: zip, formatted: street + ', ' + city + ', ' + state + ' ' + zip };
     }
-    function estAiShowQuestion() {
+    function estAiValidateAddress(showErrors, skipAbcCheck) {
+      var address = estAiReadAddress();
+      var fields = {
+        'est-ai-street': address.street.length >= 3,
+        'est-ai-city': address.city.length >= 2,
+        'est-ai-state': /^[A-Z]{2}$/.test(address.state),
+        'est-ai-zip': /^\d{5}(?:-\d{4})?$/.test(address.zip)
+      };
+      var valid = Object.keys(fields).every(function (id) { return fields[id]; });
+      var estimateReady = /^(residential|commercial)$/.test(String(currentEstimate.propertyType || '')) && /^(roof|siding|gutters)$/.test(String(currentEstimate.measurementScope || ''));
+      Object.keys(fields).forEach(function (id) {
+        var field = document.getElementById(id);
+        if (field) field.setAttribute('aria-invalid', showErrors && !fields[id] ? 'true' : 'false');
+      });
+      var button = document.getElementById('est-ai-generate');
+      if (button) button.disabled = !valid || !estimateReady;
+      var status = document.getElementById('est-ai-address-status');
+      if (status) {
+        status.classList.toggle('is-error', !!showErrors && !valid);
+        status.classList.toggle('is-success', valid);
+        status.textContent = valid ? 'Address is ready.' : (showErrors ? 'Enter a valid street, city, state, and 5-digit or ZIP+4 code.' : 'Complete all address fields to continue.');
+      }
+      if (!skipAbcCheck) {
+        var prerequisites = abcEstimatePrerequisites();
+        if (!prerequisites.ready && abcEstimateRequestState.status !== 'idle') abcResetEstimateConnection('Complete the property address to check your ABC Supply connection.');
+        else if (prerequisites.ready && (abcEstimateRequestState.status === 'idle' || abcEstimateRequestState.addressKey !== prerequisites.key)) abcLoadEstimateAccounts(false);
+      }
+      return valid && estimateReady;
+    }
+    function estAiSetProcessingState(step, state, message) {
+      var order = ['property', 'measurements', 'imagery', 'pricing'];
+      var item = document.querySelector('[data-est-ai-step="' + step + '"]');
+      if (item) {
+        item.classList.remove('is-active', 'is-complete', 'is-failed');
+        if (state) item.classList.add('is-' + state);
+        var small = item.querySelector('small');
+        if (small) small.textContent = state === 'complete' ? 'Complete' : state === 'active' ? 'In progress' : state === 'failed' ? 'Needs attention' : 'Waiting';
+      }
+      var completed = document.querySelectorAll('#est-ai-progress-list .is-complete').length;
+      var activeIndex = Math.max(0, order.indexOf(step));
+      var percent = Math.round(((completed + (state === 'active' ? .35 : state === 'failed' ? .15 : 0)) / order.length) * 100);
+      var bar = document.getElementById('est-ai-progress-bar');
+      if (bar) bar.style.width = Math.min(100, percent) + '%';
+      var status = document.getElementById('est-ai-processing-status');
+      if (status && message) status.textContent = message;
+    }
+    function estAiResetProgress() {
+      document.querySelectorAll('[data-est-ai-step]').forEach(function (item) {
+        item.classList.remove('is-active', 'is-complete', 'is-failed');
+        var small = item.querySelector('small');
+        if (small) small.textContent = 'Waiting';
+      });
+      var bar = document.getElementById('est-ai-progress-bar');
+      if (bar) bar.style.width = '0%';
+      var retry = document.getElementById('est-ai-retry');
+      if (retry) retry.hidden = true;
+      var photos = document.getElementById('est-ai-photo-request');
+      if (photos) photos.hidden = true;
+    }
+    function estAiSafeSessionPayload() {
+      if (!estAiSession) return null;
+      return {
+        id: estAiSession.id,
+        estimateNumber: estAiSession.estimateNumber,
+        createdAt: estAiSession.createdAt,
+        propertyType: estAiSession.propertyType,
+        trade: estAiSession.trade,
+        address: estAiSession.address,
+        abcPricing: estAiSession.abcPricing,
+        answers: estAiSession.answers,
+        uploadedPhotos: estAiPhotoItems.map(function (item) { return { name: item.file.name, type: item.file.type, size: item.file.size }; })
+      };
+    }
+    function estAiNormalizeResult(result) {
+      result = result && typeof result === 'object' ? result : {};
+      return {
+        complete: result.complete === true,
+        questions: Array.isArray(result.questions) ? result.questions.filter(function (question) { return question && question.text; }) : [],
+        requiredPhotos: Array.isArray(result.requiredPhotos) ? result.requiredPhotos.filter(Boolean) : [],
+        measurements: Array.isArray(result.measurements) ? result.measurements : [],
+        lineItems: Array.isArray(result.lineItems) ? result.lineItems : [],
+        assumptions: Array.isArray(result.assumptions) ? result.assumptions : [],
+        customer: result.customer || null,
+        taxRate: Number.isFinite(Number(result.taxRate)) ? Number(result.taxRate) : 0,
+        message: String(result.message || '')
+      };
+    }
+    async function estAiRunProcessing(phase) {
+      if (!estAiSession) return;
+      var token = ++estAiProcessingToken;
+      var adapter = estAiGetAdapter();
+      estAiResetProgress();
+      estAiSetProcessingState('property', 'active', phase === 'retry' ? 'Retrying connected property services…' : 'Gathering available property information…');
+      try {
+        if (!adapter || typeof adapter.analyzeEstimate !== 'function') {
+          var unavailable = new Error('AI property analysis is not connected. No measurements, imagery, pricing, or totals were generated.');
+          unavailable.code = 'integration_unavailable';
+          throw unavailable;
+        }
+        var result = await adapter.analyzeEstimate(estAiSafeSessionPayload(), { phase: phase || 'initial' });
+        if (token !== estAiProcessingToken) return;
+        estAiSetProcessingState('property', 'complete', 'Property information received. Verifying measurements and imagery…');
+        estAiSetProcessingState('measurements', 'active');
+        estAiHandleAnalysisResult(estAiNormalizeResult(result));
+      } catch (error) {
+        if (token !== estAiProcessingToken) return;
+        estAiSetProcessingState('property', 'failed', error.message || 'Property analysis failed.');
+        var retry = document.getElementById('est-ai-retry');
+        if (retry) retry.hidden = false;
+      }
+    }
+    function estAiHandleAnalysisResult(result) {
+      if (!estAiSession) return;
+      estAiSession.analysisResult = result;
+      if (result.questions.length) {
+        estAiSession.questions = result.questions.map(function (question, index) {
+          return { id: String(question.id || question.key || ('question_' + (index + 1))), text: String(question.text), options: Array.isArray(question.options) ? question.options.map(String) : [], required: question.required !== false };
+        });
+        estAiSession.questionIndex = 0;
+        estAiOpenQuestionModal();
+        estAiSetProcessingState('measurements', 'active', 'The AI Estimator needs one or more property-specific answers.');
+        return;
+      }
+      if (result.requiredPhotos.length) {
+        estAiSession.requiredPhotos = result.requiredPhotos.map(function (item) { return typeof item === 'string' ? { label: item } : item; });
+        estAiShowPhotoRequest();
+        estAiSetProcessingState('measurements', 'complete');
+        estAiSetProcessingState('imagery', 'active', 'Additional property photos are required to verify missing views.');
+        return;
+      }
+      if (result.complete) {
+        estAiSetProcessingState('measurements', 'complete');
+        estAiSetProcessingState('imagery', 'complete');
+        estAiSetProcessingState('pricing', 'complete', 'Verified information received. Review the editable estimate.');
+        estAiPrepareResult(result);
+        return;
+      }
+      estAiSetProcessingState('measurements', 'failed', result.message || 'The estimating service returned no verified result. Retry when the required integrations are available.');
+      var retry = document.getElementById('est-ai-retry');
+      if (retry) retry.hidden = false;
+    }
+    function estAiOpenQuestionModal() {
       if (!estAiSession) return;
       var question = estAiSession.questions[estAiSession.questionIndex];
-      var quick = document.getElementById('est-ai-quick-replies');
-      if (quick) quick.innerHTML = '';
-      if (!question) {
-        estAiAppendMessage('assistant', 'The initial job profile is ready. Next, Hail Money will verify property imagery and measurements, check local code requirements, and build the ABC-priced material list.');
-        estAiSetStatus('Initial estimate intake complete. Property research and measurement processing are the next stage.', false);
-        return;
+      if (!question) { estAiCloseQuestionModal(); estAiContinueAfterQuestions(); return; }
+      var modal = document.getElementById('est-ai-question-modal');
+      var text = document.getElementById('est-ai-question-text');
+      var progress = document.getElementById('est-ai-question-progress');
+      var options = document.getElementById('est-ai-question-options');
+      var input = document.getElementById('est-ai-question-input');
+      var continueButton = document.getElementById('est-ai-question-continue');
+      if (text) text.textContent = question.text;
+      if (progress) progress.textContent = 'Question ' + (estAiSession.questionIndex + 1) + ' of ' + estAiSession.questions.length;
+      if (input) input.value = '';
+      if (continueButton) continueButton.disabled = question.required !== false;
+      if (options) {
+        options.innerHTML = '';
+        question.options.forEach(function (label) {
+          var button = document.createElement('button');
+          button.type = 'button'; button.textContent = label; button.dataset.estAiQuestionAnswer = label;
+          options.appendChild(button);
+        });
       }
-      estAiAppendMessage('assistant', question.text);
-      (question.options || []).forEach(function (optionText) {
-        var button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'btn';
-        button.textContent = optionText;
-        button.addEventListener('click', function () { estAiSubmitAnswer(optionText); });
-        quick.appendChild(button);
-      });
+      if (modal) modal.hidden = false;
+      if (input && !question.options.length) setTimeout(function () { input.focus(); }, 30);
     }
-    function estAiSubmitAnswer(answer) {
-      answer = String(answer || '').trim();
-      if (!estAiSession || !answer) return;
+    function estAiCloseQuestionModal() {
+      var modal = document.getElementById('est-ai-question-modal');
+      if (modal) modal.hidden = true;
+    }
+    function estAiSubmitQuestion() {
+      if (!estAiSession) return;
       var question = estAiSession.questions[estAiSession.questionIndex];
       if (!question) return;
-      estAiSession.answers[question.key] = answer;
-      estAiAppendMessage('user', answer);
+      var selected = document.querySelector('[data-est-ai-question-answer].is-selected');
+      var input = document.getElementById('est-ai-question-input');
+      var answer = selected ? selected.dataset.estAiQuestionAnswer : String(input ? input.value : '').trim();
+      if (question.required !== false && !answer) return;
+      estAiSession.answers[question.id] = { value: answer, source: 'user', answeredAt: new Date().toISOString() };
       estAiSession.questionIndex += 1;
-      var input = document.getElementById('est-ai-chat-input');
-      if (input) input.value = '';
-      estAiShowQuestion();
+      estAiOpenQuestionModal();
     }
-    function estAiBuildQuestions() {
-      var scopes = estScopeCategories(currentEstimate.measurementScope);
-      var questions = [{ key: 'stories', text: 'How many stories is the structure?', options: ['1 story', '2 stories', '3+ stories'] }];
-      if (scopes.indexOf('roof') !== -1) {
-        questions.push({ key: 'roofLayers', text: 'How many existing roof layers are present?', options: ['1 layer', '2 layers', 'Not sure'] });
-        questions.push({ key: 'shingle', text: 'Which roofing material or shingle line should this estimate use?', options: ['Owens Corning Duration', 'Owens Corning Oakridge', 'GAF Timberline', 'CertainTeed Landmark', 'Help me choose'] });
-        questions.push({ key: 'underlayment', text: 'Which underlayment do you want?', options: ['Synthetic underlayment', 'Felt paper', 'Use code minimum'] });
+    async function estAiContinueAfterQuestions() {
+      if (!estAiSession) return;
+      var adapter = estAiGetAdapter();
+      estAiSetProcessingState('measurements', 'active', 'Applying your answers and continuing property analysis…');
+      try {
+        if (!adapter || typeof adapter.continueEstimate !== 'function') throw new Error('The AI continuation service is not connected. Your answers remain saved in this estimate session.');
+        var result = await adapter.continueEstimate(estAiSafeSessionPayload(), { phase: 'questions' });
+        estAiHandleAnalysisResult(estAiNormalizeResult(result));
+      } catch (error) {
+        estAiSetProcessingState('measurements', 'failed', error.message || 'The estimate could not continue.');
+        var retry = document.getElementById('est-ai-retry');
+        if (retry) retry.hidden = false;
       }
-      if (scopes.indexOf('siding') !== -1) questions.push({ key: 'sidingMaterial', text: 'Which siding material should the estimate use?', options: ['Vinyl siding', 'Fiber cement', 'Metal siding', 'Not sure'] });
-      if (scopes.indexOf('gutters') !== -1) questions.push({ key: 'gutterType', text: 'Which gutter system should the estimate use?', options: ['5-inch aluminum', '6-inch aluminum', 'Match existing', 'Not sure'] });
-      return questions;
+    }
+    function estAiShowPhotoRequest() {
+      var panel = document.getElementById('est-ai-photo-request');
+      var list = document.getElementById('est-ai-photo-requirements');
+      if (list) list.innerHTML = estAiSession.requiredPhotos.map(function (item) { return '<li>' + crmEscapeHtml(String(item.label || item.description || 'Requested property view')) + '</li>'; }).join('');
+      estAiPhotoItems = [];
+      estAiRenderPhotos();
+      if (panel) panel.hidden = false;
+    }
+    function estAiAddPhotoFiles(files) {
+      Array.prototype.slice.call(files || []).forEach(function (file) {
+        var item = { file: file, url: URL.createObjectURL(file), progress: 0, status: 'Ready to upload' };
+        if (estAiReplacePhotoIndex >= 0 && estAiReplacePhotoIndex < estAiPhotoItems.length) {
+          URL.revokeObjectURL(estAiPhotoItems[estAiReplacePhotoIndex].url);
+          estAiPhotoItems.splice(estAiReplacePhotoIndex, 1, item);
+          estAiReplacePhotoIndex = -1;
+        } else estAiPhotoItems.push(item);
+      });
+      estAiRenderPhotos();
+    }
+    function estAiRenderPhotos() {
+      var gallery = document.getElementById('est-ai-photo-gallery');
+      var continueButton = document.getElementById('est-ai-photo-continue');
+      var status = document.getElementById('est-ai-photo-status');
+      if (gallery) gallery.innerHTML = estAiPhotoItems.map(function (item, index) {
+        return '<article class="est-ai-photo-card"><img src="' + crmEscapeHtml(item.url) + '" alt="Selected property photo" /><div class="est-ai-photo-card-body"><div class="est-ai-photo-card-name">' + crmEscapeHtml(item.file.name) + '</div><div class="est-ai-photo-progress"><span style="width:' + item.progress + '%"></span></div><small>' + crmEscapeHtml(item.status) + '</small><div class="est-ai-photo-card-actions"><button type="button" data-est-ai-photo-replace="' + index + '">Replace</button><button type="button" data-est-ai-photo-remove="' + index + '">Remove</button></div></div></article>';
+      }).join('');
+      var needed = estAiSession && estAiSession.requiredPhotos ? estAiSession.requiredPhotos.length : 0;
+      if (status) status.textContent = estAiPhotoItems.length ? estAiPhotoItems.length + ' of ' + needed + ' requested view' + (needed === 1 ? '' : 's') + ' selected.' : 'Select the requested photos to continue.';
+      if (continueButton) continueButton.hidden = !needed || estAiPhotoItems.length < needed;
+    }
+    async function estAiUploadPhotosAndContinue() {
+      var adapter = estAiGetAdapter();
+      var button = document.getElementById('est-ai-photo-continue');
+      if (button) button.disabled = true;
+      try {
+        if (!adapter || typeof adapter.uploadEstimatePhotos !== 'function') throw new Error('Photo upload is not connected. Your selected files remain available for retry.');
+        estAiPhotoItems.forEach(function (item) { item.status = 'Uploading'; item.progress = 15; });
+        estAiRenderPhotos();
+        var result = await adapter.uploadEstimatePhotos(estAiSafeSessionPayload(), estAiPhotoItems.map(function (item) { return item.file; }), function (index, percent) {
+          if (estAiPhotoItems[index]) { estAiPhotoItems[index].progress = Math.max(0, Math.min(100, Number(percent) || 0)); estAiPhotoItems[index].status = estAiPhotoItems[index].progress >= 100 ? 'Uploaded' : 'Uploading'; estAiRenderPhotos(); }
+        });
+        estAiPhotoItems.forEach(function (item) { item.status = 'Uploaded'; item.progress = 100; });
+        estAiRenderPhotos();
+        var panel = document.getElementById('est-ai-photo-request');
+        if (panel) panel.hidden = true;
+        estAiHandleAnalysisResult(estAiNormalizeResult(result));
+      } catch (error) {
+        estAiPhotoItems.forEach(function (item) { item.status = 'Upload failed — retry available'; });
+        estAiRenderPhotos();
+        var status = document.getElementById('est-ai-photo-status');
+        if (status) { status.textContent = error.message || 'Photo upload failed.'; status.classList.add('is-error'); }
+      } finally { if (button) button.disabled = false; }
+    }
+    function estAiPrepareResult(result) {
+      estAiSession.measurements = result.measurements;
+      estAiSession.lineItems = result.lineItems.map(function (item) {
+        return { id: String(item.id || ('line_' + Math.random().toString(36).slice(2))), description: String(item.description || ''), quantity: Number(item.quantity) || 0, unit: String(item.unit || ''), material: Number(item.material) || 0, labor: Number(item.labor) || 0, waste: Number(item.waste) || 0, source: String(item.source || 'Integration response'), confidence: String(item.confidence || 'Needs verification') };
+      });
+      estAiSession.assumptions = result.assumptions;
+      estAiSession.customer = result.customer;
+      estAiSession.taxRate = result.taxRate;
+      estAiRenderResult();
+      showPage('page-est-ai-result');
+    }
+    function estAiMoney(value) { return '$' + (Number(value) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function estAiRenderResult() {
+      if (!estAiSession) return;
+      document.getElementById('est-ai-result-number').textContent = estAiSession.estimateNumber;
+      document.getElementById('est-ai-result-address').textContent = estAiSession.address.formatted;
+      document.getElementById('est-ai-result-subtitle').textContent = (estAiSession.propertyType === 'commercial' ? 'Commercial' : 'Residential') + ' · ' + (EST_SCOPE_LABELS[estAiSession.trade] || estAiSession.trade) + ' · Editable estimate';
+      document.getElementById('est-ai-result-meta').innerHTML = '<dt>Created</dt><dd>' + crmEscapeHtml(new Date(estAiSession.createdAt).toLocaleDateString()) + '</dd><dt>Property</dt><dd>' + crmEscapeHtml(estAiSession.propertyType === 'commercial' ? 'Commercial' : 'Residential') + '</dd><dt>Trade</dt><dd>' + crmEscapeHtml(EST_SCOPE_LABELS[estAiSession.trade] || estAiSession.trade) + '</dd><dt>Pricing source</dt><dd>' + crmEscapeHtml(estAiSession.abcPricing.connected ? 'ABC Supply connection' : 'Not connected') + '</dd>';
+      var summary = document.getElementById('est-ai-measurement-summary');
+      summary.innerHTML = estAiSession.measurements.length ? estAiSession.measurements.map(function (item) {
+        var confidence = String(item.confidence || 'Needs verification');
+        return '<div class="est-ai-measurement-card"><strong>' + crmEscapeHtml(String(item.label || 'Measurement')) + '</strong><span>' + crmEscapeHtml(String(item.value == null ? 'Unavailable' : item.value) + (item.unit ? ' ' + item.unit : '')) + '</span><small>Source: ' + crmEscapeHtml(String(item.source || 'Not supplied')) + '</small><small class="' + (item.requiresVerification || /verify|unknown|low/i.test(confidence) ? 'est-ai-confidence-needs-verification' : '') + '">Confidence: ' + crmEscapeHtml(confidence) + '</small></div>';
+      }).join('') : '<div class="est-ai-empty-state">No verified measurements were returned. Measurements and property details have not been invented.</div>';
+      document.getElementById('est-ai-tax-rate').value = String(estAiSession.taxRate || 0);
+      document.getElementById('est-ai-notes').value = String(estAiSession.notes || '');
+      var assumptions = document.getElementById('est-ai-assumptions');
+      assumptions.innerHTML = estAiSession.assumptions.length ? estAiSession.assumptions.map(function (item) { return '<div class="est-ai-assumption"><span>⚠</span><span>' + crmEscapeHtml(String(item.text || item)) + (item.source ? '<br><small>Source: ' + crmEscapeHtml(String(item.source)) + '</small>' : '') + '</span></div>'; }).join('') : '<div class="est-ai-empty-state">No assumptions were returned. Review all manually entered values before saving.</div>';
+      estAiRenderLineItems();
+    }
+    function estAiRenderLineItems() {
+      if (!estAiSession) return;
+      var body = document.getElementById('est-ai-line-items');
+      body.innerHTML = estAiSession.lineItems.map(function (item, index) {
+        var total = Number(item.quantity) * (Number(item.material) + Number(item.labor)) * (1 + Number(item.waste) / 100);
+        return '<tr data-est-ai-line="' + index + '"><td><input data-field="description" value="' + crmEscapeHtml(item.description) + '" aria-label="Description" /></td><td><input data-field="quantity" type="number" min="0" step="0.01" value="' + item.quantity + '" aria-label="Quantity" /></td><td><input data-field="unit" value="' + crmEscapeHtml(item.unit) + '" aria-label="Unit" /></td><td><input data-field="material" type="number" min="0" step="0.01" value="' + item.material + '" aria-label="Material price" /></td><td><input data-field="labor" type="number" min="0" step="0.01" value="' + item.labor + '" aria-label="Labor price" /></td><td><input data-field="waste" type="number" min="0" step="0.01" value="' + item.waste + '" aria-label="Waste percent" /></td><td><input data-field="source" value="' + crmEscapeHtml(item.source) + '" aria-label="Source" /><select data-field="confidence" aria-label="Confidence"><option' + (item.confidence === 'Verified' ? ' selected' : '') + '>Verified</option><option' + (item.confidence === 'High' ? ' selected' : '') + '>High</option><option' + (item.confidence === 'Medium' ? ' selected' : '') + '>Medium</option><option' + (item.confidence === 'Low' ? ' selected' : '') + '>Low</option><option' + (item.confidence === 'Needs verification' ? ' selected' : '') + '>Needs verification</option></select></td><td data-est-ai-line-total>' + estAiMoney(total) + '</td><td><button class="est-ai-remove-line" type="button" data-est-ai-remove-line="' + index + '" aria-label="Remove line item">×</button></td></tr>';
+      }).join('');
+      document.getElementById('est-ai-line-empty').hidden = estAiSession.lineItems.length > 0;
+      estAiUpdateTotals();
+    }
+    function estAiUpdateTotals() {
+      if (!estAiSession) return;
+      var subtotal = estAiSession.lineItems.reduce(function (sum, item) { return sum + Number(item.quantity) * (Number(item.material) + Number(item.labor)) * (1 + Number(item.waste) / 100); }, 0);
+      var taxRate = Math.max(0, Number((document.getElementById('est-ai-tax-rate') || {}).value) || 0);
+      estAiSession.taxRate = taxRate;
+      var tax = subtotal * taxRate / 100;
+      document.getElementById('est-ai-subtotal').textContent = estAiMoney(subtotal);
+      document.getElementById('est-ai-tax-total').textContent = estAiMoney(tax);
+      document.getElementById('est-ai-grand-total').textContent = estAiMoney(subtotal + tax);
+    }
+    function estAiLoadSaved() {
+      try { var saved = JSON.parse(localStorage.getItem(EST_AI_STORAGE_KEY) || '[]'); return Array.isArray(saved) ? saved : []; } catch (error) { return []; }
+    }
+    function estAiRenderSavedList() {
+      var panel = document.getElementById('est-ai-saved-panel');
+      var list = document.getElementById('est-ai-saved-list');
+      if (!panel || !list) return;
+      var saved = estAiLoadSaved();
+      panel.hidden = saved.length === 0;
+      list.innerHTML = saved.map(function (estimate) { return '<div class="est-ai-saved-row"><div><strong>' + crmEscapeHtml(estimate.estimateNumber || 'Saved estimate') + '</strong><span>' + crmEscapeHtml((estimate.address && estimate.address.formatted) || 'Address unavailable') + '</span></div><button class="btn" type="button" data-est-ai-open-saved="' + crmEscapeHtml(estimate.id) + '">Open</button></div>'; }).join('');
+    }
+    function estAiSaveEstimate() {
+      if (!estAiSession) return;
+      estAiSession.notes = String(document.getElementById('est-ai-notes').value || '').trim();
+      estAiSession.updatedAt = new Date().toISOString();
+      var safe = JSON.parse(JSON.stringify(estAiSession));
+      var saved = estAiLoadSaved();
+      var index = saved.findIndex(function (item) { return item.id === safe.id; });
+      if (index >= 0) saved[index] = safe; else saved.unshift(safe);
+      try {
+        localStorage.setItem(EST_AI_STORAGE_KEY, JSON.stringify(saved));
+        if (currentEstimate.tradeEstimates.indexOf(safe.id) === -1) currentEstimate.tradeEstimates.push(safe.id);
+        document.getElementById('est-ai-save-status').textContent = 'Saved ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        estAiRenderSavedList();
+      } catch (error) { document.getElementById('est-ai-save-status').textContent = 'Save failed: storage is unavailable.'; }
+    }
+    function estAiOpenSavedEstimate(id) {
+      var saved = estAiLoadSaved().find(function (item) { return item.id === id; });
+      if (!saved) return;
+      estAiSession = saved;
+      currentEstimate.propertyType = saved.propertyType;
+      currentEstimate.measurementScope = saved.trade;
+      currentEstimate.measurementSource = 'ai';
+      estAiRenderResult();
+      showPage('page-est-ai-result');
     }
     function estAiStartEstimate() {
-      var streetInput = document.getElementById('est-ai-street');
-      var cityInput = document.getElementById('est-ai-city');
-      var stateInput = document.getElementById('est-ai-state');
-      var zipInput = document.getElementById('est-ai-zip');
-      var street = streetInput ? streetInput.value.trim() : '';
-      var city = cityInput ? cityInput.value.trim() : '';
-      var state = stateInput ? stateInput.value.trim() : '';
-      var zip = zipInput ? zipInput.value.trim() : '';
-      var missingAddressField = !street ? streetInput : !city ? cityInput : !state ? stateInput : !zip ? zipInput : null;
-      if (missingAddressField) {
-        estAiSetStatus('Complete Street Address, City, State, and ZIP before starting the estimate.', true);
-        missingAddressField.focus();
-        return;
-      }
-      var address = street + ', ' + city + ', ' + state + ' ' + zip;
+      if (!estAiValidateAddress(true)) return;
+      var address = estAiReadAddress();
       var accountSelect = document.getElementById('est-abc-account');
       var branchSelect = document.getElementById('est-abc-branch');
-      if (!accountSelect || !accountSelect.value || !branchSelect || !branchSelect.value) {
-        estAiSetStatus('Select an ABC Ship-To account and branch before starting the estimate.', true);
-        return;
-      }
-      var chat = document.getElementById('est-ai-chat');
-      var quick = document.getElementById('est-ai-quick-replies');
-      if (chat) chat.innerHTML = '';
-      if (quick) quick.innerHTML = '';
+      var abcConnected = !!(accountSelect && accountSelect.value && branchSelect && branchSelect.value);
+      var now = new Date();
       estAiSession = {
-        address: address,
-        accountNumber: accountSelect.value,
-        branchNumber: branchSelect.value,
-        scope: currentEstimate.measurementScope,
-        questionIndex: 0,
-        questions: estAiBuildQuestions(),
-        answers: {}
+        id: 'ai_est_' + now.getTime().toString(36), estimateNumber: 'HM-' + now.getFullYear() + '-' + String(now.getTime()).slice(-6), createdAt: now.toISOString(),
+        propertyType: currentEstimate.propertyType || estimateCreationState.propertyType, trade: currentEstimate.measurementScope || estimateCreationState.activeEstimate.trade,
+        address: address, abcPricing: { connected: abcConnected, accountNumber: abcConnected ? accountSelect.value : null, branchNumber: abcConnected ? branchSelect.value : null, pricesRetrieved: false },
+        answers: {}, questions: [], questionIndex: 0, requiredPhotos: [], measurements: [], lineItems: [], assumptions: [], customer: null, taxRate: 0, notes: '', status: 'processing'
       };
       currentEstimate.aiSession = estAiSession;
-      estAiAppendMessage('assistant', 'Starting the estimate for ' + address + '. Your ABC account and branch are selected. I’ll collect the job details that cannot be determined reliably from property data.');
-      estAiSetStatus('AI estimate intake started.', false);
-      var startButton = document.getElementById('est-ai-generate');
-      if (startButton) startButton.textContent = 'Restart AI Estimate';
-      estAiShowQuestion();
-      var estimatorPanel = document.getElementById('est-ai-estimator-panel');
-      if (estimatorPanel) {
-        setTimeout(function () { estimatorPanel.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
-      }
+      document.getElementById('est-ai-processing-context').textContent = (estAiSession.propertyType === 'commercial' ? 'Commercial' : 'Residential') + ' · ' + (EST_SCOPE_LABELS[estAiSession.trade] || estAiSession.trade) + ' · ' + address.formatted;
+      showPage('page-est-ai-processing');
+      estAiRunProcessing('initial');
     }
+    ['est-ai-street', 'est-ai-city', 'est-ai-state', 'est-ai-zip'].forEach(function (id) {
+      var field = document.getElementById(id);
+      if (field) { field.addEventListener('input', function () { estAiValidateAddress(false); }); field.addEventListener('change', function () { estAiValidateAddress(false); }); field.addEventListener('blur', function () { estAiValidateAddress(true); }); }
+    });
     var estAiGenerateButton = document.getElementById('est-ai-generate');
     if (estAiGenerateButton) estAiGenerateButton.addEventListener('click', estAiStartEstimate);
-    var estAiChatSend = document.getElementById('est-ai-chat-send');
-    if (estAiChatSend) estAiChatSend.addEventListener('click', function () {
-      var input = document.getElementById('est-ai-chat-input');
-      estAiSubmitAnswer(input ? input.value : '');
+    document.getElementById('est-ai-retry').addEventListener('click', function () { estAiRunProcessing('retry'); });
+    document.getElementById('est-ai-question-options').addEventListener('click', function (event) {
+      var button = event.target.closest('[data-est-ai-question-answer]');
+      if (!button) return;
+      this.querySelectorAll('button').forEach(function (item) { item.classList.toggle('is-selected', item === button); });
+      document.getElementById('est-ai-question-input').value = '';
+      document.getElementById('est-ai-question-continue').disabled = false;
     });
-    var estAiChatInput = document.getElementById('est-ai-chat-input');
-    if (estAiChatInput) estAiChatInput.addEventListener('keydown', function (event) {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        estAiSubmitAnswer(this.value);
-      }
+    document.getElementById('est-ai-question-input').addEventListener('input', function () {
+      document.querySelectorAll('[data-est-ai-question-answer]').forEach(function (item) { item.classList.remove('is-selected'); });
+      document.getElementById('est-ai-question-continue').disabled = !this.value.trim();
     });
-    var estAiPhotoUpload = document.getElementById('est-ai-photo-upload');
-    var estAiPhotoFiles = document.getElementById('est-ai-photo-files');
-    if (estAiPhotoUpload && estAiPhotoFiles) {
-      estAiPhotoUpload.addEventListener('click', function () { estAiPhotoFiles.click(); });
-      estAiPhotoFiles.addEventListener('change', function () {
-        var count = this.files ? this.files.length : 0;
-        var photoStatus = document.getElementById('est-ai-photo-status');
-        if (photoStatus) photoStatus.textContent = count ? count + ' property photo' + (count === 1 ? '' : 's') + ' selected for this estimate.' : 'No property photos selected.';
-      });
-    }
+    document.getElementById('est-ai-question-continue').addEventListener('click', estAiSubmitQuestion);
+    document.getElementById('est-ai-question-cancel').addEventListener('click', function () { estAiCloseQuestionModal(); showPage('page-est-ai'); });
+    document.getElementById('est-ai-photo-upload').addEventListener('click', function () { estAiReplacePhotoIndex = -1; document.getElementById('est-ai-photo-files').click(); });
+    document.getElementById('est-ai-camera-capture').addEventListener('click', function () { estAiReplacePhotoIndex = -1; document.getElementById('est-ai-camera-file').click(); });
+    document.getElementById('est-ai-photo-files').addEventListener('change', function () { estAiAddPhotoFiles(this.files); this.value = ''; });
+    document.getElementById('est-ai-camera-file').addEventListener('change', function () { estAiAddPhotoFiles(this.files); this.value = ''; });
+    document.getElementById('est-ai-photo-gallery').addEventListener('click', function (event) {
+      var remove = event.target.closest('[data-est-ai-photo-remove]');
+      var replace = event.target.closest('[data-est-ai-photo-replace]');
+      if (remove) { var removeIndex = Number(remove.dataset.estAiPhotoRemove); if (estAiPhotoItems[removeIndex]) URL.revokeObjectURL(estAiPhotoItems[removeIndex].url); estAiPhotoItems.splice(removeIndex, 1); estAiRenderPhotos(); }
+      if (replace) { estAiReplacePhotoIndex = Number(replace.dataset.estAiPhotoReplace); document.getElementById('est-ai-photo-files').click(); }
+    });
+    document.getElementById('est-ai-photo-continue').addEventListener('click', estAiUploadPhotosAndContinue);
+    document.getElementById('est-ai-add-line').addEventListener('click', function () {
+      if (!estAiSession) return;
+      estAiSession.lineItems.push({ id: 'manual_' + Date.now().toString(36), description: '', quantity: 0, unit: '', material: 0, labor: 0, waste: 0, source: 'User entered', confidence: 'Needs verification' });
+      estAiRenderLineItems();
+      var rows = document.querySelectorAll('#est-ai-line-items tr'); if (rows.length) rows[rows.length - 1].querySelector('input').focus();
+    });
+    document.getElementById('est-ai-line-items').addEventListener('input', function (event) {
+      var row = event.target.closest('[data-est-ai-line]'); if (!row || !estAiSession) return;
+      var item = estAiSession.lineItems[Number(row.dataset.estAiLine)]; var field = event.target.dataset.field; if (!item || !field) return;
+      item[field] = ['quantity', 'material', 'labor', 'waste'].indexOf(field) >= 0 ? Math.max(0, Number(event.target.value) || 0) : event.target.value;
+      var totalCell = row.querySelector('[data-est-ai-line-total]');
+      if (totalCell) totalCell.textContent = estAiMoney(Number(item.quantity) * (Number(item.material) + Number(item.labor)) * (1 + Number(item.waste) / 100));
+      estAiUpdateTotals();
+    });
+    document.getElementById('est-ai-line-items').addEventListener('change', function (event) {
+      var row = event.target.closest('[data-est-ai-line]'); if (!row || !estAiSession || !event.target.dataset.field) return;
+      var item = estAiSession.lineItems[Number(row.dataset.estAiLine)];
+      var field = event.target.dataset.field;
+      item[field] = ['quantity', 'material', 'labor', 'waste'].indexOf(field) >= 0 ? Math.max(0, Number(event.target.value) || 0) : event.target.value;
+      estAiUpdateTotals();
+    });
+    document.getElementById('est-ai-line-items').addEventListener('click', function (event) {
+      var remove = event.target.closest('[data-est-ai-remove-line]'); if (!remove || !estAiSession) return;
+      estAiSession.lineItems.splice(Number(remove.dataset.estAiRemoveLine), 1); estAiRenderLineItems();
+    });
+    document.getElementById('est-ai-tax-rate').addEventListener('input', estAiUpdateTotals);
+    document.getElementById('est-ai-save').addEventListener('click', estAiSaveEstimate);
+    document.getElementById('est-ai-saved-list').addEventListener('click', function (event) { var button = event.target.closest('[data-est-ai-open-saved]'); if (button) estAiOpenSavedEstimate(button.dataset.estAiOpenSaved); });
     document.getElementById('back-from-est-ai').addEventListener('click', function () { showPage('page-estimates'); });
+    document.getElementById('back-from-est-ai-processing').addEventListener('click', function () { estAiProcessingToken += 1; estAiCloseQuestionModal(); showPage('page-est-ai'); });
+    document.getElementById('back-from-est-ai-result').addEventListener('click', function () { showPage('page-estimates'); });
+    estAiValidateAddress(false);
+    estAiRenderSavedList();
 
     // Drone photo upload
     document.getElementById('est-drone-upload-btn').addEventListener('click', function () {
@@ -57782,9 +58434,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           '</button>',
           '<button class="nav-item" type="button" data-dashboard-action="map" aria-label="Map">',
             '<span class="dash-icon" data-dash-icon="map" aria-hidden="true"></span><span class="nav-label">Map</span>',
-          '</button>',
-          '<button class="nav-item" type="button" data-dashboard-action="campaigns" aria-label="Campaigns">',
-            '<span class="dash-icon" data-dash-icon="speakerphone" aria-hidden="true"></span><span class="nav-label">Campaign</span>',
           '</button>',
           '<button class="nav-item" type="button" data-dashboard-action="estimates" aria-label="Estimates">',
             '<span class="dash-icon" data-dash-icon="file-dollar" aria-hidden="true"></span><span class="nav-label">Estimates</span>',
@@ -75898,6 +76547,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       'page-ai': 'Hail Money AI',
       'page-estimates': 'Estimates',
       'page-est-ai': 'AI Estimate',
+      'page-est-ai-processing': 'Preparing AI Estimate',
+      'page-est-ai-result': 'AI Estimate',
       'page-est-drone': 'Drone Estimate',
       'page-est-upload': 'Upload Estimate',
       'page-est-manual': 'Manual Estimate',

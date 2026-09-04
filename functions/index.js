@@ -1014,14 +1014,10 @@ exports.noaaPlsrProxy = functions.https.onRequest(
 const crypto = require("crypto");
 
 function setAbcCors(req, res) {
-  const allowed = new Set([
-    "https://hailmoneymap.web.app",
-    "https://hailmoneymap.firebaseapp.com",
-    "http://127.0.0.1:5500",
-    "http://localhost:5500"
-  ]);
-  const origin = req.get("origin");
-  if (origin && allowed.has(origin)) {
+  const origin = String(req.get("origin") || "");
+  const allowed = /^https:\/\/(hailmoneymap\.web\.app|hailmoneymap\.firebaseapp\.com)$/i.test(origin) ||
+    /^http:\/\/(127\.0\.0\.1|localhost):\d+$/i.test(origin);
+  if (allowed) {
     res.set("Access-Control-Allow-Origin", origin);
     res.set("Vary", "Origin");
   }
@@ -1138,11 +1134,17 @@ async function abcApiRequest(uid, path, options = {}) {
   return data;
 }
 
-exports.abcOAuthStart = onRequest(
+// ABC endpoints deploy from the isolated `functions-abc` codebase. Keep these
+// legacy definitions unexported until the historical block can be removed in a
+// dedicated cleanup, avoiding duplicate function IDs across codebases.
+const legacyAbcFunctions = {};
+
+legacyAbcFunctions.abcOAuthStart = onRequest(
   { secrets: [ABC_CLIENT_ID], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
+    if (req.method !== "POST") return res.status(405).json({ error: "POST required." });
     try {
       const user = await requireHailMoneyUser(req);
       const state = crypto.randomBytes(32).toString("hex");
@@ -1170,7 +1172,7 @@ exports.abcOAuthStart = onRequest(
   }
 );
 
-exports.abcOAuthCallback = onRequest(
+legacyAbcFunctions.abcOAuthCallback = onRequest(
   { secrets: [ABC_CLIENT_ID, ABC_CLIENT_SECRET], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
@@ -1211,11 +1213,12 @@ exports.abcOAuthCallback = onRequest(
   }
 );
 
-exports.abcAccounts = onRequest(
+legacyAbcFunctions.abcAccounts = onRequest(
   { secrets: [ABC_CLIENT_ID, ABC_CLIENT_SECRET], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
+    if (req.method !== "GET") return res.status(405).json({ error: "GET required." });
     try {
       const user = await requireHailMoneyUser(req);
       const data = await abcApiRequest(user.uid, "/api/account/v1/search/accounts", {
@@ -1236,7 +1239,7 @@ exports.abcAccounts = onRequest(
   }
 );
 
-exports.abcPriceItems = onRequest(
+legacyAbcFunctions.abcPriceItems = onRequest(
   { secrets: [ABC_CLIENT_ID, ABC_CLIENT_SECRET], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
@@ -1268,7 +1271,7 @@ exports.abcPriceItems = onRequest(
   }
 );
 
-exports.abcFavoriteItems = onRequest(
+legacyAbcFunctions.abcFavoriteItems = onRequest(
   { secrets: [ABC_CLIENT_ID, ABC_CLIENT_SECRET], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
@@ -1293,7 +1296,7 @@ exports.abcFavoriteItems = onRequest(
   }
 );
 
-exports.abcSearchProducts = onRequest(
+legacyAbcFunctions.abcSearchProducts = onRequest(
   { secrets: [ABC_CLIENT_ID, ABC_CLIENT_SECRET], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);

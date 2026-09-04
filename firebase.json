@@ -1,7 +1,14 @@
 {
-  "functions": {
-    "source": "functions"
-  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default"
+    },
+    {
+      "source": "functions-abc",
+      "codebase": "abc"
+    }
+  ],
   "hosting": {
     "public": "public",
     "ignore": [
