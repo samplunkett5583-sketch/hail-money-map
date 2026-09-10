@@ -20921,6 +20921,7 @@
     @page{size:letter portrait;margin:10mm}
     @page landscape{size:letter landscape;margin:8mm}
 </style>
+  <link rel="stylesheet" href="./estimate-ai-flow.css?v=20260908-roof-lines" />
 </head>
 <body>
   <div class="app-shell">
@@ -80714,5 +80715,9 @@ window.mapsSetCampaignMode=setActive;
 document.addEventListener('click',function(e){var go=e.target.closest&&e.target.closest('#maps-go-campaign-btn');if(go){e.preventDefault();e.stopImmediatePropagation();setActive(!active);return}var apply=e.target.closest&&e.target.closest('#maps-campaign-apply');if(apply){e.preventDefault();render();return}var clear=e.target.closest&&e.target.closest('#maps-campaign-clear-markers');if(clear){e.preventDefault();clearMarkers();return}var old=e.target.closest&&e.target.closest('#open-campaigns');if(old){e.preventDefault();e.stopImmediatePropagation();if(typeof showPage==='function')showPage('page-map');setTimeout(function(){setActive(true)},350)}},true);
 document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.target&&e.target.id==='maps-campaign-min-value'){e.preventDefault();render()}});
 })();
-</script></body>
+</script>
+<script src="./vendor-jspdf.umd.min.js?v=2.5.1"></script>
+<script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
+<script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
+</body>
 </html>
