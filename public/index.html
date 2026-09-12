@@ -20789,6 +20789,34 @@
     #page-login #login-submit-btn:hover,#page-login #login-submit-btn:focus-visible{background:linear-gradient(180deg,#ffdc73 0%,#e8aa32 100%)!important;box-shadow:0 7px 18px rgba(23,25,45,.38)!important;transform:translateY(-1px)!important;text-decoration:none!important}
     #page-login #login-submit-btn:disabled{cursor:wait!important;opacity:.72!important;transform:none!important}
     @media(max-width:700px){#page-login .login-card{width:min(245px,calc(100vw - 20px))!important}#page-login #login-submit-btn{min-height:48px!important;font-size:16px!important}}    /* Uniform category Contacts layout. */
+
+    /* Tester Training Center */
+    #page-tester-training .tester-training-body { padding:24px; }
+    .tester-training-wrap { width:min(980px,100%); margin:0 auto; color:#17192d; }
+    .tester-training-hero { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; align-items:center; padding:22px; border:1px solid rgba(115,82,17,.32); border-radius:14px; background:linear-gradient(135deg,#fffdf7,#f8e5a4); box-shadow:0 8px 22px rgba(89,57,5,.12); }
+    .tester-training-kicker { margin:0 0 5px; color:#8c641a; font-size:11px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+    .tester-training-title { margin:0; font-size:28px; line-height:1.12; }
+    .tester-training-intro { margin:8px 0 0; color:#555867; font-size:14px; line-height:1.5; }
+    .tester-training-role { display:inline-flex; align-items:center; justify-content:center; min-width:130px; min-height:42px; padding:8px 13px; border-radius:999px; background:#202239; color:#fff; font-size:13px; font-weight:800; text-align:center; }
+    .tester-training-progress-card { margin-top:14px; padding:14px 16px; border:1px solid #d8d9df; border-radius:10px; background:#fff; }
+    .tester-training-progress-row { display:flex; justify-content:space-between; gap:12px; margin-bottom:8px; font-size:13px; font-weight:800; }
+    .tester-training-progress-track { height:12px; overflow:hidden; border-radius:999px; background:#e8e9ed; }
+    .tester-training-progress-fill { width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#d99a27,#f4ca55); transition:width .2s ease; }
+    .tester-training-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:14px; }
+    .tester-training-card { position:relative; display:grid; grid-template-columns:auto minmax(0,1fr); gap:12px; padding:17px; border:1px solid #d8d9df; border-radius:11px; background:#fff; box-shadow:0 4px 12px rgba(23,25,45,.07); }
+    .tester-training-card[hidden] { display:none !important; }
+    .tester-training-card.is-complete { border-color:#65a779; background:#f6fff8; }
+    .tester-training-check { width:23px; height:23px; margin:1px 0 0; accent-color:#217346; cursor:pointer; }
+    .tester-training-step { margin:0 0 5px; font-size:15px; line-height:1.25; }
+    .tester-training-card p { margin:0; color:#5c5f6d; font-size:12px; line-height:1.5; }
+    .tester-training-list { margin:9px 0 0; padding-left:18px; color:#343744; font-size:12px; line-height:1.55; }
+    .tester-training-open { margin-top:12px; min-height:34px; padding:7px 11px; border:1px solid #202239; border-radius:7px; background:#202239; color:#fff; font-size:12px; font-weight:800; cursor:pointer; }
+    .tester-training-open:hover { background:#343653; }
+    .tester-training-card.is-complete .tester-training-open { background:#217346; border-color:#217346; }
+    .tester-training-report { grid-column:1/-1; border-color:#c99d3e; }
+    .tester-training-report-template { margin-top:10px; padding:10px; border-radius:7px; background:#f4f5f8; color:#343744; font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace; white-space:pre-line; }
+    .tester-training-copy-status { min-height:17px; margin-top:6px; color:#217346; font-size:11px; font-weight:700; }
+    @media(max-width:760px){#page-tester-training .tester-training-body{padding:14px}.tester-training-hero{grid-template-columns:1fr;padding:17px}.tester-training-title{font-size:23px}.tester-training-role{justify-self:start}.tester-training-grid{grid-template-columns:1fr}.tester-training-report{grid-column:auto}}
     #page-crm-contacts .crm-dashboard-mini-body{position:relative;isolation:isolate;padding:14px var(--crm-shell-pad-x,16px) 24px!important;background:linear-gradient(180deg,#e9c55d 0%,#d7a832 100%)!important}
     #page-crm-contacts .crm-contacts-page-shell{width:min(1120px,100%)!important;margin:0 auto!important}
     #page-crm-contacts .crm-contact-list-card{padding:14px!important;background:rgba(255,255,255,.18)!important;border:1px solid rgba(112,78,10,.28)!important;border-radius:14px!important;box-shadow:none!important;overflow:hidden}
@@ -21142,6 +21170,9 @@
               <button class="nav-item" type="button" data-dashboard-action="roofer-ai" aria-label="Roofer AI">
                 <span class="dash-icon" data-dash-icon="robot" aria-hidden="true"></span><span class="nav-label">AI</span>
               </button>
+              <button class="nav-item" type="button" data-dashboard-action="tester-training" aria-label="Tester Training">
+                <span class="dash-icon" data-dash-icon="clipboard-list" aria-hidden="true"></span><span class="nav-label">Training</span>
+              </button>
               <button class="nav-item nav-item-admin-only" type="button" data-dashboard-action="employee" aria-label="Employee">
                 <span class="dash-icon" data-dash-icon="user-plus" aria-hidden="true"></span><span class="nav-label">Employee</span>
               </button>
@@ -21339,6 +21370,80 @@
                     <div class="view-all">View all activity...</div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-tester-training" class="page" data-crm-header-title="Tester Training">
+        <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell data-dashboard-active-action="tester-training">
+          <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
+          <div class="crm-dashboard-mini-body tester-training-body">
+            <div class="tester-training-wrap">
+              <section class="tester-training-hero">
+                <div>
+                  <p class="tester-training-kicker">Hail Money Tester Training</p>
+                  <h1 class="tester-training-title">Learn the CRM without waiting for help</h1>
+                  <p class="tester-training-intro">Complete these lessons in order. Use the buttons to practice in the app, then return here and check each lesson complete.</p>
+                </div>
+                <div class="tester-training-role" id="tester-training-role">Your role</div>
+              </section>
+
+              <section class="tester-training-progress-card" aria-label="Training progress">
+                <div class="tester-training-progress-row"><span>Your progress</span><span id="tester-training-progress-label">0 of 0 complete</span></div>
+                <div class="tester-training-progress-track"><div class="tester-training-progress-fill" id="tester-training-progress-fill"></div></div>
+              </section>
+
+              <div class="tester-training-grid" id="tester-training-grid">
+                <section class="tester-training-card" data-training-step="dashboard">
+                  <input class="tester-training-check" type="checkbox" aria-label="Mark Dashboard lesson complete" />
+                  <div><h2 class="tester-training-step">1. Dashboard and navigation</h2><p>The Dashboard is your starting point. The left menu opens the major sections. The pipeline totals and activity feed update as work is added.</p><ul class="tester-training-list"><li>Open the Dashboard.</li><li>Locate Pipeline, Leads, Map, Estimates, Photos, Meetings, AI, and Training.</li><li>Use your profile menu to confirm your assigned role.</li></ul><button class="tester-training-open" type="button" data-training-open="dashboard">Open Dashboard</button></div>
+                </section>
+
+                <section class="tester-training-card" data-training-step="new-lead">
+                  <input class="tester-training-check" type="checkbox" aria-label="Mark New Lead lesson complete" />
+                  <div><h2 class="tester-training-step">2. Create a test lead</h2><p>Create a pretend homeowner. Use clearly fake test information—never enter a real customer while testing.</p><ul class="tester-training-list"><li>Choose New, then Lead.</li><li>Complete every required homeowner and property field.</li><li>Save once and confirm the lead appears in your lead list.</li></ul><button class="tester-training-open" type="button" data-training-open="new-lead">Create Test Lead</button></div>
+                </section>
+
+                <section class="tester-training-card" data-training-step="leads">
+                  <input class="tester-training-check" type="checkbox" aria-label="Mark Leads lesson complete" />
+                  <div><h2 class="tester-training-step">3. Leads and customer records</h2><p>Open the test lead you created and review the customer record. Your role controls which leads you can see.</p><ul class="tester-training-list"><li>Search for the test homeowner.</li><li>Open the lead and verify the name, address, phone, and assigned rep.</li><li>Add a note and confirm it appears in activity.</li></ul><button class="tester-training-open" type="button" data-training-open="leads">Open Leads</button></div>
+                </section>
+
+                <section class="tester-training-card" data-training-step="pipeline" data-training-roles="Owner,Admin,Office,Manager,Sales Rep">
+                  <input class="tester-training-check" type="checkbox" aria-label="Mark Pipeline lesson complete" />
+                  <div><h2 class="tester-training-step">4. Move work through the Pipeline</h2><p>The Pipeline shows where each customer is in the sales and production process.</p><ul class="tester-training-list"><li>Find your test lead.</li><li>Open it before changing its stage.</li><li>Move it only to the next correct stage and confirm the Dashboard count changes.</li></ul><button class="tester-training-open" type="button" data-training-open="pipeline">Open Pipeline</button></div>
+                </section>
+
+                <section class="tester-training-card" data-training-step="job-folder" data-training-roles="Owner,Admin,Office,Manager,Sales Rep,Production">
+                  <input class="tester-training-check" type="checkbox" aria-label="Mark Job Folder lesson complete" />
+                  <div><h2 class="tester-training-step">5. Job Folder, notes, photos, and documents</h2><p>Open a customer from Leads or Pipeline to reach their Job Folder.</p><ul class="tester-training-list"><li>Add one test note.</li><li>Upload a test photo and a test document.</li><li>Confirm each item stays with the correct homeowner.</li><li>Do not upload private or sensitive documents during testing.</li></ul><button class="tester-training-open" type="button" data-training-open="leads">Find a Customer</button></div>
+                </section>
+
+                <section class="tester-training-card" data-training-step="map" data-training-roles="Owner,Admin,Office,Manager,Sales Rep,Production">
+                  <input class="tester-training-check" type="checkbox" aria-label="Mark Map lesson complete" />
+                  <div><h2 class="tester-training-step">6. Money Maps</h2><p>Use the map to review storm dates, hail swaths, affected properties, and campaign areas.</p><ul class="tester-training-list"><li>Open the newest storm.</li><li>Zoom into a swath and select a property.</li><li>Try the opacity and date controls.</li><li>Do not treat test map results as a final customer report.</li></ul><button class="tester-training-open" type="button" data-training-open="map">Open Money Maps</button></div>
+                </section>
+
+                <section class="tester-training-card" data-training-step="ai-estimate" data-training-roles="Owner,Admin,Office,Manager,Sales Rep">
+                  <input class="tester-training-check" type="checkbox" aria-label="Mark AI Estimate lesson complete" />
+                  <div><h2 class="tester-training-step">7. Create an AI Estimate</h2><p>AI Measurements is the only estimate method released to testers right now.</p><ul class="tester-training-list"><li>Choose Residential or Commercial.</li><li>Select Roof, Siding, or Gutters.</li><li>Choose AI Measurements and follow every question.</li><li>Drone, uploaded reports, and online orders are Coming Soon for regular users.</li></ul><button class="tester-training-open" type="button" data-training-open="estimates">Open Estimates</button></div>
+                </section>
+
+                <section class="tester-training-card tester-training-report" data-training-step="report-problem">
+                  <input class="tester-training-check" type="checkbox" aria-label="Mark Problem Reporting lesson complete" />
+                  <div><h2 class="tester-training-step">8. Report a problem correctly</h2><p>If something fails, stop on that screen and take a screenshot. Send the screenshot with the exact information below so the issue can be reproduced.</p><div class="tester-training-report-template" id="tester-training-report-template">HAIL MONEY TEST REPORT
+Tester name:
+Login role:
+Page or section:
+What I clicked, in order:
+What I expected:
+What actually happened:
+Customer/test lead name:
+Device and browser:
+Screenshot attached: Yes / No</div><button class="tester-training-open" type="button" id="tester-training-copy-report">Copy Problem Report</button><div class="tester-training-copy-status" id="tester-training-copy-status" aria-live="polite"></div></div>
+                </section>
               </div>
             </div>
           </div>
@@ -26468,6 +26573,7 @@
       'page-crm-job-profitability',
       'page-crm-job-file',
       'page-crm-calendar',
+      'page-tester-training',
       'page-payroll',
       'page-crm-settings'
     ];
@@ -58508,6 +58614,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           '<button class="nav-item" type="button" data-dashboard-action="roofer-ai" aria-label="Roofer AI">',
             '<span class="dash-icon" data-dash-icon="robot" aria-hidden="true"></span><span class="nav-label">AI</span>',
           '</button>',
+          '<button class="nav-item" type="button" data-dashboard-action="tester-training" aria-label="Tester Training">',
+            '<span class="dash-icon" data-dash-icon="clipboard-list" aria-hidden="true"></span><span class="nav-label">Training</span>',
+          '</button>',
           '<button class="nav-item nav-item-admin-only" type="button" data-dashboard-action="employee" aria-label="Employee">',
             '<span class="dash-icon" data-dash-icon="user-plus" aria-hidden="true"></span><span class="nav-label">Employee</span>',
           '</button>',
@@ -59257,10 +59366,66 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmRenderMiniDashboardShells(page);
     }
     function crmOpenJobActionList(type){var search=document.getElementById('crm-job-actions-search');if(search)search.value='';crmRenderJobActionList(type);showPage('page-crm-job-actions');}
+    var CRM_TESTER_TRAINING_KEY = 'hailMoneyTesterTrainingV1';
+
+    function crmGetTesterTrainingStorageKey() {
+      var email = String(localStorage.getItem(CRM_USER_EMAIL_KEY) || crmGetCurrentUserName() || 'tester').trim().toLowerCase();
+      return CRM_TESTER_TRAINING_KEY + ':' + email;
+    }
+
+    function crmGetTesterTrainingProgress() {
+      try { return JSON.parse(localStorage.getItem(crmGetTesterTrainingStorageKey()) || '{}') || {}; }
+      catch (_) { return {}; }
+    }
+
+    function crmSaveTesterTrainingProgress(progress) {
+      try { localStorage.setItem(crmGetTesterTrainingStorageKey(), JSON.stringify(progress || {})); }
+      catch (_) { showUploadToast('Training progress could not be saved on this device.'); }
+    }
+
+    function crmUpdateTesterTrainingProgress() {
+      var page = document.getElementById('page-tester-training');
+      if (!page) return;
+      var visibleCards = Array.from(page.querySelectorAll('[data-training-step]')).filter(function (card) { return !card.hidden; });
+      var completed = visibleCards.filter(function (card) {
+        var check = card.querySelector('.tester-training-check');
+        return check && check.checked;
+      }).length;
+      var total = visibleCards.length;
+      var label = document.getElementById('tester-training-progress-label');
+      var fill = document.getElementById('tester-training-progress-fill');
+      if (label) label.textContent = completed + ' of ' + total + ' complete';
+      if (fill) fill.style.width = (total ? Math.round((completed / total) * 100) : 0) + '%';
+    }
+
+    function crmRenderTesterTraining() {
+      var page = document.getElementById('page-tester-training');
+      if (!page) return;
+      var role = String(crmGetRole() || 'Sales Rep').trim();
+      var roleEl = document.getElementById('tester-training-role');
+      if (roleEl) roleEl.textContent = role + ' Training';
+      var progress = crmGetTesterTrainingProgress();
+      page.querySelectorAll('[data-training-step]').forEach(function (card) {
+        var allowedRoles = String(card.getAttribute('data-training-roles') || '').split(',').map(function (item) { return item.trim(); }).filter(Boolean);
+        card.hidden = allowedRoles.length > 0 && allowedRoles.indexOf(role) === -1;
+        var step = card.getAttribute('data-training-step');
+        var check = card.querySelector('.tester-training-check');
+        if (check) check.checked = progress[step] === true;
+        card.classList.toggle('is-complete', !!(check && check.checked));
+      });
+      crmRenderMiniDashboardShells(page);
+      crmUpdateTesterTrainingProgress();
+    }
+
     function crmHandleDashboardTabAction(tab, pipelineStage) {
       tab = String(tab || '').trim();
       pipelineStage = String(pipelineStage || '').trim().toLowerCase();
       if (!tab) return;
+      if (tab === 'tester-training') {
+        crmRenderTesterTraining();
+        showPage('page-tester-training');
+        return;
+      }
       if (tab === 'map') {
         var App = mapsGetAppState();
         App.mapsNavigationTiming = {};
@@ -59387,6 +59552,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     document.addEventListener('click', function (e) {
+      var trainingOpenBtn = e.target.closest('[data-training-open]');
+      if (trainingOpenBtn) {
+        e.preventDefault();
+        crmHandleDashboardTabAction(trainingOpenBtn.getAttribute('data-training-open') || 'dashboard');
+        return;
+      }
       var contactCategoryBtn = e.target.closest('[data-contact-category]');
       if (contactCategoryBtn) {
         e.preventDefault();
@@ -59426,6 +59597,30 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         btn.getAttribute('data-dashboard-action') || btn.getAttribute('data-dashboard-tab'),
         btn.getAttribute('data-dashboard-pipeline-stage') || ''
       );
+    });
+
+    document.addEventListener('change', function (e) {
+      var check = e.target.closest && e.target.closest('#page-tester-training .tester-training-check');
+      if (!check) return;
+      var card = check.closest('[data-training-step]');
+      if (!card) return;
+      var progress = crmGetTesterTrainingProgress();
+      progress[card.getAttribute('data-training-step')] = !!check.checked;
+      crmSaveTesterTrainingProgress(progress);
+      card.classList.toggle('is-complete', !!check.checked);
+      crmUpdateTesterTrainingProgress();
+    });
+
+    var testerTrainingCopyReport = document.getElementById('tester-training-copy-report');
+    if (testerTrainingCopyReport) testerTrainingCopyReport.addEventListener('click', async function () {
+      var template = String((document.getElementById('tester-training-report-template') || {}).innerText || '').trim();
+      var status = document.getElementById('tester-training-copy-status');
+      try {
+        await navigator.clipboard.writeText(template);
+        if (status) status.textContent = 'Problem report copied. Paste it into your message to the administrator.';
+      } catch (_) {
+        if (status) status.textContent = 'Select the report above and copy it before contacting the administrator.';
+      }
     });
 
     var _crmReminderMentionState = {
