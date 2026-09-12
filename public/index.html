@@ -20785,11 +20785,10 @@
     #page-login .login-fields{display:grid!important;width:100%!important;gap:7px!important;margin:0!important}
     #page-login .login-fields .field{margin:0!important}
     #page-login .login-fields .field input{display:block!important;width:100%!important;min-height:31px!important;height:31px!important;padding:5px 9px!important;box-sizing:border-box!important;background:rgba(255,255,255,.88)!important;border:1px solid rgba(27,27,46,.55)!important;border-radius:5px!important;color:#17172c!important;font-size:12px!important;text-align:left!important}
-    #page-login #login-submit-btn{display:block!important;width:auto!important;min-height:0!important;margin:48px auto 0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:#17172c!important;font-family:Arial,Helvetica,sans-serif!important;font-size:11px!important;font-weight:800!important;line-height:1.25!important;cursor:pointer!important}
-    #page-login #login-submit-btn:hover,#page-login #login-submit-btn:focus-visible{color:#8c5c00!important;text-decoration:underline!important}
-    #page-login .login-test-corner{position:fixed!important;z-index:4!important;top:8px!important;right:8px!important;width:auto!important;margin:0!important;padding:5px 7px!important;background:rgba(255,255,255,.68)!important;border:1px solid rgba(17,17,17,.16)!important;border-radius:4px!important;color:#343434!important;font-size:8px!important;line-height:1.3!important;text-align:left!important}
-    #page-login .login-test-corner strong{color:#17172c!important}
-    @media(max-width:700px){#page-login .login-card{width:min(205px,calc(100vw - 20px))!important}#page-login .login-test-corner{top:4px!important;right:4px!important;font-size:7px!important}}    /* Uniform category Contacts layout. */
+    #page-login #login-submit-btn{display:block!important;width:100%!important;min-height:46px!important;margin:18px auto 0!important;padding:11px 16px!important;border:2px solid #17172c!important;border-radius:8px!important;background:linear-gradient(180deg,#f4ca55 0%,#d99a27 100%)!important;box-shadow:0 5px 14px rgba(23,25,45,.3)!important;color:#17172c!important;font-family:Arial,Helvetica,sans-serif!important;font-size:16px!important;font-weight:900!important;line-height:1.2!important;letter-spacing:.01em!important;cursor:pointer!important}
+    #page-login #login-submit-btn:hover,#page-login #login-submit-btn:focus-visible{background:linear-gradient(180deg,#ffdc73 0%,#e8aa32 100%)!important;box-shadow:0 7px 18px rgba(23,25,45,.38)!important;transform:translateY(-1px)!important;text-decoration:none!important}
+    #page-login #login-submit-btn:disabled{cursor:wait!important;opacity:.72!important;transform:none!important}
+    @media(max-width:700px){#page-login .login-card{width:min(245px,calc(100vw - 20px))!important}#page-login #login-submit-btn{min-height:48px!important;font-size:16px!important}}    /* Uniform category Contacts layout. */
     #page-crm-contacts .crm-dashboard-mini-body{position:relative;isolation:isolate;padding:14px var(--crm-shell-pad-x,16px) 24px!important;background:linear-gradient(180deg,#e9c55d 0%,#d7a832 100%)!important}
     #page-crm-contacts .crm-contacts-page-shell{width:min(1120px,100%)!important;margin:0 auto!important}
     #page-crm-contacts .crm-contact-list-card{padding:14px!important;background:rgba(255,255,255,.18)!important;border:1px solid rgba(112,78,10,.28)!important;border-radius:14px!important;box-shadow:none!important;overflow:hidden}
@@ -21053,10 +21052,9 @@
               <div class="field"><input id="login-email" type="email" placeholder="Username or email" aria-label="Username or email" autocomplete="email" /></div>
               <div class="field"><input id="login-password" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password" /></div>
             </div>
-            <button type="button" id="login-submit-btn">Login / Sign Up</button>
+            <button type="button" id="login-submit-btn">Log In / Create Account</button>
             <div id="login-error-msg" class="validation-msg" style="display:none;margin-top:7px;"></div>
           </div>
-          <div class="login-hint login-test-corner"><strong>Temporary test logins</strong><br>admin@hailmoney.test / admin123<br>rep@hailmoney.test / rep123<br>canvasser@hailmoney.test / canv123</div>
         </div>
       </section>
 
@@ -76891,7 +76889,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var errEl=document.getElementById('login-error-msg'),button=document.getElementById('login-submit-btn');
       errEl.style.display='none';button.disabled=true;button.textContent='Signing in…';
       try{await hmLoginVerifiedEmployee(email,password);}catch(error){errEl.textContent=error&&error.message?error.message:'Invalid credentials.';errEl.style.display='block';}
-      finally{button.disabled=false;button.textContent='Login / Sign Up';}
+      finally{button.disabled=false;button.textContent='Log In / Create Account';}
     });
     /* Allow Enter key on either login field to submit */
     ['login-email', 'login-password'].forEach(function (id) {
