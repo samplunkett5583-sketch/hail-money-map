@@ -18978,6 +18978,48 @@
     #page-estimates .estimates-choice-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
     #page-estimates .estimates-choice-grid-two { grid-template-columns:repeat(2,minmax(0,1fr)); }
     #page-estimates [data-est-measurement-source].is-selected { border-color:#c99d3e; background:#fff8e5; box-shadow:inset 4px 0 0 #d4a93e; }
+    #page-estimates [data-est-measurement-source].is-coming-soon {
+      cursor:not-allowed;
+      opacity:.62;
+      padding-right:92px;
+    }
+    #page-estimates [data-est-measurement-source].is-coming-soon::after { display:none; }
+    #page-estimates [data-est-measurement-source].is-coming-soon:hover {
+      border-color:#d7d9e0;
+      background:#fff;
+      box-shadow:none;
+    }
+    #page-estimates [data-est-measurement-source].is-admin-preview {
+      cursor:pointer;
+      opacity:1;
+    }
+    #page-estimates [data-est-measurement-source].is-admin-preview::after { display:block; }
+    #page-estimates [data-est-measurement-source].is-admin-preview:hover {
+      border-color:#c99d3e;
+      background:#fffcf3;
+      box-shadow:0 6px 16px rgba(23,25,45,.08);
+    }
+    .estimates-coming-soon-badge {
+      position:absolute;
+      right:12px;
+      top:12px;
+      display:inline-flex;
+      align-items:center;
+      min-height:22px;
+      padding:3px 7px;
+      border-radius:999px;
+      background:#e8e9ed;
+      color:#555867;
+      font-size:9px;
+      font-weight:800;
+      letter-spacing:.04em;
+      line-height:1;
+      text-transform:uppercase;
+    }
+    #page-estimates [data-est-measurement-source].is-admin-preview .estimates-coming-soon-badge {
+      background:#202239;
+      color:#fff;
+    }
     #page-estimates .estimates-provider-panel { display:grid; gap:10px; margin-top:12px; padding:12px; border:1px solid #d7d9e0; border-radius:8px; background:#f7f7f8; color:#17192d; }
     #page-estimates .estimates-provider-panel strong { display:block; font-size:13px; }
     #page-estimates .estimates-provider-panel > div > span { display:block; margin-top:3px; color:#666879; font-size:12px; }
@@ -23209,9 +23251,9 @@
               <div class="estimates-panel-heading"><div><h2>How would you like to acquire your measurements for this estimate?</h2><p>Select one measurement method to continue.</p></div></div>
               <div class="estimate-path-grid">
                 <button class="menu-row" type="button" id="est-source-ai" data-est-measurement-source="ai" aria-pressed="false"><div class="menu-row-title">AI Measurements</div><div class="menu-row-desc">Use Hail Money AI to begin the existing measurement and estimate process</div></button>
-                <button class="menu-row" type="button" id="est-source-drone" data-est-measurement-source="drone" aria-pressed="false"><div class="menu-row-title">Drone Measurements</div><div class="menu-row-desc">Upload drone photos for measurement extraction</div></button>
-                <button class="menu-row" type="button" id="est-source-upload" data-est-measurement-source="upload" aria-pressed="false"><div class="menu-row-title">Upload My Own Measurements</div><div class="menu-row-desc">Import a measurement report you already have</div></button>
-                <button class="menu-row" type="button" id="est-source-online" data-est-measurement-source="online" aria-pressed="false" aria-expanded="false"><div class="menu-row-title">Order Measurements Online</div><div class="menu-row-desc">Choose a connected measurement provider</div></button>
+                <button class="menu-row" type="button" id="est-source-drone" data-est-measurement-source="drone" aria-pressed="false"><span class="estimates-coming-soon-badge">Coming Soon</span><div class="menu-row-title">Drone Measurements</div><div class="menu-row-desc">Upload drone photos for measurement extraction</div></button>
+                <button class="menu-row" type="button" id="est-source-upload" data-est-measurement-source="upload" aria-pressed="false"><span class="estimates-coming-soon-badge">Coming Soon</span><div class="menu-row-title">Upload My Own Measurements</div><div class="menu-row-desc">Import a measurement report you already have</div></button>
+                <button class="menu-row" type="button" id="est-source-online" data-est-measurement-source="online" aria-pressed="false" aria-expanded="false"><span class="estimates-coming-soon-badge">Coming Soon</span><div class="menu-row-title">Order Measurements Online</div><div class="menu-row-desc">Choose a connected measurement provider</div></button>
               </div>
               <div class="estimates-provider-panel" id="est-online-providers" hidden>
                 <div><strong>Connected measurement providers</strong><span>Provider ordering will be available here when a connection is enabled.</span></div>
@@ -45722,6 +45764,16 @@ function mapsGoogleReady() {
       roof_siding: 'Roof + Siding', roof_gutters: 'Roof + Gutters',
       siding_gutters: 'Siding + Gutters', roof_siding_gutters: 'Roof + Siding + Gutters'
     };
+    var EST_UNFINISHED_MEASUREMENT_SOURCES = ['drone', 'upload', 'online'];
+
+    function estCanAccessUnfinishedFeatures() {
+      var role = typeof crmGetRole === 'function' ? String(crmGetRole() || '').trim() : '';
+      return role === 'Owner' || role === 'Admin';
+    }
+
+    function estCanOpenMeasurementSource(source) {
+      return EST_UNFINISHED_MEASUREMENT_SOURCES.indexOf(String(source || '')) === -1 || estCanAccessUnfinishedFeatures();
+    }
     var EST_FIELD_DEFS = {
       roof: [
         { key: 'squares', label: 'Squares' }, { key: 'ridge', label: 'Ridge (lf)' },
@@ -45767,9 +45819,17 @@ function mapsGoogleReady() {
         button.setAttribute('aria-pressed', selected ? 'true' : 'false');
       });
       document.querySelectorAll('[data-est-measurement-source]').forEach(function (button) {
-        var selected = button.getAttribute('data-est-measurement-source') === draft.measurementSource;
+        var source = button.getAttribute('data-est-measurement-source');
+        var unfinished = EST_UNFINISHED_MEASUREMENT_SOURCES.indexOf(source) !== -1;
+        var adminPreview = unfinished && estCanAccessUnfinishedFeatures();
+        var selected = source === draft.measurementSource;
         button.classList.toggle('is-selected', selected);
+        button.classList.toggle('is-coming-soon', unfinished && !adminPreview);
+        button.classList.toggle('is-admin-preview', adminPreview);
         button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        button.setAttribute('aria-disabled', unfinished && !adminPreview ? 'true' : 'false');
+        var badge = button.querySelector('.estimates-coming-soon-badge');
+        if (badge) badge.textContent = adminPreview ? 'Admin Preview' : 'Coming Soon';
       });
       var tradeStep = document.getElementById('est-trade-step');
       var measurementStep = document.getElementById('est-measurement-step');
@@ -45815,6 +45875,7 @@ function mapsGoogleReady() {
 
     function openEstimatePath(source) {
       if (!estimateCreationState.propertyType || !estimateCreationState.activeEstimate.trade) return;
+      if (!estCanOpenMeasurementSource(source)) return;
       estimateCreationState.activeEstimate.measurementSource = source;
       currentEstimate.measurementSource = source;
       currentEstimate.measurementScope = getEstScope();
@@ -45884,6 +45945,7 @@ function mapsGoogleReady() {
     document.getElementById('est-source-drone').addEventListener('click', function () { openEstimatePath('drone'); });
     document.getElementById('est-source-upload').addEventListener('click', function () { openEstimatePath('upload'); });
     document.getElementById('est-source-online').addEventListener('click', function () {
+      if (!estCanOpenMeasurementSource('online')) return;
       estimateCreationState.activeEstimate.measurementSource = 'online';
       estimateCreationState.activeEstimate.measurementProvider = null;
       currentEstimate.measurementSource = 'online';
