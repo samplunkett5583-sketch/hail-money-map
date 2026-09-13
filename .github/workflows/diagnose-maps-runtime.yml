@@ -1,0 +1,85 @@
+name: Diagnose Maps Runtime
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - '.github/workflows/diagnose-maps-runtime.yml'
+  workflow_dispatch:
+
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install browser driver only
+        run: npm install --no-save --ignore-scripts playwright-core@latest
+
+      - name: Exercise deployed Maps page
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const { chromium } = require('playwright-core');
+          const fs = require('fs');
+          const { execSync } = require('child_process');
+          const exe = execSync('command -v google-chrome').toString().trim();
+          const errors = [];
+          const failed = [];
+          (async () => {
+            const browser = await chromium.launch({ executablePath: exe, headless: true, args: ['--no-sandbox','--disable-dev-shm-usage'] });
+            const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+            page.on('pageerror', e => errors.push('PAGEERROR ' + e.message));
+            page.on('console', m => { if (['error','warning'].includes(m.type())) errors.push('CONSOLE_' + m.type().toUpperCase() + ' ' + m.text()); });
+            page.on('requestfailed', r => failed.push('REQUEST_FAILED ' + r.url().replace(/key=[^&]+/,'key=REDACTED') + ' :: ' + (r.failure()?.errorText || 'unknown')));
+            await page.goto('https://hailmoneymap.web.app/', { waitUntil: 'domcontentloaded', timeout: 45000 });
+            await page.waitForTimeout(8000);
+            const before = await page.evaluate(() => ({
+              google: typeof window.google,
+              googleMaps: !!(window.google && window.google.maps),
+              mapsGoogleReady: typeof window.mapsGoogleReady,
+              showPage: typeof window.showPage,
+              mapStateType: typeof window.mapsState,
+              loginDisplay: getComputedStyle(document.getElementById('page-login')).display,
+              mapDisplay: getComputedStyle(document.getElementById('page-map')).display,
+              stormMapSize: (() => { const el=document.getElementById('stormMap'); const r=el.getBoundingClientRect(); return {w:r.width,h:r.height,children:el.children.length}; })()
+            }));
+            console.log('BEFORE_FORCE=' + JSON.stringify(before));
+            const forceResult = await page.evaluate(async () => {
+              try {
+                if (typeof window.showPage === 'function') window.showPage('page-map');
+                else {
+                  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                  document.getElementById('page-map').classList.add('active');
+                }
+                await new Promise(r => setTimeout(r, 6000));
+                const el = document.getElementById('stormMap');
+                const rect = el.getBoundingClientRect();
+                const text = document.body.innerText || '';
+                return {
+                  googleMaps: !!(window.google && window.google.maps),
+                  mapDisplay: getComputedStyle(document.getElementById('page-map')).display,
+                  mapClasses: document.getElementById('page-map').className,
+                  stormMap: {w:rect.width,h:rect.height,children:el.children.length,htmlLength:el.innerHTML.length},
+                  mapsStateExists: typeof window.mapsState !== 'undefined',
+                  mapsStateMap: typeof window.mapsState !== 'undefined' && !!window.mapsState.map,
+                  mapsGoogleReady: typeof window.mapsGoogleReady,
+                  bodyHasMapError: /map.*(error|failed)|error.*map/i.test(text),
+                  visibleTextTail: text.slice(-2500)
+                };
+              } catch (e) {
+                return { forceError: e && e.stack || String(e) };
+              }
+            });
+            console.log('AFTER_FORCE=' + JSON.stringify(forceResult));
+            console.log('ERROR_COUNT=' + errors.length);
+            errors.slice(-100).forEach(e => console.log(e.replace(/key=[^& ]+/g,'key=REDACTED')));
+            console.log('FAILED_REQUEST_COUNT=' + failed.length);
+            failed.slice(-100).forEach(e => console.log(e));
+            await page.screenshot({path:'/tmp/hail-money-map-runtime.png', fullPage:true});
+            await browser.close();
+          })().catch(err => { console.error('DIAGNOSTIC_FATAL', err); process.exit(1); });
+          NODE
