@@ -48,7 +48,7 @@ jobs:
               map: !!mapsState.map
             }));
             console.log('BEFORE='+JSON.stringify(before));
-            await page.click('#open-map');
+            await page.evaluate(() => document.getElementById('open-map').click());
             await page.waitForTimeout(8000);
             const after = await page.evaluate(() => {
               const el=document.getElementById('stormMap'); const r=el.getBoundingClientRect();
