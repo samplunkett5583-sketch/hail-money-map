@@ -1,0 +1,27 @@
+name: Inspect Map Lifecycle
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - '.github/workflows/inspect-map-lifecycle.yml'
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print exact navigation lifecycle
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== POST PAINT SCHEDULER ==='
+          sed -n '30425,30545p' public/index.html
+          echo '=== POST PAINT READY ASSIGNMENTS ==='
+          grep -n -C 15 "postPaintNavigationReady" public/index.html || true
+          echo '=== SCHEDULER CALLS ==='
+          grep -n -C 25 "mapsSchedulePostPaintInitialization" public/index.html || true
+          echo '=== SHOWPAGE DEFINITIONS ==='
+          grep -n -C 120 -E "function showPage[[:space:]]*\(|showPage[[:space:]]*=[[:space:]]*function" public/index.html || true
