@@ -24,8 +24,8 @@ jobs:
           echo "HEAD=$(git rev-parse HEAD)"
           echo "INDEX_BYTES=$(wc -c < public/index.html)"
           echo "INDEX_LINES=$(wc -l < public/index.html)"
-          echo "crmFormatMoney occurrences:"
-          grep -n "crmFormatMoney" public/index.html || true
+          echo "crmFormatMoney definitions:"
+          grep -nE "function crmFormatMoney|const crmFormatMoney|let crmFormatMoney|var crmFormatMoney" public/index.html || true
           echo "sourceMap occurrences:"
           grep -n "sourceMap" public/index.html || true
           echo "Google Maps loader occurrences:"
@@ -78,12 +78,49 @@ jobs:
           curl -fsSIL --max-time 20 "$URL" | sed -n '1,20p'
           curl -fsSL --max-time 30 "$URL" -o /tmp/deployed-index.html
           echo "DEPLOYED_BYTES=$(wc -c < /tmp/deployed-index.html)"
-          echo "DEPLOYED_SHA256=$(sha256sum /tmp/deployed-index.html | awk '{print $1}')"
-          echo "REPO_SHA256=$(sha256sum public/index.html | awk '{print $1}')"
-          if cmp -s /tmp/deployed-index.html public/index.html; then
-            echo 'DEPLOY_MATCH=YES'
+          echo "REPO_BYTES=$(wc -c < public/index.html)"
+          tr -d '\r' < /tmp/deployed-index.html > /tmp/deployed-normalized.html
+          tr -d '\r' < public/index.html > /tmp/repo-normalized.html
+          echo "DEPLOYED_NORMALIZED_SHA256=$(sha256sum /tmp/deployed-normalized.html | awk '{print $1}')"
+          echo "REPO_NORMALIZED_SHA256=$(sha256sum /tmp/repo-normalized.html | awk '{print $1}')"
+          if cmp -s /tmp/deployed-normalized.html /tmp/repo-normalized.html; then
+            echo 'DEPLOY_CONTENT_MATCH=YES'
           else
-            echo 'DEPLOY_MATCH=NO'
+            echo 'DEPLOY_CONTENT_MATCH=NO'
+            echo 'First normalized diff:'
+            diff -u /tmp/repo-normalized.html /tmp/deployed-normalized.html | sed -n '1,120p' || true
           fi
           echo 'Deployed Maps loader:'
           grep -n "maps.googleapis.com/maps/api/js" /tmp/deployed-index.html | sed -E 's/key=[^&\"]+/key=REDACTED/g' || true
+
+      - name: Headless Chrome runtime smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          echo "CHROME=$CHROME"
+          if [ -z "$CHROME" ]; then
+            echo 'No Chrome binary on runner; skipping browser smoke test.'
+            exit 0
+          fi
+          set +e
+          timeout 45s "$CHROME" \
+            --headless=new \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --enable-logging=stderr \
+            --v=1 \
+            --virtual-time-budget=12000 \
+            --dump-dom \
+            'https://hailmoneymap.web.app/' \
+            >/tmp/hm-dom.html 2>/tmp/hm-chrome.log
+          CODE=$?
+          set -e
+          echo "CHROME_EXIT=$CODE"
+          echo 'Relevant browser/runtime errors:'
+          grep -Ei "maps|google|api|uncaught|referenceerror|typeerror|syntaxerror|firebase|supabase|failed|error" /tmp/hm-chrome.log \
+            | sed -E 's/(key=)[^& ]+/\1REDACTED/g' \
+            | tail -n 160 || true
+          echo 'DOM markers:'
+          grep -oE 'id="(page-login|page-map|stormMap)"' /tmp/hm-dom.html | sort -u || true
