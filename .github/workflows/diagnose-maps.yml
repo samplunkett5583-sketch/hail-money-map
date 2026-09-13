@@ -1,0 +1,89 @@
+name: Diagnose Maps
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - '.github/workflows/diagnose-maps.yml'
+      - 'public/index.html'
+      - 'public/**/*.js'
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Basic repo diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "HEAD=$(git rev-parse HEAD)"
+          echo "INDEX_BYTES=$(wc -c < public/index.html)"
+          echo "INDEX_LINES=$(wc -l < public/index.html)"
+          echo "crmFormatMoney occurrences:"
+          grep -n "crmFormatMoney" public/index.html || true
+          echo "sourceMap occurrences:"
+          grep -n "sourceMap" public/index.html || true
+          echo "Google Maps loader occurrences:"
+          grep -n "maps.googleapis.com/maps/api/js" public/index.html | sed -E 's/key=[^&\"]+/key=REDACTED/g' || true
+
+      - name: Check inline JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const cp = require('child_process');
+          const html = fs.readFileSync('public/index.html','utf8');
+          const re = /<script([^>]*)>([\s\S]*?)<\/script>/gi;
+          let m, i = 0, failures = 0;
+          while ((m = re.exec(html))) {
+            i++;
+            const attrs = m[1] || '';
+            const code = m[2] || '';
+            if (/\bsrc\s*=/.test(attrs) || !code.trim()) continue;
+            const p = `/tmp/hm-inline-${i}.js`;
+            fs.writeFileSync(p, code);
+            try {
+              cp.execFileSync(process.execPath, ['--check', p], {stdio:'pipe'});
+            } catch (e) {
+              failures++;
+              console.log(`INLINE_SCRIPT_${i}_SYNTAX_ERROR`);
+              console.log(String((e.stderr || e.stdout || e.message)).slice(0,4000));
+            }
+          }
+          console.log(`INLINE_SCRIPTS_SCANNED=${i}`);
+          console.log(`INLINE_SYNTAX_FAILURES=${failures}`);
+          if (failures) process.exit(1);
+          NODE
+
+      - name: Check local JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find public -maxdepth 1 -type f -name '*.js' -print0 | while IFS= read -r -d '' f; do
+            echo "Checking $f"
+            node --check "$f"
+          done
+
+      - name: Check deployed Firebase app
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://hailmoneymap.web.app/'
+          curl -fsSIL --max-time 20 "$URL" | sed -n '1,20p'
+          curl -fsSL --max-time 30 "$URL" -o /tmp/deployed-index.html
+          echo "DEPLOYED_BYTES=$(wc -c < /tmp/deployed-index.html)"
+          echo "DEPLOYED_SHA256=$(sha256sum /tmp/deployed-index.html | awk '{print $1}')"
+          echo "REPO_SHA256=$(sha256sum public/index.html | awk '{print $1}')"
+          if cmp -s /tmp/deployed-index.html public/index.html; then
+            echo 'DEPLOY_MATCH=YES'
+          else
+            echo 'DEPLOY_MATCH=NO'
+          fi
+          echo 'Deployed Maps loader:'
+          grep -n "maps.googleapis.com/maps/api/js" /tmp/deployed-index.html | sed -E 's/key=[^&\"]+/key=REDACTED/g' || true
