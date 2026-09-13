@@ -6463,7 +6463,9 @@
     #page-map .maps-area-search-dates label,
     body.map-page-active #maps-header-controls-host .maps-area-search-dates label { display:grid; gap:3px; color:#f4d27b; font-size:10px; font-weight:800; text-transform:uppercase; }
     #page-map .maps-area-search-dates input,
-    body.map-page-active #maps-header-controls-host .maps-area-search-dates input { width:100%; height:30px; box-sizing:border-box; border:1px solid #b79245; border-radius:4px; padding:3px 5px; background:#fff; color:#20252a; }
+    #page-map .maps-area-search-dates select,
+    body.map-page-active #maps-header-controls-host .maps-area-search-dates input,
+    body.map-page-active #maps-header-controls-host .maps-area-search-dates select { width:100%; height:30px; box-sizing:border-box; border:1px solid #b79245; border-radius:4px; padding:3px 5px; background:#fff; color:#20252a; }
     #page-map .maps-area-search-help,
     body.map-page-active #maps-header-controls-host .maps-area-search-help { margin:9px 0; color:#e6e0d2; }
     #page-map .maps-area-search-actions,
@@ -6638,7 +6640,7 @@
     #page-map .maps-toolbar-menu-wrap { position:relative; flex:0 0 auto; }
     #page-map .maps-options-menu {
       position:absolute; top:calc(100% + 8px); right:0; width:220px; padding:12px; border:1px solid #cfd4da;
-      border-radius:7px; background:#fff; color:#20252a; box-shadow:0 10px 26px rgba(0,0,0,.24);
+      border-radius:7px; background:#fff; color:#20252a; box-shadow:0 10px 26px rgba(0,0,0,.24); z-index:10050;
     }
     #page-map .maps-options-menu[hidden] { display:none; }
     #page-map .maps-options-heading { margin-bottom:8px; font-size:12px; font-weight:800; }
@@ -6926,7 +6928,7 @@
     body.map-page-active #maps-header-controls-host .maps-options-menu {
       position:absolute; top:calc(100% + 8px); right:0; width:220px; padding:12px;
       border:1px solid #cfd4da; border-radius:7px; background:#fff; color:#20252a;
-      box-shadow:0 10px 26px rgba(0,0,0,.24);
+      box-shadow:0 10px 26px rgba(0,0,0,.24); z-index:10050;
     }
     body.map-page-active #maps-header-controls-host .maps-options-menu[hidden] { display:none; }
     body.map-page-active #maps-header-controls-host .maps-options-check {
@@ -21769,7 +21771,6 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
               </div>
               <div class="maps-toolbar-group maps-toolbar-picker">
                 <input type="date" id="maps-date-picker" class="maps-date-input" aria-label="Storm date" />
-                <button type="button" id="maps-load-date-btn" class="maps-toolbar-btn maps-toolbar-btn-load">Load</button>
                 <div id="maps-date-status" class="maps-status-msg" aria-live="polite"></div>
               </div>
               <span id="maps-hail-hover-readout" class="maps-hail-hover-readout" aria-live="off"></span>
@@ -21849,13 +21850,25 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                     <button type="button" class="maps-area-search-preset" data-area-years="3">3 years</button>
                   </div>
                   <div class="maps-area-search-dates">
-                    <label>From <input type="date" id="maps-area-search-from" /></label>
-                    <label>To <input type="date" id="maps-area-search-to" /></label>
+                    <label style="grid-column:1 / -1;">Minimum hail size
+                      <select id="maps-area-hail-size">
+                        <option value="0.5">0.50&quot; and larger</option>
+                        <option value="1">1.00&quot; and larger</option>
+                        <option value="1.25">1.25&quot; and larger</option>
+                        <option value="1.5">1.50&quot; and larger</option>
+                        <option value="1.75">1.75&quot; and larger</option>
+                        <option value="2">2.00&quot; and larger</option>
+                        <option value="2.5">2.50&quot; and larger</option>
+                        <option value="3">3.00&quot; and larger</option>
+                      </select>
+                    </label>
+                    <label>Start date <input type="date" id="maps-area-start-date" /></label>
+                    <label>End date <input type="date" id="maps-area-end-date" /></label>
                   </div>
-                  <div class="maps-area-search-help">Click OK, then drag a rectangle over the map.</div>
+                  <div class="maps-area-search-help">Click Search, then drag a rectangle over the map.</div>
                   <div class="maps-area-search-actions">
                     <button type="button" id="maps-area-search-cancel" class="maps-area-search-action">Cancel</button>
-                    <button type="button" id="maps-area-search-start" class="maps-area-search-action primary">OK</button>
+                    <button type="button" id="maps-area-search-go" class="maps-area-search-action primary">Search</button>
                   </div>
                 </div>
               </div>
@@ -22093,7 +22106,6 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
               <div class="maps-panel-section-title">View Storm Date</div>
               <div style="display:flex;gap:6px;align-items:center;">
                 <input type="date" id="maps-date-picker-mob" class="maps-date-input" style="flex:1;" />
-                <button type="button" id="maps-load-date-btn-mob" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Load Date</button>
               </div>
               <div id="maps-date-status-mob" class="maps-status-msg"></div>
             </div>
@@ -30229,7 +30241,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     window.mapsRuntimeLayoutDiagnostic = function () {
       var controlIds = [
         'maps-prev-date-btn', 'maps-today-btn', 'maps-next-date-btn', 'maps-date-picker',
-        'maps-load-date-btn', 'maps-hail-hover-readout', 'maps-refresh-dates-btn',
+        'maps-hail-hover-readout', 'maps-refresh-dates-btn',
         'maps-options-btn', 'maps-toolbar-search-btn'
       ];
       function rectValue(rect) {
@@ -30623,6 +30635,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           mapsMeasureSyncPhase('wire-storm-search', mapsWireStormSearch);
           mapsMeasureSyncPhase('wire-map-style', mapsWireMapStyleCtrl);
           mapsMeasureSyncPhase('wire-workspace-controls', mapsWireWorkspaceControls);
+          mapsMeasureSyncPhase('wire-area-search', mapsWireAreaSearch);
           mapsMeasureSyncPhase('wire-street-color', mapsWireStreetColorCtrl);
           mapsMeasureSyncPhase('wire-refresh-button', mapsWireRefreshBtn);
           App.mapControlsBound = true;
@@ -43048,7 +43061,6 @@ function mapsGoogleReady() {
     function mapsWireDatePicker() {
       var picker   = document.getElementById('maps-date-picker');
       var statusEl = document.getElementById('maps-date-status');
-      var loadBtn  = document.getElementById('maps-load-date-btn');
 
       function doLoadDate() {
         var val = picker.value;
@@ -43066,12 +43078,8 @@ function mapsGoogleReady() {
         // blanking it back to the empty mm/dd/yyyy placeholder state.
       }
 
-      if (loadBtn) {
-        loadBtn.addEventListener('click', doLoadDate);
-        loadBtn.dataset.mapsBindingCount = '1';
-      }
-
-      // Pressing Enter in the date field also triggers load
+      // A completed date selection is the load action; no second button press.
+      picker.addEventListener('change', doLoadDate);
       picker.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') doLoadDate();
       });
@@ -43086,7 +43094,7 @@ function mapsGoogleReady() {
           try { picker.showPicker(); } catch (e) { /* ignore: not user-activated, already open, or unsupported context */ }
         }
       });
-      picker.dataset.mapsBindingCount = '2';
+      picker.dataset.mapsBindingCount = '3';
     }
 
     function mapsWireWorkspaceControls() {
@@ -43096,12 +43104,12 @@ function mapsGoogleReady() {
       var nextBtn = document.getElementById('maps-next-date-btn');
       var optionsBtn = document.getElementById('maps-options-btn');
       var optionsMenu = document.getElementById('maps-options-menu');
+      var mapStylesBtn = document.getElementById('maps-map-styles-btn');
+      var mapStylesMenu = document.getElementById('maps-map-styles-menu');
       var spotterReportsCheckbox = document.getElementById('maps-show-hail-spotter-reports');
       var windSpotterReportsCheckbox = document.getElementById('maps-show-wind-spotter-reports');
       var windHeatMapCheckbox = document.getElementById('maps-show-wind-heat-map');
       var addressMarkersCheckbox = document.getElementById('maps-show-campaign-address-markers');
-      var searchBtn = document.getElementById('maps-toolbar-search-btn');
-      var searchInput = document.getElementById('stormSearchInput');
 
       function selectDate(dateStr) {
         if (!dateStr) return;
@@ -43135,6 +43143,10 @@ function mapsGoogleReady() {
         document.body.classList.toggle('maps-options-open', !!open);
         if (optionsMenu) optionsMenu.hidden = !open;
         if (optionsBtn) optionsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (!open && mapStylesMenu) {
+          mapStylesMenu.hidden = true;
+          if (mapStylesBtn) mapStylesBtn.setAttribute('aria-expanded', 'false');
+        }
       }
 
       if (optionsBtn && optionsMenu) {
@@ -43148,6 +43160,27 @@ function mapsGoogleReady() {
           setOptionsOpen(false);
         });
         optionsBtn.dataset.mapsBindingCount = '1';
+      }
+
+      if (mapStylesBtn && mapStylesMenu) {
+        mapStylesBtn.addEventListener('click', function (event) {
+          event.stopPropagation();
+          var open = mapStylesMenu.hidden;
+          mapStylesMenu.hidden = !open;
+          mapStylesBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+        mapStylesMenu.querySelectorAll('.maps-options-style-choice').forEach(function (choice) {
+          choice.addEventListener('click', function (event) {
+            event.stopPropagation();
+            var style = choice.getAttribute('data-map-style');
+            if (mapsState.map && style) mapsState.map.setMapTypeId(style);
+            mapStylesMenu.querySelectorAll('.maps-options-style-choice').forEach(function (item) {
+              item.classList.toggle('active', item === choice);
+            });
+            setOptionsOpen(false);
+          });
+        });
+        mapStylesBtn.dataset.mapsBindingCount = '1';
       }
 
       if (spotterReportsCheckbox) {
@@ -43194,16 +43227,6 @@ function mapsGoogleReady() {
         addressMarkersCheckbox.dataset.mapsBindingCount = '1';
       }
 
-      if (searchBtn && searchInput) {
-        searchBtn.addEventListener('click', function () {
-          if (window.innerWidth <= 768) document.body.classList.toggle('maps-mobile-panel-open');
-          var panel = document.getElementById('maps-storm-panel');
-          if (panel) panel.classList.remove('is-collapsed');
-          requestAnimationFrame(function () { searchInput.focus(); });
-        });
-        searchBtn.dataset.mapsBindingCount = '1';
-      }
-
       document.querySelectorAll('#page-map .maps-base-map-tab').forEach(function (tab) {
         tab.addEventListener('click', function () {
           var style = tab.getAttribute('data-map-style');
@@ -43215,6 +43238,210 @@ function mapsGoogleReady() {
         });
       });
       requestAnimationFrame(function () { mapsEnsureVisibleMap(); });
+    }
+
+    // ── Hail-size/date/rectangle storm search ──
+    var mapsAreaSearchState = {
+      startDate:'', endDate:'', minHail:0.5, bounds:null, rectangle:null,
+      dates:[], drawing:false, projectionOverlay:null, dragStart:null, rubberBand:null
+    };
+
+    function mapsAreaIsoDate(date) {
+      return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    }
+
+    function mapsAreaSetDateRange(years) {
+      var end = new Date();
+      var start = new Date(end.getFullYear() - Number(years || 1), end.getMonth(), end.getDate());
+      var startEl = document.getElementById('maps-area-start-date');
+      var endEl = document.getElementById('maps-area-end-date');
+      if (startEl) startEl.value = mapsAreaIsoDate(start);
+      if (endEl) endEl.value = mapsAreaIsoDate(end);
+    }
+
+    function mapsAreaRenderResults(dates) {
+      var box = document.getElementById('maps-area-results');
+      var list = document.getElementById('maps-area-result-list');
+      var meta = document.getElementById('maps-area-results-meta');
+      var combine = document.getElementById('maps-area-combine-btn');
+      var redraw = document.getElementById('maps-area-draw-btn');
+      if (!box || !list) return;
+      box.hidden = false;
+      if (meta) meta.textContent = dates.length + ' matching storm date' + (dates.length === 1 ? '' : 's') + ' · ' + mapsAreaSearchState.minHail.toFixed(2) + '\"+ hail';
+      list.innerHTML = '';
+      if (!dates.length) list.innerHTML = '<div style="padding:10px 2px;color:#e6e0d2;">No matching storm dates were found in this area.</div>';
+      dates.forEach(function (dateStr) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'maps-area-result-date';
+        button.innerHTML = '<strong>' + dateStr + '</strong><span>Load storm swath</span>';
+        button.addEventListener('click', function () {
+          list.querySelectorAll('.maps-area-result-date').forEach(function (item) { item.classList.remove('active'); });
+          button.classList.add('active');
+          loadStormDate(dateStr);
+        });
+        list.appendChild(button);
+      });
+      if (combine) combine.hidden = dates.length < 2;
+      if (redraw) redraw.hidden = false;
+    }
+
+    function mapsAreaQuerySelectedRegion() {
+      var bounds = mapsAreaSearchState.bounds;
+      if (!bounds) return;
+      var ne = bounds.getNorthEast();
+      var sw = bounds.getSouthWest();
+      var box = document.getElementById('maps-area-results');
+      var list = document.getElementById('maps-area-result-list');
+      var meta = document.getElementById('maps-area-results-meta');
+      if (box) box.hidden = false;
+      if (meta) meta.textContent = 'Finding storm dates…';
+      if (list) list.innerHTML = '';
+      sb.from('hail_lsr_raw')
+        .select('event_date,lat,lon,hail_in')
+        .gte('event_date', mapsAreaSearchState.startDate)
+        .lte('event_date', mapsAreaSearchState.endDate)
+        .gte('lat', sw.lat()).lte('lat', ne.lat())
+        .gte('lon', sw.lng()).lte('lon', ne.lng())
+        .gte('hail_in', mapsAreaSearchState.minHail)
+        .order('event_date', { ascending:false }).limit(20000)
+        .then(function (response) {
+          if (response && response.error) throw response.error;
+          var found = {};
+          (response && response.data || []).forEach(function (row) {
+            var dateStr = mapsNormalizeDate(String(row.event_date || '').slice(0, 10));
+            if (dateStr) found[dateStr] = true;
+          });
+          mapsAreaSearchState.dates = Object.keys(found).sort().reverse();
+          mapsState.areaSearchRows = response && response.data || [];
+          mapsAreaRenderResults(mapsAreaSearchState.dates);
+        }).catch(function (error) {
+          console.warn('[area-search] failed', error);
+          if (meta) meta.textContent = 'Storm search could not load. Draw the region again.';
+        });
+    }
+
+    function mapsAreaStopDrawing() {
+      mapsAreaSearchState.drawing = false;
+      mapsState.areaSearchDrawing = false;
+      document.getElementById('page-map').classList.remove('maps-area-draw-active');
+      if (mapsState.map) mapsState.map.setOptions({ draggable:true, gestureHandling:'greedy' });
+      if (mapsAreaSearchState.rubberBand) mapsAreaSearchState.rubberBand.remove();
+      mapsAreaSearchState.rubberBand = null;
+      mapsAreaSearchState.dragStart = null;
+    }
+
+    function mapsAreaBeginRectangle() {
+      if (!mapsState.map || !mapsAreaSearchState.projectionOverlay) return;
+      if (mapsAreaSearchState.rectangle) mapsAreaSearchState.rectangle.setMap(null);
+      mapsAreaSearchState.rectangle = null;
+      mapsAreaSearchState.bounds = null;
+      mapsAreaSearchState.drawing = true;
+      mapsState.areaSearchDrawing = true;
+      document.getElementById('page-map').classList.add('maps-area-draw-active');
+      mapsState.map.setOptions({ draggable:false, gestureHandling:'none' });
+    }
+
+    function mapsWireAreaSearch() {
+      var trigger = document.getElementById('maps-toolbar-search-btn');
+      var menu = document.getElementById('maps-area-search-menu');
+      var go = document.getElementById('maps-area-search-go');
+      var cancel = document.getElementById('maps-area-search-cancel');
+      var mapDiv = mapsState.map && mapsState.map.getDiv();
+      if (!trigger || !menu || !go || !mapDiv) return;
+      mapsAreaSetDateRange(1);
+
+      mapsAreaSearchState.projectionOverlay = new google.maps.OverlayView();
+      mapsAreaSearchState.projectionOverlay.onAdd = function () {};
+      mapsAreaSearchState.projectionOverlay.draw = function () {};
+      mapsAreaSearchState.projectionOverlay.onRemove = function () {};
+      mapsAreaSearchState.projectionOverlay.setMap(mapsState.map);
+
+      trigger.addEventListener('click', function (event) {
+        event.stopPropagation();
+        menu.hidden = !menu.hidden;
+        trigger.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+      });
+      menu.addEventListener('click', function (event) { event.stopPropagation(); });
+      document.addEventListener('click', function () { menu.hidden = true; trigger.setAttribute('aria-expanded', 'false'); });
+      if (cancel) cancel.addEventListener('click', function () { menu.hidden = true; trigger.setAttribute('aria-expanded', 'false'); });
+      document.querySelectorAll('#maps-area-search-menu [data-area-years]').forEach(function (preset) {
+        preset.addEventListener('click', function () {
+          document.querySelectorAll('#maps-area-search-menu [data-area-years]').forEach(function (item) { item.classList.toggle('active', item === preset); });
+          mapsAreaSetDateRange(preset.getAttribute('data-area-years'));
+        });
+      });
+      go.addEventListener('click', function () {
+        var start = document.getElementById('maps-area-start-date').value;
+        var end = document.getElementById('maps-area-end-date').value || start;
+        var minHail = Number(document.getElementById('maps-area-hail-size').value) || 0.5;
+        if (!start || !end) return;
+        if (start > end) { var swap = start; start = end; end = swap; }
+        mapsAreaSearchState.startDate = start;
+        mapsAreaSearchState.endDate = end;
+        mapsAreaSearchState.minHail = minHail;
+        menu.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+        mapsAreaBeginRectangle();
+      });
+
+      mapDiv.addEventListener('pointerdown', function (event) {
+        if (!mapsAreaSearchState.drawing || event.button !== 0) return;
+        event.preventDefault(); event.stopPropagation();
+        var rect = mapDiv.getBoundingClientRect();
+        mapsAreaSearchState.dragStart = { x:event.clientX - rect.left, y:event.clientY - rect.top, pointerId:event.pointerId };
+        var band = document.createElement('div');
+        band.style.cssText = 'position:absolute;border:2px solid #d4af37;background:rgba(212,175,55,.12);pointer-events:none;z-index:9999;';
+        mapDiv.appendChild(band);
+        mapsAreaSearchState.rubberBand = band;
+        mapDiv.setPointerCapture(event.pointerId);
+      }, true);
+      mapDiv.addEventListener('pointermove', function (event) {
+        var start = mapsAreaSearchState.dragStart;
+        var band = mapsAreaSearchState.rubberBand;
+        if (!start || !band) return;
+        event.preventDefault(); event.stopPropagation();
+        var rect = mapDiv.getBoundingClientRect();
+        var x = event.clientX - rect.left, y = event.clientY - rect.top;
+        band.style.left = Math.min(start.x, x) + 'px'; band.style.top = Math.min(start.y, y) + 'px';
+        band.style.width = Math.abs(x - start.x) + 'px'; band.style.height = Math.abs(y - start.y) + 'px';
+      }, true);
+      mapDiv.addEventListener('pointerup', function (event) {
+        var start = mapsAreaSearchState.dragStart;
+        if (!start) return;
+        event.preventDefault(); event.stopPropagation();
+        var rect = mapDiv.getBoundingClientRect();
+        var finish = { x:event.clientX - rect.left, y:event.clientY - rect.top };
+        var projection = mapsAreaSearchState.projectionOverlay.getProjection();
+        mapsAreaStopDrawing();
+        if (!projection || Math.abs(finish.x - start.x) < 8 || Math.abs(finish.y - start.y) < 8) return;
+        var a = projection.fromContainerPixelToLatLng(new google.maps.Point(start.x, start.y));
+        var b = projection.fromContainerPixelToLatLng(new google.maps.Point(finish.x, finish.y));
+        var bounds = new google.maps.LatLngBounds(); bounds.extend(a); bounds.extend(b);
+        mapsAreaSearchState.bounds = bounds;
+        mapsAreaSearchState.rectangle = new google.maps.Rectangle({ map:mapsState.map, bounds:bounds, editable:true, draggable:true, strokeColor:'#d4af37', strokeOpacity:1, strokeWeight:2, fillColor:'#d4af37', fillOpacity:.08, zIndex:900 });
+        mapsState.areaSearchRectangle = mapsAreaSearchState.rectangle;
+        mapsAreaQuerySelectedRegion();
+      }, true);
+
+      var redraw = document.getElementById('maps-area-draw-btn');
+      if (redraw) redraw.addEventListener('click', mapsAreaBeginRectangle);
+      var combine = document.getElementById('maps-area-combine-btn');
+      if (combine) combine.addEventListener('click', function () {
+        mapsAreaSearchState.dates.slice(0, MAPS_MAX_SELECT).forEach(function (dateStr) {
+          if (mapsState.pinnedDates.indexOf(dateStr) === -1) mapsState.pinnedDates.push(dateStr);
+          mapsDrawDate(dateStr);
+        });
+        mapsPersistPinnedDates(); mapsSyncSelectedDates(); mapsRenderStormList(); mapsRenderSavedList(); mapsUpdateDownloadBtn();
+      });
+      var clear = document.getElementById('maps-area-clear-btn');
+      if (clear) clear.addEventListener('click', function () {
+        document.getElementById('maps-area-results').hidden = true;
+        if (mapsAreaSearchState.rectangle) mapsAreaSearchState.rectangle.setMap(null);
+        mapsAreaSearchState.rectangle = null; mapsAreaSearchState.bounds = null;
+      });
+      mapsState.areaSearch = mapsAreaSearchState;
+      trigger.dataset.mapsBindingCount = '1';
     }
 
     function parseSearchDate(val) {
@@ -45069,10 +45296,9 @@ function mapsGoogleReady() {
         setTimeout(function () { if (mapsState.map) google.maps.event.trigger(mapsState.map, 'resize'); }, 50);
       });
 
-      // Wire mobile date picker — Load Date button + Enter key
+      // Wire mobile date picker — selecting a date loads it immediately.
       var mobPicker  = document.getElementById('maps-date-picker-mob');
       var mobStatus  = document.getElementById('maps-date-status-mob');
-      var mobLoadBtn = document.getElementById('maps-load-date-btn-mob');
 
       function mobDoLoadDate() {
         var val = mobPicker.value;
@@ -45081,9 +45307,8 @@ function mapsGoogleReady() {
         if (!val) { mobStatus.className = 'maps-status-msg error'; mobStatus.textContent = 'Pick a date first.'; return; }
         loadStormDate(val);
         mobStatus.textContent = 'Loading ' + val + '…';
-        mobPicker.value = '';
       }
-      if (mobLoadBtn) mobLoadBtn.addEventListener('click', mobDoLoadDate);
+      mobPicker.addEventListener('change', mobDoLoadDate);
       mobPicker.addEventListener('keydown', function (e) { if (e.key === 'Enter') mobDoLoadDate(); });
 
       // Wire mobile download buttons (both drawers)
