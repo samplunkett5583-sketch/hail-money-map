@@ -1,0 +1,77 @@
+name: Diagnose Real Map Click
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - '.github/workflows/diagnose-real-map-click.yml'
+  workflow_dispatch:
+
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install --no-save --ignore-scripts playwright-core@latest
+      - name: Reproduce restored-session Maps click
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const { chromium } = require('playwright-core');
+          const { execSync } = require('child_process');
+          (async () => {
+            const exe = execSync('command -v google-chrome').toString().trim();
+            const browser = await chromium.launch({ executablePath: exe, headless: true, args:['--no-sandbox','--disable-dev-shm-usage'] });
+            const page = await browser.newPage({ viewport:{width:1440,height:900} });
+            const errors=[];
+            page.on('pageerror', e => errors.push('PAGEERROR '+e.message));
+            page.on('console', m => { if(['error','warning'].includes(m.type())) errors.push('CONSOLE_'+m.type().toUpperCase()+' '+m.text()); });
+            await page.goto('https://hailmoneymap.web.app/', {waitUntil:'domcontentloaded', timeout:45000});
+            await page.waitForTimeout(3000);
+            const keys = await page.evaluate(() => ({ role: CRM_ROLE_KEY, name: CRM_USER_NAME_KEY, email: CRM_USER_EMAIL_KEY }));
+            await page.evaluate((keys) => {
+              localStorage.setItem(keys.role, 'Admin');
+              localStorage.setItem(keys.name, 'Runtime Admin');
+              localStorage.setItem(keys.email, 'runtime-admin@local.test');
+            }, keys);
+            await page.reload({waitUntil:'domcontentloaded', timeout:45000});
+            await page.waitForTimeout(5000);
+            const before = await page.evaluate(() => ({
+              active: document.querySelector('.page.active')?.id || '',
+              openMap: !!document.getElementById('open-map'),
+              googleMaps: !!(window.google&&google.maps),
+              hmReady: !!window.HM_GOOGLE_MAPS_READY,
+              postPaint: !!mapsState.postPaintNavigationReady,
+              pendingInit: !!mapsState.pendingInit,
+              map: !!mapsState.map
+            }));
+            console.log('BEFORE='+JSON.stringify(before));
+            await page.click('#open-map');
+            await page.waitForTimeout(8000);
+            const after = await page.evaluate(() => {
+              const el=document.getElementById('stormMap'); const r=el.getBoundingClientRect();
+              const App=mapsGetAppState();
+              return {
+                active: document.querySelector('.page.active')?.id || '',
+                bodyMapClass: document.body.classList.contains('map-page-active'),
+                googleMaps: !!(window.google&&google.maps),
+                hmReady: !!window.HM_GOOGLE_MAPS_READY,
+                postPaint: !!mapsState.postPaintNavigationReady,
+                pendingInit: !!mapsState.pendingInit,
+                map: !!mapsState.map,
+                ready: !!mapsState.ready,
+                ensurePending: typeof _mapsEnsureVisibleMapPending==='undefined'?null:_mapsEnsureVisibleMapPending,
+                postPaintScheduled: typeof _mapsPostPaintInitScheduled==='undefined'?null:_mapsPostPaintInitScheduled,
+                stormMap:{w:r.width,h:r.height,children:el.children.length,htmlLength:el.innerHTML.length},
+                instances:Number(App.mapsGoogleMapInstanceCount||0),
+                timing: typeof mapsNavigationTimingDiagnostic==='function'?mapsNavigationTimingDiagnostic():null
+              };
+            });
+            console.log('AFTER='+JSON.stringify(after));
+            console.log('ERRORS='+errors.slice(-50).map(x=>x.replace(/key=[^& ]+/g,'key=REDACTED')).join('\n'));
+            if(!after.map || after.stormMap.children===0){ console.error('MAP_RUNTIME_REPRO_FAILED'); process.exitCode=1; }
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
