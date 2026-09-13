@@ -1,0 +1,84 @@
+name: Capture Map Runtime
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - '.github/workflows/capture-map-runtime.yml'
+  workflow_dispatch:
+
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install --no-save --ignore-scripts playwright-core@latest
+      - name: Capture live Maps runtime
+        continue-on-error: true
+        shell: bash
+        run: |
+          node <<'NODE' > map-runtime.txt 2>&1
+          const { chromium } = require('playwright-core');
+          const { execSync } = require('child_process');
+          (async () => {
+            const exe = execSync('command -v google-chrome').toString().trim();
+            const browser = await chromium.launch({ executablePath: exe, headless: true, args:['--no-sandbox','--disable-dev-shm-usage'] });
+            const page = await browser.newPage({ viewport:{width:1440,height:900} });
+            const events=[];
+            page.on('pageerror', e => events.push('PAGEERROR '+e.message));
+            page.on('console', m => { if(['error','warning'].includes(m.type())) events.push('CONSOLE_'+m.type().toUpperCase()+' '+m.text()); });
+            page.on('requestfailed', r => events.push('REQUEST_FAILED '+r.url().replace(/key=[^&]+/,'key=REDACTED')+' :: '+(r.failure()?.errorText||'unknown')));
+            await page.goto('https://hailmoneymap.web.app/', {waitUntil:'domcontentloaded', timeout:45000});
+            await page.waitForTimeout(4000);
+            const keys = await page.evaluate(() => ({ role: CRM_ROLE_KEY, name: CRM_USER_NAME_KEY, email: CRM_USER_EMAIL_KEY }));
+            await page.evaluate((keys) => {
+              localStorage.setItem(keys.role, 'Admin');
+              localStorage.setItem(keys.name, 'Runtime Admin');
+              localStorage.setItem(keys.email, 'runtime-admin@local.test');
+            }, keys);
+            await page.reload({waitUntil:'domcontentloaded', timeout:45000});
+            await page.waitForTimeout(5000);
+            const before = await page.evaluate(() => ({
+              active: document.querySelector('.page.active')?.id || '',
+              openMap: !!document.getElementById('open-map'),
+              googleMaps: !!(window.google&&google.maps),
+              hmReady: !!window.HM_GOOGLE_MAPS_READY,
+              pendingInit: typeof mapsState !== 'undefined' ? !!mapsState.pendingInit : null,
+              map: typeof mapsState !== 'undefined' ? !!mapsState.map : null
+            }));
+            console.log('BEFORE='+JSON.stringify(before));
+            await page.click('#open-map', {timeout:15000});
+            await page.waitForTimeout(10000);
+            const after = await page.evaluate(() => {
+              const el=document.getElementById('stormMap');
+              const r=el.getBoundingClientRect();
+              return {
+                active: document.querySelector('.page.active')?.id || '',
+                mapPageActive: document.body.classList.contains('map-page-active'),
+                googleMaps: !!(window.google&&google.maps),
+                hmReady: !!window.HM_GOOGLE_MAPS_READY,
+                pendingInit: typeof mapsState !== 'undefined' ? !!mapsState.pendingInit : null,
+                map: typeof mapsState !== 'undefined' ? !!mapsState.map : null,
+                ready: typeof mapsState !== 'undefined' ? !!mapsState.ready : null,
+                stormMap:{w:r.width,h:r.height,children:el.children.length,htmlLength:el.innerHTML.length}
+              };
+            });
+            console.log('AFTER='+JSON.stringify(after));
+            console.log('EVENTS_START');
+            for (const x of events.slice(-100)) console.log(x.replace(/key=[^& ]+/g,'key=REDACTED'));
+            console.log('EVENTS_END');
+            await page.screenshot({path:'map-runtime.png', fullPage:true});
+            await browser.close();
+            if(!after.map || !after.googleMaps || after.stormMap.children===0) process.exitCode=2;
+          })().catch(e=>{ console.error('FATAL '+(e&&e.stack||e)); process.exitCode=1; });
+          NODE
+      - name: Upload runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: map-runtime-evidence
+          path: |
+            map-runtime.txt
+            map-runtime.png
+          if-no-files-found: error
