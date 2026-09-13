@@ -1,0 +1,27 @@
+name: Inspect Map Init
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - '.github/workflows/inspect-map-init.yml'
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print map initialization code
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== mapsGoogleReady matches ==='
+          grep -n -C 25 "mapsGoogleReady" public/index.html || true
+          echo '=== mapsState.map assignments ==='
+          grep -n -C 25 -E "mapsState\.map[[:space:]]*=" public/index.html || true
+          echo '=== init function candidates ==='
+          grep -n -C 15 -E "function maps[A-Za-z0-9_]*(Init|Initialize|Ensure)|maps[A-Za-z0-9_]*(Init|Initialize|Ensure)[[:space:]]*=" public/index.html || true
+          echo '=== showPage map hooks ==='
+          grep -n -C 30 -E "page-map|showPage" public/index.html | grep -E -C 20 "maps|page-map|showPage" | tail -n 900 || true
