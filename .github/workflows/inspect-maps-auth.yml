@@ -1,0 +1,23 @@
+name: Inspect Maps Auth
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - '.github/workflows/inspect-maps-auth.yml'
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print Maps auth and LSR fetch paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== LSR FETCH CALLS ==='
+          grep -n -C 35 -E "LSR fetch|lsr|noaa.*proxy|NOAA_PROXY_BASE" public/index.html | tail -n 1200 || true
+          echo '=== AUTH HEADER/TOKEN HELPERS ==='
+          grep -n -C 30 -E "Authorization|Bearer|getIdToken|access_token|session.*token|jwt|JWT" public/index.html | grep -E -C 25 "maps|NOAA|LSR|fetch|token|Authorization|Bearer" | tail -n 1400 || true
