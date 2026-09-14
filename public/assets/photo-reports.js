@@ -139,6 +139,10 @@
     var project = findProject(projectId);
     if (!project) return null;
     var leads = typeof crmGetLeads === 'function' ? crmGetLeads() : [];
+    if (project.leadId) {
+      var linked = leads.find(function (lead) { return String(lead.id || '') === String(project.leadId || ''); });
+      if (linked) return linked;
+    }
     for (var i = 0; i < leads.length; i++) {
       var address = String(crmGetJobFileLeadAddress ? crmGetJobFileLeadAddress(leads[i]) || '' : '').trim().toLowerCase();
       var projectAddress = [project.street, project.city, project.state, project.zip].filter(Boolean).join(', ').trim().toLowerCase();
@@ -215,27 +219,12 @@
     all.push(msg);
     try { localStorage.setItem(CHAT_KEY, JSON.stringify(all)); } catch (e) {}
 
-    /* Surface in Job Details → Messages with source "Photos". */
-    if (leadId && typeof jfGetMessages === 'function' && typeof jfSaveMessages === 'function') {
-      var jobMsgs = jfGetMessages();
-      jobMsgs.push({
-        id: msg.id,
-        jobId: typeof crmGetJobFileId === 'function' ? crmGetJobFileId(lead) : '',
-        leadId: leadId,
-        source: 'Photos',
-        photoProjectId: projectId,
-        customerName: typeof crmGetJobFileLeadName === 'function' ? crmGetJobFileLeadName(lead) : '',
-        propertyAddress: typeof crmGetJobFileLeadAddress === 'function' ? crmGetJobFileLeadAddress(lead) : '',
-        createdByName: msg.createdByName,
-        createdByRole: msg.createdByRole,
-        body: body,
-        mentionedNames: [],
-        mentionedUserIds: [],
-        createdTaskIds: [],
-        createdAt: msg.createdAt,
-        updatedAt: msg.updatedAt
-      });
-      jfSaveMessages(jobMsgs);
+    /* Use the existing Job Details message path so @mentions resolve normally. */
+    if (leadId && typeof jfAddMessage === 'function') {
+      var jobMessage = jfAddMessage(leadId, body, { id: msg.id, source: 'Photos', photoProjectId: projectId });
+      msg.mentionedNames = jobMessage && jobMessage.mentionedNames || [];
+      msg.mentionedUserIds = jobMessage && jobMessage.mentionedUserIds || [];
+      try { localStorage.setItem(CHAT_KEY, JSON.stringify(all)); } catch (e) {}
       if (lead && typeof crmPushLeadActivity === 'function') {
         crmPushLeadActivity(lead, 'Photos chat: ' + String(body).slice(0, 80), 'note', msg.createdByName, msg.createdAt);
       }
@@ -271,6 +260,9 @@
     var lead = typeof crmGetJobFileLeadById === 'function' ? crmGetJobFileLeadById(leadId) : null;
     if (!lead) return '';
     var ps = projects();
+    for (var linkedIndex = 0; linkedIndex < ps.length; linkedIndex++) {
+      if (String(ps[linkedIndex].leadId || '') === String(leadId || '')) return ps[linkedIndex].id;
+    }
     for (var i = 0; i < ps.length; i++) {
       var p = ps[i];
       if ((p.reports || []).some(function (r) { return findLeadByReport(r.id) && String(findLeadByReport(r.id).id || '') === String(leadId); })) {
@@ -1054,12 +1046,12 @@
           if (opened) return;
         }
       }
-      var msgClick = e.target && e.target.closest ? e.target.closest('.jf-msg-bubble') : null;
+      var msgClick = e.target && e.target.closest ? e.target.closest('[data-photo-chat-msg-id],.jf-msg-bubble') : null;
       if (msgClick) {
-        var photoMsg = msgClick.querySelector ? msgClick.querySelector('[data-photo-chat-msg]') : null;
         var jfMsgs = typeof jfGetMessages === 'function' ? jfGetMessages() : [];
         var idx = Number(msgClick.getAttribute('data-photo-chat-index') || -1);
-        var msg = idx >= 0 ? jfMsgs[idx] : null;
+        var messageId = msgClick.getAttribute('data-photo-chat-msg-id');
+        var msg = messageId ? jfMsgs.find(function (item) { return String(item.id || '') === String(messageId); }) : (idx >= 0 ? jfMsgs[idx] : null);
         if (msg) window.hmPhotoReports.openChatFromMessage(msg);
       }
     });

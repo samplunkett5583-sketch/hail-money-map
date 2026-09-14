@@ -80352,21 +80352,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     /* Parse @mentions from message text — returns array of matched names */
     function jfParseMentions(text) {
-      var matches = [];
-      var re = /@([\w. ]+)/g;
-      var m;
-      while ((m = re.exec(text)) !== null) {
-        var raw = m[1].trim();
-        if (raw) matches.push(raw);
-      }
-      /* Match against team members */
       var members = (typeof crmGetTeamMembers === 'function') ? crmGetTeamMembers() : [];
-      return matches.map(function(raw) {
-        var lower = raw.toLowerCase();
-        return members.find(function(mb) {
-          return mb.name && mb.name.toLowerCase().indexOf(lower) === 0;
-        }) || { name: raw, id: '', role: '' };
+      var found = [];
+      members.slice().sort(function (a, b) { return String(b.name || '').length - String(a.name || '').length; }).forEach(function(member) {
+        var escaped = String(member.name || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (!escaped || !(new RegExp('@' + escaped + '(?=$|[\\s,.;:!?])', 'i')).test(String(text || ''))) return;
+        if (!found.some(function(item) { return String(item.id || item.name) === String(member.id || member.name); })) found.push(member);
       });
+      return found;
     }
 
     /* Detect if message sounds like a task/assignment */
@@ -80398,9 +80391,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var jobId = lead ? (crmGetJobFileId ? crmGetJobFileId(lead) : '') : '';
 
       var msg = {
-        id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+        id: opts.id || ('msg_' + Date.now() + '_' + Math.random().toString(36).slice(2,5)),
         jobId: jobId || '',
         leadId: leadId || '',
+        source: opts.source || '',
+        photoProjectId: opts.photoProjectId || '',
         customerName: customerName,
         propertyAddress: addr,
         createdByName: who,
@@ -80496,13 +80491,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         html += '<div class="crm-job-file-empty">No messages yet. Send the first one.</div>';
       } else {
         msgs.slice().reverse().forEach(function(msg) {
-          html += '<div class="jf-msg-bubble">';
+          html += '<div class="jf-msg-bubble"' + (msg.source === 'Photos' ? ' data-photo-chat-msg-id="' + crmEscapeHtml(msg.id || '') + '"' : '') + '>';
           html += '<div class="jf-msg-bubble-header">';
           html += '<span class="jf-msg-sender">' + crmEscapeHtml(msg.createdByName || 'User') + '</span>';
           if (msg.createdByRole) html += '<span class="jf-msg-role">' + crmEscapeHtml(msg.createdByRole) + '</span>';
           html += '<span class="jf-msg-ts">' + crmEscapeHtml(actFmtRelTime ? actFmtRelTime(msg.createdAt) : (msg.createdAt || '').slice(0,10)) + '</span>';
           html += '</div>';
           html += '<div class="jf-msg-body">' + crmEscapeHtml(msg.body || '') + '</div>';
+          if (msg.source) html += '<div class="jf-msg-source">Source: ' + crmEscapeHtml(msg.source) + (msg.source === 'Photos' && msg.photoProjectId ? ' · <button class="btn" type="button" data-photo-chat-msg-id="' + crmEscapeHtml(msg.id || '') + '">Open Photo Project</button>' : '') + '</div>';
           if (msg.mentionedNames && msg.mentionedNames.length) {
             html += '<div class="jf-msg-mentions">';
             msg.mentionedNames.forEach(function(n) { html += '<span class="jf-msg-mention">@' + crmEscapeHtml(n) + '</span>'; });
@@ -81559,6 +81555,8 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 </script>
 <script src="./vendor-jspdf.umd.min.js?v=2.5.1"></script>
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
+<script src="./assets/crm-cross-links.js?v=20260914"></script>
+<script src="./assets/photo-reports.js?v=20260914"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
 </body>
 </html>
