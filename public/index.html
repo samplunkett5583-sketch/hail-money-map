@@ -30448,11 +30448,18 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
         return false;
       }
       _mapsPostPaintInitScheduled = true;
-      mapsState.postPaintNavigationReady = false;
+      // The map itself is the primary Maps-page content. Construct it as soon as
+      // showPage() has made the container measurable; deferring it behind two
+      // paints left a visible gray map after the page controls appeared.
+      mapsState.postPaintNavigationReady = true;
       var token = ++_mapsPostPaintInitToken;
       var App = mapsGetAppState();
       App.mapsNavigationTiming = App.mapsNavigationTiming || {};
       App.mapsNavigationTiming.scheduledInitializations = Number(App.mapsNavigationTiming.scheduledInitializations || 0) + 1;
+
+      mapsMarkNavigationTiming('initialization-start');
+      mapsMeasureSyncPhase('maps-ensure-visible-map', mapsEnsureVisibleMap);
+      mapsMarkNavigationTiming('initialization-finish');
 
       _mapsPostPaintInitRafOne = requestAnimationFrame(function () {
         _mapsPostPaintInitRafOne = null;
@@ -30478,10 +30485,6 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
               return;
             }
             _mapsPostPaintInitScheduled = false;
-            mapsState.postPaintNavigationReady = true;
-            mapsMarkNavigationTiming('initialization-start');
-            mapsMeasureSyncPhase('maps-ensure-visible-map', mapsEnsureVisibleMap);
-            mapsMarkNavigationTiming('initialization-finish');
             mapsFetchRecentDates().then(function () {
               // Selecting and drawing the newest date must not wait on card
               // ranking metadata.  The swath is the first Maps-page result.
@@ -31844,13 +31847,17 @@ function mapsGoogleReady() {
       var mapEl = document.getElementById('stormMap');
       if (!mapEl) return;
 
+      var initialMapStyle = 'roadmap';
+      try { initialMapStyle = localStorage.getItem('hailMoneyMapStyle') || 'roadmap'; } catch (_) {}
+      if (['roadmap', 'satellite', 'hybrid'].indexOf(initialMapStyle) === -1) initialMapStyle = 'roadmap';
+
       mapsState.map = mapsMeasureSyncPhase('google-map-constructor', function () {
         return new google.maps.Map(mapEl, {
           center: MAPS_DEFAULT_CENTER,
           zoom: MAPS_DEFAULT_ZOOM,
           minZoom: MAPS_MIN_ZOOM,
           isFractionalZoomEnabled: true,
-          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          mapTypeId: initialMapStyle,
           styles: [],
           zoomControl: false,
           streetViewControl: false,
@@ -31872,6 +31879,11 @@ function mapsGoogleReady() {
       App.map = map;
       mapsInstallMinimumZoomGuard(map);
       mapsWireHailHoverReadout();
+      // Controls may have been visited before the asynchronously loaded Maps API
+      // was ready. Wire the map-dependent controls now as well; each is guarded
+      // against duplicate listeners.
+      mapsWireAreaSearch();
+      mapsWireMapStyleCtrl();
       hmDebugLog('[HMM] native smooth cursor-centered map wheel zoom enabled');
 
       // Keep pan gestures separate from property clicks. Google can emit a map
@@ -43173,10 +43185,9 @@ function mapsGoogleReady() {
           choice.addEventListener('click', function (event) {
             event.stopPropagation();
             var style = choice.getAttribute('data-map-style');
-            if (mapsState.map && style) mapsState.map.setMapTypeId(style);
-            mapStylesMenu.querySelectorAll('.maps-options-style-choice').forEach(function (item) {
-              item.classList.toggle('active', item === choice);
-            });
+            if (!mapsState.map || !style) return;
+            mapsState.map.setMapTypeId(style);
+            mapsSyncMapStyleControls(style);
             setOptionsOpen(false);
           });
         });
@@ -43348,7 +43359,7 @@ function mapsGoogleReady() {
       var go = document.getElementById('maps-area-search-go');
       var cancel = document.getElementById('maps-area-search-cancel');
       var mapDiv = mapsState.map && mapsState.map.getDiv();
-      if (!trigger || !menu || !go || !mapDiv) return;
+      if (!trigger || !menu || !go || !mapDiv || trigger.dataset.mapsBindingCount === '1') return;
       mapsAreaSetDateRange(1);
 
       mapsAreaSearchState.projectionOverlay = new google.maps.OverlayView();
@@ -43428,11 +43439,35 @@ function mapsGoogleReady() {
       if (redraw) redraw.addEventListener('click', mapsAreaBeginRectangle);
       var combine = document.getElementById('maps-area-combine-btn');
       if (combine) combine.addEventListener('click', function () {
-        mapsAreaSearchState.dates.slice(0, MAPS_MAX_SELECT).forEach(function (dateStr) {
-          if (mapsState.pinnedDates.indexOf(dateStr) === -1) mapsState.pinnedDates.push(dateStr);
-          mapsDrawDate(dateStr);
+        var datesToCombine = [];
+        mapsAreaSearchState.dates.some(function (dateStr) {
+          var alreadyPinned = mapsState.pinnedDates.indexOf(dateStr) !== -1;
+          if (!alreadyPinned && mapsState.pinnedDates.length >= MAPS_MAX_SELECT) return true;
+          if (!alreadyPinned) mapsState.pinnedDates.push(dateStr);
+          datesToCombine.push(dateStr);
+          return datesToCombine.length >= MAPS_MAX_SELECT;
         });
         mapsPersistPinnedDates(); mapsSyncSelectedDates(); mapsRenderStormList(); mapsRenderSavedList(); mapsUpdateDownloadBtn();
+
+        // mapsDrawDate intentionally cancels an in-flight single-date request
+        // when another date is selected. Combine is different: load each
+        // returned date in order so every pinned swath remains on the map.
+        function drawCombinedDate(index) {
+          if (index >= datesToCombine.length) return;
+          var dateStr = datesToCombine[index];
+          mapsDrawDate(dateStr);
+          var checks = 0;
+          (function waitForCombinedDate() {
+            var App = mapsGetAppState();
+            if (App.currentStormDateLoading === dateStr && checks < 240) {
+              checks += 1;
+              setTimeout(waitForCombinedDate, 50);
+              return;
+            }
+            drawCombinedDate(index + 1);
+          })();
+        }
+        drawCombinedDate(0);
       });
       var clear = document.getElementById('maps-area-clear-btn');
       if (clear) clear.addEventListener('click', function () {
@@ -43554,26 +43589,35 @@ function mapsGoogleReady() {
       });
     }
 
+    function mapsSyncMapStyleControls(style) {
+      style = style || 'roadmap';
+      var select = document.getElementById('mapStyleSelect');
+      if (select) select.value = style;
+      document.querySelectorAll('#page-map [data-map-style], #maps-map-styles-menu [data-map-style]').forEach(function (control) {
+        control.classList.toggle('active', control.getAttribute('data-map-style') === style);
+        control.setAttribute('aria-pressed', control.getAttribute('data-map-style') === style ? 'true' : 'false');
+      });
+      try { localStorage.setItem('hailMoneyMapStyle', style); } catch (_) {}
+    }
+
     function mapsWireMapStyleCtrl() {
       var select = document.getElementById('mapStyleSelect');
       if (!select) return;
-      function syncMapStyleControls(style) {
-        style = style || 'roadmap';
-        select.value = style;
-        document.querySelectorAll('#page-map .maps-base-map-tab').forEach(function (tab) {
-          tab.classList.toggle('active', tab.getAttribute('data-map-style') === style);
-        });
-      }
       if (mapsState.map && typeof mapsState.map.getMapTypeId === 'function') {
-        syncMapStyleControls(mapsState.map.getMapTypeId() || 'roadmap');
-        mapsState.map.addListener('maptypeid_changed', function () {
-          syncMapStyleControls(mapsState.map.getMapTypeId() || 'roadmap');
-        });
+        mapsSyncMapStyleControls(mapsState.map.getMapTypeId() || 'roadmap');
+        if (!mapsState._mapStyleListenerBound) {
+          mapsState._mapStyleListenerBound = true;
+          mapsState.map.addListener('maptypeid_changed', function () {
+            mapsSyncMapStyleControls(mapsState.map.getMapTypeId() || 'roadmap');
+          });
+        }
       }
+      if (select.dataset.mapsBindingCount === '1') return;
       select.addEventListener('change', function () {
         if (!mapsState.map) return;
         mapsState.map.setMapTypeId(select.value);
       });
+      select.dataset.mapsBindingCount = '1';
     }
 
     function mapsUpdateDownloadBtn() {
