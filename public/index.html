@@ -54226,7 +54226,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!member || typeof member !== 'object') return score;
       [
         'id', 'name', 'email', 'phone', 'role', 'managerId', 'managerName',
-        'teamId', 'teamName', 'calendarAccess', 'authPassword', 'tempPassword',
+        'teamId', 'teamName', 'calendarAccess', 'firebaseUid',
         'createdAt', 'updatedAt'
       ].forEach(function (key) {
         if (String(member[key] || '').trim()) score += 1;
@@ -54251,9 +54251,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         teamId: String(preferred.teamId || fallback.teamId || '').trim(),
         teamName: crmNormalizeTeamMemberText(preferred.teamName || fallback.teamName || ''),
         calendarAccess: String(preferred.calendarAccess || fallback.calendarAccess || 'role-based').trim() || 'role-based',
-        authPassword: String(preferred.authPassword || fallback.authPassword || '').trim(),
-        tempPassword: String(preferred.tempPassword || fallback.tempPassword || '').trim(),
-        forcePasswordReset: preferred.forcePasswordReset === true || fallback.forcePasswordReset === true,
+        firebaseUid: String(preferred.firebaseUid || fallback.firebaseUid || '').trim(),
+        authPassword: '',
+        tempPassword: '',
+        forcePasswordReset: false,
         createdAt: String(preferred.createdAt || fallback.createdAt || '').trim(),
         updatedAt: String(preferred.updatedAt || fallback.updatedAt || '').trim(),
         permissions: Object.assign({}, fallback.permissions || {}, preferred.permissions || {})
@@ -54737,9 +54738,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           teamId: String(item.teamId || '').trim(),
           teamName: String(item.teamName || '').trim(),
           calendarAccess: String(item.calendarAccess || 'role-based').trim() || 'role-based',
-          authPassword: auth.authPassword,
-          tempPassword: auth.tempPassword,
-          forcePasswordReset: auth.forcePasswordReset,
+          firebaseUid: String(item.firebaseUid || item.authUid || '').trim(),
+          authPassword: '',
+          tempPassword: '',
+          forcePasswordReset: false,
           createdAt: String(item.createdAt || '').trim(),
           updatedAt: String(item.updatedAt || '').trim(),
           permissions: (item.permissions && typeof item.permissions === 'object') ? Object.assign({}, item.permissions) : {},
@@ -73993,13 +73995,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmGetSettingsTeamModalValidationState() {
       var name = crmNormalizeTeamMemberText(document.getElementById('settings-team-member-name').value || '');
+      var email = String(document.getElementById('settings-team-member-email').value || '').trim();
       var role = String(document.getElementById('settings-team-member-role').value || '').trim();
+      var mode = String(document.getElementById('settings-team-member-mode').value || 'edit').trim();
       var tempPassword = String(document.getElementById('settings-team-member-temp-password').value || '').trim();
       var confirmTempPassword = String(document.getElementById('settings-team-member-temp-password-confirm').value || '').trim();
-      var passwordsMatch = !!tempPassword && !!confirmTempPassword && tempPassword === confirmTempPassword;
-      var hasMismatch = !!tempPassword && !!confirmTempPassword && tempPassword !== confirmTempPassword;
+      var passwordRequired = mode === 'create';
+      var passwordsMatch = (!tempPassword && !confirmTempPassword && !passwordRequired) || (!!tempPassword && tempPassword === confirmTempPassword);
+      var hasMismatch = (!!tempPassword || !!confirmTempPassword) && tempPassword !== confirmTempPassword;
       return {
-        canSave: !!name && !!role && !!tempPassword && !!confirmTempPassword && passwordsMatch,
+        canSave: !!name && !!email && !!role && passwordsMatch && (!passwordRequired || !!tempPassword),
         hasMismatch: hasMismatch
       };
     }
@@ -74187,7 +74192,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       msg.style.display = 'none';
       crmUpdateSettingsTeamModalSaveState();
 
-      if (!name || !role || !tempPassword || !confirmTempPassword) {
+      if (!name || !email || !role || (mode === 'create' && (!tempPassword || !confirmTempPassword))) {
         msg.textContent = 'Complete all required fields before saving.';
         msg.style.display = 'block';
         return;
@@ -74202,6 +74207,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         msg.style.display = 'block';
         return;
       }
+      var duplicateEmailMember = members.find(function (member) {
+        return member.id !== memberId && String(member.email || '').trim().toLowerCase() === email.toLowerCase();
+      }) || null;
+      if (duplicateEmailMember) {
+        msg.textContent = 'That email is already assigned to another team member.';
+        msg.style.display = 'block';
+        return;
+      }
       if ((tempPassword || confirmTempPassword) && tempPassword !== confirmTempPassword) {
         msg.textContent = 'Passwords must match';
         msg.style.display = 'block';
@@ -74209,9 +74222,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
 
       var existing = memberId ? (crmGetSettingsTeamMemberById(memberId) || null) : null;
-      var authPassword = existing ? String(existing.authPassword || '').trim() : '';
-      var savedTempPassword = existing ? String(existing.tempPassword || '').trim() : '';
-      var forcePasswordReset = existing ? (existing.forcePasswordReset === true || !!savedTempPassword) : false;
       var manager = managerId ? crmGetSettingsTeamMemberById(managerId) : null;
       var teamId = '';
       var teamName = '';
@@ -74226,11 +74236,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         managerId = '';
       } else {
         managerId = '';
-      }
-      if (mode === 'create' || tempPassword || confirmTempPassword) {
-        authPassword = '';
-        savedTempPassword = tempPassword;
-        forcePasswordReset = !!tempPassword;
       }
       var nowIso = new Date().toISOString();
 
@@ -74251,9 +74256,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         teamId: teamId,
         teamName: teamName,
         calendarAccess: calendarAccess,
-        authPassword: authPassword,
-        tempPassword: savedTempPassword,
-        forcePasswordReset: forcePasswordReset,
+        firebaseUid: existing ? String(existing.firebaseUid || '').trim() : '',
+        authPassword: '',
+        tempPassword: '',
+        forcePasswordReset: false,
         createdAt: existing ? String(existing.createdAt || '').trim() || nowIso : nowIso,
         updatedAt: nowIso
       };
@@ -74278,6 +74284,22 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         });
       }
 
+      var saveButton = document.getElementById('settings-team-modal-save');
+      var originalSaveText = saveButton.textContent;
+      saveButton.disabled = true;
+      saveButton.textContent = 'Syncing…';
+      try {
+        var authResult = await hmProvisionEmployeeAccount(record, tempPassword);
+        record.firebaseUid = String(authResult && authResult.profile && authResult.profile.uid || '').trim();
+        members = members.map(function (member) { return member.id === record.id ? record : member; });
+      } catch (error) {
+        msg.textContent = error && error.message ? error.message : 'Firebase Authentication account could not be synchronized.';
+        msg.style.display = 'block';
+        saveButton.textContent = originalSaveText;
+        crmUpdateSettingsTeamModalSaveState();
+        return;
+      }
+
       crmMigrateMemberReferences(existing, record);
       if (!crmSaveTeamMembers(members)) {
         msg.textContent = 'Save failed. Local storage may be full.';
@@ -74300,7 +74322,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmShowSettingsSectionMessage('team', mode === 'create' ? 'Team member added.' : 'Team member updated.');
     }
 
-    function crmRemoveSettingsTeamMember() {
+    async function crmRemoveSettingsTeamMember() {
       if (!(crmGetRole() === 'Admin' || crmGetRole() === 'Owner')) return;
       var memberId = String(document.getElementById('settings-team-member-id').value || '').trim();
       var member = crmGetSettingsTeamMemberById(memberId);
@@ -74314,6 +74336,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var members = crmGetTeamMembers();
       if (member.active !== false) {
         if (!confirm('Deactivate ' + member.name + '?')) return;
+        try {
+          await hmProvisionEmployeeAccount(Object.assign({}, member, { active: false }), '');
+        } catch (error) {
+          msg.textContent = error && error.message ? error.message : 'Could not disable this Firebase Authentication account.';
+          msg.style.display = 'block';
+          return;
+        }
         members = members.map(function (item) {
           if (item.id === member.id) item.active = false;
           return item;
@@ -77658,7 +77687,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
     async function hmProvisionEmployeeAccount(record, password) {
       if (!record || !record.email) throw new Error('An email address is required for a verified employee account.');
-      return hmEmployeeRequest('provisionEmployee', { email: record.email, password: password, displayName: record.name, role: record.role, active: record.active !== false }, true);
+      return hmEmployeeRequest('provisionEmployee', { uid: record.firebaseUid || '', email: record.email, password: password || '', displayName: record.name, role: record.role, active: record.active !== false }, true);
     }
     document.getElementById('login-submit-btn').addEventListener('click', async function () {
       var email=(document.getElementById('login-email').value||'').trim().toLowerCase();

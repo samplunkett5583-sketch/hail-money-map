@@ -100,7 +100,7 @@ exports.employeeTestLogin = onRequest({ cors: false, region: "us-central1" }, as
   }
 });
 
-exports.provisionEmployee = onRequest({ cors: false, region: "us-central1" }, async (req, res) => {
+exports.provisionEmployee = onRequest({ cors: false, region: "us-central1", invoker: "public" }, async (req, res) => {
   permitCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).send("");
   if (req.method !== "POST") return res.status(405).json({ error: "POST required." });
@@ -110,20 +110,32 @@ exports.provisionEmployee = onRequest({ cors: false, region: "us-central1" }, as
       return res.status(403).json({ error: "Administrator permission is required." });
     }
     const body = req.body || {};
+    const requestedUid = String(body.uid || "").trim();
     const email = String(body.email || "").trim().toLowerCase();
     const password = String(body.password || "");
     const displayName = String(body.displayName || email).trim().slice(0, 120);
     const hmRole = String(body.role || "Sales Rep").trim();
-    if (!email || !password || password.length < 6) {
-      return res.status(400).json({ error: "A valid email and password of at least 6 characters are required." });
+    const allowedRoles = ["Admin", "Manager", "Sales Rep", "Production", "Office", "Canvasser"];
+    if (!email || (password && password.length < 6)) {
+      return res.status(400).json({ error: "A valid email is required and a new password must contain at least 6 characters." });
+    }
+    if (!allowedRoles.includes(hmRole)) {
+      return res.status(400).json({ error: "That employee role cannot be provisioned." });
     }
     let userRecord;
     try {
-      userRecord = await admin.auth().getUserByEmail(email);
-      userRecord = await admin.auth().updateUser(userRecord.uid, { password, displayName, disabled: body.active === false });
+      if (requestedUid) userRecord = await admin.auth().getUser(requestedUid);
+      else userRecord = await admin.auth().getUserByEmail(email);
     } catch (error) {
       if (error && error.code !== "auth/user-not-found") throw error;
-      userRecord = await admin.auth().createUser({ email, password, displayName, disabled: body.active === false });
+    }
+    if (!userRecord) {
+      if (!password) return res.status(409).json({ error: "This profile has no Firebase Authentication account. Enter a temporary password to create it." });
+      userRecord = await admin.auth().createUser({ email, password, displayName, disabled: body.active === false, emailVerified: true });
+    } else {
+      const update = { email, displayName, disabled: body.active === false };
+      if (password) update.password = password;
+      userRecord = await admin.auth().updateUser(userRecord.uid, update);
     }
     await admin.auth().setCustomUserClaims(userRecord.uid, {
       role: "authenticated",
@@ -131,6 +143,7 @@ exports.provisionEmployee = onRequest({ cors: false, region: "us-central1" }, as
       hmRole
     });
     await db.collection("hmEmployees").doc(userRecord.uid).set({
+      uid: userRecord.uid,
       email,
       displayName,
       role: hmRole,
@@ -139,7 +152,11 @@ exports.provisionEmployee = onRequest({ cors: false, region: "us-central1" }, as
       updatedBy: caller.uid
     }, { merge: true });
     userRecord = await admin.auth().getUser(userRecord.uid);
-    return res.status(200).json({ profile: safeEmployeeProfile(userRecord, { role: hmRole, displayName }) });
+    const matchingProfiles = await db.collection("hmEmployees").where("email", "==", email).get();
+    return res.status(200).json({
+      profile: safeEmployeeProfile(userRecord, { role: hmRole, displayName }),
+      synchronization: { firebaseAuthUserCount: 1, teamRecordCount: matchingProfiles.size }
+    });
   } catch (error) {
     const status = Number(error && error.statusCode) || 500;
     logger.error("Employee provisioning failed", { message: error && error.message });
