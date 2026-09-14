@@ -6956,6 +6956,73 @@
       body.map-page-active #maps-header-controls-host .maps-toolbar-picker .maps-date-input { width:112px; }
     }
 
+    /* Mobile Maps controls: keep the date header compact and move map actions
+       into a temporary left drawer without changing the desktop toolbar. */
+    .maps-mobile-controls-toggle,
+    .maps-mobile-controls-drawer { display:none; }
+    @media (max-width:767px) {
+      body.map-page-active,
+      body.map-page-active #page-map,
+      body.map-page-active #page-map .maps-layout,
+      body.map-page-active #page-map .maps-map-area {
+        width:100%; max-width:100%; overflow-x:hidden;
+      }
+      body.map-page-active #maps-header-controls-host {
+        right:6px; left:6px; display:flex; justify-content:center;
+        overflow:hidden; gap:4px;
+      }
+      body.map-page-active #maps-header-controls-host .maps-toolbar-left {
+        flex:0 1 auto; max-width:100%; justify-content:center;
+      }
+      body.map-page-active #maps-header-controls-host .maps-toolbar-right,
+      body.map-page-active #maps-header-controls-host .maps-hail-hover-readout {
+        display:none !important;
+      }
+      body.map-page-active #maps-header-controls-host .maps-toolbar-picker .maps-date-input {
+        width:108px; max-width:28vw;
+      }
+      #page-map .maps-opacity-ctrl { display:none !important; }
+      #page-map .maps-mobile-controls-toggle {
+        position:fixed; top:calc(var(--maps-topbar-h) + 12px); left:8px; z-index:160;
+        display:inline-flex; align-items:center; justify-content:center;
+        width:38px; height:38px; padding:0; border:1px solid #bfc6ce; border-radius:6px;
+        background:#fff; color:#26313b; box-shadow:0 2px 8px rgba(0,0,0,.2);
+        font:800 20px/1 Arial,Helvetica,sans-serif; cursor:pointer;
+      }
+      #page-map .maps-mobile-controls-toggle[aria-expanded="true"] {
+        background:#2879bd; border-color:#2879bd; color:#fff;
+      }
+      #page-map .maps-mobile-controls-drawer {
+        position:fixed; top:calc(var(--maps-topbar-h) + 58px); left:8px; z-index:159;
+        display:none; width:min(280px,calc(100vw - 16px)); max-height:calc(100vh - var(--maps-topbar-h) - var(--maps-tracker-h) - 74px);
+        box-sizing:border-box; overflow-x:hidden; overflow-y:auto; padding:12px;
+        border:1px solid #cfd4da; border-radius:7px; background:#fff; color:#20252a;
+        box-shadow:0 10px 26px rgba(0,0,0,.24); font:12px/1.3 Arial,Helvetica,sans-serif;
+      }
+      #page-map .maps-mobile-controls-drawer.open { display:block; }
+      #page-map .maps-mobile-controls-heading {
+        margin:0 0 8px; color:#4c5660; font-size:10px; font-weight:800;
+        letter-spacing:.08em; text-transform:uppercase;
+      }
+      #page-map .maps-mobile-controls-refresh {
+        width:100%; min-height:36px; margin:0 0 12px; border:1px solid #bd4b45;
+        border-radius:5px; background:#a63b35; color:#fff; font-weight:800; cursor:pointer;
+      }
+      #page-map .maps-mobile-style-choices {
+        display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; margin-bottom:14px;
+      }
+      #page-map .maps-mobile-style-choice {
+        min-width:0; min-height:34px; padding:5px 2px; border:1px solid #c9ced4;
+        border-radius:4px; background:#f7f8f9; color:#3d464f; font-weight:700; cursor:pointer;
+      }
+      #page-map .maps-mobile-style-choice.active {
+        border-color:#2879bd; background:#2879bd; color:#fff;
+      }
+      #page-map .maps-mobile-opacity-row { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; }
+      #page-map .maps-mobile-opacity-slider { width:100%; min-width:0; accent-color:#1683ff; cursor:pointer; }
+      #page-map .maps-mobile-opacity-value { min-width:38px; color:#4c5660; font-weight:800; text-align:right; }
+    }
+
     #page-campaigns {
       padding:0;
       height:calc(100dvh - var(--hm-header-height, 118px));
@@ -21998,6 +22065,23 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <button type="button" id="maps-mobile-controls-toggle" class="maps-mobile-controls-toggle" aria-expanded="false" aria-controls="maps-mobile-controls-drawer" aria-label="Open map controls" title="Map controls">&#9776;</button>
+          <div id="maps-mobile-controls-drawer" class="maps-mobile-controls-drawer" aria-label="Mobile map controls">
+            <div class="maps-mobile-controls-heading">Map Controls</div>
+            <button type="button" id="maps-mobile-refresh-btn" class="maps-mobile-controls-refresh">Refresh</button>
+            <div class="maps-mobile-controls-heading">Map Options / Map Styles</div>
+            <div class="maps-mobile-style-choices" role="group" aria-label="Mobile map styles">
+              <button type="button" class="maps-mobile-style-choice active" data-map-style="roadmap">Map</button>
+              <button type="button" class="maps-mobile-style-choice" data-map-style="satellite">Satellite</button>
+              <button type="button" class="maps-mobile-style-choice" data-map-style="hybrid">Hybrid</button>
+            </div>
+            <label class="maps-mobile-controls-heading" for="maps-mobile-opacity-slider">Opacity</label>
+            <div class="maps-mobile-opacity-row">
+              <input type="range" id="maps-mobile-opacity-slider" class="maps-mobile-opacity-slider" min="0" max="100" value="55" aria-label="Storm and swath overlay opacity" />
+              <span id="maps-mobile-opacity-value" class="maps-mobile-opacity-value">55%</span>
             </div>
           </div>
 
@@ -45422,7 +45506,66 @@ function mapsGoogleReady() {
     }
 
     // ── Mobile Drawer Wiring ──
+    function mapsWireMobileControlDrawer() {
+      var toggle = document.getElementById('maps-mobile-controls-toggle');
+      var drawer = document.getElementById('maps-mobile-controls-drawer');
+      var refresh = document.getElementById('maps-mobile-refresh-btn');
+      var mobileOpacity = document.getElementById('maps-mobile-opacity-slider');
+      var mobileOpacityValue = document.getElementById('maps-mobile-opacity-value');
+      var desktopOpacity = document.getElementById('maps-opacity-hail');
+      if (!toggle || !drawer || toggle.dataset.mapsBindingCount === '1') return;
+
+      function setOpen(open) {
+        drawer.classList.toggle('open', !!open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        toggle.setAttribute('aria-label', open ? 'Close map controls' : 'Open map controls');
+      }
+
+      toggle.addEventListener('click', function (event) {
+        event.stopPropagation();
+        setOpen(!drawer.classList.contains('open'));
+      });
+      drawer.addEventListener('click', function (event) { event.stopPropagation(); });
+      document.addEventListener('click', function () { setOpen(false); });
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') setOpen(false);
+      });
+
+      if (refresh) {
+        refresh.addEventListener('click', function () {
+          var desktopRefresh = document.getElementById('maps-refresh-dates-btn');
+          if (desktopRefresh) desktopRefresh.click();
+        });
+      }
+
+      drawer.querySelectorAll('[data-map-style]').forEach(function (choice) {
+        choice.addEventListener('click', function () {
+          var style = choice.getAttribute('data-map-style');
+          if (!mapsState.map || !style) return;
+          mapsState.map.setMapTypeId(style);
+          mapsSyncMapStyleControls(style);
+        });
+      });
+
+      if (mobileOpacity && desktopOpacity) {
+        mobileOpacity.value = desktopOpacity.value;
+        if (mobileOpacityValue) mobileOpacityValue.textContent = mobileOpacity.value + '%';
+        mobileOpacity.addEventListener('input', function () {
+          desktopOpacity.value = mobileOpacity.value;
+          if (mobileOpacityValue) mobileOpacityValue.textContent = mobileOpacity.value + '%';
+          desktopOpacity.dispatchEvent(new Event('input', { bubbles:true }));
+        });
+        desktopOpacity.addEventListener('input', function () {
+          mobileOpacity.value = desktopOpacity.value;
+          if (mobileOpacityValue) mobileOpacityValue.textContent = mobileOpacity.value + '%';
+        });
+      }
+
+      toggle.dataset.mapsBindingCount = '1';
+    }
+
     function mapsWireMobileDrawers() {
+      mapsWireMobileControlDrawer();
       var stormsBtn = document.getElementById('maps-mob-storms-btn');
       var searchBtn = document.getElementById('maps-mob-search-btn');
       var stormsDrawer = document.getElementById('maps-mob-storms-drawer');
