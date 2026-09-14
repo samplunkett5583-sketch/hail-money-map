@@ -1,0 +1,46 @@
+name: Check Live Hail Money
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - '.github/workflows/check-live-hail-money.yml'
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install --no-save --ignore-scripts playwright-core@latest
+      - name: Inspect live production Maps controls
+        shell: bash
+        run: |
+          node <<'NODE'
+          const { chromium } = require('playwright-core');
+          const { execSync } = require('child_process');
+          (async () => {
+            const exe = execSync('command -v google-chrome').toString().trim();
+            const browser = await chromium.launch({ executablePath: exe, headless: true, args:['--no-sandbox','--disable-dev-shm-usage'] });
+            const page = await browser.newPage({ viewport:{width:1440,height:900} });
+            const errors=[];
+            page.on('pageerror', e => errors.push('PAGEERROR '+e.message));
+            page.on('console', m => { if (m.type()==='error') errors.push('CONSOLE '+m.text()); });
+            await page.goto('https://www.hail.money/', {waitUntil:'domcontentloaded', timeout:45000});
+            await page.waitForTimeout(4000);
+            const result = await page.evaluate(() => {
+              const text = (document.body && document.body.innerText) || '';
+              const ids = ['maps-area-search-go','mapStyleSelect','maps-map-styles-menu','open-map'];
+              const found = Object.fromEntries(ids.map(id => [id, !!document.getElementById(id)]));
+              const loadCandidates = Array.from(document.querySelectorAll('button,input[type="button"],input[type="submit"]')).map(el => ({id:el.id||'',text:(el.innerText||el.value||'').trim()})).filter(x => /\bload\b/i.test(x.text));
+              const styleChoices = Array.from(document.querySelectorAll('[data-map-style]')).map(el => ({style:el.getAttribute('data-map-style'),text:(el.innerText||'').trim()}));
+              const searchButton = document.getElementById('maps-area-search-go');
+              return {title:document.title,url:location.href,found,loadCandidates,styleChoices,searchText:searchButton ? (searchButton.innerText||searchButton.value||'').trim() : null,bodyHasRecent:/Most Recent Events/i.test(text)};
+            });
+            console.log('LIVE_INSPECTION='+JSON.stringify(result));
+            console.log('ERRORS='+JSON.stringify(errors.slice(-30)));
+            await browser.close();
+          })().catch(e => { console.error(e&&e.stack||e); process.exit(1); });
+          NODE
