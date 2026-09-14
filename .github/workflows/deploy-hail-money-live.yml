@@ -5,6 +5,7 @@ on:
     branches:
       - pr-43-storm-panel-style
     paths:
+      - 'public/**'
       - '.github/workflows/deploy-hail-money-live.yml'
   workflow_dispatch:
 
