@@ -3131,6 +3131,10 @@
       gap: 6px;
     }
 
+    body.main-menu-page-active #page-main-menu .hm-dashboard-ref [data-dashboard-manager-section][hidden] {
+      display: none !important;
+    }
+
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref .action-card {
       background: var(--surface-2);
       border: 0.5px solid var(--border);
@@ -21409,29 +21413,29 @@
                     <button class="action-card" type="button" data-dashboard-action="job-action-list" data-dashboard-pipeline-stage="closed"><div class="num" id="dash-closed-submitted">0</div><span class="dash-icon" data-dash-icon="lock" aria-hidden="true"></span><div class="lbl">Submitted as closed</div></button>
                     <button class="action-card dashboard-job-watch-list" type="button" data-dashboard-action="job-action-list" data-dashboard-pipeline-stage="watchlist"><div class="num" id="dash-wash-list">0</div><span class="dash-icon" data-dash-icon="eye" aria-hidden="true"></span><div class="lbl">Watch list</div></button>
                   </div>
-<div class="section-title dash-title-financial">FINANCIAL</div>
-                  <div class="fin-grid">
+<div class="section-title dash-title-financial" data-dashboard-manager-section="financials">FINANCIAL</div>
+                  <div class="fin-grid" data-dashboard-manager-section="financials">
                     <button class="action-card" type="button" data-dashboard-action="job-action-list" data-dashboard-pipeline-stage="financial-worksheets"><div class="num" id="dash-submitted-worksheets">0</div><span class="dash-icon" data-dash-icon="file-text" aria-hidden="true"></span><div class="lbl">Submitted worksheets</div></button>
                     <button class="action-card" type="button" data-dashboard-action="job-action-list" data-dashboard-pipeline-stage="overdue-invoices"><div class="num" id="dash-overdue-invoices">0</div><span class="dash-icon" data-dash-icon="clock-exclamation" aria-hidden="true"></span><div class="lbl">Overdue invoices</div></button>
                     <button class="action-card" type="button" data-dashboard-action="job-action-list" data-dashboard-pipeline-stage="invoices-not-recorded"><div class="num" id="dash-invoices-not-recorded">0</div><span class="dash-icon" data-dash-icon="file-off" aria-hidden="true"></span><div class="lbl">Invoices not recorded</div></button>
                     <button class="action-card" type="button" data-dashboard-action="job-action-list" data-dashboard-pipeline-stage="canceled-balance"><div class="num" id="dash-canceled-balance">0</div><span class="dash-icon" data-dash-icon="currency-dollar" aria-hidden="true"></span><div class="lbl">Canceled jobs with balance due</div></button>
                   </div>
-<div class="section-title dash-title-management">MANAGEMENT</div>
-                  <div class="fin-grid">
+<div class="section-title dash-title-management" data-dashboard-manager-section="management">MANAGEMENT</div>
+                  <div class="fin-grid" data-dashboard-manager-section="management">
                     <button class="action-card" type="button" data-dashboard-action="job-action-list" data-dashboard-pipeline-stage="submitted-orders"><div class="num" id="dash-submitted-orders">0</div><span class="dash-icon" data-dash-icon="shopping-cart" aria-hidden="true"></span><div class="lbl">Submitted orders</div></button>
                     <button class="action-card" type="button" data-dashboard-action="job-action-list" data-dashboard-pipeline-stage="measurement-orders"><div class="num" id="dash-measurement-order-requests">0</div><span class="dash-icon" data-dash-icon="ruler" aria-hidden="true"></span><div class="lbl">Measurement orders</div></button>
                     <button class="action-card" type="button" data-dashboard-action="job-action-list" data-dashboard-pipeline-stage="pending-signatures"><div class="num" id="dash-pending-signatures">0</div><span class="dash-icon" data-dash-icon="signature" aria-hidden="true"></span><div class="lbl">Pending signatures</div></button>
                     <button class="action-card" type="button" data-dashboard-action="job-action-list" data-dashboard-pipeline-stage="photos-uploaded-today"><div class="num" id="dash-photos-uploaded-today">0</div><span class="dash-icon" data-dash-icon="photo" aria-hidden="true"></span><div class="lbl">Photos uploaded today</div></button>
                   </div>
-<div class="section-title dash-title-measurements">ORDER MEASUREMENTS</div>
-                  <div class="meas-row">
+<div class="section-title dash-title-measurements" data-dashboard-manager-section="order-measurements">ORDER MEASUREMENTS</div>
+                  <div class="meas-row" data-dashboard-manager-section="order-measurements">
                     <button class="meas-item" type="button" data-dashboard-action="estimates"><div class="meas-logo" style="background:#1a3a5c;"><span class="dash-icon" data-dash-icon="drone" aria-hidden="true"></span></div><span>EagleView</span></button>
                     <button class="meas-item" type="button" data-dashboard-action="estimates"><div class="meas-logo" style="background:#c0392b;"><span style="font-size:10px;font-weight:700;letter-spacing:0.04em;" aria-hidden="true">GAF</span></div><span>GAF QuickMeasure</span></button>
                     <button class="meas-item" type="button" data-dashboard-action="estimates"><div class="meas-logo meas-logo-roofr" aria-hidden="true">Roofr</div><span>Roofr</span></button>
                     <button class="meas-item" type="button" data-dashboard-action="estimates"><div class="meas-logo meas-logo-ai"><img src="./assets/hailmoney-logo.png?v=2" alt="" draggable="false" /></div><span>AI Measurements</span></button>
                   </div>
-<div class="section-title dash-title-materials">ORDER MATERIALS</div>
-                  <div class="material-row">
+<div class="section-title dash-title-materials" data-dashboard-manager-section="order-materials">ORDER MATERIALS</div>
+                  <div class="material-row" data-dashboard-manager-section="order-materials">
                     <button class="material-item" type="button" data-dashboard-action="production">
                       <div class="meas-logo material-logo">
                         <img class="abc-supply-material-logo" src="./assets/abc-supply-logo.png" alt="ABC Supply" draggable="false">
@@ -25633,6 +25637,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                 <label class="settings-permissions-item"><input type="checkbox" id="perm-editCRM" /><span>Edit CRM</span></label>
                 <label class="settings-permissions-item"><input type="checkbox" id="perm-deleteLeads" /><span>Delete Leads</span></label>
                 <label class="settings-permissions-item"><input type="checkbox" id="perm-assignLeads" /><span>Assign Leads</span></label>
+                <label class="settings-permissions-item"><input type="checkbox" id="perm-viewManagerDashboardSections" /><span>View Manager Dashboard Sections</span></label>
               </div>
 
               <div class="settings-permissions-group-label">Pipeline</div>
@@ -59314,6 +59319,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
 
       crmRenderDashboardShellChrome(root);
+      var canViewManagerSections = crmGetOrderPermissionFlag('viewManagerDashboardSections');
+      root.querySelectorAll('[data-dashboard-manager-section]').forEach(function (sectionPart) {
+        sectionPart.hidden = !canViewManagerSections;
+      });
       var dashboardLeaderboardCard = document.getElementById('dash-leaderboard-card');
       if (dashboardLeaderboardCard && !dashboardLeaderboardCard._leaderboardBound) {
         dashboardLeaderboardCard.addEventListener('keydown', function (e) {
@@ -74234,6 +74243,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     var CRM_PERMISSIONS_KEYS = [
       'viewCRM', 'editCRM', 'deleteLeads', 'assignLeads',
+      'viewManagerDashboardSections',
       'viewAllPipelines', 'editAllPipelines', 'deleteJobs',
       'viewOrders', 'createOrders', 'manageOrders', 'approveSendOrders',
       'viewFinancialWorksheet', 'editFinancialWorksheet',
@@ -74249,6 +74259,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     var CRM_ROLE_PRESETS = {
       'Sales Rep': {
         viewCRM: true,  editCRM: true,  deleteLeads: false, assignLeads: false,
+        viewManagerDashboardSections: false,
         viewAllPipelines: false, editAllPipelines: false, deleteJobs: false,
         viewOrders: true, createOrders: true, manageOrders: false, approveSendOrders: false,
         viewFinancialWorksheet: true, editFinancialWorksheet: false,
@@ -74262,6 +74273,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       },
       'Manager': {
         viewCRM: true,  editCRM: true,  deleteLeads: false, assignLeads: true,
+        viewManagerDashboardSections: true,
         viewAllPipelines: true, editAllPipelines: false, deleteJobs: false,
         viewOrders: true, createOrders: true, manageOrders: true, approveSendOrders: true,
         viewFinancialWorksheet: true, editFinancialWorksheet: true,
@@ -74275,6 +74287,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       },
       'Office': {
         viewCRM: true,  editCRM: true,  deleteLeads: false, assignLeads: true,
+        viewManagerDashboardSections: false,
         viewAllPipelines: true, editAllPipelines: false, deleteJobs: false,
         viewOrders: true, createOrders: true, manageOrders: false, approveSendOrders: false,
         viewFinancialWorksheet: true, editFinancialWorksheet: true,
@@ -74288,6 +74301,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       },
       'Production': {
         viewCRM: true,  editCRM: true,  deleteLeads: false, assignLeads: false,
+        viewManagerDashboardSections: false,
         viewAllPipelines: true, editAllPipelines: true, deleteJobs: false,
         viewOrders: true, createOrders: true, manageOrders: true, approveSendOrders: true,
         viewFinancialWorksheet: true, editFinancialWorksheet: true,
@@ -74301,6 +74315,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       },
       'Admin': {
         viewCRM: true,  editCRM: true,  deleteLeads: true,  assignLeads: true,
+        viewManagerDashboardSections: true,
         viewAllPipelines: true, editAllPipelines: true, deleteJobs: true,
         viewOrders: true, createOrders: true, manageOrders: true, approveSendOrders: true,
         viewFinancialWorksheet: true, editFinancialWorksheet: true,
