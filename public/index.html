@@ -46593,6 +46593,11 @@ function mapsGoogleReady() {
     }
 
     document.getElementById('open-estimates').addEventListener('click', function () {
+      if (window.innerWidth < 768) {
+        document.body.classList.remove('dashboard-mobile-nav-open');
+        var mobileMenuToggle = document.getElementById('dashboard-mobile-menu-toggle');
+        if (mobileMenuToggle) mobileMenuToggle.setAttribute('aria-expanded', 'false');
+      }
       resetEstimateCreationFlow(false);
       showPage('page-estimates');
     });
