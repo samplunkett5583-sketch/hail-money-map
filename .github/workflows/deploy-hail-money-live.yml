@@ -28,7 +28,6 @@ jobs:
           projectId: hailmoneymap
 
   deploy-solar-function:
-    if: ${{ github.event_name == 'workflow_dispatch' || contains(toJson(github.event.commits.*.modified), 'functions/') || contains(toJson(github.event.commits.*.added), 'functions/') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
