@@ -35,6 +35,13 @@ jobs:
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAILMONEYMAP }}
+      - name: Record deploy principal
+        shell: python
+        run: |
+          import json, os
+          path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS') or os.environ.get('GOOGLE_GHA_CREDS_PATH')
+          data = json.load(open(path, encoding='utf-8'))
+          open('principal.txt', 'w', encoding='utf-8').write(str(data.get('client_email') or 'unknown'))
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -48,12 +55,14 @@ jobs:
           code=${PIPESTATUS[0]}
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit 0
-      - name: Upload deployment log
+      - name: Upload deployment diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: solar-function-deploy-log
-          path: deploy.log
+          name: solar-function-deploy-diagnostics
+          path: |
+            deploy.log
+            principal.txt
           retention-days: 1
       - name: Fail if deployment failed
         if: ${{ steps.deploy.outputs.exit_code != '0' }}
