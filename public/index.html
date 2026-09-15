@@ -19255,6 +19255,11 @@
     body.estimates-page-active #page-estimates .crm-dashboard-mini-body { position:relative; isolation:isolate; align-content:start; min-height:max-content; padding:12px var(--crm-shell-pad-x) 80px; background:transparent; overflow:visible; }
     body.estimates-page-active #page-estimates .crm-dashboard-mini-body::before { content:''; position:fixed; top:calc(var(--crm-shell-header-h) + 12px); right:0; bottom:0; left:var(--crm-shell-rail-w); z-index:0; background:url('./assets/hailmoney-logo.png?v=2') no-repeat center top; background-size:var(--crm-shared-watermark-size) auto; pointer-events:none; }
     body.estimates-page-active #page-estimates .crm-dashboard-mini-body > * { position:relative; z-index:1; }
+    @media (max-width: 767px) {
+      body.estimates-page-active #page-estimates .crm-dashboard-mini-sidebar { display:none !important; width:0 !important; min-width:0 !important; flex:0 0 0 !important; }
+      body.estimates-page-active #page-estimates .crm-dashboard-mini-body { width:100%; min-width:0; flex:1 1 100%; }
+      body.estimates-page-active #page-estimates .crm-dashboard-mini-body::before { left:0; }
+    }
     body.estimates-page-active .topbar-left { overflow:visible !important; }
     body.estimates-page-active .crm-header-company-logo { order:1; }
     body.estimates-page-active #global-header-back-btn { position:static !important; order:2; display:inline-flex !important; width:42px !important; height:42px !important; flex:0 0 42px; margin:0 !important; padding:4px !important; color:#d4a93e !important; background:transparent !important; border:0 !important; box-shadow:none !important; }
