@@ -19153,6 +19153,8 @@
     .est-ai-inline-status.is-error { color:#a32626; }
     .est-ai-inline-status.is-success { color:#217346; }
     .est-ai-abc-row { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .est-ai-abc-optional { display:flex; align-items:center; gap:8px; margin-bottom:10px; color:#17192d; font-size:13px; font-weight:800; }
+    .est-ai-abc-optional input { width:18px; height:18px; margin:0; flex:0 0 auto; }
     .est-ai-abc-actions { display:flex; flex:0 0 auto; gap:8px; }
     .est-ai-abc-selection { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
     .est-ai-abc-selection .field-input { width:100%; margin-top:5px; }
@@ -23638,6 +23640,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <div id="est-ai-address-status" class="est-ai-inline-status" aria-live="polite">Complete all address fields to continue.</div>
           </section>
           <section class="main-menu-card estimates-gold-card est-ai-setup-card" id="est-abc-connection-card">
+            <label class="est-ai-abc-optional"><input type="checkbox" id="est-abc-enabled" /> Use ABC Supply Pricing <span style="font-weight:600;color:#666879;">(optional)</span></label>
             <div class="est-section-label" id="est-abc-heading">ABC Supply not connected</div>
             <div class="est-ai-abc-row">
               <div>
@@ -46096,7 +46099,9 @@ function mapsGoogleReady() {
 
     // ── Estimates ──
     // ABC Supply connection used by Estimates
-    var abcEstimateRequestState = { status: 'idle', addressKey: '', lastError: null };
+    var abcEstimateRequestState = { status: 'idle', addressKey: '', lastError: null, selection: null };
+    var abcEstimateManualPricing = true;
+    window.abcEstimateRequestState = abcEstimateRequestState;
     function abcIntegrationIsConfigured() {
       return window.HAIL_MONEY_ABC_SUPPLY_ENABLED !== false;
     }
@@ -46179,14 +46184,16 @@ function mapsGoogleReady() {
     }
     function abcSetEstimateRequestState(status, message, isError) {
       abcEstimateRequestState.status = status;
+      abcEstimateRequestState.connected = status === 'connected';
+      window.abcEstimateRequestState = abcEstimateRequestState;
       var retry = document.getElementById('est-abc-retry');
       var connect = document.getElementById('est-abc-connect');
       var heading = document.getElementById('est-abc-heading');
       var showRetry = status === 'temporary_failure';
       if (retry) retry.hidden = !showRetry;
-      if (heading) heading.textContent = status === 'connected' ? 'ABC Supply Pricing' : 'ABC Supply not connected';
+      if (heading) heading.textContent = status === 'connected' ? 'ABC Supply Pricing' : 'ABC Supply Pricing (Optional)';
       if (connect) {
-        connect.disabled = status === 'checking' || status === 'connected' || !abcEstimatePrerequisites().ready;
+        connect.disabled = abcEstimateManualPricing || status === 'checking' || status === 'connected' || !abcEstimatePrerequisites().ready;
         connect.textContent = status === 'connected' ? 'ABC Supply Connected' : 'Connect ABC Supply';
       }
       abcSetEstimateStatus(message, isError);
@@ -46194,7 +46201,8 @@ function mapsGoogleReady() {
     }
     function abcResetEstimateConnection(message) {
       abcEstimateShipTos = [];
-      abcEstimateRequestState = { status: 'idle', addressKey: '', lastError: null };
+      abcEstimateRequestState = { status: 'idle', addressKey: '', lastError: null, selection: null };
+      window.abcEstimateRequestState = abcEstimateRequestState;
       var accountSelect = document.getElementById('est-abc-account');
       var branchSelect = document.getElementById('est-abc-branch');
       var selection = document.getElementById('est-abc-selection');
@@ -46292,6 +46300,10 @@ function mapsGoogleReady() {
       return abcEstimateShipTos.length;
     }
     async function abcLoadEstimateAccounts(force) {
+      if (abcEstimateManualPricing) {
+        abcSetEstimateRequestState('optional_off', 'Optional — off. The estimate will use default pricing.', false);
+        return null;
+      }
       var prerequisites = abcEstimatePrerequisites();
       if (!prerequisites.ready) {
         abcResetEstimateConnection('Complete the property address to check your ABC Supply connection.');
@@ -46328,6 +46340,7 @@ function mapsGoogleReady() {
       }
     }
     async function abcConnectEstimateAccount() {
+      if (abcEstimateManualPricing) return;
       if (!abcEstimatePrerequisites().ready) {
         abcResetEstimateConnection('Complete the property address before connecting ABC Supply.');
         return;
@@ -46368,6 +46381,36 @@ function mapsGoogleReady() {
     if (estAbcConnectButton) estAbcConnectButton.addEventListener('click', abcConnectEstimateAccount);
     var estAbcRetryButton = document.getElementById('est-abc-retry');
     if (estAbcRetryButton) estAbcRetryButton.addEventListener('click', function () { abcLoadEstimateAccounts(true); });
+    var estAbcEnabled = document.getElementById('est-abc-enabled');
+    if (estAbcEnabled) estAbcEnabled.addEventListener('change', function () {
+      abcEstimateManualPricing = !estAbcEnabled.checked;
+      if (abcEstimateManualPricing) {
+        abcResetEstimateConnection('Optional — off. The estimate will use default pricing.');
+      } else {
+        abcSetEstimateRequestState('idle', 'Optional — on. Complete the address to connect or select ABC pricing.', false);
+        if (abcEstimatePrerequisites().ready) abcLoadEstimateAccounts(false);
+      }
+    });
+    async function abcChooseEstimatePricing() {
+      if (abcEstimateManualPricing) return true;
+      if (abcEstimateRequestState.status !== 'connected') await abcLoadEstimateAccounts(false);
+      var accountSelect = document.getElementById('est-abc-account');
+      var branchSelect = document.getElementById('est-abc-branch');
+      if (abcEstimateRequestState.status !== 'connected' || !accountSelect || !accountSelect.value || !branchSelect || !branchSelect.value) {
+        abcSetEstimateStatus('ABC pricing is on. Connect ABC Supply and select an account and branch, or turn the optional setting off.', true);
+        return false;
+      }
+      var account = abcEstimateShipTos[accountSelect.selectedIndex] || {};
+      var branch = Array.isArray(account.branches) ? account.branches[branchSelect.selectedIndex] || {} : {};
+      abcEstimateRequestState.selection = {
+        accountNumber: accountSelect.value,
+        accountName: account.name || accountSelect.options[accountSelect.selectedIndex].textContent,
+        branchNumber: branchSelect.value,
+        branchName: branch.name || branchSelect.options[branchSelect.selectedIndex].textContent
+      };
+      window.abcEstimateRequestState = abcEstimateRequestState;
+      return true;
+    }
     window.addEventListener('message', function (event) {
       var abcAllowedOrigins = [location.origin, 'https://hailmoneymap.web.app', 'https://hailmoneymap.firebaseapp.com'];
       if (abcAllowedOrigins.indexOf(event.origin) === -1 || !event.data || event.data.type !== 'hailmoney:abc-oauth') return;
@@ -46636,7 +46679,7 @@ function mapsGoogleReady() {
         status.classList.toggle('is-success', valid);
         status.textContent = valid ? 'Address is ready.' : (showErrors ? 'Enter a valid street, city, state, and 5-digit or ZIP+4 code.' : 'Complete all address fields to continue.');
       }
-      if (!skipAbcCheck) {
+      if (!skipAbcCheck && !abcEstimateManualPricing) {
         var prerequisites = abcEstimatePrerequisites();
         if (!prerequisites.ready && abcEstimateRequestState.status !== 'idle') abcResetEstimateConnection('Complete the property address to check your ABC Supply connection.');
         else if (prerequisites.ready && (abcEstimateRequestState.status === 'idle' || abcEstimateRequestState.addressKey !== prerequisites.key)) abcLoadEstimateAccounts(false);
