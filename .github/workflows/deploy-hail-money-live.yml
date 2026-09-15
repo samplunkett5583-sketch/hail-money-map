@@ -7,6 +7,7 @@ on:
     paths:
       - 'public/**'
       - 'functions/**'
+      - 'scripts/**'
       - 'firebase.json'
       - '.github/workflows/deploy-hail-money-live.yml'
   workflow_dispatch:
@@ -20,6 +21,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Apply AI estimate pricing fallback
+        run: python scripts/apply-ai-estimate-pricing-fallback.py
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
