@@ -1,0 +1,69 @@
+name: Temporary AI Estimate Startup Fix
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - '.github/workflows/tmp-ai-estimate-startup-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: startsWith(github.event.head_commit.message, 'Add temporary AI startup fixer')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pr-43-storm-panel-style
+          fetch-depth: 0
+
+      - name: Apply focused startup fix
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          flow = Path('public/estimate-ai-flow.js')
+          text = flow.read_text(encoding='utf-8')
+
+          old = "    if (!await abcChooseEstimatePricing()) return;\n    var now = new Date();\n    var abcState = window.abcEstimateRequestState || {};\n    var abcConnected = !abcEstimateManualPricing && abcState.connected === true && !!abcState.selection;"
+          new = "    var abcOptionalToggle = document.getElementById('est-abc-enabled');\n    var abcPricingRequested = !!(abcOptionalToggle && abcOptionalToggle.checked);\n    if (abcPricingRequested) {\n      if (typeof window.abcChooseEstimatePricing !== 'function') {\n        document.getElementById('est-ai-address-status').textContent = 'ABC pricing is temporarily unavailable. Turn ABC pricing off to continue.';\n        return;\n      }\n      if (!await window.abcChooseEstimatePricing()) return;\n    }\n    var now = new Date();\n    var abcState = window.abcEstimateRequestState || {};\n    var abcConnected = abcPricingRequested && abcState.connected === true && !!abcState.selection;"
+          if old not in text:
+              raise SystemExit('Expected AI startup block not found; refusing speculative edit')
+          text = text.replace(old, new, 1)
+          flow.write_text(text, encoding='utf-8')
+
+          index = Path('public/index.html')
+          html = index.read_text(encoding='utf-8')
+          fn = "    async function abcChooseEstimatePricing() {"
+          if fn not in html:
+              raise SystemExit('ABC pricing chooser definition not found')
+          start = html.index(fn)
+          marker = "    window.addEventListener('message', function (event) {"
+          pos = html.index(marker, start)
+          exposure = "    window.abcChooseEstimatePricing = abcChooseEstimatePricing;\n"
+          if exposure not in html[start:pos]:
+              html = html[:pos] + exposure + html[pos:]
+          index.write_text(html, encoding='utf-8')
+          PY
+
+      - name: Verify focused fix
+        shell: bash
+        run: |
+          node --check public/estimate-ai-flow.js
+          git diff --check
+          grep -F "window.abcChooseEstimatePricing = abcChooseEstimatePricing;" public/index.html
+          grep -F "var abcPricingRequested = !!(abcOptionalToggle && abcOptionalToggle.checked);" public/estimate-ai-flow.js
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          git config user.name "Hail Money Fix Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add public/estimate-ai-flow.js public/index.html
+          git commit -m "Fix AI estimate startup with optional ABC pricing"
+          git push origin HEAD:pr-43-storm-panel-style
