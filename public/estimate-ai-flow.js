@@ -1256,10 +1256,18 @@
     var user;
     try { user = await currentFirebaseUser(); }
     catch (error) { document.getElementById('est-ai-address-status').textContent = safeError(error, 'Sign-in is required.'); return; }
-    if (!await abcChooseEstimatePricing()) return;
+    var abcOptionalToggle = document.getElementById('est-abc-enabled');
+    var abcPricingRequested = !!(abcOptionalToggle && abcOptionalToggle.checked);
+    if (abcPricingRequested) {
+      if (typeof window.abcChooseEstimatePricing !== 'function') {
+        document.getElementById('est-ai-address-status').textContent = 'ABC pricing is temporarily unavailable. Turn ABC pricing off to continue.';
+        return;
+      }
+      if (!await window.abcChooseEstimatePricing()) return;
+    }
     var now = new Date();
     var abcState = window.abcEstimateRequestState || {};
-    var abcConnected = !abcEstimateManualPricing && abcState.connected === true && !!abcState.selection;
+    var abcConnected = abcPricingRequested && abcState.connected === true && !!abcState.selection;
     estAiSession = {
       id: 'ai_est_' + now.getTime().toString(36),
       estimateNumber: 'HM-' + now.getFullYear() + '-' + String(now.getTime()).slice(-6),
