@@ -46,6 +46,8 @@ jobs:
         with:
           node-version: '24'
       - run: npm install -g firebase-tools
+      - name: Install Cloud Functions dependencies
+        run: npm ci --prefix functions
       - name: Deploy Solar function
         id: deploy
         shell: bash
