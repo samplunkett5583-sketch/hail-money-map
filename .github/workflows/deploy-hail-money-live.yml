@@ -39,4 +39,4 @@ jobs:
         with:
           node-version: '24'
       - run: npm install -g firebase-tools
-      - run: firebase deploy --only functions:default:getSolarRoofData --project hailmoneymap --non-interactive
+      - run: firebase deploy --only functions:getSolarRoofData --project hailmoneymap --non-interactive
