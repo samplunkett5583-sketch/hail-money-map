@@ -6,6 +6,8 @@ on:
       - pr-43-storm-panel-style
     paths:
       - 'public/**'
+      - 'functions/**'
+      - 'firebase.json'
       - '.github/workflows/deploy-hail-money-live.yml'
   workflow_dispatch:
 
@@ -13,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
+  deploy-hosting:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -24,3 +26,18 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAILMONEYMAP }}
           channelId: live
           projectId: hailmoneymap
+
+  deploy-solar-function:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(toJson(github.event.commits.*.modified), 'functions/') || contains(toJson(github.event.commits.*.added), 'functions/') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAILMONEYMAP }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install -g firebase-tools
+      - run: firebase deploy --only functions:default:getSolarRoofData --project hailmoneymap --non-interactive
