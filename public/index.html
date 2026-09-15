@@ -19229,6 +19229,16 @@
     .est-ai-assumption { display:flex; gap:8px; margin-bottom:8px; padding:9px; border:1px solid #ead6a8; border-radius:7px; background:#fff9e8; color:#5a471f; font-size:12px; }
     .est-ai-save-row { display:flex; justify-content:flex-end; align-items:center; gap:14px; color:#e7dfca; }
     .est-ai-save-row .btn { min-width:170px; }
+    #est-ai-measurement-review { scroll-margin-top:calc(var(--crm-shell-header-h, 64px) + 12px); }
+    .est-ai-review-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .est-ai-review-field { min-width:0; padding:11px; border:1px solid #dedfe5; border-radius:8px; background:#fff; }
+    .est-ai-review-field.is-wide { grid-column:1/-1; }
+    .est-ai-measurement-control { display:grid; grid-template-columns:34px minmax(0,1fr) 34px auto; align-items:center; gap:6px; margin-top:5px; }
+    .est-ai-measurement-control button { width:34px; height:36px; padding:0; border:1px solid #c8cad2; border-radius:7px; background:#f4f5f7; color:#17192d; font-size:18px; font-weight:800; }
+    .est-ai-measurement-control .field-input { width:100%; min-width:0; margin:0; text-align:center; }
+    .est-ai-measurement-unit { min-width:28px; color:#666879; font-size:11px; font-weight:800; }
+    .est-ai-source-select { width:100%; min-width:0; margin-top:8px; }
+    .est-ai-measurement-provenance { display:block; margin-top:7px; color:#666879; font-size:11px; line-height:1.35; overflow-wrap:anywhere; }
     @media (max-width: 620px) {
       .est-scope-palette { grid-template-columns: 1fr; }
       .est-scope-source { min-height: 50px; }
@@ -19247,6 +19257,10 @@
       .est-ai-photo-actions .btn,.est-ai-modal-actions .btn,.est-ai-save-row .btn { width:100%; }
       .est-ai-totals > label,.est-ai-totals dl { width:100%; }
       .estimates-intro { padding:18px; }
+      .est-ai-review-grid { grid-template-columns:1fr; }
+      .est-ai-review-field.is-wide { grid-column:auto; }
+      .est-ai-measurement-control { grid-template-columns:32px minmax(0,1fr) 32px auto; gap:5px; }
+      .est-ai-measurement-control button { width:32px; height:34px; }
     }
     /* Estimates standard CRM shell */
     body.estimates-page-active > .app-shell > .screen { overflow:hidden !important; }

@@ -258,7 +258,7 @@
         method: 'POST',
         signal: AbortSignal.timeout(55000),
         headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ latitude: geocode.latitude, longitude: geocode.longitude })
+        body: JSON.stringify({ latitude: geocode.latitude, longitude: geocode.longitude, apiKey: googleMapsKey() })
       });
       var data = await response.json().catch(function () { return {}; });
       if (!response.ok) {
@@ -828,7 +828,7 @@
       var info = estAiSession.measurementEvidence && estAiSession.measurementEvidence[key];
       var detail = document.createElement('small');
       detail.className = 'est-ai-measurement-provenance';
-      detail.textContent = info ? info.source + ' · ' + info.method : (input.value === '' ? 'Needs confirmation — no reliable measurement source' : 'User answer or measurement');
+      detail.textContent = info ? [info.source, info.confidence, info.method].filter(Boolean).join(' · ') : (input.value === '' ? 'Needs confirmation — no reliable measurement source' : 'User answer or measurement');
       input.closest('.est-ai-review-field').appendChild(detail);
     });
     renderSources();
