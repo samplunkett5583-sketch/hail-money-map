@@ -2,7 +2,7 @@ from pathlib import Path
 
 path = Path('public/index.html')
 text = path.read_text(encoding='utf-8')
-marker = 'HAIL MONEY FORGOT PASSWORD V7'
+marker = 'HAIL MONEY FORGOT PASSWORD V8'
 if marker in text:
     print('Forgot password reset already applied')
     raise SystemExit(0)
@@ -15,9 +15,34 @@ native = '''            <button type="button" id="login-submit-btn">Log In / Cre
             <button type="button" id="forgotPasswordBtn" style="display:block;width:100%;margin:9px 0 0;padding:8px 6px;border:0;background:transparent;color:#17172c;font-weight:800;text-decoration:underline;cursor:pointer;">Forgot password?</button>'''
 text = text.replace(anchor, native, 1)
 
+password_action = '''      if (action === 'password') {
+        crmOpenLoginResetModal(crmGetCurrentTeamMember());
+        return;
+      }'''
+password_action_replacement = '''      if (action === 'password') {
+        var passwordMember = crmGetCurrentTeamMember();
+        if (!passwordMember) {
+          var targetEmail = String(prompt('Enter the Hail Money account email whose password you want to change:', '') || '').trim().toLowerCase();
+          if (!targetEmail) return;
+          var passwordMembers = crmGetTeamMembers();
+          passwordMember = passwordMembers.find(function (member) {
+            return String(member && member.email || '').trim().toLowerCase() === targetEmail;
+          }) || null;
+          if (!passwordMember) {
+            alert('No Hail Money team member was found for ' + targetEmail + '.');
+            return;
+          }
+        }
+        crmOpenLoginResetModal(passwordMember);
+        return;
+      }'''
+if password_action not in text:
+    raise SystemExit('Could not find profile Change Password action')
+text = text.replace(password_action, password_action_replacement, 1)
+
 js = r'''
 <script>
-/* HAIL MONEY FORGOT PASSWORD V7 */
+/* HAIL MONEY FORGOT PASSWORD V8 */
 (function(){
   'use strict';
   var cooldownUntil = 0;
@@ -100,4 +125,4 @@ if '</body>' not in text:
     raise SystemExit('Could not find closing body tag')
 text = text.replace('</body>', js + '\n</body>', 1)
 path.write_text(text, encoding='utf-8')
-print('Added native forgot-password control with fresh-link cooldown and newest-email guidance')
+print('Added native forgot-password control and fixed admin password target selection')
