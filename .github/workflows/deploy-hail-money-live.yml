@@ -23,6 +23,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Apply AI estimate pricing fallback
         run: python scripts/apply-ai-estimate-pricing-fallback.py
+      - name: Apply AI estimate mobile fair market cleanup
+        run: python scripts/apply-ai-estimate-mobile-fair-market-cleanup.py
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
