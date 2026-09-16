@@ -113,5 +113,30 @@ text = text.replace(
     "financial.labor += Number(r.laborSubtotal || 0) * q;\n      financial.equipment += Number(r.equipmentSubtotal || 0) * q;\n      financial.tax += Number(r.tax || 0) * q;"
 )
 
+old_abc_gate = """    var abcOptionalToggle = document.getElementById('est-abc-enabled');
+    var abcPricingRequested = !!(abcOptionalToggle && abcOptionalToggle.checked);
+    if (abcPricingRequested) {
+      if (typeof window.abcChooseEstimatePricing !== 'function') {
+        document.getElementById('est-ai-address-status').textContent = 'ABC pricing is temporarily unavailable. Turn ABC pricing off to continue.';
+        return;
+      }
+      if (!await window.abcChooseEstimatePricing()) return;
+    }
+    var now = new Date();
+    var abcState = window.abcEstimateRequestState || {};
+    var abcConnected = abcPricingRequested && abcState.connected === true && !!abcState.selection;"""
+new_abc_gate = """    var abcOptionalToggle = document.getElementById('est-abc-enabled');
+    var abcPricingRequested = !!(abcOptionalToggle && abcOptionalToggle.checked);
+    var abcState = window.abcEstimateRequestState || {};
+    var abcConnected = abcPricingRequested && abcState.connected === true && !!abcState.selection;
+    if (abcPricingRequested && !abcConnected) {
+      var abcStatus = document.getElementById('est-ai-address-status');
+      if (abcStatus) abcStatus.textContent = 'ABC pricing is optional. Starting with editable baseline pricing; connect ABC later if you want live supplier pricing.';
+    }
+    var now = new Date();"""
+if old_abc_gate not in text:
+    raise SystemExit('Could not patch ABC start gate')
+text = text.replace(old_abc_gate, new_abc_gate, 1)
+
 path.write_text(text, encoding='utf-8')
-print('AI estimate baseline pricing patch applied')
+print('AI estimate baseline pricing and optional ABC patch applied')
