@@ -25,6 +25,8 @@ jobs:
         run: python scripts/apply-ai-estimate-pricing-fallback.py
       - name: Apply AI estimate mobile fair market cleanup
         run: python scripts/apply-ai-estimate-mobile-fair-market-cleanup.py
+      - name: Apply AI estimate CRM pipeline cleanup
+        run: python scripts/apply-ai-estimate-crm-flow-cleanup.py
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
