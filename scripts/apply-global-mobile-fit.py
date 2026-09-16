@@ -2,13 +2,13 @@ from pathlib import Path
 
 path = Path('public/index.html')
 text = path.read_text(encoding='utf-8')
-marker = '/* HAIL MONEY GLOBAL MOBILE FIT V1 */'
+marker = '/* HAIL MONEY GLOBAL MOBILE FIT V2 */'
 if marker in text:
     raise SystemExit('Global mobile fit already applied')
 
 css = r'''
 <style>
-/* HAIL MONEY GLOBAL MOBILE FIT V1 */
+/* HAIL MONEY GLOBAL MOBILE FIT V2 */
 @media (max-width: 760px) {
   html, body { width: 100%; max-width: 100%; overflow-x: hidden !important; }
   *, *::before, *::after { box-sizing: border-box; }
@@ -20,13 +20,8 @@ css = r'''
     min-width: 0 !important;
   }
 
-  input, select, textarea, button {
-    max-width: 100%;
-  }
-
-  img, canvas, video, iframe, svg {
-    max-width: 100%;
-  }
+  input, select, textarea, button { max-width: 100%; }
+  img, canvas, video, iframe, svg { max-width: 100%; }
 
   dialog {
     width: calc(100vw - 20px) !important;
@@ -36,10 +31,7 @@ css = r'''
     overflow: auto !important;
   }
 
-  #hm-estimate-crm-dialog form {
-    padding: 16px !important;
-    gap: 12px !important;
-  }
+  #hm-estimate-crm-dialog form { padding: 16px !important; gap: 12px !important; }
   #hm-estimate-crm-dialog form > div,
   #hm-estimate-crm-dialog form div[style*="grid-template-columns"] {
     grid-template-columns: 1fr !important;
@@ -92,18 +84,17 @@ css = r'''
     flex-wrap: wrap !important;
   }
 
-  /* Keep account/profile menus inside the right edge of the viewport. */
+  /* Only clamp actual menu containers. Never reposition the profile/avatar trigger itself. */
   [id*="profile" i][class*="menu" i],
   [id*="profile" i][class*="dropdown" i],
   [class*="profile" i][class*="menu" i],
   [class*="profile" i][class*="dropdown" i],
   [id*="account" i][class*="menu" i],
   [class*="account" i][class*="dropdown" i],
-  [class*="user" i][class*="dropdown" i] {
+  [class*="user" i][class*="dropdown" i],
+  [role="menu"],
+  [class*="popover" i] {
     max-width: calc(100vw - 16px) !important;
-    min-width: min(240px, calc(100vw - 16px)) !important;
-    right: 8px !important;
-    left: auto !important;
   }
 }
 </style>
@@ -119,17 +110,18 @@ js = r'''
     var s = getComputedStyle(el);
     return s.display !== 'none' && s.visibility !== 'hidden' && el.getClientRects().length > 0;
   }
-  function likelyFloating(el){
+  function isActualMenu(el){
     var id = String(el.id || '').toLowerCase();
     var cls = String(el.className || '').toLowerCase();
     var role = String(el.getAttribute('role') || '').toLowerCase();
-    var name = id + ' ' + cls + ' ' + role;
-    return /menu|dropdown|popover|profile|account|user-menu|context-menu/.test(name);
+    var name = id + ' ' + cls;
+    if (role === 'menu' || role === 'listbox') return true;
+    return /dropdown|popover|context-menu|menu-panel|menu-list|profile-menu|account-menu|user-menu/.test(name);
   }
   function clampFloatingMenus(){
     if (!isMobile()) return;
     document.querySelectorAll('body *').forEach(function(el){
-      if (!visible(el) || !likelyFloating(el)) return;
+      if (!visible(el) || !isActualMenu(el)) return;
       var pos = getComputedStyle(el).position;
       if (pos !== 'absolute' && pos !== 'fixed') return;
       var r = el.getBoundingClientRect();
@@ -137,15 +129,15 @@ js = r'''
         el.style.setProperty('width', 'calc(100vw - 16px)', 'important');
         el.style.setProperty('max-width', 'calc(100vw - 16px)', 'important');
       }
-      if (r.right > window.innerWidth - 8 || r.left < 8) {
+      r = el.getBoundingClientRect();
+      if (r.right > window.innerWidth - 8) {
         el.style.setProperty('right', '8px', 'important');
         el.style.setProperty('left', 'auto', 'important');
-        var rr = el.getBoundingClientRect();
-        if (rr.left < 8) {
-          el.style.setProperty('left', '8px', 'important');
-          el.style.setProperty('right', '8px', 'important');
-          el.style.setProperty('width', 'auto', 'important');
-        }
+      }
+      r = el.getBoundingClientRect();
+      if (r.left < 8) {
+        el.style.setProperty('left', '8px', 'important');
+        el.style.setProperty('right', 'auto', 'important');
       }
     });
   }
@@ -169,4 +161,4 @@ if '</head>' not in text or '</body>' not in text:
 text = text.replace('</head>', css + '\n</head>', 1)
 text = text.replace('</body>', js + '\n</body>', 1)
 path.write_text(text, encoding='utf-8')
-print('Applied global mobile viewport fit and floating-menu clamping')
+print('Applied global mobile viewport fit without moving profile/avatar triggers')
