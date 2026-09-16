@@ -2,14 +2,14 @@ from pathlib import Path
 
 path = Path('public/index.html')
 text = path.read_text(encoding='utf-8')
-marker = 'HAIL MONEY FORGOT PASSWORD V4'
+marker = 'HAIL MONEY FORGOT PASSWORD V5'
 if marker in text:
     print('Forgot password reset already applied')
     raise SystemExit(0)
 
 js = r'''
 <script>
-/* HAIL MONEY FORGOT PASSWORD V4 */
+/* HAIL MONEY FORGOT PASSWORD V5 */
 (function(){
   'use strict';
 
@@ -24,12 +24,8 @@ js = r'''
       document.querySelector('input[type="email"]');
   }
 
-  function loginAreaVisible(){
-    var email = loginEmailInput();
-    if (!email) return false;
-    var r = email.getBoundingClientRect();
-    var s = getComputedStyle(email);
-    return r.width > 0 && r.height > 0 && s.display !== 'none' && s.visibility !== 'hidden';
+  function isSignedIn(){
+    return !!(window.auth && window.auth.currentUser);
   }
 
   function openReset(){
@@ -50,7 +46,7 @@ js = r'''
       var address = String(email.value || '').trim().toLowerCase();
       if (!address) { status.textContent = 'Enter your email address.'; status.style.color = '#ff8b8b'; return; }
       if (!window.auth || typeof window.auth.sendPasswordResetEmail !== 'function') {
-        status.textContent = 'Firebase Authentication is not available on this page. Refresh and try again.';
+        status.textContent = 'Firebase Authentication is not available yet. Wait a moment and try again.';
         status.style.color = '#ff8b8b';
         return;
       }
@@ -79,17 +75,20 @@ js = r'''
       dock.type = 'button';
       dock.id = 'forgotPasswordBtn';
       dock.textContent = 'Forgot password?';
-      dock.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483646;appearance:none;background:#111;border:1px solid #c99d3e;border-radius:999px;padding:10px 16px;color:#c99d3e;font:inherit;font-weight:700;cursor:pointer;box-shadow:0 8px 28px rgba(0,0,0,.4);';
+      dock.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483646;appearance:none;background:#111;border:1px solid #c99d3e;border-radius:999px;padding:10px 16px;color:#c99d3e;font:inherit;font-weight:700;cursor:pointer;box-shadow:0 8px 28px rgba(0,0,0,.4);display:block;';
       dock.onclick = openReset;
       document.body.appendChild(dock);
     }
-    dock.style.display = loginAreaVisible() ? 'block' : 'none';
+    dock.style.display = isSignedIn() ? 'none' : 'block';
   }
 
   ready(function(){
     install();
     setInterval(install, 500);
     new MutationObserver(install).observe(document.documentElement, {subtree:true, childList:true, attributes:true, attributeFilter:['style','class','hidden']});
+    if (window.auth && typeof window.auth.onAuthStateChanged === 'function') {
+      window.auth.onAuthStateChanged(function(){ install(); });
+    }
   });
 })();
 </script>
@@ -99,4 +98,4 @@ if '</body>' not in text:
     raise SystemExit('Could not find closing body tag')
 text = text.replace('</body>', js + '\n</body>', 1)
 path.write_text(text, encoding='utf-8')
-print('Added corrected forgot-password reset control using the real login email field')
+print('Added persistent forgot-password control until authentication succeeds')
