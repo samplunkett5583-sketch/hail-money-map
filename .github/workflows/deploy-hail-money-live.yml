@@ -27,6 +27,8 @@ jobs:
         run: python scripts/apply-ai-estimate-mobile-fair-market-cleanup.py
       - name: Apply AI estimate CRM pipeline cleanup
         run: python scripts/apply-ai-estimate-crm-flow-cleanup.py
+      - name: Apply global mobile viewport fit
+        run: python scripts/apply-global-mobile-fit.py
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
