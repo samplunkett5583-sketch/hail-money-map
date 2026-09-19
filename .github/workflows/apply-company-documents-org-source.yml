@@ -18,8 +18,14 @@ jobs:
         with:
           ref: pr-43-storm-panel-style
           fetch-depth: 0
-      - name: Apply Company Documents workspace resolver to source
+      - name: Persist Company Documents upload library
+        run: python scripts/apply-company-documents-upload-v2.py
+      - name: Persist Company Documents admin authorization
+        run: python scripts/apply-company-documents-admin-auth-fix.py
+      - name: Persist Company Documents workspace resolver
         run: python scripts/apply-company-documents-org-access.py
+      - name: Verify Company Documents navigation
+        run: node scripts/verify-company-documents-nav.cjs
       - name: Verify Company Documents workspace resolver
         run: node scripts/verify-company-documents-access.cjs
       - name: Verify clean patch
@@ -31,8 +37,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/index.html
           if git diff --cached --quiet; then
-            echo "Company Documents workspace resolver already permanent."
+            echo "Company Documents feature is already permanent in source."
             exit 0
           fi
-          git commit -m "Persist Company Documents workspace resolution"
+          git commit -m "Persist Company Documents access in production source"
           git push origin HEAD:pr-43-storm-panel-style
