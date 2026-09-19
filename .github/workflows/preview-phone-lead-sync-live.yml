@@ -56,6 +56,8 @@ jobs:
           test -f public/preview-phone-sync.html
           grep -q 'HAIL MONEY CLOUD LEAD SYNC PREVIEW V1' public/preview-phone-sync.html
           grep -q '@media (max-width:1024px)' public/preview-phone-sync.html
+          grep -q "pageId !== 'page-main-menu'" public/preview-phone-sync.html
+          grep -q 'async function watchCloud()' public/preview-phone-sync.html
           ! grep -q 'HAIL MONEY CLOUD LEAD SYNC PREVIEW V1' public/index.html
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
