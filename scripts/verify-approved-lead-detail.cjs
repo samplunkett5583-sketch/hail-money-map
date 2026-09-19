@@ -32,6 +32,11 @@ const required = [
   "var saveOk = crmSaveLeads(leads);",
   "crmOpenLeadDetail(_crmCurrentLeadId);",
   "showUploadToast('Lead updated.');",
+  "ld-inline-edit-overlay",
+  "nextStepCard.parentNode.insertBefore(overlay, nextStepCard);",
+  "if (claimCard) claimCard.style.display = 'none';",
+  "if (claimCard) claimCard.style.display = '';",
+  "Edit customer, property, and claim details together.",
 ];
 for (const snippet of required) {
   if (!html.includes(snippet)) throw new Error('Approved Lead Detail contract missing: ' + snippet);

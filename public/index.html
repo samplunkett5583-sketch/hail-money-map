@@ -16096,6 +16096,15 @@
     @media (min-width: 981px) {
       #page-lead-detail .ld-quick-bar { flex-wrap: nowrap; }
     }
+    #page-lead-detail #ld-edit-modal-overlay.ld-inline-edit-overlay {
+      position: static; inset: auto; z-index: auto; width: 100%; height: auto;
+      padding: 0; margin: 0 0 12px; background: transparent;
+      align-items: stretch; justify-content: stretch; overflow: visible;
+    }
+    #page-lead-detail #ld-edit-modal-overlay.ld-inline-edit-overlay .settings-modal-card {
+      width: 100%; max-width: none; max-height: none; margin: 0; overflow: visible;
+      border-radius: 18px; box-shadow: 0 8px 22px rgba(15,23,42,0.09);
+    }
     #page-lead-detail .crm-detail-card {
       padding: 14px 18px;
       margin-bottom: 12px;
@@ -24270,7 +24279,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           <div class="settings-modal-header">
             <div>
               <div id="ld-edit-modal-title" class="settings-modal-title">Edit Lead</div>
-              <div class="settings-modal-subtitle">Update the lead and claim details.</div>
+              <div class="settings-modal-subtitle">Edit customer, property, and claim details together.</div>
             </div>
             <button class="settings-modal-close" type="button" id="ld-edit-modal-close" aria-label="Close lead editor">&times;</button>
           </div>
@@ -61969,7 +61978,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmCloseLeadEditModal() {
-      document.getElementById('ld-edit-modal-overlay').style.display = 'none';
+      var overlay = document.getElementById('ld-edit-modal-overlay');
+      if (overlay) overlay.style.display = 'none';
+      var claimCard = document.getElementById('ld-claim-summary-card');
+      if (claimCard) claimCard.style.display = '';
       crmShowLeadEditModalMessage('');
     }
 
@@ -62025,10 +62037,19 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       document.getElementById('ld-edit-concerns').value = (Array.isArray(lead.damageAreas) && lead.damageAreas.length ? lead.damageAreas : lead.concerns || []).join(', ');
       document.getElementById('ld-edit-notes').value = lead.claimNotes || lead.notes || '';
       crmShowLeadEditModalMessage('');
-      document.getElementById('ld-edit-modal-overlay').style.display = 'flex';
+      var overlay = document.getElementById('ld-edit-modal-overlay');
+      var nextStepCard = document.getElementById('ld-next-step-card');
+      var claimCard = document.getElementById('ld-claim-summary-card');
+      if (overlay && nextStepCard && overlay.parentNode !== nextStepCard.parentNode) {
+        nextStepCard.parentNode.insertBefore(overlay, nextStepCard);
+      }
+      if (overlay) overlay.classList.add('ld-inline-edit-overlay');
+      if (claimCard) claimCard.style.display = 'none';
+      if (overlay) overlay.style.display = 'flex';
       setTimeout(function () {
         var el = document.getElementById('ld-edit-first-name');
         if (el) el.focus();
+        if (overlay && overlay.scrollIntoView) overlay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 20);
     }
 
