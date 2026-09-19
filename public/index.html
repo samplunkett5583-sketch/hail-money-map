@@ -70834,8 +70834,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!canEdit) html += '<div class="crm-job-fin-readonly">Read-only. Contact a manager/admin to update profitability details.</div>';
       html += '<div class="crm-job-fin-section-stack">';
       html += '<div class="crm-job-file-panel-block crm-job-fin-highlight">';
-      html += '<div class="crm-job-file-row-top"><div><div class="crm-job-file-block-title">Income / Revenue</div><div class="crm-job-file-inline-note">RCV comes from the Financial Worksheet. Payments received below sync automatically.</div></div><div class="crm-job-file-payment-total" data-jfp-metric="totalRevenue">' + crmEscapeHtml(crmFormatMoney(metrics.totalRevenue)) + '</div></div>';
-      html += '<div class="crm-job-fin-summary-grid" style="margin:10px 0 14px;">' + crmRenderJobFinancialSummaryCard('RCV / Revenue', crmFormatMoney(metrics.totalRevenue), 'Auto from Financial Worksheet', 'accent') + crmRenderJobFinancialSummaryCard('Payments Received', crmFormatMoney(metrics.totalCollected), 'Auto from Financial Worksheet', '') + '</div>';
+      html += '<div class="crm-job-file-row-top"><div><div class="crm-job-file-block-title">Income / Revenue</div></div><div class="crm-job-file-payment-total" data-jfp-metric="totalRevenue">' + crmEscapeHtml(crmFormatMoney(metrics.totalRevenue)) + '</div></div>';
+      html += '<div class="crm-job-fin-summary-grid" style="margin:10px 0 14px;">' + crmRenderJobFinancialSummaryCard('RCV / Revenue', crmFormatMoney(metrics.totalRevenue), '', 'accent') + crmRenderJobFinancialSummaryCard('Payments Received', crmFormatMoney(metrics.totalCollected), '', '') + '</div>';
       html += crmRenderJobFinancialTable({
         listKey: 'jfp-revenue',
         rows: data.revenueCollected,
