@@ -16,24 +16,7 @@ permissions:
   contents: read
 
 jobs:
-  purge-employee-users:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAILMONEYMAP }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-      - name: Install Cloud Functions dependencies
-        run: npm ci --prefix functions
-      - name: Purge Firebase Auth users and employee profiles
-        run: node scripts/purge-employee-users.cjs
-
   deploy-hosting:
-    needs: purge-employee-users
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -58,7 +41,6 @@ jobs:
           projectId: hailmoneymap
 
   deploy-employee-functions:
-    needs: purge-employee-users
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
