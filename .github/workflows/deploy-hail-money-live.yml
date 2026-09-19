@@ -35,10 +35,6 @@ jobs:
         run: python scripts/apply-global-mobile-fit.py
       - name: Apply forgot password reset
         run: python scripts/apply-forgot-password.py
-      - name: Apply employee first-login password flow
-        run: python scripts/apply-employee-first-login-password.py
-      - name: Route employee functions through same-origin hosting
-        run: python scripts/apply-employee-same-origin-functions.py
       - name: Apply Company Documents uploads
         run: python scripts/apply-company-documents-upload-v2.py
       - name: Fix Company Documents admin authorization
@@ -64,8 +60,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Apply employee first-login password flow
-        run: python scripts/apply-employee-first-login-password.py
       - name: Allow hail.money in Firebase function CORS
         run: python scripts/apply-functions-cors-custom-domain.py
       - name: Install Cloud Functions dependencies
@@ -74,8 +68,6 @@ jobs:
         run: |
           gcloud functions deploy employeeTestLogin --gen2 --project=hailmoneymap --region=us-central1 --runtime=nodejs24 --source=functions --entry-point=employeeTestLogin --trigger-http --allow-unauthenticated --impersonate-service-account=hailmoneymap@appspot.gserviceaccount.com --quiet
           gcloud functions deploy provisionEmployee --gen2 --project=hailmoneymap --region=us-central1 --runtime=nodejs24 --source=functions --entry-point=provisionEmployee --trigger-http --allow-unauthenticated --impersonate-service-account=hailmoneymap@appspot.gserviceaccount.com --quiet
-          gcloud functions deploy bootstrapFirstAdmin --gen2 --project=hailmoneymap --region=us-central1 --runtime=nodejs24 --source=functions --entry-point=bootstrapFirstAdmin --trigger-http --allow-unauthenticated --impersonate-service-account=hailmoneymap@appspot.gserviceaccount.com --quiet
-          gcloud functions deploy changeOwnPassword --gen2 --project=hailmoneymap --region=us-central1 --runtime=nodejs24 --source=functions --entry-point=changeOwnPassword --trigger-http --allow-unauthenticated --impersonate-service-account=hailmoneymap@appspot.gserviceaccount.com --quiet
 
   deploy-solar-function:
     needs: deploy-employee-functions
