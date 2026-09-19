@@ -16,36 +16,6 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
-      {
-        "source": "/api/employee/employeeTestLogin",
-        "function": {
-          "functionId": "employeeTestLogin",
-          "region": "us-central1"
-        }
-      },
-      {
-        "source": "/api/employee/provisionEmployee",
-        "function": {
-          "functionId": "provisionEmployee",
-          "region": "us-central1"
-        }
-      },
-      {
-        "source": "/api/employee/bootstrapFirstAdmin",
-        "function": {
-          "functionId": "bootstrapFirstAdmin",
-          "region": "us-central1"
-        }
-      },
-      {
-        "source": "/api/employee/changeOwnPassword",
-        "function": {
-          "functionId": "changeOwnPassword",
-          "region": "us-central1"
-        }
-      }
-    ],
     "port": 5500
   },
   "emulators": {
