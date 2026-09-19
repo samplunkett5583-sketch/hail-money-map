@@ -24324,7 +24324,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
               <label for="ld-edit-job-type">Job Type</label>
               <select id="ld-edit-job-type"><option value="Retail">Retail</option><option value="Insurance Claim">Insurance Claim</option></select>
             </div>
-            <div class="field"><label for="ld-edit-insurance-company">Insurance Company</label><input id="ld-edit-insurance-company" type="text" autocomplete="off" /></div>
+            <div class="field"><label for="ld-edit-insurance-company">Insurance Company</label><input id="ld-edit-insurance-company" type="text" list="hm-insurance-company-list" autocomplete="off" /></div>
             <div class="field"><label for="ld-edit-claim-number">Claim Number</label><input id="ld-edit-claim-number" type="text" autocomplete="off" /></div>
             <div class="field"><label for="ld-edit-date-of-loss">Date of Loss</label><input id="ld-edit-date-of-loss" type="date" /></div>
             <div class="field full"><label for="ld-edit-concerns">Areas of Concern</label><textarea id="ld-edit-concerns" placeholder="Roof, siding, gutters, interior leak..."></textarea></div>
@@ -26185,22 +26185,12 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                     <div class="fl-card-body">
                       <div class="fl-grid fl-grid-insco">
                         <div class="fl-field fl-wide">
-                          <select id="fl-insuranceCompany">
-                            <option value="">Insurance Company</option>
-                            <option value="State Farm" data-claim-phone="8007325246">State Farm</option>
-                            <option value="Allstate" data-claim-phone="8002557828">Allstate</option>
-                            <option value="USAA" data-claim-phone="8005318722">USAA</option>
-                            <option value="Progressive" data-claim-phone="8007764737">Progressive</option>
-                            <option value="Farmers" data-claim-phone="8004357764">Farmers</option>
-                            <option value="Liberty Mutual" data-claim-phone="8002252467">Liberty Mutual</option>
-                            <option value="Nationwide" data-claim-phone="8004213535">Nationwide</option>
-                            <option value="Travelers" data-claim-phone="8002524633">Travelers</option>
-                          </select>
+                          <input id="fl-insuranceCompany" type="text" list="hm-insurance-company-list" placeholder="Insurance Company" autocomplete="off" />
                         </div>
-                        <label class="fl-checkbox-inline fl-inline-check"><input type="checkbox" id="fl-insuranceOther" /> Other</label>
+                        <input type="checkbox" id="fl-insuranceOther" hidden aria-hidden="true" />
                       </div>
-                      <div class="fl-field" id="fl-insuranceOtherWrap" style="display:none;">
-                        <input id="fl-insuranceCompanyOther" type="text" placeholder="Insurance company name" autocomplete="off" />
+                      <div id="fl-insuranceOtherWrap" style="display:none;">
+                        <input id="fl-insuranceCompanyOther" type="hidden" />
                       </div>
                       <div class="fl-insurance-call-prompt" id="fl-insurance-call-prompt" role="dialog" aria-live="polite" hidden>
                         <p>Would you like to call in the claim now?</p>
@@ -26621,6 +26611,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
   <script src="demo_swaths.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="insurance-companies.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     /* ---------- pdf.js worker setup ---------- */
@@ -54272,6 +54263,44 @@ var APP_PIPELINE_STAGES_KEY = 'app.pipelineStages';
 var APP_TEAM_MEMBERS_KEY    = 'app.teamMembers';
 var APP_PAYROLL_ITEMS_KEY   = 'app.payrollItems';
 var APP_PAYROLL_REVIEWS_KEY = 'app.payrollLeadMatchReviews';
+var HM_INSURANCE_CUSTOM_KEY = 'hmm_insurance_companies_custom_v1';
+function hmNormalizeInsuranceCompanyName(value) { return String(value || '').trim().replace(/\s+/g, ' '); }
+function hmGetInsuranceCompanyDirectory() {
+  var base = Array.isArray(window.HM_INSURANCE_COMPANIES) ? window.HM_INSURANCE_COMPANIES.slice() : [];
+  var custom = []; try { custom = JSON.parse(localStorage.getItem(HM_INSURANCE_CUSTOM_KEY) || '[]') || []; } catch (e) {}
+  return Array.from(new Set(base.concat(custom).map(hmNormalizeInsuranceCompanyName).filter(Boolean))).sort(function (a,b) { return a.localeCompare(b); });
+}
+function hmRefreshInsuranceCompanyDatalist() {
+  var list = document.getElementById('hm-insurance-company-list');
+  if (!list) { list = document.createElement('datalist'); list.id = 'hm-insurance-company-list'; document.body.appendChild(list); }
+  list.innerHTML = hmGetInsuranceCompanyDirectory().map(function (name) { return '<option value="' + crmEscapeHtml(name) + '"></option>'; }).join('');
+}
+function hmRememberInsuranceCompany(value) {
+  var name = hmNormalizeInsuranceCompanyName(value); if (!name) return;
+  var base = Array.isArray(window.HM_INSURANCE_COMPANIES) ? window.HM_INSURANCE_COMPANIES : [];
+  if (base.some(function (item) { return String(item).toLowerCase() === name.toLowerCase(); })) return;
+  var custom = []; try { custom = JSON.parse(localStorage.getItem(HM_INSURANCE_CUSTOM_KEY) || '[]') || []; } catch (e) {}
+  if (!custom.some(function (item) { return String(item).toLowerCase() === name.toLowerCase(); })) {
+    custom.push(name); localStorage.setItem(HM_INSURANCE_CUSTOM_KEY, JSON.stringify(custom)); hmRefreshInsuranceCompanyDatalist();
+  }
+}
+function hmGetInsuranceClaimPhone(value) {
+  var name = hmNormalizeInsuranceCompanyName(value).toLowerCase(); var map = window.HM_INSURANCE_CLAIM_PHONES || {};
+  var match = Object.keys(map).find(function (key) { return key.toLowerCase() === name; });
+  return String(match ? map[match] : '').replace(/[^0-9+]/g, '');
+}
+setTimeout(hmRefreshInsuranceCompanyDatalist, 0);
+document.addEventListener('focusin', function (event) {
+  var el = event.target; if (!el || (el.id !== 'fl-insuranceCompany' && el.id !== 'ld-edit-insurance-company')) return;
+  hmRememberInsuranceCompany(el.value); hmRefreshInsuranceCompanyDatalist();
+});
+document.addEventListener('change', function (event) {
+  var el = event.target; if (el && (el.id === 'fl-insuranceCompany' || el.id === 'ld-edit-insurance-company')) hmRememberInsuranceCompany(el.value);
+});
+document.addEventListener('click', function (event) {
+  var el = event.target; if (!el || (el.id !== 'fl-dateOfLoss' && el.id !== 'ld-edit-date-of-loss')) return;
+  if (typeof el.showPicker === 'function') { try { el.showPicker(); } catch (e) {} }
+});
 var CRM_DATA_MODEL_KEY      = 'app.crmData';
     var APP_JOBS_KEY            = 'app.jobs';
     var APP_JOB_ACTIVITIES_KEY  = 'app.jobActivities';
@@ -62110,6 +62139,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         leads[i].propertyType = leads[i].jobCategory;
         leads[i].claimType = String(document.getElementById('ld-edit-job-type').value || '').trim() || 'Retail';
         leads[i].insuranceCompany = String(document.getElementById('ld-edit-insurance-company').value || '').trim();
+        hmRememberInsuranceCompany(leads[i].insuranceCompany);
         leads[i].claimNumber = String(document.getElementById('ld-edit-claim-number').value || '').trim();
         leads[i].dateOfLoss = String(document.getElementById('ld-edit-date-of-loss').value || '').trim();
         var concernText = String(document.getElementById('ld-edit-concerns').value || '').trim();
@@ -77194,8 +77224,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
       if (insSelect && insuranceCallPrompt) {
         insSelect.addEventListener('change', function () {
-          var option = insSelect.options[insSelect.selectedIndex];
-          var phone = String(option && option.getAttribute('data-claim-phone') || '').replace(/[^0-9+]/g, '');
+          hmRememberInsuranceCompany(insSelect.value);
+          var phone = hmGetInsuranceClaimPhone(insSelect.value);
           if (!insSelect.value || !phone) {
             hideInsuranceCallPrompt();
             return;
@@ -77336,6 +77366,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var primaryPhone = phoneNumbers.filter(function (item) { return item.primary; })[0] || phoneNumbers[0] || null;
       var primaryEmail = emailAddresses.filter(function (item) { return item.primary; })[0] || emailAddresses[0] || null;
       var insuranceCompanyVal = fc('fl-insuranceOther') ? fv('fl-insuranceCompanyOther') : fv('fl-insuranceCompany');
+      hmRememberInsuranceCompany(insuranceCompanyVal);
       var req = ['fl-firstName','fl-lastName','fl-phone','fl-street','fl-city','fl-state','fl-jobCategory'];
       var missing = req.filter(function (id) { var el = document.getElementById(id); return !el || !String(el.value || '').trim(); });
       if (!insuranceCompanyVal) missing.push('fl-insuranceCompany');

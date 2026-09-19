@@ -1,4 +1,5 @@
 const fs = require('fs');
+const vm = require('vm');
 const html = fs.readFileSync('public/index.html', 'utf8');
 
 const required = [
@@ -37,6 +38,11 @@ const required = [
   "if (claimCard) claimCard.style.display = 'none';",
   "if (claimCard) claimCard.style.display = '';",
   "Edit customer, property, and claim details together.",
+  "list=\"hm-insurance-company-list\"",
+  "hmRememberInsuranceCompany(insSelect.value);",
+  "hmGetInsuranceClaimPhone(insSelect.value);",
+  "el.id !== 'fl-dateOfLoss' && el.id !== 'ld-edit-date-of-loss'",
+  "typeof el.showPicker === 'function'",
 ];
 for (const snippet of required) {
   if (!html.includes(snippet)) throw new Error('Approved Lead Detail contract missing: ' + snippet);
@@ -72,4 +78,13 @@ for (const snippet of forbidden) {
   if (html.includes(snippet)) throw new Error('Removed Lead Detail element returned: ' + snippet);
 }
 
+const insuranceJs = fs.readFileSync('public/insurance-companies.js', 'utf8');
+const insuranceSandbox = { window: {} };
+vm.runInNewContext(insuranceJs, insuranceSandbox);
+if (!Array.isArray(insuranceSandbox.window.HM_INSURANCE_COMPANIES) || insuranceSandbox.window.HM_INSURANCE_COMPANIES.length < 200) {
+  throw new Error('Insurance company directory is missing or too small.');
+}
+if (!insuranceSandbox.window.HM_INSURANCE_CLAIM_PHONES || !insuranceSandbox.window.HM_INSURANCE_CLAIM_PHONES['State Farm']) {
+  throw new Error('Insurance claim phone directory is missing.');
+}
 console.log('Approved Lead Detail contract verified.');
