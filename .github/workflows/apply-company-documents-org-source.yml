@@ -1,0 +1,38 @@
+name: Apply Company Documents Workspace Source Fix
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - '.github/workflows/apply-company-documents-org-source.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pr-43-storm-panel-style
+          fetch-depth: 0
+      - name: Apply Company Documents workspace resolver to source
+        run: python scripts/apply-company-documents-org-access.py
+      - name: Verify Company Documents workspace resolver
+        run: node scripts/verify-company-documents-access.cjs
+      - name: Verify clean patch
+        run: git diff --check
+      - name: Commit permanent source fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/index.html
+          if git diff --cached --quiet; then
+            echo "Company Documents workspace resolver already permanent."
+            exit 0
+          fi
+          git commit -m "Persist Company Documents workspace resolution"
+          git push origin HEAD:pr-43-storm-panel-style
