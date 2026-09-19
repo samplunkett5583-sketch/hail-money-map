@@ -20013,6 +20013,22 @@
     }
     body.crm-standard-header-active #global-header-back-btn svg { width: 34px !important; height: 34px !important; }
     body.crm-standard-header-active .crm-header-inline-title:not([hidden]) { grid-column: 3 !important; }
+    body.crm-standard-header-active.lead-detail-page-active .crm-header-inline-title:not([hidden]) {
+      position: fixed !important;
+      top: 0 !important;
+      left: var(--lead-detail-title-left, 116px) !important;
+      width: var(--lead-detail-title-width, 480px) !important;
+      height: var(--hm-header-height) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      grid-column: auto !important;
+      margin: 0 !important;
+      padding: 0 8px !important;
+      text-align: center !important;
+      z-index: 5 !important;
+      pointer-events: none !important;
+    }
     body.crm-standard-header-active.crm-standard-header-back-visible .crm-dashboard-mini-body { padding-left: var(--crm-shell-pad-x, 12px) !important; }
     body.pipeline-page-active.crm-standard-header-back-visible #page-crm-pipeline .hm-dashboard-ref .center { padding-left: 12px !important; }
     body.crm-standard-header-active.lead-detail-page-active.crm-standard-header-back-visible #page-lead-detail .jf-tab-bar { padding-left: 0 !important; }
@@ -77567,6 +77583,24 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (subtitleEl) subtitleEl.classList.add('crm-shared-header-hidden');
     }
 
+    function crmPositionLeadDetailHeaderTitle() {
+      var title = document.getElementById('crm-header-inline-title');
+      var body = document.body;
+      if (!title || !body || !body.classList.contains('lead-detail-page-active') || title.hidden) return;
+      var back = document.getElementById('global-header-back-btn');
+      var stages = document.getElementById('crm-pipeline-stage-filter-left');
+      var header = document.querySelector('.topbar');
+      if (!header) return;
+      var hr = header.getBoundingClientRect();
+      var br = back && back.getClientRects().length ? back.getBoundingClientRect() : null;
+      var sr = stages && stages.getClientRects().length ? stages.getBoundingClientRect() : null;
+      var left = br ? br.right + 4 : hr.left + 112;
+      var right = sr && sr.width ? sr.left - 6 : hr.left + (hr.width * 0.5) - 230;
+      if (right <= left + 120) right = left + Math.max(220, hr.width * 0.24);
+      body.style.setProperty('--lead-detail-title-left', Math.round(left) + 'px');
+      body.style.setProperty('--lead-detail-title-width', Math.round(right - left) + 'px');
+    }
+
     function renderTopBrand() {
       var brand = document.getElementById('map-header-brand');
       var companyLogoEl = document.getElementById('crm-header-company-logo');
@@ -77581,6 +77615,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var pageTitle = usesStandardHeader
         ? (pageContext.isPhaseOneSharedShell ? pageContext.pageTitle : crmGetHeaderPageTitle(pageId))
         : '';
+      if (pageId === 'page-lead-detail' && pageContext.homeownerName) pageTitle = pageContext.homeownerName;
       var showInlineHeaderTitle = usesStandardHeader && !!pageTitle;
       var inlineTitleText = !usesStandardHeader ? (pageTitle || 'Hail Money') : '';
       var inlineTitle = inlineTitleText ? '<div class="map-header-title">' + crmEscapeHtml(inlineTitleText) + '</div>' : '';
@@ -77610,7 +77645,20 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         contextHeaderTitleEl.hidden = true;
       }
       crmSyncSharedHeaderBody(pageId);
+      if (pageId === 'page-lead-detail') {
+        requestAnimationFrame(function () {
+          crmPositionLeadDetailHeaderTitle();
+          requestAnimationFrame(crmPositionLeadDetailHeaderTitle);
+        });
+        setTimeout(crmPositionLeadDetailHeaderTitle, 80);
+      }
     }
+
+    window.addEventListener('resize', function () {
+      if (document.body && document.body.classList.contains('lead-detail-page-active')) {
+        requestAnimationFrame(crmPositionLeadDetailHeaderTitle);
+      }
+    });
 
     /* ── Logo canvas compression ── */
     var _coPendingLogoDataUrl = '';
