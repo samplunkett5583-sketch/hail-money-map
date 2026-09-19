@@ -12,6 +12,10 @@ on:
       - '.github/workflows/deploy-hail-money-live.yml'
   workflow_dispatch:
 
+concurrency:
+  group: hail-money-live-deploy
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -33,6 +37,8 @@ jobs:
         run: python scripts/apply-forgot-password.py
       - name: Apply employee first-login password flow
         run: python scripts/apply-employee-first-login-password.py
+      - name: Route employee functions through same-origin hosting
+        run: python scripts/apply-employee-same-origin-functions.py
       - name: Apply Company Documents uploads
         run: python scripts/apply-company-documents-upload-v2.py
       - name: Fix Company Documents admin authorization
