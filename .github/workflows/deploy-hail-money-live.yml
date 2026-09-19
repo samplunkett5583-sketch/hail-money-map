@@ -35,36 +35,14 @@ jobs:
         run: python scripts/apply-employee-first-login-password.py
       - name: Apply Company Documents uploads
         run: python scripts/apply-company-documents-upload-v2.py
+      - name: Fix Company Documents admin authorization
+        run: python scripts/apply-company-documents-admin-auth-fix.py
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAILMONEYMAP }}
           channelId: live
           projectId: hailmoneymap
-
-  deploy-employee-functions:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v4
-      - uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAILMONEYMAP }}
-      - uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: hailmoneymap
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-      - name: Apply employee first-login password flow
-        run: python scripts/apply-employee-first-login-password.py
-      - name: Install Cloud Functions dependencies
-        run: npm ci --prefix functions
-      - name: Deploy employee authentication functions
-        run: |
-          gcloud functions deploy employeeTestLogin --gen2 --project=hailmoneymap --region=us-central1 --runtime=nodejs24 --source=functions --entry-point=employeeTestLogin --trigger-http --allow-unauthenticated --impersonate-service-account=hailmoneymap@appspot.gserviceaccount.com --quiet
-          gcloud functions deploy provisionEmployee --gen2 --project=hailmoneymap --region=us-central1 --runtime=nodejs24 --source=functions --entry-point=provisionEmployee --trigger-http --allow-unauthenticated --impersonate-service-account=hailmoneymap@appspot.gserviceaccount.com --quiet
-          gcloud functions deploy changeOwnPassword --gen2 --project=hailmoneymap --region=us-central1 --runtime=nodejs24 --source=functions --entry-point=changeOwnPassword --trigger-http --allow-unauthenticated --impersonate-service-account=hailmoneymap@appspot.gserviceaccount.com --quiet
 
   deploy-solar-function:
     runs-on: ubuntu-latest
@@ -111,3 +89,29 @@ jobs:
       - name: Fail if deployment failed
         if: ${{ steps.deploy.outputs.exit_code != '0' }}
         run: exit 1
+
+  deploy-employee-functions:
+    needs: deploy-solar-function
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAILMONEYMAP }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: hailmoneymap
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Apply employee first-login password flow
+        run: python scripts/apply-employee-first-login-password.py
+      - name: Install Cloud Functions dependencies
+        run: npm ci --prefix functions
+      - name: Deploy employee authentication functions
+        run: |
+          gcloud functions deploy employeeTestLogin --gen2 --project=hailmoneymap --region=us-central1 --runtime=nodejs24 --source=functions --entry-point=employeeTestLogin --trigger-http --allow-unauthenticated --impersonate-service-account=hailmoneymap@appspot.gserviceaccount.com --quiet
+          gcloud functions deploy provisionEmployee --gen2 --project=hailmoneymap --region=us-central1 --runtime=nodejs24 --source=functions --entry-point=provisionEmployee --trigger-http --allow-unauthenticated --impersonate-service-account=hailmoneymap@appspot.gserviceaccount.com --quiet
+          gcloud functions deploy changeOwnPassword --gen2 --project=hailmoneymap --region=us-central1 --runtime=nodejs24 --source=functions --entry-point=changeOwnPassword --trigger-http --allow-unauthenticated --impersonate-service-account=hailmoneymap@appspot.gserviceaccount.com --quiet
