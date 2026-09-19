@@ -1,0 +1,65 @@
+name: Publish Phone Lead Sync Preview
+
+on:
+  push:
+    branches:
+      - preview-phone-lead-sync-20260919
+    paths:
+      - 'scripts/build-phone-lead-sync-preview.py'
+      - '.github/workflows/preview-phone-lead-sync-live.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: hail-money-live-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish-preview-file:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply AI estimate pricing fallback
+        run: python scripts/apply-ai-estimate-pricing-fallback.py
+      - name: Apply AI estimate mobile fair market cleanup
+        run: python scripts/apply-ai-estimate-mobile-fair-market-cleanup.py
+      - name: Apply AI estimate CRM pipeline cleanup
+        run: python scripts/apply-ai-estimate-crm-flow-cleanup.py
+      - name: Apply global mobile viewport fit
+        run: python scripts/apply-global-mobile-fit.py
+      - name: Apply forgot password reset
+        run: python scripts/apply-forgot-password.py
+      - name: Restore server-backed test login
+        run: python scripts/apply-legacy-test-login-route.py
+      - name: Generate hailmoney.test logins for added users
+        run: python scripts/apply-team-hailmoney-test-logins.py
+      - name: Apply Company Documents uploads
+        run: python scripts/apply-company-documents-upload-v2.py
+      - name: Fix Company Documents admin authorization
+        run: python scripts/apply-company-documents-admin-auth-fix.py
+      - name: Fix Company Documents workspace access
+        run: python scripts/apply-company-documents-org-access.py
+      - name: Verify Company Documents navigation
+        run: node scripts/verify-company-documents-nav.cjs
+      - name: Verify Company Documents workspace access
+        run: node scripts/verify-company-documents-access.cjs
+      - name: Verify approved Lead Detail contract
+        run: node scripts/verify-approved-lead-detail.cjs
+      - name: Build phone and lead sync preview
+        run: python scripts/build-phone-lead-sync-preview.py
+      - name: Verify preview-only output
+        shell: bash
+        run: |
+          test -f public/preview-phone-sync.html
+          grep -q 'HAIL MONEY CLOUD LEAD SYNC PREVIEW V1' public/preview-phone-sync.html
+          grep -q '@media (max-width:1024px)' public/preview-phone-sync.html
+          ! grep -q 'HAIL MONEY CLOUD LEAD SYNC PREVIEW V1' public/index.html
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAILMONEYMAP }}
+          channelId: live
+          projectId: hailmoneymap
