@@ -26361,6 +26361,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <button class="btn" type="button" id="cfv-back-btn">Back to Lead</button>
             <a id="cfv-download-btn" class="btn btn-primary" href="#" download
                style="text-decoration:none;display:none;">Download</a>
+            <button class="btn" type="button" id="cfv-print-btn" style="display:none;">Print</button>
           </div>
           <div class="crm-detail-card">
             <div id="cfv-title"
@@ -51342,6 +51343,24 @@ function mapsGoogleReady() {
       showPage('page-docusign');
     }
 
+    function crmOpenLeadContingencyFromDocuments(leadId) {
+      leadId=String(leadId||'').trim(); var lead=crmGetLeads().find(function(item){return String(item&&item.id||'')===leadId;});
+      if(!lead){showUploadToast('Lead not found.');return;}
+      var idx=savedFormTemplates.findIndex(function(tpl){return /conting/i.test(String(tpl&&tpl.name||''));});
+      if(idx<0 && savedFormTemplates.length===1) idx=0;
+      if(idx<0){showUploadToast('No Contingency template has been uploaded yet.');return;}
+      _crmPostLeadContingencyContext={leadId:leadId,returnMode:'documents'};
+      openDocuSign(leadId); createAndOpenFormInstance(leadId,idx);
+    }
+
+    function crmOpenSavedLeadContingency(leadId,idx) {
+      var lead=crmGetLeads().find(function(item){return String(item&&item.id||'')===String(leadId||'');});
+      var docs=lead&&Array.isArray(lead.contingencyFormInstances)?lead.contingencyFormInstances:[]; if(!lead||!docs[idx])return;
+      savedDocsJobId=null; _crmSavedDocsReturnLeadId=lead.id;
+      document.getElementById('saved-docs-subtitle').textContent=crmGetLeadDisplayName(lead);
+      renderSavedDocsList({savedDocs:docs}); showPage('page-saved-docs'); viewSavedDoc({savedDocs:docs},idx);
+    }
+
     function renderDocuSignForms(job) {
       var list = document.getElementById('docusign-forms-list');
       if (savedFormTemplates.length === 0) {
@@ -51648,6 +51667,11 @@ function mapsGoogleReady() {
             signedLead.updatedAt = new Date().toISOString();
             crmSaveLeads(leadRows);
             _activeFormInstance = null;
+            if (_crmPostLeadContingencyContext && _crmPostLeadContingencyContext.returnMode === 'documents') {
+              _jfDocSelectedCategory = 'Contingency'; _crmCurrentJobFileLeadId = signedLead.id;
+              _crmPostLeadContingencyContext = null; crmOpenJobFileSection(signedLead.id, 'documents'); showUploadToast('Signed contingency saved.');
+              return;
+            }
             crmOpenPostLeadPhotoReport(signedLead.id);
             return;
           }
@@ -51732,6 +51756,7 @@ function mapsGoogleReady() {
     var savedDocsJobId = null;
 
     function openSavedDocs(jobId) {
+      _crmSavedDocsReturnLeadId = '';
       var jobs = getJobs();
       var job = null;
       for (var i = 0; i < jobs.length; i++) { if (jobs[i].id === jobId) { job = jobs[i]; break; } }
@@ -51888,11 +51913,8 @@ function mapsGoogleReady() {
     }
 
     document.getElementById('back-from-saved-docs').addEventListener('click', function () {
-      if (savedDocsJobId) {
-        openJobDetail(savedDocsJobId);
-      } else {
-        showPage('page-main-menu');
-      }
+      if (_crmSavedDocsReturnLeadId) { var leadId=_crmSavedDocsReturnLeadId; _crmSavedDocsReturnLeadId=''; _jfDocSelectedCategory='Contingency'; crmOpenJobFileSection(leadId,'documents'); return; }
+      if (savedDocsJobId) openJobDetail(savedDocsJobId); else showPage('page-main-menu');
     });
 
     document.getElementById('saved-doc-print').addEventListener('click', function () {
@@ -51907,8 +51929,8 @@ function mapsGoogleReady() {
 
     document.getElementById('back-from-docusign').addEventListener('click', function () {
       if (_crmPostLeadContingencyContext && _crmPostLeadContingencyContext.leadId) {
-        crmOpenLeadContingencyActions(_crmPostLeadContingencyContext.leadId);
-        return;
+        if (_crmPostLeadContingencyContext.returnMode === 'documents') { var leadId=_crmPostLeadContingencyContext.leadId; _crmPostLeadContingencyContext=null; _jfDocSelectedCategory='Contingency'; crmOpenJobFileSection(leadId,'documents'); return; }
+        crmOpenLeadContingencyActions(_crmPostLeadContingencyContext.leadId); return;
       }
       if (docusignJobId) {
         openJobDetail(docusignJobId);
@@ -61780,6 +61802,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var metaEl     = document.getElementById('cfv-meta');
       var contentEl  = document.getElementById('cfv-content');
       var dlBtn      = document.getElementById('cfv-download-btn');
+      var printBtn   = document.getElementById('cfv-print-btn');
       var backBtn    = document.getElementById('cfv-back-btn');
 
       if (backBtn) {
@@ -61795,6 +61818,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
       contentEl.innerHTML = '<div style="color:var(--muted);padding:30px;text-align:center;">Loading…</div>';
       dlBtn.style.display = 'none';
+      if (printBtn) printBtn.style.display = 'none';
 
       showPage('page-crm-file-viewer');
 
@@ -61824,6 +61848,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           dlBtn.href     = url;
           dlBtn.download = meta.fileName || 'download';
           dlBtn.style.display = '';
+          if (printBtn) printBtn.style.display = '';
 
           var mime = meta.mimeType || '';
           if (mime.indexOf('image/') === 0) {
@@ -61852,6 +61877,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         });
       });
     }
+
+    document.getElementById('cfv-print-btn').addEventListener('click', function () {
+      if (!_crmViewerObjectUrl) return;
+      var w = window.open(_crmViewerObjectUrl, '_blank');
+      if (w) setTimeout(function () { try { w.focus(); w.print(); } catch (e) {} }, 500);
+    });
 
     document.getElementById('cfv-back-btn').addEventListener('click', function () {
       crmRevokeViewerUrl();
@@ -69127,7 +69158,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     var JF_DOC_HUB_CATEGORIES = [
       { key: 'Measurements',  icon: '&#128208;', types: ['measurement_document'] },
       { key: 'Payments',      icon: '&#128181;', types: ['check_turned_in'] },
-      { key: 'Contract',      icon: '&#9997;&#65039;', types: ['signed_contract', 'signed_contingency'] },
+      { key: 'Contingency',   icon: '&#128221;', types: ['signed_contingency'] },
+      { key: 'Contract',      icon: '&#9997;&#65039;', types: ['signed_contract'] },
       { key: 'Job Paperwork', icon: '&#128203;', types: ['job_document'] },
       { key: 'Permits',       icon: '&#127380;', types: ['permit_document'] },
       { key: 'Insurance',     icon: '&#127970;', types: ['summary_of_loss', 'insurance_paperwork'] },
@@ -69136,6 +69168,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       { key: 'Invoice',       icon: '&#129534;', types: ['invoice_document', 'final_invoice_paid'] }
     ];
     var _jfDocSelectedCategory = null;
+    var _crmSavedDocsReturnLeadId = '';
 
     function crmEscapeHtmlWithBreaks(str) {
       return crmEscapeHtml(str).replace(/\n/g, '<br>');
@@ -73414,6 +73447,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!leadId || !files.length || !crmCanEditJobFileLead(lead)) return;
       var type = _crmJobFilePendingDocType || 'job_document';
       var meta = _crmJobFilePendingUploadMeta || {};
+      if (type === 'signed_contingency' && files.some(function(file){ return String(file.type||'').toLowerCase() !== 'application/pdf' && !/\.pdf$/i.test(String(file.name||'')); })) { showUploadToast('Upload a signed contingency PDF.'); _crmJobFilePendingUploadMeta=null; return; }
       crmSaveFilesToDb(leadId, type, files, function (count, savedMeta) {
         if (!count) return;
         crmUpdateJobFileLeadRecord(leadId, function (item) {
@@ -73423,9 +73457,15 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
               category: meta.category || meta.docCategory || crmGetJobFileDocumentCategoryForType(type), note: meta.note || '',
               uploadedBy: meta.uploadedBy || crmGetCurrentUserName() || currentRep || '', uploadedAt: fileMeta.uploadedAt || new Date().toISOString() }));
           });
-          crmApplyLeadJobFileData(item, data); crmPushLeadActivity(item, count + ' document' + (count !== 1 ? 's' : '') + ' uploaded', 'document');
+          if (type === 'signed_contingency') {
+            item.contingencySigned = true; item.contingencySignedAt = new Date().toISOString(); item.contingencyStatus = 'signed_uploaded';
+            item.contingencyDocumentId = savedMeta && savedMeta[0] ? String(savedMeta[0].id || '') : ''; data.contingencySigned = true;
+            crmPushLeadActivity(item, 'Signed contingency uploaded', 'document', crmGetCurrentUserName() || currentRep || '', item.contingencySignedAt);
+          }
+          crmApplyLeadJobFileData(item, data); if (type !== 'signed_contingency') crmPushLeadActivity(item, count + ' document' + (count !== 1 ? 's' : '') + ' uploaded', 'document');
         });
-        crmRenderJobFile(); showUploadToast(count + ' document' + (count !== 1 ? 's' : '') + ' uploaded.');
+        crmRenderJobFile(); showUploadToast(type === 'signed_contingency' ? 'Signed contingency uploaded.' : (count + ' document' + (count !== 1 ? 's' : '') + ' uploaded.'));
+        _crmJobFilePendingUploadMeta = null;
       }, meta);
     });
 
@@ -80627,6 +80667,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         crmRenderJobFile && crmRenderJobFile();
         return;
       }
+      var addContingencyBtn=e.target.closest('[data-jf-add-contingency]');
+      if(addContingencyBtn){crmOpenLeadContingencyFromDocuments(_crmCurrentJobFileLeadId);return;}
+      var savedContingencyBtn=e.target.closest('[data-jf-open-contingency-form]');
+      if(savedContingencyBtn){crmOpenSavedLeadContingency(_crmCurrentJobFileLeadId,parseInt(savedContingencyBtn.getAttribute('data-jf-open-contingency-form'),10)||0);return;}
       /* Upload from hub category */
       var uploadBtn = e.target.closest('[data-jf-upload-doc-hub]');
       if (uploadBtn) {
@@ -80929,9 +80973,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function jfGetDocHubCategoryCount(lead, catKeys) {
       var files = crmGetLeadFilesFor ? crmGetLeadFilesFor(lead.id) : [];
-      return files.filter(function(f) {
-        return catKeys.indexOf(f.type) !== -1 || catKeys.indexOf(f.docCategory) !== -1;
-      }).length;
+      var count = files.filter(function(f) { return catKeys.indexOf(f.type) !== -1 || catKeys.indexOf(f.docCategory) !== -1; }).length;
+      if (catKeys.indexOf('signed_contingency') !== -1) count += Array.isArray(lead.contingencyFormInstances) ? lead.contingencyFormInstances.length : 0;
+      return count;
     }
 
     function crmRenderJobFileDocumentsHubHtml(lead, jobFile) {
@@ -80952,7 +80996,21 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return html;
     }
 
+    function jfRenderContingencyCategoryHtml(lead) {
+      var files = crmGetLeadFilesFor ? crmGetLeadFilesFor(lead.id).filter(function(f){ return f.type === 'signed_contingency' || f.docCategory === 'Contingency'; }) : [];
+      var signedForms = Array.isArray(lead.contingencyFormInstances) ? lead.contingencyFormInstances : [];
+      var canEdit = typeof crmCanEditJobFileLead === 'function' ? crmCanEditJobFileLead(lead) : true;
+      var html = '<div class="crm-job-file-panel-block">';
+      html += '<div class="jf-doc-cat-header"><button class="jf-doc-cat-back" type="button" data-jf-doc-hub-back="1">← Back</button><span class="jf-doc-cat-title">&#128221; Contingency</span></div>';
+      if (canEdit) html += '<div class="crm-job-file-inline-actions" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-primary" type="button" data-jf-add-contingency="1">Add Contingency</button><button class="btn" type="button" data-jf-upload-doc-hub="signed_contingency" data-jf-doc-hub-cat="Contingency">Upload Signed Contingency</button></div>';
+      if (!files.length && !signedForms.length) html += '<div class="crm-job-file-empty">No signed contingency saved yet.</div>';
+      if (signedForms.length) { html += '<div class="crm-job-file-file-links">'; signedForms.forEach(function(doc,idx){ var date=doc.signedAt?crmFormatDateTimeLabel(doc.signedAt):''; html += '<button class="crm-job-file-file-link" type="button" data-jf-open-contingency-form="'+idx+'"><strong>'+crmEscapeHtml(doc.templateName||'Signed Contingency')+'</strong><span style="display:block;font-size:11px;color:var(--muted);margin-top:4px;">Signed'+(date?' · '+crmEscapeHtml(date):'')+' · View / Print</span></button>'; }); html += '</div>'; }
+      if (files.length) { html += '<div class="crm-job-file-file-links">'; files.forEach(function(file){ var entry={fileId:file.id,file:file,note:'Signed contingency agreement',uploadedBy:file.uploadedBy||'',uploadedAt:file.uploadedAt||file.createdAt||''}; html += crmRenderJobFileDocumentEntry(entry); }); html += '</div>'; }
+      html += '</div>'; return html;
+    }
+
     function jfRenderDocCategoryHtml(lead, categoryKey) {
+      if (categoryKey === 'Contingency') return jfRenderContingencyCategoryHtml(lead);
       var cat = JF_DOC_HUB_CATEGORIES.find(function(c) { return c.key === categoryKey; });
       if (!cat) { _jfDocSelectedCategory = null; return crmRenderJobFileDocumentsHubHtml(lead); }
       var files = crmGetLeadFilesFor ? crmGetLeadFilesFor(lead.id) : [];

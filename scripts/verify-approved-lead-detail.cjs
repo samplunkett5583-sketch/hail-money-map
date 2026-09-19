@@ -43,6 +43,16 @@ const required = [
   "hmGetInsuranceClaimPhone(insSelect.value);",
   "el.id !== 'fl-dateOfLoss' && el.id !== 'ld-edit-date-of-loss'",
   "typeof el.showPicker === 'function'",
+  "{ key: 'Contingency',   icon: '&#128221;', types: ['signed_contingency'] }",
+  "data-jf-add-contingency=\"1\"",
+  "Upload Signed Contingency",
+  "data-jf-open-contingency-form",
+  "function crmOpenLeadContingencyFromDocuments",
+  "returnMode:'documents'",
+  "type === 'signed_contingency'",
+  "Signed contingency uploaded",
+  "id=\"cfv-print-btn\"",
+  "document.getElementById('cfv-print-btn').addEventListener",
 ];
 for (const snippet of required) {
   if (!html.includes(snippet)) throw new Error('Approved Lead Detail contract missing: ' + snippet);
