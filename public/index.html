@@ -23987,6 +23987,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                 <button class="btn" type="button" id="ld-add-appointment-btn">Add Appointment</button>
                 <button class="btn" type="button" id="ld-open-job-file-btn" style="display:none;">Open Job File</button>
                 <button class="btn" type="button" id="ld-convert-job-btn">Convert to Job</button>
+                <button class="btn" type="button" id="ld-delete-job-btn" style="display:none;border-color:#b42318;color:#b42318;font-weight:800;">Delete Job</button>
                 <button class="btn" type="button" id="ld-offer-rotation-btn" style="display:none;">Offer via Rotation</button>
                 <div id="ld-rotation-offer-banner" style="display:none;"></div>
               </div>
@@ -61357,6 +61358,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       document.getElementById('ld-edit-lead-btn').style.display = canEditLead ? '' : 'none';
       document.getElementById('ld-convert-job-btn').disabled = !!lead.convertedToJob;
       document.getElementById('ld-convert-job-btn').style.display = canConvertLead && !lead.convertedToJob ? '' : 'none';
+      var deleteJobBtn = document.getElementById('ld-delete-job-btn');
+      if (deleteJobBtn) {
+        var isAdminJobDelete = String(crmGetRole() || '').trim() === 'Admin';
+        deleteJobBtn.style.display = isAdminJobDelete ? '' : 'none';
+        deleteJobBtn.disabled = !lead.convertedToJob;
+        deleteJobBtn.title = lead.convertedToJob ? 'Delete this job and return the customer to Lead' : 'This lead has not been converted to a job yet';
+      }
       document.getElementById('ld-move-stage-btn').style.display = canEditLead ? '' : 'none';
       if (!canEditLead) {
         document.getElementById('ld-move-stage-panel').style.display = 'none';
@@ -62036,6 +62044,38 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
       document.getElementById('ld-convert-msg').style.display = 'none';
       crmPopulateJobStageSelect(currentLead.stage || currentLead.jobStage || 'New Lead', currentLead);
+    });
+
+    document.getElementById('ld-delete-job-btn').addEventListener('click', function () {
+      if (String(crmGetRole() || '').trim() !== 'Admin') {
+        showUploadToast('Only an Admin can delete a job.');
+        return;
+      }
+      var leads = crmGetLeads();
+      var leadIndex = leads.findIndex(function (lead) { return lead.id === _crmCurrentLeadId; });
+      if (leadIndex === -1 || !leads[leadIndex].convertedToJob) {
+        showUploadToast('This customer does not have a job to delete.');
+        return;
+      }
+      var lead = leads[leadIndex];
+      var customerName = ((lead.firstName || '') + ' ' + (lead.lastName || '')).trim() || 'this customer';
+      if (!window.confirm('Delete the job for ' + customerName + '? The customer will remain in Hail Money as a lead.')) return;
+      var now = new Date().toISOString();
+      lead.convertedToJob = false;
+      lead.jobId = '';
+      lead.jobStage = '';
+      lead.stage = 'Lead';
+      lead.manualStageOverride = false;
+      if (lead.jobFile && typeof lead.jobFile === 'object') lead.jobFile.status = '';
+      if (!Array.isArray(lead.activityNotes)) lead.activityNotes = [];
+      lead.activityNotes.push({ text: 'Job deleted by Admin. Customer returned to Lead.', kind: 'job', author: crmGetCurrentUserName() || currentRep || 'Admin', ts: now });
+      lead.updatedAt = now;
+      lead.lastActivityAt = now;
+      crmSaveLeads(leads);
+      crmRenderJobs();
+      crmRenderPipeline();
+      crmOpenLeadDetail(lead.id, _crmLeadDetailBackPageId || 'page-crm-pipeline');
+      showUploadToast('Job deleted. Customer returned to Lead.');
     });
 
     document.getElementById('ld-convert-confirm-btn').addEventListener('click', function () {
