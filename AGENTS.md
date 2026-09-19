@@ -23,3 +23,16 @@
 - Before pushing a new change, compare it against the current production-source branch and preserve every unrelated approved fix.
 - If a local working copy contains a newer approved fix than GitHub, merge that exact fix into GitHub before any further production deployment.
 - Do not call a change finished merely because it works locally or in a transient deployment runner.
+
+## Full Application Lock — September 19, 2026
+
+- The user explicitly approved and locked all Hail Money application work completed through September 19, 2026.
+- The recovery and approval baseline is the GitHub branch `APPROVED_FULL_APP_LOCK_2026-09-19`.
+- This lock covers the current production UI, CRM behavior, Documents library and workspace access, authentication and test-user behavior, Lead Detail behavior, Maps, Estimates, Firebase functions/configuration, deployment patch scripts, and all other protected production source present at the baseline.
+- No protected surface may be changed, reverted, reformatted, regenerated, replaced, or cleaned up unless the user explicitly requests that exact change.
+- A user-requested change opens only that exact scope. Every unrelated approved behavior remains locked.
+- For UI changes, preview the requested change before moving the approved baseline unless the user explicitly says to lock the change immediately.
+- After the user approves a requested change, commit the final source, run all relevant regression checks, verify production, and only then move `APPROVED_FULL_APP_LOCK_2026-09-19` to that approved commit.
+- Production deployment must fail whenever protected source differs from the approved baseline branch.
+- Never move, recreate, repoint, or delete `APPROVED_FULL_APP_LOCK_2026-09-19` without explicit user approval of the corresponding production change.
+- Never bypass, remove, weaken, or skip the full-app source lock or an approved behavior verifier merely to make a deployment pass.
