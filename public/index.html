@@ -24270,7 +24270,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           <div class="settings-modal-header">
             <div>
               <div id="ld-edit-modal-title" class="settings-modal-title">Edit Lead</div>
-              <div class="settings-modal-subtitle">Update the lead details before converting it to a job.</div>
+              <div class="settings-modal-subtitle">Update the lead and claim details.</div>
             </div>
             <button class="settings-modal-close" type="button" id="ld-edit-modal-close" aria-label="Close lead editor">&times;</button>
           </div>
@@ -24308,6 +24308,18 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
               <input id="ld-edit-zip" type="text" autocomplete="off" />
             </div>
             <div class="field">
+              <label for="ld-edit-property-type">Property Type</label>
+              <select id="ld-edit-property-type"><option value="">Select one</option><option value="Residential">Residential</option><option value="Commercial">Commercial</option></select>
+            </div>
+            <div class="field">
+              <label for="ld-edit-job-type">Job Type</label>
+              <select id="ld-edit-job-type"><option value="Retail">Retail</option><option value="Insurance Claim">Insurance Claim</option></select>
+            </div>
+            <div class="field"><label for="ld-edit-insurance-company">Insurance Company</label><input id="ld-edit-insurance-company" type="text" autocomplete="off" /></div>
+            <div class="field"><label for="ld-edit-claim-number">Claim Number</label><input id="ld-edit-claim-number" type="text" autocomplete="off" /></div>
+            <div class="field"><label for="ld-edit-date-of-loss">Date of Loss</label><input id="ld-edit-date-of-loss" type="date" /></div>
+            <div class="field full"><label for="ld-edit-concerns">Areas of Concern</label><textarea id="ld-edit-concerns" placeholder="Roof, siding, gutters, interior leak..."></textarea></div>
+            <div class="field">
               <label for="ld-edit-assigned-rep">Assigned Rep</label>
               <select id="ld-edit-assigned-rep"></select>
             </div>
@@ -24333,8 +24345,8 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
               </select>
             </div>
             <div class="field full">
-              <label for="ld-edit-notes">Notes</label>
-              <textarea id="ld-edit-notes" placeholder="Lead notes..."></textarea>
+              <label for="ld-edit-notes">Claim Notes</label>
+              <textarea id="ld-edit-notes" placeholder="Anything special about this claim..."></textarea>
             </div>
           </div>
           <div id="ld-edit-modal-msg" class="validation-msg" style="display:none;margin-top:12px;"></div>
@@ -62002,7 +62014,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       document.getElementById('ld-edit-zip').value = lead.zip || '';
       document.getElementById('ld-edit-lead-source').value = lead.leadSource || '';
       crmToggleCanvasserSelectForSource(lead.leadSource || '', 'ld-edit-canvasser-wrap', 'ld-edit-canvasser', lead.canvasserId || '');
-      document.getElementById('ld-edit-notes').value = lead.notes || '';
+      var editInsurance = lead.jobFile && lead.jobFile.insurance && typeof lead.jobFile.insurance === 'object' ? lead.jobFile.insurance : {};
+      var editPropertyType = String(lead.jobCategory || lead.propertyType || '').trim();
+      var editJobType = String(lead.claimType || lead.saleType || '').trim() || ((crmGetLeadInsuranceCompany(lead) || crmGetLeadClaimNumber(lead) || lead.dateOfLoss || lead.claimFiled === true) ? 'Insurance Claim' : 'Retail');
+      document.getElementById('ld-edit-property-type').value = editPropertyType;
+      document.getElementById('ld-edit-job-type').value = editJobType;
+      document.getElementById('ld-edit-insurance-company').value = crmGetLeadInsuranceCompany(lead);
+      document.getElementById('ld-edit-claim-number').value = crmGetLeadClaimNumber(lead);
+      document.getElementById('ld-edit-date-of-loss').value = String(lead.dateOfLoss || editInsurance.dateOfLoss || '').slice(0, 10);
+      document.getElementById('ld-edit-concerns').value = (Array.isArray(lead.damageAreas) && lead.damageAreas.length ? lead.damageAreas : lead.concerns || []).join(', ');
+      document.getElementById('ld-edit-notes').value = lead.claimNotes || lead.notes || '';
       crmShowLeadEditModalMessage('');
       document.getElementById('ld-edit-modal-overlay').style.display = 'flex';
       setTimeout(function () {
@@ -62046,7 +62067,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           : (String(leads[i].stage || 'New Lead').trim() || 'New Lead');
         var leadSource = String(document.getElementById('ld-edit-lead-source').value || '').trim();
         var canvasserId = String(document.getElementById('ld-edit-canvasser').value || '').trim();
-        if (canEditLead && !crmCanUserManuallySetStage(leads[i], newStage)) {
+        var currentStage = String(leads[i].stage || 'New Lead').trim() || 'New Lead';
+        if (canEditLead && newStage !== currentStage && !crmCanUserManuallySetStage(leads[i], newStage)) {
           crmShowLeadEditModalMessage('Complete the required workflow details before moving to that stage.');
           return;
         }
@@ -62063,6 +62085,21 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         leads[i].city = String(document.getElementById('ld-edit-city').value || '').trim();
         leads[i].state = String(document.getElementById('ld-edit-state').value || '').trim();
         leads[i].zip = String(document.getElementById('ld-edit-zip').value || '').trim();
+        leads[i].jobCategory = String(document.getElementById('ld-edit-property-type').value || '').trim();
+        leads[i].propertyType = leads[i].jobCategory;
+        leads[i].claimType = String(document.getElementById('ld-edit-job-type').value || '').trim() || 'Retail';
+        leads[i].insuranceCompany = String(document.getElementById('ld-edit-insurance-company').value || '').trim();
+        leads[i].claimNumber = String(document.getElementById('ld-edit-claim-number').value || '').trim();
+        leads[i].dateOfLoss = String(document.getElementById('ld-edit-date-of-loss').value || '').trim();
+        var concernText = String(document.getElementById('ld-edit-concerns').value || '').trim();
+        var concernItems = concernText ? concernText.split(/[\n,;]+/).map(function (item) { return item.trim(); }).filter(Boolean) : [];
+        leads[i].damageAreas = concernItems.slice();
+        leads[i].concerns = concernItems.slice();
+        if (!leads[i].jobFile || typeof leads[i].jobFile !== 'object') leads[i].jobFile = {};
+        if (!leads[i].jobFile.insurance || typeof leads[i].jobFile.insurance !== 'object') leads[i].jobFile.insurance = {};
+        leads[i].jobFile.insurance.company = leads[i].insuranceCompany;
+        leads[i].jobFile.insurance.claimNumber = leads[i].claimNumber;
+        leads[i].jobFile.insurance.dateOfLoss = leads[i].dateOfLoss;
         if (canReassignLead) crmSetLeadAssignedRep(leads[i], assignedRep);
         leads[i].stage = newStage;
         if (leads[i].convertedToJob) leads[i].jobStage = newStage;
@@ -62073,14 +62110,28 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           leads[i].matchedLeadId = '';
           leads[i].payrollMatchStatus = '';
         }
-        leads[i].notes = String(document.getElementById('ld-edit-notes').value || '').trim();
+        leads[i].claimNotes = String(document.getElementById('ld-edit-notes').value || '').trim();
+        leads[i].notes = leads[i].claimNotes;
         leads[i].updatedAt = new Date().toISOString();
         leads[i].lastActivityAt = leads[i].updatedAt;
         crmPushLeadActivity(leads[i], 'Lead details updated', 'note', crmGetCurrentUserName() || currentRep || '', leads[i].updatedAt);
-        crmSaveLeads(leads);
+        var savedAt = leads[i].updatedAt;
+        var saveOk = crmSaveLeads(leads);
+        if (!saveOk) {
+          crmShowLeadEditModalMessage('Could not save this lead. Your changes are still in the editor.');
+          showUploadToast('Lead was not saved.');
+          return;
+        }
+        var savedLead = crmGetLeads().find(function (item) { return item.id === _crmCurrentLeadId; }) || null;
+        if (!savedLead || String(savedLead.updatedAt || '') !== savedAt) {
+          crmShowLeadEditModalMessage('The lead could not be verified after saving. Your editor is still open.');
+          showUploadToast('Lead save could not be verified.');
+          return;
+        }
         crmCloseLeadEditModal();
         if (_crmLeadDetailBackPageId === 'page-crm-pipeline') crmRenderPipeline();
-        else crmOpenLeadDetail(_crmCurrentLeadId);
+        crmOpenLeadDetail(_crmCurrentLeadId);
+        showUploadToast('Lead updated.');
         return;
       }
     });

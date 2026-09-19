@@ -22,6 +22,16 @@ const required = [
   "id=\"ld-claim-notes\"",
   "id=\"ld-docs-card\" style=\"display:none !important;\"",
   "var concernSource = Array.isArray(lead.damageAreas)",
+  "id=\"ld-edit-property-type\"",
+  "id=\"ld-edit-job-type\"",
+  "id=\"ld-edit-insurance-company\"",
+  "id=\"ld-edit-claim-number\"",
+  "id=\"ld-edit-date-of-loss\"",
+  "id=\"ld-edit-concerns\"",
+  "newStage !== currentStage",
+  "var saveOk = crmSaveLeads(leads);",
+  "crmOpenLeadDetail(_crmCurrentLeadId);",
+  "showUploadToast('Lead updated.');",
 ];
 for (const snippet of required) {
   if (!html.includes(snippet)) throw new Error('Approved Lead Detail contract missing: ' + snippet);
