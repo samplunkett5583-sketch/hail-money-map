@@ -24034,18 +24034,20 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                 <div class="crm-detail-label">Address</div>
                 <div class="crm-detail-value" id="ld-address"></div>
               </div>
-              <div class="crm-detail-field">
-                <div class="crm-detail-label">Storm Date</div>
-                <div class="crm-detail-value" id="ld-storm-date"></div>
-              </div>
-              <div class="crm-detail-field">
-                <div class="crm-detail-label">Concerns</div>
-                <div class="crm-detail-value" id="ld-concerns"></div>
-              </div>
             </div>
+          </div>
 
-            <div class="crm-detail-section-header" style="margin-top:14px;">NOTES</div>
-            <div class="crm-detail-value" id="ld-notes-initial" style="white-space:pre-wrap;"></div>
+          <!-- Claim details summary: intentionally no section title -->
+          <div class="crm-detail-card" id="ld-claim-summary-card">
+            <div class="crm-detail-grid">
+              <div class="crm-detail-field"><div class="crm-detail-label">Property Type</div><div class="crm-detail-value" id="ld-claim-property-type"></div></div>
+              <div class="crm-detail-field"><div class="crm-detail-label">Job Type</div><div class="crm-detail-value" id="ld-claim-job-type"></div></div>
+              <div class="crm-detail-field"><div class="crm-detail-label">Insurance Company</div><div class="crm-detail-value" id="ld-claim-insurance-company"></div></div>
+              <div class="crm-detail-field"><div class="crm-detail-label">Claim Number</div><div class="crm-detail-value" id="ld-claim-number"></div></div>
+              <div class="crm-detail-field"><div class="crm-detail-label">Date of Loss</div><div class="crm-detail-value" id="ld-claim-date-of-loss"></div></div>
+              <div class="crm-detail-field full"><div class="crm-detail-label">Areas of Concern</div><div class="crm-detail-value" id="ld-claim-concerns"></div></div>
+              <div class="crm-detail-field full"><div class="crm-detail-label">Claim Notes</div><div class="crm-detail-value" id="ld-claim-notes" style="white-space:pre-wrap;"></div></div>
+            </div>
           </div>
 
           <!-- Next Step card — populated by crmRenderNextStep() -->
@@ -24082,8 +24084,8 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <div id="ld-assign-msg" class="save-confirmation" style="display:none;margin-top:8px;">Lead assigned.</div>
           </div>
 
-          <!-- Documents & Actions card — populated entirely by JS -->
-          <div class="crm-detail-card" id="ld-docs-card"></div>
+          <!-- Hidden document-action controls retained only for workflow triggers -->
+          <div id="ld-docs-card" style="display:none !important;" aria-hidden="true"></div>
 
           <!-- Manual Stage Change panel -->
           <div class="crm-detail-card" id="ld-move-stage-panel" style="display:none;">
@@ -61350,9 +61352,39 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
       var addr = [lead.street, lead.city, lead.state, lead.zip].filter(Boolean).join(', ');
       setVal('ld-address', addr);
-      setVal('ld-storm-date', lead.stormDate ? crmFormatDateShort(lead.stormDate) : '');
-      setVal('ld-concerns', (lead.concerns && lead.concerns.length) ? lead.concerns.join(', ') : '');
-      setVal('ld-notes-initial', lead.notes);
+
+      var claimInsurance = lead.jobFile && lead.jobFile.insurance && typeof lead.jobFile.insurance === 'object'
+        ? lead.jobFile.insurance
+        : {};
+      var claimNumber = crmGetLeadClaimNumber(lead);
+      var insuranceCompany = crmGetLeadInsuranceCompany(lead);
+      var dateOfLoss = String(lead.dateOfLoss || claimInsurance.dateOfLoss || lead.stormDate || '').trim();
+      var propertyType = String(
+        lead.jobCategory || lead.propertyType ||
+        lead.jobFile && lead.jobFile.propertyType ||
+        lead.jobFile && lead.jobFile.estimate && lead.jobFile.estimate.propertyType || ''
+      ).trim();
+      if (/^residential$/i.test(propertyType)) propertyType = 'Residential';
+      else if (/^commercial$/i.test(propertyType)) propertyType = 'Commercial';
+      else if (!propertyType && String(lead.companyName || '').trim()) propertyType = 'Commercial';
+      var claimJobType = String(lead.claimType || lead.saleType || lead.billingType || lead.projectType || '').trim();
+      if (!claimJobType) {
+        claimJobType = (insuranceCompany || claimNumber || dateOfLoss || lead.claimFiled === true || lead.claimFiledAt)
+          ? 'Insurance Claim'
+          : 'Retail';
+      }
+      var concernSource = Array.isArray(lead.damageAreas) && lead.damageAreas.length ? lead.damageAreas : lead.concerns;
+      var concernText = Array.isArray(concernSource)
+        ? concernSource.filter(Boolean).join(', ')
+        : String(concernSource || '').trim();
+      var claimNotes = String(lead.claimNotes || lead.notes || '').trim();
+      setVal('ld-claim-property-type', propertyType);
+      setVal('ld-claim-job-type', claimJobType);
+      setVal('ld-claim-insurance-company', insuranceCompany);
+      setVal('ld-claim-number', claimNumber);
+      setVal('ld-claim-date-of-loss', dateOfLoss ? crmFormatDateShort(dateOfLoss) : '');
+      setVal('ld-claim-concerns', concernText);
+      setVal('ld-claim-notes', claimNotes);
 
       // Hide all panels
       ['ld-move-stage-panel','ld-add-note-panel','ld-add-task-panel','ld-convert-panel'].forEach(function (id) {
@@ -61475,7 +61507,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         card.style.display = 'none';
         return;
       }
-      card.style.display = '';
+      card.style.display = 'none';
 
       var docTypes = [
         { type: 'inspection_photo',   label: 'Inspection Photos',         isToggle: false, isPhoto: true,  btnLabel: 'Upload Photos' },
