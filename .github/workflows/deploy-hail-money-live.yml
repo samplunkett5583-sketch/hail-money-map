@@ -33,6 +33,8 @@ jobs:
         run: python scripts/apply-forgot-password.py
       - name: Apply employee first-login password flow
         run: python scripts/apply-employee-first-login-password.py
+      - name: Apply Company Documents uploads
+        run: python scripts/apply-company-documents-upload.py
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
