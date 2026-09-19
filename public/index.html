@@ -15972,7 +15972,7 @@
       width: 100%;
       max-width: none;
       min-height: calc(100vh - 118px);
-      padding: 84px 36px 28px 143px;
+      padding: 120px 36px 28px 143px;
       box-sizing: border-box;
     }
     #page-lead-detail .jf-folder-sidebar {
@@ -16034,7 +16034,7 @@
       left: 125px;
       z-index: 50;
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 8px;
       overflow: visible;
       padding: 8px 18px;
@@ -23970,6 +23970,8 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <button class="jf-tab-btn" type="button" data-jf-tab="invoice">🧾 Invoice</button>
             <button class="jf-tab-btn" type="button" data-jf-tab="estimates">📐 Estimates</button>
             <button class="jf-tab-btn" type="button" data-jf-tab="messages">💬 Messages</button>
+            <button class="jf-tab-btn" type="button" data-jf-tab="history" data-manager-tool="1" style="display:none;">🕘 History</button>
+            <button class="jf-tab-btn" type="button" data-jf-tab="profit-loss" data-manager-tool="1" style="display:none;">💰 Profit &amp; Loss</button>
           </div>
           <div class="crm-wrap">
           <div class="page-actions" style="margin-bottom:14px;display:none;">
@@ -25366,7 +25368,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
         </div>
       </section>
 
-      <section id="page-crm-job-profitability" class="page" data-crm-header-title="Job Profitability">
+      <section id="page-crm-job-profitability" class="page" data-crm-header-title="Profit &amp; Loss">
         <div class="crm-dashboard-mini-layout" data-dashboard-mini-shell>
           <div class="crm-dashboard-mini-sidebar" data-dashboard-mini-sidebar></div>
           <div class="crm-dashboard-mini-body">
@@ -51245,6 +51247,17 @@ function mapsGoogleReady() {
       }
       var leadDetailTabBtn = e.target && e.target.closest ? e.target.closest('#page-lead-detail [data-jf-tab]') : null;
       if (!leadDetailTabBtn || !_crmCurrentLeadId) return;
+      var leadDetailTabKey = String(leadDetailTabBtn.getAttribute('data-jf-tab') || '').trim();
+      var managerToolRequested = leadDetailTabKey === 'history' || leadDetailTabKey === 'profit-loss';
+      if (managerToolRequested && ['Manager','Admin','Owner'].indexOf(String(crmGetRole() || '').trim()) === -1) {
+        showUploadToast('Manager access or higher is required.');
+        return;
+      }
+      if (leadDetailTabKey === 'profit-loss') {
+        _crmCurrentJobFileLeadId = _crmCurrentLeadId;
+        crmOpenJobProfitabilityPage(_crmCurrentLeadId);
+        return;
+      }
       var tabMap = {
         photos: 'photos',
         documents: 'documents',
@@ -51254,9 +51267,10 @@ function mapsGoogleReady() {
         invoice: 'payments',
         estimates: 'estimate',
         messages: 'messages',
+        history: 'activity',
         pfo: 'messages'
       };
-      var requestedTab = tabMap[String(leadDetailTabBtn.getAttribute('data-jf-tab') || '').trim()] || 'overview';
+      var requestedTab = tabMap[leadDetailTabKey] || 'overview';
       if (requestedTab === 'financial') {
         _crmCurrentJobFileLeadId = _crmCurrentLeadId;
         crmOpenFinancialWorksheetPage(_crmCurrentLeadId);
@@ -61309,6 +61323,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var name = (lead.firstName + ' ' + lead.lastName).trim() || 'Unnamed';
       document.getElementById('ld-name').textContent = name;
 
+      var managerToolAllowed = ['Manager','Admin','Owner'].indexOf(String(crmGetRole() || '').trim()) !== -1;
+      document.querySelectorAll('#page-lead-detail [data-manager-tool="1"]').forEach(function (btn) {
+        btn.style.display = managerToolAllowed ? '' : 'none';
+      });
+
       var stageWrap = document.getElementById('ld-stage-wrap');
       stageWrap.innerHTML = '<span class="crm-stage-pill">' + crmGetRepAwareStageLabel(lead.stage || 'New Lead') + '</span>';
       if (lead.convertedToJob) {
@@ -62025,6 +62044,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         leads[i].notes = String(document.getElementById('ld-edit-notes').value || '').trim();
         leads[i].updatedAt = new Date().toISOString();
         leads[i].lastActivityAt = leads[i].updatedAt;
+        crmPushLeadActivity(leads[i], 'Lead details updated', 'note', crmGetCurrentUserName() || currentRep || '', leads[i].updatedAt);
         crmSaveLeads(leads);
         crmCloseLeadEditModal();
         if (_crmLeadDetailBackPageId === 'page-crm-pipeline') crmRenderPipeline();
@@ -69267,6 +69287,44 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       };
     }
 
+    function crmCanViewLeadManagerTools() {
+      return ['Manager','Admin','Owner'].indexOf(String(crmGetRole() || '').trim()) !== -1;
+    }
+
+    function crmBuildProfitLossData(lead) {
+      var jobFileData = crmGetLeadJobFileData(lead);
+      var data = crmCloneObject(jobFileData.jobProfitability || crmGetDefaultJobProfitabilityData({}));
+      var worksheet = jobFileData.financialWorksheet || {};
+      var worksheetPayments = Array.isArray(worksheet.paymentsReceived) ? worksheet.paymentsReceived : [];
+      var autoRevenue = worksheetPayments.map(function (item) {
+        return crmNormalizeJobFileRevenueEntry({
+          checkNumber: item.referenceNumber || '', dateReceived: item.paymentDate || '', amount: item.amount || '',
+          paymentType: item.paymentType || 'Other', notes: item.notes || ''
+        });
+      });
+      if (!autoRevenue.length && Array.isArray(jobFileData.payments)) {
+        autoRevenue = jobFileData.payments.map(function (item) {
+          return crmNormalizeJobFileRevenueEntry({
+            checkNumber: item.referenceNumber || item.checkNumber || '', dateReceived: item.date || '', amount: item.amount || '',
+            paymentType: item.label || item.paymentType || 'Other', notes: item.notes || ''
+          });
+        });
+      }
+      data.revenueCollected = autoRevenue;
+      data.rcvAmount = crmParseMoneyNumber(worksheet.insuranceBreakdown && worksheet.insuranceBreakdown.totalRcv || 0);
+      var jobId = crmGetJobFileId(lead);
+      var repPay = (typeof crmGetPayrollItems === 'function' ? crmGetPayrollItems() : []).reduce(function (sum, item) {
+        var belongs = String(item.relatedLeadId || '').trim() === String(lead.id || '').trim() || String(item.relatedJobId || '').trim() === String(jobId || '').trim();
+        var isRep = String(item.employeeRole || '').trim() === 'Sales Rep' || String(item.payType || '').indexOf('REP_') === 0;
+        return belongs && isRep ? sum + Number(item.grossAmount || item.netAmount || 0) : sum;
+      }, 0);
+      if (repPay > 0) {
+        data.commission = crmNormalizeJobFileCommissionEntry({ salesRep: lead.assignedRep || '', commissionAmount: String(repPay) });
+        data.repPayAuto = true;
+      }
+      return data;
+    }
+
     function crmGetJobFileStatus(lead, jobFile) {
       var explicit = String(jobFile && jobFile.status || '').trim();
       if (explicit) return explicit;
@@ -70341,7 +70399,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmRenderJobFileQuickActionsHtml(lead) {
       var canEdit = crmCanEditJobFileLead(lead);
       var canCalendar = canEdit && crmCanUseCalendar();
-      var canFinance = crmCanAccessJobFinancialPages(lead);
+      var canFinance = crmCanAccessJobFinancialPages(lead) && crmCanViewLeadManagerTools();
       var canViewWorksheet = crmCanViewFinancialWorksheet(lead);
       var quickActions = [
         { action: 'call', label: 'Call', disabled: !lead.phone },
@@ -70357,7 +70415,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         { action: 'create-contract', label: 'Create Contract', disabled: !canEdit }
       ];
       if (canViewWorksheet) quickActions.push({ action: 'financial-worksheet', label: 'Financial Worksheet', disabled: false });
-      if (canFinance) quickActions.push({ action: 'job-profitability', label: 'Job Profitability', disabled: false });
+      if (canFinance) quickActions.push({ action: 'job-profitability', label: 'Profit & Loss', disabled: false });
       var html = '<div class="crm-detail-section-header">QUICK ACTIONS</div><div class="crm-job-file-quick-grid">';
       quickActions.forEach(function (item) {
         html += '<button class="crm-job-file-quick-btn" type="button" data-jf-action="' + item.action + '"' + (item.disabled ? ' disabled' : '') + '><span>' + crmEscapeHtml(item.label) + '</span></button>';
@@ -70409,7 +70467,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           return sum + crmParseMoneyNumber(item && item[key] || 0);
         }, 0);
       }
-      var totalRevenue = sumMoney(data.revenueCollected, 'amount');
+      var totalCollected = sumMoney(data.revenueCollected, 'amount');
+      var totalRevenue = crmParseMoneyNumber(data.rcvAmount || 0) || totalCollected;
       var totalLabor = sumMoney(data.labor, 'amountPaid');
       var totalMaterials = sumMoney(data.materials, 'amount');
       var totalMiscellaneous = sumMoney(data.miscellaneous, 'amount');
@@ -70419,6 +70478,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var profitMargin = totalRevenue ? (totalProfit / totalRevenue) : 0;
       return {
         totalRevenue: totalRevenue,
+        totalCollected: totalCollected,
         totalLabor: totalLabor,
         totalMaterials: totalMaterials,
         totalMiscellaneous: totalMiscellaneous,
@@ -70609,6 +70669,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           salesRep: String((document.getElementById('jfp-commission-sales-rep') || {}).value || '').trim(),
           commissionAmount: String((document.getElementById('jfp-commission-amount') || {}).value || '').trim()
         }),
+        rcvAmount: _crmJobProfitabilityDraft && _crmJobProfitabilityDraft.rcvAmount ? _crmJobProfitabilityDraft.rcvAmount : 0,
+        repPayAuto: !!(_crmJobProfitabilityDraft && _crmJobProfitabilityDraft.repPayAuto),
         updatedAt: _crmJobProfitabilityDraft && _crmJobProfitabilityDraft.updatedAt ? _crmJobProfitabilityDraft.updatedAt : ''
       };
     }
@@ -70653,6 +70715,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var metrics = crmGetJobProfitabilityMetrics(data);
       var mapping = {
         totalRevenue: crmFormatMoney(metrics.totalRevenue),
+        totalCollected: crmFormatMoney(metrics.totalCollected),
         totalLabor: crmFormatMoney(metrics.totalLabor),
         totalMaterials: crmFormatMoney(metrics.totalMaterials),
         totalMiscellaneous: crmFormatMoney(metrics.totalMiscellaneous),
@@ -70764,23 +70827,24 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmRenderJobProfitabilityContent(lead, data) {
-      var canEdit = crmCanEditJobFileLead(lead);
+      var canEdit = crmCanEditJobFileLead(lead) && crmCanViewLeadManagerTools();
       var metrics = crmGetJobProfitabilityMetrics(data);
       var profitTone = metrics.totalProfit < 0 ? 'negative' : (metrics.totalRevenue > 0 ? 'positive' : '');
       var html = '';
       if (!canEdit) html += '<div class="crm-job-fin-readonly">Read-only. Contact a manager/admin to update profitability details.</div>';
       html += '<div class="crm-job-fin-section-stack">';
       html += '<div class="crm-job-file-panel-block crm-job-fin-highlight">';
-      html += '<div class="crm-job-file-row-top"><div class="crm-job-file-block-title">Revenue Collected</div><div class="crm-job-file-payment-total" data-jfp-metric="totalRevenue">' + crmEscapeHtml(crmFormatMoney(metrics.totalRevenue)) + '</div></div>';
+      html += '<div class="crm-job-file-row-top"><div><div class="crm-job-file-block-title">Income / Revenue</div><div class="crm-job-file-inline-note">RCV comes from the Financial Worksheet. Payments received below sync automatically.</div></div><div class="crm-job-file-payment-total" data-jfp-metric="totalRevenue">' + crmEscapeHtml(crmFormatMoney(metrics.totalRevenue)) + '</div></div>';
+      html += '<div class="crm-job-fin-summary-grid" style="margin:10px 0 14px;">' + crmRenderJobFinancialSummaryCard('RCV / Revenue', crmFormatMoney(metrics.totalRevenue), 'Auto from Financial Worksheet', 'accent') + crmRenderJobFinancialSummaryCard('Payments Received', crmFormatMoney(metrics.totalCollected), 'Auto from Financial Worksheet', '') + '</div>';
       html += crmRenderJobFinancialTable({
         listKey: 'jfp-revenue',
         rows: data.revenueCollected,
-        readOnly: !canEdit,
+        readOnly: true,
         addLabel: 'Add Payment',
-        totalLabel: 'Total Revenue',
-        totalValue: crmFormatMoney(metrics.totalRevenue),
+        totalLabel: 'Payments Received',
+        totalValue: crmFormatMoney(metrics.totalCollected),
         totalAttrName: 'data-jfp-metric',
-        totalKey: 'totalRevenue',
+        totalKey: 'totalCollected',
         minWidth: 860,
         createRow: function () { return crmNormalizeJobFileRevenueEntry({}); },
         columns: [
@@ -70857,16 +70921,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         ]
       });
       html += '</div>';
-      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-row-top"><div class="crm-job-file-block-title">Sales Rep Commission</div><div class="crm-job-file-payment-total" data-jfp-metric="totalCommission">' + crmEscapeHtml(crmFormatMoney(metrics.totalCommission)) + '</div></div><div class="crm-job-file-form-grid">';
-      html += crmRenderJobFinancialField('Sales Rep', 'jfp-commission-sales-rep', data.commission && data.commission.salesRep || '', 'Sales rep name', { disabled: !canEdit });
-      html += crmRenderJobFinancialField('Commission Amount', 'jfp-commission-amount', data.commission && data.commission.commissionAmount || '', '0.00', { disabled: !canEdit, inputMode: 'decimal' });
-      html += '</div><div class="crm-job-fin-formula">Total Commission rolls into Total Costs automatically.</div></div>';
+      html += '<div class="crm-job-file-panel-block"><div class="crm-job-file-row-top"><div class="crm-job-file-block-title">Rep Pay</div><div class="crm-job-file-payment-total" data-jfp-metric="totalCommission">' + crmEscapeHtml(crmFormatMoney(metrics.totalCommission)) + '</div></div><div class="crm-job-file-form-grid">';
+      html += crmRenderJobFinancialField('Sales Rep', 'jfp-commission-sales-rep', data.commission && data.commission.salesRep || '', 'Sales rep name', { disabled: !canEdit || data.repPayAuto });
+      html += crmRenderJobFinancialField('Rep Pay Amount', 'jfp-commission-amount', data.commission && data.commission.commissionAmount || '', '0.00', { disabled: !canEdit || data.repPayAuto, inputMode: 'decimal' });
+      html += '</div><div class="crm-job-fin-formula">' + (data.repPayAuto ? 'Rep pay is synced from Payroll for this job.' : 'Enter rep pay here until Payroll has a linked amount for this job.') + '</div></div>';
       html += '<div class="crm-job-file-panel-block crm-job-fin-highlight"><div class="crm-job-file-block-title">Profit Calculations</div><div class="crm-job-fin-summary-grid">';
       html += crmRenderJobFinancialSummaryCard('Total Revenue', crmFormatMoney(metrics.totalRevenue), '', 'accent', 'data-jfp-metric', 'totalRevenue');
       html += crmRenderJobFinancialSummaryCard('Total Costs', crmFormatMoney(metrics.totalCosts), '', '', 'data-jfp-metric', 'totalCosts');
       html += crmRenderJobFinancialSummaryCard('Total Profit', crmFormatMoney(metrics.totalProfit), '', profitTone, 'data-jfp-metric', 'totalProfit', 'data-jfp-card');
       html += crmRenderJobFinancialSummaryCard('Profit Margin', crmFormatPercentValue(metrics.profitMargin), '', profitTone, 'data-jfp-metric', 'profitMargin', 'data-jfp-card');
-      html += '</div><div class="crm-job-fin-formula">Total Costs = Labor + Materials + Miscellaneous + Sales Rep Commission. Total Profit = Total Revenue - Total Costs.</div><div class="crm-job-fin-actions"><button class="btn btn-primary" type="button" data-jfp-save="1"' + (canEdit ? '' : ' disabled') + '>Save Profitability</button></div></div>';
+      html += '</div><div class="crm-job-fin-formula">Total Costs = Labor + Materials + Other Expenses + Rep Pay. Profit = RCV / Revenue - Total Costs. Profit Margin = Profit ÷ Revenue.</div><div class="crm-job-fin-actions"><button class="btn btn-primary" type="button" data-jfp-save="1"' + (canEdit ? '' : ' disabled') + '>Save Profit &amp; Loss</button></div></div>';
       html += '</div>';
       return html;
     }
@@ -70888,15 +70952,22 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderJobProfitabilityPage() {
       var lead = crmGetJobFileLeadById(_crmCurrentJobFileLeadId);
-      if (!crmCanAccessJobFinancialPages(lead)) {
-        showUploadToast('You do not have permission to open this financial page.');
+      if (!crmCanViewLeadManagerTools() || !crmCanAccessJobFinancialPages(lead)) {
+        showUploadToast('Manager access or higher is required for Profit & Loss.');
         return false;
       }
       var headerCard = document.getElementById('jfp-header-card');
       var contentCard = document.getElementById('jfp-content');
       if (!headerCard || !contentCard) return false;
-      var data = crmCloneObject(_crmJobProfitabilityDraft || crmGetLeadJobFileData(lead).jobProfitability);
-      headerCard.innerHTML = crmRenderJobFinancialHeaderHtml(lead, 'Job Profitability', 'Track collected revenue, job costs, and the actual profit made on completed work.', data.updatedAt || '');
+      var autoData = crmBuildProfitLossData(lead);
+      var data = crmCloneObject(_crmJobProfitabilityDraft || autoData);
+      data.revenueCollected = autoData.revenueCollected || [];
+      data.rcvAmount = autoData.rcvAmount || 0;
+      if (autoData.repPayAuto) {
+        data.commission = autoData.commission;
+        data.repPayAuto = true;
+      }
+      headerCard.innerHTML = crmRenderJobFinancialHeaderHtml(lead, 'Profit & Loss', 'Track RCV, money received, job costs, profit, and profit margin.', data.updatedAt || '');
       contentCard.innerHTML = crmRenderJobProfitabilityContent(lead, data);
       crmApplyJobProfitabilityMetricDom(data);
       return true;
@@ -70918,12 +70989,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmOpenJobProfitabilityPage(leadId) {
       var lead = crmGetJobFileLeadById(leadId || _crmCurrentJobFileLeadId);
-      if (!crmCanAccessJobFinancialPages(lead)) {
-        showUploadToast('You do not have permission to open this financial page.');
+      if (!crmCanViewLeadManagerTools() || !crmCanAccessJobFinancialPages(lead)) {
+        showUploadToast('Manager access or higher is required for Profit & Loss.');
         return;
       }
       _crmCurrentJobFileLeadId = lead.id;
-      _crmJobProfitabilityDraft = crmCloneObject(crmGetLeadJobFileData(lead).jobProfitability);
+      _crmJobProfitabilityDraft = crmCloneObject(crmBuildProfitLossData(lead));
       if (crmRenderJobProfitabilityPage()) showPage('page-crm-job-profitability');
     }
 
@@ -71083,7 +71154,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmRenderJobFileReportsHtml(lead, jobFile) {
-      var canFinance = crmCanAccessJobFinancialPages(lead);
+      var canFinance = crmCanAccessJobFinancialPages(lead) && crmCanViewLeadManagerTools();
       var canViewWorksheet = crmCanViewFinancialWorksheet(lead);
       var html = '<div class="crm-job-folder-card-grid">';
       html += '<div class="crm-job-folder-card full">';
@@ -71122,7 +71193,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         html += '<button class="btn" type="button" data-jf-action="financial-worksheet">Financial Worksheet</button>';
       }
       if (canFinance) {
-        html += '<button class="btn" type="button" data-jf-action="job-profitability">Job Profitability</button>';
+        html += '<button class="btn" type="button" data-jf-action="job-profitability">Profit & Loss</button>';
       }
       html += '<button class="btn" type="button" data-jf-tab-shortcut="documents">Open Documents</button>';
       html += '<button class="btn" type="button" data-jf-tab-shortcut="photos">Open Photos</button>';
@@ -71153,7 +71224,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderJobFileActivityHtml(lead, feed) {
       var html = '<div class="crm-job-folder-card">';
-      html += '<div class="crm-job-folder-section-title">Activity</div>';
+      html += '<div class="crm-job-folder-section-title">History</div>';
       html += crmRenderJobFileFeedHtml(feed);
       html += '</div>';
       return html;
@@ -73362,8 +73433,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
       var saveBtn = e.target.closest('[data-jfp-save]');
       if (saveBtn) {
-        if (!crmCanEditJobFileLead(lead)) {
-          showUploadToast('You do not have permission to edit this financial page.');
+        if (!crmCanViewLeadManagerTools() || !crmCanEditJobFileLead(lead)) {
+          showUploadToast('Manager access or higher is required to edit Profit & Loss.');
           return;
         }
         var nextData = crmReadJobProfitabilityForm();
@@ -73375,7 +73446,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           });
           data.jobProfitability.updatedAt = nextData.updatedAt;
           crmApplyLeadJobFileData(item, data);
-          crmPushLeadActivity(item, 'Job profitability updated', 'payment');
+          crmPushLeadActivity(item, 'Profit & Loss updated', 'payment');
         });
         _crmJobProfitabilityDraft = crmCloneObject(nextData);
         crmRenderJobProfitabilityPage();
@@ -77502,7 +77573,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       };
       var pageTitles = {
         'page-crm-financial-worksheet': 'Financial Worksheet',
-        'page-crm-job-profitability': 'Job Profitability',
+        'page-crm-job-profitability': 'Profit & Loss',
         'page-crm-file-viewer': 'File Viewer',
         'page-inspection-report': 'Property Photo Report',
         'page-inspection-report-preview': 'Property Photo Report'
@@ -77575,7 +77646,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       'page-crm-inspections': 'Inspections',
       'page-crm-job-file': 'Job Folder',
       'page-crm-financial-worksheet': 'Financial Worksheet',
-      'page-crm-job-profitability': 'Job Profitability',
+      'page-crm-job-profitability': 'Profit & Loss',
       'page-company-docs': 'Documents',
       'page-estimates': 'Estimates',
       'page-crm-settings': 'Settings',
