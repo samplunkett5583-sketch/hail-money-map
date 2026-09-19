@@ -35,6 +35,8 @@ jobs:
         run: python scripts/apply-global-mobile-fit.py
       - name: Apply forgot password reset
         run: python scripts/apply-forgot-password.py
+      - name: Restore server-backed test login
+        run: python scripts/apply-legacy-test-login-route.py
       - name: Generate hailmoney.test logins for added users
         run: python scripts/apply-team-hailmoney-test-logins.py
       - name: Apply Company Documents uploads
