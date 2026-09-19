@@ -43,6 +43,8 @@ jobs:
         run: python scripts/apply-company-documents-upload-v2.py
       - name: Fix Company Documents admin authorization
         run: python scripts/apply-company-documents-admin-auth-fix.py
+      - name: Verify permanent UI contracts
+        run: python scripts/verify-permanent-ui-contracts.py
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

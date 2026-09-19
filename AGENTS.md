@@ -13,3 +13,13 @@
 - Do not switch branches, reset, restore, merge, or cherry-pick without verifying that the approved CRM baseline remains present.
 - Never broadly rewrite `public/index.html` for targeted work.
 - Do not make unrelated UI changes.
+
+## Permanent Fix Rule
+
+- A fix is not complete until the final working change is committed to the active GitHub branch that production deploys from.
+- Never leave an approved fix only in a local file, backup, temporary worktree, generated artifact, or deployment-time patch.
+- Deployment scripts must not silently replace or undo previously approved source behavior.
+- For critical approved behavior, add or update a deploy-time contract check that fails the deployment if the behavior regresses.
+- Before pushing a new change, compare it against the current production-source branch and preserve every unrelated approved fix.
+- If a local working copy contains a newer approved fix than GitHub, merge that exact fix into GitHub before any further production deployment.
+- Do not call a change finished merely because it works locally or in a transient deployment runner.
