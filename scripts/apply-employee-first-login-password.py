@@ -8,6 +8,7 @@ public = PUBLIC.read_text(encoding='utf-8')
 functions = FUNCTIONS.read_text(encoding='utf-8')
 
 new_login = '''    async function hmLoginVerifiedEmployee(email, password) {
+      // adminBootstrapRecoveryV2
       var credential;
       try {
         credential = await window.auth.signInWithEmailAndPassword(email, password);
@@ -21,6 +22,11 @@ new_login = '''    async function hmLoginVerifiedEmployee(email, password) {
         await credential.user.getIdToken(true);
       }
       var tokenResult = await credential.user.getIdTokenResult(true);
+      if (tokenResult.claims.employee !== true && String(email || '').trim().toLowerCase() === 'admin@hailmoney.test') {
+        await hmEmployeeRequest('bootstrapFirstAdmin', {}, true);
+        await credential.user.getIdToken(true);
+        tokenResult = await credential.user.getIdTokenResult(true);
+      }
       if (tokenResult.claims.employee !== true) { await window.auth.signOut(); throw new Error('This account is not an approved Hail Money employee.'); }
       if (tokenResult.claims.mustChangePassword === true) {
         var newPassword = window.prompt('This is your first login. Create a new password with at least 8 characters.');
@@ -35,7 +41,7 @@ new_login = '''    async function hmLoginVerifiedEmployee(email, password) {
     }'''
 
 login_pattern = r'    async function hmLoginVerifiedEmployee\(email, password\) \{.*?\n    \}(?=\n    async function hmProvisionEmployeeAccount)'
-if "bootstrapFirstAdmin" not in public:
+if "adminBootstrapRecoveryV2" not in public:
     public, count = re.subn(login_pattern, new_login, public, count=1, flags=re.S)
     if count != 1:
         raise SystemExit('Expected login function not found')
