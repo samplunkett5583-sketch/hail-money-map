@@ -53,6 +53,15 @@ const required = [
   "Signed contingency uploaded",
   "id=\"cfv-print-btn\"",
   "document.getElementById('cfv-print-btn').addEventListener",
+  "data-jf-add-contract=\"1\"",
+  "Upload Signed Contract",
+  "data-jf-open-contract-form",
+  "function crmOpenLeadContractFromDocuments",
+  "function crmOpenSavedLeadContract",
+  "function jfRenderContractCategoryHtml",
+  "type === 'signed_contract'",
+  "Signed contract uploaded",
+  "Signed contract completed",
 ];
 for (const snippet of required) {
   if (!html.includes(snippet)) throw new Error('Approved Lead Detail contract missing: ' + snippet);
