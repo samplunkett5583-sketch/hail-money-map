@@ -43,6 +43,8 @@ jobs:
         run: python scripts/apply-company-documents-upload-v2.py
       - name: Fix Company Documents admin authorization
         run: python scripts/apply-company-documents-admin-auth-fix.py
+      - name: Verify Company Documents navigation
+        run: node scripts/verify-company-documents-nav.cjs
       - name: Verify approved Lead Detail contract
         run: node scripts/verify-approved-lead-detail.cjs
       - uses: FirebaseExtended/action-hosting-deploy@v0
