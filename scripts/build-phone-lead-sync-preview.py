@@ -28,6 +28,22 @@ if resize_old not in text:
     raise SystemExit('Dashboard mobile resize guard not found')
 text = text.replace(resize_old, resize_new, 1)
 
+# Always close the dashboard drawer as soon as navigation leaves Dashboard.
+# Keeping this at the route boundary covers Pipeline and every other page,
+# including routes opened by code instead of a direct sidebar click.
+show_page_old = '''    function showPage(pageId) {
+      if (pageId === 'page-photo-files' && typeof window.hmPhotoLoadFromSupabase === 'function') {'''
+show_page_new = '''    function showPage(pageId) {
+      if (pageId !== 'page-main-menu') {
+        document.body.classList.remove('dashboard-mobile-nav-open');
+        var dashboardMobileMenuToggle = document.getElementById('dashboard-mobile-menu-toggle');
+        if (dashboardMobileMenuToggle) dashboardMobileMenuToggle.setAttribute('aria-expanded', 'false');
+      }
+      if (pageId === 'page-photo-files' && typeof window.hmPhotoLoadFromSupabase === 'function') {'''
+if show_page_old not in text:
+    raise SystemExit('showPage route boundary not found')
+text = text.replace(show_page_old, show_page_new, 1)
+
 marker = '/* HAIL MONEY CLOUD LEAD SYNC PREVIEW V1 */'
 if marker in text:
     raise SystemExit('Cloud lead sync preview already present')
@@ -44,6 +60,7 @@ sync_js = r'''
   var authBound = false;
   var loadInFlight = false;
   var lastLoadedUid = '';
+  var stopCloudListener = null;
   var syncQueue = Promise.resolve();
 
   function asArray(value) { return Array.isArray(value) ? value : []; }
@@ -174,6 +191,20 @@ sync_js = r'''
       loadInFlight = false;
     }
   }
+  async function watchCloud() {
+    if (stopCloudListener) {
+      stopCloudListener();
+      stopCloudListener = null;
+    }
+    var refs = await stateRefs();
+    if (!refs) return;
+    stopCloudListener = refs.meta.onSnapshot(function (snapshot) {
+      var data = snapshot.exists ? (snapshot.data() || {}) : {};
+      if (data.initialized === true) setTimeout(bootstrapOrLoad, 0);
+    }, function (error) {
+      console.warn('[Hail Money lead sync preview] live sync failed', error);
+    });
+  }
   async function saveDelta(before, after) {
     var refs = await stateRefs();
     if (!refs) return;
@@ -263,15 +294,22 @@ sync_js = r'''
       authBound = true;
       window.auth.onAuthStateChanged(function (user) {
         wrapSave();
-        if (!user) { lastLoadedUid = ''; return; }
+        if (!user) {
+          lastLoadedUid = '';
+          if (stopCloudListener) stopCloudListener();
+          stopCloudListener = null;
+          return;
+        }
         if (lastLoadedUid === user.uid) return;
         lastLoadedUid = user.uid;
         setTimeout(bootstrapOrLoad, 0);
+        setTimeout(watchCloud, 0);
       });
     }
     if (window.auth.currentUser && lastLoadedUid !== window.auth.currentUser.uid) {
       lastLoadedUid = window.auth.currentUser.uid;
       setTimeout(bootstrapOrLoad, 0);
+      setTimeout(watchCloud, 0);
     }
   }
 
