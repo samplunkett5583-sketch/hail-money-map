@@ -9,6 +9,25 @@ if 'const HM_PRIMARY_ORGANIZATION_ID = "yopro";' not in s:
         raise SystemExit('Employee seed marker not found')
     s = s.replace(marker, '};\nconst HM_PRIMARY_ORGANIZATION_ID = "yopro";\n\nfunction safeEmployeeProfile(userRecord, fallback) {', 1)
 
+repair_marker = '''      userRecord = await admin.auth().createUser({
+        email,
+        password,
+        displayName: seed.displayName,
+        emailVerified: true
+      });
+    }
+'''
+repair_block = repair_marker + '''    userRecord = await admin.auth().updateUser(userRecord.uid, {
+      password: seed.password,
+      displayName: seed.displayName,
+      disabled: false
+    });
+'''
+if 'password: seed.password' not in s:
+    if repair_marker not in s:
+        raise SystemExit('Legacy test user creation marker not found')
+    s = s.replace(repair_marker, repair_block, 1)
+
 old_test_claims = '''    await admin.auth().setCustomUserClaims(userRecord.uid, {
       role: "authenticated",
       employee: true,
@@ -71,4 +90,4 @@ elif '      organizationId,\n      active: body.active !== false,' not in s:
     raise SystemExit('Provision employee Firestore block not found')
 
 p.write_text(s, encoding='utf-8')
-print('Employee organization auth restored without changing login/password behavior.')
+print('Employee organization auth and legacy test account recovery patched successfully.')
