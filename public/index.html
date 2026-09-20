@@ -82394,7 +82394,14 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   }
 
   function normalizeAllSidebars() {
-    Array.prototype.slice.call(document.querySelectorAll('.hm-dashboard-ref nav.sidebar, nav.sidebar')).forEach(normalizeSidebar);
+    Array.prototype.slice.call(document.querySelectorAll('.hm-dashboard-ref nav.sidebar, nav.sidebar')).forEach(function (sidebar) {
+      normalizeSidebar(sidebar);
+      if (isAdminOwner()) {
+        var financials = sidebar.querySelector(':scope > .hm-company-financials-nav');
+        var settings = sidebar.querySelector(':scope > [data-dashboard-action="settings"]');
+        if (financials && settings && financials.nextElementSibling !== settings) sidebar.insertBefore(financials, settings);
+      }
+    });
     if (!isAdminOwner()) {
       var financialPage = document.getElementById('page-company-financials');
       if (financialPage) financialPage.remove();
