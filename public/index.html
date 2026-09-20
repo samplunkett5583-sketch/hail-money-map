@@ -59053,9 +59053,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmGetDashboardNewLeadAction() {
       var role = crmGetWorkspaceMenuRole();
       if (role === 'Canvasser') return 'canvass-lead';
-      if (role === 'Sales Rep') return 'field-lead';
       if (role === 'Viewer') return '';
-      return 'call-in-leads';
+      return 'field-lead';
     }
 
     function crmGetDashboardPipelineAction() {
