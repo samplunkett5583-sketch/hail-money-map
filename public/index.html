@@ -82171,5 +82171,577 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 </script>
+
+<!-- HM_MENU_COMPANY_FINANCIALS_V1 -->
+<style id="hm-menu-company-financials-style-v1">
+  #page-company-financials { background: linear-gradient(180deg,#f3db8f 0%,#ddb24b 100%); min-height: calc(100vh - 118px); }
+  #page-company-financials .company-financials-main { padding: 22px; width:100%; box-sizing:border-box; }
+  #page-company-financials .company-financials-shell { max-width: 1380px; margin: 0 auto; }
+  #page-company-financials .company-financials-head { display:flex; gap:16px; align-items:flex-start; justify-content:space-between; margin-bottom:18px; }
+  #page-company-financials .company-financials-head h1 { margin:0; font-size:28px; color:#171b2d; }
+  #page-company-financials .company-financials-head p { margin:5px 0 0; color:#5f5130; font-weight:600; }
+  #page-company-financials .company-financials-refresh { border:1px solid #b4831d; border-radius:9px; background:#fff8e6; color:#171b2d; font-weight:800; padding:9px 14px; cursor:pointer; }
+  #page-company-financials .company-financials-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
+  #page-company-financials .company-financials-card { background:rgba(255,255,255,.92); border:1px solid rgba(92,62,0,.22); border-radius:12px; padding:15px 16px; box-shadow:0 7px 20px rgba(51,35,0,.08); }
+  #page-company-financials .company-financials-card-label { color:#6b6047; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.06em; }
+  #page-company-financials .company-financials-card-value { color:#171b2d; font-size:24px; font-weight:900; margin-top:5px; }
+  #page-company-financials .company-financials-card.is-profit .company-financials-card-value { font-size:28px; }
+  #page-company-financials .company-financials-panel { background:rgba(255,255,255,.94); border:1px solid rgba(92,62,0,.22); border-radius:12px; padding:16px; margin-bottom:16px; box-shadow:0 7px 20px rgba(51,35,0,.08); }
+  #page-company-financials .company-financials-panel h2 { margin:0 0 5px; font-size:18px; color:#171b2d; }
+  #page-company-financials .company-financials-panel-copy { margin:0 0 13px; color:#6b6047; font-size:12px; font-weight:600; }
+  #page-company-financials .company-financials-table-wrap { overflow:auto; }
+  #page-company-financials table { width:100%; border-collapse:collapse; min-width:808px; }
+  #page-company-financials th,#page-company-financials td { padding:10px 9px; border-bottom:1px solid rgba(85,68,30,.14); text-align:right; white-space:nowrap; font-size:12px; color:#25293a; }
+  #page-company-financials th { background:#f7efd8; color:#5d5136; font-size:10px; text-transform:uppercase; letter-spacing:.04em; position:sticky; top:0; }
+  #page-company-financials th:first-child,#page-company-financials td:first-child,#page-company-financials th:nth-child(2),#page-company-financials td:nth-child(2) { text-align:left; }
+  #page-company-financials .company-financials-edit { border:1px solid #c89528; border-radius:7px; background:#fff8e6; color:#171b2d; padding:6px 10px; font-weight:800; cursor:pointer; }
+  #page-company-financials .company-financials-empty { padding:18px; text-align:center; color:#756847; font-weight:700; }
+  #page-company-financials .company-financials-modal-backdrop { position:fixed; inset:0; zindex:10050; background:rgba(14,17,31,.58); display:flex; align-items:center; justify-content:center; padding:18px; }
+  #page-company-financials .company-financials-modal { width:min(520px,100%); max-height:88vh; overflow:auto; background:#fffdf7; border:1px solid #c99b32; border-radius:14px; box-shadow:0 22px 60px rgba(0,0,0,.3); padding:20px; }
+  #page-company-financials .company-financials-modal-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+  #page-company-financials .company-financials-modal h3 { margin:0; color:#171b2d; }
+  #page-company-financials .company-financials-modal-role { color:#74633b; font-size:12px; font-weight:700; margin-top:3px; }
+  #page-company-financials .company-financials-close { border:0; background:transparent; font-size:24px; cursor:pointer; line-height:1; }
+  #page-company-financials .company-financials-running { margin:15px 0; padding:12px; background:#f6e8bb; border-radius:9px; color:#171b2d; font-weight:900; }
+  #page-company-financials .company-financials-field { display:grid; gap:5px; margin:11px 0; }
+  #page-company-financials .company-financials-field label { font-size:11px; font-weight:900; color:#665a3c; text-transform:uppercase; }
+  #page-company-financials .company-financials-field input { width:100%; box-sizing:border-box; border:1px solid #cdbd91; border-radius:8px; padding:9px 10px; font:inherit; }
+  #page-company-financials .company-financials-adjust-actions { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:12px; }
+  #page-company-financials .company-financials-adjust-actions button { border:0; border-radius:9px; padding:10px 12px; font-weight:900; cursor:pointer; }
+  #page-company-financials [data-company-fin-save="add"] { background:#171b2d; color:#f5ca5c; }
+  #page-company-financials [data-company-fin-save="subtract"] { background:#efe3c3; color:#4e3f1f; }
+  #page-company-financials .company-financials-history { margin-top:16px; }
+  #page-company-financials .company-financials-history-row { display:flex; justify-content:space-between; gap:12px; border-top:1px solid #eadfbe; padding:8px 0; font-size:12px; }
+  #page-company-financials .company-financials-history-note { color:#756847; }
+  @media (max-width:900px) {
+    #page-company-financials .company-financials-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  }
+  @media (max-width:620px) {
+    #page-company-financials .company-financials-main { padding:14px 10px; }
+    #page-company-financials .company-financials-grid { grid-template-columns:1fr; }
+    #page-company-financials .company-financials-head { flex-direction:column; }
+  }
+</style>
+<script id="hm-menu-company-financials-script-v1">
+(function () {
+  'use strict';
+
+  var COMMON_ORDER = [
+    { key:'new', labels:['New'], actions:[] },
+    { key:'start', labels:['Start'], actions:['start-inspection'] },
+    { key:'ai', labels:['AI','Roofer AI'], actions:['roofer-ai'] },
+    { key:'pipeline', labels:['Pipeline'], actions:['pipeline'] },
+    { key:'leads', labels:['Leads'], actions:['leads'] },
+    { key:'photos', labels:['Photos',"Photo's"], actions:['photos','photo-files','job-photos'] },
+    { key:'maps', labels:['Maps','Map','Money Maps'], actions:['map','maps'] },
+    { key:'estimates', labels:['Estimates'], actions:['estimates'] },
+    { key:'calendar', labels:['Calendar','Calander'], actions:['calendar'] },
+    { key:'meetings', labels:['Meetings'], actions:['meetings'] },
+    { key:'production', labels:['Production'], actions:['production'] }
+  ];
+
+  function currentRole() {
+    try { return String(typeof crmGetRole === 'function' ? crmGetrole() : '').trim(); }
+    catch (_) { return ''; }
+  }
+
+  function isAdminOwner() {
+    var role = currentRole();
+    return role === 'Admin' || role === 'Owner';
+  }
+
+  function labelText(node) {
+    if (!node) return '';
+    var label = node.matches && node.matches('.nav-label') ? node : node.querySelector && node.querySelector('.nav-label');
+    return String(label ? label.textContent : '').trim();
+  }
+
+  function directChildFor(el, sidebar) {
+    if (!el || !sidebar) return null;
+    var node = el;
+    while (node && node.parentElement !== sidebar) node = node.parentElement;
+    return node && node.parentElement === sidebar ? node : null;
+  }
+
+  function findDirectNode(sidebar, spec) {
+    if (!sidebar || !spec) return null;
+    if (spec.key === 'new') {
+      var newGroup = sidebar.querySelector('.nav-dropdown-group-new');
+      if (newGroup) return directChildFor(newGroup, sidebar);
+    }
+    for (var i = 0; i < (spec.actions || []).length; i += 1) {
+      var el = sidebar.querySelector('[data-dashboard-action="' + spec.actions[i] + '"]');
+      if (el) return directChildFor(el, sidebar);
+    }
+    var children = Array.prototype.slice.call(sidebar.children || []);
+    for (var c = 0; c < children.length; c += 1) {
+      var txt = labelText(children[c]).toLowerCase();
+      if ((spec.labels || []).some(function (name) { return txt === String(name).toLowerCase(); })) return children[c];
+    }
+    return null;
+  }
+
+  function findTemplateNode(spec) {
+    var sidebars = Array.prototype.slice.call(document.querySelectorAll('.hm-dashboard-ref nav.sidebar, nav.sidebar'));
+    for (var i = 0; i < sidebars.length; i += 1) {
+      var node = findDirectNode(sidebars[i], spec);
+      if (node) return node;
+    }
+    return null;
+  }
+
+  function cloneTemplateNode(spec) {
+    var source = findTemplateNode(spec);
+    if (!source) return null;
+    var clone = source.cloneNode(true);
+    clone.querySelectorAll('[id]').forEach(function (el) { el.removeAttribute('id'); });
+    clone.removeAttribute('id');
+    clone.classList.remove('active');
+    clone.querySelectorAll('.active').forEach(function (el) { el.classList.remove('active'); });
+    clone.querySelectorAll('[aria-current]').forEach(function (el) { el.removeAttribute('aria-current'); });
+    return clone;
+  }
+
+  function createCompanyFinancialsButton() {
+    var btn = document.createElement('button');
+    btn.className = 'nav-item nav-item-admin-only hm-company-financials-nav';
+    btn.type = 'button';
+    btn.setAttribute('data-dashboard-action', 'company-financials');
+    btn.setAttribute('aria-label', 'Company Financials');
+    btn.innerHTML = '<span class="dash-icon" data-dash-icon="file-dollar" aria-hidden="true"></span><span class="nav-label">Company Financials</span>';
+    return btn;
+  }
+
+  function setMenuLabel(node, text) {
+    if (!node) return;
+    var label = node.querySelector && node.querySelector('.nav-label');
+    if (label) label.textContent = text;
+  }
+
+  function normalizeSidebar(sidebar) {
+    if (!sidebar || !sidebar.children) return;
+    var desired = [];
+    COMMON_ORDER.forEach(function (spec) {
+      var node = findDirectNode(sidebar, spec);
+      if (!node) {
+        node = cloneTemplateNode(spec);
+        if (node) sidebar.appendChild(node);
+      }
+      if (node && desired.indexOf(node) === -1) desired.push(node);
+    });
+
+    var financials = sidebar.querySelector(':scope > .hm-company-financials-nav');
+    if (isAdminOwner()) {
+      if (!financials) {
+        financials = createCompanyFinancialsButton();
+        sidebar.appendChild(financials);
+      }
+      desired.push(financials);
+    } else if (financials) {
+      financials.style.setProperty('display', 'none', 'important');
+    }
+
+    var trainingSpec = { key:'training', labels:['Training'], actions:['tester-training','training'] };
+    var training = findDirectNode(sidebar, trainingSpec);
+    if (!training) {
+      training = cloneTemplateNode(trainingSpec);
+      if (training) sidebar.appendChild(training);
+    }
+    if (training) desired.push(training);
+
+    if (isAdminOwner()) {
+      var employeeSpec = { key:'employee', labels:['Employee','Employees'], actions:['employee'] };
+      var settingsSpec = { key:'settings', labels:['Settings'], actions:['settings'] };
+      var employee = findDirectNode(sidebar, employeeSpec) || cloneTemplateNode(employeeSpec);
+      var settings = findDirectNode(sidebar, settingsSpec) || cloneTemplateNode(settingsSpec);
+      if (employee && !employee.parentElement) sidebar.appendChild(employee);
+      if (settings && !settings.parentElement) sidebar.appendChild(settings);
+      if (employee) { setMenuLabel(employee, 'Employees'); desired.push(employee); }
+      if (settings) desired.push(settings);
+    }
+
+    desired.forEach(function (node) {
+      if (node) node.style.removeProperty('display');
+    });
+
+    var cursor = sidebar.querySelector(':scope > .logo');
+    desired.forEach(function (node) {
+      if (!node) return;
+      if (cursor) {
+        if (cursor.nextElementSibling !== node) sidebar.insertBefore(node, cursor.nextElementSibling);
+      } else if (sidebar.firstElementChild !== node) {
+        sidebar.insertBefore(node, sidebar.firstElementChild);
+      }
+      cursor = node;
+    });
+
+    Array.prototype.slice.call(sidebar.children).forEach(function (child) {
+      if (!child.matches || !child.matches('.nav-item,.nav-dropdown-group')) return;
+      if (desired.indexOf(child) === -1) {
+        child.setAttribute('data-hm-menu-hidden-v1', '1');
+        child.style.setProperty('display', 'none', 'important');
+      } else {
+        child.removeAttribute('data-hm-menu-hidden-v1');
+        child.style.removeProperty('display');
+      }
+    });
+
+    var photo = desired.find(function (node) {
+      var txt = labelText(node).toLowerCase();
+      return txt === 'photos' || txt === "photo's";
+    });
+    setMenuLabel(photo, "Photo's");
+  }
+
+  function normalizeAllSidebars() {
+    Array.prototype.slice.call(document.querySelectorAll('.hm-dashboard-ref nav.sidebar, nav.sidebar')).forEach(normalizeSidebar);
+  }
+
+  function money(value) {
+    value = Number(value || 0);
+    if (!isFinite(value)) value = 0;
+    try { if (typeof crmFormatMoney === 'function') return crmFormatMoney(value); } catch (_) {}
+    return value.toLocaleString(undefined, { style:'currency', currency:'USD' });
+  }
+
+  function percent(value) {
+    value = Number(value || 0);
+    if (!isFinite(value)) value = 0;
+    try { if (typeof crmFormatPercentValue === 'function') return crmFormatPercentValue(value); } catch (_) {}
+    return (value * 100).toFixed(1) + '%';
+  }
+
+  function escapeHtml(value) {
+    try { if (typeof crmEscapeHtml === 'function') return crmEscapeHtml(String(value == null ? '' : value)); } catch (_) {}
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
+      return ({'&':'&amp;','<':'flt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]);
+    });
+  }
+
+  function getTeamMembers() {
+    try { return typeof crmGetTeamMembers === 'function' ? crmGetTeamMembers() : []; }
+    catch (_) { return []; }
+  }
+
+  function getOfficeEmployees() {
+    return getTeamMembers().filter(function (member) {
+      if (!member || member.active === false) return false;
+      var role = String(member.role || '').trim();
+      return ['Sales Rep','Canvasser','Admin','Owner'].indexOf(role) === -1;
+    });
+  }
+
+  function getPayrollItems() {
+    try { return typeof crmGetPayrollItems === 'function' ? crmGetPayrollItems() : []; }
+    catch (_) { return []; }
+  }
+
+  function getOfficePayrollItems() {
+    return getPayrollItems().filter(function (item) {
+      return String(item && item.payType || '').trim() === 'OFFICE_PAYROLL_ADJUSTMENT';
+    });
+  }
+
+  function getOfficePayrollTotal() {
+    return getOfficePayrollItems().reduce(function (sum, item) {
+      var n = Number(item.netAmount || 0);
+      return sum + (isFinite(n) ? n : 0);
+    }, 0);
+  }
+
+  function employeePayrollTotal(employeeId) {
+    return getOfficePayrollItems().reduce(function (sum, item) {
+      if (String(item.employeeId || '') !== String(employeeId || '')) return sum;
+      var n = Number(item.netAmount || 0);
+      return sum + (isFinite(n) ? n : 0);
+    }, 0);
+  }
+
+  function buildJobRows() {
+    var leads = [];
+    try { leads = typeof crmGetLeads === 'function' ? crmGetLeads() : []; } catch (_) {}
+    return leads.filter(function (lead) {
+      if (!lead) return false;
+      if (lead.convertedToJob) return true;
+      try {
+        var jf = typeof crmGetLeadJobFileData === 'function' ? crmGetLeadJobFileData(lead) : null;
+        return !!(jf && jf.jobProfitability);
+      } catch (_) { return false; }
+    }).map(function (lead) {
+      var data = {};
+      var metrics = {};
+      try { data = typeof crmBuildProfitLossData === 'function' ? crmBuildProfitLossData(lead) : {}; } catch (_) {}
+      try { metrics = typeof crmGetJobProfitabilityMetrics === 'function' ? crmGetJobProfitabilityMetrics(data) : {}; } catch (_) {}
+      var collected = Number(metrics.totalCollected || 0);
+      var labor = Number(metrics.totalLabor || 0);
+      var materials = Number(metrics.totalMaterials || 0);
+      var misc = Number(metrics.totalMiscellaneous || 0);
+      var commission = Number(metrics.totalCommission || 0);
+      var costs = labor + materials + misc + commission;
+      var profit = collected - costs;
+      var margin = collected ? profit / collected : 0;
+      var customer = '';
+      try { customer = typeof crmGetPayrollLeadName === 'function' ? crmGetPayrollLeadName(lead) : ''; } catch (_) {}
+      if (!customer) customer = [lead.firstName, lead.lastName].filter(Boolean).join(' ') || lead.name || lead.companyName || 'Customer';
+      var jobId = '';
+      try { jobId = typeof crmGetJobFileId === 'function' ? crmGetJobFileId(lead) : ''; } catch (_) {}
+      return {
+        id: String(lead.id || ''),
+        jobId: String(jobId || ''),
+        customer: customer,
+        rep: String(lead.assignedRep || ''),
+        collected: collected,
+        materials: materials,
+        labor: labor,
+        misc: misc,
+        commission: commission,
+        costs: costs,
+        profit: profit,
+        margin: margin
+      };
+    });
+  }
+
+  function buildCompanyMetrics(rows) {
+    var totals = rows.reduce(function (acc, row) {
+      acc.collected += row.collected;
+      acc.materials += row.materials;
+      acc.labor += row.labor;
+      acc.misc += row.misc;
+      acc.commission += row.commission;
+      return acc;
+    }, { collected:0, materials:0, labor:0, misc:0, commission:0 });
+    totals.officePayroll = getOfficePayrollTotal();
+    totals.jobCosts = totals.materials + totals.labor + totals.misc + totals.commission;
+    totals.totalCosts = totals.jobCosts + totals.officePayroll;
+    totals.profit = totals.collected - totals.totalCosts;
+    totals.margin = totals.collected ? totals.profit / totals.collected : 0;
+    return totals;
+  }
+
+  function createPage() {
+    var existing = document.getElementById('page-company-financials');
+    if (existing) return existing;
+    var anchorPage = document.getElementById('page-main-menu') || document.querySelector('.page');
+    if (!anchorPage || !anchorPage.parentElement) return null;
+    var section = document.createElement('section');
+    section.id = 'page-company-financials';
+    section.className = 'page';
+    section.setAttribute('data-crm-header-title', 'Company Financials');
+    var sidebar = document.getElementById('dashboard-mobile-navigation');
+    var sidebarHtml = '';
+    if (sidebar) {
+      var clone = sidebar.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.setAttribute('aria-label', 'Company Financials navigation');
+      clone.querySelectorAll('[id]').forEach(function (el) { el.removeAttribute('id'); });
+      sidebarHtml = clone.outerHTML;
+    }
+    section.innerHTML =
+      '<div class="hm-dashboard-ref"><div class="wrap">' +
+        sidebarHtml +
+        '<div class="main"><div class="company-financials-main"><div class="company-financials-shell">' +
+          '<div class="company-financials-head"><div><h1>Company Financials</h1><p>Company-wide cash profitability for every job under this subscription.</p></div><button class="company-financials-refresh" type="button" data-company-fin-refresh>Refresh totals</button></div>' +
+          '<div id="company-financials-summary" class="company-financials-grid"></div>' +
+          '<section class="company-financials-panel"><h2>Office Payroll</h2><p class="company-financials-panel-copy">Weekly hourly or salary payroll adjustments. Add or subtract money and Hail Money keeps a running total for each employee.</p><div class="company-financials-table-wrap"><table><thead><tr><th>Employee</th><th>Role</th><th>Running Total</th><th>Action</th></tr></thead><tbody id="company-financials-employees"></tbody></table></div></section>' +
+          '<section class="company-financials-panel"><h2>Job Profitability</h2><p class="company-financials-panel-copy">Automatic totals from each job Profit &amp; Loss page and linked rep payroll.</p><div class="company-financials-table-wrap"><table><thead><tr><th>Job / Customer</th><th>Sales Rep</th><th>Collected</th><th>Materials</th><th>Labor</th><th>Misc.</th><th>Commission</th><th>Cash Profit</th><th>Margin</th></tr></thead><tbody id="company-financials-jobs"></tbody></table></div></section>' +
+          '<div id="company-financials-modal-host"></div>' +
+        '</div></div></div>' +
+      '</div></div>';
+    anchorPage.parentElement.appendChild(section);
+    normalizeAllSidebars();
+    return section;
+  }
+
+  function renderSummary(totals) {
+    var el = document.getElementById('company-financials-summary');
+    if (!el) return;
+    var cards = [
+      ['Money Collected', money(totals.collected), ''],
+      ['Materials', money(totals.materials), ''],
+      ['Labor', money(totals.labor), ''],
+      ['Sales Rep Commission', money(totals.commission), ''],
+      ['Misc. Job Expenses', money(totals.misc), ''],
+      ['Office Payroll', money(totals.officePayroll), ''],
+      ['Total Costs', money(totals.totalCosts), ''],
+      ['Total Profit', money(totals.profit), 'is-profit'],
+      ['Profit Margin', percent(totals.margin), 'is-profit']
+    ];
+    el.innerHTML = cards.map(function (card) {
+      return '<div class="company-financials-card ' + card[2] + '"><div class="company-financials-card-label">' + escapeHtml(card[0]) + '</div><div class="company-financials-card-value">' + escapeHtml(card[1]) + '</div></div>';
+    }).join('');
+  }
+
+  function renderEmployees() {
+    var body = document.getElementById('company-financials-employees');
+    if (!body) return;
+    var employees = getOfficeEmployees();
+    if (!employees.length) {
+      body.innerHTML = '<tr><td colspan="4" class="company-financials-empty">No hourly or salary employees are set up yet.</td></tr>';
+      return;
+    }
+    body.innerHTML = employees.map(function (member) {
+      return '<tr><td>' + escapeHtml(member.name || 'Employee') + '</td><td>' + escapeHtml(member.role || '') + '</td><td>' + escapeHtml(money(employeePayrollTotal(member.id))) + '</td><td><button type="button" class="company-financials-edit" data-company-fin-edit="' + escapeHtml(member.id) + '">Edit</button></td></tr>';
+    }).join('');
+  }
+
+  function renderJobs(rows) {
+    var body = document.getElementById('company-financials-jobs');
+    if (!body) return;
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="9" class="company-financials-empty">No jobs with financial data yet.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function (row) {
+      var title = row.jobId ? row.jobId + ' · ' + row.customer : row.customer;
+      return '<tr><td>' + escapeHtml(title) + '</td><td>' + escapeHtml(row.rep || '—') + '</td><td>' + escapeHtml(money(row.collected)) + '</td><td>' + escapeHtml(money(row.materials)) + '</td><td>' + escapeHtml(money(row.labor)) + '</td><td>' + escapeHtml(money(row.misc)) + '</td><td>' + escapeHtml(money(row.commission)) + '</td><td>' + escapeHtml(money(row.profit)) + '</td><td>' + escapeHtml(percent(row.margin)) + '</td></tr>';
+    }).join('');
+  }
+
+  function renderCompanyFinancials() {
+    if (!isAdminOwner()) return;
+    createPage();
+    var rows = buildJobRows();
+    var totals = buildCompanyMetrics(rows);
+    renderSummary(totals);
+    renderEmployees();
+    renderJobs(rows);
+    normalizeAllSidebars();
+  }
+
+  function openPayrollEditor(employeeId) {
+    var member = getOfficeEmployees().find(function (item) { return String(item.id || '') === String(employeeId || ''); });
+    if (!member) return;
+    var host = document.getElementById('company-financials-modal-host');
+    if (!host) return;
+    var history = getOfficePayrollItems().filter(function (item) {
+      return String(item.employeeId || '') === String(member.id || '');
+    }).sort(function (a,b) {
+      return String(b.createdAt || b.earnedAt || '').localeCompare(String(a.createdAt || a.earnedAt || ''));
+    }).slice(0,8);
+    var historyHtml = history.length ? history.map(function (item) {
+      var value = Number(item.netAmount || 0);
+      var when = String(item.paidAt || item.earnedAt || item.createdAt || '').slice(0,10);
+      return '<div class="company-financials-history-row"><div><strong>' + escapeHtml(when || '— ') + '</strong><div class="company-financials-history-note">' + escapeHtml(item.description || 'Payroll adjustment') + '</div></div><strong>' + escapeHtml(money(value)) + '</strong></div>';
+    }).join('') : '<div class="company-financials-empty">No payroll adjustments yet.</div>';
+    host.innerHTML =
+      '<div class="company-financials-modal-backdrop" data-company-fin-close>' +
+        '<div class="company-financials-modal" role="dialog" aria-modal="true" aria-labelledby="company-financials-modal-title" data-company-fin-modal>' +
+         '<div class="company-financials-modal-head"><div><h3 id="company-financials-modal-title">' + escapeHtml(member.name || 'Employee') + '</h3><div class="company-financials-modal-role">' + escapeHtml(member.role || '') + '</div></div><button type="button" class="company-financials-close" data-company-fin-close aria-label="Close">&times;</button></div>' +
+         '<div class="company-financials-running">Running total: <span>' + escapeHtml(money(employeePayrollTotal(member.id))) + '</span></div>' +
+         '<input type="hidden" id="company-financials-employee-id" value=' + escapeHtml(member.id) + '" />' +
+        '<div class="company-financials-field"><label for="company-financials-adjustment-amount">Amount</label><input id="company-financials-adjustment-amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" /></div>' +
+         '<div class="company-financials-field"><label for="company-financials-adjustment-note">Payroll note</label><input id="company-financials-adjustment-note" type="text" placeholder="Weekly payroll, correction, bonus, etc." /></div>' +
+        '<div class="company-financials-adjust-actions"><button type="button" data-company-fin-save="add">Add Money</button><button type="button" data-company-fin-save="subtract">Subtract Money</button></div>' +
+         '<div class="company-financials-history"><strong>Recent adjustments</strong>' + historyHtml + '</div>' +
+       '</div></div>';
+  }
+
+  function closePayrollEditor() {
+    var host = document.getElementById('company-financials-modal-host');
+    if (host) host.innerHTML = '';
+  }
+
+  function savePayrollAdjustment(mode) {
+    if (!isAdminOwner()) return;
+    var employeeId = String((document.getElementById('company-financials-employee-id') || {}).value || '').trim();
+    var member = getOfficeEmployees().find(function (item) { return String(item.id || '') === employeeId; });
+    if (!member) return;
+    var amount = Math.abs(Number((document.getElementById('company-financials-adjustment-amount') || {}).value || 0));
+    if (!isFinite(amount) || amount <= 0) {
+      try { if (typeof showUploadToast === 'function') showUploadToast('Enter a payroll amount greater than $0.'); } catch (_) {}
+      return;
+    }
+    var note = String((document.getElementById('company-financials-adjustment-note') || {}).value || '').trim();
+    var now = new Date();
+    var nowIso = now.toISOString();
+    var range = null;
+    try { range = typeof crmGetPayrollWeekRange === 'function' ? crmGetPayrollWeekRange(nowIso) : null; } catch (_) {}
+    if (!range) {
+      var d = nowIso.slice(0,10);
+      range = { start:d, end:d };
+    }
+    var sign = mode === 'subtract' ? -1 : 1;
+    var item = {
+      id: 'pay_office_' + String(member.id || 'employee') + '_' + Date.now(),
+      employeeId: String(member.id || ''),
+      employeeRole: String(member.role || ''),
+      relatedLeadId: '',
+      relatedJobId: '',
+      payPeriodStart: String(range.start || ''),
+      payPeriodEnd: String(range.end || ''),
+      payType: 'OFFICE_PAYROLL_ADJUSTMENT',
+      description: (mode === 'subtract' ? 'Office payroll subtraction' : 'Office payroll payment') + (note ? ': ' + note : ''),
+      grossAmount: sign > 0 ? amount : 0,
+      deductionAmount: sign < 0 ? amount : 0,
+      netAmount: sign * amount,
+      status: 'Paid',
+      earnedAt: nowIso,
+      paidAt: nowIso,
+      createdAt: nowIso
+    };
+    var items = getPayrollItems();
+    items.push(item);
+    var saved = false;
+    try { saved = typeof crmSavePayrollItems === 'function' ? crmSavePayrollItems(items) : false; } catch (_) {}
+    if (!saved) {
+      try { if (typeof showUploadToast === 'function') showUploadToast('Could not save payroll adjustment.'); } catch (_) {}
+      return;
+    }
+    closePayrollEditor();
+    renderCompanyFinancials();
+    try { if (typeof showUploadToast === 'function') output = showUploadToast('Office payroll updated.'); } catch (_) {}
+  }
+
+  document.addEventListener('click', function (event) {
+    var financialNav = event.target.closest && event.target.closest('[data-dashboard-action="company-financials"]');
+    if (financialNav) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!isAdminOwner()) return;
+      createPage();
+      renderCompanyFinancials();
+      try { if (typeof showPage === 'function') showPage('page-company-financials'); } catch (_) {}
+      return;
+    }
+    var refresh = event.target.closest && event.target.closest('[data-company-fin-refresh]');
+    if (refresh) { renderCompanyFinancials(); return; }
+    var edit = event.target.closest && event.target.closest('[data-company-fin-edit]');
+    if (edit) { openPayrollEditor(edit.getAttribute('data-company-fin-edit')); return; }
+    var save = event.target.closest && event.target.closest('[data-company-fin-save]');
+    if (save) { savePayrollAdjustment(save.getAttribute('data-company-fin-save')); return; }
+    var close = event.target.closest && event.target.closest('[data-company-fin-close]');
+    if (close && !event.target.closest('[data-company-fin-modal]')) { closePayrollEditor(); return; }
+    if (event.target.closest && event.target.closest('.company-financials-close')) { closePayrollEditor(); }
+  }, true);
+
+  function boot() {
+    normalizeAllSidebars();
+    if (isAdminOwner()) createPage();
+    normalizeAllSidebars();
+  }
+
+  var scheduled = false;
+  var observer = new MutationObserver(function () {
+    if (scheduled) return;
+    scheduled = true;
+    window.setTimeout(function () {
+      scheduled = false;
+      normalizeAllSidebars();
+    }, 30);
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      boot();
+      observer.observe(document.body, { childList:true, subtree:true });
+    }, { once:true });
+  } else {
+    boot();
+    observer.observe(document.body, { childList:true, subtree:true });
+  }
+})();
+</script>
+
 </body>
 </html>
