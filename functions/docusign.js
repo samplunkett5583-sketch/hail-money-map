@@ -72,6 +72,14 @@ function oauthRedirectUri() {
   return `https://${REGION}-${projectId()}.cloudfunctions.net/docusignOAuthCallback`;
 }
 
+function createPkceVerifier() {
+  return crypto.randomBytes(64).toString('base64url');
+}
+
+function createPkceChallenge(verifier) {
+  return crypto.createHash('sha256').update(String(verifier)).digest().toString('base64url');
+}
+
 function safeReturnUrl(value, fallback) {
   const raw = String(value || fallback || 'https://www.hail.money/').trim();
   try {
@@ -126,12 +134,19 @@ async function requestJson(url, options) {
   return body;
 }
 
-async function exchangeCode(code) {
+async function exchangeCode(code, codeVerifier) {
+  const verifier = String(codeVerifier || '').trim();
+  if (!verifier) throw Object.assign(new Error('DocuSign PKCE verifier is missing. Start the connection again.'), { statusCode: 400 });
   const basic = Buffer.from(`${DOCUSIGN_CLIENT_ID.value()}:${DOCUSIGN_CLIENT_SECRET.value()}`).toString('base64');
   return requestJson(`${authBase()}/oauth/token`, {
     method: 'POST',
     headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'authorization_code', code: String(code) }).toString()
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: String(code),
+      redirect_uri: oauthRedirectUri(),
+      code_verifier: verifier
+    }).toString()
   });
 }
 
@@ -259,11 +274,14 @@ exports.docusignConnect = onRequest(secretOptions, async (req, res) => {
     requireAdmin(user);
     const organizationId = await resolveOrganizationId(user);
     const state = crypto.randomBytes(24).toString('hex');
+    const codeVerifier = createPkceVerifier();
+    const codeChallenge = createPkceChallenge(codeVerifier);
     const returnUrl = safeReturnUrl(req.body && req.body.returnUrl, 'https://www.hail.money/');
     await db.collection(OAUTH_STATES).doc(state).set({
       organizationId,
       uid: user.uid,
       returnUrl,
+      codeVerifier,
       environment: environmentName(),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000)
@@ -273,6 +291,8 @@ exports.docusignConnect = onRequest(secretOptions, async (req, res) => {
       scope: 'signature extended',
       client_id: DOCUSIGN_CLIENT_ID.value(),
       redirect_uri: oauthRedirectUri(),
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
       state
     });
     return res.status(200).json({ authorizationUrl: `${authBase()}/oauth/auth?${params.toString()}`, environment: environmentName() });
@@ -299,7 +319,9 @@ exports.docusignOAuthCallback = onRequest(secretOptions, async (req, res) => {
     const code = String(req.query && req.query.code || '').trim();
     if (!code) throw Object.assign(new Error('DocuSign did not return an authorization code.'), { statusCode: 400 });
 
-    const tokenResponse = await exchangeCode(code);
+    const codeVerifier = String(stateData.codeVerifier || '').trim();
+    if (!codeVerifier) throw Object.assign(new Error('DocuSign PKCE verifier is missing or expired. Start the connection again.'), { statusCode: 400 });
+    const tokenResponse = await exchangeCode(code, codeVerifier);
     const userInfo = await requestJson(`${authBase()}/oauth/userinfo`, {
       method: 'GET', headers: { Authorization: `Bearer ${tokenResponse.access_token}`, Accept: 'application/json' }
     });
