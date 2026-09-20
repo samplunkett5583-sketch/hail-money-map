@@ -77943,14 +77943,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmGetMobileHeaderPageTitle(pageId) {
-      var aliases = {'page-photo-files':'Photos','page-photo-file-detail':'Photos','page-map':'Maps','page-ai':'AI','page-company-docs':'Documents','page-template-builder':'Document Editor','page-crm-pipeline':'Pipeline','page-crm-contacts':'Contacts','page-all-leads':'Leads','page-my-assigned-leads':'Leads','page-estimates':'Estimates','page-crm-calendar':'Calendar','page-crm-production':'Production','page-tester-training':'Training','page-admin-sales-reps':'Employees','page-crm-settings':'Settings'};
+      var aliases = {'page-main-menu':'Dashboard','page-photo-files':'Photos','page-photo-file-detail':'Photos','page-map':'Maps','page-ai':'AI','page-company-docs':'Documents','page-template-builder':'Document Editor','page-crm-pipeline':'Pipeline','page-crm-contacts':'Contacts','page-all-leads':'Leads','page-my-assigned-leads':'Leads','page-estimates':'Estimates','page-crm-calendar':'Calendar','page-crm-production':'Production','page-tester-training':'Training','page-admin-sales-reps':'Employees','page-crm-settings':'Settings'};
       return aliases[pageId] || crmGetHeaderPageTitle(pageId) || 'Hail Money';
     }
 
     function crmSyncMobilePageChrome(pageId) {
       var mobile = window.matchMedia ? window.matchMedia('(max-width:767px)').matches : window.innerWidth <= 767;
       var heading = document.querySelector('#map-header-center-brand .map-header-center-heading');
-      if (heading) heading.textContent = mobile && pageId && pageId !== 'page-main-menu' && pageId !== 'page-login' ? crmGetMobileHeaderPageTitle(pageId) : 'Hail Money';
+      if (heading) heading.textContent = mobile && pageId && pageId !== 'page-login' ? crmGetMobileHeaderPageTitle(pageId) : 'Hail Money';
       if (!mobile) return;
       document.body.classList.remove('dashboard-mobile-nav-open');
       var toggle = document.getElementById('dashboard-mobile-menu-toggle');

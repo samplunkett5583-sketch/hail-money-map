@@ -5,6 +5,7 @@ const required=[
   'body.app-page-active:not(.main-menu-page-active) .page.active .crm-dashboard-mini-sidebar',
   'body.app-page-active:not(.main-menu-page-active) .page.active .hm-dashboard-ref .sidebar',
   'function crmGetMobileHeaderPageTitle(pageId)',
+  "'page-main-menu':'Dashboard'",
   "'page-photo-files':'Photos'",
   "'page-company-docs':'Documents'",
   "'page-crm-pipeline':'Pipeline'",
