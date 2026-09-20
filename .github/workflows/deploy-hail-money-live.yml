@@ -57,7 +57,7 @@ jobs:
         run: python scripts/apply-company-documents-admin-auth-fix.py
       - name: Fix Company Documents workspace access
         run: python scripts/apply-company-documents-org-access.py
-      - name: Verify global mobile page sync
+      - name: Verify mobile page sync
         run: node scripts/verify-mobile-page-sync.cjs
       - name: Verify Company Documents navigation
         run: node scripts/verify-company-documents-nav.cjs

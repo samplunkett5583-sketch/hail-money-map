@@ -4986,6 +4986,7 @@
 
     /* ── Template Builder ── */
     .tpl-builder-wrap { max-width:1200px;margin:0 auto;padding:0 12px 40px; }
+    .tpl-company-doc-help{margin:0 0 12px;padding:10px 12px;border:1px solid #d7b34f;border-radius:8px;background:#fff6d8;color:#423716;font-size:12px;font-weight:700;line-height:1.4}
     .tpl-builder-row { display:flex;gap:12px;margin-bottom:12px; }
     .tpl-builder-row input[type=text] { flex:1; }
     .tpl-builder-body {
@@ -21253,7 +21254,8 @@
   #page-template-builder .tpl-builder-wrap{padding-left:10px;padding-right:10px;}
   #page-template-builder .tpl-field-chip{min-height:38px;display:flex;align-items:center;justify-content:center;padding:8px 10px;}
 }
-.tpl-editor-help{margin:0 0 12px;padding:10px 12px;border:1px solid #d7b34f;border-radius:8px;background:#fff6d8;color:#423716;font-size:12px;font-weight:700;line-height:1.4;}
+.tpl-company-doc-help{margin:0 0 12px;padding:10px 12px;border:1px solid #d7b34f;border-radius:8px;background:#fff6d8;color:#423716;font-size:12px;font-weight:700;line-height:1.4;}
+
 </style>
 </head>
 <body>
@@ -23119,7 +23121,8 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
         <div class="tpl-builder-wrap">
           <h1 class="page-title">Document Template Builder</h1>
           <p class="page-subtitle">Upload a document, name it, and map fields where job data should appear.</p>
-          <div class="tpl-editor-help">Choose a field below, such as Homeowner Name, Address, or Phone Number, then tap and drag a box on the document where that information belongs. Save the field layout when finished.</div>
+          <div id="tpl-company-doc-help" class="tpl-company-doc-help" hidden><strong>Place fillable fields:</strong> choose Homeowner Name, Address, Phone Number, Signature, Date, Claim Number, or another field below. Tap and drag on the document to size it. On a phone, you can also choose a field and tap once on the document to place it.</div>
+
           <div class="page-actions" style="margin-bottom:14px;">
             <button class="btn" type="button" id="back-from-tpl-builder">Back</button>
             <button class="btn btn-primary" type="button" id="tpl-save-btn">Save Template</button>
@@ -27123,6 +27126,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       if (typeof crmTrackRecentDestination === 'function') crmTrackRecentDestination(pageId);
       if (typeof crmRenderMiniDashboardShells === 'function') crmRenderMiniDashboardShells(target);
       if (typeof crmRenderPhaseOneSharedShell === 'function') crmRenderPhaseOneSharedShell(pageId);
+      if (typeof crmSyncMobilePageChrome === 'function') crmSyncMobilePageChrome(pageId);
       if (pageId === 'page-map' && window.google && mapsState && mapsState.map) {
         var center = mapsState.map.getCenter();
         google.maps.event.trigger(mapsState.map, 'resize');
@@ -52518,16 +52522,18 @@ function mapsGoogleReady() {
         drawRect.remove();
         drawRect = null;
 
-        // Ignore tiny accidental clicks (minimum 8×8 px)
-        if (w < 8 || h < 8) return;
-
+        // Phone-friendly field placement. A tap uses the field's default size; dragging still draws a custom box.
         var key = tplSelectedFieldKey;
         var fieldDef = TEMPLATE_FIELD_PALETTE.find(function (p) { return p.key === key; });
         if (!fieldDef) return;
-
-        // Compute page-relative percentage coords using actual CSS dimensions
         var pgW = drawPageWrapper.offsetWidth || drawPageWrapper.scrollWidth || 1;
         var pgH = drawPageWrapper.offsetHeight || drawPageWrapper.scrollHeight || 1;
+        if (w < 8 || h < 8) {
+          w = Math.min(Number(fieldDef.w || 140), Math.max(40, pgW * 0.72));
+          h = Math.min(Number(fieldDef.h || 24), Math.max(20, pgH * 0.16));
+          x = Math.max(0, Math.min(drawStartX - (w / 2), pgW - w));
+          y = Math.max(0, Math.min(drawStartY - (h / 2), pgH - h));
+        }
 
         currentTplFields.push({
           key: key, label: fieldDef.label,
@@ -77936,6 +77942,23 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return crmFormatHeaderTitleText(CRM_CANONICAL_HEADER_TITLES[pageId] || '');
     }
 
+    function crmGetMobileHeaderPageTitle(pageId) {
+      var aliases = {'page-photo-files':'Photos','page-photo-file-detail':'Photos','page-map':'Maps','page-ai':'AI','page-company-docs':'Documents','page-template-builder':'Document Editor','page-crm-pipeline':'Pipeline','page-crm-contacts':'Contacts','page-all-leads':'Leads','page-my-assigned-leads':'Leads','page-estimates':'Estimates','page-crm-calendar':'Calendar','page-crm-production':'Production','page-tester-training':'Training','page-admin-sales-reps':'Employees','page-crm-settings':'Settings'};
+      return aliases[pageId] || crmGetHeaderPageTitle(pageId) || 'Hail Money';
+    }
+
+    function crmSyncMobilePageChrome(pageId) {
+      var mobile = window.matchMedia ? window.matchMedia('(max-width:767px)').matches : window.innerWidth <= 767;
+      var heading = document.querySelector('#map-header-center-brand .map-header-center-heading');
+      if (heading) heading.textContent = mobile && pageId && pageId !== 'page-main-menu' && pageId !== 'page-login' ? crmGetMobileHeaderPageTitle(pageId) : 'Hail Money';
+      if (!mobile) return;
+      document.body.classList.remove('dashboard-mobile-nav-open');
+      var toggle = document.getElementById('dashboard-mobile-menu-toggle');
+      if (toggle) toggle.setAttribute('aria-expanded','false');
+      document.querySelectorAll('.nav-dropdown-group.is-open').forEach(function(el){el.classList.remove('is-open')});
+    }
+    window.addEventListener('resize',function(){if(typeof _appCurrentPageId!=='undefined')crmSyncMobilePageChrome(_appCurrentPageId||'')});
+
     function crmSyncSharedHeaderBody(pageId) {
       document.querySelectorAll('.crm-shared-header-hidden').forEach(function (el) {
         el.classList.remove('crm-shared-header-hidden');
@@ -82787,28 +82810,6 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 
   <script src="assets/docusign-integration.js"></script>
 
-<script id="hm-global-mobile-page-title-v1">
-(function(){
-  function titleFor(page){
-    if(!page)return 'Hail Money';
-    var friendly={'page-main-menu':'Dashboard','page-photo-files':'Photos','page-photo-file-detail':'Photos','page-map':'Maps','page-ai':'AI','page-tester-training':'Training','page-admin-sales-reps':'Employees'};
-    var t=friendly[page.id]||String(page.getAttribute('data-crm-header-title')||'').trim();
-    if(!t&&typeof crmGetHeaderPageTitle==='function'){try{t=String(crmGetHeaderPageTitle(page.id)||'').trim();}catch(_){}}
-    return t||'Hail Money';
-  }
-  function sync(){
-    var h=document.querySelector('.map-header-center-heading');
-    if(!h)return;
-    if(window.innerWidth>767){h.textContent='Hail Money';return;}
-    h.textContent=titleFor(document.querySelector('.page.active'));
-  }
-  var obs=new MutationObserver(sync);
-  var screen=document.querySelector('.screen');
-  if(screen)obs.observe(screen,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
-  window.addEventListener('resize',sync);
-  document.addEventListener('DOMContentLoaded',sync);
-  setTimeout(sync,0);
-})();
-</script>
+
 </body>
 </html>

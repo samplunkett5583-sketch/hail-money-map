@@ -73,7 +73,11 @@ script = r'''<script id="hm-company-documents-script">
   async function signedUrl(d){var c=client();if(!c||!d||!d.storagePath)return'';var r=await c.storage.from('hail-money-files').createSignedUrl(d.storagePath,3600);if(r.error)throw r.error;return r.data&&r.data.signedUrl?r.data.signedUrl:''}
   async function openDoc(id){var d=find(id);if(!d)return;var pop=window.open('about:blank','_blank');try{status('Opening '+(d.name||'document')+'…');var url=await signedUrl(d);if(!url)throw new Error('This document could not be opened.');if(pop)pop.location.href=url;else window.location.href=url;status('Company documents are ready.')}catch(e){if(pop)pop.close();status(e&&e.message?e.message:'This document could not be opened.',true)}}
   function copyTemplateFields(fields){return (Array.isArray(fields)?fields:[]).map(function(f){return {key:f.key,label:f.label,pageIndex:f.pageIndex!=null?f.pageIndex:0,xPct:f.xPct,yPct:f.yPct,wPct:f.wPct,hPct:f.hPct,x:f.x,y:f.y,width:f.width,height:f.height,confirmed:!!f.confirmed}})}
-  function resetCompanyDocEdit(){window.hmCompanyDocumentTemplateEdit=null;var save=document.getElementById('tpl-save-btn');if(save)save.textContent='Save Template'}
+  function ensureCompanyDocPdfJs(){
+    if(typeof pdfjsLib!=='undefined')return Promise.resolve(true);
+    return new Promise(function(resolve,reject){var old=document.querySelector('script[data-hm-company-pdfjs]');if(old){var tries=0,t=setInterval(function(){tries++;if(typeof pdfjsLib!=='undefined'){clearInterval(t);resolve(true)}else if(tries>50){clearInterval(t);reject(new Error('PDF field editor could not load.'))}},100);return}var sc=document.createElement('script');sc.setAttribute('data-hm-company-pdfjs','1');sc.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';sc.onload=function(){try{if(typeof pdfjsLib!=='undefined'&&pdfjsLib.GlobalWorkerOptions)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';resolve(true)}catch(e){reject(e)}};sc.onerror=function(){reject(new Error('PDF field editor could not load.'))};document.head.appendChild(sc)})
+  }
+  function resetCompanyDocEdit(){window.hmCompanyDocumentTemplateEdit=null;var save=document.getElementById('tpl-save-btn');if(save)save.textContent='Save Template';var help=document.getElementById('tpl-company-doc-help');if(help)help.hidden=true;var upload=document.getElementById('tpl-upload-btn');if(upload)upload.style.removeProperty('display');var sub=document.querySelector('#page-template-builder .page-subtitle');if(sub)sub.textContent='Upload a document, name it, and map fields where job data should appear.'}
   async function editDoc(id){
     var d=find(id);if(!d||!canManage())return;
     try{
@@ -84,12 +88,17 @@ script = r'''<script id="hm-company-documents-script">
       var url=await signedUrl(d);if(!url)throw new Error('This document could not be opened.');
       var response=await fetch(url);if(!response.ok)throw new Error('The document could not be downloaded for editing.');
       var blob=await response.blob(),dataUrl=await blobToDataUrl(blob),oid=await orgId();
+      var pdfDoc=String(d.contentType||blob.type||'').toLowerCase()==='application/pdf'||/\.pdf$/i.test(String(d.name||''));
+      if(pdfDoc&&typeof pdfjsLib==='undefined')await ensureCompanyDocPdfJs();
       window.hmCompanyDocumentTemplateEdit={docId:String(d.id||''),organizationId:String(oid||'')};
-      currentTplFields=copyTemplateFields(d.templateFields);currentTplFileDataUrl=dataUrl;currentTplFileName=d.name;currentTplFileType=d.contentType||blob.type||'application/pdf';tplRenderedPages=[];tplSelectedFieldKey=null;tplSelectedIdx=-1;
+      currentTplFields=copyTemplateFields(d.templateFields);currentTplFileDataUrl=dataUrl;currentTplFileName=d.name;currentTplFileType=pdfDoc?'application/pdf':(d.contentType||blob.type||'image/*');tplRenderedPages=[];tplSelectedFieldKey=null;tplSelectedIdx=-1;
       var name=document.getElementById('tpl-doc-name');if(name)name.value=String(d.templateName||d.name||'Document').replace(/\.[^.]+$/,'');
       var label=document.getElementById('tpl-file-label');if(label)label.textContent=String(d.name||'Document')+' (Company Document)';
       var save=document.getElementById('tpl-save-btn');if(save)save.textContent='Save Document Fields';
-      renderTemplateFieldPalette();renderTplPreview();showPage('page-template-builder');
+      var help=document.getElementById('tpl-company-doc-help');if(help)help.hidden=false;
+      var upload=document.getElementById('tpl-upload-btn');if(upload)upload.style.display='none';
+      var sub=document.querySelector('#page-template-builder .page-subtitle');if(sub)sub.textContent='Place the fields that Hail Money should fill when this document is used.';
+      renderTemplateFieldPalette();showPage('page-template-builder');requestAnimationFrame(function(){requestAnimationFrame(renderTplPreview)});
     }catch(e){resetCompanyDocEdit();status(e&&e.message?e.message:'Document editor could not be opened.',true)}
   }
   async function saveCompanyDocumentFields(){
