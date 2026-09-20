@@ -82395,6 +82395,10 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 
   function normalizeAllSidebars() {
     Array.prototype.slice.call(document.querySelectorAll('.hm-dashboard-ref nav.sidebar, nav.sidebar')).forEach(normalizeSidebar);
+    if (!isAdminOwner()) {
+      var financialPage = document.getElementById('page-company-financials');
+      if (financialPage) financialPage.remove();
+    }
   }
 
   function money(value) {
