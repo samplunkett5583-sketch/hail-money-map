@@ -23135,6 +23135,10 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <select id="tpl-region" class="field-input" aria-label="Region"><option value="">Select region</option></select>
             <select id="tpl-state" class="field-input" aria-label="State"><option value="">Select state</option></select>
           </div>
+          <div class="tpl-builder-row" id="tpl-versioning-row" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+            <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Effective date<input type="date" id="tpl-effective-date" class="field-input" /></label>
+            <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Status<select id="tpl-status" class="field-input"><option value="active">Active</option><option value="inactive">Inactive</option></select></label>
+          </div>
           <label id="tpl-active-default-wrap" style="margin:0 0 12px;display:flex;gap:8px;align-items:center;"><input type="checkbox" id="tpl-active-default" checked /><span>Use as the active default for this region and state</span></label>
           <div class="tpl-builder-row">
             <button class="btn" type="button" id="tpl-upload-btn">Upload Document</button>
@@ -51730,11 +51734,7 @@ function mapsGoogleReady() {
       // Wire complete button
       var completeBtn = document.getElementById('docusign-complete-form');
       if (completeBtn) {
-        completeBtn.addEventListener('click', function () {
-          if (_crmPostLeadContingencyContext && String(_crmPostLeadContingencyContext.documentType || 'contingency') === 'contingency') {
-            var claimLead = crmGetLeads().find(function (item) { return String(item && item.id || '') === String(jobId || ''); });
-            if (!claimLead || !String(claimLead.claimNumber || '').trim()) { alert('Enter the claim number before the homeowner signs and completes the contingency.'); return; }
-          }
+        completeBtn.addEventListener('click', async function () {
           // Validate: all signature fields must be signed
           var sigFieldIdxs = [];
           inst.fields.forEach(function (f, idx) { if (f.key === 'homeowner_signature' || f.key === 'rep_signature') sigFieldIdxs.push(idx); });
@@ -51774,15 +51774,45 @@ function mapsGoogleReady() {
               _crmPostLeadContingencyContext = null; crmOpenJobFileSection(signedLead.id, 'documents'); showUploadToast('Signed contract saved.');
               return;
             }
+            var templateMeta = savedFormTemplates.find(function (tpl) { return String(tpl && tpl.id || '') === String(inst.templateId || ''); }) || null;
+            var lockedResult = null;
+            try {
+              if (typeof window.hmCreateAndUploadLockedContingencyPdf !== 'function') throw new Error('Locked PDF creation is not ready.');
+              completeBtn.disabled = true;
+              completeBtn.textContent = 'Creating locked signed PDF...';
+              lockedResult = await window.hmCreateAndUploadLockedContingencyPdf(signedLead.id, inst, signedLead, templateMeta);
+            } catch (pdfErr) {
+              completeBtn.disabled = false;
+              completeBtn.textContent = 'Complete & Save to Saved Docs';
+              showUploadToast(pdfErr && pdfErr.message ? pdfErr.message : 'The locked signed PDF could not be created and uploaded.');
+              return;
+            }
+            var lockedMeta = lockedResult && lockedResult.meta ? lockedResult.meta : null;
+            if (!lockedMeta || !lockedMeta.id) {
+              completeBtn.disabled = false;
+              completeBtn.textContent = 'Complete & Save to Saved Docs';
+              showUploadToast('The locked signed PDF was not saved. The lead was not advanced.');
+              return;
+            }
             signedLead.contingencySigned = true;
-            signedLead.contingencySignedAt = inst.signedAt;
-            signedLead.contingencyStatus = 'signed_docusign';
+            signedLead.contingencySignedAt = lockedResult.signedAt || inst.signedAt;
+            signedLead.contingencyStatus = 'signed_locked_pdf_uploaded';
+            signedLead.contingencyDocumentId = String(lockedMeta.id || '');
+            signedLead.contingencyTemplateId = String(lockedResult.templateId || inst.templateId || '');
+            signedLead.contingencyTemplateVersion = Number(lockedResult.templateVersion || 1);
+            signedLead.contingencyTemplateRegion = String(lockedResult.region || '');
+            signedLead.contingencyTemplateState = String(lockedResult.state || '');
+            signedLead.contingencyTemplateEffectiveDate = String(lockedResult.effectiveDate || '');
+            signedLead.contingencySigner = String(lockedResult.signer || '');
+            signedLead.contingencyRepresentative = String(lockedResult.representative || '');
             signedLead.jobFile = signedLead.jobFile && typeof signedLead.jobFile === 'object' ? signedLead.jobFile : {};
             signedLead.jobFile.contingencySigned = true;
+            signedLead.jobFile.contingencyDocumentId = signedLead.contingencyDocumentId;
             signedLead.contingencyFormInstances = Array.isArray(signedLead.contingencyFormInstances) ? signedLead.contingencyFormInstances : [];
             signedLead.contingencyFormInstances.push(inst);
             signedLead.updatedAt = new Date().toISOString();
             if (typeof crmLeadMeetsProspectRequirements === 'function' && crmLeadMeetsProspectRequirements(signedLead)) signedLead.stage = 'Prospect';
+            crmPushLeadActivity(signedLead, 'Locked signed contingency PDF uploaded', 'document', crmGetCurrentUserName() || currentRep || '', signedLead.contingencySignedAt);
             crmSaveLeads(leadRows);
             _activeFormInstance = null;
             if (_crmPostLeadContingencyContext && _crmPostLeadContingencyContext.returnMode === 'documents') {
@@ -52080,6 +52110,7 @@ function mapsGoogleReady() {
     ];
 
     var savedFormTemplates = JSON.parse(localStorage.getItem('formTemplates') || '[]');
+    var _editingTemplateSourceId = '';
     var currentTplFields = [];
     var currentTplFileDataUrl = null;
     var currentTplFileName = null;
@@ -52650,14 +52681,30 @@ function mapsGoogleReady() {
         documentType: String((document.getElementById('tpl-doc-type') || {}).value || 'contingency'),
         region: String((document.getElementById('tpl-region') || {}).value || ''),
         state: String((document.getElementById('tpl-state') || {}).value || '').toUpperCase(),
+        effectiveDate: String((document.getElementById('tpl-effective-date') || {}).value || ''),
+        status: String((document.getElementById('tpl-status') || {}).value || 'active'),
         activeDefault: !!((document.getElementById('tpl-active-default') || {}).checked),
         createdAt: new Date().toISOString()
       };
       if (tpl.documentType === 'contingency' && (!tpl.region || !tpl.state)) { alert('Select a region and state for this contingency.'); return; }
+      if (tpl.documentType === 'contingency' && !tpl.effectiveDate) { alert('Select an effective date for this contingency.'); return; }
+      if (tpl.status === 'inactive') tpl.activeDefault = false;
+      var sourceTpl = _editingTemplateSourceId ? savedFormTemplates.find(function (item) { return String(item && item.id || '') === String(_editingTemplateSourceId); }) : null;
+      tpl.version = sourceTpl ? Number(sourceTpl.version || 1) + 1 : 1;
+      tpl.previousTemplateId = sourceTpl ? String(sourceTpl.id || '') : '';
+      if (sourceTpl) {
+        sourceTpl.status = 'inactive';
+        sourceTpl.activeDefault = false;
+        sourceTpl.supersededAt = new Date().toISOString();
+      }
       if (tpl.activeDefault && tpl.region && tpl.state) savedFormTemplates.forEach(function (existing) {
-        if (String(existing.documentType || 'contingency') === tpl.documentType && String(existing.region || '') === tpl.region && String(existing.state || '').toUpperCase() === tpl.state) existing.activeDefault = false;
+        if (String(existing.documentType || 'contingency') === tpl.documentType && String(existing.region || '') === tpl.region && String(existing.state || '').toUpperCase() === tpl.state) {
+          existing.activeDefault = false;
+          if (existing !== sourceTpl) existing.status = 'inactive';
+        }
       });
       savedFormTemplates.push(tpl);
+      _editingTemplateSourceId = '';
       localStorage.setItem('formTemplates', JSON.stringify(savedFormTemplates));
       alert('Template "' + name + '" saved.');
       // Reset
@@ -52669,6 +52716,8 @@ function mapsGoogleReady() {
       document.getElementById('tpl-doc-type').value = 'contingency';
       document.getElementById('tpl-region').value = '';
       document.getElementById('tpl-state').value = '';
+      document.getElementById('tpl-effective-date').value = '';
+      document.getElementById('tpl-status').value = 'active';
       document.getElementById('tpl-active-default').checked = true;
       document.getElementById('tpl-file-label').textContent = 'No file selected';
       renderTplPreview();
@@ -52684,7 +52733,7 @@ function mapsGoogleReady() {
       var html = '';
       savedFormTemplates.forEach(function (tpl, i) {
         html += '<div class="tpl-saved-item">';
-        html += '<div><strong>' + tpl.name + '</strong><br><span style="font-size:11px;color:var(--muted,#888);">' + tpl.fields.length + ' fields &middot; ' + (tpl.fileName || 'unknown') + (tpl.region ? ' &middot; ' + tpl.region + ' / ' + (tpl.state || '') : '') + (tpl.activeDefault ? ' &middot; Active' : '') + '</span></div>';
+        html += '<div><strong>' + tpl.name + '</strong><br><span style="font-size:11px;color:var(--muted,#888);">' + tpl.fields.length + ' fields &middot; ' + (tpl.fileName || 'unknown') + (tpl.region ? ' &middot; ' + tpl.region + ' / ' + (tpl.state || '') : '') + (tpl.effectiveDate ? ' &middot; Effective ' + tpl.effectiveDate : '') + ' &middot; v' + Number(tpl.version || 1) + ' &middot; ' + (String(tpl.status || 'active') === 'active' ? 'Active' : 'Inactive') + (tpl.activeDefault ? ' Default' : '') + '</span></div>';
         html += '<div style="display:flex;gap:6px;">';
         html += '<button class="btn" type="button" data-tpl-edit="' + i + '" style="font-size:12px;padding:4px 10px;">Edit</button>';
         html += '<button class="btn" type="button" data-tpl-delete="' + i + '" style="font-size:12px;padding:4px 10px;color:#e53935;">Delete</button>';
@@ -52715,7 +52764,10 @@ function mapsGoogleReady() {
       document.getElementById('tpl-doc-name').value = tpl.name;
       document.getElementById('tpl-doc-type').value = tpl.documentType || 'contingency';
       if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting(tpl.region || '', tpl.state || '');
+      document.getElementById('tpl-effective-date').value = tpl.effectiveDate || '';
+      document.getElementById('tpl-status').value = tpl.status || (tpl.activeDefault === false ? 'inactive' : 'active');
       document.getElementById('tpl-active-default').checked = tpl.activeDefault !== false;
+      _editingTemplateSourceId = String(tpl.id || '');
       currentTplFileName = tpl.fileName;
       currentTplFileType = tpl.fileType || null;
       document.getElementById('tpl-file-label').textContent = (tpl.fileName || 'Saved document') + (tpl.fileType ? ' (' + tpl.fileType + ')' : '');
@@ -52728,9 +52780,7 @@ function mapsGoogleReady() {
           x: f.x, y: f.y, width: f.width, height: f.height
         };
       });
-      // Remove old so save creates updated version
-      savedFormTemplates.splice(idx, 1);
-      localStorage.setItem('formTemplates', JSON.stringify(savedFormTemplates));
+      // Keep the old version in history; saving creates a new version.
       renderTplPreview();
       renderSavedTemplates();
     }
@@ -54738,8 +54788,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmLeadHasInspectionPhotos(record) {
       if (!record) return false;
       var leadId = String(record.id || '').trim();
-      if (leadId && crmHasFileType(leadId, 'inspection_photo')) return true;
       var jobFile = record.jobFile && typeof record.jobFile === 'object' ? record.jobFile : {};
+      var inspection = jobFile.inspection && typeof jobFile.inspection === 'object' ? jobFile.inspection : (record.inspection && typeof record.inspection === 'object' ? record.inspection : {});
+      var inspectionComplete = String(inspection.status || '').toLowerCase() === 'completed' || inspection.reportApproved === true || !!inspection.completedAt;
+      if (!inspectionComplete) return false;
+      if (leadId && crmHasFileType(leadId, 'inspection_photo')) return true;
       return Array.isArray(jobFile.photos) && jobFile.photos.some(function (entry) {
         var phase = String(entry && entry.photoPhase || 'inspection').trim() || 'inspection';
         return phase !== 'completion';
@@ -54747,7 +54800,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmLeadHasProspectContingency(record) {
-      if (crmGetLeadContingencySigned(record)) return true;
+      if (!crmGetLeadContingencySigned(record)) return false;
       var leadId = String(record && record.id || '').trim();
       if (leadId && crmHasFileType(leadId, 'signed_contingency')) return true;
       return !!String(
@@ -54764,10 +54817,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmGetLeadProspectClassification(record) {
       var hasPhotos = crmLeadHasInspectionPhotos(record);
-      var hasContingency = crmLeadHasProspectContingency(record);
-      var hasInsuranceInfo = !!crmGetLeadInsuranceCompany(record);
-      var hasClaimNumber = !!crmGetLeadClaimNumber(record);
-      return hasPhotos && hasContingency && hasInsuranceInfo && hasClaimNumber ? 'prospect' : 'lead';
+      var hasSignedAndUploadedContingency = crmLeadHasProspectContingency(record);
+      return hasPhotos && hasSignedAndUploadedContingency ? 'prospect' : 'lead';
     }
 
     function crmLeadMeetsProspectRequirements(record) {
@@ -54783,13 +54834,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var currentStage = String(record.stage || record.jobStage || 'New Lead').trim() || 'New Lead';
       if (['New Lead', 'Contacted', 'Lead', 'Inspected'].indexOf(currentStage) === -1) return false;
       if (!shouldAutoMoveToClaimFiled(record)) return false;
-      record.stage = 'Claim Filed';
-      if (record.convertedToJob) record.jobStage = 'Claim Filed';
+      record.stage = 'Prospect';
+      if (record.convertedToJob) record.jobStage = 'Prospect';
       record.lastActivityAt = new Date().toISOString();
       record.updatedAt = record.lastActivityAt;
       if (!Array.isArray(record.activityNotes)) record.activityNotes = [];
       record.activityNotes.push({
-        text: 'Pipeline automatically moved to Claim Filed because inspection photos, contingency, insurance company, and claim number were completed.',
+        text: 'Pipeline automatically moved to Prospect after the required inspection pictures were saved and the signed contingency PDF was uploaded.',
         kind: 'stage',
         author: 'System',
         ts: record.lastActivityAt
@@ -73597,6 +73648,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           if (type === 'signed_contingency') {
             item.contingencySigned = true; item.contingencySignedAt = new Date().toISOString(); item.contingencyStatus = 'signed_uploaded';
             item.contingencyDocumentId = savedMeta && savedMeta[0] ? String(savedMeta[0].id || '') : ''; data.contingencySigned = true;
+            crmApplyLeadJobFileData(item, data);
+            if (typeof crmLeadMeetsProspectRequirements === 'function' && crmLeadMeetsProspectRequirements(item)) item.stage = 'Prospect';
             crmPushLeadActivity(item, 'Signed contingency uploaded', 'document', crmGetCurrentUserName() || currentRep || '', item.contingencySignedAt);
           }
           if (type === 'signed_contract') {
@@ -73813,7 +73866,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         { id: 'office', label: 'Office', desc: 'Manage Office users and profiles.' },
         { id: 'admin', label: 'Admin', desc: 'Manage Admin users and profiles.' }
       ];
-      if (crmGetRole() === 'Admin' || crmGetRole() === 'Owner') items.splice(2, 0, { id: 'regions', label: 'Regions', desc: 'Assign states to regions for automatic document selection.' });
+      if (['Admin','Owner','Manager'].indexOf(crmGetRole()) !== -1) items.splice(2, 0, { id: 'regions', label: 'Regions', desc: crmGetRole() === 'Manager' ? 'Review state-to-region assignments (read only).' : 'Assign states to regions for automatic document selection.' });
       return items;
     }
 
@@ -75206,7 +75259,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
 
       if (currentPage === 'regions') {
-        if (!(role === 'Admin' || role === 'Owner')) { crmSetSettingsPage('menu'); return; }
+        if (['Admin','Owner','Manager'].indexOf(role) === -1) { crmSetSettingsPage('menu'); return; }
         if (regionsSection) regionsSection.style.display = '';
         if (typeof hmRenderRegionSettings === 'function') hmRenderRegionSettings();
         crmSyncSettingsPageTitle();
@@ -82209,6 +82262,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 </script>
 <script src="./vendor-jspdf.umd.min.js?v=2.5.1"></script>
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
+<script src="./contingency-locked-pdf.js?v=20260920"></script>
 <script src="./assets/crm-cross-links.js?v=20260914"></script>
 <script src="./assets/photo-reports.js?v=20260914"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
@@ -82223,16 +82277,16 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   function save(rows){localStorage.setItem(KEY,JSON.stringify(rows));try{if(typeof crmSaveFieldLeadDropdownOptions==='function'){var opts=crmGetFieldLeadDropdownOptions();opts.regions=rows.map(function(r){return r.name});crmSaveFieldLeadDropdownOptions(opts)}}catch(_){} syncLead();populate('','')}
   function resolve(state){state=String(state||'').trim().toUpperCase();var row=get().find(function(r){return (r.states||[]).indexOf(state)!==-1});return row?row.name:''}
   window.hmResolveRegionForState=resolve;
-  window.hmFindTemplateForLead=function(lead,type){var state=String(lead&&lead.state||'').trim().toUpperCase(),region=String(lead&&lead.region||resolve(state)||'').trim(),templates=window.savedFormTemplates||savedFormTemplates||[];var matches=templates.map(function(t,i){return{t:t,i:i}}).filter(function(x){return String(x.t.documentType||'contingency')===String(type||'contingency')&&String(x.t.region||'')===region&&String(x.t.state||'').toUpperCase()===state});var active=matches.find(function(x){return x.t.activeDefault!==false});return active?active.i:(matches[0]?matches[0].i:-1)};
+  window.hmFindTemplateForLead=function(lead,type){var state=String(lead&&lead.state||'').trim().toUpperCase(),region=String(lead&&lead.region||resolve(state)||'').trim(),templates=window.savedFormTemplates||savedFormTemplates||[],today=new Date().toISOString().slice(0,10);var matches=templates.map(function(t,i){return{t:t,i:i}}).filter(function(x){var effective=!x.t.effectiveDate||String(x.t.effectiveDate)<=today;return String(x.t.documentType||'contingency')===String(type||'contingency')&&String(x.t.region||'')===region&&String(x.t.state||'').toUpperCase()===state&&String(x.t.status||'active')==='active'&&effective});var active=matches.filter(function(x){return x.t.activeDefault===true}).sort(function(a,b){return String(b.t.effectiveDate||'').localeCompare(String(a.t.effectiveDate||''))||Number(b.t.version||1)-Number(a.t.version||1)})[0];return active?active.i:-1};
   function stateOptions(region,selected){var row=get().find(function(r){return r.name===region}),allowed=row?(row.states||[]):[];return '<option value="">Select state</option>'+STATES.filter(function(s){return allowed.indexOf(s[0])!==-1}).map(function(s){return'<option value="'+s[0]+'"'+(s[0]===selected?' selected':'')+'>'+s[0]+' – '+s[1]+'</option>'}).join('')}
   function populate(region,state){var rs=document.getElementById('tpl-region'),ss=document.getElementById('tpl-state');if(!rs||!ss)return;var rows=get();rs.innerHTML='<option value="">Select region</option>'+rows.map(function(r){return'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>'}).join('');rs.value=region||'';ss.innerHTML=stateOptions(rs.value,String(state||'').toUpperCase());ss.value=String(state||'').toUpperCase()}
   window.hmPopulateTemplateRouting=populate;
-  function render(){var host=document.getElementById('settings-regions-list');if(!host)return;host.innerHTML=get().map(function(r,idx){return'<div class="settings-row" data-region-row="'+idx+'" style="display:block;"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;"><input class="field-input" data-region-name value="'+esc(r.name)+'" aria-label="Region name" style="max-width:220px;"><button class="btn" type="button" data-region-remove="'+idx+'">Remove</button></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:6px;">'+STATES.map(function(s){return'<label style="display:flex;gap:6px;align-items:center;font-size:12px;"><input type="checkbox" data-region-state="'+s[0]+'"'+((r.states||[]).indexOf(s[0])!==-1?' checked':'')+'> '+s[0]+' – '+s[1]+'</label>'}).join('')+'</div></div>'}).join('')}
+  function render(){var host=document.getElementById('settings-regions-list');if(!host)return;var readOnly=String(typeof crmGetRole==='function'?crmGetRole():'')==='Manager';host.innerHTML=get().map(function(r,idx){return'<div class="settings-row" data-region-row="'+idx+'" style="display:block;"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;"><input class="field-input" data-region-name value="'+esc(r.name)+'" aria-label="Region name" style="max-width:220px;"'+(readOnly?' disabled':'')+'>'+(!readOnly?'<button class="btn" type="button" data-region-remove="'+idx+'">Remove</button>':'<span class="settings-tag muted">Read only</span>')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:6px;">'+STATES.map(function(s){return'<label style="display:flex;gap:6px;align-items:center;font-size:12px;"><input type="checkbox" data-region-state="'+s[0]+'"'+((r.states||[]).indexOf(s[0])!==-1?' checked':'')+(readOnly?' disabled':'')+'> '+s[0]+' – '+s[1]+'</label>'}).join('')+'</div></div>'}).join('');var add=document.getElementById('settings-region-add'),saveBtn=document.getElementById('settings-regions-save');if(add)add.style.display=readOnly?'none':'';if(saveBtn)saveBtn.style.display=readOnly?'none':'';}
   window.hmRenderRegionSettings=render;
   function collect(){var used={},rows=[];document.querySelectorAll('[data-region-row]').forEach(function(card,idx){var name=String((card.querySelector('[data-region-name]')||{}).value||'').trim()||('Region '+(idx+1)),states=[];card.querySelectorAll('[data-region-state]:checked').forEach(function(cb){var st=cb.getAttribute('data-region-state');if(used[st])throw new Error(st+' is already assigned to '+used[st]+'.');used[st]=name;states.push(st)});rows.push({id:'region_'+(idx+1),name:name,states:states})});return rows}
   function syncLead(){var select=document.getElementById('fl-workType'),state=document.getElementById('fl-state');if(select){var current=select.value;select.innerHTML='<option value="" disabled>Select Region</option>'+get().map(function(r){return'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>'}).join('');var inferred=resolve(state&&state.value);select.value=inferred||current||''}}
   document.addEventListener('change',function(e){if(e.target&&e.target.id==='tpl-region'){var ss=document.getElementById('tpl-state');if(ss)ss.innerHTML=stateOptions(e.target.value,'')}if(e.target&&e.target.id==='fl-state')syncLead()});
-  document.addEventListener('click',function(e){var add=e.target.closest&&e.target.closest('#settings-region-add');if(add){var rows=get();rows.push({id:'region_'+(rows.length+1),name:'Region '+(rows.length+1),states:[]});localStorage.setItem(KEY,JSON.stringify(rows));render();return}var rem=e.target.closest&&e.target.closest('[data-region-remove]');if(rem){var rows2=get();rows2.splice(Number(rem.getAttribute('data-region-remove')),1);localStorage.setItem(KEY,JSON.stringify(rows2));render();return}var saveBtn=e.target.closest&&e.target.closest('#settings-regions-save');if(saveBtn){var msg=document.getElementById('settings-regions-msg');try{save(collect());msg.textContent='Regions saved.';msg.style.display='block'}catch(err){msg.textContent=err.message;msg.style.display='block'}return}var editor=e.target.closest&&e.target.closest('#crm-company-doc-template-editor');if(editor&&typeof openTemplateBuilder==='function')openTemplateBuilder()});
+  document.addEventListener('click',function(e){var readOnly=String(typeof crmGetRole==='function'?crmGetRole():'')==='Manager';var add=e.target.closest&&e.target.closest('#settings-region-add');if(add){if(readOnly)return;var rows=get();rows.push({id:'region_'+(rows.length+1),name:'Region '+(rows.length+1),states:[]});localStorage.setItem(KEY,JSON.stringify(rows));render();return}var rem=e.target.closest&&e.target.closest('[data-region-remove]');if(rem){if(readOnly)return;var rows2=get();rows2.splice(Number(rem.getAttribute('data-region-remove')),1);localStorage.setItem(KEY,JSON.stringify(rows2));render();return}var saveBtn=e.target.closest&&e.target.closest('#settings-regions-save');if(saveBtn){if(readOnly)return;var msg=document.getElementById('settings-regions-msg');try{save(collect());msg.textContent='Regions saved.';msg.style.display='block'}catch(err){msg.textContent=err.message;msg.style.display='block'}return}var editor=e.target.closest&&e.target.closest('#crm-company-doc-template-editor');if(editor&&typeof openTemplateBuilder==='function')openTemplateBuilder()});
   function bind(){populate('','');syncLead();var r=String(typeof crmGetRole==='function'?crmGetRole():'');var editor=document.getElementById('crm-company-doc-template-editor');if(editor)editor.style.display=['Owner','Admin','Manager'].indexOf(r)!==-1?'inline-flex':'none'}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
