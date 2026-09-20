@@ -1,0 +1,45 @@
+name: Finalize Company Financials guard
+
+on:
+  push:
+    branches:
+      - pr-43-storm-panel-style
+    paths:
+      - '.github/workflows/finalize-company-financials-guard.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pr-43-storm-panel-style
+      - name: Clear admin-only financial page when role changes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('public/index.html')
+          s = p.read_text(encoding='utf-8')
+          old = """  function normalizeAllSidebars() {\n    Array.prototype.slice.call(document.querySelectorAll('.hm-dashboard-ref nav.sidebar, nav.sidebar')).forEach(normalizeSidebar);\n  }"""
+          new = """  function normalizeAllSidebars() {\n    Array.prototype.slice.call(document.querySelectorAll('.hm-dashboard-ref nav.sidebar, nav.sidebar')).forEach(normalizeSidebar);\n    if (!isAdminOwner()) {\n      var financialPage = document.getElementById('page-company-financials');\n      if (financialPage) financialPage.remove();\n    }\n  }"""
+          if old not in s:
+              raise SystemExit('Expected Company Financials sidebar block not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Validate final browser script
+        run: |
+          git diff --check
+          grep -q "HM_MENU_COMPANY_FINANCIALS_V1" public/index.html
+          node -e "const fs=require('fs');const s=fs.readFileSync('public/index.html','utf8');const m=s.match(/<script id=\"hm-menu-company-financials-script-v1\">([\\s\\S]*?)<\\/script>/);if(!m)process.exit(1);new Function(m[1]);"
+      - name: Commit only final app guard
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/index.html
+          git diff --cached --check
+          git commit -m "Clear admin financials when role changes"
+          git push origin HEAD:pr-43-storm-panel-style
