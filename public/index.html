@@ -52650,7 +52650,6 @@ function mapsGoogleReady() {
       var name = document.getElementById('tpl-doc-name').value.trim();
       if (!name) { alert('Please enter a template name.'); return; }
       if (!currentTplFileDataUrl) { alert('Please upload a document first.'); return; }
-      if (currentTplFields.length === 0) { alert('Please place at least one field on the document.'); return; }
       // Fields already carry page-relative percentage coords from placement/drag
       var tpl = {
         id: 'tpl_' + Date.now(),
@@ -52731,16 +52730,23 @@ function mapsGoogleReady() {
       savedFormTemplates.forEach(function (tpl, i) {
         html += '<div class="tpl-saved-item">';
         html += '<div><strong>' + tpl.name + '</strong><br><span style="font-size:11px;color:var(--muted,#888);">' + tpl.fields.length + ' fields &middot; ' + (tpl.fileName || 'unknown') + (tpl.region ? ' &middot; ' + tpl.region + ' / ' + (tpl.state || '') : '') + (tpl.effectiveDate ? ' &middot; Effective ' + tpl.effectiveDate : '') + ' &middot; v' + Number(tpl.version || 1) + ' &middot; ' + (String(tpl.status || 'active') === 'active' ? 'Active' : 'Inactive') + (tpl.activeDefault ? ' Default' : '') + '</span></div>';
-        html += '<div style="display:flex;gap:6px;">';
-        html += '<button class="btn" type="button" data-tpl-edit="' + i + '" style="font-size:12px;padding:4px 10px;">Edit</button>';
+        html += '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">';
+        html += '<button class="btn" type="button" data-tpl-fields="' + i + '" style="font-size:12px;padding:4px 10px;">' + (tpl.fields && tpl.fields.length ? 'Edit Fillable Fields' : 'Add Fillable Fields') + '</button>';
+        html += '<button class="btn" type="button" data-tpl-new-document="' + i + '" style="font-size:12px;padding:4px 10px;">Upload New Document</button>';
         html += '<button class="btn" type="button" data-tpl-delete="' + i + '" style="font-size:12px;padding:4px 10px;color:#e53935;">Delete</button>';
         html += '</div></div>';
       });
       list.innerHTML = html;
-      list.querySelectorAll('[data-tpl-edit]').forEach(function (btn) {
+      list.querySelectorAll('[data-tpl-fields]').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          var idx = parseInt(this.getAttribute('data-tpl-edit'));
+          var idx = parseInt(this.getAttribute('data-tpl-fields'));
           loadTemplateForEdit(idx);
+        });
+      });
+      list.querySelectorAll('[data-tpl-new-document]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var idx = parseInt(this.getAttribute('data-tpl-new-document'));
+          loadTemplateForNewDocument(idx);
         });
       });
       list.querySelectorAll('[data-tpl-delete]').forEach(function (btn) {
@@ -52753,6 +52759,28 @@ function mapsGoogleReady() {
           }
         });
       });
+    }
+
+    function loadTemplateForNewDocument(idx) {
+      var tpl = savedFormTemplates[idx];
+      if (!tpl) return;
+      document.getElementById('tpl-doc-name').value = tpl.name || '';
+      document.getElementById('tpl-doc-type').value = tpl.documentType || 'contingency';
+      if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting(tpl.region || '', tpl.state || '');
+      document.getElementById('tpl-effective-date').value = tpl.effectiveDate || '';
+      document.getElementById('tpl-status').value = 'active';
+      document.getElementById('tpl-active-default').checked = tpl.activeDefault !== false;
+      document.getElementById('tpl-save-btn').textContent = 'Save New Document';
+      _editingTemplateSourceId = String(tpl.id || '');
+      currentTplFileName = null;
+      currentTplFileType = null;
+      currentTplFileDataUrl = null;
+      currentTplFields = [];
+      tplRenderedPages = [];
+      document.getElementById('tpl-file-label').textContent = 'No new document selected';
+      renderTplPreview();
+      document.getElementById('tpl-file-input').value = '';
+      document.getElementById('tpl-file-input').click();
     }
 
     function loadTemplateForEdit(idx) {
