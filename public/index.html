@@ -26264,8 +26264,15 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                           </select>
                         </div>
                         <div class="fl-field fl-req-visual">
+                          <label>Region<span class="req">*</span></label>
                           <select id="fl-workType" class="fl-placeholder-select">
                             <option value="" disabled selected>Select Region</option>
+                          </select>
+                        </div>
+                        <div class="fl-field fl-req-visual">
+                          <label>State<span class="req">*</span></label>
+                          <select id="fl-regionState" class="fl-placeholder-select" disabled>
+                            <option value="" disabled selected>Select State</option>
                           </select>
                         </div>
                       </div>
@@ -26310,12 +26317,14 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                     <div class="fl-card-body">
                       <div class="fl-grid fl-grid-insco">
                         <div class="fl-field fl-wide">
-                          <input id="fl-insuranceCompany" type="text" list="hm-insurance-company-list" placeholder="Insurance Company" autocomplete="off" />
+                          <select id="fl-insuranceCompany">
+                            <option value="">Select Insurance Company</option>
+                          </select>
                         </div>
                         <input type="checkbox" id="fl-insuranceOther" hidden aria-hidden="true" />
                       </div>
                       <div id="fl-insuranceOtherWrap" style="display:none;">
-                        <input id="fl-insuranceCompanyOther" type="hidden" />
+                        <input id="fl-insuranceCompanyOther" type="text" placeholder="Insurance company name" autocomplete="off" />
                       </div>
                       <div class="fl-insurance-call-prompt" id="fl-insurance-call-prompt" role="dialog" aria-live="polite" hidden>
                         <p>Would you like to call in the claim now?</p>
@@ -49204,6 +49213,7 @@ function mapsGoogleReady() {
       crmAddressAutocompleteFillField('fl-street', street);
       crmAddressAutocompleteFillField('fl-city', city);
       crmAddressAutocompleteFillField('fl-state', state);
+      if (typeof hmPopulateLeadRegionStateRouting === 'function') hmPopulateLeadRegionStateRouting('', state);
       crmAddressAutocompleteFillField('fl-zip', zip);
       crmAddressAutocompleteFillField('fl-county', county);
       crmAddressAutocompleteFillField('fl-lat', isFinite(lat) ? Number(lat).toFixed(6) : '');
@@ -54667,9 +54677,18 @@ function hmGetInsuranceCompanyDirectory() {
   return Array.from(new Set(base.concat(custom).map(hmNormalizeInsuranceCompanyName).filter(Boolean))).sort(function (a,b) { return a.localeCompare(b); });
 }
 function hmRefreshInsuranceCompanyDatalist() {
+  var directory = hmGetInsuranceCompanyDirectory();
   var list = document.getElementById('hm-insurance-company-list');
   if (!list) { list = document.createElement('datalist'); list.id = 'hm-insurance-company-list'; document.body.appendChild(list); }
-  list.innerHTML = hmGetInsuranceCompanyDirectory().map(function (name) { return '<option value="' + crmEscapeHtml(name) + '"></option>'; }).join('');
+  list.innerHTML = directory.map(function (name) { return '<option value="' + crmEscapeHtml(name) + '"></option>'; }).join('');
+  var select = document.getElementById('fl-insuranceCompany');
+  if (select && select.tagName === 'SELECT') {
+    var current = String(select.value || '');
+    select.innerHTML = '<option value="">Select Insurance Company</option>' + directory.map(function (name) {
+      return '<option value="' + crmEscapeHtml(name) + '">' + crmEscapeHtml(name) + '</option>';
+    }).join('') + '<option value="__other__">Other / Not Listed</option>';
+    if (current && Array.prototype.some.call(select.options, function (o) { return o.value === current; })) select.value = current;
+  }
 }
 function hmRememberInsuranceCompany(value) {
   var name = hmNormalizeInsuranceCompanyName(value); if (!name) return;
@@ -77336,7 +77355,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var options = crmGetFieldLeadDropdownOptions();
       crmPopulateFieldLeadDropdown('fl-leadSource', 'Select Lead Source', options.leadSources);
       crmPopulateFieldLeadDropdown('fl-tradeType', 'Select Trade', options.trades);
-      crmPopulateFieldLeadDropdown('fl-workType', 'Select Region', options.regions);
+      if (typeof hmPopulateLeadRegionStateRouting === 'function') hmPopulateLeadRegionStateRouting('', '');
+      else crmPopulateFieldLeadDropdown('fl-workType', 'Select Region', options.regions);
+      if (typeof hmRefreshInsuranceCompanyDatalist === 'function') hmRefreshInsuranceCompanyDatalist();
     }
 
     var _crmFieldLeadDraftTimer = null;
@@ -77605,6 +77626,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmResetFieldLeadDuplicateChecks();
       crmRestoreFieldLeadDraft();
       crmApplyPendingContactLeadPrefill('fl');
+      if (typeof hmPopulateLeadRegionStateRouting === 'function') {
+        hmPopulateLeadRegionStateRouting(
+          String((document.getElementById('fl-workType') || {}).value || ''),
+          String((document.getElementById('fl-regionState') || {}).value || (document.getElementById('fl-state') || {}).value || '')
+        );
+      }
+      if (typeof hmRefreshInsuranceCompanyDatalist === 'function') hmRefreshInsuranceCompanyDatalist();
       crmHideFieldLeadAddressSuggestions();
       _crmFieldLeadAddressAutocomplete.selectedPlaceId = '';
       var streetInput = document.getElementById('fl-street');
@@ -77666,6 +77694,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
       if (insSelect && insuranceCallPrompt) {
         insSelect.addEventListener('change', function () {
+          var useOther = insSelect.value === '__other__';
+          if (insOther) insOther.checked = useOther;
+          if (insOtherWrap) insOtherWrap.style.display = useOther ? '' : 'none';
+          var otherInput = document.getElementById('fl-insuranceCompanyOther');
+          if (useOther) {
+            hideInsuranceCallPrompt();
+            if (otherInput) { otherInput.value = ''; setTimeout(function () { otherInput.focus(); }, 0); }
+            return;
+          }
+          if (otherInput) otherInput.value = '';
           hmRememberInsuranceCompany(insSelect.value);
           var phone = hmGetInsuranceClaimPhone(insSelect.value);
           if (!insSelect.value || !phone) {
@@ -77809,7 +77847,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var primaryEmail = emailAddresses.filter(function (item) { return item.primary; })[0] || emailAddresses[0] || null;
       var insuranceCompanyVal = fc('fl-insuranceOther') ? fv('fl-insuranceCompanyOther') : fv('fl-insuranceCompany');
       hmRememberInsuranceCompany(insuranceCompanyVal);
-      var req = ['fl-firstName','fl-lastName','fl-phone','fl-street','fl-city','fl-state','fl-jobCategory'];
+      var req = ['fl-firstName','fl-lastName','fl-phone','fl-street','fl-city','fl-state','fl-jobCategory','fl-workType','fl-regionState'];
       var missing = req.filter(function (id) { var el = document.getElementById(id); return !el || !String(el.value || '').trim(); });
       if (!insuranceCompanyVal) missing.push('fl-insuranceCompany');
       if (fv('fl-leadSource') === 'Canvasser' && !fv('fl-canvasser')) {
@@ -77819,10 +77857,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
       if (missing.length) { valMsg.style.display = 'block'; return; }
       if (typeof hmResolveRegionForState === 'function') {
-        var configuredRegion = hmResolveRegionForState(fv('fl-state'));
+        var propertyState = String(fv('fl-state') || '').toUpperCase();
+        var routingState = String(fv('fl-regionState') || '').toUpperCase();
+        var configuredRegion = hmResolveRegionForState(routingState || propertyState);
         if (!configuredRegion) { valMsg.textContent = 'This state has not been assigned to a region by the admin.'; valMsg.style.display = 'block'; return; }
-        var regionSelect = document.getElementById('fl-workType');
-        if (regionSelect) regionSelect.value = configuredRegion;
+        if (routingState && propertyState && routingState !== propertyState) { valMsg.textContent = 'The selected Region/State must match the property address state.'; valMsg.style.display = 'block'; return; }
+        if (fv('fl-workType') !== configuredRegion) { valMsg.textContent = 'Select the region assigned to this state in Admin Settings.'; valMsg.style.display = 'block'; return; }
       }
       var splitCommissionEnabled = fc('fl-splitCommissionEnabled');
       var primaryCommissionPercent = Number(fv('fl-primaryCommissionPercent') || 0);
@@ -77904,7 +77944,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         gclid: fv('fl-gclid'),
         street: fv('fl-street'), suite: fv('fl-suite'), city: fv('fl-city'), state: stateVal, zip: fv('fl-zip'), country: fv('fl-country') || 'USA',
         county: fv('fl-county'), lat: fv('fl-lat'), lng: fv('fl-lng'), latitude: fv('fl-lat'), longitude: fv('fl-lng'),
-        jobCategory: fv('fl-jobCategory'), workType: fv('fl-workType'), region: fv('fl-workType'), tradeType: fv('fl-tradeType'),
+        jobCategory: fv('fl-jobCategory'), workType: fv('fl-workType'), region: fv('fl-workType'), regionState: fv('fl-regionState') || stateVal, tradeType: fv('fl-tradeType'),
         leadSource: fv('fl-leadSource') || 'Self Generated',
         canvasserId: fv('fl-leadSource') === 'Canvasser' && canvasserMember ? canvasserMember.id : '',
         canvasserName: fv('fl-leadSource') === 'Canvasser' && canvasserMember ? canvasserMember.name : '',
@@ -82486,6 +82526,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 </script>
+<script src="./region-lead-sync.js?v=20260920-1"></script>
 <script id="hm-company-documents-script">
 (function(){
   var MAX_BYTES=25*1024*1024, docs=[];
