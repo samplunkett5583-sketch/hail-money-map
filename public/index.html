@@ -82241,7 +82241,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   ];
 
   function currentRole() {
-    try { return String(typeof crmGetRole === 'function' ? crmGetrole() : '').trim(); }
+    try { return String(typeof crmGetRole === 'function' ? crmGetRole() : '').trim(); }
     catch (_) { return ''; }
   }
 
