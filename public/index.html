@@ -48930,6 +48930,7 @@ function mapsGoogleReady() {
       placesService: null,
       geocoder: null,
       geocodeTimer: null,
+      bindRetryTimer: null,
       geocodeRequestToken: 0,
       lastGeocodeSignature: '',
       sessionToken: null,
@@ -49391,6 +49392,21 @@ function mapsGoogleReady() {
           crmHideFieldLeadAddressSuggestions();
         }
       });
+    }
+
+    function crmEnsureFieldLeadAddressAutocompleteReady(attempt) {
+      attempt = Number(attempt || 0);
+      clearTimeout(_crmFieldLeadAddressAutocomplete.bindRetryTimer);
+      if (_crmFieldLeadAddressAutocomplete.bound) return true;
+      if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+        initAddressAutocomplete();
+        if (_crmFieldLeadAddressAutocomplete.bound) return true;
+      }
+      if (attempt >= 20) return false;
+      _crmFieldLeadAddressAutocomplete.bindRetryTimer = setTimeout(function () {
+        crmEnsureFieldLeadAddressAutocompleteReady(attempt + 1);
+      }, 250);
+      return false;
     }
 
     function initAddressAutocomplete() {
@@ -77589,6 +77605,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmResetFieldLeadDuplicateChecks();
       crmRestoreFieldLeadDraft();
       crmApplyPendingContactLeadPrefill('fl');
+      crmHideFieldLeadAddressSuggestions();
+      _crmFieldLeadAddressAutocomplete.selectedPlaceId = '';
+      var streetInput = document.getElementById('fl-street');
+      if (streetInput) streetInput.dataset.crmAddressValidated = '';
+      var geocodeHelper = document.getElementById('fl-geocode-helper');
+      if (geocodeHelper) geocodeHelper.textContent = 'Start typing the street address and select a suggestion to auto-fill the location.';
+      crmUpdateFieldLeadGeocodeHelper();
+      crmEnsureFieldLeadAddressAutocompleteReady(0);
     }
 
     function crmCapitalizeFirstLetterOnInput(e) {
