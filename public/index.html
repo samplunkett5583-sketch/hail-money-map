@@ -23140,11 +23140,14 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Status<select id="tpl-status" class="field-input"><option value="active">Active</option><option value="inactive">Inactive</option></select></label>
           </div>
           <label id="tpl-active-default-wrap" style="margin:0 0 12px;display:flex;gap:8px;align-items:center;"><input type="checkbox" id="tpl-active-default" checked /><span>Use as the active default for this region and state</span></label>
-          <div class="tpl-builder-row">
-            <button class="btn" type="button" id="tpl-upload-btn">Upload Document</button>
+          <div class="tpl-builder-row" id="tpl-existing-document-row" style="display:grid;grid-template-columns:minmax(260px,1fr) auto;gap:10px;align-items:end;">
+            <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Use Existing Contingency
+              <select id="tpl-existing-contingency" class="field-input" aria-label="Choose existing contingency"><option value="">Choose an uploaded contingency</option></select>
+            </label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span style="font-size:12px;color:var(--muted,#888);">or</span><button class="btn" type="button" id="tpl-upload-btn">Upload New Document</button></div>
             <input type="file" id="tpl-file-input" accept="image/*,application/pdf" style="display:none;" />
-            <span id="tpl-file-label" style="font-size:12px;color:var(--muted,#888);align-self:center;">No file selected</span>
           </div>
+          <div id="tpl-file-label" style="font-size:12px;color:var(--muted,#888);margin:-4px 0 10px;">No document selected</div>
           <div class="tpl-builder-body">
             <div class="tpl-palette-rail">
               <h3>Field Palette</h3>
@@ -52118,6 +52121,52 @@ function mapsGoogleReady() {
     var tplSelectedFieldKey = null;
     var tplRenderedPages = []; // { wrapper, width, height, offsetTop } per page from last PDF render
 
+    async function refreshExistingContingencyPicker(selectedId) {
+      var select = document.getElementById('tpl-existing-contingency');
+      if (!select) return;
+      select.disabled = true;
+      select.innerHTML = '<option value="">Loading uploaded contingencies...</option>';
+      try {
+        if (typeof window.hmListCompanyDocuments !== 'function') throw new Error('Company documents are still loading.');
+        var items = await window.hmListCompanyDocuments('contingencies');
+        if (!items.length) {
+          select.innerHTML = '<option value="">No uploaded contingencies found</option>';
+          return;
+        }
+        select.innerHTML = '<option value="">Choose an uploaded contingency</option>' + items.map(function (d) {
+          var name = String(d.name || 'Contingency').replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+          return '<option value="' + String(d.id || '') + '">' + name + '</option>';
+        }).join('');
+        if (selectedId) select.value = String(selectedId);
+      } catch (err) {
+        select.innerHTML = '<option value="">Could not load uploaded contingencies</option>';
+        console.error('[TPL-EXISTING] list failed', err);
+      } finally { select.disabled = false; }
+    }
+
+    async function loadExistingContingencyIntoEditor(id) {
+      if (!id || typeof window.hmLoadCompanyDocumentForTemplate !== 'function') return;
+      var select = document.getElementById('tpl-existing-contingency');
+      var label = document.getElementById('tpl-file-label');
+      if (select) select.disabled = true;
+      if (label) label.textContent = 'Loading selected contingency...';
+      try {
+        var file = await window.hmLoadCompanyDocumentForTemplate(id);
+        currentTplFileName = file.name || 'Contingency';
+        currentTplFileType = file.contentType || 'application/pdf';
+        currentTplFileDataUrl = file.dataUrl;
+        currentTplFields = [];
+        tplRenderedPages = [];
+        document.getElementById('tpl-doc-type').value = 'contingency';
+        if (!document.getElementById('tpl-doc-name').value.trim()) document.getElementById('tpl-doc-name').value = String(file.name || 'Contingency').replace(/\.[^.]+$/, '');
+        if (label) label.textContent = 'Using existing contingency: ' + currentTplFileName;
+        renderTplPreview();
+      } catch (err) {
+        if (label) label.textContent = 'Could not load that contingency. Try again.';
+        console.error('[TPL-EXISTING] load failed', err);
+      } finally { if (select) select.disabled = false; }
+    }
+
     function openTemplateBuilder() {
       currentTplFields = [];
       currentTplFileDataUrl = null;
@@ -52127,8 +52176,9 @@ function mapsGoogleReady() {
       tplRenderedPages = [];
       document.getElementById('tpl-doc-name').value = '';
       document.getElementById('tpl-save-btn').textContent = 'Save Template';
-      document.getElementById('tpl-file-label').textContent = 'No file selected';
+      document.getElementById('tpl-file-label').textContent = 'No document selected';
       if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting('', '');
+      refreshExistingContingencyPicker('');
       renderTemplateFieldPalette();
       renderTplPreview();
       renderSavedTemplates();
@@ -52620,6 +52670,11 @@ function mapsGoogleReady() {
       });
     })();
 
+    document.getElementById('tpl-existing-contingency').addEventListener('change', function () {
+      var id = String(this.value || '');
+      if (id) loadExistingContingencyIntoEditor(id);
+    });
+
     // File upload
     document.getElementById('tpl-upload-btn').addEventListener('click', function () {
       document.getElementById('tpl-file-input').click();
@@ -52630,6 +52685,8 @@ function mapsGoogleReady() {
       console.log('[TPL-UPLOAD] selected file:', file.name, 'type:', file.type, 'size:', file.size);
       currentTplFileName = file.name;
       currentTplFileType = file.type || null;
+      var existingPick = document.getElementById('tpl-existing-contingency');
+      if (existingPick) existingPick.value = '';
       document.getElementById('tpl-file-label').textContent = file.name + (file.type ? ' (' + file.type + ')' : '');
       var reader = new FileReader();
       reader.onload = function (e) {
@@ -82380,6 +82437,8 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   function choose(cat){if(!canManage())return;var i=document.getElementById('crm-company-doc-file-input');if(!i)return;i.setAttribute('data-category',String(cat||'other'));i.value='';i.click()}
   async function upload(input){var file=input&&input.files&&input.files[0],cat=String(input&&input.getAttribute('data-category')||'other'),path='';if(!file)return;try{if(file.size>MAX_BYTES)throw new Error('Documents must be 25 MB or smaller.');if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can upload company documents.');var id=await orgId();if(!id)throw new Error('Company access is not ready yet.');var c=client();if(!c)throw new Error('Document storage is not available.');var docId='company_doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);path='company-documents/'+safe(id)+'/'+safe(cat)+'/'+safe(docId)+'/'+safe(file.name);status('Uploading '+file.name+'…');var up=await c.storage.from('hail-money-files').upload(path,file,{upsert:false,contentType:file.type||'application/octet-stream'});if(up.error)throw up.error;var r=ref(id),snap=await r.get(),data=snap.exists?(snap.data()||{}):{},arr=Array.isArray(data.documents)?data.documents.slice():[],u=window.auth&&window.auth.currentUser;arr.push({id:docId,category:cat,name:file.name,size:Number(file.size||0),contentType:file.type||'application/octet-stream',storagePath:path,uploadedAt:new Date().toISOString(),uploadedBy:(typeof crmGetCurrentUserName==='function'&&crmGetCurrentUserName())||(u&&u.email)||'Admin',uploadedByUid:(u&&u.uid)||''});await r.set({documents:arr,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});docs=arr;render();status(file.name+' uploaded successfully.')}catch(e){if(path){try{var cc=client();if(cc)await cc.storage.from('hail-money-files').remove([path])}catch(_){}}status(e&&e.message?e.message:'Document upload failed.',true)}finally{if(input)input.value=''}}
   async function signedUrl(d){var c=client();if(!c||!d||!d.storagePath)return'';var r=await c.storage.from('hail-money-files').createSignedUrl(d.storagePath,3600);if(r.error)throw r.error;return r.data&&r.data.signedUrl?r.data.signedUrl:''}
+  window.hmListCompanyDocuments=async function(category){await load();return docs.filter(function(d){return !category||String(d&&d.category||'')===String(category)}).map(function(d){return{id:d.id,name:d.name,category:d.category,contentType:d.contentType,size:d.size,uploadedAt:d.uploadedAt}})};
+  window.hmLoadCompanyDocumentForTemplate=async function(id){var d=find(id);if(!d){await load();d=find(id)}if(!d)throw new Error('That uploaded contingency could not be found.');var type=String(d.contentType||'').toLowerCase();if(type&&type!=='application/pdf'&&type.indexOf('image/')!==0)throw new Error('Fillable fields can be added to PDF or image contingencies.');var c=client();if(!c||!d.storagePath)throw new Error('Document storage is not available.');var r=await c.storage.from('hail-money-files').download(d.storagePath);if(r.error)throw r.error;var blob=r.data;if(!blob)throw new Error('The uploaded contingency could not be downloaded.');var dataUrl=await new Promise(function(resolve,reject){var reader=new FileReader();reader.onload=function(){resolve(reader.result)};reader.onerror=function(){reject(reader.error||new Error('Could not read the uploaded contingency.'))};reader.readAsDataURL(blob)});return{id:d.id,name:d.name||'Contingency',category:d.category||'contingencies',contentType:d.contentType||blob.type||'application/pdf',size:d.size||blob.size||0,dataUrl:dataUrl}};
   async function openDoc(id){var d=find(id);if(!d)return;var pop=window.open('about:blank','_blank');try{status('Opening '+(d.name||'document')+'…');var url=await signedUrl(d);if(!url)throw new Error('This document could not be opened.');if(pop)pop.location.href=url;else window.location.href=url;status('Company documents are ready.')}catch(e){if(pop)pop.close();status(e&&e.message?e.message:'This document could not be opened.',true)}}
   async function deleteDoc(id){var d=find(id);if(!d||!window.confirm('Delete "'+String(d.name||'this document')+'" for the entire company?'))return;try{if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can delete company documents.');var oid=await orgId();if(!oid)throw new Error('Company access is not ready yet.');status('Deleting '+(d.name||'document')+'…');var c=client();if(c&&d.storagePath){var rem=await c.storage.from('hail-money-files').remove([d.storagePath]);if(rem.error)throw rem.error}var r=ref(oid),snap=await r.get(),data=snap.exists?(snap.data()||{}):{},arr=(Array.isArray(data.documents)?data.documents:[]).filter(function(x){return String(x&&x.id||'')!==String(id)});await r.set({documents:arr,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});docs=arr;render();status('Document deleted.')}catch(e){status(e&&e.message?e.message:'Document could not be deleted.',true)}}
   function bind(){document.querySelectorAll('[data-company-doc-upload]').forEach(function(b){if(b.dataset.companyDocBound)return;b.dataset.companyDocBound='1';b.addEventListener('click',function(){choose(b.getAttribute('data-company-doc-upload'))})});var i=document.getElementById('crm-company-doc-file-input');if(i&&!i.dataset.companyDocBound){i.dataset.companyDocBound='1';i.addEventListener('change',function(){upload(i)})}render();var page=document.getElementById('page-company-docs');if(page){var obs=new MutationObserver(function(){if(page.classList.contains('active'))load()});obs.observe(page,{attributes:true,attributeFilter:['class']});if(page.classList.contains('active'))load()}}
