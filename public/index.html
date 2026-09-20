@@ -23131,9 +23131,9 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <input type="text" id="tpl-doc-name" class="field-input" placeholder="Template name, e.g. Contingency Agreement v2" />
           </div>
           <div class="tpl-builder-row" id="tpl-routing-row" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;">
-            <select id="tpl-doc-type" class="field-input" aria-label="Document type"><option value="contingency">Contingency</option><option value="contract">Contract</option><option value="other">Other</option></select>
-            <select id="tpl-region" class="field-input" aria-label="Region"><option value="">Select region</option></select>
-            <select id="tpl-state" class="field-input" aria-label="State"><option value="">Select state</option></select>
+            <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Document Type<select id="tpl-doc-type" class="field-input" aria-label="Document type"><option value="contingency">Contingency</option><option value="contract">Contract</option><option value="other">Other</option></select></label>
+            <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Region *<select id="tpl-region" class="field-input" aria-label="Region" required><option value="">Select region</option></select></label>
+            <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">State *<select id="tpl-state" class="field-input" aria-label="State" required disabled><option value="">Select a region first</option></select></label>
           </div>
           <div class="tpl-builder-row" id="tpl-versioning-row" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
             <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Effective date<input type="date" id="tpl-effective-date" class="field-input" /></label>
@@ -52126,6 +52126,7 @@ function mapsGoogleReady() {
       tplSelectedFieldKey = null;
       tplRenderedPages = [];
       document.getElementById('tpl-doc-name').value = '';
+      document.getElementById('tpl-save-btn').textContent = 'Save Template';
       document.getElementById('tpl-file-label').textContent = 'No file selected';
       if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting('', '');
       renderTemplateFieldPalette();
@@ -52692,21 +52693,17 @@ function mapsGoogleReady() {
       var sourceTpl = _editingTemplateSourceId ? savedFormTemplates.find(function (item) { return String(item && item.id || '') === String(_editingTemplateSourceId); }) : null;
       tpl.version = sourceTpl ? Number(sourceTpl.version || 1) + 1 : 1;
       tpl.previousTemplateId = sourceTpl ? String(sourceTpl.id || '') : '';
-      if (sourceTpl) {
-        sourceTpl.status = 'inactive';
-        sourceTpl.activeDefault = false;
-        sourceTpl.supersededAt = new Date().toISOString();
-      }
+      // Editing always creates a separate reusable copy. Never modify or deactivate the source template.
       if (tpl.activeDefault && tpl.region && tpl.state) savedFormTemplates.forEach(function (existing) {
         if (String(existing.documentType || 'contingency') === tpl.documentType && String(existing.region || '') === tpl.region && String(existing.state || '').toUpperCase() === tpl.state) {
           existing.activeDefault = false;
-          if (existing !== sourceTpl) existing.status = 'inactive';
         }
       });
       savedFormTemplates.push(tpl);
       _editingTemplateSourceId = '';
       localStorage.setItem('formTemplates', JSON.stringify(savedFormTemplates));
-      alert('Template "' + name + '" saved.');
+      alert('Template "' + name + '" saved as a new reusable copy.');
+      document.getElementById('tpl-save-btn').textContent = 'Save Template';
       // Reset
       currentTplFields = [];
       currentTplFileDataUrl = null;
@@ -52767,6 +52764,7 @@ function mapsGoogleReady() {
       document.getElementById('tpl-effective-date').value = tpl.effectiveDate || '';
       document.getElementById('tpl-status').value = tpl.status || (tpl.activeDefault === false ? 'inactive' : 'active');
       document.getElementById('tpl-active-default').checked = tpl.activeDefault !== false;
+      document.getElementById('tpl-save-btn').textContent = 'Save as New Copy';
       _editingTemplateSourceId = String(tpl.id || '');
       currentTplFileName = tpl.fileName;
       currentTplFileType = tpl.fileType || null;
@@ -82279,13 +82277,13 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   window.hmResolveRegionForState=resolve;
   window.hmFindTemplateForLead=function(lead,type){var state=String(lead&&lead.state||'').trim().toUpperCase(),region=String(lead&&lead.region||resolve(state)||'').trim(),templates=window.savedFormTemplates||savedFormTemplates||[],today=new Date().toISOString().slice(0,10);var matches=templates.map(function(t,i){return{t:t,i:i}}).filter(function(x){var effective=!x.t.effectiveDate||String(x.t.effectiveDate)<=today;return String(x.t.documentType||'contingency')===String(type||'contingency')&&String(x.t.region||'')===region&&String(x.t.state||'').toUpperCase()===state&&String(x.t.status||'active')==='active'&&effective});var active=matches.filter(function(x){return x.t.activeDefault===true}).sort(function(a,b){return String(b.t.effectiveDate||'').localeCompare(String(a.t.effectiveDate||''))||Number(b.t.version||1)-Number(a.t.version||1)})[0];return active?active.i:-1};
   function stateOptions(region,selected){var row=get().find(function(r){return r.name===region}),allowed=row?(row.states||[]):[];return '<option value="">Select state</option>'+STATES.filter(function(s){return allowed.indexOf(s[0])!==-1}).map(function(s){return'<option value="'+s[0]+'"'+(s[0]===selected?' selected':'')+'>'+s[0]+' – '+s[1]+'</option>'}).join('')}
-  function populate(region,state){var rs=document.getElementById('tpl-region'),ss=document.getElementById('tpl-state');if(!rs||!ss)return;var rows=get();rs.innerHTML='<option value="">Select region</option>'+rows.map(function(r){return'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>'}).join('');rs.value=region||'';ss.innerHTML=stateOptions(rs.value,String(state||'').toUpperCase());ss.value=String(state||'').toUpperCase()}
+  function populate(region,state){var rs=document.getElementById('tpl-region'),ss=document.getElementById('tpl-state');if(!rs||!ss)return;var rows=get();rs.innerHTML='<option value="">Select region</option>'+rows.map(function(r){return'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>'}).join('');rs.value=region||'';if(!rs.value){ss.innerHTML='<option value="">Select a region first</option>';ss.value='';ss.disabled=true;return}ss.disabled=false;ss.innerHTML=stateOptions(rs.value,String(state||'').toUpperCase());ss.value=String(state||'').toUpperCase()}
   window.hmPopulateTemplateRouting=populate;
   function render(){var host=document.getElementById('settings-regions-list');if(!host)return;var readOnly=String(typeof crmGetRole==='function'?crmGetRole():'')==='Manager';host.innerHTML=get().map(function(r,idx){return'<div class="settings-row" data-region-row="'+idx+'" style="display:block;"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;"><input class="field-input" data-region-name value="'+esc(r.name)+'" aria-label="Region name" style="max-width:220px;"'+(readOnly?' disabled':'')+'>'+(!readOnly?'<button class="btn" type="button" data-region-remove="'+idx+'">Remove</button>':'<span class="settings-tag muted">Read only</span>')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:6px;">'+STATES.map(function(s){return'<label style="display:flex;gap:6px;align-items:center;font-size:12px;"><input type="checkbox" data-region-state="'+s[0]+'"'+((r.states||[]).indexOf(s[0])!==-1?' checked':'')+(readOnly?' disabled':'')+'> '+s[0]+' – '+s[1]+'</label>'}).join('')+'</div></div>'}).join('');var add=document.getElementById('settings-region-add'),saveBtn=document.getElementById('settings-regions-save');if(add)add.style.display=readOnly?'none':'';if(saveBtn)saveBtn.style.display=readOnly?'none':'';}
   window.hmRenderRegionSettings=render;
   function collect(){var used={},rows=[];document.querySelectorAll('[data-region-row]').forEach(function(card,idx){var name=String((card.querySelector('[data-region-name]')||{}).value||'').trim()||('Region '+(idx+1)),states=[];card.querySelectorAll('[data-region-state]:checked').forEach(function(cb){var st=cb.getAttribute('data-region-state');if(used[st])throw new Error(st+' is already assigned to '+used[st]+'.');used[st]=name;states.push(st)});rows.push({id:'region_'+(idx+1),name:name,states:states})});return rows}
   function syncLead(){var select=document.getElementById('fl-workType'),state=document.getElementById('fl-state');if(select){var current=select.value;select.innerHTML='<option value="" disabled>Select Region</option>'+get().map(function(r){return'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>'}).join('');var inferred=resolve(state&&state.value);select.value=inferred||current||''}}
-  document.addEventListener('change',function(e){if(e.target&&e.target.id==='tpl-region'){var ss=document.getElementById('tpl-state');if(ss)ss.innerHTML=stateOptions(e.target.value,'')}if(e.target&&e.target.id==='fl-state')syncLead()});
+  document.addEventListener('change',function(e){if(e.target&&e.target.id==='tpl-region'){var ss=document.getElementById('tpl-state');if(ss){if(!e.target.value){ss.innerHTML='<option value="">Select a region first</option>';ss.disabled=true}else{ss.disabled=false;ss.innerHTML=stateOptions(e.target.value,'')}}}if(e.target&&e.target.id==='fl-state')syncLead()});
   document.addEventListener('click',function(e){var readOnly=String(typeof crmGetRole==='function'?crmGetRole():'')==='Manager';var add=e.target.closest&&e.target.closest('#settings-region-add');if(add){if(readOnly)return;var rows=get();rows.push({id:'region_'+(rows.length+1),name:'Region '+(rows.length+1),states:[]});localStorage.setItem(KEY,JSON.stringify(rows));render();return}var rem=e.target.closest&&e.target.closest('[data-region-remove]');if(rem){if(readOnly)return;var rows2=get();rows2.splice(Number(rem.getAttribute('data-region-remove')),1);localStorage.setItem(KEY,JSON.stringify(rows2));render();return}var saveBtn=e.target.closest&&e.target.closest('#settings-regions-save');if(saveBtn){if(readOnly)return;var msg=document.getElementById('settings-regions-msg');try{save(collect());msg.textContent='Regions saved.';msg.style.display='block'}catch(err){msg.textContent=err.message;msg.style.display='block'}return}var editor=e.target.closest&&e.target.closest('#crm-company-doc-template-editor');if(editor&&typeof openTemplateBuilder==='function')openTemplateBuilder()});
   function bind(){populate('','');syncLead();var r=String(typeof crmGetRole==='function'?crmGetRole():'');var editor=document.getElementById('crm-company-doc-template-editor');if(editor)editor.style.display=['Owner','Admin','Manager'].indexOf(r)!==-1?'inline-flex':'none'}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
