@@ -36,18 +36,6 @@ jobs:
           node --check functions/docusign.js
           node --check functions/entry.js
           npm ci --prefix functions
-      - name: Grant runtime access to DocuSign secrets
-        shell: bash
-        run: |
-          set -euo pipefail
-          RUNTIME_SA='hailmoneymap@appspot.gserviceaccount.com'
-          for SECRET in DOCUSIGN_CLIENT_ID DOCUSIGN_CLIENT_SECRET DOCUSIGN_TOKEN_KEY; do
-            gcloud secrets add-iam-policy-binding "$SECRET" \
-              --project=hailmoneymap \
-              --member="serviceAccount:${RUNTIME_SA}" \
-              --role='roles/secretmanager.secretAccessor' \
-              --quiet >/dev/null
-          done
       - name: Deploy DocuSign demo functions
         shell: bash
         run: |
