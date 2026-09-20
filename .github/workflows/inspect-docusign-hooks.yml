@@ -1,0 +1,49 @@
+name: Inspect DocuSign UI hooks
+
+on:
+  push:
+    branches:
+      - docusign-integration
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docusign-integration
+          fetch-depth: 0
+      - name: Inspect current document and signature hooks
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('public/index.html')
+          lines = p.read_text(encoding='utf-8').splitlines()
+          needles = ['open-docusign', 'Forms & Signatures', 'Forms &amp; Signatures', 'contingency', 'contract', 'open-saved-docs']
+          found = []
+          seen = set()
+          for i, line in enumerate(lines):
+              if any(n.lower() in line.lower() for n in needles):
+                  lo = max(0, i - 4)
+                  hi = min(len(lines), i + 8)
+                  key = (lo, hi)
+                  if key in seen:
+                      continue
+                  seen.add(key)
+                  found.append(f'--- lines {lo+1}-{hi} ---')
+                  for j in range(lo, hi):
+                      found.append(f'{j+1}: {lines[j]}')
+                  found.append('')
+          out = Path('DOCUSIGN_UI_HOOKS_INSPECTION.txt')
+          out.write_text('\n'.join(found) if found else 'No matching current hooks found.\n', encoding='utf-8')
+      - name: Save inspection
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add DOCUSIGN_UI_HOOKS_INSPECTION.txt
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Record current DocuSign UI hooks"
+          git push origin HEAD:docusign-integration
