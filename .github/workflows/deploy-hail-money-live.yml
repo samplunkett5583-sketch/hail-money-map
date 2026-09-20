@@ -61,6 +61,8 @@ jobs:
         run: node scripts/verify-company-documents-nav.cjs
       - name: Verify Company Documents workspace access
         run: node scripts/verify-company-documents-access.cjs
+      - name: Verify mobile page sync
+        run: node scripts/verify-mobile-page-sync.cjs
       - name: Verify approved Lead Detail contract
         run: node scripts/verify-approved-lead-detail.cjs
       - uses: FirebaseExtended/action-hosting-deploy@v0
