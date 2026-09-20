@@ -20,6 +20,15 @@ jobs:
           ref: pr-43-storm-panel-style
       - name: Apply approved patch
         run: python tmp/apply-menu-company-financials.py
+      - name: Repair transport typo from temporary patch payload
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('public/index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('var"n = Number(item.netAmount || 0);', 'var n = Number(item.netAmount || 0);')
+          p.write_text(s, encoding='utf-8')
+          PY
       - name: Validate changed file
         run: |
           git diff --check
