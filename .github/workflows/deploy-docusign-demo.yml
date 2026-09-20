@@ -1,0 +1,95 @@
+name: Deploy DocuSign Demo Integration
+
+on:
+  push:
+    branches:
+      - docusign-integration
+    paths:
+      - 'DOCUSIGN_DEPLOY_TRIGGER.txt'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hail-money-docusign-demo
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docusign-integration
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAILMONEYMAP }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: hailmoneymap
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate DocuSign code
+        run: |
+          node --check functions/docusign.js
+          node --check functions/entry.js
+          npm ci --prefix functions
+      - name: Grant runtime access to DocuSign secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUNTIME_SA='hailmoneymap@appspot.gserviceaccount.com'
+          for SECRET in DOCUSIGN_CLIENT_ID DOCUSIGN_CLIENT_SECRET DOCUSIGN_TOKEN_KEY; do
+            gcloud secrets add-iam-policy-binding "$SECRET" \
+              --project=hailmoneymap \
+              --member="serviceAccount:${RUNTIME_SA}" \
+              --role='roles/secretmanager.secretAccessor' \
+              --quiet >/dev/null
+          done
+      - name: Deploy DocuSign demo functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUNTIME_SA='hailmoneymap@appspot.gserviceaccount.com'
+          FUNCTIONS=(
+            docusignConnect
+            docusignOAuthCallback
+            docusignStatus
+            docusignDisconnect
+            docusignSendEnvelope
+            docusignEnvelopeStatus
+            docusignRecipientView
+          )
+          for FN in "${FUNCTIONS[@]}"; do
+            echo "Deploying ${FN}"
+            gcloud functions deploy "$FN" \
+              --gen2 \
+              --project=hailmoneymap \
+              --region=us-central1 \
+              --runtime=nodejs24 \
+              --source=functions \
+              --entry-point="$FN" \
+              --trigger-http \
+              --allow-unauthenticated \
+              --service-account="$RUNTIME_SA" \
+              --set-env-vars='DOCUSIGN_ENVIRONMENT=demo' \
+              --set-secrets='DOCUSIGN_CLIENT_ID=DOCUSIGN_CLIENT_ID:latest,DOCUSIGN_CLIENT_SECRET=DOCUSIGN_CLIENT_SECRET:latest,DOCUSIGN_TOKEN_KEY=DOCUSIGN_TOKEN_KEY:latest' \
+              --impersonate-service-account="$RUNTIME_SA" \
+              --quiet
+          done
+      - name: Verify deployed endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          for FN in docusignConnect docusignStatus docusignDisconnect docusignSendEnvelope docusignEnvelopeStatus docusignRecipientView; do
+            URL="https://us-central1-hailmoneymap.cloudfunctions.net/${FN}"
+            CODE=$(curl -sS -o /tmp/body.txt -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{}' "$URL")
+            echo "${FN}: HTTP ${CODE}"
+            test "$CODE" = '401'
+          done
+          URL='https://us-central1-hailmoneymap.cloudfunctions.net/docusignOAuthCallback'
+          CODE=$(curl -sS -o /tmp/body.txt -w '%{http_code}' "$URL")
+          echo "docusignOAuthCallback invalid-state response: HTTP ${CODE}"
+          test "$CODE" = '302'
