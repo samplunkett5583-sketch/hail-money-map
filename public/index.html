@@ -50115,6 +50115,7 @@ function mapsGoogleReady() {
         selectedRoofType: '',
         additionalSlopes: [],
         currentAdditionalSlopeIndex: -1,
+        slopeDecisionMode: false,
         reportLayout: 4,
         reportApproved: false,
         photoReport: null,
@@ -50598,6 +50599,7 @@ function mapsGoogleReady() {
       _crmGroundInspectionState = JSON.parse(JSON.stringify(pending));
       _crmGroundInspectionState.selectedRoofType = String(pending.selectedRoofType || pending.roofType || '').trim();
       _crmGroundInspectionState.currentAdditionalSlopeIndex = -1;
+      _crmGroundInspectionState.slopeDecisionMode = pending.slopeDecisionMode === true;
       _crmGroundInspectionState.reportLayout = [1, 2, 4, 6, 8].indexOf(Number(pending.reportLayout)) !== -1 ? Number(pending.reportLayout) : 4;
       return _crmGroundInspectionState;
     }
@@ -50791,6 +50793,7 @@ function mapsGoogleReady() {
       var isBackSlope = crmIsGroundInspectionBackSlopeStep(step);
       var isAdditionalSlopeMode = state.currentAdditionalSlopeIndex >= 0;
       var isSlope = isBackSlope || isAdditionalSlopeMode;
+      var isSlopeDecision = isSlope && state.slopeDecisionMode === true;
       var slopeActionsEl = document.getElementById('crm-ground-inspection-slope-actions');
       var slopeNameRowEl = document.getElementById('crm-ground-inspection-slope-name-row');
       var stepPage = document.getElementById('page-start-inspection-step');
@@ -50809,18 +50812,20 @@ function mapsGoogleReady() {
       var nextBtn = document.getElementById('crm-ground-inspection-next-btn');
 
       if (stepPage) stepPage.classList.toggle('crm-ground-inspection-elevation-mode', isElevation);
-      if (titleEl) titleEl.textContent = isAdditionalSlopeMode
-        ? ((state.additionalSlopes[state.currentAdditionalSlopeIndex] || {}).name || 'Additional Slope')
-        : step.title;
+      if (titleEl) titleEl.textContent = isSlopeDecision
+        ? 'Slopes'
+        : (isAdditionalSlopeMode
+          ? ((state.additionalSlopes[state.currentAdditionalSlopeIndex] || {}).name || 'Additional Slope')
+          : step.title);
       if (standardUploadEl) standardUploadEl.hidden = isElevation || isRoofSelection || isPenetrations;
       if (actionRowEl) actionRowEl.hidden = isElevation || isRoofSelection || isPenetrations;
-      if (elevationUploadEl) elevationUploadEl.hidden = !isElevation;
+      if (elevationUploadEl) elevationUploadEl.hidden = !isElevation || isSlopeDecision;
       if (roofPanelEl) roofPanelEl.hidden = !isRoofSelection;
       if (penetrationsPanelEl) {
         penetrationsPanelEl.hidden = !isPenetrations;
         if (isPenetrations) crmRenderGroundInspectionPenetrationsPanel();
       }
-      if (slopeActionsEl) slopeActionsEl.hidden = !isSlope;
+      if (slopeActionsEl) slopeActionsEl.hidden = !isSlopeDecision;
       if (slopeNameRowEl && isSlope) slopeNameRowEl.hidden = true;
       if (roofGridEl) {
         roofGridEl.innerHTML = isRoofSelection
@@ -50875,8 +50880,8 @@ function mapsGoogleReady() {
           sectionKey: category,
           sectionLabel: category,
           photos: files,
-          continueMode: (crmIsGroundInspectionBackSlopeStep(step) || state.currentAdditionalSlopeIndex >= 0) ? 'return' : 'advance',
-          continueLabel: (crmIsGroundInspectionBackSlopeStep(step) || state.currentAdditionalSlopeIndex >= 0) ? 'Back to Slopes' : 'Continue'
+          continueMode: (crmIsGroundInspectionBackSlopeStep(step) || state.currentAdditionalSlopeIndex >= 0) ? 'slope-decision' : 'advance',
+          continueLabel: 'Continue'
         });
       });
     }
@@ -50895,6 +50900,7 @@ function mapsGoogleReady() {
       var nextStep = crmGetGroundInspectionStep(nextIndex);
       var stepPage = document.getElementById('page-start-inspection-step');
       state.currentAdditionalSlopeIndex = -1;
+      state.slopeDecisionMode = false;
       state.currentStepIndex = nextIndex;
       crmSavePendingInspectionRecord(state, 'in_progress');
       if (stepPage) stepPage.classList.toggle('crm-ground-inspection-elevation-mode', crmIsGroundInspectionElevationStep(nextStep));
@@ -51019,6 +51025,7 @@ function mapsGoogleReady() {
       var state = crmGetGroundInspectionState();
       state.additionalSlopes.push({ name: name, photos: [] });
       state.currentAdditionalSlopeIndex = state.additionalSlopes.length - 1;
+      state.slopeDecisionMode = false;
       crmSavePendingInspectionRecord(state, 'in_progress');
       crmRenderGroundInspectionStep();
     });
@@ -51026,6 +51033,8 @@ function mapsGoogleReady() {
     document.getElementById('crm-ground-inspection-complete-slopes-btn').addEventListener('click', function () {
       var state = crmGetGroundInspectionState();
       state.currentAdditionalSlopeIndex = -1;
+      state.slopeDecisionMode = false;
+      crmSavePendingInspectionRecord(state, 'in_progress');
       crmAdvanceGroundInspectionStep();
     });
 
@@ -51164,7 +51173,15 @@ function mapsGoogleReady() {
 
     document.getElementById('crm-inspection-review-continue-btn').addEventListener('click', function () {
       var context = _crmInspectionPhotoReviewContext;
-      crmSavePendingInspectionRecord(crmGetGroundInspectionState(), 'in_progress');
+      var state = crmGetGroundInspectionState();
+      if (context && context.continueMode === 'slope-decision') {
+        state.slopeDecisionMode = true;
+        crmSavePendingInspectionRecord(state, 'in_progress');
+        showPage('page-start-inspection-step');
+        crmRenderGroundInspectionStep();
+        return;
+      }
+      crmSavePendingInspectionRecord(state, 'in_progress');
       if (context && context.continueMode === 'advance') crmAdvanceGroundInspectionStep();
       else {
         showPage('page-start-inspection-step');
@@ -57365,6 +57382,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         roofType: String(state.selectedRoofType || '').trim(),
         selectedRoofType: String(state.selectedRoofType || '').trim(),
         currentStepIndex: Number(state.currentStepIndex || 0),
+        slopeDecisionMode: state.slopeDecisionMode === true,
         photosByStep: photosByStep,
         inspectionPhotos: allPhotos,
         elevationPhotos: ['Front Elevation', 'Right Elevation', 'Rear Elevation', 'Left Elevation'].reduce(function (photos, stepName) {
