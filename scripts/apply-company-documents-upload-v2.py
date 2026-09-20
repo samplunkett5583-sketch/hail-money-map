@@ -117,7 +117,13 @@ script = r'''<script id="hm-company-documents-script">
 })();
 </script>'''
 
-if 'id="hm-company-documents-script"' not in text:
+if 'id="hm-company-documents-script"' in text:
+    start = text.find('<script id="hm-company-documents-script">')
+    end = text.find('</script>', start)
+    if start < 0 or end < 0:
+        raise SystemExit('Existing Company Documents script block could not be located')
+    text = text[:start] + script + text[end + len('</script>'):]
+else:
     if '</body>' not in text:
         raise SystemExit('Body closing tag not found')
     text = text.replace('</body>', script + '\n</body>', 1)
