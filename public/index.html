@@ -14511,6 +14511,13 @@
       justify-content: flex-start;
       margin: 0 0 16px;
     }
+    #page-start-inspection-step .crm-inspection-step-top-actions {
+      justify-content: space-between;
+      align-items: center;
+    }
+    #page-start-inspection-step #crm-ground-inspection-next-top-btn {
+      margin-left: auto;
+    }
     @media (max-width: 960px) {
       #page-start-inspection-workflow .crm-dashboard-mini-body,
       #page-start-inspection-step .crm-dashboard-mini-body {
@@ -14984,6 +14991,8 @@
       padding: 20px;
       margin-bottom: 18px;
     }
+    .crm-inspection-review-head { position: relative; padding-right: 150px; }
+    .crm-inspection-review-top-continue { position: absolute; top: 20px; right: 20px; }
     .crm-inspection-review-title,
     .crm-inspection-report-title {
       margin: 0;
@@ -22909,8 +22918,9 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           <div class="crm-dashboard-mini-body">
             <div class="crm-wrap crm-start-inspection-shell">
               <div class="crm-start-inspection-card">
-                <div class="page-actions">
+                <div class="page-actions crm-inspection-step-top-actions">
                   <button class="btn" type="button" data-inspection-shell-back>Back</button>
+                  <button class="btn btn-primary" type="button" id="crm-ground-inspection-next-top-btn">Continue</button>
                 </div>
                 <h1 class="crm-start-inspection-step-title" id="crm-ground-inspection-step-title">Front Elevation</h1>
                 <div class="crm-start-inspection-elevation-upload" id="crm-ground-inspection-elevation-upload" hidden>
@@ -23003,6 +23013,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           <div class="crm-inspection-review-head">
             <h1 class="crm-inspection-review-title">Review Photos</h1>
             <p class="crm-inspection-review-subtitle" id="crm-inspection-review-section"></p>
+            <button class="btn btn-primary crm-inspection-review-top-continue" type="button" id="crm-inspection-review-continue-top-btn">Continue</button>
             <div class="crm-inspection-review-actions">
               <button class="btn btn-primary" type="button" id="crm-inspection-review-camera-btn">Take Picture</button>
               <button class="btn" type="button" id="crm-inspection-review-device-btn">Select From Device</button>
@@ -50308,11 +50319,13 @@ function mapsGoogleReady() {
       var grid = document.getElementById('crm-inspection-review-grid');
       var sectionEl = document.getElementById('crm-inspection-review-section');
       var continueBtn = document.getElementById('crm-inspection-review-continue-btn');
+      var continueTopBtn = document.getElementById('crm-inspection-review-continue-top-btn');
       var voiceMsg = document.getElementById('crm-inspection-voice-message');
       if (!context || !grid) return;
       crmClearInspectionPreviewObjectUrls();
       if (sectionEl) sectionEl.textContent = context.sectionLabel + ' — ' + context.photos.length + ' photo' + (context.photos.length === 1 ? '' : 's');
       if (continueBtn) continueBtn.textContent = context.continueLabel || 'Continue';
+      if (continueTopBtn) continueTopBtn.textContent = context.continueLabel || 'Continue';
       if (voiceMsg) voiceMsg.textContent = '';
       if (!context.photos.length) {
         grid.innerHTML = '<div class="crm-inspection-empty">No photos are attached to this inspection section yet. Add a photo to continue reviewing.</div>';
@@ -50810,6 +50823,7 @@ function mapsGoogleReady() {
       var uploadShell = document.getElementById('crm-ground-inspection-upload-shell');
       var prevBtn = document.getElementById('crm-ground-inspection-prev-btn');
       var nextBtn = document.getElementById('crm-ground-inspection-next-btn');
+      var nextTopBtn = document.getElementById('crm-ground-inspection-next-top-btn');
 
       if (stepPage) stepPage.classList.toggle('crm-ground-inspection-elevation-mode', isElevation);
       if (titleEl) titleEl.textContent = isSlopeDecision
@@ -50858,10 +50872,11 @@ function mapsGoogleReady() {
       var otherRowEl = document.getElementById('crm-ground-inspection-other-row');
       if (otherRowEl) otherRowEl.hidden = !(isRoofSelection && state.selectedRoofType === '__other__');
       if (prevBtn) prevBtn.hidden = state.currentStepIndex === 0;
-      if (nextBtn) {
-        nextBtn.hidden = isRoofSelection || isSlope;
-        nextBtn.textContent = (state.currentStepIndex >= CRM_GROUND_INSPECTION_STEPS.length - 1) ? 'Complete Inspection' : 'Next';
-      }
+      [nextBtn, nextTopBtn].forEach(function (btn) {
+        if (!btn) return;
+        btn.hidden = isRoofSelection || isSlope;
+        btn.textContent = 'Continue';
+      });
       if (typeof renderTopBrand === 'function') renderTopBrand();
     }
 
@@ -50979,6 +50994,9 @@ function mapsGoogleReady() {
     });
 
     document.getElementById('crm-ground-inspection-next-btn').addEventListener('click', function () {
+      crmAdvanceGroundInspectionStep();
+    });
+    document.getElementById('crm-ground-inspection-next-top-btn').addEventListener('click', function () {
       crmAdvanceGroundInspectionStep();
     });
     document.getElementById('crm-ground-inspection-roof-grid').addEventListener('click', function (e) {
@@ -51171,7 +51189,7 @@ function mapsGoogleReady() {
       crmRenderGroundInspectionStep();
     });
 
-    document.getElementById('crm-inspection-review-continue-btn').addEventListener('click', function () {
+    function crmContinueInspectionPhotoReview() {
       var context = _crmInspectionPhotoReviewContext;
       var state = crmGetGroundInspectionState();
       if (context && context.continueMode === 'slope-decision') {
@@ -51187,7 +51205,9 @@ function mapsGoogleReady() {
         showPage('page-start-inspection-step');
         crmRenderGroundInspectionStep();
       }
-    });
+    }
+    document.getElementById('crm-inspection-review-continue-btn').addEventListener('click', crmContinueInspectionPhotoReview);
+    document.getElementById('crm-inspection-review-continue-top-btn').addEventListener('click', crmContinueInspectionPhotoReview);
 
     document.getElementById('crm-inspection-image-close').addEventListener('click', crmCloseInspectionImagePreview);
     document.getElementById('crm-inspection-image-modal').addEventListener('click', function (e) {
