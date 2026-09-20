@@ -6,7 +6,7 @@ const required = [
   "d.organizationId||d.hmOrganizationId",
   "/@hailmoney\\.test$/i",
   "return'yopro'",
-  "edit.textContent='Edit'",
+  "edit.textContent='Edit Fields'",
   "edit.onclick=function(){editDoc(d.id)}",
   "window.hmCompanyDocumentTemplateEdit",
   "save.textContent='Save Document Fields'",

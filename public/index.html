@@ -21240,6 +21240,21 @@
 <style id="hm-company-documents-style">
 .crm-company-docs-status{margin:0 0 14px;min-height:20px;color:#667085;font-size:13px}.crm-company-docs-status.is-error{color:#b42318}.crm-company-docs-category-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.crm-company-docs-category-head h2{margin:0}.crm-company-doc-upload{display:none;flex:0 0 auto}.crm-company-docs-list{display:grid;gap:9px}.crm-company-doc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid #e2e7ee;border-radius:12px;background:#f8fafc}.crm-company-doc-info{min-width:0}.crm-company-doc-name{color:#172033;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.crm-company-doc-meta{margin-top:3px;color:#7a8494;font-size:11px}.crm-company-doc-actions{display:flex;align-items:center;gap:7px;flex:0 0 auto}.crm-company-doc-actions .btn{padding:7px 10px;font-size:12px}@media(max-width:640px){.crm-company-docs-category-head,.crm-company-doc-row{align-items:stretch;flex-direction:column}.crm-company-doc-upload{width:100%;justify-content:center}.crm-company-doc-actions{width:100%}.crm-company-doc-actions .btn{flex:1 1 0}}
 </style>
+
+<style id="hm-global-mobile-page-shell-v1">
+@media (max-width:767px){
+  body.app-page-active:not(.main-menu-page-active) .page.active .crm-dashboard-mini-sidebar,
+  body.app-page-active:not(.main-menu-page-active) .page.active .hm-dashboard-ref .sidebar{display:none!important;width:0!important;min-width:0!important;flex:0 0 0!important;}
+  body.app-page-active:not(.main-menu-page-active) .page.active .crm-dashboard-mini-layout,
+  body.app-page-active:not(.main-menu-page-active) #page-crm-pipeline.active .hm-dashboard-ref .wrap{display:block!important;width:100%!important;max-width:100%!important;}
+  body.app-page-active:not(.main-menu-page-active) .page.active .crm-dashboard-mini-body,
+  body.app-page-active:not(.main-menu-page-active) #page-crm-pipeline.active .hm-dashboard-ref .main{width:100%!important;max-width:100%!important;min-width:0!important;flex:1 1 auto!important;margin-left:0!important;}
+  body.app-page-active:not(.main-menu-page-active) .page.active [data-crm-phase-one-shared-sidebar]{display:none!important;}
+  #page-template-builder .tpl-builder-wrap{padding-left:10px;padding-right:10px;}
+  #page-template-builder .tpl-field-chip{min-height:38px;display:flex;align-items:center;justify-content:center;padding:8px 10px;}
+}
+.tpl-editor-help{margin:0 0 12px;padding:10px 12px;border:1px solid #d7b34f;border-radius:8px;background:#fff6d8;color:#423716;font-size:12px;font-weight:700;line-height:1.4;}
+</style>
 </head>
 <body>
   <div class="app-shell">
@@ -23100,10 +23115,11 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       </section>
 
       <!-- ── Template Builder (Admin) ── -->
-      <section id="page-template-builder" class="page">
+      <section id="page-template-builder" class="page" data-crm-header-title="Document Editor">
         <div class="tpl-builder-wrap">
           <h1 class="page-title">Document Template Builder</h1>
           <p class="page-subtitle">Upload a document, name it, and map fields where job data should appear.</p>
+          <div class="tpl-editor-help">Choose a field below, such as Homeowner Name, Address, or Phone Number, then tap and drag a box on the document where that information belongs. Save the field layout when finished.</div>
           <div class="page-actions" style="margin-bottom:14px;">
             <button class="btn" type="button" id="back-from-tpl-builder">Back</button>
             <button class="btn btn-primary" type="button" id="tpl-save-btn">Save Template</button>
@@ -82770,5 +82786,29 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 </script>
 
   <script src="assets/docusign-integration.js"></script>
+
+<script id="hm-global-mobile-page-title-v1">
+(function(){
+  function titleFor(page){
+    if(!page)return 'Hail Money';
+    var friendly={'page-main-menu':'Dashboard','page-photo-files':'Photos','page-photo-file-detail':'Photos','page-map':'Maps','page-ai':'AI','page-tester-training':'Training','page-admin-sales-reps':'Employees'};
+    var t=friendly[page.id]||String(page.getAttribute('data-crm-header-title')||'').trim();
+    if(!t&&typeof crmGetHeaderPageTitle==='function'){try{t=String(crmGetHeaderPageTitle(page.id)||'').trim();}catch(_){}}
+    return t||'Hail Money';
+  }
+  function sync(){
+    var h=document.querySelector('.map-header-center-heading');
+    if(!h)return;
+    if(window.innerWidth>767){h.textContent='Hail Money';return;}
+    h.textContent=titleFor(document.querySelector('.page.active'));
+  }
+  var obs=new MutationObserver(sync);
+  var screen=document.querySelector('.screen');
+  if(screen)obs.observe(screen,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+  window.addEventListener('resize',sync);
+  document.addEventListener('DOMContentLoaded',sync);
+  setTimeout(sync,0);
+})();
+</script>
 </body>
 </html>
