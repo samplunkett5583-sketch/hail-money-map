@@ -28946,7 +28946,8 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     });
 
     document.getElementById('open-new-lead').addEventListener('click', function () {
-      showPage('page-new-lead');
+      crmInitFieldLead();
+      showPage('page-field-lead');
     });
 
     document.getElementById('open-my-jobs').addEventListener('click', function () {
@@ -59936,7 +59937,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           showPage('page-crm-leaderboard');
           return true;
         case 'page-new-lead':
-          showPage('page-new-lead');
+          crmInitFieldLead();
+          showPage('page-field-lead');
           return true;
         case 'page-office-lead':
           crmInitOfficeLead();
@@ -61358,12 +61360,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     /* New Lead from sub-pages */
     document.getElementById('al-new-lead-btn').addEventListener('click', function () {
-      showPage('page-new-lead');
+      crmInitFieldLead();
+      showPage('page-field-lead');
     });
     var pipelineNewLeadBtn = document.getElementById('pipeline-new-lead-btn');
     if (pipelineNewLeadBtn) {
       pipelineNewLeadBtn.addEventListener('click', function () {
-        showPage('page-new-lead');
+        crmInitFieldLead();
+        showPage('page-field-lead');
       });
     }
     var pipelineAssignedLeadsBtn = document.getElementById('pipeline-assigned-leads-btn');
