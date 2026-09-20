@@ -1,0 +1,64 @@
+name: Wire DocuSign backend
+
+on:
+  push:
+    branches:
+      - docusign-backend-build
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docusign-backend-build
+          fetch-depth: 0
+
+      - name: Wire DocuSign module and browser client
+        shell: python
+        run: |
+          from pathlib import Path
+
+          entry = Path('functions/entry.js')
+          text = entry.read_text(encoding='utf-8')
+          wire = "Object.assign(module.exports, require('./docusign'));"
+          if wire not in text:
+              marker = 'module.exports = original;'
+              if marker not in text:
+                  raise SystemExit('functions/entry.js export marker not found')
+              text = text.replace(marker, marker + '\n' + wire, 1)
+              entry.write_text(text, encoding='utf-8')
+
+          index = Path('public/index.html')
+          html = index.read_text(encoding='utf-8')
+          script = '<script src="assets/docusign-integration.js"></script>'
+          if script not in html:
+              marker = '</body>'
+              if marker not in html:
+                  raise SystemExit('public/index.html body closing tag not found')
+              html = html.replace(marker, '  ' + script + '\n' + marker, 1)
+              index.write_text(html, encoding='utf-8')
+
+      - name: Validate DocuSign code
+        run: |
+          node --check functions/docusign.js
+          node --check functions/entry.js
+          node --check public/assets/docusign-integration.js
+          git diff --check
+          grep -F "Object.assign(module.exports, require('./docusign'));" functions/entry.js
+          grep -F '<script src="assets/docusign-integration.js"></script>' public/index.html
+
+      - name: Commit wiring
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add functions/entry.js public/index.html
+          if git diff --cached --quiet; then
+            echo "DocuSign wiring already present."
+            exit 0
+          fi
+          git commit -m "Wire secure DocuSign integration into Hail Money"
+          git push origin HEAD:docusign-backend-build
