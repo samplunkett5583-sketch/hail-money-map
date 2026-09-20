@@ -82229,12 +82229,14 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   var COMMON_ORDER = [
     { key:'new', labels:['New'], actions:[] },
     { key:'start', labels:['Start'], actions:['start-inspection'] },
-    { key:'ai', labels:['AI','Roofer AI'], actions:['roofer-ai'] },
     { key:'pipeline', labels:['Pipeline'], actions:['pipeline'] },
+    { key:'ai', labels:['AI','Roofer AI'], actions:['roofer-ai'] },
+    { key:'contacts', labels:['Contacts'], actions:['contacts'] },
     { key:'leads', labels:['Leads'], actions:['leads'] },
     { key:'photos', labels:['Photos',"Photo's"], actions:['photos','photo-files','job-photos'] },
     { key:'maps', labels:['Maps','Map','Money Maps'], actions:['map','maps'] },
     { key:'estimates', labels:['Estimates'], actions:['estimates'] },
+    { key:'documents', labels:['Documents','Company Documents'], actions:['company-documents'] },
     { key:'calendar', labels:['Calendar','Calander'], actions:['calendar'] },
     { key:'meetings', labels:['Meetings'], actions:['meetings'] },
     { key:'production', labels:['Production'], actions:['production'] }
@@ -82302,6 +82304,18 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
     return clone;
   }
 
+  function createDocumentsButton() {
+    var btn = document.createElement('button');
+    btn.className = 'nav-item hm-company-documents-nav';
+    btn.type = 'button';
+    btn.setAttribute('data-dashboard-action', 'company-documents');
+    btn.setAttribute('aria-label', 'Documents');
+    var icon = '';
+    try { if (typeof crmGetDashboardIconSvg === 'function') icon = crmGetDashboardIconSvg('file-text') || ''; } catch (_) {}
+    btn.innerHTML = '<span class="dash-icon" data-dash-icon="file-text" aria-hidden="true">' + icon + '</span><span class="nav-label">Documents</span>';
+    return btn;
+  }
+
   function createCompanyFinancialsButton() {
     var btn = document.createElement('button');
     btn.className = 'nav-item nav-item-admin-only hm-company-financials-nav';
@@ -82325,6 +82339,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
       var node = findDirectNode(sidebar, spec);
       if (!node) {
         node = cloneTemplateNode(spec);
+        if (!node && spec.key === 'documents') node = createDocumentsButton();
         if (node) sidebar.appendChild(node);
       }
       if (node && desired.indexOf(node) === -1) desired.push(node);
