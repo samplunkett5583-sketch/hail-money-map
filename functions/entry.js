@@ -6,6 +6,7 @@ const admin = require('firebase-admin');
 const logger = require('firebase-functions/logger');
 
 module.exports = original;
+Object.assign(module.exports, require('./docusign'));
 
 function permitCors(req, res) {
   const origin = String(req.get('origin') || '');
