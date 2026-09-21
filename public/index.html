@@ -19409,6 +19409,17 @@
       position: relative !important;
       z-index: 2 !important;
     }
+    @media (max-width: 767px) {
+      body.pipeline-page-active #page-crm-pipeline .hm-dashboard-ref .wrap { display:block !important; min-height:calc(100dvh - var(--crm-shell-header-h)) !important; }
+      body.pipeline-page-active #page-crm-pipeline .hm-dashboard-ref .wrap > .sidebar,
+      body.pipeline-page-active #page-crm-pipeline [data-crm-phase-one-shared-sidebar] { display:none !important; width:0 !important; min-width:0 !important; flex:0 0 0 !important; min-height:0 !important; padding:0 !important; overflow:hidden !important; }
+      body.pipeline-page-active #page-crm-pipeline .hm-dashboard-ref .main { width:100% !important; min-width:0 !important; }
+      body.pipeline-page-active #page-crm-pipeline .hm-dashboard-ref .content { display:block !important; grid-template-columns:1fr !important; width:100% !important; padding:8px 10px 20px !important; }
+      body.pipeline-page-active #page-crm-pipeline .hm-dashboard-ref .center { width:100% !important; min-width:0 !important; }
+      body.pipeline-page-active #page-crm-pipeline .hm-dashboard-ref .center::before { left:0 !important; right:0 !important; background-size:min(88vw,520px) auto !important; opacity:.10 !important; }
+      body.pipeline-page-active #page-crm-pipeline .crm-kanban { grid-template-columns:1fr !important; width:100% !important; }
+      body.pipeline-page-active #page-crm-pipeline .hm-dashboard-ref .right-panel { width:100% !important; min-width:0 !important; padding-top:12px !important; }
+    }
     /* Dashboard uniform transparent-field system. Every selector is locked to
        the Dashboard route so no other CRM page inherits these rules. */
     body.main-menu-page-active #page-main-menu .hm-dashboard-ref {
