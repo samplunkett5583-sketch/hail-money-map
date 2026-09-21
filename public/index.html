@@ -51611,12 +51611,29 @@ function mapsGoogleReady() {
       showPage('page-docusign');
     }
 
-    function crmOpenLeadContingencyAfterInspection(leadId, matchedTemplateIndex) {
+    async function crmOpenLeadContingencyAfterInspection(leadId, matchedTemplateIndex) {
       leadId = String(leadId || '').trim();
       var lead = crmGetLeads().find(function(item) { return String(item && item.id || '') === leadId; });
       if (!lead) { showUploadToast('Lead not found.'); return false; }
       var idx = Number.isInteger(matchedTemplateIndex) ? matchedTemplateIndex : (typeof hmFindTemplateForLead === 'function' ? hmFindTemplateForLead(lead, 'contingency') : -1);
       if (idx < 0) { showUploadToast('No active contingency matches ' + String(lead.region || 'the selected region') + ' + ' + String(lead.state || 'the selected state') + '. Your lead information was not cleared.'); return false; }
+      var tpl = savedFormTemplates[idx];
+      if (tpl && !tpl.fileDataUrl && tpl.sourceCompanyDocumentId && typeof window.hmLoadCompanyDocumentForTemplate === 'function') {
+        try {
+          var cloudFile = await window.hmLoadCompanyDocumentForTemplate(tpl.sourceCompanyDocumentId);
+          tpl.fileDataUrl = cloudFile.dataUrl;
+          tpl.fileName = tpl.fileName || cloudFile.name;
+          tpl.fileType = tpl.fileType || cloudFile.contentType;
+        } catch (fileError) {
+          console.error('[Contingency Routing] Document load failed', fileError);
+          showUploadToast('The matching contingency was found, but its PDF could not be loaded. Your lead information was not cleared.');
+          return false;
+        }
+      }
+      if (!tpl || !tpl.fileDataUrl) {
+        showUploadToast('The matching contingency does not have a company document attached. Your lead information was not cleared.');
+        return false;
+      }
       _crmPostLeadContingencyContext = { leadId: leadId, returnMode: 'post_inspection', documentType: 'contingency' };
       openDocuSign(leadId);
       createAndOpenFormInstance(leadId, idx);
@@ -52929,6 +52946,7 @@ function mapsGoogleReady() {
         fileName: currentTplFileName,
         fileType: currentTplFileType,
         fileDataUrl: currentTplFileDataUrl,
+        sourceCompanyDocumentId: String((document.getElementById('tpl-existing-contingency') || {}).value || '').trim(),
         fields: currentTplFields.map(function (f) {
           // If pct coords exist (PDF path), use them directly; otherwise compute from area
           var entry = {
@@ -52962,6 +52980,7 @@ function mapsGoogleReady() {
       if (tpl.documentType === 'contingency' && !tpl.effectiveDate) { alert('Select an effective date for this contingency.'); return; }
       if (tpl.status === 'inactive') tpl.activeDefault = false;
       var sourceTpl = _editingTemplateSourceId ? savedFormTemplates.find(function (item) { return String(item && item.id || '') === String(_editingTemplateSourceId); }) : null;
+      if (!tpl.sourceCompanyDocumentId && sourceTpl && sourceTpl.sourceCompanyDocumentId) tpl.sourceCompanyDocumentId = sourceTpl.sourceCompanyDocumentId;
       tpl.version = sourceTpl ? Number(sourceTpl.version || 1) + 1 : 1;
       tpl.previousTemplateId = sourceTpl ? String(sourceTpl.id || '') : '';
       // Editing always creates a separate reusable copy. Never modify or deactivate the source template.
@@ -52973,6 +52992,7 @@ function mapsGoogleReady() {
       savedFormTemplates.push(tpl);
       _editingTemplateSourceId = '';
       localStorage.setItem('formTemplates', JSON.stringify(savedFormTemplates));
+      if (typeof window.hmSaveCompanyFormTemplate === 'function') window.hmSaveCompanyFormTemplate(tpl).catch(function (err) { console.warn('[Template Cloud] save failed', err); });
       alert('Template "' + name + '" saved as a new reusable copy.');
       document.getElementById('tpl-save-btn').textContent = 'Save Template';
       // Reset
@@ -77951,7 +77971,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       });
     }());
 
-    document.getElementById('fl-save-btn').addEventListener('click', function () {
+    document.getElementById('fl-save-btn').addEventListener('click', async function () {
       var valMsg = document.getElementById('fl-validation-msg');
       var savedMsg = document.getElementById('fl-saved-msg');
       var warningMsg = document.getElementById('fl-warning-msg');
@@ -78098,6 +78118,17 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         activityNotes: [{ text: 'Field lead created', author: creatorDisplayName || currentRep || 'Rep', ts: new Date().toISOString() }]
       };
       crmAttachPendingInspectionToLead(lead, pendingInspection);
+      if (pendingInspection && pendingInspection.status === 'completed_pending_lead' && typeof window.hmGetCompanyFormTemplates === 'function') {
+        try {
+          var companyTemplates = await window.hmGetCompanyFormTemplates();
+          if (Array.isArray(companyTemplates) && companyTemplates.length) {
+            savedFormTemplates = companyTemplates;
+            window.savedFormTemplates = companyTemplates;
+          }
+        } catch (templateSyncError) {
+          console.warn('[Contingency Routing] Company template lookup failed', templateSyncError);
+        }
+      }
       var pendingContingencyIndex = -1;
       if (pendingInspection && pendingInspection.status === 'completed_pending_lead') {
         pendingContingencyIndex = typeof hmFindTemplateForLead === 'function' ? hmFindTemplateForLead(lead, 'contingency') : -1;
@@ -78147,11 +78178,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           crmSaveFilesToDb(lead.id, 'signed_contingency', contingencyFilesToSave, function () {});
         });
       });
-      setTimeout(function () {
+      setTimeout(async function () {
         savedMsg.style.display = 'none';
         warningMsg.style.display = 'none';
         if (pendingInspection && pendingInspection.status === 'completed_pending_lead') {
-          if (crmOpenLeadContingencyAfterInspection(lead.id, pendingContingencyIndex)) { crmClearFieldLeadDraft(); crmInitFieldLead(); }
+          if (await crmOpenLeadContingencyAfterInspection(lead.id, pendingContingencyIndex)) { crmClearFieldLeadDraft(); crmInitFieldLead(); }
         } else {
           crmInitFieldLead();
           goToMainMenuFromHeader();
@@ -82802,9 +82833,44 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   async function signedUrl(d){var c=client();if(!c||!d||!d.storagePath)return'';var r=await c.storage.from('hail-money-files').createSignedUrl(d.storagePath,3600);if(r.error)throw r.error;return r.data&&r.data.signedUrl?r.data.signedUrl:''}
   window.hmListCompanyDocuments=async function(category){await load();return docs.filter(function(d){return !category||String(d&&d.category||'')===String(category)}).map(function(d){return{id:d.id,name:d.name,category:d.category,contentType:d.contentType,size:d.size,uploadedAt:d.uploadedAt}})};
   window.hmLoadCompanyDocumentForTemplate=async function(id){var d=find(id);if(!d){await load();d=find(id)}if(!d)throw new Error('That uploaded contingency could not be found.');var type=String(d.contentType||'').toLowerCase();if(type&&type!=='application/pdf'&&type.indexOf('image/')!==0)throw new Error('Fillable fields can be added to PDF or image contingencies.');var c=client();if(!c||!d.storagePath)throw new Error('Document storage is not available.');var r=await c.storage.from('hail-money-files').download(d.storagePath);if(r.error)throw r.error;var blob=r.data;if(!blob)throw new Error('The uploaded contingency could not be downloaded.');var dataUrl=await new Promise(function(resolve,reject){var reader=new FileReader();reader.onload=function(){resolve(reader.result)};reader.onerror=function(){reject(reader.error||new Error('Could not read the uploaded contingency.'))};reader.readAsDataURL(blob)});return{id:d.id,name:d.name||'Contingency',category:d.category||'contingencies',contentType:d.contentType||blob.type||'application/pdf',size:d.size||blob.size||0,dataUrl:dataUrl}};
+  function sourceDocForTemplate(tpl,documents){
+    var explicit=String(tpl&&tpl.sourceCompanyDocumentId||'').trim();if(explicit)return explicit;
+    var name=String(tpl&&tpl.fileName||'').trim().toLowerCase();if(!name)return'';
+    var match=(documents||[]).find(function(d){return String(d&&d.category||'')==='contingencies'&&String(d&&d.name||'').trim().toLowerCase()===name});
+    return match?String(match.id||''):'';
+  }
+  async function ensureTemplateSource(tpl,documents,oid){
+    var existing=sourceDocForTemplate(tpl,documents);if(existing)return existing;
+    if(!tpl||!tpl.fileDataUrl)return'';var c=client();if(!c)return'';
+    var blob=await fetch(tpl.fileDataUrl).then(function(r){return r.blob()});if(!blob||blob.size>MAX_BYTES)return'';
+    var docId='company_doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),name=tpl.fileName||tpl.name||'Contingency.pdf';
+    var path='company-documents/'+safe(oid)+'/contingencies/'+safe(docId)+'/'+safe(name);
+    var up=await c.storage.from('hail-money-files').upload(path,blob,{upsert:false,contentType:tpl.fileType||blob.type||'application/pdf'});if(up.error)throw up.error;
+    var u=window.auth&&window.auth.currentUser,meta={id:docId,category:'contingencies',name:name,size:Number(blob.size||0),contentType:tpl.fileType||blob.type||'application/pdf',storagePath:path,uploadedAt:new Date().toISOString(),uploadedBy:(typeof crmGetCurrentUserName==='function'&&crmGetCurrentUserName())||(u&&u.email)||'Admin',uploadedByUid:(u&&u.uid)||''};
+    documents.push(meta);return docId;
+  }
+  function cleanTemplateMeta(tpl,sourceId){var copy=JSON.parse(JSON.stringify(tpl||{}));delete copy.fileDataUrl;copy.sourceCompanyDocumentId=String(sourceId||copy.sourceCompanyDocumentId||'');return copy;}
+  window.hmGetCompanyFormTemplates=async function(){
+    var oid=await orgId();if(!oid)throw new Error('Company access is not ready yet.');var r=ref(oid),snap=await r.get(),data=snap.exists?(snap.data()||{}):{};
+    var documents=Array.isArray(data.documents)?data.documents.slice():[],remote=Array.isArray(data.formTemplates)?data.formTemplates.slice():[],local=[];
+    try{local=JSON.parse(localStorage.getItem('formTemplates')||'[]')}catch(_){}
+    if(Array.isArray(local)&&local.length&&canManage()&&await tokenCanManage()){
+      var ids={};remote.forEach(function(t){ids[String(t&&t.id||'')]=true});var changed=false;
+      for(var i=0;i<local.length;i++){var t=local[i],tid=String(t&&t.id||'');if(!tid||ids[tid])continue;var source=await ensureTemplateSource(t,documents,oid);if(!source)continue;remote.push(cleanTemplateMeta(t,source));ids[tid]=true;changed=true;}
+      if(changed)await r.set({documents:documents,formTemplates:remote,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    }
+    return remote.map(function(t){return JSON.parse(JSON.stringify(t))});
+  };
+  window.hmSaveCompanyFormTemplate=async function(tpl){
+    if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can save company templates.');var oid=await orgId();if(!oid)throw new Error('Company access is not ready yet.');
+    var r=ref(oid),snap=await r.get(),data=snap.exists?(snap.data()||{}):{},documents=Array.isArray(data.documents)?data.documents.slice():[];
+    var source=await ensureTemplateSource(tpl,documents,oid);if(!source)throw new Error('This contingency could not be linked to company storage.');var meta=cleanTemplateMeta(tpl,source);
+    var arr=Array.isArray(data.formTemplates)?data.formTemplates.slice():[],idx=arr.findIndex(function(x){return String(x&&x.id||'')===String(meta.id||'')});if(idx>=0)arr[idx]=meta;else arr.push(meta);
+    await r.set({documents:documents,formTemplates:arr,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});return meta;
+  };
   async function openDoc(id){var d=find(id);if(!d)return;var pop=window.open('about:blank','_blank');try{status('Opening '+(d.name||'document')+'…');var url=await signedUrl(d);if(!url)throw new Error('This document could not be opened.');if(pop)pop.location.href=url;else window.location.href=url;status('Company documents are ready.')}catch(e){if(pop)pop.close();status(e&&e.message?e.message:'This document could not be opened.',true)}}
   async function deleteDoc(id){var d=find(id);if(!d||!window.confirm('Delete "'+String(d.name||'this document')+'" for the entire company?'))return;try{if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can delete company documents.');var oid=await orgId();if(!oid)throw new Error('Company access is not ready yet.');status('Deleting '+(d.name||'document')+'…');var c=client();if(c&&d.storagePath){var rem=await c.storage.from('hail-money-files').remove([d.storagePath]);if(rem.error)throw rem.error}var r=ref(oid),snap=await r.get(),data=snap.exists?(snap.data()||{}):{},arr=(Array.isArray(data.documents)?data.documents:[]).filter(function(x){return String(x&&x.id||'')!==String(id)});await r.set({documents:arr,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});docs=arr;render();status('Document deleted.')}catch(e){status(e&&e.message?e.message:'Document could not be deleted.',true)}}
-  function bind(){document.querySelectorAll('[data-company-doc-upload]').forEach(function(b){if(b.dataset.companyDocBound)return;b.dataset.companyDocBound='1';b.addEventListener('click',function(){choose(b.getAttribute('data-company-doc-upload'))})});var i=document.getElementById('crm-company-doc-file-input');if(i&&!i.dataset.companyDocBound){i.dataset.companyDocBound='1';i.addEventListener('change',function(){upload(i)})}render();var page=document.getElementById('page-company-docs');if(page){var obs=new MutationObserver(function(){if(page.classList.contains('active'))load()});obs.observe(page,{attributes:true,attributeFilter:['class']});if(page.classList.contains('active'))load()}}
+  function bind(){document.querySelectorAll('[data-company-doc-upload]').forEach(function(b){if(b.dataset.companyDocBound)return;b.dataset.companyDocBound='1';b.addEventListener('click',function(){choose(b.getAttribute('data-company-doc-upload'))})});var i=document.getElementById('crm-company-doc-file-input');if(i&&!i.dataset.companyDocBound){i.dataset.companyDocBound='1';i.addEventListener('change',function(){upload(i)})}render();setTimeout(function(){if(typeof window.hmGetCompanyFormTemplates==='function')window.hmGetCompanyFormTemplates().catch(function(e){console.warn('[Template Cloud] migration deferred',e)});},1500);var page=document.getElementById('page-company-docs');if(page){var obs=new MutationObserver(function(){if(page.classList.contains('active'))load()});obs.observe(page,{attributes:true,attributeFilter:['class']});if(page.classList.contains('active'))load()}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 </script>
