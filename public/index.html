@@ -82270,6 +82270,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
   async function syncProject(project, user) {
     project.photos = Array.isArray(project.photos) ? project.photos : [];
+    var existing = await sb.from(TABLE).select('data').eq('id', project.id).limit(1);
+    if (existing.error) throw existing.error;
+    if (existing.data && existing.data[0] && existing.data[0].data && existing.data[0].data.deleted === true) return;
     for (var i = 0; i < project.photos.length; i++) await uploadLocalPhoto(project, project.photos[i]);
     project.updatedAt = project.updatedAt || new Date().toISOString();
     var row = {
@@ -82309,6 +82312,24 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     return result.data && result.data.signedUrl ? result.data.signedUrl : '';
   };
 
+  window.hmPhotoDeleteProject = async function (project) {
+    var user = await waitForFirebaseUser();
+    if (!user) throw new Error('Sign in before deleting a photo project.');
+    var id = String(project && project.id || '').trim();
+    if (!id) throw new Error('Photo project ID is missing.');
+    var paths = (project.photos || []).map(function (photo) { return String(photo && photo.storagePath || '').trim(); }).filter(Boolean);
+    if (paths.length) {
+      var storageResult = await sb.storage.from(BUCKET).remove(paths);
+      if (storageResult.error) console.warn('[Photo Delete Storage]', storageResult.error);
+    }
+    var deletedAt = new Date().toISOString();
+    var tombstone = { id:id, deleted:true, deletedAt:deletedAt, photos:[] };
+    var row = { id:id, data:tombstone, created_by_uid:user.uid, created_at:project.createdAt || deletedAt, updated_at:deletedAt };
+    var result = await sb.from(TABLE).upsert(row, { onConflict:'id' });
+    if (result.error) throw result.error;
+    return true;
+  };
+
   window.hmPhotoLoadFromSupabase = async function () {
     if (loadRunning) return;
     loadRunning = true;
@@ -82317,15 +82338,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!user) return;
       var result = await sb.from(TABLE).select('id,data,updated_at').order('updated_at', { ascending: false });
       if (result.error) throw result.error;
-      var remote = (result.data || []).map(function (row) {
+      var rows = result.data || [];
+      var remote = rows.map(function (row) {
         var project = row.data || {};
         project.id = row.id;
         project.updatedAt = row.updated_at || project.updatedAt;
         project.photos = Array.isArray(project.photos) ? project.photos : [];
         return project;
-      });
+      }).filter(function (project) { return project.deleted !== true; });
       var local = getPhotoFiles();
-      if (!remote.length && local.length) {
+      if (!rows.length && local.length) {
         await window.hmPhotoSyncAll(local);
         remote = local;
       }
@@ -82340,6 +82362,15 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       loadRunning = false;
     }
   };
+
+  function refreshPhotoPageIfVisible() {
+    var page = document.getElementById('page-photo-files');
+    if (!page || !page.classList.contains('active') || document.visibilityState === 'hidden') return;
+    window.hmPhotoLoadFromSupabase();
+  }
+  window.setInterval(refreshPhotoPageIfVisible, 10000);
+  window.addEventListener('focus', refreshPhotoPageIfVisible);
+  document.addEventListener('visibilitychange', refreshPhotoPageIfVisible);
 })();
 </script>
 <script>
@@ -82371,7 +82402,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   }
   function canSee(p){var role=typeof crmGetRole==='function'?crmGetRole():'';if(role==='Restricted'){var n=typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'';return p.createdBy===n||p.assignedRep===n;}return role!=='Canvasser';}
   function projectAddress(p){return [p.street,p.city,p.state,p.zip].filter(Boolean).join(', ');}
-  function render(filter){filter=String(filter||document.getElementById('photo-files-search').value||'').toLowerCase();var list=document.getElementById('photo-files-list');if(!list)return;var ps=projects().filter(canSee).filter(function(p){var hay=[p.homeownerName,p.projectName,projectAddress(p),p.assignedRep].join(' ').toLowerCase();return(!filter||hay.indexOf(filter)>=0);}).sort(function(a,b){return String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||''));});if(!ps.length){list.innerHTML='<div class="crm-empty-state">No photo projects found.</div>';return;}var isAdmin=typeof crmGetRole==='function'&&['Admin','Owner'].indexOf(crmGetRole())!==-1;list.innerHTML=ps.map(function(p){var adminDel=isAdmin?'<button class="btn" type="button" data-hm-delete-project="'+esc(p.id)+'" title="Delete project">Delete</button>':'';return '<div class="hm-photo-project-row" data-hm-project="'+esc(p.id)+'"><div class="hm-photo-project-thumb" data-hm-thumb="'+esc(p.id)+'"></div><div><div class="hm-photo-project-name">'+esc(p.projectName||p.homeownerName||'Untitled Project')+'</div><div class="hm-photo-project-address">'+esc(projectAddress(p)||'No address entered')+'</div><div class="hm-photo-project-address">'+esc(p.assignedRep||p.createdBy||'Unassigned')+'</div></div><div class="hm-photo-project-stat"><b>'+p.photos.length+'</b><br>Photos</div><div class="hm-photo-project-stat"><b>'+esc(new Date(p.updatedAt||p.createdAt||Date.now()).toLocaleDateString())+'</b><br>Updated</div><div class="hm-photo-project-strip" data-hm-strip="'+esc(p.id)+'"></div>'+adminDel+'</div>';}).join('');list.querySelectorAll('[data-hm-project]').forEach(function(row){row.addEventListener('click',function(e){if(e.target&&e.target.closest('[data-hm-delete-project]'))return;open(row.dataset.hmProject);});});list.querySelectorAll('[data-hm-delete-project]').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();var pid=btn.getAttribute('data-hm-delete-project');if(!confirm('Delete this photo project and all of its photos? This cannot be undone.'))return;var ps=projects().filter(function(x){return x.id!==pid;});save(ps);render();});});ps.forEach(function(p){p.photos.slice(0,5).forEach(function(ph,i){photoSrc(ph,function(src){if(!src)return;var img=document.createElement('img');img.src=src;img.alt='';var strip=list.querySelector('[data-hm-strip="'+CSS.escape(p.id)+'"]');if(strip)strip.appendChild(img);if(i===0){var th=list.querySelector('[data-hm-thumb="'+CSS.escape(p.id)+'"]');if(th){th.innerHTML='';var ti=document.createElement('img');ti.className='hm-photo-project-thumb';ti.src=src;th.appendChild(ti);}}});});});
+  function render(filter){filter=String(filter||document.getElementById('photo-files-search').value||'').toLowerCase();var list=document.getElementById('photo-files-list');if(!list)return;var ps=projects().filter(canSee).filter(function(p){var hay=[p.homeownerName,p.projectName,projectAddress(p),p.assignedRep].join(' ').toLowerCase();return(!filter||hay.indexOf(filter)>=0);}).sort(function(a,b){return String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||''));});if(!ps.length){list.innerHTML='<div class="crm-empty-state">No photo projects found.</div>';return;}var isAdmin=typeof crmGetRole==='function'&&['Admin','Owner'].indexOf(crmGetRole())!==-1;list.innerHTML=ps.map(function(p){var adminDel=isAdmin?'<button class="btn" type="button" data-hm-delete-project="'+esc(p.id)+'" title="Delete project">Delete</button>':'';return '<div class="hm-photo-project-row" data-hm-project="'+esc(p.id)+'"><div class="hm-photo-project-thumb" data-hm-thumb="'+esc(p.id)+'"></div><div><div class="hm-photo-project-name">'+esc(p.projectName||p.homeownerName||'Untitled Project')+'</div><div class="hm-photo-project-address">'+esc(projectAddress(p)||'No address entered')+'</div><div class="hm-photo-project-address">'+esc(p.assignedRep||p.createdBy||'Unassigned')+'</div></div><div class="hm-photo-project-stat"><b>'+p.photos.length+'</b><br>Photos</div><div class="hm-photo-project-stat"><b>'+esc(new Date(p.updatedAt||p.createdAt||Date.now()).toLocaleDateString())+'</b><br>Updated</div><div class="hm-photo-project-strip" data-hm-strip="'+esc(p.id)+'"></div>'+adminDel+'</div>';}).join('');list.querySelectorAll('[data-hm-project]').forEach(function(row){row.addEventListener('click',function(e){if(e.target&&e.target.closest('[data-hm-delete-project]'))return;open(row.dataset.hmProject);});});list.querySelectorAll('[data-hm-delete-project]').forEach(function(btn){btn.addEventListener('click',async function(e){e.stopPropagation();var pid=btn.getAttribute('data-hm-delete-project');var project=find(pid);if(!project)return;if(!confirm('Delete this photo project and all of its photos? This cannot be undone.'))return;btn.disabled=true;btn.textContent='Deleting...';try{if(typeof window.hmPhotoDeleteProject==='function')await window.hmPhotoDeleteProject(project);var ps=projects().filter(function(x){return x.id!==pid;});window.hmPhotoRemoteLoadActive=true;localStorage.setItem('hmm_photo_files_v1',JSON.stringify(ps));window.hmPhotoRemoteLoadActive=false;render();if(typeof showUploadToast==='function')showUploadToast('Photo project deleted on all devices.');}catch(error){console.error('[Photo Delete]',error);btn.disabled=false;btn.textContent='Delete';if(typeof showUploadToast==='function')showUploadToast('Could not delete the photo project from company sync.');}});});ps.forEach(function(p){p.photos.slice(0,5).forEach(function(ph,i){photoSrc(ph,function(src){if(!src)return;var img=document.createElement('img');img.src=src;img.alt='';var strip=list.querySelector('[data-hm-strip="'+CSS.escape(p.id)+'"]');if(strip)strip.appendChild(img);if(i===0){var th=list.querySelector('[data-hm-thumb="'+CSS.escape(p.id)+'"]');if(th){th.innerHTML='';var ti=document.createElement('img');ti.className='hm-photo-project-thumb';ti.src=src;th.appendChild(ti);}}});});});
   }
   window.renderPhotoFiles=renderPhotoFiles=render;
   function switchTab(tab){currentProjectId=currentProjectId||'';document.querySelectorAll('#pf-detail-tabs [data-hm-tab]').forEach(function(btn){btn.classList.toggle('active',btn.getAttribute('data-hm-tab')===tab);});['photos','reports','chat'].forEach(function(t){var el=document.getElementById('pf-detail-tab-'+t);if(el)el.classList.toggle('active',t===tab);});if(tab==='reports'&&typeof window.renderPhotoProjectReports==='function'&&currentProjectId)window.renderPhotoProjectReports(currentProjectId);if(tab==='chat'&&typeof window.renderPhotoProjectChat==='function'&&currentProjectId)window.renderPhotoProjectChat(currentProjectId);}
