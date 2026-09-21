@@ -1851,6 +1851,24 @@
       border-color: var(--error);
     }
 
+    /* New Lead: make missing required fields impossible to miss after Save. */
+    #page-new-lead .field.field-error input,
+    #page-new-lead .field.field-error select,
+    #page-new-lead .field.field-error textarea {
+      background: #ff2b2b !important;
+      border: 3px solid #ff0000 !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.28) !important;
+    }
+    #page-new-lead .field.field-error input::placeholder,
+    #page-new-lead .field.field-error textarea::placeholder {
+      color: rgba(255,255,255,.9) !important;
+    }
+    #page-new-lead .field.field-error label,
+    #page-new-lead .field.field-error .field-label {
+      color: #ff1f1f !important;
+      font-weight: 800;
+    }
     .helper-text {
       margin-top: 16px;
       color: var(--muted);
@@ -58840,6 +58858,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var btn = document.getElementById('crm-save-lead-btn');
       if (!btn) return;
 
+      /* Once the user fixes a highlighted field, clear the red state immediately. */
+      document.querySelectorAll('#page-new-lead .field input, #page-new-lead .field select, #page-new-lead .field textarea').forEach(function (el) {
+        function clearRequiredError() {
+          var field = el.closest && el.closest('.field');
+          if (!field || !field.classList.contains('field-error')) return;
+          if (String(el.value || '').trim()) field.classList.remove('field-error');
+        }
+        el.addEventListener('input', clearRequiredError);
+        el.addEventListener('change', clearRequiredError);
+      });
       btn.addEventListener('click', function () {
         var valMsg = document.getElementById('crm-lead-validation-msg');
         var savedMsg = document.getElementById('crm-lead-saved-msg');
