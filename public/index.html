@@ -51611,15 +51611,16 @@ function mapsGoogleReady() {
       showPage('page-docusign');
     }
 
-    function crmOpenLeadContingencyAfterInspection(leadId) {
+    function crmOpenLeadContingencyAfterInspection(leadId, matchedTemplateIndex) {
       leadId = String(leadId || '').trim();
       var lead = crmGetLeads().find(function(item) { return String(item && item.id || '') === leadId; });
-      if (!lead) { showUploadToast('Lead not found.'); return; }
-      var idx = typeof hmFindTemplateForLead === 'function' ? hmFindTemplateForLead(lead, 'contingency') : -1;
-      if (idx < 0) { showUploadToast('No active contingency matches ' + String(lead.region || 'the selected region') + ' + ' + String(lead.state || 'the selected state') + '.'); return; }
+      if (!lead) { showUploadToast('Lead not found.'); return false; }
+      var idx = Number.isInteger(matchedTemplateIndex) ? matchedTemplateIndex : (typeof hmFindTemplateForLead === 'function' ? hmFindTemplateForLead(lead, 'contingency') : -1);
+      if (idx < 0) { showUploadToast('No active contingency matches ' + String(lead.region || 'the selected region') + ' + ' + String(lead.state || 'the selected state') + '. Your lead information was not cleared.'); return false; }
       _crmPostLeadContingencyContext = { leadId: leadId, returnMode: 'post_inspection', documentType: 'contingency' };
       openDocuSign(leadId);
       createAndOpenFormInstance(leadId, idx);
+      return true;
     }
 
     function crmOpenLeadContingencyFromDocuments(leadId) {
@@ -78097,6 +78098,15 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         activityNotes: [{ text: 'Field lead created', author: creatorDisplayName || currentRep || 'Rep', ts: new Date().toISOString() }]
       };
       crmAttachPendingInspectionToLead(lead, pendingInspection);
+      var pendingContingencyIndex = -1;
+      if (pendingInspection && pendingInspection.status === 'completed_pending_lead') {
+        pendingContingencyIndex = typeof hmFindTemplateForLead === 'function' ? hmFindTemplateForLead(lead, 'contingency') : -1;
+        if (pendingContingencyIndex < 0) {
+          valMsg.textContent = 'No active contingency matches ' + String(lead.region || 'the selected region') + ' + ' + String(lead.state || 'the selected state') + '. Nothing was cleared or saved.';
+          valMsg.style.display = 'block';
+          return;
+        }
+      }
       var leads = crmGetLeads();
       if (!leads.some(function (existingLead) { return existingLead && existingLead.id === lead.id; })) leads.push(lead);
       if (!crmSaveLeads(leads)) {
@@ -78108,7 +78118,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         crmMovePendingInspectionFilesToLead(pendingInspection.id, lead.id, pendingInspection);
         crmCreateInspectionPhotoProject(lead, pendingInspection);
       }
-      crmClearFieldLeadDraft();
+      if (!(pendingInspection && pendingInspection.status === 'completed_pending_lead')) crmClearFieldLeadDraft();
       crmSyncDataModelSnapshot();
       crmRenderMainMenu();
       crmRenderDashboardCommandCenter();
@@ -78140,9 +78150,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       setTimeout(function () {
         savedMsg.style.display = 'none';
         warningMsg.style.display = 'none';
-        crmInitFieldLead();
-        if (pendingInspection && pendingInspection.status === 'completed_pending_lead') crmOpenLeadContingencyAfterInspection(lead.id);
-        else goToMainMenuFromHeader();
+        if (pendingInspection && pendingInspection.status === 'completed_pending_lead') {
+          if (crmOpenLeadContingencyAfterInspection(lead.id, pendingContingencyIndex)) { crmClearFieldLeadDraft(); crmInitFieldLead(); }
+        } else {
+          crmInitFieldLead();
+          goToMainMenuFromHeader();
+        }
       }, 1400);
     });
 
@@ -82709,7 +82722,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   function save(rows){localStorage.setItem(KEY,JSON.stringify(rows));try{if(typeof crmSaveFieldLeadDropdownOptions==='function'){var opts=crmGetFieldLeadDropdownOptions();opts.regions=rows.map(function(r){return r.name});crmSaveFieldLeadDropdownOptions(opts)}}catch(_){} syncLead();populate('','')}
   function resolve(state){state=String(state||'').trim().toUpperCase();var row=get().find(function(r){return (r.states||[]).indexOf(state)!==-1});return row?row.name:''}
   window.hmResolveRegionForState=resolve;
-  window.hmFindTemplateForLead=function(lead,type){var state=String(lead&&lead.state||'').trim().toUpperCase(),region=String(lead&&lead.region||resolve(state)||'').trim(),templates=window.savedFormTemplates||savedFormTemplates||[],today=new Date().toISOString().slice(0,10);var matches=templates.map(function(t,i){return{t:t,i:i}}).filter(function(x){var effective=!x.t.effectiveDate||String(x.t.effectiveDate)<=today;return String(x.t.documentType||'contingency')===String(type||'contingency')&&String(x.t.region||'')===region&&String(x.t.state||'').toUpperCase()===state&&String(x.t.status||'active')==='active'&&effective});var active=matches.filter(function(x){return x.t.activeDefault===true}).sort(function(a,b){return String(b.t.effectiveDate||'').localeCompare(String(a.t.effectiveDate||''))||Number(b.t.version||1)-Number(a.t.version||1)})[0];return active?active.i:-1};
+  window.hmFindTemplateForLead=function(lead,type){var state=String(lead&&lead.state||'').trim().toUpperCase(),region=String(lead&&lead.region||resolve(state)||'').trim(),templates=window.savedFormTemplates||savedFormTemplates||[],today=new Date().toISOString().slice(0,10);var matches=templates.map(function(t,i){return{t:t,i:i}}).filter(function(x){var effective=!x.t.effectiveDate||String(x.t.effectiveDate)<=today;return String(x.t.documentType||'contingency')===String(type||'contingency')&&String(x.t.region||'')===region&&String(x.t.state||'').toUpperCase()===state&&String(x.t.status||'active')==='active'&&effective}).sort(function(a,b){return String(b.t.effectiveDate||'').localeCompare(String(a.t.effectiveDate||''))||Number(b.t.version||1)-Number(a.t.version||1)});var active=matches.filter(function(x){return x.t.activeDefault===true})[0]||matches[0];return active?active.i:-1};
   function stateOptions(region,selected){var row=get().find(function(r){return r.name===region}),allowed=row?(row.states||[]):[];return '<option value="">Select state</option>'+STATES.filter(function(s){return allowed.indexOf(s[0])!==-1}).map(function(s){return'<option value="'+s[0]+'"'+(s[0]===selected?' selected':'')+'>'+s[0]+' – '+s[1]+'</option>'}).join('')}
   function populate(region,state){var rs=document.getElementById('tpl-region'),ss=document.getElementById('tpl-state');if(!rs||!ss)return;var rows=get();rs.innerHTML='<option value="">Select region</option>'+rows.map(function(r){return'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>'}).join('');rs.value=region||'';if(!rs.value){ss.innerHTML='<option value="">Select a region first</option>';ss.value='';ss.disabled=true;return}ss.disabled=false;ss.innerHTML=stateOptions(rs.value,String(state||'').toUpperCase());ss.value=String(state||'').toUpperCase()}
   window.hmPopulateTemplateRouting=populate;
