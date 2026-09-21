@@ -55297,113 +55297,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmBuildDefaultTeamMembers() {
-      var members = [];
-      var seen = {};
-      function upsert(member) {
-        if (!member) return;
-        var name = String(member.name || '').trim();
-        if (!name) return;
-        var role = ['Owner', 'Admin', 'Office', 'Manager', 'Production', 'Sales Rep', 'Canvasser', 'Viewer'].indexOf(member.role) !== -1 ? member.role : 'Sales Rep';
-        var auth = crmNormalizeTeamMemberAuth(member);
-        var baseId = String(member.id || '').trim() || (
-          role === 'Manager' ? 'mgr_' + crmSettingsSlug(name)
-          : role === 'Sales Rep' ? 'rep_' + crmSettingsSlug(name)
-          : 'user_' + crmSettingsSlug(name)
-        );
-        var key = baseId.toLowerCase();
-        var current = seen[key];
-        if (!current) {
-          current = {
-            id: baseId,
-            name: name,
-            email: String(member.email || '').trim(),
-            phone: String(member.phone || '').trim(),
-            role: role,
-            active: member.active !== false,
-            managerId: String(member.managerId || '').trim(),
-            managerName: String(member.managerName || '').trim(),
-            teamId: String(member.teamId || '').trim(),
-            teamName: String(member.teamName || '').trim(),
-            calendarAccess: String(member.calendarAccess || 'role-based').trim() || 'role-based',
-            authPassword: auth.authPassword,
-            tempPassword: auth.tempPassword,
-            forcePasswordReset: auth.forcePasswordReset
-          };
-          seen[key] = current;
-          members.push(current);
-          return;
-        }
-        if (!current.email && member.email) current.email = String(member.email || '').trim();
-        if (!current.phone && member.phone) current.phone = String(member.phone || '').trim();
-        if (!current.managerId && member.managerId) current.managerId = String(member.managerId || '').trim();
-        if (!current.managerName && member.managerName) current.managerName = String(member.managerName || '').trim();
-        if (!current.teamId && member.teamId) current.teamId = String(member.teamId || '').trim();
-        if (!current.teamName && member.teamName) current.teamName = String(member.teamName || '').trim();
-        if (!current.active && member.active !== false) current.active = true;
-        if (current.role === 'Sales Rep' && role !== 'Sales Rep') current.role = role;
-        if (!current.authPassword && auth.authPassword) current.authPassword = auth.authPassword;
-        if (!current.tempPassword && auth.tempPassword) current.tempPassword = auth.tempPassword;
-        if (!current.forcePasswordReset && auth.forcePasswordReset) current.forcePasswordReset = true;
-      }
-
-      TEAMS.forEach(function (team) {
-        upsert({
-          id: team.managerId,
-          name: team.managerName,
-          role: 'Manager',
-          active: true,
-          teamId: team.id,
-          teamName: team.name
-        });
-      });
-
-      REPS.forEach(function (rep) {
-        var team = TEAMS.find(function (t) { return String(t.managerId || '').trim() === String(rep.managerId || '').trim(); }) || null;
-        upsert({
-          id: rep.id,
-          name: rep.name,
-          role: 'Sales Rep',
-          active: rep.active !== false,
-          managerId: rep.managerId,
-          managerName: team ? team.managerName : '',
-          teamId: team ? team.id : '',
-          teamName: team ? team.name : ''
-        });
-      });
-
-      crmReadLegacyRepNames().forEach(function (name) {
-        upsert({ name: name, role: 'Sales Rep', active: true });
-      });
-
-      if (Array.isArray(CRM_TEST_USERS)) {
-        CRM_TEST_USERS.forEach(function (user) {
-          if (!user) return;
-          upsert({
-            id: 'user_' + crmSettingsSlug(user.displayName || user.email || user.role),
-            name: user.displayName || user.role,
-            email: user.email || '',
-            role: user.role || 'Sales Rep',
-            active: true
-          });
-        });
-      }
-
-      var currentName = localStorage.getItem(CRM_USER_NAME_KEY) || '';
-      var currentEmail = localStorage.getItem(CRM_USER_EMAIL_KEY) || '';
-      var currentRole = localStorage.getItem(CRM_ROLE_KEY) || '';
-      if (currentName || currentRole) {
-        upsert({
-          id: currentRole === 'Manager' ? 'mgr_' + crmSettingsSlug(currentName || currentRole)
-             : currentRole === 'Sales Rep' ? 'rep_' + crmSettingsSlug(currentName || currentRole)
-             : 'user_' + crmSettingsSlug(currentName || currentRole),
-          name: currentName || currentRole,
-          email: currentEmail,
-          role: currentRole || 'Sales Rep',
-          active: true
-        });
-      }
-
-      return members;
+      var authUser = window.auth && window.auth.currentUser;
+      var currentEmail = String(localStorage.getItem(CRM_USER_EMAIL_KEY) || (authUser && authUser.email) || '').trim();
+      var known = Array.isArray(CRM_TEST_USERS) ? CRM_TEST_USERS.find(function (u) { return String(u && u.email || '').toLowerCase() === currentEmail.toLowerCase(); }) : null;
+      var currentName = String(localStorage.getItem(CRM_USER_NAME_KEY) || (authUser && authUser.displayName) || (known && known.displayName) || currentEmail || '').trim();
+      var currentRole = String(localStorage.getItem(CRM_ROLE_KEY) || (known && known.role) || 'Sales Rep').trim();
+      if (!currentName && !currentEmail) return [];
+      if (['Owner','Admin','Office','Manager','Production','Sales Rep','Canvasser','Viewer'].indexOf(currentRole) === -1) currentRole = 'Sales Rep';
+      return [{ id: currentRole === 'Manager' ? 'mgr_' + crmSettingsSlug(currentName || currentRole) : currentRole === 'Sales Rep' ? 'rep_' + crmSettingsSlug(currentName || currentRole) : 'user_' + crmSettingsSlug(currentName || currentRole), name: currentName || currentEmail || currentRole, email: currentEmail, phone: '', role: currentRole, active: true, managerId: '', managerName: '', teamId: '', teamName: '', calendarAccess: 'role-based', firebaseUid: authUser ? String(authUser.uid || '') : '', authPassword: '', tempPassword: '', forcePasswordReset: false }];
     }
 
     function crmFinalizeTeamMembers(members) {
@@ -55448,6 +55349,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var seen = {};
       raw.forEach(function (item, index) {
         if (!item || typeof item !== 'object') return;
+        var legacyDemoId = String(item.id || '').trim().toLowerCase();
+        if (legacyDemoId === 'user_samuel_plunkett') return;
+        if ({mgr_sam:1,mgr_dana:1,rep_alex:1,rep_jordan:1,rep_casey:1,rep_riley:1,rep_morgan:1,rep_taylor:1,rep_sam:1}[legacyDemoId] && !String(item.email || '').trim() && !String(item.firebaseUid || item.authUid || '').trim()) return;
         var name = crmNormalizeTeamMemberText(item.name || '');
         if (!name) return;
         var role = ['Owner', 'Admin', 'Office', 'Manager', 'Production', 'Sales Rep', 'Canvasser', 'Viewer'].indexOf(item.role) !== -1 ? item.role : 'Sales Rep';
@@ -55504,14 +55408,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmGetTeamMembers() {
       try {
-        var parsed = JSON.parse(localStorage.getItem(APP_TEAM_MEMBERS_KEY) || 'null');
-        if (Array.isArray(parsed) && parsed.length) return crmNormalizeTeamMembers(parsed);
+        var raw = localStorage.getItem(APP_TEAM_MEMBERS_KEY);
+        if (raw != null) {
+          var parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return crmNormalizeTeamMembers(parsed);
+        }
       } catch (e) {}
-      var snapshot = crmGetDataModelSnapshot();
-      if (snapshot && Array.isArray(snapshot.users) && snapshot.users.length) {
-        return crmNormalizeTeamMembers(snapshot.users);
-      }
-      var defaults = crmNormalizeTeamMembers(crmBuildDefaultTeamMembers());
+      var defaults = crmNormalizeTeamMembers([]);
       try { localStorage.setItem(APP_TEAM_MEMBERS_KEY, JSON.stringify(defaults)); } catch (e2) {}
       return defaults;
     }
@@ -55542,29 +55445,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var members = crmGetTeamMembers();
       var groups = [];
       var seen = {};
-      TEAMS.forEach(function (team) {
-        var member = members.find(function (item) { return item.role === 'Manager' && item.id === team.managerId; }) || null;
-        var key = String(team.id || '').trim();
-        if (!key || seen[key]) return;
-        seen[key] = true;
-        groups.push({
-          id: key,
-          name: String(team.name || '').trim(),
-          managerId: team.managerId || (member ? member.id : ''),
-          managerName: team.managerName || (member ? member.name : '')
-        });
-      });
       members.forEach(function (member) {
         if (member.role !== 'Manager') return;
         var key = String(member.teamId || ('team_' + crmSettingsSlug(member.name))).trim();
-        if (seen[key]) return;
+        if (!key || seen[key]) return;
         seen[key] = true;
-        groups.push({
-          id: key,
-          name: String(member.teamName || (member.name + ' Team')).trim(),
-          managerId: member.id,
-          managerName: member.name
-        });
+        groups.push({ id:key, name:String(member.teamName || (member.name + ' Team')).trim(), managerId:member.id, managerName:member.name });
       });
       return groups;
     }
