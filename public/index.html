@@ -18918,10 +18918,22 @@
       body.crm-standard-header-active .topbar-controls { min-width: 0 !important; }
       body.crm-standard-header-active .crm-profile-copy,
       body.crm-standard-header-active .crm-profile-caret { display: none !important; }
+      body.crm-standard-header-active.crm-header-stage-row-active .pipeline-header-center .crm-pipe-filter-bar {
+        width: calc(50vw - 2px) !important;
+        max-width: calc(50vw - 2px) !important;
+        gap: 1px !important;
+      }
+      body.crm-standard-header-active.crm-header-stage-row-active #crm-pipeline-stage-filter-left { right: calc(50% + 1px) !important; }
+      body.crm-standard-header-active.crm-header-stage-row-active #crm-pipeline-stage-filter-right { left: calc(50% + 1px) !important; }
       body.crm-standard-header-active.crm-header-stage-row-active .crm-pipeline-header-filter .crm-pipe-filter-btn {
-        padding-right: 7px !important;
-        padding-left: 7px !important;
-        font-size: 10px !important;
+        flex: 1 1 0 !important;
+        width: auto !important;
+        min-width: 0 !important;
+        min-height: 24px !important;
+        padding: 3px 1px !important;
+        font-size: clamp(5.6px, 1.8vw, 8px) !important;
+        letter-spacing: 0 !important;
+        overflow: hidden !important;
       }
     }
     /* Estimates — professional CRM workspace and composable scope */
