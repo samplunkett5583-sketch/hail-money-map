@@ -75724,8 +75724,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         return;
       }
       if (!confirm('Delete ALL CRM leads, tasks, and notes? This cannot be undone.')) return;
-      localStorage.removeItem(CRM_LEADS_KEY);
-      localStorage.removeItem(APP_LEADS_KEY);
+      crmSaveLeads([]);
       localStorage.removeItem(CRM_TASKS_KEY);
       localStorage.removeItem(CRM_APPOINTMENTS_KEY);
       localStorage.removeItem(APP_PAYROLL_ITEMS_KEY);
