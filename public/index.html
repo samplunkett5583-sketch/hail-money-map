@@ -52048,14 +52048,47 @@ function mapsGoogleReady() {
             signedLead.updatedAt = new Date().toISOString();
             if (typeof crmLeadMeetsProspectRequirements === 'function' && crmLeadMeetsProspectRequirements(signedLead)) signedLead.stage = 'Prospect';
             crmPushLeadActivity(signedLead, 'Locked signed contingency PDF uploaded', 'document', crmGetCurrentUserName() || currentRep || '', signedLead.contingencySignedAt);
+            var homeownerEmail = String(signedLead.email || '').trim();
+            if (!homeownerEmail && Array.isArray(signedLead.emailAddresses)) {
+              var primaryEmail = signedLead.emailAddresses.find(function (item) { return item && item.primary && item.value; }) || signedLead.emailAddresses.find(function (item) { return item && item.value; });
+              homeownerEmail = primaryEmail ? String(primaryEmail.value || '').trim() : '';
+            }
+            var homeownerName = String(signedLead.homeownerName || ((signedLead.firstName || '') + ' ' + (signedLead.lastName || '')).trim() || 'Homeowner');
+            var emailDelivery = null;
+            var emailError = '';
+            if (homeownerEmail) {
+              try {
+                if (!lockedResult.file || !window.HailMoneyDocuSign || typeof window.HailMoneyDocuSign.sendCompletedCopy !== 'function') throw new Error('Automatic DocuSign email delivery is not ready.');
+                completeBtn.textContent = 'Emailing signed contingency...';
+                var signedPdfBase64 = await window.HailMoneyDocuSign.fileToBase64(lockedResult.file);
+                emailDelivery = await window.HailMoneyDocuSign.sendCompletedCopy({
+                  documentBase64: signedPdfBase64,
+                  documentName: lockedResult.file.name || 'Signed Contingency.pdf',
+                  emailSubject: 'Your signed contingency agreement',
+                  emailBlurb: 'Attached is a copy of your signed contingency agreement for your records.',
+                  recipient: { name: homeownerName, email: homeownerEmail }
+                });
+                signedLead.contingencyEmailStatus = 'sent';
+                signedLead.contingencyEmailedAt = new Date().toISOString();
+                signedLead.contingencyEmailedTo = homeownerEmail;
+                signedLead.contingencyEmailEnvelopeId = String(emailDelivery && emailDelivery.envelopeId || '');
+                crmPushLeadActivity(signedLead, 'Signed contingency emailed to ' + homeownerEmail, 'document', crmGetCurrentUserName() || currentRep || '', signedLead.contingencyEmailedAt);
+              } catch (sendErr) {
+                emailError = String(sendErr && sendErr.message || 'The signed contingency email could not be sent.');
+                signedLead.contingencyEmailStatus = 'failed';
+                signedLead.contingencyEmailError = emailError;
+                crmPushLeadActivity(signedLead, 'Signed contingency email failed: ' + emailError, 'document', crmGetCurrentUserName() || currentRep || '', new Date().toISOString());
+              }
+            } else {
+              emailError = 'No homeowner email is saved on this lead.';
+              signedLead.contingencyEmailStatus = 'missing_email';
+              signedLead.contingencyEmailError = emailError;
+            }
             crmSaveLeads(leadRows);
             _activeFormInstance = null;
-            if (_crmPostLeadContingencyContext && _crmPostLeadContingencyContext.returnMode === 'documents') {
-              _jfDocSelectedCategory = 'Contingency'; _crmCurrentJobFileLeadId = signedLead.id;
-              _crmPostLeadContingencyContext = null; crmOpenJobFileSection(signedLead.id, 'documents'); showUploadToast('Signed contingency saved.');
-              return;
-            }
-            crmOpenPostLeadPhotoReport(signedLead.id);
+            _crmPostLeadContingencyContext = null;
+            goToMainMenuFromHeader();
+            showUploadToast(emailDelivery ? 'Signed contingency saved and emailed to the homeowner.' : ('Signed contingency saved. ' + emailError));
             return;
           }
 

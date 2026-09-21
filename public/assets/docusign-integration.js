@@ -69,6 +69,19 @@
     });
   }
 
+  async function sendCompletedCopy(options) {
+    options = options || {};
+    if (!options.documentBase64) throw new Error('A signed PDF is required.');
+    if (!options.recipient || !options.recipient.email || !options.recipient.name) throw new Error('The homeowner name and email are required.');
+    return call('docusignSendCompletedCopy', {
+      documentBase64: options.documentBase64,
+      documentName: options.documentName || 'Signed Hail Money Contingency.pdf',
+      emailSubject: options.emailSubject || 'Your signed contingency agreement',
+      emailBlurb: options.emailBlurb || 'Attached is a copy of your signed contingency agreement for your records.',
+      recipient: options.recipient
+    });
+  }
+
   async function envelopeStatus(envelopeId) {
     return call('docusignEnvelopeStatus', { envelopeId: envelopeId });
   }
@@ -279,6 +292,7 @@
     status: status,
     disconnect: disconnect,
     sendPdf: sendPdf,
+    sendCompletedCopy: sendCompletedCopy,
     envelopeStatus: envelopeStatus,
     recipientView: recipientView,
     fileToBase64: fileToBase64,

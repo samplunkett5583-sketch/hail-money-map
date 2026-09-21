@@ -501,3 +501,39 @@ exports.docusignRecipientView = onRequest(secretOptions, async (req, res) => {
     return jsonError(res, error, 'DocuSign signing view could not be created.');
   }
 });
+exports.docusignSendCompletedCopy = onRequest(secretOptions, async (req, res) => {
+  permitCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST required.' });
+  try {
+    const user = await requireFirebaseUser(req);
+    const { organizationId, connection, tokens } = await getConnection(user);
+    const body = req.body || {};
+    const documentBase64 = parseBase64Document(body.documentBase64);
+    const documentName = String(body.documentName || 'Signed Hail Money Contingency.pdf').trim().replace(/[<>:"/\\|?*]+/g, '-').slice(0, 180) || 'Signed Hail Money Contingency.pdf';
+    const recipient = body.recipient || {};
+    const email = String(recipient.email || '').trim().toLowerCase();
+    const name = String(recipient.name || '').trim().slice(0, 120);
+    if (!email || !/^\S+@\S+\.\S+$/.test(email) || !name) throw Object.assign(new Error('A valid homeowner name and email are required.'), { statusCode: 400 });
+    const envelopeDefinition = {
+      emailSubject: String(body.emailSubject || 'Your signed contingency agreement').trim().slice(0, 100),
+      emailBlurb: String(body.emailBlurb || 'Attached is a copy of your signed contingency agreement for your records.').trim().slice(0, 10000),
+      documents: [{ documentBase64, name: documentName, fileExtension: 'pdf', documentId: '1' }],
+      recipients: { carbonCopies: [{ email, name, recipientId: '1', routingOrder: '1' }] },
+      status: 'sent'
+    };
+    const result = await apiRequest(connection, tokens, '/envelopes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(envelopeDefinition)
+    });
+    const envelopeId = sanitizeEnvelopeId(result.envelopeId);
+    await db.collection(ENVELOPES).doc(envelopeId).set({
+      envelopeId, organizationId, createdBy: user.uid,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      status: String(result.status || 'sent'), type: 'completed_copy', documentName,
+      recipientSummary: [{ name, email, recipientId: '1', role: 'carbon_copy' }]
+    });
+    return res.status(200).json({ envelopeId, status: result.status || 'sent', recipient: { name, email } });
+  } catch (error) {
+    return jsonError(res, error, 'The signed contingency copy could not be emailed.');
+  }
+});

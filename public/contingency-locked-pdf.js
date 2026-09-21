@@ -77,6 +77,7 @@
     var meta = await saveFile(leadId, file, 'Locked signed contingency agreement');
     return {
       meta: meta,
+      file: file,
       templateId: String(template && template.id || instance.templateId || ''),
       templateVersion: Number(template && template.version || 1),
       region: String(template && template.region || lead && lead.region || ''),
