@@ -27201,6 +27201,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     }
 
     function showPage(pageId) {
+      allPages = document.querySelectorAll('.page');
       if (pageId === 'page-photo-files' && typeof window.hmPhotoLoadFromSupabase === 'function') {
         window.hmPhotoLoadFromSupabase();
       }
@@ -82906,8 +82907,10 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   ];
 
   function currentRole() {
-    try { return String(typeof crmGetRole === 'function' ? crmGetRole() : '').trim(); }
-    catch (_) { return ''; }
+    try {
+      if (typeof crmGetWorkspaceMenuRole === 'function') return String(crmGetWorkspaceMenuRole() || '').trim();
+      return String(typeof crmGetRole === 'function' ? crmGetRole() : '').trim();
+    } catch (_) { return ''; }
   }
 
   function isAdminOwner() {
@@ -83210,7 +83213,12 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 
   function createPage() {
     var existing = document.getElementById('page-company-financials');
-    if (existing) return existing;
+    if (existing) {
+      try {
+        if (typeof allPages !== 'undefined') allPages = document.querySelectorAll('.page');
+      } catch (_) {}
+      return existing;
+    }
     var anchorPage = document.getElementById('page-main-menu') || document.querySelector('.page');
     if (!anchorPage || !anchorPage.parentElement) return null;
     var section = document.createElement('section');
@@ -83407,13 +83415,6 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   }
 
   document.addEventListener('click', function (event) {
-    var financialNav = event.target.closest && event.target.closest('[data-dashboard-action="company-financials"]');
-    if (financialNav) {
-      event.preventDefault();
-      event.stopPropagation();
-      openCompanyFinancialsPage();
-      return;
-    }
     var refresh = event.target.closest && event.target.closest('[data-company-fin-refresh]');
     if (refresh) { renderCompanyFinancials(); return; }
     var edit = event.target.closest && event.target.closest('[data-company-fin-edit]');
