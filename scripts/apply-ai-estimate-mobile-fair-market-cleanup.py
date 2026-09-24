@@ -26,7 +26,7 @@ verification_pattern = re.compile(r"  function verificationItems\(\) \{.*?\n  \}
 verification_replacement = r'''  function verificationItems() {
     var items = [];
     if (estAiSession.photosNeedManualReview) items.push('Requested photo observations still require manual review.');
-    var requiredMeasurementKeys = ['totalRoofArea', 'squares', 'stories'];
+    var requiredMeasurementKeys = estimateTrades().indexOf('roof') >= 0 ? ['totalRoofArea', 'squares', 'stories'] : [];
     (estAiSession.measurements || []).forEach(function (item) {
       var missing = item.value === '' || item.value === null || item.value === undefined || (requiredMeasurementKeys.indexOf(item.key) >= 0 && Number(item.value) <= 0);
       if (requiredMeasurementKeys.indexOf(item.key) >= 0 && missing) items.push(item.label + ' is required.');

@@ -910,10 +910,56 @@
     return item ? Number(item.value || 0) : 0;
   }
 
-  function line(code, description, quantity, unit, waste, source) {
+  function estimateTrades(scope) {
+    if (typeof estScopeCategories === 'function') return estScopeCategories(scope || (estAiSession && (estAiSession.estimate_category || estAiSession.trade)));
+    return String(scope || '').split('_').filter(function (trade) { return ['roof', 'siding', 'gutters'].indexOf(trade) >= 0; });
+  }
+
+  function sectionDefinitions() {
+    var trades = estimateTrades();
+    var sections = [];
+    if (trades.indexOf('roof') >= 0) sections.push({ key: 'roof', label: 'Dwelling Roof' });
+    if (trades.indexOf('siding') >= 0) {
+      sections.push({ key: 'siding_front', label: 'Front Elevation' });
+      sections.push({ key: 'siding_right', label: 'Right Elevation' });
+      sections.push({ key: 'siding_rear', label: 'Rear Elevation' });
+      sections.push({ key: 'siding_left', label: 'Left Elevation' });
+    }
+    if (trades.indexOf('gutters') >= 0) {
+      sections.push({ key: 'gutters', label: 'Gutters' });
+      sections.push({ key: 'downspouts', label: 'Downspouts' });
+    }
+    sections.push({ key: 'misc', label: 'Miscellaneous' });
+    return sections;
+  }
+
+  function inferLineSection(item) {
+    if (item && item.section) return item.section;
+    var code = String(item && item.code || '').toUpperCase();
+    var description = String(item && item.description || '').toLowerCase();
+    if (/PRMT|DUMP|DISP|DELV|CLNP|MISC/.test(code) || /permit|dumpster|debris|delivery|cleanup|additional labor/.test(description)) return 'misc';
+    if (/DOWNSPOUT/.test(code) || /downspout/.test(description)) return 'downspouts';
+    if (/GUT/.test(code) || /gutter/.test(description)) return 'gutters';
+    if (/front/.test(description)) return 'siding_front';
+    if (/right/.test(description)) return 'siding_right';
+    if (/rear|back elevation/.test(description)) return 'siding_rear';
+    if (/left/.test(description)) return 'siding_left';
+    if (/SID/.test(code) || /siding|soffit|fascia|j-channel|corner post/.test(description)) return 'siding_front';
+    return estimateTrades().indexOf('roof') >= 0 ? 'roof' : sectionDefinitions()[0].key;
+  }
+
+  function sectionSelect(item) {
+    var selected = inferLineSection(item);
+    item.section = selected;
+    return '<select data-field="section" aria-label="Estimate section">' + sectionDefinitions().map(function (section) {
+      return '<option value="' + esc(section.key) + '"' + (section.key === selected ? ' selected' : '') + '>' + esc(section.label) + '</option>';
+    }).join('') + '</select>';
+  }
+
+  function line(code, description, quantity, unit, waste, source, section) {
     return {
       id: 'line_' + Math.random().toString(36).slice(2), code: code, description: description,
-      quantity: Number(quantity || 0), unit: unit, material: 0, labor: 0, equipment: 0,
+      section: section || '', quantity: Number(quantity || 0), unit: unit, material: 0, labor: 0, equipment: 0,
       waste: Number(waste || 0), taxable: true,
       quantitySource: source || (Number(quantity || 0) > 0 ? 'Confirmed measurement review' : 'Measurement not entered'), materialSource: 'Manual price required',
       laborSource: 'Company labor rate not configured — manual rate required', equipmentSource: 'Manual price required',
@@ -1026,7 +1072,7 @@
       var amounts = lineAmounts(item);
       var total = amounts.material + amounts.labor + amounts.equipment;
       var quantityValue = item.confidence === 'Needs confirmation' && Number(item.quantity || 0) <= 0 ? '' : Number(item.quantity || 0);
-      return '<tr data-est-ai-line="' + index + '"><td><input data-field="code" value="' + esc(item.code) + '" aria-label="Line-item code" /></td><td><input data-field="description" value="' + esc(item.description) + '" aria-label="Description" /></td><td><input data-field="quantity" type="number" min="0" step=".01" value="' + quantityValue + '" placeholder="Not entered" aria-label="Quantity" /></td><td><input data-field="unit" value="' + esc(item.unit) + '" aria-label="Unit" /></td><td><input data-field="material" type="number" min="0" step=".01" value="' + Number(item.material || 0) + '" aria-label="Material unit price" /><input class="est-ai-line-source" data-field="materialSource" value="' + esc(item.materialSource) + '" aria-label="Material price source" /></td><td><input data-field="labor" type="number" min="0" step=".01" value="' + Number(item.labor || 0) + '" aria-label="Labor unit price" /><input class="est-ai-line-source" data-field="laborSource" value="' + esc(item.laborSource) + '" aria-label="Labor price source" /></td><td><input data-field="equipment" type="number" min="0" step=".01" value="' + Number(item.equipment || 0) + '" aria-label="Equipment unit price" /></td><td><input data-field="waste" type="number" min="0" step=".1" value="' + Number(item.waste || 0) + '" aria-label="Waste percent" /></td><td><label class="est-ai-tax-check"><input data-field="taxable" type="checkbox"' + (item.taxable ? ' checked' : '') + ' /> Taxable</label></td><td><input class="est-ai-line-source" data-field="quantitySource" value="' + esc(item.quantitySource) + '" aria-label="Quantity source" /><select data-field="confidence" aria-label="Verification status">' + sourceOptions(item.confidence) + '</select></td><td data-est-ai-line-total>' + money(total) + '</td><td><div class="est-ai-line-actions"><button type="button" data-line-up="' + index + '" aria-label="Move line up">↑</button><button type="button" data-line-down="' + index + '" aria-label="Move line down">↓</button><button type="button" data-line-duplicate="' + index + '" aria-label="Duplicate line">⧉</button><button class="est-ai-remove-line" type="button" data-line-remove="' + index + '" aria-label="Remove line">×</button></div></td></tr>';
+      return '<tr data-est-ai-line="' + index + '"><td><input data-field="code" value="' + esc(item.code) + '" aria-label="Line-item code" /></td><td>' + sectionSelect(item) + '</td><td><input data-field="description" value="' + esc(item.description) + '" aria-label="Description" /></td><td><input data-field="quantity" type="number" min="0" step=".01" value="' + quantityValue + '" placeholder="Not entered" aria-label="Quantity" /></td><td><input data-field="unit" value="' + esc(item.unit) + '" aria-label="Unit" /></td><td><input data-field="material" type="number" min="0" step=".01" value="' + Number(item.material || 0) + '" aria-label="Material unit price" /><input class="est-ai-line-source" data-field="materialSource" value="' + esc(item.materialSource) + '" aria-label="Material price source" /></td><td><input data-field="labor" type="number" min="0" step=".01" value="' + Number(item.labor || 0) + '" aria-label="Labor unit price" /><input class="est-ai-line-source" data-field="laborSource" value="' + esc(item.laborSource) + '" aria-label="Labor price source" /></td><td><input data-field="equipment" type="number" min="0" step=".01" value="' + Number(item.equipment || 0) + '" aria-label="Equipment unit price" /></td><td><input data-field="waste" type="number" min="0" step=".1" value="' + Number(item.waste || 0) + '" aria-label="Waste percent" /></td><td><label class="est-ai-tax-check"><input data-field="taxable" type="checkbox"' + (item.taxable ? ' checked' : '') + ' /> Taxable</label></td><td><input class="est-ai-line-source" data-field="quantitySource" value="' + esc(item.quantitySource) + '" aria-label="Quantity source" /><select data-field="confidence" aria-label="Verification status">' + sourceOptions(item.confidence) + '</select></td><td data-est-ai-line-total>' + money(total) + '</td><td><div class="est-ai-line-actions"><button type="button" data-line-up="' + index + '" aria-label="Move line up">↑</button><button type="button" data-line-down="' + index + '" aria-label="Move line down">↓</button><button type="button" data-line-duplicate="' + index + '" aria-label="Duplicate line">⧉</button><button class="est-ai-remove-line" type="button" data-line-remove="' + index + '" aria-label="Remove line">×</button></div></td></tr>';
     }).join('');
     document.getElementById('est-ai-line-empty').hidden = estAiSession.lineItems.length > 0;
     updateTotals();
@@ -1062,13 +1108,16 @@
     document.getElementById('est-ai-result-number').textContent = estAiSession.estimateNumber;
     document.getElementById('est-ai-result-address').textContent = estAiSession.address.formatted;
     var typeLabel = estAiSession.propertyType === 'commercial' ? 'Commercial' : 'Residential';
-    var tradeLabel = { roof: 'Roof', siding: 'Siding', gutters: 'Gutters' }[estAiSession.trade] || 'Estimate';
+    var scopeKey = estAiSession.estimate_category || estAiSession.trade || '';
+    var tradeLabel = (typeof EST_SCOPE_LABELS !== 'undefined' && EST_SCOPE_LABELS[scopeKey]) || scopeKey.split('_').map(function (trade) { return trade.charAt(0).toUpperCase() + trade.slice(1); }).join(' + ') || 'Estimate';
+    var resultTitle = document.getElementById('est-ai-result-title');
+    if (resultTitle) resultTitle.textContent = 'AI ' + tradeLabel + ' Estimate';
     document.getElementById('est-ai-result-subtitle').textContent = typeLabel + ' · ' + tradeLabel + ' · Editable estimate';
     document.getElementById('est-ai-result-status').textContent = estAiSession.status || 'Draft';
-    document.getElementById('est-ai-result-meta').innerHTML = '<dt>Created</dt><dd>' + esc(new Date(estAiSession.createdAt).toLocaleDateString()) + '</dd><dt>Property</dt><dd>Residential</dd><dt>Trade</dt><dd>Roof</dd><dt>Pricing</dt><dd>' + esc(estAiSession.abcPricing && estAiSession.abcPricing.pricesRetrieved ? 'Live ABC customer pricing' : 'ABC pricing pending connection') + '</dd>';
+    document.getElementById('est-ai-result-meta').innerHTML = '<dt>Created</dt><dd>' + esc(new Date(estAiSession.createdAt).toLocaleDateString()) + '</dd><dt>Property</dt><dd>' + esc(typeLabel) + '</dd><dt>Trade</dt><dd>' + esc(tradeLabel) + '</dd><dt>Pricing</dt><dd>' + esc(estAiSession.abcPricing && estAiSession.abcPricing.pricesRetrieved ? 'Live ABC customer pricing' : 'ABC pricing pending connection') + '</dd>';
     ['name', 'phone', 'email'].forEach(function (key) { var input = document.querySelector('[data-est-customer="' + key + '"]'); if (input) input.value = estAiSession.customer && estAiSession.customer[key] || ''; });
     var solar = estAiSession.sources && estAiSession.sources.solar;
-    document.getElementById('est-ai-property-summary').innerHTML = '<div><dt>Address</dt><dd>' + esc(estAiSession.address.formatted) + '</dd></div><div><dt>Property type</dt><dd>Residential</dd></div><div><dt>Trade</dt><dd>Roof</dd></div>' + (solar && solar.available ? '<div><dt>API footprint</dt><dd>' + esc(solar.footprintSquareFeet) + ' sq ft</dd></div><div><dt>Aerial imagery</dt><dd>' + esc(solar.imageryDate || 'Date not supplied') + ' · ' + esc(solar.imageryQuality) + '</dd></div>' : '');
+    document.getElementById('est-ai-property-summary').innerHTML = '<div><dt>Address</dt><dd>' + esc(estAiSession.address.formatted) + '</dd></div><div><dt>Property type</dt><dd>' + esc(typeLabel) + '</dd></div><div><dt>Trade</dt><dd>' + esc(tradeLabel) + '</dd></div>' + (solar && solar.available ? '<div><dt>API footprint</dt><dd>' + esc(solar.footprintSquareFeet) + ' sq ft</dd></div><div><dt>Aerial imagery</dt><dd>' + esc(solar.imageryDate || 'Date not supplied') + ' · ' + esc(solar.imageryQuality) + '</dd></div>' : '');
     var roof = [
       ['Stories', estAiSession.answers.stories && estAiSession.answers.stories.value],
       ['Split-level', estAiSession.answers.stories && typeof estAiSession.answers.stories.splitLevel === 'boolean' ? (estAiSession.answers.stories.splitLevel ? 'Yes' : 'No') : 'Needs confirmation'],
@@ -1080,7 +1129,7 @@
       ['Ventilation', estAiSession.answers.ventilation && estAiSession.answers.ventilation.value]
     ];
     document.getElementById('est-ai-roof-summary').innerHTML = roof.filter(function (pair) { return pair[1]; }).map(function (pair) { return '<div><dt>' + esc(pair[0]) + '</dt><dd>' + esc(pair[1]) + '</dd></div>'; }).join('');
-    document.getElementById('est-ai-scope-work').textContent = 'Remove and replace the confirmed residential roof scope using the reviewed measurements. Install applicable underlayment, shingles, edge metal, flashings, ventilation, accessories, delivery, permit allowance, and cleanup shown in the detailed line items.';
+    document.getElementById('est-ai-scope-work').textContent = 'Review the confirmed ' + tradeLabel.toLowerCase() + ' scope and all detailed line items. Each selected trade remains part of this one estimate and one combined project total.';
     if (estAiSession.crmManual) {
       document.getElementById('est-ai-result-meta').innerHTML = '<dt>Created</dt><dd>' + esc(new Date(estAiSession.createdAt).toLocaleDateString()) + '</dd><dt>Property</dt><dd>' + typeLabel + '</dd><dt>Trade</dt><dd>' + tradeLabel + '</dd><dt>Job type</dt><dd>' + esc(estAiSession.job_type) + '</dd>';
       document.getElementById('est-ai-property-summary').innerHTML = '<dt>Address</dt><dd>' + esc(estAiSession.address.formatted) + '</dd><dt>Property type</dt><dd>' + typeLabel + '</dd><dt>Trade</dt><dd>' + tradeLabel + '</dd>';
@@ -1164,17 +1213,39 @@
     var jobType = estAiSession.job_type || 'retail';
     var trade = estAiSession.estimate_category || estAiSession.trade || 'roof';
     var pricingRows = window.HailMoneyPricing && estAiSession.fairMarketPricing ? window.HailMoneyPricing.sync(estAiSession) : [];
-    var incomplete = !pricingRows.length || pricingRows.some(function (row) { return !row.result || !row.model || !(Number(row.quantity) > 0) || row.model.priceStatus === 'sample'; });
+    var pricingById = {};
+    pricingRows.forEach(function (row) { if (row && row.id) pricingById[row.id] = row; });
+    var incomplete = verificationItems().length > 0 || pricingRows.some(function (row) { return !row.result || !row.model || !(Number(row.quantity) > 0) || row.model.priceStatus === 'sample'; });
+    function lineFinancial(item) {
+      var priced = pricingById[item.id];
+      if (priced && priced.result) {
+        var q = Number(priced.quantity || item.quantity || 0), r = priced.result;
+        return {
+          material: (Number(r.materialSubtotal || 0) + Number(r.wasteCost || 0)) * q,
+          labor: Number(r.laborSubtotal || 0) * q,
+          equipment: Number(r.equipmentSubtotal || 0) * q,
+          other: Number(r.priceAdjustment || 0) * q,
+          tax: Number(r.tax || 0) * q,
+          overhead: Number(r.overheadProfit || 0) * q,
+          profit: 0,
+          grand: Number(r.finalExtendedPrice || 0)
+        };
+      }
+      var amounts = lineAmounts(item);
+      var direct = amounts.material + amounts.labor + amounts.equipment;
+      var tax = item.taxable ? (amounts.material + amounts.equipment) * Number(estAiSession.taxRate || 0) / 100 : 0;
+      var overhead = direct * Number(estAiSession.overheadRate || 0) / 100;
+      var profit = (direct + overhead) * Number(estAiSession.profitRate || 0) / 100;
+      return { material:amounts.material, labor:amounts.labor, equipment:amounts.equipment, other:0, tax:tax, overhead:overhead, profit:profit, grand:direct + tax + overhead + profit };
+    }
+    function lineTotal(item) { return lineFinancial(item).grand; }
+    function sectionItems(section) { return (estAiSession.lineItems || []).filter(function (item) { return inferLineSection(item) === section; }); }
+    function sectionTotal(section) { return sectionItems(section).reduce(function (sum, item) { return sum + lineTotal(item); }, 0); }
+    function sectionQuantity(section, unit) { return sectionItems(section).filter(function (item) { return !unit || String(item.unit || '').toUpperCase() === unit; }).reduce(function (sum, item) { return sum + Number(item.quantity || 0); }, 0); }
     var financial = { material:0, labor:0, equipment:0, other:0, tax:0, overhead:0, profit:0, grand:0 };
-    pricingRows.forEach(function (row) {
-      if (!row.result) return;
-      var q = Number(row.quantity || 0), r = row.result;
-      financial.material += (Number(r.materialSubtotal || 0) + Number(r.wasteCost || 0)) * q;
-      financial.labor += Number(r.laborSubtotal || 0) * q;
-      financial.tax += Number(r.tax || 0) * q;
-      financial.overhead += Number(r.overheadProfit || 0) * q;
-      financial.other += Number(r.priceAdjustment || 0) * q;
-      financial.grand += Number(r.finalExtendedPrice || 0);
+    (estAiSession.lineItems || []).forEach(function (item) {
+      var parts = lineFinancial(item);
+      Object.keys(financial).forEach(function (key) { financial[key] += Number(parts[key] || 0); });
     });
     Object.keys(financial).forEach(function (key) { financial[key] = Math.round(financial[key] * 100) / 100; });
     function text(value) { return String(value == null || value === '' ? '-' : value).replace(/[\u2011\u2012\u2013\u2014]/g, '-'); }
@@ -1225,15 +1296,95 @@
     y=title('Detected roof diagram',doc.lastAutoTable.finalY+30); drawRoofDiagram(y);
 
     y = addSectionPage('Detailed line items');
-    var grouped={}; pricingRows.forEach(function(row){var code=((estAiSession.lineItems||[]).find(function(i){return i.id===row.id;})||{}).code||'';(grouped[category(code)]||(grouped[category(code)]=[])).push({row:row,code:code});});
-    Object.keys(grouped).forEach(function(group,groupIndex){var nextY=groupIndex?doc.lastAutoTable.finalY+22:y;var estimatedHeight=58+(grouped[group].length+1)*24;if(groupIndex&&nextY+estimatedHeight>720){y=addSectionPage('Detailed line items (continued)');}else y=nextY;doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor.apply(doc,navy);doc.text(group,margin,y);var subtotal=0;var body=grouped[group].map(function(entry,i){var r=entry.row,res=r.result;var total=res?Number(res.finalExtendedPrice||0):0;subtotal+=total;return [String(i+1),entry.code,text(r.name),Number(r.quantity||0).toFixed(2),text(r.unit),res?currency(res.finalUnitPrice):'Unpriced',res?currency(Number(res.tax||0)*Number(r.quantity||0)):'-',res?currency(total):'-'];});body.push([{content:'Category subtotal',colSpan:7,styles:{halign:'right',fontStyle:'bold'}},{content:currency(subtotal),styles:{halign:'right',fontStyle:'bold'}}]);doc.autoTable({startY:y+8,margin:{left:margin,right:margin,bottom:58},head:[['#','Code','Description','Qty','Unit','Unit price','Tax','Total']],body:body,theme:'grid',styles:{font:'helvetica',fontSize:7.5,cellPadding:4,overflow:'linebreak',lineColor:[222,224,229],lineWidth:.35},headStyles:{fillColor:navy},columnStyles:{0:{cellWidth:22},1:{cellWidth:55},2:{cellWidth:185},3:{cellWidth:42,halign:'right'},4:{cellWidth:34},5:{cellWidth:62,halign:'right'},6:{cellWidth:53,halign:'right'},7:{cellWidth:64,halign:'right'}},showHead:'everyPage',rowPageBreak:'avoid'});});
+    function scopeLineRows(section) {
+      var items = sectionItems(section);
+      if (!items.length) return [[{content:'No line items entered for this section.',colSpan:8,styles:{fontStyle:'italic',textColor:[95,99,108]}}]];
+      return items.map(function (item, index) {
+        var priced = pricingById[item.id], result = priced && priced.result;
+        var parts = lineFinancial(item);
+        var unitPrice = result ? Number(result.finalUnitPrice || 0) : Number(item.material || 0) + Number(item.labor || 0) + Number(item.equipment || 0);
+        return [String(index + 1), text(item.code), text(item.description), Number(item.quantity || 0).toFixed(2), text(item.unit), currency(unitPrice), currency(parts.tax), currency(parts.grand)];
+      });
+    }
+    function renderScopeSection(label, section, totalLabel, startY) {
+      var sectionY = startY;
+      if (sectionY > 690) sectionY = addSectionPage('Detailed line items (continued)');
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor.apply(doc,navy); doc.text(label,margin,sectionY);
+      var body = scopeLineRows(section);
+      if (totalLabel) body.push([{content:totalLabel,colSpan:7,styles:{halign:'right',fontStyle:'bold'}},{content:currency(sectionTotal(section)),styles:{halign:'right',fontStyle:'bold'}}]);
+      doc.autoTable({startY:sectionY+8,margin:{left:margin,right:margin,bottom:58},head:[['#','Code','Description','Qty','Unit','Unit price','Tax','Total']],body:body,theme:'grid',styles:{font:'helvetica',fontSize:7.5,cellPadding:4,overflow:'linebreak',lineColor:[222,224,229],lineWidth:.35},headStyles:{fillColor:navy},columnStyles:{0:{cellWidth:22},1:{cellWidth:55},2:{cellWidth:185},3:{cellWidth:42,halign:'right'},4:{cellWidth:34},5:{cellWidth:62,halign:'right'},6:{cellWidth:53,halign:'right'},7:{cellWidth:64,halign:'right'}},showHead:'everyPage',rowPageBreak:'avoid'});
+      return doc.lastAutoTable.finalY + 24;
+    }
+    function renderTradeTotal(label, amount, startY) {
+      var totalY = startY;
+      if (totalY > 710) totalY = addSectionPage('Detailed line items (continued)');
+      doc.autoTable({startY:totalY,margin:{left:margin,right:margin},body:[[{content:label,styles:{fontStyle:'bold'}},{content:currency(amount),styles:{halign:'right',fontStyle:'bold'}}]],theme:'grid',styles:{font:'helvetica',fontSize:10,cellPadding:7,lineColor:[220,223,228],lineWidth:.4},columnStyles:{1:{halign:'right'}}});
+      return doc.lastAutoTable.finalY + 26;
+    }
+    var selectedTrades = estimateTrades(trade);
+    if (selectedTrades.indexOf('roof') >= 0) y = renderScopeSection('Dwelling Roof', 'roof', 'Total Dwelling Roof', y);
+    if (selectedTrades.indexOf('siding') >= 0) {
+      y = renderScopeSection('Siding - Front Elevation', 'siding_front', null, y);
+      y = renderScopeSection('Siding - Right Elevation', 'siding_right', null, y);
+      y = renderScopeSection('Siding - Rear Elevation', 'siding_rear', null, y);
+      y = renderScopeSection('Siding - Left Elevation', 'siding_left', null, y);
+      var sidingTotal = sectionTotal('siding_front') + sectionTotal('siding_right') + sectionTotal('siding_rear') + sectionTotal('siding_left');
+      y = renderTradeTotal('Total Siding', sidingTotal, y + 6);
+    }
+    if (selectedTrades.indexOf('gutters') >= 0) {
+      if (y > 670) y = addSectionPage('Detailed line items (continued)');
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor.apply(doc,navy); doc.text('Gutters',margin,y);
+      var gutterLf = sectionQuantity('gutters', 'LF');
+      var downspoutLf = sectionQuantity('downspouts', 'LF');
+      var gutterAmount = sectionTotal('gutters');
+      var downspoutAmount = sectionTotal('downspouts');
+      doc.autoTable({startY:y+8,margin:{left:margin,right:margin},head:[['Description','Total LF','Amount Paid']],body:[
+        ['Gutters',gutterLf.toFixed(2),currency(gutterAmount)],
+        ['Downspouts',downspoutLf.toFixed(2),currency(downspoutAmount)],
+        [{content:'Total Gutter and Downspout',styles:{fontStyle:'bold'}},{content:(gutterLf+downspoutLf).toFixed(2),styles:{fontStyle:'bold',halign:'right'}},{content:currency(gutterAmount+downspoutAmount),styles:{fontStyle:'bold',halign:'right'}}]
+      ],theme:'grid',styles:{font:'helvetica',fontSize:9,cellPadding:6,lineColor:[220,223,228],lineWidth:.4},headStyles:{fillColor:navy},columnStyles:{1:{halign:'right'},2:{halign:'right'}}});
+      y = doc.lastAutoTable.finalY + 26;
+    }
+    y = renderScopeSection('Miscellaneous', 'misc', 'Total Miscellaneous', y);
 
     y=addSectionPage('Estimate recap');
-    doc.autoTable({startY:y,margin:{left:margin,right:margin},head:[['Category','Subtotal']],body:Object.keys(grouped).map(function(group){return [group,currency(grouped[group].reduce(function(sum,e){return sum+Number(e.row.result&&e.row.result.finalExtendedPrice||0);},0))];}),theme:'grid',styles:{font:'helvetica',fontSize:10,cellPadding:7},headStyles:{fillColor:navy},columnStyles:{1:{halign:'right'}}});
-    y=title('Final total',doc.lastAutoTable.finalY+32);doc.setFillColor(237,246,240);doc.roundedRect(margin,y,contentWidth,58,6,6,'F');doc.setTextColor.apply(doc,navy);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('GRAND TOTAL',margin+18,y+35);doc.setTextColor.apply(doc,green);doc.setFontSize(20);doc.text(currency(financial.grand),pageWidth-margin-18,y+36,{align:'right'});
+    var breakdown = estAiSession.insuranceBreakdown || {};
+    function firstMoney() {
+      for (var i=0;i<arguments.length;i+=1) {
+        var raw = arguments[i];
+        if (raw !== undefined && raw !== null && String(raw).trim() !== '' && Number(String(raw).replace(/[^0-9.-]/g,'')) === Number(String(raw).replace(/[^0-9.-]/g,''))) return Number(String(raw).replace(/[^0-9.-]/g,''));
+      }
+      return null;
+    }
+    function moneyOrDash(value) { return value == null || !Number.isFinite(Number(value)) ? '-' : currency(value); }
+    var rcv = firstMoney(insurance.totalRcv, insurance.rcv, insurance.rcvAmount, breakdown.totalRcv, estAiSession.rcvAmount, financial.grand);
+    var deductible = firstMoney(insurance.deductible, breakdown.deductible);
+    var depreciation = firstMoney(insurance.depreciation, insurance.depreciationHoldback, breakdown.depreciationHoldback);
+    var recoverableDep = firstMoney(insurance.recoverableDepreciation, breakdown.recoverableDepreciation);
+    var nonRecoverableDep = firstMoney(insurance.nonRecoverableDepreciation, breakdown.nonRecoverableDepreciation);
+    var acv = firstMoney(insurance.acv, insurance.actualCashValue, breakdown.acv);
+    if (acv == null && rcv != null && depreciation != null) acv = Math.max(0, rcv - depreciation);
+    var firstCheck = firstMoney(insurance.firstCheck, breakdown.firstCheck);
+    var supplements = firstMoney(insurance.supplements, breakdown.supplements);
+    var recapRows = [['Project Total',currency(financial.grand)]];
+    if (jobType === 'insurance' || deductible != null || depreciation != null || acv != null) {
+      recapRows = [
+        ['RCV',moneyOrDash(rcv)],
+        ['Deductible',moneyOrDash(deductible)],
+        ['ACV',moneyOrDash(acv)],
+        ['Depreciation',moneyOrDash(depreciation)],
+        ['Recoverable Depreciation',moneyOrDash(recoverableDep)],
+        ['Non-Recoverable Depreciation',moneyOrDash(nonRecoverableDep)],
+        ['First Insurance Check',moneyOrDash(firstCheck)],
+        ['Supplements',moneyOrDash(supplements)],
+        ['Project Total',currency(financial.grand)]
+      ];
+    }
+    doc.autoTable({startY:y,margin:{left:margin,right:margin},head:[['Final totals','Amount']],body:recapRows,theme:'grid',styles:{font:'helvetica',fontSize:10,cellPadding:7},headStyles:{fillColor:navy},columnStyles:{1:{halign:'right',fontStyle:'bold'}}});
+    y=title('Final total',doc.lastAutoTable.finalY+32);doc.setFillColor(237,246,240);doc.roundedRect(margin,y,contentWidth,58,6,6,'F');doc.setTextColor.apply(doc,navy);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text(jobType==='insurance'?'RCV / PROJECT TOTAL':'PROJECT TOTAL',margin+18,y+35);doc.setTextColor.apply(doc,green);doc.setFontSize(20);doc.text(currency(rcv != null ? rcv : financial.grand),pageWidth-margin-18,y+36,{align:'right'});
 
     y=addSectionPage('Terms and acceptance');
-    [['Scope notes',estAiSession.notes||'Roofing work is limited to the detailed line items and confirmed measurements in this estimate.'],['Exclusions',estAiSession.exclusions||'Hidden damage, code upgrades, decking replacement, and work outside the confirmed scope are excluded unless added in writing.'],['Payment terms','Payment schedule and financing terms must be confirmed in the signed contract.'],['Estimate validity','Pricing is valid for 30 days from the created date unless otherwise stated.']].forEach(function(section){y=title(section[0],y);doc.setTextColor.apply(doc,ink);doc.setFont('helvetica','normal');doc.setFontSize(10);var lines=doc.splitTextToSize(text(section[1]),contentWidth);doc.text(lines,margin,y);y+=lines.length*13+22;});
+    [['Scope notes',estAiSession.notes||'Work is limited to the detailed line items and confirmed measurements in this estimate.'],['Exclusions',estAiSession.exclusions||'Hidden damage, code upgrades, decking replacement, and work outside the confirmed scope are excluded unless added in writing.'],['Payment terms','Payment schedule and financing terms must be confirmed in the signed contract.'],['Estimate validity','Pricing is valid for 30 days from the created date unless otherwise stated.']].forEach(function(section){y=title(section[0],y);doc.setTextColor.apply(doc,ink);doc.setFont('helvetica','normal');doc.setFontSize(10);var lines=doc.splitTextToSize(text(section[1]),contentWidth);doc.text(lines,margin,y);y+=lines.length*13+22;});
     doc.setDrawColor(120,124,132);doc.line(margin,650,275,650);doc.line(337,650,pageWidth-margin,650);doc.setFontSize(8);doc.text('Customer acceptance / date',margin,665);doc.text('Estimator / date',337,665);doc.setFontSize(9);doc.text('Estimator: '+text(estAiSession.estimatorName||'Hail Money representative'),337,690);
 
     y=addSectionPage('Internal methodology appendix');
@@ -1268,11 +1419,13 @@
     var now = new Date();
     var abcState = window.abcEstimateRequestState || {};
     var abcConnected = abcPricingRequested && abcState.connected === true && !!abcState.selection;
+    var propertyType = currentEstimate.propertyType || estimateCreationState.propertyType || 'residential';
+    var tradeScope = currentEstimate.measurementScope || estimateCreationState.activeEstimate.trade || 'roof';
     estAiSession = {
       id: 'ai_est_' + now.getTime().toString(36),
       estimateNumber: 'HM-' + now.getFullYear() + '-' + String(now.getTime()).slice(-6),
       createdAt: now.toISOString(), updatedAt: now.toISOString(),
-      propertyType: 'residential', trade: 'roof', address: estAiReadAddress(),
+      propertyType: propertyType, trade: tradeScope, estimate_category: tradeScope, address: estAiReadAddress(),
       abcPricing: {
         connected: abcConnected,
         accountName: abcConnected ? abcState.selection.accountName : null,
@@ -1287,11 +1440,12 @@
     };
     currentEstimate.aiSession = estAiSession;
     if (window.HailMoneyCrmEstimate) window.HailMoneyCrmEstimate.attach(estAiSession);
-    currentEstimate.propertyType = 'residential';
-    currentEstimate.measurementScope = 'roof';
+    currentEstimate.propertyType = propertyType;
+    currentEstimate.measurementScope = tradeScope;
     currentEstimate.measurementSource = 'ai';
     persistDraft();
-    document.getElementById('est-ai-processing-context').textContent = 'Residential · Roof · ' + estAiSession.address.formatted;
+    var startTradeLabel = (typeof EST_SCOPE_LABELS !== 'undefined' && EST_SCOPE_LABELS[tradeScope]) || tradeScope;
+    document.getElementById('est-ai-processing-context').textContent = (propertyType === 'commercial' ? 'Commercial' : 'Residential') + ' · ' + startTradeLabel + ' · ' + estAiSession.address.formatted;
     showPage('page-est-ai-processing');
     runProcessing('initial');
     } finally { estimateStarting = false; }
@@ -1339,7 +1493,7 @@
 
   function enhanceResultPage() {
     var wrap = document.querySelector('#page-est-ai-result .placeholder-wrap');
-    wrap.innerHTML = '<h1 class="page-title">AI Roof Estimate</h1><p class="page-subtitle" id="est-ai-result-subtitle">Editable estimate</p><div class="page-actions"><button class="btn" type="button" id="back-from-est-ai-result">Back to Estimates</button></div><div class="est-ai-result-toolbar"><button class="btn" type="button" id="est-ai-save-draft">Save Draft</button><button class="btn" type="button" id="est-ai-finalize">Finalize Estimate</button><button class="btn" type="button" id="est-ai-print">Print</button><button class="btn btn-primary" type="button" id="est-ai-download-pdf">Download PDF</button></div><section class="main-menu-card estimates-gold-card est-ai-result-header"><div><div class="est-section-label">ESTIMATE</div><h2 id="est-ai-result-number">—</h2><p id="est-ai-result-address">—</p><span id="est-ai-result-status" class="est-ai-status-pill">Draft</span></div><dl id="est-ai-result-meta"></dl></section><section class="main-menu-card estimates-gold-card est-ai-result-card"><div class="estimates-panel-heading"><div><h2>Customer and property</h2><p>Complete any customer details before finalizing.</p></div></div><div class="est-ai-detail-grid"><div class="est-ai-detail-card"><h3>Customer</h3><label class="est-ai-field">NAME<input class="field-input" data-est-customer="name" /></label><label class="est-ai-field">PHONE<input class="field-input" data-est-customer="phone" /></label><label class="est-ai-field">EMAIL<input class="field-input" type="email" data-est-customer="email" /></label></div><div class="est-ai-detail-card"><h3>Property</h3><dl id="est-ai-property-summary"></dl></div><div class="est-ai-detail-card"><h3>Existing roof details</h3><dl id="est-ai-roof-summary"></dl></div><div class="est-ai-detail-card"><h3>Scope of work</h3><p id="est-ai-scope-work"></p></div></div></section><section class="main-menu-card estimates-gold-card est-ai-result-card"><div class="estimates-panel-heading"><div><h2>Measurement summary</h2><p>Every value is labeled by source and confirmation status.</p></div></div><div id="est-ai-measurement-summary" class="est-ai-measurement-summary"></div></section><section class="main-menu-card estimates-gold-card est-ai-result-card"><div class="estimates-panel-heading"><div><h2>Detailed line items</h2><p>Edit, duplicate, reorder, or remove any item. No supplier price is fabricated.</p></div><button class="btn" type="button" id="est-ai-add-line">Add Line Item</button></div><div class="est-ai-table-wrap"><table class="est-ai-line-table"><thead><tr><th>Code</th><th>Description</th><th>Qty</th><th>Unit</th><th>Material / source</th><th>Labor / source</th><th>Equipment</th><th>Waste %</th><th>Tax</th><th>Quantity source / status</th><th>Line total</th><th>Actions</th></tr></thead><tbody id="est-ai-line-items"></tbody></table></div><div id="est-ai-line-empty" class="est-ai-empty-state">No line items.</div><div class="est-ai-totals"><div class="est-ai-totals-controls"><label>Tax rate %<input class="field-input" id="est-ai-tax-rate" type="number" min="0" step=".01" value="0" /></label><label>Overhead %<input class="field-input" id="est-ai-overhead-rate" type="number" min="0" step=".01" value="0" /></label><label>Profit %<input class="field-input" id="est-ai-profit-rate" type="number" min="0" step=".01" value="0" /></label></div><dl class="est-ai-totals-breakdown"><div><dt>Material subtotal</dt><dd id="est-ai-total-material">$0.00</dd></div><div><dt>Labor subtotal</dt><dd id="est-ai-total-labor">$0.00</dd></div><div><dt>Equipment subtotal</dt><dd id="est-ai-total-equipment">$0.00</dd></div><div><dt>Tax total</dt><dd id="est-ai-total-tax">$0.00</dd></div><div><dt>Overhead</dt><dd id="est-ai-total-overhead">$0.00</dd></div><div><dt>Profit</dt><dd id="est-ai-total-profit">$0.00</dd></div><div class="grand"><dt>Grand total</dt><dd id="est-ai-total-grand">$0.00</dd></div><div class="source-note"><dt>Pricing source</dt><dd>Manual until connected</dd></div></dl></div></section><section class="main-menu-card estimates-gold-card est-ai-result-card"><div class="estimates-panel-heading"><div><h2>Items requiring verification</h2><p>The estimate cannot be finalized while required values or prices remain unconfirmed.</p></div></div><div id="est-ai-verification-list" class="est-ai-verification-list"></div></section><section class="main-menu-card estimates-gold-card est-ai-result-card"><div class="estimates-panel-heading"><div><h2>Notes, exclusions, and assumptions</h2><p>Review the AI intake assumptions before presenting the estimate.</p></div></div><div id="est-ai-assumptions"></div><div class="est-ai-textarea-grid"><label>NOTES<textarea class="field-input" id="est-ai-notes" rows="5"></textarea></label><label>EXCLUSIONS<textarea class="field-input" id="est-ai-exclusions" rows="5"></textarea></label></div></section><section class="main-menu-card estimates-gold-card est-ai-result-card"><div class="estimates-panel-heading"><div><h2>Measurement and pricing sources</h2><p>Supplier pricing remains pending until a live authorized ABC request succeeds.</p></div></div><div class="est-ai-detail-card"><ul id="est-ai-source-list"></ul></div></section><div class="est-ai-save-row"><div id="est-ai-save-status" aria-live="polite"></div></div>';
+    wrap.innerHTML = '<h1 class="page-title" id="est-ai-result-title">AI Estimate</h1><p class="page-subtitle" id="est-ai-result-subtitle">Editable estimate</p><div class="page-actions"><button class="btn" type="button" id="back-from-est-ai-result">Back to Estimates</button></div><div class="est-ai-result-toolbar"><button class="btn" type="button" id="est-ai-save-draft">Save Draft</button><button class="btn" type="button" id="est-ai-finalize">Finalize Estimate</button><button class="btn" type="button" id="est-ai-print">Print</button><button class="btn btn-primary" type="button" id="est-ai-download-pdf">Download PDF</button></div><section class="main-menu-card estimates-gold-card est-ai-result-header"><div><div class="est-section-label">ESTIMATE</div><h2 id="est-ai-result-number">—</h2><p id="est-ai-result-address">—</p><span id="est-ai-result-status" class="est-ai-status-pill">Draft</span></div><dl id="est-ai-result-meta"></dl></section><section class="main-menu-card estimates-gold-card est-ai-result-card"><div class="estimates-panel-heading"><div><h2>Customer and property</h2><p>Complete any customer details before finalizing.</p></div></div><div class="est-ai-detail-grid"><div class="est-ai-detail-card"><h3>Customer</h3><label class="est-ai-field">NAME<input class="field-input" data-est-customer="name" /></label><label class="est-ai-field">PHONE<input class="field-input" data-est-customer="phone" /></label><label class="est-ai-field">EMAIL<input class="field-input" type="email" data-est-customer="email" /></label></div><div class="est-ai-detail-card"><h3>Property</h3><dl id="est-ai-property-summary"></dl></div><div class="est-ai-detail-card"><h3>Existing roof details</h3><dl id="est-ai-roof-summary"></dl></div><div class="est-ai-detail-card"><h3>Scope of work</h3><p id="est-ai-scope-work"></p></div></div></section><section class="main-menu-card estimates-gold-card est-ai-result-card"><div class="estimates-panel-heading"><div><h2>Measurement summary</h2><p>Every value is labeled by source and confirmation status.</p></div></div><div id="est-ai-measurement-summary" class="est-ai-measurement-summary"></div></section><section class="main-menu-card estimates-gold-card est-ai-result-card"><div class="estimates-panel-heading"><div><h2>Detailed line items</h2><p>Edit, duplicate, reorder, or remove any item. No supplier price is fabricated.</p></div><button class="btn" type="button" id="est-ai-add-line">Add Line Item</button></div><div class="est-ai-table-wrap"><table class="est-ai-line-table"><thead><tr><th>Code</th><th>Section</th><th>Description</th><th>Qty</th><th>Unit</th><th>Material / source</th><th>Labor / source</th><th>Equipment</th><th>Waste %</th><th>Tax</th><th>Quantity source / status</th><th>Line total</th><th>Actions</th></tr></thead><tbody id="est-ai-line-items"></tbody></table></div><div id="est-ai-line-empty" class="est-ai-empty-state">No line items.</div><div class="est-ai-totals"><div class="est-ai-totals-controls"><label>Tax rate %<input class="field-input" id="est-ai-tax-rate" type="number" min="0" step=".01" value="0" /></label><label>Overhead %<input class="field-input" id="est-ai-overhead-rate" type="number" min="0" step=".01" value="0" /></label><label>Profit %<input class="field-input" id="est-ai-profit-rate" type="number" min="0" step=".01" value="0" /></label></div><dl class="est-ai-totals-breakdown"><div><dt>Material subtotal</dt><dd id="est-ai-total-material">$0.00</dd></div><div><dt>Labor subtotal</dt><dd id="est-ai-total-labor">$0.00</dd></div><div><dt>Equipment subtotal</dt><dd id="est-ai-total-equipment">$0.00</dd></div><div><dt>Tax total</dt><dd id="est-ai-total-tax">$0.00</dd></div><div><dt>Overhead</dt><dd id="est-ai-total-overhead">$0.00</dd></div><div><dt>Profit</dt><dd id="est-ai-total-profit">$0.00</dd></div><div class="grand"><dt>Grand total</dt><dd id="est-ai-total-grand">$0.00</dd></div><div class="source-note"><dt>Pricing source</dt><dd>Manual until connected</dd></div></dl></div></section><section class="main-menu-card estimates-gold-card est-ai-result-card"><div class="estimates-panel-heading"><div><h2>Items requiring verification</h2><p>The estimate cannot be finalized while required values or prices remain unconfirmed.</p></div></div><div id="est-ai-verification-list" class="est-ai-verification-list"></div></section><section class="main-menu-card estimates-gold-card est-ai-result-card"><div class="estimates-panel-heading"><div><h2>Notes, exclusions, and assumptions</h2><p>Review the AI intake assumptions before presenting the estimate.</p></div></div><div id="est-ai-assumptions"></div><div class="est-ai-textarea-grid"><label>NOTES<textarea class="field-input" id="est-ai-notes" rows="5"></textarea></label><label>EXCLUSIONS<textarea class="field-input" id="est-ai-exclusions" rows="5"></textarea></label></div></section><section class="main-menu-card estimates-gold-card est-ai-result-card"><div class="estimates-panel-heading"><div><h2>Measurement and pricing sources</h2><p>Supplier pricing remains pending until a live authorized ABC request succeeds.</p></div></div><div class="est-ai-detail-card"><ul id="est-ai-source-list"></ul></div></section><div class="est-ai-save-row"><div id="est-ai-save-status" aria-live="polite"></div></div>';
   }
 
   function bindEvents() {
@@ -1363,7 +1517,9 @@
       if (!draft || !draft.currentUser || draft.currentUser.uid !== user.uid) return;
       estAiSession = draft;
       currentEstimate.aiSession = draft;
-      document.getElementById('est-ai-processing-context').textContent = 'Residential · Roof · ' + draft.address.formatted;
+      var resumeScope = draft.estimate_category || draft.trade || 'roof';
+      var resumeLabel = (typeof EST_SCOPE_LABELS !== 'undefined' && EST_SCOPE_LABELS[resumeScope]) || resumeScope;
+      document.getElementById('est-ai-processing-context').textContent = (draft.propertyType === 'commercial' ? 'Commercial' : 'Residential') + ' · ' + resumeLabel + ' · ' + draft.address.formatted;
       showPage('page-est-ai-processing');
       openQuestion();
     });
@@ -1394,7 +1550,7 @@
     document.getElementById('est-ai-review-save-exit').addEventListener('click', function () { persistDraft(); showPage('page-estimates'); });
     document.getElementById('est-ai-review-continue').addEventListener('click', buildEstimate);
     document.getElementById('back-from-est-ai-result').addEventListener('click', function () { showPage('page-estimates'); });
-    document.getElementById('est-ai-add-line').addEventListener('click', function () { estAiSession.lineItems.push(line('MANUAL', 'New line item', 0, 'EA', 0, 'User entered')); renderLineItems(); });
+    document.getElementById('est-ai-add-line').addEventListener('click', function () { var firstSection = sectionDefinitions()[0]; estAiSession.lineItems.push(line('MANUAL', 'New line item', 0, 'EA', 0, 'User entered', firstSection && firstSection.key)); renderLineItems(); });
     document.getElementById('est-ai-line-items').addEventListener('input', function (event) {
       var row = event.target.closest('[data-est-ai-line]'); if (!row) return;
       var item = estAiSession.lineItems[Number(row.dataset.estAiLine)]; var field = event.target.dataset.field; if (!item || !field) return;
@@ -1467,18 +1623,43 @@
     window.estAiBuildCrmManual = function () {
       var context = currentEstimate.crmContext;
       if (!context) { window.HailMoneyCrmEstimate.start(); return; }
-      var trade = context.estimate.estimate_category;
-      var values = currentEstimate.measurements[trade] || {};
-      var fields = (EST_FIELD_DEFS[trade] || []).filter(function (f) { return f.key !== 'pitch' && Number(values[f.key]) > 0; });
-      if (!fields.length) { showUploadToast('Enter at least one measured quantity to build the estimate.'); return; }
-      estAiSession = Object.assign({}, context.estimate, { crmManual: true, status: 'Draft', sources: {}, answers: {}, assumptions: [], notes: '', exclusions: '', taxRate: 0, overheadRate: 0, profitRate: 0, measurementSource: currentEstimate.measurementSource,
-        abcPricing: { connected: !abcEstimateManualPricing && !!(window.abcEstimateRequestState && window.abcEstimateRequestState.connected), pricesRetrieved: false }, measurements: [], lineItems: [] });
-      fields.forEach(function (f) {
-        var unit = f.key === 'squares' ? 'SQ' : /Area|gables/.test(f.key) ? 'SF' : /Openings|downspouts|elbows/.test(f.key) ? 'EA' : 'LF';
-        var quantity = Number(values[f.key]);
-        estAiSession.measurements.push({ key: f.key, label: f.label, value: quantity, unit: unit, sourceStatus: 'User-confirmed' });
-        estAiSession.lineItems.push(line('MANUAL-' + trade.toUpperCase() + '-' + f.key, f.label + ' — scope and pricing to review', quantity, unit, 0, 'User-entered measurement'));
+      var scope = currentEstimate.measurementScope || context.estimate.estimate_category || 'roof';
+      var trades = estimateTrades(scope);
+      var entered = 0;
+      estAiSession = Object.assign({}, context.estimate, {
+        crmManual: true, status: 'Draft', trade: scope, estimate_category: scope,
+        propertyType: currentEstimate.propertyType || context.estimate.propertyType || 'residential',
+        sources: {}, answers: {}, assumptions: [], notes: '', exclusions: '', taxRate: 0, overheadRate: 0, profitRate: 0, measurementSource: currentEstimate.measurementSource,
+        abcPricing: { connected: !abcEstimateManualPricing && !!(window.abcEstimateRequestState && window.abcEstimateRequestState.connected), pricesRetrieved: false }, measurements: [], lineItems: []
       });
+      trades.forEach(function (trade) {
+        if (trade === 'siding') {
+          var siding = currentEstimate.measurements.siding || {};
+          var elevations = siding.elevations || {};
+          ['front', 'right', 'rear', 'left'].forEach(function (elevation) {
+            var values = elevations[elevation] || {};
+            (EST_FIELD_DEFS.siding || []).filter(function (f) { return Number(values[f.key]) > 0; }).forEach(function (f) {
+              var unit = /Area|gables/.test(f.key) ? 'SF' : /Openings/.test(f.key) ? 'EA' : 'LF';
+              var quantity = Number(values[f.key]);
+              var label = elevation.charAt(0).toUpperCase() + elevation.slice(1) + ' Elevation · ' + f.label;
+              estAiSession.measurements.push({ key: 'siding_' + elevation + '_' + f.key, label: label, value: quantity, unit: unit, sourceStatus: 'User-confirmed' });
+              estAiSession.lineItems.push(line('MANUAL-SIDING-' + elevation.toUpperCase() + '-' + f.key, f.label + ' — scope and pricing to review', quantity, unit, 0, 'User-entered measurement', 'siding_' + elevation));
+              entered += 1;
+            });
+          });
+          return;
+        }
+        var values = currentEstimate.measurements[trade] || {};
+        (EST_FIELD_DEFS[trade] || []).filter(function (f) { return f.key !== 'pitch' && Number(values[f.key]) > 0; }).forEach(function (f) {
+          var unit = f.key === 'squares' ? 'SQ' : /Area|gables/.test(f.key) ? 'SF' : f.key === 'elbows' ? 'EA' : 'LF';
+          var quantity = Number(values[f.key]);
+          var section = trade === 'gutters' ? (f.key === 'downspouts' ? 'downspouts' : 'gutters') : 'roof';
+          estAiSession.measurements.push({ key: trade + '_' + f.key, label: f.label, value: quantity, unit: unit, sourceStatus: 'User-confirmed' });
+          estAiSession.lineItems.push(line('MANUAL-' + trade.toUpperCase() + '-' + f.key, f.label + ' — scope and pricing to review', quantity, unit, 0, 'User-entered measurement', section));
+          entered += 1;
+        });
+      });
+      if (!entered) { showUploadToast('Enter at least one measured quantity to build the estimate.'); return; }
       estAiSession.assumptions.push({ text: 'Measurements entered by the user; automated analysis was not performed for this estimate.', source: 'Measurement method' });
       window.HailMoneyCrmEstimate.attach(estAiSession);currentEstimate.aiSession = estAiSession;
       renderResult();saveEstimate('Draft');showPage('page-est-ai-result');

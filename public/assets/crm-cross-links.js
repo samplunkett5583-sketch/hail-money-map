@@ -172,7 +172,12 @@
       var jobType = document.getElementById('hm-est-job-type').value || 'retail';
       var lead = ensureLead({ name: name, phone: customer.phone, email: customer.email, address: address, leadSource: 'Estimate' });
       var now = new Date().toISOString();
-      var seed = { id: 'ai_est_' + Date.now().toString(36), createdAt: now, updatedAt: now, customer: customer, address: address, job_type: jobType, insurance: {}, leadId: lead.id, jobId: crmGetJobFileId(lead), lead_or_job_id: lead.id };
+      var jobFile = lead.jobFile && typeof lead.jobFile === 'object' ? lead.jobFile : {};
+      var worksheet = jobFile.financialWorksheet && typeof jobFile.financialWorksheet === 'object' ? jobFile.financialWorksheet : {};
+      var insuranceBreakdown = worksheet.insuranceBreakdown && typeof worksheet.insuranceBreakdown === 'object' ? worksheet.insuranceBreakdown : {};
+      var seedInsurance = Object.assign({}, jobFile.insurance || {}, insuranceBreakdown);
+      var selectedScope = currentEstimate && currentEstimate.measurementScope || null;
+      var seed = { id: 'ai_est_' + Date.now().toString(36), createdAt: now, updatedAt: now, customer: customer, address: address, propertyType: currentEstimate && currentEstimate.propertyType || 'residential', estimate_category: selectedScope, trade: selectedScope, job_type: jobType, insurance: seedInsurance, insuranceBreakdown: insuranceBreakdown, leadId: lead.id, jobId: crmGetJobFileId(lead), lead_or_job_id: lead.id };
       currentEstimate.crmContext = { leadId: lead.id, jobId: seed.jobId, estimate: seed };
       dialog.close();
       var generate = document.getElementById('est-ai-generate');

@@ -23804,7 +23804,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             </section>
 
             <section class="estimates-panel estimates-flow-step" id="est-trade-step" hidden>
-              <div class="estimates-panel-heading"><div><h2>What are you estimating?</h2><p>Select one trade for this estimate.</p></div></div>
+              <div class="estimates-panel-heading"><div><h2>What are you estimating?</h2><p>Select one or more trades. All selected trades will be combined into one estimate.</p></div></div>
               <div class="estimates-choice-grid" role="group" aria-label="Estimate trade">
                 <button class="est-scope-source" type="button" data-est-scope="roof" aria-pressed="false">Roof</button>
                 <button class="est-scope-source" type="button" data-est-scope="siding" aria-pressed="false">Siding</button>
@@ -46710,12 +46710,15 @@ function mapsGoogleReady() {
     var currentEstimate = {
       propertyType: null,        // 'residential' | 'commercial'
       measurementSource: null,   // 'ai' | 'drone' | 'upload' | 'online' | 'manual'
-      measurementScope: null,    // one trade: 'roof' | 'siding' | 'gutters'
+      measurementScope: null,    // canonical combined scope, e.g. 'roof_siding_gutters'
       tradeEstimates: [],        // completed single-trade estimates can be collected here later
       reportSource: null,        // 'hover' | 'eagleview' | 'roofr' | 'other'
       measurements: {
         roof: { squares: '', ridge: '', hip: '', rake: '', valley: '', starter: '', dripEdge: '', pitch: '' },
-        siding: { wallArea: '', gables: '', starterTrack: '', corners: '', jChannel: '', soffit: '', fascia: '', doorOpenings: '', windowOpenings: '' },
+        siding: {
+          wallArea: '', gables: '', starterTrack: '', corners: '', jChannel: '', soffit: '', fascia: '', doorOpenings: '', windowOpenings: '',
+          elevations: { front: {}, right: {}, rear: {}, left: {} }
+        },
         gutters: { gutterTotal: '', downspouts: '', elbows: '' }
       },
       roofMaterialOrder: { items: [] },
@@ -46764,7 +46767,7 @@ function mapsGoogleReady() {
         { key: 'windowOpenings', label: 'Window Openings' }
       ],
       gutters: [
-        { key: 'gutterTotal', label: 'Gutter Total (lf)' }, { key: 'downspouts', label: 'Downspouts' },
+        { key: 'gutterTotal', label: 'Gutter Total (lf)' }, { key: 'downspouts', label: 'Downspouts (lf)' },
         { key: 'elbows', label: 'Elbows' }
       ]
     };
@@ -46788,8 +46791,9 @@ function mapsGoogleReady() {
         button.classList.toggle('is-selected', selected);
         button.setAttribute('aria-pressed', selected ? 'true' : 'false');
       });
+      var selectedEstimateTrades = estScopeCategories(draft.trade);
       document.querySelectorAll('[data-est-scope]').forEach(function (button) {
-        var selected = button.getAttribute('data-est-scope') === draft.trade;
+        var selected = selectedEstimateTrades.indexOf(button.getAttribute('data-est-scope')) !== -1;
         button.classList.toggle('is-selected', selected);
         button.setAttribute('aria-pressed', selected ? 'true' : 'false');
       });
@@ -46838,11 +46842,25 @@ function mapsGoogleReady() {
       cats.forEach(function (cat) {
         html += '<section class="main-menu-card" style="margin-bottom:14px;">';
         html += '<div style="font-size:12px;font-weight:700;color:var(--muted,#888);margin-bottom:8px;">' + cat.toUpperCase() + '</div>';
-        (EST_FIELD_DEFS[cat] || []).forEach(function (fd) {
-          var val = (currentEstimate.measurements[cat] && currentEstimate.measurements[cat][fd.key]) || '';
-          html += '<div style="margin-bottom:8px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:2px;">' + fd.label + '</label>';
-          html += '<input type="text" inputmode="decimal" class="field-input est-manual-input" data-cat="' + cat + '" data-key="' + fd.key + '" value="' + val + '" placeholder="—" style="width:100%;" /></div>';
-        });
+        if (cat === 'siding') {
+          var siding = currentEstimate.measurements.siding || {};
+          siding.elevations = siding.elevations || { front: {}, right: {}, rear: {}, left: {} };
+          ['front', 'right', 'rear', 'left'].forEach(function (elevation) {
+            var elevationLabel = elevation.charAt(0).toUpperCase() + elevation.slice(1) + ' Elevation';
+            html += '<div style="font-size:13px;font-weight:800;margin:14px 0 8px;">' + elevationLabel + '</div>';
+            (EST_FIELD_DEFS.siding || []).forEach(function (fd) {
+              var val = siding.elevations[elevation] && siding.elevations[elevation][fd.key] || '';
+              html += '<div style="margin-bottom:8px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:2px;">' + fd.label + '</label>';
+              html += '<input type="text" inputmode="decimal" class="field-input est-manual-input" data-cat="siding" data-elevation="' + elevation + '" data-key="' + fd.key + '" value="' + val + '" placeholder="—" style="width:100%;" /></div>';
+            });
+          });
+        } else {
+          (EST_FIELD_DEFS[cat] || []).forEach(function (fd) {
+            var val = (currentEstimate.measurements[cat] && currentEstimate.measurements[cat][fd.key]) || '';
+            html += '<div style="margin-bottom:8px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:2px;">' + fd.label + '</label>';
+            html += '<input type="text" inputmode="decimal" class="field-input est-manual-input" data-cat="' + cat + '" data-key="' + fd.key + '" value="' + val + '" placeholder="—" style="width:100%;" /></div>';
+          });
+        }
         html += '</section>';
       });
       document.getElementById('est-manual-fields').innerHTML = html;
@@ -46909,11 +46927,18 @@ function mapsGoogleReady() {
     document.querySelectorAll('[data-est-scope]').forEach(function (button) {
       button.addEventListener('click', function () {
         var trade = this.getAttribute('data-est-scope');
-        if (estimateCreationState.activeEstimate.trade !== trade) {
-          estimateCreationState.activeEstimate.trade = trade;
+        var selected = estScopeCategories(estimateCreationState.activeEstimate.trade);
+        var existingIndex = selected.indexOf(trade);
+        if (existingIndex >= 0) selected.splice(existingIndex, 1);
+        else selected.push(trade);
+        var canonicalOrder = ['roof', 'siding', 'gutters'];
+        selected.sort(function (a, b) { return canonicalOrder.indexOf(a) - canonicalOrder.indexOf(b); });
+        var combinedScope = selected.length ? selected.join('_') : null;
+        if (estimateCreationState.activeEstimate.trade !== combinedScope) {
+          estimateCreationState.activeEstimate.trade = combinedScope;
           estimateCreationState.activeEstimate.measurementSource = null;
           estimateCreationState.activeEstimate.measurementProvider = null;
-          currentEstimate.measurementScope = trade;
+          currentEstimate.measurementScope = combinedScope;
           currentEstimate.measurementSource = null;
           currentEstimate.reportSource = null;
         }
@@ -46960,7 +46985,7 @@ function mapsGoogleReady() {
         'est-ai-zip': /^\d{5}(?:-\d{4})?$/.test(address.zip)
       };
       var valid = Object.keys(fields).every(function (id) { return fields[id]; });
-      var estimateReady = /^(residential|commercial)$/.test(String(currentEstimate.propertyType || '')) && /^(roof|siding|gutters)$/.test(String(currentEstimate.measurementScope || ''));
+      var estimateReady = /^(residential|commercial)$/.test(String(currentEstimate.propertyType || '')) && estScopeCategories(currentEstimate.measurementScope).length > 0;
       Object.keys(fields).forEach(function (id) {
         var field = document.getElementById(id);
         if (field) field.setAttribute('aria-invalid', showErrors && !fields[id] ? 'true' : 'false');
@@ -47397,8 +47422,15 @@ function mapsGoogleReady() {
       document.querySelectorAll('.est-manual-input').forEach(function (inp) {
         var cat = inp.getAttribute('data-cat');
         var key = inp.getAttribute('data-key');
+        var elevation = inp.getAttribute('data-elevation');
         if (!currentEstimate.measurements[cat]) currentEstimate.measurements[cat] = {};
-        currentEstimate.measurements[cat][key] = inp.value.trim();
+        if (cat === 'siding' && elevation) {
+          currentEstimate.measurements.siding.elevations = currentEstimate.measurements.siding.elevations || { front: {}, right: {}, rear: {}, left: {} };
+          currentEstimate.measurements.siding.elevations[elevation] = currentEstimate.measurements.siding.elevations[elevation] || {};
+          currentEstimate.measurements.siding.elevations[elevation][key] = inp.value.trim();
+        } else {
+          currentEstimate.measurements[cat][key] = inp.value.trim();
+        }
       });
       alert('Measurements saved.');
     });

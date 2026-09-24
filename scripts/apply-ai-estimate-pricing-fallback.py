@@ -4,7 +4,7 @@ import re
 path = Path('public/estimate-ai-flow.js')
 text = path.read_text(encoding='utf-8')
 
-line_block = re.compile(r"  function line\(code, description, quantity, unit, waste, source\) \{.*?\n  \}\n\n  function buildLineItems\(\) \{", re.S)
+line_block = re.compile(r"  function line\(code, description, quantity, unit, waste, source, section\) \{.*?\n  \}\n\n  function buildLineItems\(\) \{", re.S)
 replacement = r'''  var ESTIMATE_BASELINE_PRICES = {
     'RFG-TEAR': { material: 0, labor: 95, equipment: 20 },
     'RFG-DISP': { material: 0, labor: 20, equipment: 45 },
@@ -29,12 +29,12 @@ replacement = r'''  var ESTIMATE_BASELINE_PRICES = {
     return { material: Number(price.material || 0), labor: Number(price.labor || 0), equipment: Number(price.equipment || 0) };
   }
 
-  function line(code, description, quantity, unit, waste, source) {
+  function line(code, description, quantity, unit, waste, source, section) {
     var baseline = baselinePrice(code);
     var hasBaseline = baseline.material > 0 || baseline.labor > 0 || baseline.equipment > 0;
     return {
       id: 'line_' + Math.random().toString(36).slice(2), code: code, description: description,
-      quantity: Number(quantity || 0), unit: unit, material: baseline.material, labor: baseline.labor, equipment: baseline.equipment,
+      section: section || '', quantity: Number(quantity || 0), unit: unit, material: baseline.material, labor: baseline.labor, equipment: baseline.equipment,
       waste: Number(waste || 0), taxable: true,
       quantitySource: source || (Number(quantity || 0) > 0 ? 'Confirmed measurement review' : 'Measurement not entered'),
       materialSource: baseline.material > 0 ? 'Baseline market allowance — confirm or replace with supplier price' : 'No material allowance',
