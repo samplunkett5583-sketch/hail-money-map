@@ -39234,6 +39234,11 @@ function mapsGoogleReady() {
       var desktopList = document.getElementById('maps-storm-list');
       var mobileList = document.getElementById('maps-storm-list-mob');
       if (!desktopList) return;
+      var desktopScroll = desktopList.closest('.maps-panel-scroll');
+      var mobileScroll = mobileList && mobileList.closest('.maps-mobile-drawer');
+      var preserveScroll = options.focusActive !== true;
+      var desktopScrollTop = preserveScroll && desktopScroll ? desktopScroll.scrollTop : null;
+      var mobileScrollTop = preserveScroll && mobileScroll ? mobileScroll.scrollTop : null;
       if (!dates.length) {
         mapsState.renderedStormDateCount = 0;
         [desktopList, mobileList].forEach(function (list) {
@@ -39260,8 +39265,15 @@ function mapsGoogleReady() {
         generatedHtmlBytes:desktopDelta.generatedHtmlBytes + mobileDelta.generatedHtmlBytes
       });
       mapsWireStormDateInfiniteScroll();
-      var activeRow = desktopList.querySelector('.maps-storm-row.is-preview');
-      if (activeRow && typeof activeRow.scrollIntoView === 'function' && !options.append) activeRow.scrollIntoView({ block:'nearest' });
+      if (preserveScroll) {
+        if (desktopScroll && desktopScrollTop != null) desktopScroll.scrollTop = desktopScrollTop;
+        if (mobileScroll && mobileScrollTop != null) mobileScroll.scrollTop = mobileScrollTop;
+      } else {
+        var activeRow = desktopList.querySelector('.maps-storm-row.is-preview');
+        var activeMobileRow = mobileList && mobileList.querySelector('.maps-storm-row.is-preview');
+        if (activeRow && typeof activeRow.scrollIntoView === 'function') activeRow.scrollIntoView({ block:'nearest' });
+        if (activeMobileRow && typeof activeMobileRow.scrollIntoView === 'function') activeMobileRow.scrollIntoView({ block:'nearest' });
+      }
     }
 
     function mapsUpdateDebugPanel() {
@@ -39502,9 +39514,9 @@ function mapsGoogleReady() {
         ms: Math.round(performance.now() - previewT0)
       });
 
-      // Continuous scroll list (no pagination) — mapsRenderStormList()
-      // itself scrolls the newly selected card into view after rendering.
-      mapsRenderStormList();
+      // Only an intentional date selection may move the Recent Storms scroll.
+      // Background enrichment/re-renders must leave the user's scroll position alone.
+      mapsRenderStormList({ focusActive:true });
       mapsRenderSavedList();
       mapsUpdateDownloadBtn();
     }
