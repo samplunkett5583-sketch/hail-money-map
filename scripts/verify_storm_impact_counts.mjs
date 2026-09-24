@@ -110,7 +110,8 @@ function plainText(value) {
 function extractCount(value) {
   const text = plainText(value);
   const patterns = [
-    /(?:a\s+total\s+of\s+)?([\d,]+)\s+(?:properties|homes|households|housing units)\s+(?:were|are|have been|that were)?\s*(?:impacted|affected|damaged)/i,
+    /there\s+(?:were|are)\s+([\d,]+)\s+(?:total\s+)?(?:properties|homes|households|housing units)\s+(?:that\s+)?(?:were|are|have been)?\s*(?:impacted|affected|damaged)/i,
+    /(?:a\s+total\s+of\s+)?([\d,]+)\s+(?:total\s+)?(?:properties|homes|households|housing units)\s+(?:were|are|have been|that were)?\s*(?:impacted|affected|damaged)/i,
     /(?:impacted|affected|damaged)\s+(?:approximately\s+|about\s+|an estimated\s+)?([\d,]+)\s+(?:properties|homes|households|housing units)/i,
     /(?:properties|homes|households|housing units)\s+(?:impacted|affected|damaged)\s*[:\-]?\s*([\d,]+)/i,
   ];
