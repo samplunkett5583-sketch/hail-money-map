@@ -190,6 +190,7 @@ async function verifyDate(date) {
   const slashDate = `${date.slice(5, 7)}/${date.slice(8, 10)}/${date.slice(0, 4)}`;
   const queries = [
     `how many homes were affected by the ${humanDate} hailstorm`,
+    `site:hailstrike.com/hail-map/ "${humanDate}" properties`,
     `"${humanDate}" hailstorm properties impacted HailStrike`,
   ];
   const citations = [];
