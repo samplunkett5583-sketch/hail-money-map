@@ -14,6 +14,7 @@ const args = Object.fromEntries(process.argv.slice(2).map((arg) => {
   return [key, rest.length ? rest.join("=") : "true"];
 }));
 const force = args.force === "true";
+const debug = args.debug === "true";
 const unverifiedOnly = args.unverified !== "false";
 const limit = Math.min(2000, Math.max(1, Number(args.limit) || 100));
 const offset = Math.max(0, Number(args.offset) || 0);
@@ -198,6 +199,11 @@ async function verifyDate(date) {
   for (const query of queries) {
     const body = await googleSearch(query);
     const candidates = candidatesFrom(body);
+    if (debug) {
+      console.log("[debug]", query, candidates.slice(0, 10).map((c) => ({
+        title: c.title, url: c.url, snippet: c.snippet.slice(0, 260),
+      })));
+    }
     candidates.forEach((c) => citations.push({ url: c.url, title: c.title }));
 
     for (const candidate of candidates) {

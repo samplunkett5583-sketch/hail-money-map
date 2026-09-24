@@ -63,7 +63,7 @@ jobs:
 
       - name: Verify one storm date
         if: github.event_name == 'workflow_dispatch' && inputs.scope == 'date'
-        run: node scripts/verify_storm_impact_counts.mjs --date="${{ inputs.date }}" --force=true
+        run: node scripts/verify_storm_impact_counts.mjs --date="${{ inputs.date }}" --force=true --debug=true
 
       - name: Backfill all unchecked storm dates
         if: github.event_name == 'workflow_dispatch' && inputs.scope == 'all'
