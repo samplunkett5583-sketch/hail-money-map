@@ -60736,6 +60736,15 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         crmHandleMenuAction(leadsAction);
         return;
       }
+      if (tab === 'company-financials') {
+        if (typeof window.hmOpenCompanyFinancials === 'function') {
+          window.hmOpenCompanyFinancials();
+        } else {
+          var companyFinancialsPage = document.getElementById('page-company-financials');
+          if (companyFinancialsPage) showPage('page-company-financials');
+        }
+        return;
+      }
       if (tab === 'employee') {
         crmOpenAdminSalesRepsPage();
         return;
@@ -82902,8 +82911,8 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   }
 
   function isAdminOwner() {
-    var role = currentRole();
-    return role === 'Admin' || role === 'Owner';
+    var role = currentRole().toLowerCase();
+    return role === 'admin' || role === 'owner';
   }
 
   function labelText(node) {
@@ -83229,6 +83238,9 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
         '</div></div></div>' +
       '</div></div>';
     anchorPage.parentElement.appendChild(section);
+    try {
+      if (typeof allPages !== 'undefined') allPages = document.querySelectorAll('.page');
+    } catch (_) {}
     normalizeAllSidebars();
     return section;
   }
@@ -83288,6 +83300,27 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
     renderJobs(rows);
     normalizeAllSidebars();
   }
+
+  function openCompanyFinancialsPage() {
+    if (!isAdminOwner()) return false;
+    var page = createPage();
+    if (!page) return false;
+    try {
+      if (typeof showPage === 'function') showPage('page-company-financials');
+      else {
+        document.querySelectorAll('.page').forEach(function (node) { node.classList.remove('active'); });
+        page.classList.add('active');
+      }
+    } catch (_) {
+      document.querySelectorAll('.page').forEach(function (node) { node.classList.remove('active'); });
+      page.classList.add('active');
+    }
+    try { renderCompanyFinancials(); }
+    catch (err) { try { console.error('[Company Financials]', err); } catch (_) {} }
+    return true;
+  }
+
+  window.hmOpenCompanyFinancials = openCompanyFinancialsPage;
 
   function openPayrollEditor(employeeId) {
     var member = getOfficeEmployees().find(function (item) { return String(item.id || '') === String(employeeId || ''); });
@@ -83378,10 +83411,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
     if (financialNav) {
       event.preventDefault();
       event.stopPropagation();
-      if (!isAdminOwner()) return;
-      createPage();
-      renderCompanyFinancials();
-      try { if (typeof showPage === 'function') showPage('page-company-financials'); } catch (_) {}
+      openCompanyFinancialsPage();
       return;
     }
     var refresh = event.target.closest && event.target.closest('[data-company-fin-refresh]');
