@@ -184,6 +184,179 @@ async function googleSearch(query) {
   return body;
 }
 
+let hailStrikeSitemapPromise = null;
+
+function shiftDate(date, daysToAdd) {
+  const value = new Date(`${date}T12:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + daysToAdd);
+  return value.toISOString().slice(0, 10);
+}
+
+async function getHailStrikeSitemap() {
+  if (hailStrikeSitemapPromise) return hailStrikeSitemapPromise;
+  hailStrikeSitemapPromise = fetch(
+    "https://hailstrike.com/sitemaps/sitemap-search-aniswaths.xml",
+    { headers: { "User-Agent": "HailMoneyMap/1.0 (impact-count-verification)" } },
+  ).then(async (response) => {
+    if (!response.ok) throw new Error(`HailStrike sitemap HTTP ${response.status}`);
+    const xml = await response.text();
+    const byDate = {};
+    const re = /<url>\s*<loc>(https:\/\/hailstrike\.com\/hail-map\/\d+)<\/loc>\s*<lastmod>(\d{4}-\d{2}-\d{2})<\/lastmod>\s*<\/url>/g;
+    for (const match of xml.matchAll(re)) {
+      (byDate[match[2]] ||= []).push(match[1]);
+    }
+    return byDate;
+  });
+  return hailStrikeSitemapPromise;
+}
+
+async function getStormProfile(date) {
+  const rows = await dbQuery(`
+    with storm_points as (
+      select state, hail_in::double precision as hail
+      from public.hail_lsr_raw
+      where event_date = ${sqlText(date)}::date
+      union all
+      select state, greatest(coalesce(band_min,0), coalesce(band_max,0))::double precision as hail
+      from public.storm_polygons
+      where event_date = ${sqlText(date)}::date
+        and coalesce(storm_type,'hail') not in ('wind','tornado')
+    )
+    select coalesce(array_agg(distinct state) filter (where state is not null and state <> ''), '{}') as states,
+           coalesce(max(hail),0) as max_hail
+    from storm_points;
+  `);
+  const row = rows[0] || {};
+  let states = row.states || [];
+  if (typeof states === "string") {
+    states = states.replace(/^\{|\}$/g, "").split(",").map((v) => v.replace(/"/g, "").trim()).filter(Boolean);
+  }
+  return {
+    states: Array.isArray(states) ? states.map((v) => String(v).toUpperCase()) : [],
+    maxHail: Number(row.max_hail) || 0,
+  };
+}
+
+function parseHailStrikePage(html, url, expectedDate) {
+  const title = String(html.match(/<title>([^<]+)<\/title>/i)?.[1] || "").trim();
+  const dateText = title.match(/Hail Map For\s+(.+?)\s+\(/i)?.[1] || "";
+  const parsedDate = dateText ? new Date(`${dateText} 12:00:00 UTC`) : null;
+  const eventDate = parsedDate && !Number.isNaN(parsedDate.getTime())
+    ? parsedDate.toISOString().slice(0, 10)
+    : "";
+  if (eventDate !== expectedDate) return null;
+
+  const text = plainText(html);
+  const countMatch = extractCount(text);
+  if (!countMatch) return null;
+
+  const maxHail = Number(text.match(/Maximum\s+(\d+(?:\.\d+)?)"/i)?.[1]) || 0;
+  const spotters = Number(text.match(/Spotters\s+(\d+)/i)?.[1]) || 0;
+  const metaStates = String(
+    html.match(/<meta\s+name=["']description["']\s+content=["'][^"']*States affected:\s*([^"']*)["']/i)?.[1] || "",
+  );
+  const states = [...new Set(
+    metaStates.split(/[,\s]+/).map((v) => v.trim().toUpperCase()).filter((v) => /^[A-Z]{2}$/.test(v)),
+  )];
+
+  return {
+    url,
+    title,
+    eventDate,
+    impactedProperties: countMatch.count,
+    evidence: countMatch.evidence,
+    maxHail,
+    spotters,
+    states,
+    groundVerified: /GROUND VERIFIED/i.test(text),
+  };
+}
+
+function hailStrikeCandidateScore(candidate, profile) {
+  let score = 0;
+  const sourceStates = new Set(candidate.states || []);
+  const stormStates = new Set(profile.states || []);
+  if (sourceStates.size && stormStates.size) {
+    let overlap = 0;
+    stormStates.forEach((state) => { if (sourceStates.has(state)) overlap += 1; });
+    const union = new Set([...sourceStates, ...stormStates]).size || 1;
+    score += (overlap / union) * 100;
+    if (!overlap) score -= 100;
+  }
+  if (candidate.maxHail > 0 && profile.maxHail > 0) {
+    score -= Math.abs(candidate.maxHail - profile.maxHail) * 20;
+  }
+  if (candidate.groundVerified) score += 3;
+  score += Math.min(2, candidate.spotters / 10);
+  return score;
+}
+
+async function findHailStrikeImpact(date, googleCitations) {
+  const [sitemap, profile] = await Promise.all([
+    getHailStrikeSitemap(),
+    getStormProfile(date),
+  ]);
+  const candidateDates = [date, shiftDate(date, 1), shiftDate(date, -1)];
+  const urls = [...new Set(candidateDates.flatMap((d) => sitemap[d] || []))].slice(0, 24);
+  if (!urls.length) return null;
+
+  const settled = await Promise.allSettled(urls.map(async (url) => {
+    const response = await fetch(url, {
+      headers: { "User-Agent": "HailMoneyMap/1.0 (impact-count-verification)" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) return null;
+    return parseHailStrikePage(await response.text(), url, date);
+  }));
+  const candidates = settled
+    .filter((item) => item.status === "fulfilled" && item.value)
+    .map((item) => item.value);
+  if (!candidates.length) return null;
+
+  candidates.sort((a, b) =>
+    hailStrikeCandidateScore(b, profile) - hailStrikeCandidateScore(a, profile) ||
+    b.spotters - a.spotters ||
+    a.url.localeCompare(b.url)
+  );
+  const selected = candidates[0];
+  if (debug) {
+    console.log("[debug] HailStrike match", {
+      profile,
+      selected,
+      candidates: candidates.map((c) => ({
+        url: c.url, properties: c.impactedProperties, maxHail: c.maxHail,
+        states: c.states, score: hailStrikeCandidateScore(c, profile),
+      })),
+    });
+  }
+  return {
+    status: "verified",
+    impacted_properties: selected.impactedProperties,
+    source_url: selected.url,
+    source_title: selected.title,
+    source_provider: "hailstrike.com",
+    query_text: `Google search + HailStrike source match for ${date}`,
+    search_rank: null,
+    confidence: selected.groundVerified ? 0.98 : 0.94,
+    google_citations: [
+      ...(googleCitations || []),
+      { url: selected.url, title: selected.title },
+    ],
+    raw: {
+      verification_method: "hailstrike-source-match",
+      evidence: selected.evidence,
+      storm_profile: profile,
+      selected_event: {
+        max_hail: selected.maxHail,
+        states: selected.states,
+        spotters: selected.spotters,
+        ground_verified: selected.groundVerified,
+      },
+    },
+  };
+}
+
 async function verifyDate(date) {
   const humanDate = new Intl.DateTimeFormat("en-US", {
     timeZone: "UTC", month: "long", day: "numeric", year: "numeric",
@@ -191,8 +364,6 @@ async function verifyDate(date) {
   const slashDate = `${date.slice(5, 7)}/${date.slice(8, 10)}/${date.slice(0, 4)}`;
   const queries = [
     `how many homes were affected by the ${humanDate} hailstorm`,
-    `site:hailstrike.com/hail-map/ "${humanDate}" properties`,
-    `"${humanDate}" hailstorm properties impacted HailStrike`,
   ];
   const citations = [];
 
@@ -241,6 +412,13 @@ async function verifyDate(date) {
       };
     }
     await sleep(120);
+  }
+
+  try {
+    const hailStrike = await findHailStrikeImpact(date, citations);
+    if (hailStrike) return hailStrike;
+  } catch (error) {
+    console.warn(`[${date}] HailStrike source match failed: ${error.message || error}`);
   }
 
   return {
