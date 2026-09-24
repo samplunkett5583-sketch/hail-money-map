@@ -31323,8 +31323,8 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       var polygonUrl = SUPABASE_URL + '/rest/v1/storm_polygons?event_date=in.(' + encodedDates + ')' +
         '&source_product=neq.no_swath&select=event_date,storm_type,band_min,band_max,centroid_lat,centroid_lon,area_sq_mi,source,swath_index' +
         '&order=event_date.desc&limit=10000';
-      var impactUrl = SUPABASE_URL + '/rest/v1/impact_state_summary?event_date=in.(' + encodedDates + ')' +
-        '&select=event_date,state,impacted_housing_units,center_lat,center_lon' +
+      var googleImpactUrl = SUPABASE_URL + '/rest/v1/storm_google_impact_verification?event_date=in.(' + encodedDates + ')' +
+        '&status=eq.verified&select=event_date,impacted_properties,source_url,source_title,source_provider,verified_at' +
         '&order=event_date.desc&limit=10000';
 
       function fetchRows(url, label) {
@@ -31343,14 +31343,14 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           hmDebugWarn('[stormRanking] Polygon summary unavailable; using report footprint:', err.message || err);
           return [];
         }),
-        fetchRows(impactUrl, 'housing impact').catch(function (err) {
-          hmDebugWarn('[stormRanking] Housing summary unavailable; using Census swath estimate:', err.message || err);
+        fetchRows(googleImpactUrl, 'Google property impact').catch(function (err) {
+          hmDebugWarn('[stormRanking] Google-verified property impact unavailable:', err.message || err);
           return [];
         })
       ]).then(function (results) {
           var hailRows = results[0] || [];
           var polygonRows = results[1] || [];
-          var impactRows = results[2] || [];
+          var googleImpactRows = results[2] || [];
           var summaries = mapsState.dateSummaries || (mapsState.dateSummaries = {});
           var polygonSummaries = mapsState.polyHailSummaries || (mapsState.polyHailSummaries = {});
 
@@ -31404,20 +31404,17 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
               mapsState.dateHasCanonicalHailSwath[dateStr] = true;
             }
           });
-          mapsApplyValidatedHousingRows(dates, polygonRows, impactRows);
-          return mapsEstimateHousingFromStormPolygons(dates, polygonRows, hailRows).then(function () {
-            dates.forEach(function (dateStr) {
-              mapsState.stormRankingLoadedDates[dateStr] = true;
-              delete mapsState.stormRankingPendingDates[dateStr];
-            });
-            hmDebugLog('[stormRanking] Loaded ' + hailRows.length + ' reports, ' +
-              polygonRows.length + ' polygon bands, and ' + impactRows.length +
-              ' verified housing rows; Census/swath exposure completed for ' +
-              dates.length + ' visible dates');
-            mapsRenderStormList({ refreshExisting:true });
-            mapsRenderPinnedTab();
-            return results;
+          mapsApplyGoogleVerifiedImpactRows(dates, googleImpactRows);
+          dates.forEach(function (dateStr) {
+            mapsState.stormRankingLoadedDates[dateStr] = true;
+            delete mapsState.stormRankingPendingDates[dateStr];
           });
+          hmDebugLog('[stormRanking] Loaded ' + hailRows.length + ' reports, ' +
+            polygonRows.length + ' polygon bands, and ' + googleImpactRows.length +
+            ' Google-verified property impact rows for ' + dates.length + ' visible dates');
+          mapsRenderStormList({ refreshExisting:true });
+          mapsRenderPinnedTab();
+          return results;
         })
         .catch(function (err) {
           dates.forEach(function (dateStr) { delete mapsState.stormRankingPendingDates[dateStr]; });
@@ -38718,19 +38715,55 @@ function mapsGoogleReady() {
       return 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
     }
 
-    function mapsStoreStormHousingImpact(dateStr, impactedHomes, connected, source) {
+    function mapsStoreStormHousingImpact(dateStr, impactedHomes, connected, source, metadata) {
       mapsState.stormImpactSummaries = mapsState.stormImpactSummaries || {};
       var existing = mapsState.stormImpactSummaries[dateStr] || {};
+      var incomingSource = String(source || '').toLowerCase();
+      var existingSource = String(existing.housingImpactSource || '').toLowerCase();
+      if (existingSource === 'google-verified-impact' && incomingSource !== 'google-verified-impact') return existing;
       if (!connected && existing.housingEstimateConnected) return existing;
+      metadata = metadata || {};
       var next = Object.assign({}, existing, {
         dateStr:dateStr,
         housingEstimateConnected:!!connected,
         impactedHomesCount:connected ? Math.max(0, Math.round(Number(impactedHomes) || 0)) : 0,
-        housingImpactSource:source || null
+        housingImpactSource:source || null,
+        housingImpactSourceUrl:metadata.source_url || existing.housingImpactSourceUrl || null,
+        housingImpactSourceTitle:metadata.source_title || existing.housingImpactSourceTitle || null,
+        housingImpactVerifiedAt:metadata.verified_at || existing.housingImpactVerifiedAt || null
       });
       mapsState.stormImpactSummaries[dateStr] = next;
       mapsSetStormImpactSummaryText(dateStr, mapsFormatHousingUnitLabel(next));
       return next;
+    }
+
+    function mapsApplyGoogleVerifiedImpactRows(dateList, rows) {
+      var byDate = {};
+      (rows || []).forEach(function (row) {
+        var dateStr = String(row && row.event_date || '').slice(0, 10);
+        var count = Number(row && row.impacted_properties);
+        if (!dateStr || !Number.isFinite(count) || count < 0) return;
+        byDate[dateStr] = row;
+      });
+      (dateList || []).forEach(function (dateStr) {
+        var row = byDate[dateStr];
+        if (row) {
+          mapsStoreStormHousingImpact(dateStr, Number(row.impacted_properties), true, 'google-verified-impact', row);
+          return;
+        }
+        var existing = mapsState.stormImpactSummaries && mapsState.stormImpactSummaries[dateStr];
+        if (existing && String(existing.housingImpactSource || '').toLowerCase() !== 'google-verified-impact') {
+          mapsState.stormImpactSummaries[dateStr] = Object.assign({}, existing, {
+            housingEstimateConnected:false,
+            impactedHomesCount:0,
+            housingImpactSource:null,
+            housingImpactSourceUrl:null,
+            housingImpactSourceTitle:null,
+            housingImpactVerifiedAt:null
+          });
+        }
+        mapsSetStormImpactSummaryText(dateStr, '');
+      });
     }
 
     // Accept a precomputed Census housing row only when its geographic center
@@ -39955,6 +39988,9 @@ function mapsGoogleReady() {
     // footprint. They are not a claim that every home has confirmed damage.
     function mapsFormatHousingUnitLabel(summary) {
       var source = String(summary && summary.housingImpactSource || '').toLowerCase();
+      if (!!(summary && summary.housingEstimateConnected) && source === 'google-verified-impact') {
+        return Math.max(0, Math.round(Number(summary.impactedHomesCount) || 0)).toLocaleString('en-US') + ' properties';
+      }
       var estimated = !!(summary && summary.housingEstimateConnected) &&
         (source.indexOf('regrid') !== -1 ||
          source.indexOf('parcel_api') !== -1 ||
@@ -39971,8 +40007,15 @@ function mapsGoogleReady() {
     }
 
     function mapsSetStormImpactSummaryText(dateStr, text) {
+      var impactSummary = mapsGetStormImpactSummarySync(dateStr);
       document.querySelectorAll('.storm-home-count[data-impact-date="' + dateStr + '"]').forEach(function (el) {
         el.textContent = text;
+        if (impactSummary && String(impactSummary.housingImpactSource || '').toLowerCase() === 'google-verified-impact') {
+          var sourceTitle = impactSummary.housingImpactSourceTitle || 'Google search result';
+          el.title = 'Google verified: ' + sourceTitle;
+        } else {
+          el.removeAttribute('title');
+        }
       });
       var tone = mapsGetStormImpactTone(dateStr);
       document.querySelectorAll('[data-impact-rating-date="' + dateStr + '"]').forEach(function (el) {

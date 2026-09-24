@@ -50,6 +50,40 @@ alter table public.hail_ground_truth_runs enable row level security;
 grant all on public.hail_ground_truth_evidence to service_role;
 grant all on public.hail_ground_truth_runs to service_role;
 
+-- Google-search-grounded property impact count shown on each Maps storm card.
+-- This replaces the old browser-side Census-density guess. Only verified rows
+-- are readable by the app; writes remain service-role only.
+create table if not exists public.storm_google_impact_verification (
+  event_date date primary key,
+  status text not null default 'not_found'
+    check (status in ('verified', 'not_found')),
+  impacted_properties bigint
+    check (impacted_properties is null or impacted_properties >= 0),
+  source_url text,
+  source_title text,
+  source_provider text,
+  query_text text,
+  search_rank integer,
+  confidence numeric
+    check (confidence is null or confidence between 0 and 1),
+  google_citations jsonb not null default '[]'::jsonb,
+  raw jsonb not null default '{}'::jsonb,
+  verified_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.storm_google_impact_verification enable row level security;
+grant all on public.storm_google_impact_verification to service_role;
+grant select on public.storm_google_impact_verification to anon, authenticated;
+
+drop policy if exists "read verified storm impact" on public.storm_google_impact_verification;
+create policy "read verified storm impact"
+  on public.storm_google_impact_verification
+  for select
+  to anon, authenticated
+  using (status = 'verified' and impacted_properties is not null);
+
 -- Complete, uncapped verification queue. The browser-oriented storm-date
 -- endpoint intentionally returns a limited recent list and cannot drive a
 -- historical ground-truth backfill.

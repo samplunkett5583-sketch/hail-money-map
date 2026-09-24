@@ -219,14 +219,22 @@ async function getDates() {
     )].sort().reverse();
 
     if (unverifiedOnly && dates.length) {
-      const completed = await supabase
-        .from("hail_ground_truth_runs")
-        .select("event_date")
-        .eq("status", "complete")
-        .range(0, 4999);
+      const [completed, impactChecked] = await Promise.all([
+        supabase
+          .from("hail_ground_truth_runs")
+          .select("event_date")
+          .eq("status", "complete")
+          .range(0, 4999),
+        supabase
+          .from("storm_google_impact_verification")
+          .select("event_date")
+          .range(0, 4999),
+      ]);
       if (completed.error) throw new Error(completed.error.message);
+      if (impactChecked.error) throw new Error(impactChecked.error.message);
       const completedDates = new Set((completed.data || []).map((row) => asDate(row.event_date)));
-      dates = dates.filter((date) => !completedDates.has(date));
+      const impactDates = new Set((impactChecked.data || []).map((row) => asDate(row.event_date)));
+      dates = dates.filter((date) => !(completedDates.has(date) && impactDates.has(date)));
     }
     return dates.slice(offset, offset + limit);
   }
@@ -453,6 +461,164 @@ async function searchGoogle(date, region) {
   return { reports: directReports, citations };
 }
 
+function impactPlainText(value) {
+  return String(value || "")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractImpactPropertyCount(value) {
+  const text = impactPlainText(value);
+  const patterns = [
+    /there\s+(?:were|are)\s+([\d,]+)\s+(?:total\s+)?(?:properties|homes|households|housing units)\s+(?:that\s+)?(?:were\s+|are\s+)?(?:impacted|affected|damaged)/i,
+    /(?:estimated\s+)?([\d,]+)\s+(?:total\s+)?(?:properties|homes|households|housing units)\s+(?:were\s+|are\s+)?(?:impacted|affected|damaged)/i,
+    /(?:properties|homes|households|housing units)\s*[:\-]?\s*([\d,]+)/i,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (!match) continue;
+    const count = Number(String(match[1]).replace(/,/g, ""));
+    if (Number.isInteger(count) && count > 0 && count <= 50000000) {
+      return { count, evidence: match[0].slice(0, 240) };
+    }
+  }
+  return null;
+}
+
+function impactSourceConfidence(url) {
+  const host = hostname(url);
+  if (host === "hailstrike.com" || host.endsWith(".hailstrike.com")) return 0.97;
+  if (host === "hailtrace.com" || host.endsWith(".hailtrace.com")) return 0.95;
+  if (host === "interactivehailmaps.com" || host.endsWith(".interactivehailmaps.com")) return 0.90;
+  return 0.82;
+}
+
+async function searchGooglePropertyImpact(date) {
+  const humanDate = new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(`${date}T12:00:00Z`));
+  const query = `how many homes were affected by the ${humanDate} hailstorm`;
+  const response = await fetch("https://google.serper.dev/search", {
+    method: "POST",
+    headers: {
+      "X-API-KEY": SERPER_API_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ q: query, gl: "us", hl: "en", num: 10 }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(`Google impact search ${response.status}: ${JSON.stringify(body).slice(0, 500)}`);
+  }
+
+  const candidates = [...(body.organic || []), ...(body.news || [])]
+    .filter((result) => typeof result?.link === "string" && result.link.startsWith("https://"))
+    .slice(0, 10)
+    .map((result, index) => ({
+      rank: index + 1,
+      title: String(result.title || "").slice(0, 300),
+      url: result.link,
+      snippet: String(result.snippet || "").slice(0, 1500),
+    }));
+  const citations = candidates.map(({ url, title }) => ({ url, title }));
+
+  for (const candidate of candidates) {
+    let searchable = `${candidate.title} | ${candidate.snippet}`;
+    let match = extractImpactPropertyCount(searchable);
+    if (!match) {
+      try {
+        const page = await fetch(candidate.url, {
+          headers: { "User-Agent": "HailMoneyMap/1.0 (storm-impact-verification)" },
+          redirect: "follow",
+          signal: AbortSignal.timeout(8000),
+        });
+        if (page.ok) {
+          searchable += " | " + (await page.text()).slice(0, 1000000);
+          match = extractImpactPropertyCount(searchable);
+        }
+      } catch (_) {}
+    }
+    if (!match) continue;
+
+    const lower = impactPlainText(searchable).toLowerCase();
+    const dateSeen = lower.includes(date.toLowerCase()) ||
+      lower.includes(humanDate.toLowerCase()) ||
+      lower.includes(`${date.slice(5, 7)}/${date.slice(8, 10)}/${date.slice(0, 4)}`);
+    if (!dateSeen) continue;
+
+    return {
+      status: "verified",
+      impacted_properties: match.count,
+      source_url: candidate.url,
+      source_title: candidate.title || null,
+      source_provider: hostname(candidate.url) || null,
+      query_text: query,
+      search_rank: candidate.rank,
+      confidence: impactSourceConfidence(candidate.url),
+      google_citations: citations,
+      raw: {
+        evidence: match.evidence,
+        candidate: candidate,
+      },
+    };
+  }
+
+  return {
+    status: "not_found",
+    impacted_properties: null,
+    source_url: null,
+    source_title: null,
+    source_provider: null,
+    query_text: query,
+    search_rank: null,
+    confidence: null,
+    google_citations: citations,
+    raw: { candidates },
+  };
+}
+
+async function saveGooglePropertyImpact(date, result) {
+  if (dryRun) return;
+  if (result.status !== "verified") {
+    const existing = await supabase
+      .from("storm_google_impact_verification")
+      .select("status")
+      .eq("event_date", date)
+      .maybeSingle();
+    if (existing.error) throw new Error(existing.error.message);
+    if (existing.data?.status === "verified") return;
+  }
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("storm_google_impact_verification")
+    .upsert({
+      event_date: date,
+      status: result.status,
+      impacted_properties: result.impacted_properties,
+      source_url: result.source_url,
+      source_title: result.source_title,
+      source_provider: result.source_provider,
+      query_text: result.query_text,
+      search_rank: result.search_rank,
+      confidence: result.confidence,
+      google_citations: result.google_citations || [],
+      raw: result.raw || {},
+      verified_at: now,
+      updated_at: now,
+    }, { onConflict: "event_date" });
+  if (error) throw new Error(`Google property-impact upsert failed: ${error.message}`);
+}
+
 async function addCoordinates(report) {
   const lat = Number(report.lat);
   const lon = Number(report.lon);
@@ -544,14 +710,26 @@ function normalizeEvidence(date, report, region, citations) {
 
 async function recentRun(date) {
   if (force) return false;
-  const { data, error } = await supabase
-    .from("hail_ground_truth_runs")
-    .select("status,completed_at")
-    .eq("event_date", date)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (data?.status !== "complete" || !data.completed_at) return false;
-  return Date.now() - Date.parse(data.completed_at) < refreshHours * 60 * 60 * 1000;
+  const [hailRun, impactRun] = await Promise.all([
+    supabase
+      .from("hail_ground_truth_runs")
+      .select("status,completed_at")
+      .eq("event_date", date)
+      .maybeSingle(),
+    supabase
+      .from("storm_google_impact_verification")
+      .select("verified_at")
+      .eq("event_date", date)
+      .maybeSingle(),
+  ]);
+  if (hailRun.error) throw new Error(hailRun.error.message);
+  if (impactRun.error) throw new Error(impactRun.error.message);
+  if (hailRun.data?.status !== "complete" || !hailRun.data.completed_at || !impactRun.data?.verified_at) {
+    return false;
+  }
+  const maxAge = refreshHours * 60 * 60 * 1000;
+  return Date.now() - Date.parse(hailRun.data.completed_at) < maxAge &&
+    Date.now() - Date.parse(impactRun.data.verified_at) < maxAge;
 }
 
 async function markRun(date, values) {
@@ -628,6 +806,18 @@ async function processDate(date) {
   });
 
   try {
+    try {
+      const propertyImpact = await searchGooglePropertyImpact(date);
+      await saveGooglePropertyImpact(date, propertyImpact);
+      if (propertyImpact.status === "verified") {
+        console.log(`[${date}] Google verified ${propertyImpact.impacted_properties} impacted properties from ${propertyImpact.source_provider}`);
+      } else {
+        console.log(`[${date}] no Google-verified property impact count found`);
+      }
+    } catch (impactError) {
+      console.warn(`[${date}] property-impact verification failed: ${impactError.message || impactError}`);
+    }
+
     const anchors = await getAnchors(date);
     const regions = buildRegions(anchors);
     if (regions.length === 0) {
