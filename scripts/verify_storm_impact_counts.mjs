@@ -137,8 +137,18 @@ function confidence(url) {
   if (h === "hailstrike.com" || h.endsWith(".hailstrike.com")) return 0.98;
   if (h === "hailtrace.com" || h.endsWith(".hailtrace.com")) return 0.96;
   if (h === "interactivehailmaps.com" || h.endsWith(".interactivehailmaps.com")) return 0.92;
-  if (h.endsWith(".gov")) return 0.92;
+  if (h === "hailpoint.com" || h.endsWith(".hailpoint.com")) return 0.90;
+  if (h === "weather.gov" || h.endsWith(".weather.gov") || h.endsWith(".noaa.gov")) return 0.92;
   return 0.84;
+}
+
+function trustedImpactSource(url) {
+  const h = host(url);
+  return h === "hailstrike.com" || h.endsWith(".hailstrike.com") ||
+    h === "hailtrace.com" || h.endsWith(".hailtrace.com") ||
+    h === "interactivehailmaps.com" || h.endsWith(".interactivehailmaps.com") ||
+    h === "hailpoint.com" || h.endsWith(".hailpoint.com") ||
+    h === "weather.gov" || h.endsWith(".weather.gov") || h.endsWith(".noaa.gov");
 }
 
 function candidatesFrom(body) {
@@ -378,6 +388,7 @@ async function verifyDate(date) {
     candidates.forEach((c) => citations.push({ url: c.url, title: c.title }));
 
     for (const candidate of candidates) {
+      if (!trustedImpactSource(candidate.url)) continue;
       let searchable = `${candidate.title} | ${candidate.snippet}`;
       let match = extractCount(searchable);
       if (!match && /hailstrike|hailtrace|interactivehailmaps/i.test(host(candidate.url))) {

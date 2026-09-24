@@ -40023,8 +40023,8 @@ function mapsGoogleReady() {
       document.querySelectorAll('.storm-home-count[data-impact-date="' + dateStr + '"]').forEach(function (el) {
         el.textContent = text;
         if (impactSummary && String(impactSummary.housingImpactSource || '').toLowerCase() === 'google-verified-impact') {
-          var sourceTitle = impactSummary.housingImpactSourceTitle || 'Google search result';
-          el.title = 'Google verified: ' + sourceTitle;
+          var sourceTitle = impactSummary.housingImpactSourceTitle || 'verified storm source';
+          el.title = 'Verified source: ' + sourceTitle;
         } else {
           el.removeAttribute('title');
         }
