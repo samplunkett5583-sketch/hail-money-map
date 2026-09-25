@@ -5247,6 +5247,22 @@
       overflow: hidden;
       pointer-events: auto;
     }
+    #page-map #stormMap3d {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      display: none;
+      overflow: hidden;
+      background: #111;
+      pointer-events: auto;
+    }
+    #page-map #stormMap3d gmp-map-3d {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
     #mapsView #stormMap,
     #page-map #stormMap,
     #page-map .maps-map-container {
@@ -5256,6 +5272,13 @@
       height: 100%;
       z-index: 0;
       pointer-events: auto;
+    }
+    body.maps-native-3d #page-map #stormMap3d {
+      display: block;
+    }
+    body.maps-native-3d #page-map #stormMap {
+      opacity: 0;
+      pointer-events: none;
     }
     /* Cursor state is visual only. Updating google.maps.Map options while the
        camera is moving interrupts native wheel zoom and pan inertia. */
@@ -5272,6 +5295,7 @@
       bottom: 36px;
       height: auto;
     }
+    body.map-page-active #page-map .maps-map-area > #stormMap3d,
     body.map-page-active #page-map .maps-map-area > #stormMap.maps-map-container {
       position: absolute !important;
       inset: 0 !important;
@@ -22593,6 +22617,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
 
           <!-- Map Area -->
           <div class="maps-map-area">
+            <div id="stormMap3d" aria-hidden="true"></div>
             <div id="stormMap" class="maps-map-container"></div>
             <aside id="maps-campaign-panel" class="maps-campaign-panel" hidden aria-label="Campaign Mode controls"><div class="maps-campaign-panel-title">Campaign Mode</div><div id="maps-campaign-development-notice" class="maps-campaign-development-notice" hidden>Development property data — open-data estimates</div><div id="maps-campaign-production-lock" hidden>Production property data requires an enabled company add-on and an approved licensed provider.</div><div class="maps-campaign-section-label">Drag a marker onto a house</div><div id="maps-campaign-status-pins" class="maps-campaign-status-pins" aria-label="Campaign house markers"></div><label for="maps-campaign-min-value">Minimum home value</label><div class="maps-campaign-value-row"><span>$</span><input id="maps-campaign-min-value" type="number" min="0" step="10000" inputmode="numeric" placeholder="300,000" aria-label="Minimum home value" /><button id="maps-campaign-apply" type="button">Apply</button></div><div id="maps-campaign-results" class="maps-campaign-results" aria-live="polite">Show a storm swath, enter a minimum value, and press Apply.</div><div class="maps-campaign-actions"><button id="maps-campaign-clear-markers" type="button">Clear Markers</button></div><div class="maps-campaign-help">Value tags remain visible while you pan and zoom. Property verification opens only when you zoom to a specific house.</div></aside>
             <aside id="maps-mrms-review-panel" class="maps-mrms-review-panel" hidden aria-label="Local MRMS review controls">
@@ -29236,6 +29261,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       typeOpacityScale: { hail: 0.30, wind: 0.00, tornado: 0.30 },
       selectedProperty: null,    // { lat, lng, address, title }
       rawStormRows: {},          // dateStr -> raw row[] from storm_polygons (for nearby-storm search)
+      _native3dOverlayDefs: {},   // dateStr -> prepared swath definitions for native 3D renderer
       _drawComplete: {},          // dateStr -> true after finishDraw completes (perf cache)
       _fitBoundsCache: {},       // dateStr -> {center:{lat,lng}, zoom} — cached map position
       impactStatesByDate: {},        // dateStr -> impact_state_summary rows
@@ -38519,6 +38545,18 @@ function mapsGoogleReady() {
         });
       });
 
+      // Keep the exact prepared paths/colors/opacities for the native 3D renderer.
+      // This is the same swath geometry/style data used by the current map, not a
+      // recreated or simplified replacement.
+      mapsState._native3dOverlayDefs[dateStr] = _overlayDefs;
+      if (window.HMM3D && window.HMM3D.ready) {
+        window.HMM3D.renderSwathDefs(
+          dateStr,
+          _overlayDefs,
+          (mapsState.selectedDates || []).indexOf(dateStr) !== -1
+        );
+      }
+
       // ── Persistent batched render: far fewer Google Polygon objects ──
       var _t_polyBatch = performance.now();
       var _polygonsDrawn = 0;
@@ -41659,6 +41697,9 @@ function mapsGoogleReady() {
     function rebuildVisibleStormOverlays() {
       var map = mapsState.map;
       if (!map) return;
+      if (window.HMM3D && window.HMM3D.ready) {
+        window.HMM3D.setVisibleDates(mapsState.selectedDates || []);
+      }
       // Hide/show reference swath map overlays
       Object.keys(mapsState.refSwathOverlays).forEach(function (d) {
         var show = mapsState.selectedDates.indexOf(d) !== -1;
@@ -44377,6 +44418,7 @@ function mapsGoogleReady() {
       select.addEventListener('change', function () {
         if (!mapsState.map) return;
         mapsState.map.setMapTypeId(select.value);
+        if (window.HMM3D && window.HMM3D.ready) window.HMM3D.setMode(select.value);
       });
       select.dataset.mapsBindingCount = '1';
     }
@@ -83718,7 +83760,8 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 })();
 </script>
 
-  <script src="assets/docusign-integration.js"></script>
+  <script src="maps3d-engine.js"></script>
+<script src="assets/docusign-integration.js"></script>
 
 
 </body>
