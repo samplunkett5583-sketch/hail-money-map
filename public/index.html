@@ -32376,6 +32376,11 @@ function mapsGoogleReady() {
       mapEl._hailMoneySmoothWheelInstalled = true;
 
       var wheelSerial = 0;
+      var wheelState = {
+        zoom: null,
+        center: null,
+        lastEventAt: 0
+      };
 
       function clampZoom(value) {
         return Math.max(MAPS_MIN_ZOOM, Math.min(22, Number(value) || MAPS_MIN_ZOOM));
@@ -32393,23 +32398,34 @@ function mapsGoogleReady() {
         else if (event.deltaMode === 2) delta *= Math.max(1, mapEl.clientHeight);
         if (!delta) return;
 
+        var now = (window.performance && performance.now) ? performance.now() : Date.now();
+        var newGesture = !wheelState.lastEventAt || (now - wheelState.lastEventAt) > 180;
+        wheelState.lastEventAt = now;
+
+        // Google Maps can report the previous rendered zoom for a few milliseconds
+        // after moveCamera(). Keep our own camera position during one wheel gesture
+        // so fast wheel clicks are never dropped or overwritten by stale map state.
+        if (newGesture || !Number.isFinite(wheelState.zoom) || !wheelState.center) {
+          var reportedZoom = Number(map.getZoom());
+          wheelState.zoom = Number.isFinite(reportedZoom) ? reportedZoom : MAPS_DEFAULT_ZOOM;
+          wheelState.center = map.getCenter && map.getCenter();
+        }
+
         var rect = mapEl.getBoundingClientRect();
         var anchorX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
         var anchorY = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
 
         var projection = map.getProjection && map.getProjection();
-        var currentCenter = map.getCenter && map.getCenter();
-        var currentZoom = Number(map.getZoom());
-        if (!Number.isFinite(currentZoom)) currentZoom = MAPS_DEFAULT_ZOOM;
+        var currentCenter = wheelState.center || (map.getCenter && map.getCenter());
+        var currentZoom = wheelState.zoom;
 
         // One wheel event equals one immediate fractional camera movement.
-        // There is deliberately no easing, inertia, debounce, or animation tail:
-        // the map begins on the first wheel click and stops with the last one.
+        // No easing and no inertia: first click starts it, last click stops it.
         var zoomDelta = -delta * 0.0038;
         zoomDelta = Math.max(-0.85, Math.min(0.85, zoomDelta));
         var nextZoom = clampZoom(currentZoom + zoomDelta);
 
-        var nextCenter = null;
+        var nextCenter = currentCenter;
         if (projection && currentCenter &&
             typeof projection.fromLatLngToPoint === 'function' &&
             typeof projection.fromPointToLatLng === 'function') {
@@ -32425,9 +32441,14 @@ function mapsGoogleReady() {
               anchorWorld.x - (anchorX - rect.width / 2) / nextScale,
               anchorWorld.y - (anchorY - rect.height / 2) / nextScale
             );
-            nextCenter = projection.fromPointToLatLng(nextCenterWorld);
+            nextCenter = projection.fromPointToLatLng(nextCenterWorld) || currentCenter;
           }
         }
+
+        // Update our virtual camera BEFORE Google renders this event. That keeps
+        // every physical wheel click accounted for even when the renderer is busy.
+        wheelState.zoom = nextZoom;
+        wheelState.center = nextCenter;
 
         mapsState._smoothWheelActive = true;
         mapsState._mapCameraMoving = true;
