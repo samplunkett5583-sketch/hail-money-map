@@ -39017,7 +39017,12 @@ function mapsGoogleReady() {
       var reportedHailMax = Number(summary.hail && summary.hail.max != null ? summary.hail.max : 0) || 0;
       var polygonSummary = mapsState.polyHailSummaries && mapsState.polyHailSummaries[dateStr];
       var polygonHailMax = Number(polygonSummary && polygonSummary.max || 0) || 0;
-      var maximumHail = Math.max(reportedHailMax, polygonHailMax);
+      // The storm rating must use the same field-facing hail magnitude shown on
+      // the card. A dated ground report wins over a higher radar/polygon estimate;
+      // radar is only the fallback when no hail report exists for the date.
+      var maximumHail = reportedHailMax > 0 ? reportedHailMax : polygonHailMax;
+      var reviewedDateCap = mapsReviewedHailDateCap(dateStr);
+      if (reviewedDateCap > 0 && maximumHail > 0) maximumHail = Math.min(maximumHail, reviewedDateCap);
       var severityTier = mapsStormHailSeverityTier(maximumHail);
 
       if (!severityTier) {
