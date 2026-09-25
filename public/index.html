@@ -32376,11 +32376,13 @@ function mapsGoogleReady() {
       mapEl._hailMoneySmoothWheelInstalled = true;
 
       var wheelSerial = 0;
+      var initialZoom = Number(map.getZoom());
       var wheelState = {
-        zoom: null,
-        center: null,
+        zoom: Number.isFinite(initialZoom) ? initialZoom : MAPS_DEFAULT_ZOOM,
+        center: map.getCenter && map.getCenter(),
         lastEventAt: 0
       };
+      map._hailMoneyWheelState = wheelState;
 
       function clampZoom(value) {
         return Math.max(MAPS_MIN_ZOOM, Math.min(22, Number(value) || MAPS_MIN_ZOOM));
@@ -32399,17 +32401,13 @@ function mapsGoogleReady() {
         if (!delta) return;
 
         var now = (window.performance && performance.now) ? performance.now() : Date.now();
-        var newGesture = !wheelState.lastEventAt || (now - wheelState.lastEventAt) > 180;
         wheelState.lastEventAt = now;
 
-        // Google Maps can report the previous rendered zoom for a few milliseconds
-        // after moveCamera(). Keep our own camera position during one wheel gesture
-        // so fast wheel clicks are never dropped or overwritten by stale map state.
-        if (newGesture || !Number.isFinite(wheelState.zoom) || !wheelState.center) {
-          var reportedZoom = Number(map.getZoom());
-          wheelState.zoom = Number.isFinite(reportedZoom) ? reportedZoom : MAPS_DEFAULT_ZOOM;
-          wheelState.center = map.getCenter && map.getCenter();
-        }
+        // Never reset from map.getZoom() between wheel rolls. The renderer can
+        // still be a frame behind the camera command, which made roll #2 start
+        // from stale state and progressively fall behind the physical wheel.
+        if (!Number.isFinite(wheelState.zoom)) wheelState.zoom = MAPS_DEFAULT_ZOOM;
+        if (!wheelState.center) wheelState.center = map.getCenter && map.getCenter();
 
         var rect = mapEl.getBoundingClientRect();
         var anchorX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
@@ -32624,11 +32622,19 @@ function mapsGoogleReady() {
       });
       map.addListener('idle', function() {
         if (!mapsState._smoothWheelActive) mapsState._mapCameraMoving = false;
-        if (_svSetting) return;
         var c = map.getCenter();
+        var z = Number(map.getZoom());
+        // Once Google confirms the camera is idle, synchronize the persistent
+        // wheel camera to the actual rendered camera. This also picks up drags,
+        // searches, date focus, and any other non-wheel camera changes.
+        if (map._hailMoneyWheelState && Number.isFinite(z) && c) {
+          map._hailMoneyWheelState.zoom = z;
+          map._hailMoneyWheelState.center = c;
+        }
+        if (_svSetting) return;
         sharedViewport.lat = c.lat();
         sharedViewport.lng = c.lng();
-        sharedViewport.zoom = map.getZoom();
+        sharedViewport.zoom = z;
       });
 
       // Keep base maps unfiltered so roadmap styling and satellite imagery render normally.
