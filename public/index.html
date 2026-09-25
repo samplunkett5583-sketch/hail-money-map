@@ -32400,7 +32400,15 @@ function mapsGoogleReady() {
           center: MAPS_DEFAULT_CENTER,
           zoom: MAPS_DEFAULT_ZOOM,
           minZoom: MAPS_MIN_ZOOM,
+          // Use Google's GPU/WebGL vector renderer. The div-based Maps JS API
+          // defaults to raster, which makes wheel zoom advance in visibly chunky
+          // tile steps. Vector + fractional zoom gives continuous camera motion.
+          renderingType: google.maps.RenderingType.VECTOR,
           isFractionalZoomEnabled: true,
+          tilt: 0,
+          heading: 0,
+          tiltInteractionEnabled: false,
+          headingInteractionEnabled: false,
           mapTypeId: initialMapStyle,
           styles: [],
           zoomControl: false,
@@ -54504,6 +54512,12 @@ function mapsGoogleReady() {
           var cmpZoom = (sharedViewport.zoom != null) ? sharedViewport.zoom : 16;
           window.cMap = new google.maps.Map(el, {
             center: cmpCenter, zoom: cmpZoom,
+            renderingType: google.maps.RenderingType.VECTOR,
+            isFractionalZoomEnabled: true,
+            tilt: 0,
+            heading: 0,
+            tiltInteractionEnabled: false,
+            headingInteractionEnabled: false,
             mapTypeId: 'hybrid', zoomControl: true, streetViewControl: false,
             mapTypeControl: false, fullscreenControl: false,
             draggable: true,
@@ -54524,7 +54538,7 @@ function mapsGoogleReady() {
             }
           });
 
-          // Cursor-tracking wheel zoom — 2× increment, zooms toward pointer (not center)
+          // Let Google's native vector camera own wheel/pinch zoom.
           // Track Campaign viewport changes → shared state
           window.cMap.addListener('idle', function() {
             if (_svSetting) return;
