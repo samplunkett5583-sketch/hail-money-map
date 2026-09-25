@@ -32903,18 +32903,28 @@ function mapsGoogleReady() {
     //  AI SWATH RENDERER — Phase A fetch + Phase B canvas painter
     // ══════════════════════════════════════════════════════════════
 
-    // ── Severity → color (hail: pale-yellow → orange → red → magenta/purple) ──
-    // Nested-swath ramp matches HailTrace: outer/light=yellow, inner/core=purple
+    // ── Severity → color ──
+    // Match the approved storm-map legend without changing swath geometry/style:
+    // yellow 1.00-1.25", orange 1.50-1.75", red 2.00-2.75", purple 3.00"+.
     function swathSeverityColor(hailIn) {
-      // One shared Hail Recon-matched palette for every swath renderer.
-      // Hail at or below 1.50 inches stays yellow; severity colors begin only above 1.50.
-      if (hailIn >= 3.00) return [123,  31, 162, 0.65]; // #7b1fa2 purple
-      if (hailIn >= 2.50) return [220,  30,  30, 0.62]; // #dc1e1e red
-      if (hailIn >= 2.00) return [220,  75,  30, 0.60]; // #dc4b1e orange-red
-      if (hailIn >= 1.74) return [226, 137,  28, 0.58]; // #e2891c darker orange
-      if (hailIn >  1.50) return [239, 174,  54, 0.56]; // #efae36 light orange
-      if (hailIn >= 1.50) return [249, 231, 107, 0.60]; // #f9e76b subtle 1.5-inch yellow
-      return                     [255, 245, 157, 0.60]; // #fff59d Hail Recon light yellow
+      // RGB follows the approved legend. Existing alpha/opacity tiers are kept
+      // exactly so the swath's visual style does not change.
+      if (hailIn >= 3.00) return [130,  99, 191, 0.65]; // purple
+      if (hailIn >= 2.50) return [230,  66,  85, 0.62]; // red
+      if (hailIn >= 2.00) return [230,  66,  85, 0.60]; // red
+      if (hailIn >= 1.74) return [255, 126,  40, 0.58]; // orange
+      if (hailIn >  1.50) return [255, 126,  40, 0.56]; // orange
+      if (hailIn >= 1.50) return [255, 126,  40, 0.60]; // orange
+      return                     [240, 193,  77, 0.60]; // yellow
+    }
+
+    function swathVisualHailValue(bandMin, bandMax) {
+      var min = Number(bandMin) || 0;
+      var max = Number(bandMax);
+      // Some stored top bins are 2.50-3.xx. Those are the storm core and must
+      // render as the 3.00"+ purple zone instead of being flattened to red.
+      if (min >= 3.00 || (min >= 2.50 && Number.isFinite(max) && max > 3.00)) return 3.00;
+      return min;
     }
 
     function _swathScaledDisplayOpacity(globalOpacity, baseOpacity, bandMin, stormType) {
@@ -38151,12 +38161,15 @@ function mapsGoogleReady() {
         var _showRow = ((stormType === 'wind' && mapsState.swathToggles.wind) ||
           (stormType === 'tornado' && mapsState.swathToggles.tornado) ||
           ((stormType !== 'wind' && stormType !== 'tornado') && mapsState.swathToggles.hail));
+        // Swath COLOR follows the stored severity band, but every other swath
+        // behavior stays exactly as before. This intentionally does not change
+        // geometry, width, opacity, edge treatment, or the report-calibrated
+        // effective band used elsewhere.
+        var visualBand = (!isWind && !isTornado)
+          ? swathVisualHailValue(bandMin, bandMax)
+          : bandMin;
         if (!isWind && !isTornado) {
           var localReportedMax = mapsMaxReportedHailInsideGeometry(dateStr, row.polygon_geojson);
-          // Official ground reports control displayed magnitude for every
-          // geometry source, including NEXRAD tracks. The radar supplies the
-          // footprint; it cannot promote that footprint above the verified
-          // hail measured inside it.
           bandMin = mapsCalibratedHailSize(bandMin, localReportedMax);
           var reviewedGeometryCap = mapsGeometryIntersectsReviewedHailRule(dateStr, row.polygon_geojson);
           if (reviewedGeometryCap > 0) bandMin = Math.min(bandMin, reviewedGeometryCap);
@@ -38165,10 +38178,9 @@ function mapsGoogleReady() {
         }
         var isEnvelope = (row.source_product || '') === 'nexrad_iem_envelope';
         var effectiveBand = isEnvelope ? 0.5 : Math.max(bandMin, 0.5);
-        // Keep the full 1-inch radar footprint pale yellow. Promoting the entire
-        // nested band to amber created broad orange slabs; only the smaller 1.5"+
-        // geometry and the ground-verified organic ribbons should be orange.
-        var rgba = isTornado ? tornadoSeverityColor(effectiveBand) : (isWind ? windSeverityColor(effectiveBand) : swathSeverityColor(effectiveBand));
+        var rgba = isTornado
+          ? tornadoSeverityColor(effectiveBand)
+          : (isWind ? windSeverityColor(effectiveBand) : swathSeverityColor(visualBand));
         var segFill   = 'rgb(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ')';
         if (_verboseDateLogs) {
           hmDebugLog('[SWATH-DRAW] id=' + (row.id || ri) +
