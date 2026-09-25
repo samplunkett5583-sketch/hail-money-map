@@ -19388,7 +19388,51 @@
       #page-crm-permits .permit-form-grid { grid-template-columns: 1fr; }
       #page-crm-permits .permit-field.full { grid-column: auto; }
     }
-      /* Pipeline layout lock: keep shared dashboard/estimate styles from
+      /* Desktop shared left navigation: easier-to-read labels without changing
+       the mobile drawer or tablet rail. */
+    @media (min-width: 1101px) {
+      :root {
+        --crm-shell-rail-w: 150px;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-item,
+      body.crm-standard-header-active .crm-dashboard-mini-layout .nav-item,
+      body.pipeline-page-active #page-crm-pipeline [data-crm-phase-one-shared-sidebar] .nav-item {
+        min-height: 64px;
+        padding: 8px 6px;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-label,
+      body.crm-standard-header-active .crm-dashboard-mini-layout .nav-label,
+      body.pipeline-page-active #page-crm-pipeline [data-crm-phase-one-shared-sidebar] .nav-label {
+        font-size: 13px;
+        line-height: 1.15;
+        font-weight: 600;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .nav-item .dash-icon svg,
+      body.crm-standard-header-active .crm-dashboard-mini-layout .nav-item .dash-icon svg,
+      body.pipeline-page-active #page-crm-pipeline [data-crm-phase-one-shared-sidebar] .nav-item .dash-icon svg {
+        width: 30px;
+        height: 30px;
+      }
+
+      body.main-menu-page-active #page-main-menu .hm-dashboard-ref .sidebar,
+      body.crm-standard-header-active .crm-dashboard-mini-sidebar {
+        width: var(--crm-shell-rail-w);
+        min-width: var(--crm-shell-rail-w);
+        flex: 0 0 var(--crm-shell-rail-w);
+      }
+
+      body.pipeline-page-active #page-crm-pipeline .hm-dashboard-ref .wrap > .sidebar,
+      body.pipeline-page-active #page-crm-pipeline [data-crm-phase-one-shared-sidebar] {
+        width: var(--crm-shell-rail-w) !important;
+        min-width: var(--crm-shell-rail-w) !important;
+        flex: 0 0 var(--crm-shell-rail-w) !important;
+      }
+    }
+
+    /* Pipeline layout lock: keep shared dashboard/estimate styles from
        overriding the completed CRM Pipeline workspace. */
     body.pipeline-page-active #page-crm-pipeline .hm-dashboard-ref .wrap {
       display: flex !important;
@@ -19398,9 +19442,9 @@
     }
     body.pipeline-page-active #page-crm-pipeline .hm-dashboard-ref .wrap > .sidebar,
     body.pipeline-page-active #page-crm-pipeline [data-crm-phase-one-shared-sidebar] {
-      width: 125px !important;
-      min-width: 125px !important;
-      flex: 0 0 125px !important;
+      width: var(--crm-shell-rail-w) !important;
+      min-width: var(--crm-shell-rail-w) !important;
+      flex: 0 0 var(--crm-shell-rail-w) !important;
       min-height: calc(100vh - 118px) !important;
       display: flex !important;
       flex-direction: column !important;
