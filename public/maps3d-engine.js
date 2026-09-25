@@ -66,6 +66,72 @@
       Math.max(0, Math.min(1, Number(alpha) || 0)) + ')';
   }
 
+  function simplifyPath(points) {
+    if (!Array.isArray(points) || points.length < 80) return points || [];
+
+    // ~1 metre tolerance at mid-latitudes. This removes redundant contour
+    // vertices without changing the visible hand-cut swath shape.
+    var tolerance = 0.00001;
+    var sqTolerance = tolerance * tolerance;
+
+    function sqSegDist(p, a, b) {
+      var x = a.lng;
+      var y = a.lat;
+      var dx = b.lng - x;
+      var dy = b.lat - y;
+
+      if (dx !== 0 || dy !== 0) {
+        var t = ((p.lng - x) * dx + (p.lat - y) * dy) / (dx * dx + dy * dy);
+        if (t > 1) {
+          x = b.lng;
+          y = b.lat;
+        } else if (t > 0) {
+          x += dx * t;
+          y += dy * t;
+        }
+      }
+
+      dx = p.lng - x;
+      dy = p.lat - y;
+      return dx * dx + dy * dy;
+    }
+
+    function simplifyStep(first, last, source, keep) {
+      var maxSqDist = sqTolerance;
+      var index = -1;
+      for (var i = first + 1; i < last; i++) {
+        var sqDist = sqSegDist(source[i], source[first], source[last]);
+        if (sqDist > maxSqDist) {
+          index = i;
+          maxSqDist = sqDist;
+        }
+      }
+      if (index !== -1) {
+        if (index - first > 1) simplifyStep(first, index, source, keep);
+        keep[index] = true;
+        if (last - index > 1) simplifyStep(index, last, source, keep);
+      }
+    }
+
+    var normalized = points.map(function (pt) {
+      return { lat: Number(pt.lat), lng: Number(pt.lng), altitude: 0 };
+    }).filter(function (pt) {
+      return Number.isFinite(pt.lat) && Number.isFinite(pt.lng);
+    });
+    if (normalized.length < 80) return normalized;
+
+    var keep = new Array(normalized.length);
+    keep[0] = true;
+    keep[normalized.length - 1] = true;
+    simplifyStep(0, normalized.length - 1, normalized, keep);
+
+    var result = [];
+    for (var i = 0; i < normalized.length; i++) {
+      if (keep[i]) result.push(normalized[i]);
+    }
+    return result.length >= 3 ? result : normalized;
+  }
+
   function normalizeMode(style) {
     style = String(style || 'hybrid').toLowerCase();
     if (style === 'roadmap') return 'ROADMAP';
@@ -226,11 +292,7 @@
         if (list.length >= maxElements) break outer;
         var path = paths[j];
         if (!Array.isArray(path) || path.length < 3) continue;
-        var coords = path.map(function (pt) {
-          return { lat: Number(pt.lat), lng: Number(pt.lng), altitude: 0 };
-        }).filter(function (pt) {
-          return Number.isFinite(pt.lat) && Number.isFinite(pt.lng);
-        });
+        var coords = simplifyPath(path);
         if (coords.length < 3) continue;
 
         var isHail = def.stormType !== 'wind' && def.stormType !== 'tornado';
