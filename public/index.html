@@ -32371,6 +32371,132 @@ function mapsGoogleReady() {
       mapsClampMinimumZoom(map);
     }
 
+    function mapsInstallEarthStyleWheelZoom(map, mapEl) {
+      if (!map || !mapEl || mapEl._hailMoneySmoothWheelInstalled) return;
+      mapEl._hailMoneySmoothWheelInstalled = true;
+
+      var state = {
+        targetZoom: null,
+        anchorX: 0,
+        anchorY: 0,
+        anchorLatLng: null,
+        raf: 0,
+        stopTimer: 0
+      };
+
+      function clampZoom(value) {
+        return Math.max(MAPS_MIN_ZOOM, Math.min(22, Number(value) || MAPS_MIN_ZOOM));
+      }
+
+      function scheduleFrame() {
+        if (state.raf) return;
+        state.raf = requestAnimationFrame(step);
+      }
+
+      function step() {
+        state.raf = 0;
+        if (state.targetZoom == null) return;
+
+        var currentZoom = Number(map.getZoom());
+        if (!Number.isFinite(currentZoom)) currentZoom = MAPS_DEFAULT_ZOOM;
+        var diff = state.targetZoom - currentZoom;
+        var finished = Math.abs(diff) < 0.0015;
+        var nextZoom = finished
+          ? state.targetZoom
+          : currentZoom + diff * 0.34;
+
+        var projection = map.getProjection && map.getProjection();
+        var center = map.getCenter && map.getCenter();
+        var anchor = state.anchorLatLng;
+        if (projection && center && anchor &&
+            typeof projection.fromLatLngToPoint === 'function' &&
+            typeof projection.fromPointToLatLng === 'function') {
+          var anchorWorld = projection.fromLatLngToPoint(anchor);
+          if (anchorWorld) {
+            var scale = Math.pow(2, nextZoom);
+            var centerWorld = new google.maps.Point(
+              anchorWorld.x - (state.anchorX - mapEl.clientWidth / 2) / scale,
+              anchorWorld.y - (state.anchorY - mapEl.clientHeight / 2) / scale
+            );
+            var nextCenter = projection.fromPointToLatLng(centerWorld);
+            if (nextCenter) {
+              map.moveCamera({ center: nextCenter, zoom: nextZoom });
+            } else {
+              map.moveCamera({ zoom: nextZoom });
+            }
+          } else {
+            map.moveCamera({ zoom: nextZoom });
+          }
+        } else {
+          map.moveCamera({ zoom: nextZoom });
+        }
+
+        if (!finished) {
+          scheduleFrame();
+        } else {
+          state.targetZoom = null;
+          state.anchorLatLng = null;
+          clearTimeout(state.stopTimer);
+          state.stopTimer = setTimeout(function () {
+            mapsState._smoothWheelActive = false;
+            mapsState._mapCameraMoving = false;
+          }, 60);
+        }
+      }
+
+      function endGestureSoon() {
+        clearTimeout(state.stopTimer);
+        state.stopTimer = setTimeout(function () {
+          if (state.targetZoom != null) scheduleFrame();
+        }, 160);
+      }
+
+      mapEl.addEventListener('wheel', function (event) {
+        if (!document.getElementById('page-map') ||
+            !document.getElementById('page-map').classList.contains('active')) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        var delta = Number(event.deltaY) || 0;
+        if (event.deltaMode === 1) delta *= 16;
+        else if (event.deltaMode === 2) delta *= Math.max(1, mapEl.clientHeight);
+
+        var rect = mapEl.getBoundingClientRect();
+        state.anchorX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+        state.anchorY = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
+
+        var projection = map.getProjection && map.getProjection();
+        var currentCenter = map.getCenter && map.getCenter();
+        var currentZoom = Number(map.getZoom());
+        if (!Number.isFinite(currentZoom)) currentZoom = MAPS_DEFAULT_ZOOM;
+        if (state.targetZoom == null) state.targetZoom = currentZoom;
+
+        if (projection && currentCenter &&
+            typeof projection.fromLatLngToPoint === 'function' &&
+            typeof projection.fromPointToLatLng === 'function') {
+          var centerWorld = projection.fromLatLngToPoint(currentCenter);
+          if (centerWorld) {
+            var scale = Math.pow(2, currentZoom);
+            state.anchorLatLng = projection.fromPointToLatLng(new google.maps.Point(
+              centerWorld.x + (state.anchorX - rect.width / 2) / scale,
+              centerWorld.y + (state.anchorY - rect.height / 2) / scale
+            ));
+          }
+        }
+
+        // Mouse-wheel notches arrive as chunky bursts. Accumulate them into a
+        // fractional target and ease the camera there continuously, like Earth.
+        var zoomDelta = -delta * 0.0038;
+        zoomDelta = Math.max(-0.85, Math.min(0.85, zoomDelta));
+        state.targetZoom = clampZoom(state.targetZoom + zoomDelta);
+        mapsState._smoothWheelActive = true;
+        mapsState._mapCameraMoving = true;
+        scheduleFrame();
+        endGestureSoon();
+      }, { passive:false, capture:true });
+    }
+
     function mapsInitMap() {
       var page = document.getElementById('page-map');
       if (!page || !page.classList.contains('active')) {
@@ -32418,7 +32544,9 @@ function mapsGoogleReady() {
           rotateControl: false,
           clickableIcons: false,
           gestureHandling: 'greedy',
-          scrollwheel: true,
+          // Desktop wheel is handled by Hail Money's eased fractional camera
+          // below. Pinch/touch gestures remain native.
+          scrollwheel: false,
           draggableCursor: 'grab',
           draggingCursor: 'grabbing'
         });
@@ -32430,13 +32558,14 @@ function mapsGoogleReady() {
       var map = mapsState.map;
       App.map = map;
       mapsInstallMinimumZoomGuard(map);
+      mapsInstallEarthStyleWheelZoom(map, mapEl);
       mapsWireHailHoverReadout();
       // Controls may have been visited before the asynchronously loaded Maps API
       // was ready. Wire the map-dependent controls now as well; each is guarded
       // against duplicate listeners.
       mapsWireAreaSearch();
       mapsWireMapStyleCtrl();
-      hmDebugLog('[HMM] native smooth cursor-centered map wheel zoom enabled');
+      hmDebugLog('[HMM] Earth-style eased cursor-centered wheel zoom enabled');
 
       // Keep pan gestures separate from property clicks. Google can emit a map
       // click after a short drag, especially when hover-driven cursor options
@@ -32524,7 +32653,7 @@ function mapsGoogleReady() {
         mapsState._hailHoverPendingLatLng = null;
       });
       map.addListener('idle', function() {
-        mapsState._mapCameraMoving = false;
+        if (!mapsState._smoothWheelActive) mapsState._mapCameraMoving = false;
         if (_svSetting) return;
         var c = map.getCenter();
         sharedViewport.lat = c.lat();
