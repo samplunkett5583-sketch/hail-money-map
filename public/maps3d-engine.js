@@ -12,7 +12,6 @@
     visibleDates: new Set(),
     syncingFrom3D: false,
     syncingFrom2D: false,
-    ignoreLogicMapUntil: 0,
     lastSteady: true,
     fov: 45,
     mode: 'HYBRID'
@@ -125,8 +124,7 @@
     var zoom = zoomForRange(Number(engine.map.range), lat);
     engine.syncingFrom3D = true;
     // The hidden 2D map follows the native camera for legacy calculations only.
-    // Give its resulting idle event nowhere to bounce back into the visible 3D camera.
-    engine.ignoreLogicMapUntil = performance.now() + 300;
+    // It never drives the visible camera during normal navigation.
     try {
       logicMap.setCenter({ lat: lat, lng: lng });
       logicMap.setZoom(zoom);
@@ -199,33 +197,10 @@
         renderSwathDefs(dateStr, cachedDefs[dateStr], selectedDates.indexOf(dateStr) !== -1);
       });
 
-      if (logicMap && typeof logicMap.addListener === 'function') {
-        logicMap.addListener('idle', function () {
-          if (!engine.ready || engine.syncingFrom3D || !engine.lastSteady) return;
-          if (performance.now() < engine.ignoreLogicMapUntil) return;
-
-          // Ignore reflected camera updates. The 3D renderer must never "correct"
-          // itself from the hidden compatibility map after a wheel gesture.
-          var logicCenter = logicMap.getCenter();
-          var logicLat = latOf(logicCenter);
-          var logicLng = lngOf(logicCenter);
-          var nativeCenter = engine.map && engine.map.center;
-          var nativeLat = latOf(nativeCenter);
-          var nativeLng = lngOf(nativeCenter);
-          var logicZoom = Number(logicMap.getZoom());
-          var targetRange = rangeForZoom(logicZoom, logicLat);
-          var currentRange = Number(engine.map && engine.map.range);
-          var sameCenter = Number.isFinite(logicLat) && Number.isFinite(logicLng) &&
-            Number.isFinite(nativeLat) && Number.isFinite(nativeLng) &&
-            Math.abs(logicLat - nativeLat) < 0.000001 &&
-            Math.abs(logicLng - nativeLng) < 0.000001;
-          var sameRange = Number.isFinite(targetRange) && Number.isFinite(currentRange) &&
-            Math.abs(targetRange - currentRange) / Math.max(1, currentRange) < 0.002;
-          if (sameCenter && sameRange) return;
-
-          syncFrom2D(logicCenter, logicZoom);
-        });
-      }
+      // IMPORTANT: Do not mirror logicMap "idle" back into the visible 3D camera.
+      // That feedback loop is what creates post-wheel catch-up. Programmatic
+      // navigation can call HMM3D.syncFrom2D explicitly when it truly needs to
+      // reposition the visible map.
 
       return engine;
     })().finally(function () {
@@ -266,7 +241,7 @@
           fillColor: cssRgba(def.fill, def.opacity),
           strokeColor: cssRgba(def.fill, isHail ? 0 : Math.min(0.65, Number(def.opacity) + 0.10)),
           strokeWidth: strokeWidth,
-          drawsOccludedSegments: true,
+          drawsOccludedSegments: false,
           geodesic: false,
           extruded: false,
           zIndex: Number(def.zIndex) || 0
