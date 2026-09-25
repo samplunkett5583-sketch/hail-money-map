@@ -5247,22 +5247,6 @@
       overflow: hidden;
       pointer-events: auto;
     }
-    #page-map #stormEarthMap {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      display: none;
-      overflow: hidden;
-      pointer-events: none;
-      background: #111;
-    }
-    #page-map #stormEarthMap gmp-map-3d {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
     #mapsView #stormMap,
     #page-map #stormMap,
     #page-map .maps-map-container {
@@ -5270,12 +5254,8 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      z-index: 1;
+      z-index: 0;
       pointer-events: auto;
-    }
-    body.maps-immersive-base #page-map #stormMap,
-    body.maps-immersive-base #page-map #stormMap .gm-style {
-      background: transparent !important;
     }
     /* Cursor state is visual only. Updating google.maps.Map options while the
        camera is moving interrupts native wheel zoom and pan inertia. */
@@ -5292,7 +5272,6 @@
       bottom: 36px;
       height: auto;
     }
-    body.map-page-active #page-map .maps-map-area > #stormEarthMap,
     body.map-page-active #page-map .maps-map-area > #stormMap.maps-map-container {
       position: absolute !important;
       inset: 0 !important;
@@ -22614,7 +22593,6 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
 
           <!-- Map Area -->
           <div class="maps-map-area">
-            <div id="stormEarthMap" aria-hidden="true"></div>
             <div id="stormMap" class="maps-map-container"></div>
             <aside id="maps-campaign-panel" class="maps-campaign-panel" hidden aria-label="Campaign Mode controls"><div class="maps-campaign-panel-title">Campaign Mode</div><div id="maps-campaign-development-notice" class="maps-campaign-development-notice" hidden>Development property data — open-data estimates</div><div id="maps-campaign-production-lock" hidden>Production property data requires an enabled company add-on and an approved licensed provider.</div><div class="maps-campaign-section-label">Drag a marker onto a house</div><div id="maps-campaign-status-pins" class="maps-campaign-status-pins" aria-label="Campaign house markers"></div><label for="maps-campaign-min-value">Minimum home value</label><div class="maps-campaign-value-row"><span>$</span><input id="maps-campaign-min-value" type="number" min="0" step="10000" inputmode="numeric" placeholder="300,000" aria-label="Minimum home value" /><button id="maps-campaign-apply" type="button">Apply</button></div><div id="maps-campaign-results" class="maps-campaign-results" aria-live="polite">Show a storm swath, enter a minimum value, and press Apply.</div><div class="maps-campaign-actions"><button id="maps-campaign-clear-markers" type="button">Clear Markers</button></div><div class="maps-campaign-help">Value tags remain visible while you pan and zoom. Property verification opens only when you zoom to a specific house.</div></aside>
             <aside id="maps-mrms-review-panel" class="maps-mrms-review-panel" hidden aria-label="Local MRMS review controls">
@@ -29270,14 +29248,6 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       expandedImpactStates: {},     // stateName -> true while expanded in Impact tab
       _impactCityPopupInfoWindow: null,
       map: null,
-      earthMap: null,
-      earthMapHost: null,
-      earthMapReady: false,
-      earthMapInitPromise: null,
-      earthMapSyncRaf: 0,
-      earthMapPendingCamera: null,
-      earthOverlayMapTypeId: 'hailMoneyOverlayOnly',
-      baseMapStyle: 'roadmap',
       ready: false,
       fetching: false,
       renderedStormDateCount: 0
@@ -32401,157 +32371,6 @@ function mapsGoogleReady() {
       mapsClampMinimumZoom(map);
     }
 
-    function mapsCanUseImmersiveBase() {
-      var role = typeof crmGetRole === 'function' ? String(crmGetRole() || '').trim() : '';
-      return role === 'Admin' &&
-        window.google && google.maps && typeof google.maps.importLibrary === 'function' &&
-        window.matchMedia && window.matchMedia('(pointer:fine)').matches;
-    }
-
-    function mapsEarthRangeForZoom(zoom, lat) {
-      var host = document.getElementById('stormMap');
-      var height = Math.max(320, Number(host && host.clientHeight) || window.innerHeight || 800);
-      var safeLat = Math.max(-80, Math.min(80, Number(lat) || 0));
-      var metersPerPixel = 156543.03392804097 * Math.cos(safeLat * Math.PI / 180) / Math.pow(2, Number(zoom) || MAPS_DEFAULT_ZOOM);
-      var visibleGroundHeight = metersPerPixel * height;
-      var fovRadians = 45 * Math.PI / 180;
-      var range = visibleGroundHeight / (2 * Math.tan(fovRadians / 2));
-      return Math.max(20, Math.min(63170000, range));
-    }
-
-    function mapsRegisterTransparentOverlayType(map) {
-      if (!map || map._hailMoneyOverlayTypeRegistered) return;
-      map._hailMoneyOverlayTypeRegistered = true;
-      var blankType = {
-        tileSize: new google.maps.Size(256, 256),
-        minZoom: MAPS_MIN_ZOOM,
-        maxZoom: 22,
-        name: 'Hail Money Overlay',
-        alt: 'Hail Money storm overlay',
-        getTile: function (_coord, _zoom, ownerDocument) {
-          var tile = ownerDocument.createElement('div');
-          tile.style.width = '256px';
-          tile.style.height = '256px';
-          tile.style.background = 'transparent';
-          return tile;
-        },
-        releaseTile: function (tile) {
-          if (tile && tile.parentNode) tile.parentNode.removeChild(tile);
-        }
-      };
-      map.mapTypes.set(mapsState.earthOverlayMapTypeId, blankType);
-    }
-
-    function mapsSyncEarthCameraNow(center, zoom) {
-      if (!mapsState.earthMapReady || !mapsState.earthMap || !center) return;
-      var lat = typeof center.lat === 'function' ? center.lat() : Number(center.lat);
-      var lng = typeof center.lng === 'function' ? center.lng() : Number(center.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(Number(zoom))) return;
-      mapsState.earthMap.center = { lat:lat, lng:lng, altitude:0 };
-      mapsState.earthMap.range = mapsEarthRangeForZoom(Number(zoom), lat);
-      mapsState.earthMap.tilt = 0;
-      mapsState.earthMap.heading = 0;
-    }
-
-    function mapsScheduleEarthCameraSync(center, zoom) {
-      if (!mapsState.earthMapReady) return;
-      mapsState.earthMapPendingCamera = { center:center, zoom:Number(zoom) };
-      if (mapsState.earthMapSyncRaf) return;
-      mapsState.earthMapSyncRaf = requestAnimationFrame(function () {
-        mapsState.earthMapSyncRaf = 0;
-        var pending = mapsState.earthMapPendingCamera;
-        mapsState.earthMapPendingCamera = null;
-        if (pending) mapsSyncEarthCameraNow(pending.center, pending.zoom);
-      });
-    }
-
-    function mapsDisableImmersiveBase() {
-      var host = document.getElementById('stormEarthMap');
-      if (host) host.style.display = 'none';
-      document.body.classList.remove('maps-immersive-base');
-    }
-
-    function mapsUseTransparentOverlayMap() {
-      if (!mapsState.map) return;
-      mapsRegisterTransparentOverlayType(mapsState.map);
-      if (mapsState.map.getMapTypeId() !== mapsState.earthOverlayMapTypeId) {
-        mapsState._settingOverlayMapType = true;
-        mapsState.map.setMapTypeId(mapsState.earthOverlayMapTypeId);
-        mapsState._settingOverlayMapType = false;
-      }
-    }
-
-    function mapsApplyBaseMapStyle(style) {
-      style = String(style || 'roadmap').toLowerCase();
-      if (['roadmap','satellite','hybrid'].indexOf(style) === -1) style = 'roadmap';
-      mapsState.baseMapStyle = style;
-      mapsSyncMapStyleControls(style);
-
-      if (style === 'roadmap' || !mapsCanUseImmersiveBase()) {
-        mapsDisableImmersiveBase();
-        if (mapsState.map && mapsState.map.getMapTypeId() !== style) mapsState.map.setMapTypeId(style);
-        return Promise.resolve(false);
-      }
-
-      return mapsEnsureImmersiveBase(style).then(function (ready) {
-        if (!ready) {
-          mapsDisableImmersiveBase();
-          if (mapsState.map && mapsState.map.getMapTypeId() !== style) mapsState.map.setMapTypeId(style);
-          return false;
-        }
-        mapsState.earthMap.mode = style === 'satellite' ? 'SATELLITE' : 'HYBRID';
-        mapsState.earthMapHost.style.display = 'block';
-        document.body.classList.add('maps-immersive-base');
-        mapsUseTransparentOverlayMap();
-        if (mapsState.map) mapsScheduleEarthCameraSync(mapsState.map.getCenter(), Number(mapsState.map.getZoom()));
-        return true;
-      }).catch(function (error) {
-        console.warn('[HMM] Immersive basemap fallback:', error && error.message || error);
-        mapsDisableImmersiveBase();
-        if (mapsState.map && mapsState.map.getMapTypeId() !== style) mapsState.map.setMapTypeId(style);
-        return false;
-      });
-    }
-
-    function mapsEnsureImmersiveBase(style) {
-      if (!mapsCanUseImmersiveBase()) return Promise.resolve(false);
-      if (mapsState.earthMapReady && mapsState.earthMap) return Promise.resolve(true);
-      if (mapsState.earthMapInitPromise) return mapsState.earthMapInitPromise;
-
-      mapsState.earthMapInitPromise = google.maps.importLibrary('maps3d').then(function (lib) {
-        var host = document.getElementById('stormEarthMap');
-        if (!host || !lib || !lib.Map3DElement) return false;
-        var center = mapsState.map && mapsState.map.getCenter ? mapsState.map.getCenter() : MAPS_DEFAULT_CENTER;
-        var zoom = mapsState.map && Number(mapsState.map.getZoom()) || MAPS_DEFAULT_ZOOM;
-        var lat = typeof center.lat === 'function' ? center.lat() : Number(center.lat);
-        var lng = typeof center.lng === 'function' ? center.lng() : Number(center.lng);
-        var earth = new lib.Map3DElement({
-          center: { lat:lat, lng:lng, altitude:0 },
-          range: mapsEarthRangeForZoom(zoom, lat),
-          tilt: 0,
-          heading: 0,
-          fov: 45,
-          mode: String(style || mapsState.baseMapStyle || 'hybrid').toLowerCase() === 'satellite' ? 'SATELLITE' : 'HYBRID',
-          defaultUIHidden: true,
-          gestureHandling: 'NONE',
-          minTilt: 0,
-          maxTilt: 0
-        });
-        host.replaceChildren(earth);
-        host.style.display = 'block';
-        mapsState.earthMapHost = host;
-        mapsState.earthMap = earth;
-        mapsState.earthMapReady = true;
-        document.body.classList.add('maps-immersive-base');
-        mapsUseTransparentOverlayMap();
-        mapsSyncEarthCameraNow(center, zoom);
-        return true;
-      }).finally(function () {
-        mapsState.earthMapInitPromise = null;
-      });
-      return mapsState.earthMapInitPromise;
-    }
-
     function mapsInstallEarthStyleWheelZoom(map, mapEl) {
       if (!map || !mapEl || mapEl._hailMoneySmoothWheelInstalled) return;
       mapEl._hailMoneySmoothWheelInstalled = true;
@@ -32584,8 +32403,8 @@ function mapsGoogleReady() {
         // Apply only what the screen can actually present this frame. Extra
         // wheel events are merged into this frame rather than becoming future
         // camera work, so there is never a "catch-up" tail after the hand stops.
-        var zoomDelta = -delta * 0.002;
-        zoomDelta = Math.max(-0.24, Math.min(0.24, zoomDelta));
+        var zoomDelta = -delta * 0.001;
+        zoomDelta = Math.max(-0.12, Math.min(0.12, zoomDelta));
 
         var currentZoom = wheelState.zoom;
         var nextZoom = clampZoom(currentZoom + zoomDelta);
@@ -32621,9 +32440,6 @@ function mapsGoogleReady() {
           map.moveCamera({ center: nextCenter, zoom: nextZoom });
         } else {
           map.moveCamera({ zoom: nextZoom });
-        }
-        if (mapsState.earthMapReady) {
-          mapsScheduleEarthCameraSync(nextCenter || map.getCenter(), nextZoom);
         }
       }
 
@@ -32699,7 +32515,6 @@ function mapsGoogleReady() {
       var initialMapStyle = 'roadmap';
       try { initialMapStyle = localStorage.getItem('hailMoneyMapStyle') || 'roadmap'; } catch (_) {}
       if (['roadmap', 'satellite', 'hybrid'].indexOf(initialMapStyle) === -1) initialMapStyle = 'roadmap';
-      mapsState.baseMapStyle = initialMapStyle;
 
       mapsState.map = mapsMeasureSyncPhase('google-map-constructor', function () {
         return new google.maps.Map(mapEl, {
@@ -32716,7 +32531,6 @@ function mapsGoogleReady() {
           tiltInteractionEnabled: false,
           headingInteractionEnabled: false,
           mapTypeId: initialMapStyle,
-          backgroundColor: 'rgba(0,0,0,0)',
           styles: [],
           zoomControl: false,
           streetViewControl: false,
@@ -32740,7 +32554,6 @@ function mapsGoogleReady() {
       App.map = map;
       mapsInstallMinimumZoomGuard(map);
       mapsInstallEarthStyleWheelZoom(map, mapEl);
-      mapsApplyBaseMapStyle(initialMapStyle);
       mapsWireHailHoverReadout();
       // Controls may have been visited before the asynchronously loaded Maps API
       // was ready. Wire the map-dependent controls now as well; each is guarded
@@ -32826,16 +32639,8 @@ function mapsGoogleReady() {
       }
 
       // Track viewport changes → shared state
-      map.addListener('center_changed', function() {
-        if (mapsState.earthMapReady && !mapsState._smoothWheelActive) {
-          mapsScheduleEarthCameraSync(map.getCenter(), Number(map.getZoom()));
-        }
-      });
       map.addListener('zoom_changed', function() {
         mapsState._mapCameraMoving = true;
-        if (mapsState.earthMapReady && !mapsState._smoothWheelActive) {
-          mapsScheduleEarthCameraSync(map.getCenter(), Number(map.getZoom()));
-        }
         if (mapsState._hailHoverRaf) {
           cancelAnimationFrame(mapsState._hailHoverRaf);
           mapsState._hailHoverRaf = null;
@@ -32854,9 +32659,6 @@ function mapsGoogleReady() {
         if (ws && wheelQuiet && !ws.raf && Number.isFinite(z) && c) {
           ws.zoom = z;
           ws.center = c;
-        }
-        if (mapsState.earthMapReady && Number.isFinite(z) && c) {
-          mapsScheduleEarthCameraSync(c, z);
         }
         if (_svSetting) return;
         sharedViewport.lat = c.lat();
@@ -44562,28 +44364,19 @@ function mapsGoogleReady() {
     function mapsWireMapStyleCtrl() {
       var select = document.getElementById('mapStyleSelect');
       if (!select) return;
-      mapsSyncMapStyleControls(mapsState.baseMapStyle || 'roadmap');
-
-      if (mapsState.map && !mapsState._mapStyleListenerBound) {
-        mapsState._mapStyleListenerBound = true;
-        mapsState.map.addListener('maptypeid_changed', function () {
-          if (mapsState._settingOverlayMapType) return;
-          var actual = mapsState.map.getMapTypeId() || 'roadmap';
-          if (actual === mapsState.earthOverlayMapTypeId && mapsState.earthMapReady) {
-            mapsSyncMapStyleControls(mapsState.baseMapStyle || 'hybrid');
-            return;
-          }
-          if (['roadmap','satellite','hybrid'].indexOf(actual) !== -1) {
-            mapsState.baseMapStyle = actual;
-            mapsSyncMapStyleControls(actual);
-          }
-        });
+      if (mapsState.map && typeof mapsState.map.getMapTypeId === 'function') {
+        mapsSyncMapStyleControls(mapsState.map.getMapTypeId() || 'roadmap');
+        if (!mapsState._mapStyleListenerBound) {
+          mapsState._mapStyleListenerBound = true;
+          mapsState.map.addListener('maptypeid_changed', function () {
+            mapsSyncMapStyleControls(mapsState.map.getMapTypeId() || 'roadmap');
+          });
+        }
       }
-
       if (select.dataset.mapsBindingCount === '1') return;
       select.addEventListener('change', function () {
         if (!mapsState.map) return;
-        mapsApplyBaseMapStyle(select.value);
+        mapsState.map.setMapTypeId(select.value);
       });
       select.dataset.mapsBindingCount = '1';
     }
