@@ -32375,17 +32375,43 @@ function mapsGoogleReady() {
       if (!map || !mapEl || mapEl._hailMoneySmoothWheelInstalled) return;
       mapEl._hailMoneySmoothWheelInstalled = true;
 
-      var wheelSerial = 0;
       var initialZoom = Number(map.getZoom());
       var wheelState = {
         zoom: Number.isFinite(initialZoom) ? initialZoom : MAPS_DEFAULT_ZOOM,
         center: map.getCenter && map.getCenter(),
-        lastEventAt: 0
+        lastEventAt: 0,
+        raf: 0,
+        stopTimer: 0
       };
       map._hailMoneyWheelState = wheelState;
 
       function clampZoom(value) {
         return Math.max(MAPS_MIN_ZOOM, Math.min(22, Number(value) || MAPS_MIN_ZOOM));
+      }
+
+      function flushCamera() {
+        wheelState.raf = 0;
+        if (!Number.isFinite(wheelState.zoom)) return;
+        mapsState._smoothWheelActive = true;
+        mapsState._mapCameraMoving = true;
+        if (wheelState.center) {
+          map.moveCamera({ center: wheelState.center, zoom: wheelState.zoom });
+        } else {
+          map.moveCamera({ zoom: wheelState.zoom });
+        }
+      }
+
+      function scheduleCameraFlush() {
+        if (wheelState.raf) return;
+        wheelState.raf = requestAnimationFrame(flushCamera);
+      }
+
+      function markWheelStoppedSoon() {
+        clearTimeout(wheelState.stopTimer);
+        wheelState.stopTimer = setTimeout(function () {
+          mapsState._smoothWheelActive = false;
+          mapsState._mapCameraMoving = false;
+        }, 120);
       }
 
       mapEl.addEventListener('wheel', function (event) {
@@ -32400,12 +32426,10 @@ function mapsGoogleReady() {
         else if (event.deltaMode === 2) delta *= Math.max(1, mapEl.clientHeight);
         if (!delta) return;
 
-        var now = (window.performance && performance.now) ? performance.now() : Date.now();
-        wheelState.lastEventAt = now;
+        wheelState.lastEventAt = (window.performance && performance.now)
+          ? performance.now()
+          : Date.now();
 
-        // Never reset from map.getZoom() between wheel rolls. The renderer can
-        // still be a frame behind the camera command, which made roll #2 start
-        // from stale state and progressively fall behind the physical wheel.
         if (!Number.isFinite(wheelState.zoom)) wheelState.zoom = MAPS_DEFAULT_ZOOM;
         if (!wheelState.center) wheelState.center = map.getCenter && map.getCenter();
 
@@ -32417,8 +32441,6 @@ function mapsGoogleReady() {
         var currentCenter = wheelState.center || (map.getCenter && map.getCenter());
         var currentZoom = wheelState.zoom;
 
-        // One wheel event equals one immediate fractional camera movement.
-        // No easing and no inertia: first click starts it, last click stops it.
         var zoomDelta = -delta * 0.0038;
         zoomDelta = Math.max(-0.85, Math.min(0.85, zoomDelta));
         var nextZoom = clampZoom(currentZoom + zoomDelta);
@@ -32443,25 +32465,16 @@ function mapsGoogleReady() {
           }
         }
 
-        // Update our virtual camera BEFORE Google renders this event. That keeps
-        // every physical wheel click accounted for even when the renderer is busy.
+        // Wheel events can arrive much faster than the browser can paint.
+        // Keep EVERY wheel delta in the virtual camera, but send Google only the
+        // latest camera once per animation frame. That prevents a queue of old
+        // camera commands from building up behind the mouse.
         wheelState.zoom = nextZoom;
         wheelState.center = nextCenter;
-
         mapsState._smoothWheelActive = true;
         mapsState._mapCameraMoving = true;
-        if (nextCenter) {
-          map.moveCamera({ center: nextCenter, zoom: nextZoom });
-        } else {
-          map.moveCamera({ zoom: nextZoom });
-        }
-
-        var serial = ++wheelSerial;
-        requestAnimationFrame(function () {
-          if (serial !== wheelSerial) return;
-          mapsState._smoothWheelActive = false;
-          mapsState._mapCameraMoving = false;
-        });
+        scheduleCameraFlush();
+        markWheelStoppedSoon();
       }, { passive:false, capture:true });
     }
 
@@ -32624,12 +32637,14 @@ function mapsGoogleReady() {
         if (!mapsState._smoothWheelActive) mapsState._mapCameraMoving = false;
         var c = map.getCenter();
         var z = Number(map.getZoom());
-        // Once Google confirms the camera is idle, synchronize the persistent
-        // wheel camera to the actual rendered camera. This also picks up drags,
-        // searches, date focus, and any other non-wheel camera changes.
-        if (map._hailMoneyWheelState && Number.isFinite(z) && c) {
-          map._hailMoneyWheelState.zoom = z;
-          map._hailMoneyWheelState.center = c;
+        // Do not let an idle event from an older camera frame overwrite the
+        // wheel's newer virtual camera while the user is actively rolling.
+        var ws = map._hailMoneyWheelState;
+        var now = (window.performance && performance.now) ? performance.now() : Date.now();
+        var wheelQuiet = !ws || !ws.lastEventAt || (now - ws.lastEventAt) > 180;
+        if (ws && wheelQuiet && !ws.raf && Number.isFinite(z) && c) {
+          ws.zoom = z;
+          ws.center = c;
         }
         if (_svSetting) return;
         sharedViewport.lat = c.lat();
