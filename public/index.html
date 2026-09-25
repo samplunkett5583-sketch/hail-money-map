@@ -32441,8 +32441,20 @@ function mapsGoogleReady() {
         var currentCenter = wheelState.center || (map.getCenter && map.getCenter());
         var currentZoom = wheelState.zoom;
 
-        var zoomDelta = -delta * 0.0038;
-        zoomDelta = Math.max(-0.85, Math.min(0.85, zoomDelta));
+        // Keep one physical wheel roll close to one small fractional zoom step.
+        // Large 0.4-0.8 jumps were outrunning Google's satellite imagery pyramid,
+        // which is why the camera moved first and the picture blurred/blanked
+        // while tiles caught up. Trackpads keep their fine-grained delta; mouse
+        // wheels get an immediate fixed step per notch with no queued remainder.
+        var absDelta = Math.abs(delta);
+        var zoomDelta;
+        if (absDelta >= 40) {
+          var notches = Math.max(1, Math.min(3, Math.round(absDelta / 100)));
+          zoomDelta = (delta < 0 ? 1 : -1) * notches * 0.20;
+        } else {
+          zoomDelta = -delta * 0.005;
+          zoomDelta = Math.max(-0.20, Math.min(0.20, zoomDelta));
+        }
         var nextZoom = clampZoom(currentZoom + zoomDelta);
 
         var nextCenter = currentCenter;
