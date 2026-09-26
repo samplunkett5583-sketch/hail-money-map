@@ -32397,127 +32397,6 @@ function mapsGoogleReady() {
       mapsClampMinimumZoom(map);
     }
 
-    function mapsInstallEarthStyleWheelZoom(map, mapEl) {
-      if (!map || !mapEl || mapEl._hailMoneySmoothWheelInstalled) return;
-      mapEl._hailMoneySmoothWheelInstalled = true;
-
-      var initialZoom = Number(map.getZoom());
-      var wheelState = {
-        zoom: Number.isFinite(initialZoom) ? initialZoom : MAPS_DEFAULT_ZOOM,
-        center: map.getCenter && map.getCenter(),
-        lastEventAt: 0,
-        pendingDelta: 0,
-        anchorX: 0,
-        anchorY: 0,
-        raf: 0,
-        stopTimer: 0
-      };
-      map._hailMoneyWheelState = wheelState;
-
-      function clampZoom(value) {
-        return Math.max(MAPS_MIN_ZOOM, Math.min(22, Number(value) || MAPS_MIN_ZOOM));
-      }
-
-      function flushCamera() {
-        wheelState.raf = 0;
-        if (!Number.isFinite(wheelState.zoom)) return;
-
-        var delta = wheelState.pendingDelta;
-        wheelState.pendingDelta = 0;
-        if (!delta) return;
-
-        // Apply only what the screen can actually present this frame. Extra
-        // wheel events are merged into this frame rather than becoming future
-        // camera work, so there is never a "catch-up" tail after the hand stops.
-        var zoomDelta = -delta * 0.00725;
-        zoomDelta = Math.max(-0.85, Math.min(0.85, zoomDelta));
-
-        var currentZoom = wheelState.zoom;
-        var nextZoom = clampZoom(currentZoom + zoomDelta);
-        var currentCenter = wheelState.center || (map.getCenter && map.getCenter());
-        var nextCenter = currentCenter;
-        var projection = map.getProjection && map.getProjection();
-
-        if (projection && currentCenter &&
-            typeof projection.fromLatLngToPoint === 'function' &&
-            typeof projection.fromPointToLatLng === 'function') {
-          var centerWorld = projection.fromLatLngToPoint(currentCenter);
-          if (centerWorld) {
-            var currentScale = Math.pow(2, currentZoom);
-            var anchorWorld = new google.maps.Point(
-              centerWorld.x + (wheelState.anchorX - mapEl.clientWidth / 2) / currentScale,
-              centerWorld.y + (wheelState.anchorY - mapEl.clientHeight / 2) / currentScale
-            );
-            var nextScale = Math.pow(2, nextZoom);
-            var nextCenterWorld = new google.maps.Point(
-              anchorWorld.x - (wheelState.anchorX - mapEl.clientWidth / 2) / nextScale,
-              anchorWorld.y - (wheelState.anchorY - mapEl.clientHeight / 2) / nextScale
-            );
-            nextCenter = projection.fromPointToLatLng(nextCenterWorld) || currentCenter;
-          }
-        }
-
-        wheelState.zoom = nextZoom;
-        wheelState.center = nextCenter;
-        mapsState._smoothWheelActive = true;
-        mapsState._mapCameraMoving = true;
-
-        if (nextCenter) {
-          map.moveCamera({ center: nextCenter, zoom: nextZoom });
-        } else {
-          map.moveCamera({ zoom: nextZoom });
-        }
-      }
-
-      function scheduleCameraFlush() {
-        if (wheelState.raf) return;
-        wheelState.raf = requestAnimationFrame(flushCamera);
-      }
-
-      function markWheelStoppedSoon() {
-        clearTimeout(wheelState.stopTimer);
-        wheelState.stopTimer = setTimeout(function () {
-          mapsState._smoothWheelActive = false;
-          mapsState._mapCameraMoving = false;
-        }, 120);
-      }
-
-      mapEl.addEventListener('wheel', function (event) {
-        if (!document.getElementById('page-map') ||
-            !document.getElementById('page-map').classList.contains('active')) return;
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        var delta = Number(event.deltaY) || 0;
-        if (event.deltaMode === 1) delta *= 16;
-        else if (event.deltaMode === 2) delta *= Math.max(1, mapEl.clientHeight);
-        if (!delta) return;
-
-        wheelState.lastEventAt = (window.performance && performance.now)
-          ? performance.now()
-          : Date.now();
-
-        if (!Number.isFinite(wheelState.zoom)) wheelState.zoom = MAPS_DEFAULT_ZOOM;
-        if (!wheelState.center) wheelState.center = map.getCenter && map.getCenter();
-
-        var rect = mapEl.getBoundingClientRect();
-        wheelState.anchorX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
-        wheelState.anchorY = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
-
-        // Accumulate only until the next paint. flushCamera() turns the whole
-        // batch into ONE bounded camera update and drops the remainder instead
-        // of building a queue that keeps moving after the wheel has stopped.
-        wheelState.pendingDelta += delta;
-        wheelState.pendingDelta = Math.max(-240, Math.min(240, wheelState.pendingDelta));
-
-        mapsState._smoothWheelActive = true;
-        mapsState._mapCameraMoving = true;
-        scheduleCameraFlush();
-        markWheelStoppedSoon();
-      }, { passive:false, capture:true });
-    }
-
     function mapsInitMap() {
       var page = document.getElementById('page-map');
       if (!page || !page.classList.contains('active')) {
@@ -32565,9 +32444,9 @@ function mapsGoogleReady() {
           rotateControl: false,
           clickableIcons: false,
           gestureHandling: 'greedy',
-          // Desktop wheel is handled by Hail Money's direct fractional camera
-          // below. Pinch/touch gestures remain native.
-          scrollwheel: false,
+          // The visible vector map owns wheel and pinch gestures. Do not add a
+          // second camera or a wheel handler that interrupts native animation.
+          scrollwheel: true,
           draggableCursor: 'grab',
           draggingCursor: 'grabbing'
         });
@@ -32579,14 +32458,22 @@ function mapsGoogleReady() {
       var map = mapsState.map;
       App.map = map;
       mapsInstallMinimumZoomGuard(map);
-      mapsInstallEarthStyleWheelZoom(map, mapEl);
+      // Record the actual renderer for verification: requesting VECTOR alone
+      // does not prove that this browser can run it without raster fallback.
+      function recordMapRenderer() {
+        var type = typeof map.getRenderingType === 'function' ? map.getRenderingType() : '';
+        mapEl.dataset.mapsRenderer = String(type || 'UNINITIALIZED').toLowerCase();
+      }
+      mapEl.dataset.mapsCamera = 'native';
+      map.addListener('renderingtype_changed', recordMapRenderer);
+      recordMapRenderer();
       mapsWireHailHoverReadout();
       // Controls may have been visited before the asynchronously loaded Maps API
       // was ready. Wire the map-dependent controls now as well; each is guarded
       // against duplicate listeners.
       mapsWireAreaSearch();
       mapsWireMapStyleCtrl();
-      hmDebugLog('[HMM] direct wheel-synced cursor-centered zoom enabled');
+      hmDebugLog('[HMM] single native vector camera enabled');
 
       // Keep pan gestures separate from property clicks. Google can emit a map
       // click after a short drag, especially when hover-driven cursor options
@@ -32674,18 +32561,9 @@ function mapsGoogleReady() {
         mapsState._hailHoverPendingLatLng = null;
       });
       map.addListener('idle', function() {
-        if (!mapsState._smoothWheelActive) mapsState._mapCameraMoving = false;
+        mapsState._mapCameraMoving = false;
         var c = map.getCenter();
         var z = Number(map.getZoom());
-        // Do not let an idle event from an older camera frame overwrite the
-        // wheel's newer virtual camera while the user is actively rolling.
-        var ws = map._hailMoneyWheelState;
-        var now = (window.performance && performance.now) ? performance.now() : Date.now();
-        var wheelQuiet = !ws || !ws.lastEventAt || (now - ws.lastEventAt) > 180;
-        if (ws && wheelQuiet && !ws.raf && Number.isFinite(z) && c) {
-          ws.zoom = z;
-          ws.center = c;
-        }
         if (_svSetting) return;
         sharedViewport.lat = c.lat();
         sharedViewport.lng = c.lng();
@@ -83770,7 +83648,6 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 })();
 </script>
 
-  <script src="maps3d-engine.js"></script>
 <script src="assets/docusign-integration.js"></script>
 
 

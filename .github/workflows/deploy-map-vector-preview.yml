@@ -7,6 +7,7 @@ on:
     paths:
       - 'public/maps3d-engine.js'
       - 'public/index.html'
+      - 'scripts/verify-map-native-zoom.cjs'
       - '.github/workflows/deploy-map-vector-preview.yml'
   workflow_dispatch:
 
@@ -21,6 +22,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+
+      - name: Verify native map camera ownership
+        run: node scripts/verify-map-native-zoom.cjs
 
       - name: Use preview-safe browser key for Maps
         run: |
