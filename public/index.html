@@ -78995,6 +78995,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     async function hmLoginVerifiedEmployee(email, password) {
       var testUser = CRM_TEST_USERS.find(function (user) { return user.email === email; }) || null;
       if (testUser) {
+        var isMapPreview = /--map-vector-test-[^.]+\.web\.app$/i.test(location.hostname);
+        if (isMapPreview) {
+          if (password !== testUser.password) throw new Error('Invalid credentials.');
+          crmSetTestSession(testUser);
+          crmRenderMainMenu();
+          crmRenderSettings();
+          crmRenderRoleSelector();
+          showPage('page-main-menu');
+          return;
+        }
         var testCredential = await window.auth.signInWithEmailAndPassword(email, password);
         await testCredential.user.getIdToken(true);
         await hmCompleteVerifiedLogin({ email: testUser.email, displayName: testUser.displayName, role: testUser.role });
