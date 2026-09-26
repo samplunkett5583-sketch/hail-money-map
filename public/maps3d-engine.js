@@ -7,14 +7,11 @@
     initializing: null,
     map: null,
     host: null,
-    lib: null,
     overlaysByDate: Object.create(null),
+    overlayMeta: new WeakMap(),
     visibleDates: new Set(),
-    syncingFrom3D: false,
-    syncingFrom2D: false,
-    lastSteady: true,
-    fov: 45,
-    mode: 'HYBRID'
+    syncingFromVector: false,
+    mode: 'hybrid'
   };
 
   function enabledByUrl() {
@@ -36,121 +33,28 @@
     return typeof value.lng === 'function' ? Number(value.lng()) : Number(value.lng);
   }
 
-  function rangeForZoom(zoom, lat) {
-    var host = document.getElementById('stormMap3d') || document.getElementById('stormMap');
-    var height = Math.max(320, Number(host && host.clientHeight) || window.innerHeight || 800);
-    var safeLat = Math.max(-80, Math.min(80, Number(lat) || 0));
-    var metersPerPixel = 156543.03392804097 * Math.cos(safeLat * Math.PI / 180) /
-      Math.pow(2, Number(zoom) || 5);
-    var visibleGroundHeight = metersPerPixel * height;
-    var fovRadians = engine.fov * Math.PI / 180;
-    return Math.max(20, Math.min(63170000, visibleGroundHeight / (2 * Math.tan(fovRadians / 2))));
-  }
-
-  function zoomForRange(range, lat) {
-    var host = document.getElementById('stormMap3d') || document.getElementById('stormMap');
-    var height = Math.max(320, Number(host && host.clientHeight) || window.innerHeight || 800);
-    var safeLat = Math.max(-80, Math.min(80, Number(lat) || 0));
-    var fovRadians = engine.fov * Math.PI / 180;
-    var visibleGroundHeight = Math.max(1, Number(range) || 1) * 2 * Math.tan(fovRadians / 2);
-    var metersPerPixel = visibleGroundHeight / height;
-    var numerator = 156543.03392804097 * Math.cos(safeLat * Math.PI / 180);
-    var zoom = Math.log2(numerator / Math.max(0.000001, metersPerPixel));
-    return Math.max(2, Math.min(22, zoom));
-  }
-
-  function cssRgba(rgb, alpha) {
-    var match = String(rgb || '').match(/\d+(?:\.\d+)?/g) || [];
-    if (match.length < 3) return String(rgb || '#f0c14d');
-    return 'rgba(' + Number(match[0]) + ',' + Number(match[1]) + ',' + Number(match[2]) + ',' +
-      Math.max(0, Math.min(1, Number(alpha) || 0)) + ')';
-  }
-
-  function simplifyPath(points) {
-    if (!Array.isArray(points) || points.length < 80) return points || [];
-
-    // ~1 metre tolerance at mid-latitudes. This removes redundant contour
-    // vertices without changing the visible hand-cut swath shape.
-    var tolerance = 0.00001;
-    var sqTolerance = tolerance * tolerance;
-
-    function sqSegDist(p, a, b) {
-      var x = a.lng;
-      var y = a.lat;
-      var dx = b.lng - x;
-      var dy = b.lat - y;
-
-      if (dx !== 0 || dy !== 0) {
-        var t = ((p.lng - x) * dx + (p.lat - y) * dy) / (dx * dx + dy * dy);
-        if (t > 1) {
-          x = b.lng;
-          y = b.lat;
-        } else if (t > 0) {
-          x += dx * t;
-          y += dy * t;
-        }
-      }
-
-      dx = p.lng - x;
-      dy = p.lat - y;
-      return dx * dx + dy * dy;
-    }
-
-    function simplifyStep(first, last, source, keep) {
-      var maxSqDist = sqTolerance;
-      var index = -1;
-      for (var i = first + 1; i < last; i++) {
-        var sqDist = sqSegDist(source[i], source[first], source[last]);
-        if (sqDist > maxSqDist) {
-          index = i;
-          maxSqDist = sqDist;
-        }
-      }
-      if (index !== -1) {
-        if (index - first > 1) simplifyStep(first, index, source, keep);
-        keep[index] = true;
-        if (last - index > 1) simplifyStep(index, last, source, keep);
-      }
-    }
-
-    var normalized = points.map(function (pt) {
-      return { lat: Number(pt.lat), lng: Number(pt.lng), altitude: 0 };
-    }).filter(function (pt) {
-      return Number.isFinite(pt.lat) && Number.isFinite(pt.lng);
-    });
-    if (normalized.length < 80) return normalized;
-
-    var keep = new Array(normalized.length);
-    keep[0] = true;
-    keep[normalized.length - 1] = true;
-    simplifyStep(0, normalized.length - 1, normalized, keep);
-
-    var result = [];
-    for (var i = 0; i < normalized.length; i++) {
-      if (keep[i]) result.push(normalized[i]);
-    }
-    return result.length >= 3 ? result : normalized;
-  }
-
   function normalizeMode(style) {
     style = String(style || 'hybrid').toLowerCase();
-    if (style === 'roadmap') return 'ROADMAP';
-    if (style === 'satellite') return 'SATELLITE';
-    return 'HYBRID';
+    if (style === 'roadmap') return 'roadmap';
+    if (style === 'satellite') return 'satellite';
+    return 'hybrid';
   }
 
   function clearDate(dateStr) {
     var list = engine.overlaysByDate[dateStr] || [];
-    list.forEach(function (el) {
-      try { el.remove(); } catch (_) {}
+    list.forEach(function (polygon) {
+      try { polygon.setMap(null); } catch (_) {}
     });
     delete engine.overlaysByDate[dateStr];
+    engine.visibleDates.delete(dateStr);
   }
 
   function setDateVisible(dateStr, visible) {
     var list = engine.overlaysByDate[dateStr] || [];
-    list.forEach(function (el) {
-      try { el.style.display = visible ? '' : 'none'; } catch (_) {}
+    list.forEach(function (polygon) {
+      var meta = engine.overlayMeta.get(polygon) || {};
+      var shouldShow = visible && meta.show !== false;
+      try { polygon.setMap(shouldShow ? engine.map : null); } catch (_) {}
     });
     if (visible) engine.visibleDates.add(dateStr);
     else engine.visibleDates.delete(dateStr);
@@ -165,41 +69,43 @@
 
   function setMode(style) {
     engine.mode = normalizeMode(style);
-    if (engine.map) engine.map.mode = engine.mode;
+    if (engine.map) {
+      try { engine.map.setMapTypeId(engine.mode); } catch (_) {}
+    }
   }
 
   function syncFrom2D(center, zoom) {
-    if (!engine.ready || !engine.map || engine.syncingFrom3D || !center) return;
+    if (!engine.ready || !engine.map || !center) return;
     var lat = latOf(center);
     var lng = lngOf(center);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(Number(zoom))) return;
-    engine.syncingFrom2D = true;
-    engine.map.center = { lat: lat, lng: lng, altitude: 0 };
-    engine.map.range = rangeForZoom(Number(zoom), lat);
-    requestAnimationFrame(function () { engine.syncingFrom2D = false; });
+    zoom = Number(zoom);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(zoom)) return;
+    engine.map.setCenter({ lat: lat, lng: lng });
+    engine.map.setZoom(zoom);
   }
 
-  function syncLogicMapFrom3D() {
-    if (!engine.ready || !engine.map || engine.syncingFrom2D) return;
+  function syncLogicMapFromVector() {
+    if (!engine.ready || !engine.map) return;
     var logicMap = window.mapsState && window.mapsState.map;
     if (!logicMap) return;
-    var center = engine.map.center;
+    var center = engine.map.getCenter && engine.map.getCenter();
+    var zoom = Number(engine.map.getZoom && engine.map.getZoom());
     var lat = latOf(center);
     var lng = lngOf(center);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-    var zoom = zoomForRange(Number(engine.map.range), lat);
-    engine.syncingFrom3D = true;
-    // The hidden 2D map follows the native camera for legacy calculations only.
-    // It never drives the visible camera during normal navigation.
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(zoom)) return;
+
+    engine.syncingFromVector = true;
     try {
       logicMap.setCenter({ lat: lat, lng: lng });
       logicMap.setZoom(zoom);
     } catch (_) {}
-    requestAnimationFrame(function () { engine.syncingFrom3D = false; });
+    requestAnimationFrame(function () {
+      engine.syncingFromVector = false;
+    });
   }
 
-  function selectPropertyFrom3D(event) {
-    var pos = event && event.position;
+  function selectPropertyFromVector(event) {
+    var pos = event && event.latLng;
     if (!pos) return;
     var lat = latOf(pos);
     var lng = lngOf(pos);
@@ -217,10 +123,10 @@
     if (!(window.google && google.maps && typeof google.maps.importLibrary === 'function')) return null;
 
     engine.initializing = (async function () {
-      engine.lib = await google.maps.importLibrary('maps3d');
+      var mapsLib = await google.maps.importLibrary('maps');
       var host = document.getElementById('stormMap3d');
       var logicMap = window.mapsState && window.mapsState.map;
-      if (!host || !logicMap || !engine.lib || !engine.lib.Map3DElement) return null;
+      if (!host || !logicMap || !mapsLib || !mapsLib.Map) return null;
 
       var center = logicMap.getCenter ? logicMap.getCenter() : { lat: 38.6, lng: -97 };
       var lat = latOf(center);
@@ -228,33 +134,38 @@
       var zoom = Number(logicMap.getZoom && logicMap.getZoom()) || 5;
       engine.mode = normalizeMode(options.style || 'hybrid');
 
-      var map = new engine.lib.Map3DElement({
-        center: { lat: lat, lng: lng, altitude: 0 },
-        range: rangeForZoom(zoom, lat),
+      host.replaceChildren();
+
+      var map = new mapsLib.Map(host, {
+        center: { lat: lat, lng: lng },
+        zoom: zoom,
+        mapTypeId: engine.mode,
+        renderingType: mapsLib.RenderingType ? mapsLib.RenderingType.VECTOR : 'VECTOR',
+        isFractionalZoomEnabled: true,
+        gestureHandling: 'greedy',
         tilt: 0,
         heading: 0,
-        roll: 0,
-        fov: engine.fov,
-        mode: engine.mode,
-        defaultUIHidden: true,
-        gestureHandling: 'GREEDY',
-        minTilt: 0,
-        maxTilt: 0,
-        minHeading: 0,
-        maxHeading: 0
+        tiltInteractionEnabled: false,
+        headingInteractionEnabled: false,
+        disableDefaultUI: true,
+        clickableIcons: false,
+        keyboardShortcuts: false,
+        backgroundColor: '#111'
       });
 
-      host.replaceChildren(map);
       engine.map = map;
       engine.host = host;
       engine.active = true;
       engine.ready = true;
       document.body.classList.add('maps-native-3d');
 
-      map.addEventListener('gmp-click', selectPropertyFrom3D);
-      map.addEventListener('gmp-steadychange', function (event) {
-        engine.lastSteady = !!(event && event.isSteady);
-        if (engine.lastSteady) syncLogicMapFrom3D();
+      map.addListener('click', selectPropertyFromVector);
+
+      // Native Google wheel + fractional zoom owns the camera. We do no work
+      // during zoom_changed. Only after Google reports idle do we copy the final
+      // camera into the hidden legacy map for compatibility calculations.
+      map.addListener('idle', function () {
+        syncLogicMapFromVector();
       });
 
       var cachedDefs = window.mapsState && window.mapsState._native3dOverlayDefs || {};
@@ -262,11 +173,6 @@
       Object.keys(cachedDefs).forEach(function (dateStr) {
         renderSwathDefs(dateStr, cachedDefs[dateStr], selectedDates.indexOf(dateStr) !== -1);
       });
-
-      // IMPORTANT: Do not mirror logicMap "idle" back into the visible 3D camera.
-      // That feedback loop is what creates post-wheel catch-up. Programmatic
-      // navigation can call HMM3D.syncFrom2D explicitly when it truly needs to
-      // reposition the visible map.
 
       return engine;
     })().finally(function () {
@@ -277,42 +183,54 @@
   }
 
   async function renderSwathDefs(dateStr, defs, visible) {
-    if (!engine.ready || !engine.map || !engine.lib) return false;
+    if (!engine.ready || !engine.map || !(window.google && google.maps && google.maps.Polygon)) return false;
     clearDate(dateStr);
+
     var list = [];
-    var Polygon3D = engine.lib.Polygon3DElement;
-    var AltitudeMode = engine.lib.AltitudeMode;
     var maxElements = 1600;
 
     outer:
     for (var i = 0; i < (defs || []).length; i++) {
       var def = defs[i] || {};
       var paths = Array.isArray(def.paths) ? def.paths : [];
+
       for (var j = 0; j < paths.length; j++) {
         if (list.length >= maxElements) break outer;
         var path = paths[j];
         if (!Array.isArray(path) || path.length < 3) continue;
-        var coords = simplifyPath(path);
+
+        var coords = path.map(function (pt) {
+          return { lat: Number(pt.lat), lng: Number(pt.lng) };
+        }).filter(function (pt) {
+          return Number.isFinite(pt.lat) && Number.isFinite(pt.lng);
+        });
         if (coords.length < 3) continue;
 
         var isHail = def.stormType !== 'wind' && def.stormType !== 'tornado';
-        var strokeWidth = isHail ? 0 : 1;
-        var polygon = new Polygon3D({
-          path: coords,
-          altitudeMode: AltitudeMode ? AltitudeMode.CLAMP_TO_GROUND : 'CLAMP_TO_GROUND',
-          fillColor: cssRgba(def.fill, def.opacity),
-          strokeColor: cssRgba(def.fill, isHail ? 0 : Math.min(0.65, Number(def.opacity) + 0.10)),
-          strokeWidth: strokeWidth,
-          drawsOccludedSegments: false,
+        var fillOpacity = Math.max(0, Math.min(1, Number(def.opacity) || 0));
+        var strokeOpacity = isHail ? 0 : Math.min(0.65, fillOpacity + 0.10);
+
+        var polygon = new google.maps.Polygon({
+          paths: coords,
+          clickable: false,
+          draggable: false,
+          editable: false,
           geodesic: false,
-          extruded: false,
-          zIndex: Number(def.zIndex) || 0
+          fillColor: def.fill || '#f0c14d',
+          fillOpacity: fillOpacity,
+          strokeColor: def.fill || '#f0c14d',
+          strokeOpacity: strokeOpacity,
+          strokeWeight: isHail ? 0 : 1,
+          zIndex: Number(def.zIndex) || 0,
+          map: visible === false || def.show === false ? null : engine.map
         });
-        polygon.dataset.hmDate = dateStr;
-        polygon.dataset.hmStormType = String(def.stormType || 'hail');
-        polygon.dataset.hmBandMin = String(def.bandMin || '');
-        polygon.style.display = visible === false || def.show === false ? 'none' : '';
-        engine.map.appendChild(polygon);
+
+        engine.overlayMeta.set(polygon, {
+          date: String(dateStr),
+          stormType: String(def.stormType || 'hail').toLowerCase(),
+          baseOpacity: fillOpacity,
+          show: def.show !== false
+        });
         list.push(polygon);
       }
     }
@@ -325,10 +243,17 @@
   function setOpacityForType(type, scale) {
     type = String(type || '').toLowerCase();
     scale = Math.max(0, Math.min(1, Number(scale)));
+
     Object.keys(engine.overlaysByDate).forEach(function (dateStr) {
-      (engine.overlaysByDate[dateStr] || []).forEach(function (el) {
-        if (String(el.dataset.hmStormType || '').toLowerCase() !== type) return;
-        el.style.opacity = String(scale);
+      (engine.overlaysByDate[dateStr] || []).forEach(function (polygon) {
+        var meta = engine.overlayMeta.get(polygon) || {};
+        if (meta.stormType !== type) return;
+        try {
+          polygon.setOptions({
+            fillOpacity: (Number(meta.baseOpacity) || 0) * scale,
+            strokeOpacity: type === 'hail' ? 0 : Math.min(0.65, (Number(meta.baseOpacity) || 0) * scale + 0.10)
+          });
+        } catch (_) {}
       });
     });
   }
@@ -342,23 +267,25 @@
   engine.syncFrom2D = syncFrom2D;
   engine.renderSwathDefs = renderSwathDefs;
   engine.setOpacityForType = setOpacityForType;
-  engine.rangeForZoom = rangeForZoom;
-  engine.zoomForRange = zoomForRange;
 
   window.HMM3D = engine;
 
   function bootWhenReady(attempt) {
     if (!enabledByUrl()) return;
     attempt = Number(attempt) || 0;
+
     if (window.mapsState && window.mapsState.map && window.google && google.maps) {
       var style = 'hybrid';
       try { style = localStorage.getItem('hailMoneyMapStyle') || 'hybrid'; } catch (_) {}
       init({ style: style }).catch(function (error) {
-        console.error('[HMM3D] init failed', error);
+        console.error('[HMM vector] init failed', error);
       });
       return;
     }
-    if (attempt < 80) setTimeout(function () { bootWhenReady(attempt + 1); }, 100);
+
+    if (attempt < 80) {
+      setTimeout(function () { bootWhenReady(attempt + 1); }, 100);
+    }
   }
 
   setTimeout(function () { bootWhenReady(0); }, 0);
