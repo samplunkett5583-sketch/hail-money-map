@@ -22,11 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Restore server-backed test login
-        run: python scripts/apply-legacy-test-login-route.py
-
-      - name: Generate hailmoney.test logins for added users
-        run: python scripts/apply-team-hailmoney-test-logins.py
 
       - name: Deploy isolated map test preview
         uses: FirebaseExtended/action-hosting-deploy@v0
