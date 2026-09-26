@@ -6,6 +6,7 @@ on:
       - pr-43-storm-panel-style
     paths:
       - 'public/maps3d-engine.js'
+      - 'public/index.html'
       - '.github/workflows/deploy-map-vector-preview.yml'
   workflow_dispatch:
 
