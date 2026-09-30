@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reset Hail Money Password</title>
+  <style>
+    html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:#f3df97;color:#17172c}
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}
+    .card{width:min(420px,100%);background:#fffdf7;border:1px solid #c99d3e;border-radius:16px;padding:22px;box-shadow:0 16px 45px rgba(0,0,0,.2);box-sizing:border-box}
+    h1{font-size:24px;margin:0 0 10px}.muted{color:#5b5b63;font-size:14px;line-height:1.4;margin-bottom:16px}
+    label{display:block;font-weight:700;font-size:13px;margin:12px 0 5px}input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #8e8e96;border-radius:8px;font-size:16px}
+    button{width:100%;margin-top:16px;padding:12px;border:2px solid #17172c;border-radius:9px;background:linear-gradient(180deg,#f4ca55,#d99a27);font-weight:900;font-size:16px;color:#17172c;cursor:pointer}
+    #status{margin-top:14px;min-height:20px;font-size:14px;line-height:1.4}.error{color:#a11919}.ok{color:#176b2f}
+    a{color:#17172c;font-weight:700}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Reset your Hail Money password</h1>
+    <div id="intro" class="muted">Checking your reset link…</div>
+    <div id="form" hidden>
+      <label for="newPassword">New password</label>
+      <input id="newPassword" type="password" autocomplete="new-password" minlength="8" />
+      <label for="confirmPassword">Confirm new password</label>
+      <input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" />
+      <button id="saveBtn" type="button">Save new password</button>
+    </div>
+    <div id="status"></div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script>
+    (function(){
+      'use strict';
+      var firebaseConfig={
+        apiKey:'AIzaSyDuNue4UyVgq4Xsh1dtOjqFum7K-OJ1k4k',
+        authDomain:'hailmoneymap.firebaseapp.com',
+        projectId:'hailmoneymap'
+      };
+      if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      var auth=firebase.auth();
+      var params=new URLSearchParams(location.search);
+      var mode=params.get('mode');
+      var code=params.get('oobCode');
+      var intro=document.getElementById('intro');
+      var form=document.getElementById('form');
+      var status=document.getElementById('status');
+      var accountEmail='';
+
+      function fail(message){
+        intro.textContent='This reset link cannot be used.';
+        form.hidden=true;
+        status.className='error';
+        status.innerHTML=message+'<br><br><a href="https://hail.money/">Return to Hail Money and request a new reset link.</a>';
+      }
+
+      if(mode!=='resetPassword'||!code){
+        fail('The reset link is missing required information.');
+        return;
+      }
+
+      auth.verifyPasswordResetCode(code).then(function(email){
+        accountEmail=email;
+        intro.textContent='Reset password for '+email;
+        form.hidden=false;
+        document.getElementById('newPassword').focus();
+      }).catch(function(error){
+        var codeName=String(error&&error.code||'');
+        fail(codeName.indexOf('expired-action-code')!==-1 ? 'This reset link has expired.' : 'This reset link is invalid or has already been used.');
+      });
+
+      document.getElementById('saveBtn').addEventListener('click',function(){
+        var p1=document.getElementById('newPassword').value;
+        var p2=document.getElementById('confirmPassword').value;
+        var btn=this;
+        status.className='';
+        if(p1.length<8){status.className='error';status.textContent='Use at least 8 characters.';return;}
+        if(p1!==p2){status.className='error';status.textContent='The passwords do not match.';return;}
+        btn.disabled=true;btn.textContent='Saving…';
+        auth.confirmPasswordReset(code,p1).then(function(){
+          form.hidden=true;
+          intro.textContent='Password changed successfully.';
+          status.className='ok';
+          status.innerHTML='Your Hail Money password has been updated for '+accountEmail+'.<br><br><a href="https://hail.money/">Return to Hail Money and sign in.</a>';
+        }).catch(function(error){
+          btn.disabled=false;btn.textContent='Save new password';
+          var c=String(error&&error.code||'');
+          status.className='error';
+          status.textContent=c.indexOf('weak-password')!==-1?'Choose a stronger password.':'That reset link is no longer valid. Request a new one from Hail Money.';
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

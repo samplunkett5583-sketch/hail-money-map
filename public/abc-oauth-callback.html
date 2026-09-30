@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connect ABC Supply | Hail Money</title>
+  <style>
+    :root { color-scheme: dark; font-family: Arial, Helvetica, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #17182c; color: #fff; }
+    main { width: min(520px, calc(100% - 40px)); padding: 34px; border: 1px solid #c49a3a; border-radius: 14px; background: #202238; text-align: center; box-shadow: 0 18px 60px #0008; }
+    img { width: 92px; height: 92px; object-fit: contain; }
+    h1 { margin: 14px 0 8px; color: #f2c85a; font-size: 24px; }
+    p { line-height: 1.45; color: #e8e8ec; }
+    button { margin-top: 12px; padding: 11px 18px; border: 0; border-radius: 7px; background: #c49a3a; color: #17182c; font-weight: 800; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="/assets/hailmoney-logo-abc-upload.png" alt="Hail Money">
+    <h1 id="title">Connecting ABC Supply…</h1>
+    <p id="message">Please keep this window open while Hail Money completes the secure connection.</p>
+    <button id="close" type="button" hidden>Close this window</button>
+  </main>
+  <script>
+    (() => {
+      const params = new URLSearchParams(location.search);
+      const code = params.get("code");
+      const state = params.get("state");
+      const oauthError = params.get("error_description") || params.get("error");
+      const title = document.getElementById("title");
+      const message = document.getElementById("message");
+      const closeButton = document.getElementById("close");
+      const finish = (ok, text) => {
+        title.textContent = ok ? "ABC Supply connected" : "ABC Supply was not connected";
+        message.textContent = text;
+        closeButton.hidden = false;
+        if (window.opener) window.opener.postMessage({ type: "hailmoney:abc-oauth", ok }, location.origin);
+      };
+      closeButton.addEventListener("click", () => window.close());
+      if (oauthError) return finish(false, oauthError);
+      if (!code || !state) return finish(false, "The authorization response was incomplete. Return to Hail Money and try again.");
+      const callbackEndpoint = location.hostname === "127.0.0.1" || location.hostname === "localhost"
+        ? "http://127.0.0.1:5015/hailmoneymap/us-central1/abcOAuthCallback"
+        : "https://us-central1-hailmoneymap.cloudfunctions.net/abcOAuthCallback";
+      fetch(callbackEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, state })
+      })
+        .then(async response => {
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.error || "The ABC connection could not be completed.");
+          finish(true, "Your ABC Supply sandbox account is ready to provide account-specific product pricing in Hail Money.");
+        })
+        .catch(error => finish(false, error.message));
+    })();
+  </script>
+</body>
+</html>

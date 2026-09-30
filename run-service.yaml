@@ -1,0 +1,67 @@
+﻿apiVersion: serving.knative.dev/v1
+          value: http
+        - name: NOAA_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: NOAA_TOKEN
+              key: latest
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  annotations:
+    cloudfunctions.googleapis.com/function-id: noaaPlsrProxy
+    run.googleapis.com/build-base-image: us-central1-docker.pkg.dev/serverless-runtimes/google-24-full/runtimes/nodejs24
+    run.googleapis.com/build-enable-automatic-updates: 'true'
+    run.googleapis.com/build-environment-variables: '{"GOOGLE_NODE_RUN_SCRIPTS":""}'
+    run.googleapis.com/build-function-target: noaaPlsrProxy
+    run.googleapis.com/build-id: f9942ac2-b68d-476e-9374-3c93196ab78b
+    run.googleapis.com/build-image-uri: us-central1-docker.pkg.dev/hailmoneymap/gcf-artifacts/noaaplsrproxy
+    run.googleapis.com/build-name: projects/153623806900/locations/us-central1/builds/f9942ac2-b68d-476e-9374-3c93196ab78b
+    run.googleapis.com/build-service-account: projects/hailmoneymap/serviceAccounts/153623806900-compute@developer.gserviceaccount.com
+    run.googleapis.com/build-source-location: gs://gcf-v2-sources-153623806900-us-central1/services/noaaplsrproxy/1766382073.885779-3e5af348f57d4a68b5b28a48b9b5ef4d.zip#1766382073733078
+    run.googleapis.com/custom-audiences: '["https://us-central1-hailmoneymap.cloudfunctions.net/noaaPlsrProxy"]'
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+    run.googleapis.com/maxScale: '3'
+    run.googleapis.com/urls: '["https://noaaplsrproxy-153623806900.us-central1.run.app","https://us-central1-hailmoneymap.cloudfunctions.net/noaaPlsrProxy","https://noaaplsrproxy-jzyejnppqa-uc.a.run.app"]'
+  labels:
+    cloud.googleapis.com/location: us-central1
+    firebase-functions-hash: 3ab25e1f8c81112cc1e41a9fa1f61f574e6859d8
+    goog-cloudfunctions-runtime: nodejs24
+    goog-drz-cloudfunctions-id: noaaplsrproxy
+    goog-drz-cloudfunctions-location: us-central1
+    goog-managed-by: cloudfunctions
+  name: noaaplsrproxy
+  namespace: '153623806900'
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: '3'
+        cloudfunctions.googleapis.com/trigger-type: HTTP_TRIGGER
+        run.googleapis.com/base-images: '{"worker":"us-central1-docker.pkg.dev/serverless-runtimes/google-24-full/runtimes/nodejs24"}'
+        run.googleapis.com/client-name: gcloud
+        run.googleapis.com/client-version: 550.0.0
+        run.googleapis.com/startup-cpu-boost: 'true'
+      labels:
+        client.knative.dev/nonce: ptbtdhvojm
+        firebase-functions-hash: 3ab25e1f8c81112cc1e41a9fa1f61f574e6859d8
+        goog-drz-cloudfunctions-id: noaaplsrproxy
+        goog-drz-cloudfunctions-location: us-central1
+        run.googleapis.com/startupProbeType: Default
+    spec:
+      containerConcurrency: 80
+      containers:
+      - env:
+        - name: FIREBASE_CONFIG
+          value: '{"projectId":"hailmoneymap","storageBucket":"hailmoneymap.firebasestorage.app"}'
+        - name: GCLOUD_PROJECT
+          value: hailmoneymap
+        - name: EVENTARC_CLOUD_EVENT_SOURCE
+          value: projects/hailmoneymap/locations/us-central1/services/noaaPlsrProxy
+        - name: FUNCTION_TARGET
+          value: noaaPlsrProxy
+        - name: LOG_EXECUTION_ID
+          value: 'true'
+        - name: FUNCTION_SIGNATURE_TYPE
+          value: http

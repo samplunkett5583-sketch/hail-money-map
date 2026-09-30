@@ -1,0 +1,63 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ABC OAuth state and token records are server-only. Cloud Functions use
+    // the Admin SDK, which bypasses client security rules.
+    match /abcSupplyConnections/{document=**} {
+      allow read, write: if false;
+    }
+
+    match /abcSupplyOrganizationConnections/{document=**} {
+      allow read, write: if false;
+    }
+
+    match /abcOAuthStates/{document=**} {
+      allow read, write: if false;
+    }
+
+    match /hailMoneyUserOnboarding/{document=**} {
+      allow read, write: if false;
+    }
+
+    // AI estimator usage and spend reservations are enforced by trusted
+    // Cloud Functions only. Clients must not read or alter their counters.
+    match /aiEstimatorUsage/{document=**} {
+      allow read, write: if false;
+    }
+
+    // Organization membership and roles are issued by trusted backend code.
+    // Clients cannot assign themselves to another roofing company.
+    match /hmEmployees/{document=**} {
+      allow read, write: if false;
+    }
+
+    // CRM source-of-truth data (Admin/team member accounts, leads) is scoped
+    // per organization. Only a signed-in, verified employee whose own
+    // hmOrganizationId custom claim matches this path's {orgId} may read or
+    // write — this is what stops one company from reading/writing another
+    // company's data even if it knows/guesses the org ID.
+    function isVerifiedOrgMember(orgId) {
+      return request.auth != null
+        && request.auth.token.employee == true
+        && request.auth.token.hmOrganizationId == orgId;
+    }
+    match /organizations/{orgId}/teamMembers/{memberId} {
+      allow read, write: if isVerifiedOrgMember(orgId);
+    }
+    match /organizations/{orgId}/leads/{leadId} {
+      allow read, write: if isVerifiedOrgMember(orgId);
+    }
+
+    // Preserve the existing access behavior for every unrelated collection.
+    match /{collection}/{document=**} {
+      allow read, write: if collection != 'abcSupplyConnections'
+        && collection != 'abcOAuthStates'
+        && collection != 'abcSupplyOrganizationConnections'
+        && collection != 'hailMoneyUserOnboarding'
+        && collection != 'aiEstimatorUsage'
+        && collection != 'hmEmployees'
+        && collection != 'organizations';
+    }
+  }
+}

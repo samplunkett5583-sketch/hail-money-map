@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <!-- roof surface -->
+  <rect x="4" y="60" width="72" height="14" rx="3" fill="#c8a86a" stroke="#6b7280" stroke-width="1.5"/>
+  <!-- raised curb frame -->
+  <rect x="14" y="44" width="52" height="20" rx="2" fill="#9ca3af" stroke="#374151" stroke-width="1.5"/>
+  <!-- HVAC unit on curb -->
+  <rect x="16" y="22" width="48" height="25" rx="3" fill="#adb5bd" stroke="#374151" stroke-width="1.5"/>
+  <!-- fan grill circle -->
+  <circle cx="40" cy="34" r="9" fill="#6b7280" stroke="#374151" stroke-width="1.5"/>
+  <line x1="40" y1="26" x2="40" y2="42" stroke="#9ca3af" stroke-width="2"/>
+  <line x1="32" y1="34" x2="48" y2="34" stroke="#9ca3af" stroke-width="2"/>
+  <!-- unit label box -->
+  <rect x="20" y="23" width="12" height="7" rx="1" fill="#374151"/>
+</svg>

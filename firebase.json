@@ -1,0 +1,50 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default"
+    },
+    {
+      "source": "functions-abc",
+      "codebase": "abc"
+    },
+    {
+      "source": "functions-drone",
+      "codebase": "drone"
+    },
+    {
+      "source": "functions-migration",
+      "codebase": "migration"
+    },
+    {
+      "source": "functions-ai",
+      "codebase": "ai"
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "port": 5500
+  },
+  "emulators": {
+    "functions": {
+      "port": 5015
+    },
+    "hosting": {
+      "port": 5500
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4403
+    }
+  }
+}
+
+

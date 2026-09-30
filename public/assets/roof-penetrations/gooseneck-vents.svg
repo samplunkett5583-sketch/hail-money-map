@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <!-- roof surface -->
+  <rect x="4" y="58" width="72" height="14" rx="3" fill="#c8a86a" stroke="#6b7280" stroke-width="1.5"/>
+  <!-- vertical pipe -->
+  <rect x="35" y="30" width="10" height="32" rx="2" fill="#9ca3af" stroke="#374151" stroke-width="1.5"/>
+  <!-- gooseneck curve (thick stroke trick) -->
+  <path d="M35 30 Q35 14 54 14" fill="none" stroke="#374151" stroke-width="12" stroke-linecap="round"/>
+  <path d="M35 30 Q35 14 54 14" fill="none" stroke="#9ca3af" stroke-width="10" stroke-linecap="round"/>
+  <!-- horizontal discharge -->
+  <rect x="52" y="10" width="16" height="9" rx="3" fill="#9ca3af" stroke="#374151" stroke-width="1.5"/>
+  <!-- hooded cap -->
+  <path d="M66 8 L72 10 L72 21 L66 23 Z" fill="#6b7280" stroke="#374151" stroke-width="1.5"/>
+</svg>

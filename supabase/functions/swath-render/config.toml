@@ -1,0 +1,2 @@
+# Allow browser access without Authorization header
+verify_jwt = false
