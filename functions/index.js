@@ -68,6 +68,68 @@ function safeEmployeeProfile(userRecord, fallback) {
   };
 }
 
+function employeeTimestampIso(value) {
+  try {
+    if (value && typeof value.toDate === "function") return value.toDate().toISOString();
+    if (value) return new Date(value).toISOString();
+  } catch (_) {}
+  return "";
+}
+
+exports.listCompanyEmployees = onRequest({ cors: false, region: "us-central1" }, async (req, res) => {
+  permitCors(req, res);
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).json({ error: "POST required." });
+  try {
+    const caller = await requireFirebaseUser(req);
+    if (caller.employee !== true) return res.status(403).json({ error: "Employee access is required." });
+    const organizationId = String(caller.hmOrganizationId || HM_PRIMARY_ORGANIZATION_ID).trim().toLowerCase();
+    const teamCol = db.collection("organizations").doc(organizationId).collection("teamMembers");
+    const teamSnap = await teamCol.get();
+    const members = teamSnap.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }));
+    const byUid = new Map(members.map((member) => [String(member.firebaseUid || ""), member]));
+    const byEmail = new Map(members.map((member) => [String(member.email || "").toLowerCase(), member]));
+    const employeeSnap = await db.collection("hmEmployees").where("organizationId", "==", organizationId).get();
+    const batch = db.batch();
+    let changed = 0;
+
+    employeeSnap.docs.forEach((doc) => {
+      const employee = doc.data() || {};
+      const email = String(employee.email || "").trim().toLowerCase();
+      if (byUid.has(doc.id) || (email && byEmail.has(email))) return;
+      const memberId = "user_" + doc.id;
+      const member = {
+        id: memberId,
+        firebaseUid: doc.id,
+        name: String(employee.displayName || employee.email || "Employee").trim(),
+        email,
+        phone: "",
+        role: String(employee.role || "Sales Rep").trim(),
+        active: employee.active !== false,
+        managerId: "",
+        managerName: "",
+        teamId: "",
+        teamName: "",
+        calendarAccess: "role-based",
+        createdAt: employeeTimestampIso(employee.createdAt),
+        updatedAt: employeeTimestampIso(employee.updatedAt) || new Date().toISOString()
+      };
+      members.push(member);
+      byUid.set(doc.id, member);
+      if (email) byEmail.set(email, member);
+      batch.set(teamCol.doc(memberId), member, { merge: true });
+      changed += 1;
+    });
+
+    if (changed) await batch.commit();
+    return res.status(200).json({ members });
+  } catch (error) {
+    const status = Number(error && error.statusCode) || 500;
+    logger.error("Company employee listing failed", { message: error && error.message });
+    return res.status(status).json({ error: error && error.message || "Company employees could not be loaded." });
+  }
+});
+
 exports.employeeTestLogin = onRequest({ cors: false, region: "us-central1" }, async (req, res) => {
   permitCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).send("");
@@ -167,6 +229,23 @@ exports.provisionEmployee = onRequest({ cors: false, region: "us-central1" }, as
       active: body.active !== false,
       updatedAt: FieldValue.serverTimestamp(),
       updatedBy: caller.uid
+    }, { merge: true });
+    const memberId = String(body.memberId || ("user_" + userRecord.uid)).trim();
+    await db.collection("organizations").doc(organizationId).collection("teamMembers").doc(memberId).set({
+      id: memberId,
+      firebaseUid: userRecord.uid,
+      name: displayName,
+      email,
+      phone: String(body.phone || "").trim(),
+      role: hmRole,
+      active: body.active !== false,
+      managerId: String(body.managerId || "").trim(),
+      managerName: String(body.managerName || "").trim(),
+      teamId: String(body.teamId || "").trim(),
+      teamName: String(body.teamName || "").trim(),
+      calendarAccess: String(body.calendarAccess || "role-based").trim(),
+      createdAt: String(body.createdAt || "").trim() || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     }, { merge: true });
     userRecord = await admin.auth().getUser(userRecord.uid);
     return res.status(200).json({ profile: safeEmployeeProfile(userRecord, { role: hmRole, displayName }) });

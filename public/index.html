@@ -26938,6 +26938,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <script src="./lead-cloud-source.js?v=20260929-login-cloud-refresh-3"></script>
+  <script src="./team-member-cloud-source.js?v=20261002-cloud-team-1"></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly&loading=async&callback=mapsGoogleReady" defer></script>
   <script src="demo_swaths.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
@@ -79022,6 +79023,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     async function hmCompleteVerifiedLogin(profile) {
       crmSetSessionUser(profile.role || 'Sales Rep', profile.displayName || profile.email || '', profile.email || '');
       if (typeof window.hmLeadCloudRefresh === 'function') await window.hmLeadCloudRefresh();
+      if (typeof window.hmTeamCloudRefresh === 'function') await window.hmTeamCloudRefresh();
       crmRenderMainMenu(); crmRenderSettings(); crmRenderRoleSelector();
       await loadJobsFromSupabase();
       if (typeof window.hmPhotoLoadFromSupabase === 'function') await window.hmPhotoLoadFromSupabase();
@@ -79042,7 +79044,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
     async function hmProvisionEmployeeAccount(record, password) {
       if (!record || !record.email) throw new Error('An email address is required for a verified employee account.');
-      return hmEmployeeRequest('provisionEmployee', { uid: record.firebaseUid || '', email: record.email, password: password || '', displayName: record.name, role: record.role, active: record.active !== false }, true);
+      return hmEmployeeRequest('provisionEmployee', { uid: record.firebaseUid || '', memberId: record.id || '', email: record.email, password: password || '', displayName: record.name, phone: record.phone || '', role: record.role, active: record.active !== false, managerId: record.managerId || '', managerName: record.managerName || '', teamId: record.teamId || '', teamName: record.teamName || '', calendarAccess: record.calendarAccess || 'role-based', createdAt: record.createdAt || '' }, true);
     }
     document.getElementById('login-submit-btn').addEventListener('click', async function () {
       var email=(document.getElementById('login-email').value||'').trim().toLowerCase();
