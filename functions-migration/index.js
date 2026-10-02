@@ -68,6 +68,66 @@ async function requireCompanyMember(req) {
   return { user, role, organizationId };
 }
 
+function employeeTimeIso(value) {
+  try {
+    if (value && typeof value.toDate === 'function') return value.toDate().toISOString();
+    if (value) return new Date(value).toISOString();
+  } catch (_) {}
+  return '';
+}
+
+exports.listCompanyEmployeesCloud = onRequest({ cors: false, region: 'us-central1' }, async (req, res) => {
+  permitCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST required.' });
+  try {
+    const { organizationId } = await requireCompanyMember(req);
+    const teamCol = db.collection('organizations').doc(organizationId).collection('teamMembers');
+    const teamSnap = await teamCol.get();
+    const members = teamSnap.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }));
+    const byUid = new Map(members.map((member) => [String(member.firebaseUid || ''), member]));
+    const byEmail = new Map(members.map((member) => [String(member.email || '').toLowerCase(), member]));
+    const employeeSnap = await db.collection('hmEmployees').where('organizationId', '==', organizationId).get();
+    const batch = db.batch();
+    let changed = 0;
+
+    employeeSnap.docs.forEach((doc) => {
+      const employee = doc.data() || {};
+      const email = String(employee.email || '').trim().toLowerCase();
+      if (byUid.has(doc.id) || (email && byEmail.has(email))) return;
+      const memberId = 'user_' + doc.id;
+      const member = {
+        id: memberId,
+        firebaseUid: doc.id,
+        name: String(employee.displayName || employee.email || 'Employee').trim(),
+        email,
+        phone: '',
+        role: String(employee.role || 'Sales Rep').trim(),
+        active: employee.active !== false,
+        managerId: '',
+        managerName: '',
+        teamId: '',
+        teamName: '',
+        calendarAccess: 'role-based',
+        createdAt: employeeTimeIso(employee.createdAt),
+        updatedAt: employeeTimeIso(employee.updatedAt) || new Date().toISOString()
+      };
+      members.push(member);
+      byUid.set(doc.id, member);
+      if (email) byEmail.set(email, member);
+      batch.set(teamCol.doc(memberId), member, { merge: true });
+      changed += 1;
+    });
+
+    if (changed) await batch.commit();
+    return res.status(200).json({ members });
+  } catch (error) {
+    const status = Number(error && error.statusCode) || 500;
+    logger.error('Company employee cloud load failed', { message: error && error.message });
+    return res.status(status).json({ error: error && error.message || 'Company employees could not be loaded.' });
+  }
+});
+
 function cleanText(value, max = 2000) {
   return String(value == null ? '' : value).replace(/\s+/g, ' ').trim().slice(0, max);
 }
