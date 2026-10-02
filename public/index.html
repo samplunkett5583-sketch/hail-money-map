@@ -59656,7 +59656,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         if (!member || member.active === false) return;
         if (member.role !== 'Sales Rep' && member.role !== 'Manager') return;
         if (typeof crmIsDemoSalesRepRecord === 'function' && crmIsDemoSalesRepRecord(member)) return;
-        if (typeof crmIsCleanupTestSalesRep === 'function' && crmIsCleanupTestSalesRep(member)) return;
         var name = String(member.name || '').trim();
         var key = crmNormalizeTeamMemberKey(name);
         if (!key || rowsByKey[key]) return;
