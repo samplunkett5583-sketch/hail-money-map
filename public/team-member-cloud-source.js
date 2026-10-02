@@ -95,7 +95,7 @@
 
   async function fetchCompanyEmployees(user) {
     var token = await user.getIdToken(true);
-    var response = await fetch(employeeFunctionUrl('listCompanyEmployees'), {
+    var response = await fetch(employeeFunctionUrl('listCompanyEmployeesCloud'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
