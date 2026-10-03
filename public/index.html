@@ -13347,12 +13347,19 @@
     .fl-field.fl-wide { flex: 2 1 0; }
     .fl-field.fl-req-visual input,
     .fl-field.fl-req-visual select {
-      background: #fdece0;
-      border-color: #e0793a;
-      color: #8a4a1c;
+      background: #f3f4f6;
+      border-color: #d8dbe0;
+      color: #1f2530;
     }
-    .fl-field.fl-req-visual input::placeholder { color: #c98a5c; }
-    select.fl-placeholder-select { color: #8a4a1c; }
+    .fl-field.fl-req-visual input::placeholder { color: #7c8494; }
+    select.fl-placeholder-select { color: #7c8494; }
+    #page-field-lead .fl-missing-required {
+      background: #fff1f0 !important;
+      border: 2px solid #d93025 !important;
+      color: #1f2530 !important;
+      box-shadow: 0 0 0 2px rgba(217,48,37,.12) !important;
+    }
+    #page-field-lead .fl-missing-required::placeholder { color: #a85a55 !important; }
     .fl-address-suggestions {
       position: absolute;
       top: calc(100% + 4px);
@@ -26537,7 +26544,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                           </details>
                           <input id="fl-damageLocation" type="hidden" value="" />
                         </div>
-                        <div class="fl-field"><input id="fl-dateOfLoss" type="date" placeholder="Date of Loss" /></div>
+                        <div class="fl-field"><label for="fl-dateOfLoss">Date of Loss</label><input id="fl-dateOfLoss" type="date" /></div>
                       </div>
                       <label class="fl-checkbox-inline"><input type="checkbox" id="fl-claimFiled" /> Claim Filed</label>
 
@@ -78262,6 +78269,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       document.getElementById('fl-saved-msg').style.display = 'none';
       document.getElementById('fl-warning-msg').style.display = 'none';
       document.getElementById('fl-warning-msg').textContent = '';
+      document.querySelectorAll('#page-field-lead .fl-missing-required').forEach(function (el) { el.classList.remove('fl-missing-required'); });
       crmResetFieldLeadDuplicateChecks();
       crmRestoreFieldLeadDraft();
       crmApplyPendingContactLeadPrefill('fl');
@@ -78452,6 +78460,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!fieldLeadPage) return;
       fieldLeadPage.addEventListener('input', crmScheduleFieldLeadDraftSave);
       fieldLeadPage.addEventListener('change', crmScheduleFieldLeadDraftSave);
+      function clearFieldLeadMissingState(event) {
+        var el = event.target;
+        if (el && el.classList && el.classList.contains('fl-missing-required') && String(el.value || '').trim()) {
+          el.classList.remove('fl-missing-required');
+        }
+      }
+      fieldLeadPage.addEventListener('input', clearFieldLeadMissingState);
+      fieldLeadPage.addEventListener('change', clearFieldLeadMissingState);
       window.addEventListener('beforeunload', function () {
         if (fieldLeadPage.classList.contains('active')) crmSaveFieldLeadDraft();
       });
@@ -78466,8 +78482,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       savedMsg.style.display = 'none';
       warningMsg.style.display = 'none';
       warningMsg.textContent = '';
+      document.querySelectorAll('#page-field-lead .fl-missing-required').forEach(function (el) { el.classList.remove('fl-missing-required'); });
       function fv(id) { var el = document.getElementById(id); return el ? String(el.value || '').trim() : ''; }
       function fc(id) { var el = document.getElementById(id); return !!(el && el.checked); }
+      function markMissingField(id) {
+        var targetId = id === 'fl-insuranceCompany' && fc('fl-insuranceOther') ? 'fl-insuranceCompanyOther' : id;
+        var el = document.getElementById(targetId);
+        if (el) el.classList.add('fl-missing-required');
+      }
       function collectRepeatedContactRows(group, rowSelector) {
         return Array.prototype.map.call(document.querySelectorAll('#page-field-lead ' + rowSelector), function (row) {
           var inputs = row.querySelectorAll('input');
@@ -78490,11 +78512,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var missing = req.filter(function (id) { var el = document.getElementById(id); return !el || !String(el.value || '').trim(); });
       if (!insuranceCompanyVal) missing.push('fl-insuranceCompany');
       if (fv('fl-leadSource') === 'Canvasser' && !fv('fl-canvasser')) {
+        markMissingField('fl-canvasser');
         valMsg.textContent = 'Please select the canvasser who created this lead.';
         valMsg.style.display = 'block';
         return;
       }
-      if (missing.length) { valMsg.style.display = 'block'; return; }
+      if (missing.length) {
+        missing.forEach(markMissingField);
+        valMsg.style.display = 'block';
+        return;
+      }
       if (typeof hmResolveRegionForState === 'function') {
         var propertyState = String(fv('fl-state') || '').toUpperCase();
         var routingState = String(fv('fl-regionState') || '').toUpperCase();
