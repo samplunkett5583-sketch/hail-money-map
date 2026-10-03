@@ -59998,12 +59998,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       });
     }
 
-    function crmRenderContingencySignedDashboard() {
-      crmScheduleContingencySignedRolloverRefresh();
-      if (typeof crmReconcileSignedContingenciesToCloud === 'function') crmReconcileSignedContingenciesToCloud();
+    function crmRenderContingencySignedRows(rows) {
       var listEl = document.getElementById('dash-contingency-signed-rows');
-      if (!listEl) return [];
-      var rows = crmGetContingencySignedDashboardRows();
+      if (!listEl) return rows || [];
+      rows = Array.isArray(rows) ? rows : [];
       if (!rows.length) {
         listEl.innerHTML = '<div style="padding:14px;text-align:center;color:#6d7684;font-size:12px;">No employees have been added yet.</div>';
         return rows;
@@ -60018,6 +60016,60 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           '<span class="contingency-signed-count">' + row.allTime + '</span>' +
         '</div>';
       }).join('');
+      return rows;
+    }
+
+    var _crmContingencyDashboardCloudRun = 0;
+    async function crmRefreshContingencySignedDashboardFromCloud() {
+      var listEl = document.getElementById('dash-contingency-signed-rows');
+      if (!listEl || !window.auth || !window.auth.currentUser) return [];
+      var runId = ++_crmContingencyDashboardCloudRun;
+      try {
+        var token = await window.auth.currentUser.getIdToken(false);
+        var response = await fetch('/api/contingency-dashboard', { headers: { Authorization: 'Bearer ' + token } });
+        var payload = await response.json().catch(function () { return {}; });
+        if (!response.ok) throw new Error(payload.error || 'Contingency dashboard could not load.');
+        if (runId !== _crmContingencyDashboardCloudRun) return [];
+        var now = new Date();
+        var weekStart = crmGetContingencyPeriodStartCentral('week', now);
+        var monthStart = crmGetContingencyPeriodStartCentral('month', now);
+        var yearStart = crmGetContingencyPeriodStartCentral('year', now);
+        var byId = {}, byName = {};
+        var rows = (Array.isArray(payload.members) ? payload.members : []).map(function (member) {
+          var row = { id: String(member.id || ''), name: String(member.name || ''), week: 0, month: 0, year: 0, allTime: 0 };
+          if (row.id) byId[row.id] = row;
+          byName[crmNormalizeTeamMemberKey(row.name)] = row;
+          return row;
+        });
+        (Array.isArray(payload.events) ? payload.events : []).forEach(function (event) {
+          var row = byId[String(event.employeeId || '')] || byName[crmNormalizeTeamMemberKey(event.employeeName || '')];
+          if (!row) return;
+          row.allTime += 1;
+          var signedAt = crmParseDashboardTimestamp(event.signedAt);
+          if (!signedAt || signedAt.getTime() > now.getTime()) return;
+          if (signedAt.getTime() >= yearStart.getTime()) row.year += 1;
+          if (signedAt.getTime() >= monthStart.getTime()) row.month += 1;
+          if (signedAt.getTime() >= weekStart.getTime()) row.week += 1;
+        });
+        rows.sort(function (a, b) {
+          if (b.week !== a.week) return b.week - a.week;
+          if (b.month !== a.month) return b.month - a.month;
+          if (b.year !== a.year) return b.year - a.year;
+          if (b.allTime !== a.allTime) return b.allTime - a.allTime;
+          return a.name.localeCompare(b.name);
+        });
+        return crmRenderContingencySignedRows(rows);
+      } catch (error) {
+        console.warn('[Contingency Dashboard] cloud refresh failed', error);
+        return [];
+      }
+    }
+
+    function crmRenderContingencySignedDashboard() {
+      crmScheduleContingencySignedRolloverRefresh();
+      if (typeof crmReconcileSignedContingenciesToCloud === 'function') crmReconcileSignedContingenciesToCloud();
+      var rows = crmRenderContingencySignedRows(crmGetContingencySignedDashboardRows());
+      setTimeout(function () { crmRefreshContingencySignedDashboardFromCloud(); }, 0);
       return rows;
     }
 

@@ -196,3 +196,159 @@ exports.hmDocumentStore = onRequest(
     }
   }
 );
+
+function dashboardText(value) {
+  return String(value == null ? "" : value).trim();
+}
+function dashboardKey(value) {
+  return dashboardText(value).toLowerCase();
+}
+function dashboardDate(value) {
+  if (!value) return null;
+  if (value && typeof value.toDate === "function") return value.toDate();
+  const date = value instanceof Date ? value : new Date(value);
+  return date instanceof Date && !Number.isNaN(date.getTime()) ? date : null;
+}
+function newestSignedInstanceDate(lead) {
+  const instances = Array.isArray(lead && lead.contingencyFormInstances) ? lead.contingencyFormInstances : [];
+  for (let i = instances.length - 1; i >= 0; i -= 1) {
+    const item = instances[i] || {};
+    if (dashboardText(item.status).toLowerCase() !== "signed" && !item.signedAt) continue;
+    const date = dashboardDate(item.signedAt);
+    if (date) return date;
+  }
+  return null;
+}
+exports.hmContingencyDashboard = onRequest(
+  { region: "us-central1", timeoutSeconds: 60, memory: "256MiB", cors: false },
+  async (req, res) => {
+    permitCors(req, res);
+    if (req.method === "OPTIONS") return res.status(204).send("");
+    if (req.method !== "GET") return res.status(405).json({ error: "GET required." });
+    try {
+      const employee = await requireEmployee(req);
+      const orgRef = db.collection("organizations").doc(employee.orgId);
+      const [teamSnap, leadsSnap, filesSnap] = await Promise.all([
+        orgRef.collection("teamMembers").get(),
+        orgRef.collection("leads").get(),
+        db.collection(FILES_COLLECTION).where("organizationId", "==", employee.orgId).get()
+      ]);
+
+      const members = [];
+      const byId = new Map();
+      const byName = new Map();
+      const byEmail = new Map();
+      const byUid = new Map();
+      teamSnap.forEach((doc) => {
+        const data = doc.data() || {};
+        const role = dashboardText(data.role);
+        if (data.active === false || (role !== "Sales Rep" && role !== "Manager")) return;
+        const row = {
+          id: dashboardText(data.id || doc.id),
+          name: dashboardText(data.name),
+          email: dashboardText(data.email),
+          role
+        };
+        if (!row.name) return;
+        members.push(row);
+        if (row.id) byId.set(row.id, row);
+        byId.set(doc.id, row);
+        byName.set(dashboardKey(row.name), row);
+        if (row.email) byEmail.set(dashboardKey(row.email), row);
+        const firebaseUid = dashboardText(data.firebaseUid || data.authUid);
+        if (firebaseUid) byUid.set(firebaseUid, row);
+      });
+
+      const signedDocs = new Map();
+      filesSnap.forEach((doc) => {
+        const data = doc.data() || {};
+        const path = dashboardText(data.path);
+        const parts = path.split("/");
+        if (parts.length < 5 ||
+            parts[0] !== "lead-documents" ||
+            parts[1] !== employee.orgId ||
+            parts[3] !== "signed_contingency") return;
+        const leadId = dashboardText(parts[2]);
+        if (!leadId) return;
+        const date = dashboardDate(data.updatedAt);
+        const existing = signedDocs.get(leadId);
+        if (!existing || ((date ? date.getTime() : 0) > (existing.date ? existing.date.getTime() : 0))) {
+          signedDocs.set(leadId, { data, date });
+        }
+      });
+      const events = [];
+      const seenLeadIds = new Set();
+      function resolveMember(lead, signedDoc) {
+        let member = null;
+        const assignedId = dashboardText(lead && lead.assignedRepId);
+        const assignedName = dashboardKey(lead && lead.assignedRep);
+        if (assignedId) member = byId.get(assignedId) || byUid.get(assignedId) || null;
+        if (!member && assignedName) member = byName.get(assignedName) || null;
+
+        const creditedId = dashboardText(lead && lead.contingencyCreditedEmployeeId);
+        const creditedName = dashboardKey(lead && lead.contingencyCreditedEmployeeName);
+        if (!member && creditedId) member = byId.get(creditedId) || byUid.get(creditedId) || null;
+        if (!member && creditedName) member = byName.get(creditedName) || null;
+
+        if (!member && signedDoc) {
+          const uploaderUid = dashboardText(signedDoc.data.uploadedByUid);
+          const uploaderEmail = dashboardKey(signedDoc.data.uploadedByEmail);
+          if (uploaderUid) member = byUid.get(uploaderUid) || byId.get(uploaderUid) || null;
+          if (!member && uploaderEmail) member = byEmail.get(uploaderEmail) || null;
+        }
+
+        const repName = dashboardKey(lead && lead.contingencyRepresentative);
+        const creatorName = dashboardKey(lead && lead.createdByName);
+        if (!member && repName) member = byName.get(repName) || null;
+        if (!member && creatorName) member = byName.get(creatorName) || null;
+        return member;
+      }
+      leadsSnap.forEach((doc) => {
+        const lead = doc.data() || {};
+        const leadId = dashboardText(lead.id || doc.id);
+        if (!leadId) return;
+        seenLeadIds.add(leadId);
+        const signedDoc = signedDocs.get(leadId) || null;
+        const signed = lead.contingencySigned === true ||
+          !!(lead.jobFile && lead.jobFile.contingencySigned === true) ||
+          !!signedDoc ||
+          !!dashboardDate(lead.contingencySignedAt) ||
+          !!newestSignedInstanceDate(lead);
+        if (!signed) return;
+        const member = resolveMember(lead, signedDoc);
+        if (!member) return;
+        const signedAt = dashboardDate(lead.contingencySignedAt) ||
+          newestSignedInstanceDate(lead) ||
+          (signedDoc && signedDoc.date) ||
+          dashboardDate(lead.updatedAt) ||
+          new Date();
+        events.push({
+          leadId,
+          employeeId: member.id,
+          employeeName: member.name,
+          signedAt: signedAt.toISOString()
+        });
+      });
+      signedDocs.forEach((signedDoc, leadId) => {
+        if (seenLeadIds.has(leadId)) return;
+        const member = resolveMember({}, signedDoc);
+        if (!member) return;
+        const signedAt = signedDoc.date || new Date();
+        events.push({
+          leadId,
+          employeeId: member.id,
+          employeeName: member.name,
+          signedAt: signedAt.toISOString()
+        });
+      });
+
+      members.sort((a, b) => a.name.localeCompare(b.name));
+      return res.status(200).json({
+        members: members.map((m) => ({ id: m.id, name: m.name, role: m.role })),
+        events
+      });
+    } catch (error) {
+      return responseError(res, error);
+    }
+  }
+);

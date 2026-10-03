@@ -49,6 +49,13 @@
           "functionId": "hmDocumentStore",
           "region": "us-central1"
         }
+      },
+      {
+        "source": "/api/contingency-dashboard",
+        "function": {
+          "functionId": "hmContingencyDashboard",
+          "region": "us-central1"
+        }
       }
     ],
     "port": 5500
