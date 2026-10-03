@@ -79163,7 +79163,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     /* ── Login form handler ── */
     function hmEmployeeFunctionUrl(functionName) {
       var local = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
-      return local ? 'http://127.0.0.1:5015/hailmoneymap/us-central1/' + functionName : 'https://us-central1-hailmoneymap.cloudfunctions.net/' + functionName;
+      if (local) return 'http://127.0.0.1:5015/hailmoneymap/us-central1/' + functionName;
+      if (functionName === 'employeeTestLogin') return '/api/employee-test-login';
+      return 'https://us-central1-hailmoneymap.cloudfunctions.net/' + functionName;
     }
     async function hmEmployeeRequest(functionName, body, requiresAuth) {
       var headers = { 'Content-Type': 'application/json' };

@@ -31,6 +31,15 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "rewrites": [
+      {
+        "source": "/api/employee-test-login",
+        "function": {
+          "functionId": "employeeTestLogin",
+          "region": "us-central1"
+        }
+      }
+    ],
     "port": 5500
   },
   "emulators": {
