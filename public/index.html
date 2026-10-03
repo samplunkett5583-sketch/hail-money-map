@@ -51895,6 +51895,7 @@ function mapsGoogleReady() {
         lead.jobFile = jobFile;
         lead.updatedAt = new Date().toISOString();
         crmSaveLeads(leads);
+        if (typeof crmRenderContingencySignedDashboard === 'function') crmRenderContingencySignedDashboard();
         crmOpenPostLeadPhotoReport(leadId);
       }, { category: 'Job Paperwork', note: 'Signed contingency agreement' });
     });
@@ -52498,6 +52499,7 @@ function mapsGoogleReady() {
               signedLead.contingencyEmailError = emailError;
             }
             crmSaveLeads(leadRows);
+            if (typeof crmRenderContingencySignedDashboard === 'function') crmRenderContingencySignedDashboard();
             _activeFormInstance = null;
             _crmPostLeadContingencyContext = null;
             goToMainMenuFromHeader();
@@ -57616,6 +57618,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       lead.updatedAt = new Date().toISOString();
       lead.lastActivityAt = lead.updatedAt;
       crmSaveLeads(leads);
+      if (typeof crmRenderContingencySignedDashboard === 'function') crmRenderContingencySignedDashboard();
       return true;
     }
 
@@ -59891,9 +59894,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmGetContingencyCreditEmployeeName(lead) {
+      lead = lead || {};
       var assignedName = String(crmGetLeadAssignedRepName(lead) || '').trim();
       if (assignedName) return assignedName;
-      var instances = Array.isArray(lead && lead.contingencyFormInstances) ? lead.contingencyFormInstances : [];
+      var creatorRole = String(lead.createdByRole || '').trim();
+      var creatorName = String(lead.createdByName || '').trim();
+      if (creatorName && (creatorRole === 'Sales Rep' || creatorRole === 'Manager')) return creatorName;
+      var instances = Array.isArray(lead.contingencyFormInstances) ? lead.contingencyFormInstances : [];
       for (var i = instances.length - 1; i >= 0; i -= 1) {
         var completedBy = String(instances[i] && instances[i].completedBy || '').trim();
         if (completedBy) return completedBy;
@@ -59942,7 +59949,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmGetContingencySignedDashboardRows() {
       var rowsByKey = {};
       var rowsById = {};
-      var members = typeof crmGetStoredTeamMembersOnly === 'function' ? crmGetStoredTeamMembersOnly() : [];
+      var members = typeof crmGetTeamMembers === 'function' ? crmGetTeamMembers() : (typeof crmGetStoredTeamMembersOnly === 'function' ? crmGetStoredTeamMembersOnly() : []);
       members.forEach(function (member) {
         if (!member || member.active === false) return;
         if (member.role !== 'Sales Rep' && member.role !== 'Manager') return;
@@ -59963,7 +59970,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var weekStart = crmGetContingencyPeriodStartCentral('week', now);
       var monthStart = crmGetContingencyPeriodStartCentral('month', now);
       var yearStart = crmGetContingencyPeriodStartCentral('year', now);
-      crmGetStoredLeads().forEach(function (lead) {
+      crmGetLeads().forEach(function (lead) {
         if (!crmIsLeadContingencySigned(lead)) return;
         var assignedId = String(lead && lead.assignedRepId || '').trim();
         var row = assignedId ? rowsById[assignedId] : null;
