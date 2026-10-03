@@ -1,10 +1,7 @@
-﻿(function () {
+(function () {
   'use strict';
 
   var KEY = 'hmm_document_regions_v1';
-  var CLOUD_DOC = 'documentRegions';
-  var unsubscribe = null;
-  var loadingCloud = false;
 
   function readRows() {
     try {
@@ -95,76 +92,10 @@
     document.dispatchEvent(new CustomEvent('hm:document-regions-updated'));
   }
 
-  async function resolveOrganizationId() {
-    var id = '';
-    if (typeof window.crmResolveFirestoreOrgId === 'function') {
-      try { id = String(await window.crmResolveFirestoreOrgId() || '').trim().toLowerCase(); } catch (_) {}
-      if (id) return id;
-    }
-    var user = window.auth && window.auth.currentUser;
-    if (!user) return '';
-    try {
-      var token = await user.getIdTokenResult(true);
-      id = String((token.claims || {}).hmOrganizationId || '').trim().toLowerCase();
-      if (id) return id;
-    } catch (_) {}
-    if (window.db) {
-      try {
-        var snap = await window.db.collection('hmEmployees').doc(user.uid).get();
-        if (snap.exists) {
-          var data = snap.data() || {};
-          id = String(data.organizationId || data.hmOrganizationId || '').trim().toLowerCase();
-          if (id) return id;
-        }
-      } catch (_) {}
-    }
-    if (/@hailmoney\.test$/i.test(String(user.email || ''))) return 'yopro';
-    return '';
-  }
-
-  async function getCloudRef() {
-    if (!window.db) return null;
-    var orgId = await resolveOrganizationId();
-    if (!orgId) return null;
-    return window.db.collection('organizations').doc(orgId).collection('appState').doc(CLOUD_DOC);
-  }
-
-  async function saveCloud(rows) {
-    var ref = await getCloudRef();
-    if (!ref) return false;
-    await ref.set({ rows: rows, updatedAt: new Date().toISOString() }, { merge: true });
+  window.hmSaveDocumentRegionsToCloud = async function (rows) {
+    applyRows(Array.isArray(rows) ? rows : []);
     return true;
-  }
-
-  window.hmSaveDocumentRegionsToCloud = saveCloud;
-
-  async function loadCloudAndWatch() {
-    if (loadingCloud) return;
-    loadingCloud = true;
-    try {
-      var ref = await getCloudRef();
-      if (!ref) return;
-      var snap = await ref.get();
-      var data = snap.exists ? (snap.data() || {}) : {};
-      if (Array.isArray(data.rows) && data.rows.length) {
-        applyRows(data.rows);
-      } else {
-        var localRows = readRows();
-        if (localRows.some(function (row) { return row && Array.isArray(row.states) && row.states.length; })) {
-          await saveCloud(localRows);
-        }
-      }
-      if (typeof unsubscribe === 'function') unsubscribe();
-      unsubscribe = ref.onSnapshot(function (next) {
-        var nextData = next.exists ? (next.data() || {}) : {};
-        if (Array.isArray(nextData.rows) && nextData.rows.length) applyRows(nextData.rows);
-      }, function (err) { console.warn('Region cloud sync unavailable.', err); });
-    } catch (err) {
-      console.warn('Region cloud sync failed.', err);
-    } finally {
-      loadingCloud = false;
-    }
-  }
+  };
 
   document.addEventListener('change', function (event) {
     var el = event.target;
@@ -183,24 +114,20 @@
   document.addEventListener('click', function (event) {
     if (!event.target.closest || !event.target.closest('#settings-regions-save')) return;
     setTimeout(function () {
-      var msg = document.getElementById('settings-regions-msg');
-      if (msg && /Regions saved/i.test(String(msg.textContent || ''))) {
-        saveCloud(readRows()).catch(function (err) { console.warn('Could not sync regions to cloud.', err); });
-        populateLeadRouting('', String((document.getElementById('fl-state') || {}).value || ''));
-      }
+      populateLeadRouting('', String((document.getElementById('fl-state') || {}).value || ''));
+      document.dispatchEvent(new CustomEvent('hm:document-regions-updated'));
     }, 80);
   });
 
-  function boot() {
+  async function boot() {
+    try {
+      if (typeof window.hmCloudWhenReady === 'function') await window.hmCloudWhenReady();
+    } catch (_) {}
     populateLeadRouting('', String((document.getElementById('fl-state') || {}).value || ''));
-    loadCloudAndWatch();
-    setTimeout(loadCloudAndWatch, 1200);
-    setTimeout(loadCloudAndWatch, 3500);
-    if (window.auth && typeof window.auth.onAuthStateChanged === 'function') {
-      window.auth.onAuthStateChanged(function (user) { if (user) loadCloudAndWatch(); });
-    }
+    document.dispatchEvent(new CustomEvent('hm:document-regions-updated'));
   }
 
+  window.addEventListener('hailmoneycloudready', boot);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 }());

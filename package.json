@@ -6,10 +6,14 @@
     "ingest:recent-storms": "node scripts/ingest_lsr_hail.mjs && node scripts/ingest_lsr_wind_tornado.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1146.0",
+    "@aws-sdk/s3-request-presigner": "^3.1146.0",
     "@supabase/supabase-js": "^2.39.3",
     "csv-parse": "^5.5.6",
     "csv-parser": "^3.2.0",
     "firebase-admin": "^13.6.0",
+    "jose": "^6.2.12",
+    "pg": "^8.23.1",
     "polygon-clipping": "^0.15.7"
   },
   "devDependencies": {
