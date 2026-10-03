@@ -176,6 +176,7 @@
   function refreshUi() {
     try {
       if (typeof window.crmRenderMainMenu === 'function') window.crmRenderMainMenu();
+      if (typeof window.crmRenderContingencySignedDashboard === 'function') window.crmRenderContingencySignedDashboard();
       var active = document.querySelector('.page.active');
       var id = active ? active.id : '';
       if (id === 'page-all-leads' && typeof window.crmRenderAllLeads === 'function') window.crmRenderAllLeads('');

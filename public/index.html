@@ -59241,6 +59241,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           insuranceCompany: fieldVal('insuranceCompanyVisible'),
           claimNumber: fieldVal('claimNumberVisible'),
           contingencySigned: !!((document.getElementById('contingencySigned') || {}).checked),
+          contingencySignedAt: ((document.getElementById('contingencySigned') || {}).checked) ? new Date().toISOString() : '',
           contingencyDocumentId: '',
           contingencyDocumentUrl: '',
           concerns:    concerns,
@@ -59627,7 +59628,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         if (instDate) return instDate;
       }
       var inspectionDate = crmParseDashboardTimestamp(lead.inspection && lead.inspection.contingencySignedAt);
-      return inspectionDate || null;
+      if (inspectionDate) return inspectionDate;
+      var activity = Array.isArray(lead.activityNotes) ? lead.activityNotes : [];
+      for (var a = activity.length - 1; a >= 0; a -= 1) {
+        var note = activity[a] || {};
+        var noteText = String(note.text || note.message || '').toLowerCase();
+        var noteKind = String(note.kind || note.actionType || '').toLowerCase();
+        if (noteText.indexOf('contingency') === -1 && noteKind.indexOf('contingency') === -1) continue;
+        if (noteText.indexOf('sign') === -1 && noteKind.indexOf('sign') === -1) continue;
+        var activityDate = crmParseDashboardTimestamp(note.ts || note.createdAt || note.updatedAt);
+        if (activityDate) return activityDate;
+      }
+      var jobFile = lead.jobFile && typeof lead.jobFile === 'object' ? lead.jobFile : {};
+      var docs = Array.isArray(jobFile.documents) ? jobFile.documents : [];
+      for (var d = docs.length - 1; d >= 0; d -= 1) {
+        var doc = docs[d] || {};
+        var docLabel = [doc.category, doc.docCategory, doc.note, doc.name, doc.fileName, doc.type].filter(Boolean).join(' ').toLowerCase();
+        if (docLabel.indexOf('conting') === -1 || docLabel.indexOf('sign') === -1) continue;
+        var docDate = crmParseDashboardTimestamp(doc.uploadedAt || doc.createdAt || doc.savedAt || doc.updatedAt);
+        if (docDate) return docDate;
+      }
+      return null;
     }
 
     function crmIsLeadContingencySigned(lead) {
@@ -59649,8 +59670,47 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return '';
     }
 
+    function crmGetCentralCalendarParts(dateLike) {
+      var date = dateLike instanceof Date && !isNaN(dateLike.getTime()) ? dateLike : new Date();
+      var out = {};
+      new Intl.DateTimeFormat('en-US', {timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(date).forEach(function (part) {
+        if (part.type !== 'literal') out[part.type] = part.value;
+      });
+      return {year:Number(out.year),month:Number(out.month),day:Number(out.day),hour:Number(out.hour),minute:Number(out.minute),second:Number(out.second)};
+    }
+
+    function crmCentralMidnight(year, month, day) {
+      var target = Date.UTC(year, month - 1, day, 0, 0, 0);
+      var guess = target + (6 * 60 * 60 * 1000);
+      for (var i = 0; i < 3; i += 1) {
+        var p = crmGetCentralCalendarParts(new Date(guess));
+        var shown = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+        guess += target - shown;
+      }
+      return new Date(guess);
+    }
+
+    function crmGetContingencyPeriodStartCentral(period, now) {
+      var p = crmGetCentralCalendarParts(now instanceof Date ? now : new Date());
+      var day = new Date(Date.UTC(p.year, p.month - 1, p.day, 12));
+      if (period === 'week') day.setUTCDate(day.getUTCDate() - day.getUTCDay());
+      else if (period === 'month') day.setUTCDate(1);
+      else if (period === 'year') day.setUTCMonth(0, 1);
+      return crmCentralMidnight(day.getUTCFullYear(), day.getUTCMonth() + 1, day.getUTCDate());
+    }
+
+    var _crmContingencyRolloverTimer = null;
+    function crmScheduleContingencySignedRolloverRefresh() {
+      if (_crmContingencyRolloverTimer) clearTimeout(_crmContingencyRolloverTimer);
+      var p = crmGetCentralCalendarParts(new Date());
+      var tomorrow = new Date(Date.UTC(p.year, p.month - 1, p.day + 1, 12));
+      var nextMidnight = crmCentralMidnight(tomorrow.getUTCFullYear(), tomorrow.getUTCMonth() + 1, tomorrow.getUTCDate());
+      _crmContingencyRolloverTimer = setTimeout(function () { crmRenderContingencySignedDashboard(); }, Math.max(1000, nextMidnight.getTime() - Date.now() + 250));
+    }
+
     function crmGetContingencySignedDashboardRows() {
       var rowsByKey = {};
+      var rowsById = {};
       var members = typeof crmGetStoredTeamMembersOnly === 'function' ? crmGetStoredTeamMembersOnly() : [];
       members.forEach(function (member) {
         if (!member || member.active === false) return;
@@ -59658,18 +59718,28 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         if (typeof crmIsDemoSalesRepRecord === 'function' && crmIsDemoSalesRepRecord(member)) return;
         var name = String(member.name || '').trim();
         var key = crmNormalizeTeamMemberKey(name);
-        if (!key || rowsByKey[key]) return;
-        rowsByKey[key] = { name: name, week: 0, month: 0, year: 0, allTime: 0 };
+        if (!key) return;
+        var row = rowsByKey[key];
+        if (!row) {
+          row = { name: name, week: 0, month: 0, year: 0, allTime: 0 };
+          rowsByKey[key] = row;
+        }
+        var memberId = String(member.id || '').trim();
+        if (memberId) rowsById[memberId] = row;
       });
 
       var now = new Date();
-      var weekStart = crmGetLeaderboardPeriodStart('week', now);
-      var monthStart = crmGetLeaderboardPeriodStart('month', now);
-      var yearStart = crmGetLeaderboardPeriodStart('year', now);
+      var weekStart = crmGetContingencyPeriodStartCentral('week', now);
+      var monthStart = crmGetContingencyPeriodStartCentral('month', now);
+      var yearStart = crmGetContingencyPeriodStartCentral('year', now);
       crmGetStoredLeads().forEach(function (lead) {
         if (!crmIsLeadContingencySigned(lead)) return;
-        var employeeKey = crmNormalizeTeamMemberKey(crmGetContingencyCreditEmployeeName(lead));
-        var row = employeeKey ? rowsByKey[employeeKey] : null;
+        var assignedId = String(lead && lead.assignedRepId || '').trim();
+        var row = assignedId ? rowsById[assignedId] : null;
+        if (!row) {
+          var employeeKey = crmNormalizeTeamMemberKey(crmGetContingencyCreditEmployeeName(lead));
+          row = employeeKey ? rowsByKey[employeeKey] : null;
+        }
         if (!row) return;
         row.allTime += 1;
         var signedDate = crmGetContingencySignedDate(lead);
@@ -59691,6 +59761,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmRenderContingencySignedDashboard() {
+      crmScheduleContingencySignedRolloverRefresh();
       var listEl = document.getElementById('dash-contingency-signed-rows');
       if (!listEl) return [];
       var rows = crmGetContingencySignedDashboardRows();
