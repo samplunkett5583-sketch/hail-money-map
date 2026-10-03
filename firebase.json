@@ -19,6 +19,10 @@
     {
       "source": "functions-ai",
       "codebase": "ai"
+    },
+    {
+      "source": "functions-documents",
+      "codebase": "documents"
     }
   ],
   "firestore": {
@@ -36,6 +40,13 @@
         "source": "/api/employee-test-login",
         "function": {
           "functionId": "employeeTestLogin",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/document-store",
+        "function": {
+          "functionId": "hmDocumentStore",
           "region": "us-central1"
         }
       }

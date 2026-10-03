@@ -8,13 +8,17 @@
       img.src = src;
     });
   }
-  function saveFile(leadId, file, note) {
+  async function saveFile(leadId, file, note) {
+    var metaOptions = { category: 'Job Paperwork', note: note || 'Locked signed contingency agreement' };
+    if (typeof window.hmUploadLeadDocumentToCloud === 'function') {
+      return window.hmUploadLeadDocumentToCloud(leadId, 'signed_contingency', file, metaOptions);
+    }
     return new Promise(function (resolve, reject) {
       if (typeof crmSaveFilesToDb !== 'function') { reject(new Error('Document storage is not available.')); return; }
       crmSaveFilesToDb(leadId, 'signed_contingency', [file], function (count, savedMeta) {
         if (!count || !savedMeta || !savedMeta.length) { reject(new Error('The locked signed PDF could not be uploaded.')); return; }
         resolve(savedMeta[0]);
-      }, { category: 'Job Paperwork', note: note || 'Locked signed contingency agreement' });
+      }, metaOptions);
     });
   }
   function fieldBox(field, w, h) {
