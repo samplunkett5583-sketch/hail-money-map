@@ -18664,19 +18664,101 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 16px;
     }
-    .crm-company-docs-category {
+    .crm-company-docs-category-button,
+    .crm-company-docs-choice-button,
+    .crm-company-docs-file-button {
+      width: 100%;
       min-width: 0;
-      padding: 20px;
       border: 1px solid #d8dde6;
-      border-radius: 16px;
+      border-radius: 14px;
       background: #fff;
-      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
-    }
-    .crm-company-docs-category h2 {
-      margin: 0 0 12px;
       color: #172033;
-      font-size: 18px;
-      line-height: 1.25;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+    }
+    .crm-company-docs-category-button {
+      min-height: 112px;
+      padding: 20px;
+      display: grid;
+      gap: 7px;
+      align-content: center;
+    }
+    .crm-company-docs-category-button:hover,
+    .crm-company-docs-choice-button:hover,
+    .crm-company-docs-file-button:hover {
+      border-color: #bf8d1f;
+      box-shadow: 0 10px 26px rgba(92, 62, 0, 0.12);
+    }
+    .crm-company-docs-category-button strong {
+      font-size: 19px;
+      line-height: 1.2;
+    }
+    .crm-company-docs-category-button span {
+      color: #6b7280;
+      font-size: 13px;
+    }
+    .crm-company-docs-browser-head,
+    .crm-company-docs-step-head,
+    .crm-company-docs-file-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .crm-company-docs-browser-head h2,
+    .crm-company-docs-region-step h3,
+    .crm-company-docs-state-step h3 {
+      margin: 0;
+      color: #172033;
+    }
+    .crm-company-docs-browser-path {
+      margin-top: 3px;
+      color: #6b7280;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .crm-company-docs-choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .crm-company-docs-choice-button {
+      min-height: 68px;
+      padding: 15px 17px;
+      font-weight: 850;
+      font-size: 16px;
+    }
+    .crm-company-docs-upload-list {
+      display: grid;
+      gap: 10px;
+    }
+    .crm-company-docs-file-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .crm-company-docs-file-button {
+      padding: 14px 16px;
+      display: grid;
+      gap: 4px;
+    }
+    .crm-company-docs-file-button strong {
+      overflow-wrap: anywhere;
+      font-size: 15px;
+    }
+    .crm-company-docs-file-button span {
+      color: #6b7280;
+      font-size: 12px;
+    }
+    .crm-company-docs-file-tools {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
     .crm-company-docs-empty {
       padding: 18px 14px;
@@ -18730,8 +18812,15 @@
         width: 100% !important;
         flex: 0 0 auto !important;
       }
-      .crm-company-docs-grid {
+      .crm-company-docs-grid,
+      .crm-company-docs-choice-grid {
         grid-template-columns: 1fr;
+      }
+      .crm-company-docs-file-row {
+        grid-template-columns: 1fr;
+      }
+      .crm-company-docs-file-tools {
+        justify-content: flex-start;
       }
     }
 
@@ -25770,36 +25859,52 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           <div class="crm-dashboard-mini-sidebar" data-crm-phase-one-sidebar></div>
           <div class="crm-dashboard-mini-body">
             <div class="crm-company-docs-page-shell">
-              <h1 class="page-title">Company Documents</h1>
-              <p class="page-subtitle">Shared company documents available for Sales Rep viewing and download.</p>
-              <div class="page-actions" style="margin-bottom:12px;"><button class="btn btn-primary" type="button" id="crm-company-doc-template-editor" style="display:none;">Manage Fillable Templates</button></div>
+              <h1 class="page-title">Documents</h1>
+              <p class="page-subtitle" id="crm-company-docs-subtitle">Choose a document section.</p>
               <div class="crm-company-docs-status" id="crm-company-docs-status" role="status">Company files are shared with your team.</div>
-              <div class="crm-company-docs-grid" aria-label="Company document categories">
-                <section class="crm-company-docs-category" data-company-doc-category="contingencies">
-                  <div class="crm-company-docs-category-head"><h2>Contingencies</h2><button class="btn btn-primary crm-company-doc-upload" type="button" data-company-doc-upload="contingencies">Upload Document</button></div>
-                  <div class="crm-company-docs-list" data-company-doc-list="contingencies"><div class="crm-company-docs-empty">No documents uploaded yet</div></div>
-                </section>
-                <section class="crm-company-docs-category" data-company-doc-category="contracts">
-                  <div class="crm-company-docs-category-head"><h2>Contracts</h2><button class="btn btn-primary crm-company-doc-upload" type="button" data-company-doc-upload="contracts">Upload Document</button></div>
-                  <div class="crm-company-docs-list" data-company-doc-list="contracts"><div class="crm-company-docs-empty">No documents uploaded yet</div></div>
-                </section>
-                <section class="crm-company-docs-category" data-company-doc-category="specifications">
-                  <div class="crm-company-docs-category-head"><h2>Shingle and Manufacturer Specifications</h2><button class="btn btn-primary crm-company-doc-upload" type="button" data-company-doc-upload="specifications">Upload Document</button></div>
-                  <div class="crm-company-docs-list" data-company-doc-list="specifications"><div class="crm-company-docs-empty">No documents uploaded yet</div></div>
-                </section>
-                <section class="crm-company-docs-category" data-company-doc-category="insurance">
-                  <div class="crm-company-docs-category-head"><h2>Company Insurance Documents</h2><button class="btn btn-primary crm-company-doc-upload" type="button" data-company-doc-upload="insurance">Upload Document</button></div>
-                  <div class="crm-company-docs-list" data-company-doc-list="insurance"><div class="crm-company-docs-empty">No documents uploaded yet</div></div>
-                </section>
-                <section class="crm-company-docs-category" data-company-doc-category="licenses">
-                  <div class="crm-company-docs-category-head"><h2>Roofing Licenses</h2><button class="btn btn-primary crm-company-doc-upload" type="button" data-company-doc-upload="licenses">Upload Document</button></div>
-                  <div class="crm-company-docs-list" data-company-doc-list="licenses"><div class="crm-company-docs-empty">No documents uploaded yet</div></div>
-                </section>
-                <section class="crm-company-docs-category" data-company-doc-category="other">
-                  <div class="crm-company-docs-category-head"><h2>Other Company Documents</h2><button class="btn btn-primary crm-company-doc-upload" type="button" data-company-doc-upload="other">Upload Document</button></div>
-                  <div class="crm-company-docs-list" data-company-doc-list="other"><div class="crm-company-docs-empty">No documents uploaded yet</div></div>
-                </section>
+
+              <div id="crm-company-docs-home">
+                <div class="crm-company-docs-grid" aria-label="Company document categories">
+                  <button class="crm-company-docs-category-button" type="button" data-company-doc-open-category="contingencies"><strong>Contingencies</strong><span>Region and state specific agreements</span></button>
+                  <button class="crm-company-docs-category-button" type="button" data-company-doc-open-category="contracts"><strong>Contracts</strong><span>Uploaded company contracts</span></button>
+                  <button class="crm-company-docs-category-button" type="button" data-company-doc-open-category="specifications"><strong>Shingle &amp; Manufacturer Specifications</strong><span>Product and manufacturer documents</span></button>
+                  <button class="crm-company-docs-category-button" type="button" data-company-doc-open-category="insurance"><strong>Company Insurance Documents</strong><span>Company insurance files</span></button>
+                  <button class="crm-company-docs-category-button" type="button" data-company-doc-open-category="licenses"><strong>Roofing Licenses</strong><span>Company roofing licenses</span></button>
+                  <button class="crm-company-docs-category-button" type="button" data-company-doc-open-category="other"><strong>Other Company Documents</strong><span>Other shared company files</span></button>
+                </div>
               </div>
+
+              <div id="crm-company-docs-browser" hidden>
+                <div class="crm-company-docs-browser-head">
+                  <button class="btn" type="button" id="crm-company-docs-back">Back</button>
+                  <div>
+                    <h2 id="crm-company-docs-browser-title">Uploads</h2>
+                    <div class="crm-company-docs-browser-path" id="crm-company-docs-browser-path"></div>
+                  </div>
+                </div>
+
+                <div id="crm-company-docs-region-step" hidden>
+                  <h3>Select Region</h3>
+                  <div class="crm-company-docs-choice-grid" id="crm-company-docs-region-buttons"></div>
+                </div>
+
+                <div id="crm-company-docs-state-step" hidden>
+                  <div class="crm-company-docs-step-head">
+                    <button class="btn" type="button" id="crm-company-docs-state-back">Back to Regions</button>
+                    <h3>Select State</h3>
+                  </div>
+                  <div class="crm-company-docs-choice-grid" id="crm-company-docs-state-buttons"></div>
+                </div>
+
+                <div id="crm-company-docs-file-step" hidden>
+                  <div class="crm-company-docs-file-actions">
+                    <button class="btn btn-primary crm-company-doc-upload" type="button" id="crm-company-doc-upload-btn">Upload File</button>
+                    <button class="btn" type="button" id="crm-company-doc-template-editor" style="display:none;">Set Up for DocuSign</button>
+                  </div>
+                  <div class="crm-company-docs-upload-list" id="crm-company-docs-file-list"></div>
+                </div>
+              </div>
+
               <input id="crm-company-doc-file-input" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp" hidden />
             </div>
           </div>
@@ -51939,10 +52044,7 @@ function mapsGoogleReady() {
       leadId=String(leadId||'').trim(); var lead=crmGetLeads().find(function(item){return String(item&&item.id||'')===leadId;});
       if(!lead){showUploadToast('Lead not found.');return;}
       var idx=typeof hmFindTemplateForLead==='function'?hmFindTemplateForLead(lead,'contingency'):-1;
-      var hasRouted=savedFormTemplates.some(function(tpl){return !!String(tpl&&tpl.region||'').trim()&&!!String(tpl&&tpl.state||'').trim();});
-      if(idx<0&&!hasRouted) idx=savedFormTemplates.findIndex(function(tpl){return /conting/i.test(String(tpl&&tpl.name||''));});
-      if(idx<0&&!hasRouted&&savedFormTemplates.length===1) idx=0;
-      if(idx<0){showUploadToast('No active contingency is configured for '+String(lead.region||'this region')+' / '+String(lead.state||'this state')+'.');return;}
+      if(idx<0){showUploadToast('No active contingency is configured for '+String(lead.region||'this region')+' / '+String(lead.regionState||lead.state||'this state')+'.');return;}
       try{await crmEnsureTemplateDocumentLoaded(savedFormTemplates[idx]);}
       catch(err){console.error('[Contingency Documents] load failed',err);showUploadToast(err&&err.message?err.message:'The contingency PDF could not be loaded.');return;}
       _crmPostLeadContingencyContext={leadId:leadId,returnMode:'documents'};
@@ -52697,7 +52799,7 @@ function mapsGoogleReady() {
     var tplSelectedFieldKey = null;
     var tplRenderedPages = []; // { wrapper, width, height, offsetTop } per page from last PDF render
 
-    async function refreshExistingContingencyPicker(selectedId) {
+    async function refreshExistingContingencyPicker(selectedId, region, state) {
       var select = document.getElementById('tpl-existing-contingency');
       if (!select) return;
       select.disabled = true;
@@ -52705,6 +52807,10 @@ function mapsGoogleReady() {
       try {
         if (typeof window.hmListCompanyDocuments !== 'function') throw new Error('Company documents are still loading.');
         var items = await window.hmListCompanyDocuments('contingencies');
+        region = String(region || '').trim();
+        state = String(state || '').trim().toUpperCase();
+        if (region) items = items.filter(function (d) { return String(d.region || '') === region; });
+        if (state) items = items.filter(function (d) { return String(d.state || '').toUpperCase() === state; });
         if (!items.length) {
           select.innerHTML = '<option value="">No uploaded contingencies found</option>';
           return;
@@ -52743,7 +52849,10 @@ function mapsGoogleReady() {
       } finally { if (select) select.disabled = false; }
     }
 
-    function openTemplateBuilder() {
+    function openTemplateBuilder(region, state, selectedId) {
+      region = String(region || '').trim();
+      state = String(state || '').trim().toUpperCase();
+      selectedId = String(selectedId || '').trim();
       currentTplFields = [];
       currentTplFileDataUrl = null;
       currentTplFileName = null;
@@ -52753,8 +52862,10 @@ function mapsGoogleReady() {
       document.getElementById('tpl-doc-name').value = '';
       document.getElementById('tpl-save-btn').textContent = 'Save Template';
       document.getElementById('tpl-file-label').textContent = 'No document selected';
-      if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting('', '');
-      refreshExistingContingencyPicker('');
+      if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting(region, state);
+      refreshExistingContingencyPicker(selectedId, region, state).then(function () {
+        if (selectedId) loadExistingContingencyIntoEditor(selectedId);
+      });
       renderTemplateFieldPalette();
       renderTplPreview();
       renderSavedTemplates();
@@ -78646,7 +78757,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (pendingInspection && pendingInspection.status === 'completed_pending_lead') {
         pendingContingencyIndex = typeof hmFindTemplateForLead === 'function' ? hmFindTemplateForLead(lead, 'contingency') : -1;
         if (pendingContingencyIndex < 0) {
-          valMsg.textContent = 'No active contingency matches ' + String(lead.region || 'the selected region') + ' + ' + String(lead.state || 'the selected state') + '. Nothing was cleared or saved.';
+          valMsg.textContent = 'No active contingency matches ' + String(lead.region || 'the selected region') + ' + ' + String(lead.regionState || lead.state || 'the selected state') + '. Nothing was cleared or saved.';
           valMsg.style.display = 'block';
           return;
         }
@@ -83283,7 +83394,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   function save(rows){localStorage.setItem(KEY,JSON.stringify(rows));try{if(typeof crmSaveFieldLeadDropdownOptions==='function'){var opts=crmGetFieldLeadDropdownOptions();opts.regions=rows.map(function(r){return r.name});crmSaveFieldLeadDropdownOptions(opts)}}catch(_){} syncLead();populate('','')}
   function resolve(state){state=String(state||'').trim().toUpperCase();var row=get().find(function(r){return (r.states||[]).indexOf(state)!==-1});return row?row.name:''}
   window.hmResolveRegionForState=resolve;
-  window.hmFindTemplateForLead=function(lead,type){var state=String(lead&&lead.state||'').trim().toUpperCase(),region=String(lead&&lead.region||resolve(state)||'').trim(),templates=window.savedFormTemplates||savedFormTemplates||[],today=new Date().toISOString().slice(0,10);var matches=templates.map(function(t,i){return{t:t,i:i}}).filter(function(x){var effective=!x.t.effectiveDate||String(x.t.effectiveDate)<=today;return String(x.t.documentType||'contingency')===String(type||'contingency')&&String(x.t.region||'')===region&&String(x.t.state||'').toUpperCase()===state&&String(x.t.status||'active')==='active'&&effective}).sort(function(a,b){return String(b.t.effectiveDate||'').localeCompare(String(a.t.effectiveDate||''))||Number(b.t.version||1)-Number(a.t.version||1)});var active=matches.filter(function(x){return x.t.activeDefault===true})[0]||matches[0];return active?active.i:-1};
+  window.hmFindTemplateForLead=function(lead,type){var state=String(lead&&(lead.regionState||lead.state)||'').trim().toUpperCase(),region=String(lead&&lead.region||resolve(state)||'').trim(),templates=window.savedFormTemplates||savedFormTemplates||[],today=new Date().toISOString().slice(0,10);var matches=templates.map(function(t,i){return{t:t,i:i}}).filter(function(x){var effective=!x.t.effectiveDate||String(x.t.effectiveDate)<=today;return String(x.t.documentType||'contingency')===String(type||'contingency')&&String(x.t.region||'')===region&&String(x.t.state||'').toUpperCase()===state&&String(x.t.status||'active')==='active'&&effective}).sort(function(a,b){return String(b.t.effectiveDate||'').localeCompare(String(a.t.effectiveDate||''))||Number(b.t.version||1)-Number(a.t.version||1)});var active=matches.filter(function(x){return x.t.activeDefault===true})[0]||matches[0];return active?active.i:-1};
   function stateOptions(region,selected){var row=get().find(function(r){return r.name===region}),allowed=row?(row.states||[]):[];return '<option value="">Select state</option>'+STATES.filter(function(s){return allowed.indexOf(s[0])!==-1}).map(function(s){return'<option value="'+s[0]+'"'+(s[0]===selected?' selected':'')+'>'+s[0]+' – '+s[1]+'</option>'}).join('')}
   function populate(region,state){var rs=document.getElementById('tpl-region'),ss=document.getElementById('tpl-state');if(!rs||!ss)return;var rows=get();rs.innerHTML='<option value="">Select region</option>'+rows.map(function(r){return'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>'}).join('');rs.value=region||'';if(!rs.value){ss.innerHTML='<option value="">Select a region first</option>';ss.value='';ss.disabled=true;return}ss.disabled=false;ss.innerHTML=stateOptions(rs.value,String(state||'').toUpperCase());ss.value=String(state||'').toUpperCase()}
   window.hmPopulateTemplateRouting=populate;
@@ -83292,15 +83403,15 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   function collect(){var used={},rows=[];document.querySelectorAll('[data-region-row]').forEach(function(card,idx){var name=String((card.querySelector('[data-region-name]')||{}).value||'').trim()||('Region '+(idx+1)),states=[];card.querySelectorAll('[data-region-state]:checked').forEach(function(cb){var st=cb.getAttribute('data-region-state');if(used[st])throw new Error(st+' is already assigned to '+used[st]+'.');used[st]=name;states.push(st)});rows.push({id:'region_'+(idx+1),name:name,states:states})});return rows}
   function syncLead(){var select=document.getElementById('fl-workType'),state=document.getElementById('fl-state');if(select){var current=select.value;select.innerHTML='<option value="" disabled>Select Region</option>'+get().map(function(r){return'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>'}).join('');var inferred=resolve(state&&state.value);select.value=inferred||current||''}}
   document.addEventListener('change',function(e){if(e.target&&e.target.id==='tpl-region'){var ss=document.getElementById('tpl-state');if(ss){if(!e.target.value){ss.innerHTML='<option value="">Select a region first</option>';ss.disabled=true}else{ss.disabled=false;ss.innerHTML=stateOptions(e.target.value,'')}}}if(e.target&&e.target.id==='fl-state')syncLead()});
-  document.addEventListener('click',function(e){var readOnly=String(typeof crmGetRole==='function'?crmGetRole():'')==='Manager';var add=e.target.closest&&e.target.closest('#settings-region-add');if(add){if(readOnly)return;var rows=get();rows.push({id:'region_'+(rows.length+1),name:'Region '+(rows.length+1),states:[]});localStorage.setItem(KEY,JSON.stringify(rows));render();return}var rem=e.target.closest&&e.target.closest('[data-region-remove]');if(rem){if(readOnly)return;var rows2=get();rows2.splice(Number(rem.getAttribute('data-region-remove')),1);localStorage.setItem(KEY,JSON.stringify(rows2));render();return}var saveBtn=e.target.closest&&e.target.closest('#settings-regions-save');if(saveBtn){if(readOnly)return;var msg=document.getElementById('settings-regions-msg');try{save(collect());msg.textContent='Regions saved.';msg.style.display='block'}catch(err){msg.textContent=err.message;msg.style.display='block'}return}var editor=e.target.closest&&e.target.closest('#crm-company-doc-template-editor');if(editor&&typeof openTemplateBuilder==='function')openTemplateBuilder()});
+  document.addEventListener('click',function(e){var readOnly=String(typeof crmGetRole==='function'?crmGetRole():'')==='Manager';var add=e.target.closest&&e.target.closest('#settings-region-add');if(add){if(readOnly)return;var rows=get();rows.push({id:'region_'+(rows.length+1),name:'Region '+(rows.length+1),states:[]});localStorage.setItem(KEY,JSON.stringify(rows));render();return}var rem=e.target.closest&&e.target.closest('[data-region-remove]');if(rem){if(readOnly)return;var rows2=get();rows2.splice(Number(rem.getAttribute('data-region-remove')),1);localStorage.setItem(KEY,JSON.stringify(rows2));render();return}var saveBtn=e.target.closest&&e.target.closest('#settings-regions-save');if(saveBtn){if(readOnly)return;var msg=document.getElementById('settings-regions-msg');try{save(collect());msg.textContent='Regions saved.';msg.style.display='block'}catch(err){msg.textContent=err.message;msg.style.display='block'}return}var editor=e.target.closest&&e.target.closest('#crm-company-doc-template-editor');if(editor&&typeof openTemplateBuilder==='function')openTemplateBuilder(String(window.hmCompanyDocumentsCurrentRegion||''),String(window.hmCompanyDocumentsCurrentState||''),String(window.hmCompanyDocumentsCurrentFileId||''))});
   function bind(){populate('','');syncLead();var r=String(typeof crmGetRole==='function'?crmGetRole():'');var editor=document.getElementById('crm-company-doc-template-editor');if(editor)editor.style.display=['Owner','Admin','Manager'].indexOf(r)!==-1?'inline-flex':'none'}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 </script>
-<script src="./region-lead-sync.js?v=20260920-1"></script>
+<script src="./region-lead-sync.js?v=20261003-1"></script>
 <script id="hm-company-documents-script">
 (function(){
-  var MAX_BYTES=25*1024*1024, docs=[];
+  var MAX_BYTES=25*1024*1024, docs=[], templates=[], currentCategory='', currentRegion='', currentState='';
   function status(msg,bad){var e=document.getElementById('crm-company-docs-status');if(!e)return;e.textContent=String(msg||'');e.classList.toggle('is-error',!!bad)}
   function roleCanManage(v){return ['owner','admin','manager'].indexOf(String(v||'').trim().toLowerCase())!==-1}
   function canManage(){return roleCanManage(typeof crmGetRole==='function'?crmGetRole():'')}
@@ -83390,37 +83501,180 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
       throw new Error(data.error||'Document delete failed.');
     }
   }
-  function render(){
-    var manage=canManage();document.querySelectorAll('[data-company-doc-upload]').forEach(function(b){b.style.display=manage?'inline-flex':'none'});var editor=document.getElementById('crm-company-doc-template-editor');if(editor)editor.style.display=manage?'inline-flex':'none';
-    document.querySelectorAll('[data-company-doc-list]').forEach(function(list){
-      var cat=String(list.getAttribute('data-company-doc-list')||''),items=docs.filter(function(d){return String(d.category||'')===cat}).sort(function(a,b){return String(b.uploadedAt||'').localeCompare(String(a.uploadedAt||''))});
-      list.innerHTML='';if(!items.length){var empty=document.createElement('div');empty.className='crm-company-docs-empty';empty.textContent='No documents uploaded yet';list.appendChild(empty);return}
-      items.forEach(function(d){var row=document.createElement('div');row.className='crm-company-doc-row';var info=document.createElement('div');info.className='crm-company-doc-info';var nm=document.createElement('div');nm.className='crm-company-doc-name';nm.textContent=String(d.name||'Document');var meta=document.createElement('div');meta.className='crm-company-doc-meta';var when=d.uploadedAt?new Date(d.uploadedAt).toLocaleDateString():'';meta.textContent=[fmt(d.size),d.uploadedBy||'',when].filter(Boolean).join(' • ');info.append(nm,meta);var actions=document.createElement('div');actions.className='crm-company-doc-actions';var open=document.createElement('button');open.className='btn';open.type='button';open.textContent='Open';open.onclick=function(){openDoc(d.id)};actions.appendChild(open);if(manage){var del=document.createElement('button');del.className='btn';del.type='button';del.textContent='Delete';del.onclick=function(){deleteDoc(d.id)};actions.appendChild(del)}row.append(info,actions);list.appendChild(row)})
-    })
+  function categoryLabel(cat){
+    return ({contingencies:'Contingencies',contracts:'Contracts',specifications:'Shingle & Manufacturer Specifications',insurance:'Company Insurance Documents',licenses:'Roofing Licenses',other:'Other Company Documents'})[String(cat||'')]||'Documents';
   }
-  async function load(){try{status('Loading company documents…');var id=await orgId();if(!id)throw new Error('Company access is not ready yet. Sign out and back in, then try again.');var s=await ref(id).get(),data=s.exists?(s.data()||{}):{};docs=Array.isArray(data.documents)?data.documents:[];render();status(canManage()?'Upload company documents here. Everyone in your company can open and download them.':'Company documents are available to open and download.')}catch(e){docs=[];render();status(e&&e.message?e.message:'Company documents could not be loaded.',true)}}
-  function choose(cat){if(!canManage())return;var i=document.getElementById('crm-company-doc-file-input');if(!i)return;i.setAttribute('data-category',String(cat||'other'));i.value='';i.click()}
+  function regionRows(){
+    try{
+      var rows=JSON.parse(localStorage.getItem('hmm_document_regions_v1')||'[]');
+      if(Array.isArray(rows)&&rows.length)return rows;
+    }catch(_){}
+    return[
+      {id:'region_1',name:'Region 1',states:[]},
+      {id:'region_2',name:'Region 2',states:[]},
+      {id:'region_3',name:'Region 3',states:[]},
+      {id:'region_4',name:'Region 4',states:[]}
+    ];
+  }
+  function stateLabel(code){
+    code=String(code||'').toUpperCase();
+    var option=document.querySelector('#fl-state option[value="'+code+'"]');
+    var name=option?String(option.textContent||'').trim():'';
+    return name&&name!==code?code+' – '+name:code;
+  }
+  function routeForDoc(d){
+    var region=String(d&&d.region||'').trim(),state=String(d&&d.state||'').trim().toUpperCase();
+    if(region&&state)return{region:region,state:state};
+    var linked=templates.find(function(t){return String(t&&t.sourceCompanyDocumentId||'')===String(d&&d.id||'')});
+    return linked?{region:String(linked.region||'').trim(),state:String(linked.state||'').trim().toUpperCase()}:{region:'',state:''};
+  }
+  function templateForDoc(d){
+    return templates.filter(function(t){
+      return String(t&&t.sourceCompanyDocumentId||'')===String(d&&d.id||'') &&
+        String(t&&t.documentType||'contingency')==='contingency' &&
+        String(t&&t.region||'')===currentRegion &&
+        String(t&&t.state||'').toUpperCase()===currentState;
+    }).sort(function(a,b){
+      return Number(b&&b.activeDefault===true)-Number(a&&a.activeDefault===true) ||
+        String(b&&b.effectiveDate||'').localeCompare(String(a&&a.effectiveDate||'')) ||
+        Number(b&&b.version||1)-Number(a&&a.version||1);
+    })[0]||null;
+  }
+  function setStep(name){
+    var region=document.getElementById('crm-company-docs-region-step');
+    var state=document.getElementById('crm-company-docs-state-step');
+    var file=document.getElementById('crm-company-docs-file-step');
+    if(region)region.hidden=name!=='region';
+    if(state)state.hidden=name!=='state';
+    if(file)file.hidden=name!=='file';
+  }
+  function updateBrowserPath(){
+    var path=document.getElementById('crm-company-docs-browser-path');
+    if(!path)return;
+    var parts=[categoryLabel(currentCategory)];
+    if(currentCategory==='contingencies'&&currentRegion)parts.push(currentRegion);
+    if(currentCategory==='contingencies'&&currentState)parts.push(stateLabel(currentState));
+    path.textContent=parts.join(' / ');
+  }
+  function showHome(){
+    currentCategory='';currentRegion='';currentState='';
+    window.hmCompanyDocumentsCurrentRegion='';
+    window.hmCompanyDocumentsCurrentState='';
+    window.hmCompanyDocumentsCurrentFileId='';
+    var home=document.getElementById('crm-company-docs-home'),browser=document.getElementById('crm-company-docs-browser'),sub=document.getElementById('crm-company-docs-subtitle');
+    if(home)home.hidden=false;if(browser)browser.hidden=true;if(sub)sub.textContent='Choose a document section.';
+  }
+  function renderRegions(){
+    setStep('region');updateBrowserPath();
+    var host=document.getElementById('crm-company-docs-region-buttons');if(!host)return;host.innerHTML='';
+    regionRows().forEach(function(row){
+      var btn=document.createElement('button');btn.className='crm-company-docs-choice-button';btn.type='button';
+      btn.textContent=String(row&&row.name||'Region');
+      btn.onclick=function(){currentRegion=String(row&&row.name||'').trim();currentState='';renderStates()};
+      host.appendChild(btn);
+    });
+  }
+  function renderStates(){
+    setStep('state');updateBrowserPath();
+    var host=document.getElementById('crm-company-docs-state-buttons');if(!host)return;host.innerHTML='';
+    var row=regionRows().find(function(r){return String(r&&r.name||'')===currentRegion});
+    var states=row&&Array.isArray(row.states)?row.states:[];
+    if(!states.length){
+      var empty=document.createElement('div');empty.className='crm-company-docs-empty';empty.textContent='No states are assigned to '+currentRegion+'. Add states in Settings → Regions.';host.appendChild(empty);return;
+    }
+    states.forEach(function(code){
+      var btn=document.createElement('button');btn.className='crm-company-docs-choice-button';btn.type='button';btn.textContent=stateLabel(code);
+      btn.onclick=function(){currentState=String(code||'').toUpperCase();showFileStep()};
+      host.appendChild(btn);
+    });
+  }
+  function renderFiles(){
+    var host=document.getElementById('crm-company-docs-file-list');if(!host)return;host.innerHTML='';
+    var items=docs.filter(function(d){
+      if(String(d&&d.category||'')!==currentCategory)return false;
+      if(currentCategory!=='contingencies')return true;
+      var route=routeForDoc(d);return route.region===currentRegion&&route.state===currentState;
+    }).sort(function(a,b){return String(b&&b.uploadedAt||'').localeCompare(String(a&&a.uploadedAt||''))});
+    if(!items.length){var empty=document.createElement('div');empty.className='crm-company-docs-empty';empty.textContent='No files uploaded here yet.';host.appendChild(empty);return}
+    items.forEach(function(d){
+      var row=document.createElement('div');row.className='crm-company-docs-file-row';
+      var open=document.createElement('button');open.className='crm-company-docs-file-button';open.type='button';
+      var strong=document.createElement('strong');strong.textContent=String(d.name||'Document');
+      var meta=document.createElement('span'),when=d.uploadedAt?new Date(d.uploadedAt).toLocaleDateString():'';
+      var ready=currentCategory==='contingencies'?templateForDoc(d):null;
+      meta.textContent=[fmt(d.size),d.uploadedBy||'',when,ready?(String(ready.status||'active')==='active'?'DocuSign ready':'Template inactive'):''].filter(Boolean).join(' • ');
+      open.append(strong,meta);open.onclick=function(){openDoc(d.id)};
+      var tools=document.createElement('div');tools.className='crm-company-docs-file-tools';
+      if(canManage()){var del=document.createElement('button');del.className='btn';del.type='button';del.textContent='Delete';del.onclick=function(){deleteDoc(d.id)};tools.appendChild(del)}
+      row.append(open,tools);host.appendChild(row);
+    });
+  }
+  function showFileStep(){
+    setStep('file');updateBrowserPath();
+    window.hmCompanyDocumentsCurrentRegion=currentRegion;
+    window.hmCompanyDocumentsCurrentState=currentState;
+    window.hmCompanyDocumentsCurrentFileId='';
+    var uploadBtn=document.getElementById('crm-company-doc-upload-btn');
+    if(uploadBtn)uploadBtn.style.display=canManage()?'inline-flex':'none';
+    var editor=document.getElementById('crm-company-doc-template-editor');
+    if(editor)editor.style.display=canManage()&&currentCategory==='contingencies'&&currentRegion&&currentState?'inline-flex':'none';
+    renderFiles();
+  }
+  function openCategory(cat){
+    currentCategory=String(cat||'other');currentRegion='';currentState='';
+    var home=document.getElementById('crm-company-docs-home'),browser=document.getElementById('crm-company-docs-browser'),sub=document.getElementById('crm-company-docs-subtitle'),title=document.getElementById('crm-company-docs-browser-title');
+    if(home)home.hidden=true;if(browser)browser.hidden=false;if(sub)sub.textContent=currentCategory==='contingencies'?'Choose the region, then the state.':'Open an uploaded file or add a new one.';if(title)title.textContent='Uploads';
+    if(currentCategory==='contingencies')renderRegions();else showFileStep();
+  }
+  function render(){
+    if(!currentCategory){showHome();return}
+    if(currentCategory==='contingencies'&&!currentRegion){renderRegions();return}
+    if(currentCategory==='contingencies'&&!currentState){renderStates();return}
+    showFileStep();
+  }
+  async function load(){
+    try{
+      status('Loading company documents…');
+      var id=await orgId();if(!id)throw new Error('Company access is not ready yet. Sign out and back in, then try again.');
+      var s=await ref(id).get(),data=s.exists?(s.data()||{}):{};
+      docs=Array.isArray(data.documents)?data.documents:[];
+      templates=Array.isArray(data.formTemplates)?data.formTemplates:[];
+      render();
+      status(canManage()?'Choose a section to manage company files.':'Choose a section to open company files.');
+    }catch(e){docs=[];templates=[];render();status(e&&e.message?e.message:'Company documents could not be loaded.',true)}
+  }
+  function choose(cat,region,state){
+    if(!canManage())return;
+    var i=document.getElementById('crm-company-doc-file-input');if(!i)return;
+    i.setAttribute('data-category',String(cat||'other'));
+    i.setAttribute('data-region',String(region||''));
+    i.setAttribute('data-state',String(state||'').toUpperCase());
+    i.value='';i.click();
+  }
   async function upload(input){
-    var file=input&&input.files&&input.files[0],cat=String(input&&input.getAttribute('data-category')||'other');
+    var file=input&&input.files&&input.files[0],cat=String(input&&input.getAttribute('data-category')||'other'),region=String(input&&input.getAttribute('data-region')||'').trim(),state=String(input&&input.getAttribute('data-state')||'').trim().toUpperCase();
     if(!file)return;
     try{
       if(file.size>MAX_BYTES)throw new Error('Documents must be 25 MB or smaller.');
+      if(cat==='contingencies'&&(!region||!state))throw new Error('Choose the contingency region and state before uploading.');
       if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can upload company documents.');
       var id=await orgId();if(!id)throw new Error('Company access is not ready yet.');
       var docId='company_doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
       status('Uploading '+file.name+'…');
-      var stored=await uploadFirebaseDocument('company',{category:cat,documentId:docId,name:file.name,contentType:file.type},file);
+      var storageCategory=cat==='contingencies'?'contingencies_'+safe(region)+'_'+safe(state):cat;
+      var stored=await uploadFirebaseDocument('company',{category:storageCategory,documentId:docId,name:file.name,contentType:file.type},file);
       var r=ref(id),snap=await r.get(),data=snap.exists?(snap.data()||{}):{},arr=Array.isArray(data.documents)?data.documents.slice():[],u=window.auth&&window.auth.currentUser;
-      arr.push({id:docId,category:cat,name:file.name,size:Number(stored.size||file.size||0),contentType:stored.contentType||file.type||'application/octet-stream',storageProvider:'firebase',storagePath:stored.storagePath,uploadedAt:new Date().toISOString(),uploadedBy:(typeof crmGetCurrentUserName==='function'&&crmGetCurrentUserName())||(u&&u.email)||'Admin',uploadedByUid:(u&&u.uid)||''});
+      arr.push({id:docId,category:cat,region:region,state:state,name:file.name,size:Number(stored.size||file.size||0),contentType:stored.contentType||file.type||'application/octet-stream',storageProvider:'firebase',storagePath:stored.storagePath,uploadedAt:new Date().toISOString(),uploadedBy:(typeof crmGetCurrentUserName==='function'&&crmGetCurrentUserName())||(u&&u.email)||'Admin',uploadedByUid:(u&&u.uid)||''});
       await r.set({documents:arr,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-      docs=arr;render();status(file.name+' uploaded successfully.');
+      docs=arr;renderFiles();status(file.name+' uploaded to '+(cat==='contingencies'?region+' / '+state:categoryLabel(cat))+'.');
     }catch(e){status(e&&e.message?e.message:'Document upload failed.',true)}
     finally{if(input)input.value=''}
   }
   window.hmListCompanyDocuments=async function(category){
     await load();
     return docs.filter(function(d){return !category||String(d&&d.category||'')===String(category)}).map(function(d){
-      return{id:d.id,name:d.name,category:d.category,contentType:d.contentType,size:d.size,uploadedAt:d.uploadedAt,storageProvider:d.storageProvider||'',storagePath:d.storagePath||''};
+      var route=routeForDoc(d);
+      return{id:d.id,name:d.name,category:d.category,region:route.region,state:route.state,contentType:d.contentType,size:d.size,uploadedAt:d.uploadedAt,uploadedBy:d.uploadedBy||'',storageProvider:d.storageProvider||'',storagePath:d.storagePath||''};
     });
   };
   window.hmLoadCompanyDocumentForTemplate=async function(id){
@@ -83450,7 +83704,15 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
       if(explicitDoc&&String(explicitDoc.storageProvider||'').toLowerCase()==='firebase')return explicit;
     }
     var name=String(tpl&&tpl.fileName||'').trim().toLowerCase();if(!name)return'';
-    var match=rows.find(function(d){return String(d&&d.category||'')==='contingencies'&&String(d&&d.name||'').trim().toLowerCase()===name&&String(d&&d.storageProvider||'').toLowerCase()==='firebase'});
+    var wantedRegion=String(tpl&&tpl.region||'').trim(),wantedState=String(tpl&&tpl.state||'').trim().toUpperCase();
+    var match=rows.find(function(d){
+      var route=routeForDoc(d);
+      return String(d&&d.category||'')==='contingencies' &&
+        String(d&&d.name||'').trim().toLowerCase()===name &&
+        String(d&&d.storageProvider||'').toLowerCase()==='firebase' &&
+        (!wantedRegion||route.region===wantedRegion) &&
+        (!wantedState||route.state===wantedState);
+    });
     return match?String(match.id||''):'';
   }
   async function ensureTemplateSource(tpl,documents,oid){
@@ -83458,11 +83720,12 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
     if(!tpl||!tpl.fileDataUrl)return'';
     var blob=await fetch(tpl.fileDataUrl).then(function(r){if(!r.ok)throw new Error('The contingency source could not be read.');return r.blob()});
     if(!blob||!blob.size||blob.size>MAX_BYTES)return'';
-    var name=tpl.fileName||tpl.name||'Contingency.pdf';
-    var stale=(documents||[]).find(function(d){return String(d&&d.category||'')==='contingencies'&&String(d&&d.name||'').trim().toLowerCase()===String(name).trim().toLowerCase()});
+    var name=tpl.fileName||tpl.name||'Contingency.pdf',tplRegion=String(tpl.region||'').trim(),tplState=String(tpl.state||'').trim().toUpperCase();
+    var stale=(documents||[]).find(function(d){var route=routeForDoc(d);return String(d&&d.category||'')==='contingencies'&&String(d&&d.name||'').trim().toLowerCase()===String(name).trim().toLowerCase()&&(!tplRegion||route.region===tplRegion)&&(!tplState||route.state===tplState)});
     var docId=String(stale&&stale.id||'').trim()||('company_doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9));
-    var stored=await uploadFirebaseDocument('company',{category:'contingencies',documentId:docId,name:name,contentType:tpl.fileType||blob.type||'application/pdf'},blob);
-    var u=window.auth&&window.auth.currentUser,meta={id:docId,category:'contingencies',name:name,size:Number(stored.size||blob.size||0),contentType:stored.contentType||tpl.fileType||blob.type||'application/pdf',storageProvider:'firebase',storagePath:stored.storagePath,uploadedAt:new Date().toISOString(),uploadedBy:(typeof crmGetCurrentUserName==='function'&&crmGetCurrentUserName())||(u&&u.email)||'Admin',uploadedByUid:(u&&u.uid)||''};
+    var storageCategory='contingencies_'+safe(tplRegion||'unassigned')+'_'+safe(tplState||'unassigned');
+    var stored=await uploadFirebaseDocument('company',{category:storageCategory,documentId:docId,name:name,contentType:tpl.fileType||blob.type||'application/pdf'},blob);
+    var u=window.auth&&window.auth.currentUser,meta={id:docId,category:'contingencies',region:tplRegion,state:tplState,name:name,size:Number(stored.size||blob.size||0),contentType:stored.contentType||tpl.fileType||blob.type||'application/pdf',storageProvider:'firebase',storagePath:stored.storagePath,uploadedAt:new Date().toISOString(),uploadedBy:(typeof crmGetCurrentUserName==='function'&&crmGetCurrentUserName())||(u&&u.email)||'Admin',uploadedByUid:(u&&u.uid)||''};
     var staleIndex=(documents||[]).findIndex(function(d){return String(d&&d.id||'')===docId});
     if(staleIndex>=0)documents[staleIndex]=meta;else documents.push(meta);
     return docId;
@@ -83499,14 +83762,24 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
         render();
       }
     }
+    templates=remote.slice();
     return remote.map(function(t){return JSON.parse(JSON.stringify(t))});
   };
   window.hmSaveCompanyFormTemplate=async function(tpl){
     if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can save company templates.');var oid=await orgId();if(!oid)throw new Error('Company access is not ready yet.');
     var r=ref(oid),snap=await r.get(),data=snap.exists?(snap.data()||{}):{},documents=Array.isArray(data.documents)?data.documents.slice():[];
-    var source=await ensureTemplateSource(tpl,documents,oid);if(!source)throw new Error('This contingency could not be linked to company storage.');var meta=cleanTemplateMeta(tpl,source);
+    var source=await ensureTemplateSource(tpl,documents,oid);if(!source)throw new Error('This contingency could not be linked to company storage.');
+    var sourceIndex=documents.findIndex(function(d){return String(d&&d.id||'')===String(source)});
+    if(sourceIndex>=0&&String(tpl&&tpl.documentType||'contingency')==='contingency'){
+      documents[sourceIndex].category='contingencies';
+      documents[sourceIndex].region=String(tpl.region||'').trim();
+      documents[sourceIndex].state=String(tpl.state||'').trim().toUpperCase();
+    }
+    var meta=cleanTemplateMeta(tpl,source);
     var arr=Array.isArray(data.formTemplates)?data.formTemplates.slice():[],idx=arr.findIndex(function(x){return String(x&&x.id||'')===String(meta.id||'')});if(idx>=0)arr[idx]=meta;else arr.push(meta);
-    await r.set({documents:documents,formTemplates:arr,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});return meta;
+    await r.set({documents:documents,formTemplates:arr,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    docs=documents.slice();templates=arr.slice();if(currentCategory==='contingencies'&&currentRegion&&currentState)renderFiles();
+    return meta;
   };
   window.hmUploadLeadDocumentToCloud=async function(leadId,type,file,metaOptions){
     metaOptions=metaOptions||{};
@@ -83556,7 +83829,30 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
       docs=arr;render();status('Document deleted.');
     }catch(e){status(e&&e.message?e.message:'Document could not be deleted.',true)}
   }
-  function bind(){document.querySelectorAll('[data-company-doc-upload]').forEach(function(b){if(b.dataset.companyDocBound)return;b.dataset.companyDocBound='1';b.addEventListener('click',function(){choose(b.getAttribute('data-company-doc-upload'))})});var i=document.getElementById('crm-company-doc-file-input');if(i&&!i.dataset.companyDocBound){i.dataset.companyDocBound='1';i.addEventListener('change',function(){upload(i)})}render();setTimeout(function(){if(typeof window.hmGetCompanyFormTemplates==='function')window.hmGetCompanyFormTemplates().catch(function(e){console.warn('[Template Cloud] migration deferred',e)});},1500);var page=document.getElementById('page-company-docs');if(page){var obs=new MutationObserver(function(){if(page.classList.contains('active'))load()});obs.observe(page,{attributes:true,attributeFilter:['class']});if(page.classList.contains('active'))load()}}
+  function bind(){
+    document.querySelectorAll('[data-company-doc-open-category]').forEach(function(b){
+      if(b.dataset.companyDocBound)return;b.dataset.companyDocBound='1';
+      b.addEventListener('click',function(){openCategory(b.getAttribute('data-company-doc-open-category'))});
+    });
+    var back=document.getElementById('crm-company-docs-back');if(back&&!back.dataset.companyDocBound){back.dataset.companyDocBound='1';back.addEventListener('click',showHome)}
+    var stateBack=document.getElementById('crm-company-docs-state-back');if(stateBack&&!stateBack.dataset.companyDocBound){stateBack.dataset.companyDocBound='1';stateBack.addEventListener('click',function(){currentRegion='';currentState='';renderRegions()})}
+    var uploadBtn=document.getElementById('crm-company-doc-upload-btn');if(uploadBtn&&!uploadBtn.dataset.companyDocBound){uploadBtn.dataset.companyDocBound='1';uploadBtn.addEventListener('click',function(){choose(currentCategory,currentRegion,currentState)})}
+    var i=document.getElementById('crm-company-doc-file-input');if(i&&!i.dataset.companyDocBound){i.dataset.companyDocBound='1';i.addEventListener('change',function(){upload(i)})}
+    showHome();
+    document.addEventListener('hm:document-regions-updated',function(){
+      if(currentCategory==='contingencies'){
+        if(currentRegion&&!regionRows().some(function(row){return String(row&&row.name||'')===currentRegion})){currentRegion='';currentState=''}
+        render();
+      }
+    });
+    setTimeout(function(){if(typeof window.hmGetCompanyFormTemplates==='function')window.hmGetCompanyFormTemplates().catch(function(e){console.warn('[Template Cloud] migration deferred',e)});},1500);
+    var page=document.getElementById('page-company-docs');
+    if(page){
+      var obs=new MutationObserver(function(){if(page.classList.contains('active')){showHome();load()}});
+      obs.observe(page,{attributes:true,attributeFilter:['class']});
+      if(page.classList.contains('active'))load();
+    }
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 </script>

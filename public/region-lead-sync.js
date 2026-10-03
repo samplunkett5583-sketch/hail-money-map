@@ -92,6 +92,7 @@
       window.hmPopulateTemplateRouting(templateRegion, templateState);
     }
     populateLeadRouting('', String((document.getElementById('fl-state') || {}).value || ''));
+    document.dispatchEvent(new CustomEvent('hm:document-regions-updated'));
   }
 
   async function resolveOrganizationId() {
