@@ -56977,7 +56977,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
             crmPushLeadActivity(lead, 'Claim number added', 'insurance', '', nowTs);
           }
           if (!crmGetLeadContingencySigned(prev) && crmGetLeadContingencySigned(lead)) {
-            crmPushLeadActivity(lead, 'Contingency signed', 'insurance', '', nowTs);
+            crmPushLeadActivity(lead, 'Contingency signed', 'insurance', '', lead.contingencySignedAt || nowTs);
           }
           if (!prevClaimEligible && crmIsClaimFiledForPayroll(lead)) {
             crmPushLeadActivity(lead, 'Claim filed payroll milestone reached', 'payroll', 'System', nowTs);
@@ -57429,6 +57429,82 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return crmGetLeadFiles().some(function (f) { return f.leadId === leadId && f.type === type; });
     }
 
+    function crmFindSignedContingencyFile(leadId) {
+      leadId = String(leadId || '').trim();
+      if (!leadId) return null;
+      var matches = crmGetLeadFilesFor(leadId).filter(function (file) {
+        file = file || {};
+        var type = String(file.type || '').trim().toLowerCase();
+        var text = [file.category, file.docCategory, file.note, file.fileName, file.label].filter(Boolean).join(' ').toLowerCase();
+        return type === 'signed_contingency' || (text.indexOf('conting') !== -1 && text.indexOf('sign') !== -1);
+      });
+      matches.sort(function (a, b) {
+        var bt = Date.parse(b.uploadedAt || b.createdAt || '') || 0;
+        var at = Date.parse(a.uploadedAt || a.createdAt || '') || 0;
+        return bt - at;
+      });
+      return matches[0] || null;
+    }
+
+    function crmSyncSignedContingencyMetaToLead(lead, fileMeta) {
+      if (!lead || !fileMeta) return false;
+      var changed = false;
+      var signedAt = String(lead.contingencySignedAt || fileMeta.uploadedAt || fileMeta.createdAt || '').trim();
+      if (lead.contingencySigned !== true) { lead.contingencySigned = true; changed = true; }
+      if (!lead.contingencySignedAt && signedAt) { lead.contingencySignedAt = signedAt; changed = true; }
+      if (!String(lead.contingencyDocumentId || '').trim() && fileMeta.id) { lead.contingencyDocumentId = String(fileMeta.id); changed = true; }
+      if (!String(lead.contingencyStatus || '').trim() || String(lead.contingencyStatus || '').toLowerCase() === 'missing') {
+        lead.contingencyStatus = /locked/i.test(String(fileMeta.note || '')) ? 'signed_locked_pdf_uploaded' : 'signed_uploaded';
+        changed = true;
+      }
+      lead.jobFile = lead.jobFile && typeof lead.jobFile === 'object' ? lead.jobFile : {};
+      if (lead.jobFile.contingencySigned !== true) { lead.jobFile.contingencySigned = true; changed = true; }
+      if (!String(lead.jobFile.contingencyDocumentId || '').trim() && fileMeta.id) { lead.jobFile.contingencyDocumentId = String(fileMeta.id); changed = true; }
+      return changed;
+    }
+
+    function crmApplySignedContingencyFileToLead(leadId, fileMeta) {
+      var leads = crmGetLeads();
+      var lead = leads.find(function (item) { return String(item && item.id || '') === String(leadId || ''); });
+      if (!lead || !crmSyncSignedContingencyMetaToLead(lead, fileMeta)) return false;
+      lead.updatedAt = new Date().toISOString();
+      lead.lastActivityAt = lead.updatedAt;
+      crmSaveLeads(leads);
+      return true;
+    }
+
+    function crmReconcileSignedContingenciesToCloud() {
+      var files = crmGetLeadFiles();
+      if (!files.length) return false;
+      var signedByLead = {};
+      files.forEach(function (file) {
+        if (!file || !file.leadId) return;
+        var type = String(file.type || '').trim().toLowerCase();
+        var text = [file.category, file.docCategory, file.note, file.fileName, file.label].filter(Boolean).join(' ').toLowerCase();
+        if (type !== 'signed_contingency' && !(text.indexOf('conting') !== -1 && text.indexOf('sign') !== -1)) return;
+        var current = signedByLead[file.leadId];
+        var fileTime = Date.parse(file.uploadedAt || file.createdAt || '') || 0;
+        var currentTime = current ? (Date.parse(current.uploadedAt || current.createdAt || '') || 0) : -1;
+        if (!current || fileTime > currentTime) signedByLead[file.leadId] = file;
+      });
+      var leads = crmGetLeads();
+      var changed = false;
+      leads.forEach(function (lead) {
+        var fileMeta = lead && signedByLead[lead.id];
+        if (fileMeta && crmSyncSignedContingencyMetaToLead(lead, fileMeta)) changed = true;
+      });
+      if (!changed) return false;
+      var now = new Date().toISOString();
+      leads.forEach(function (lead) {
+        if (lead && signedByLead[lead.id] && lead.contingencySigned === true) {
+          lead.updatedAt = lead.updatedAt || now;
+          lead.lastActivityAt = lead.lastActivityAt || lead.updatedAt;
+        }
+      });
+      crmSaveLeads(leads);
+      return true;
+    }
+
     /* Toggle-only: sync, no blob needed */
     function crmAddLeadFile(leadId, type, label) {
       var files = crmGetLeadFiles();
@@ -57497,6 +57573,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           if (i >= files.length) {
             crmSaveLeadFiles(allMeta);
             console.log('[CRM Upload] Metadata saved to localStorage. Total records for lead:', allMeta.filter(function(m){ return m.leadId === leadId; }).length);
+            if (String(type || '').trim().toLowerCase() === 'signed_contingency' && savedMeta.length) {
+              crmApplySignedContingencyFileToLead(leadId, savedMeta[savedMeta.length - 1]);
+            }
             onDone(saved, savedMeta);
             return;
           }
@@ -59639,6 +59718,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var activityDate = crmParseDashboardTimestamp(note.ts || note.createdAt || note.updatedAt);
         if (activityDate) return activityDate;
       }
+      var localSignedFile = typeof crmFindSignedContingencyFile === 'function' ? crmFindSignedContingencyFile(lead.id) : null;
+      if (localSignedFile) {
+        var localFileDate = crmParseDashboardTimestamp(localSignedFile.uploadedAt || localSignedFile.createdAt);
+        if (localFileDate) return localFileDate;
+      }
       var jobFile = lead.jobFile && typeof lead.jobFile === 'object' ? lead.jobFile : {};
       var docs = Array.isArray(jobFile.documents) ? jobFile.documents : [];
       for (var d = docs.length - 1; d >= 0; d -= 1) {
@@ -59655,6 +59739,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       lead = lead || {};
       if (lead.contingencySigned === true) return true;
       if (lead.jobFile && lead.jobFile.contingencySigned === true) return true;
+      if (typeof crmFindSignedContingencyFile === 'function' && crmFindSignedContingencyFile(lead.id)) return true;
       if (crmGetContingencySignedDate(lead)) return true;
       return false;
     }
@@ -59762,6 +59847,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderContingencySignedDashboard() {
       crmScheduleContingencySignedRolloverRefresh();
+      if (typeof crmReconcileSignedContingenciesToCloud === 'function') crmReconcileSignedContingenciesToCloud();
       var listEl = document.getElementById('dash-contingency-signed-rows');
       if (!listEl) return [];
       var rows = crmGetContingencySignedDashboardRows();
