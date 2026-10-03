@@ -27047,14 +27047,10 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-  <script src="./lead-cloud-source.js?v=20260929-login-cloud-refresh-3"></script>
-  <script src="./team-member-cloud-source.js?v=20261002-cloud-team-1"></script>
+  <script src="./neon-cloud-source.js?v=20261003-neon-cloud-1"></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly&loading=async&callback=mapsGoogleReady" defer></script>
   <script src="demo_swaths.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="insurance-companies.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
@@ -27126,19 +27122,10 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       });
     }
 
-    /* ---------- Supabase client ---------- */
-    var SUPABASE_URL = 'https://ehegjhlkadtpnkborlbz.supabase.co';
-    var SUPABASE_ANON_KEY = 'sb_publishable_EvGtl1XOWp8cfi6kfM2zUg_hnX2ldb_';
-    var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      accessToken: async function () {
-        return window.auth && window.auth.currentUser
-          ? await window.auth.currentUser.getIdToken(false)
-          : null;
-      }
-    });
-    window.supabaseClient = sb;
+    /* ---------- Hail Money cloud ---------- */
+    /* Business data and files live in Neon. Firebase is authentication only. */
 
-    /* ---------- Firebase (same config as Hail Money Maps) ---------- */
+    /* ---------- Firebase Authentication ---------- */
     var firebaseConfig = {
       apiKey: 'AIzaSyDuNue4UyVgq4Xsh1dtOjqFum7K-OJ1k4k',
       authDomain: 'hailmoneymap.firebaseapp.com',
@@ -27152,8 +27139,6 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     }
     if (typeof firebase !== 'undefined') {
       window.auth = firebase.auth();
-      window.db = firebase.firestore();
-      window.storage = firebase.storage();
     }
     var JOB_PHOTOS_BUCKET = 'job-photos';
     var JOBS_TABLE = 'jobs';
@@ -27165,68 +27150,27 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     var HM_GOOGLE_CALENDAR_EMBED_PREF_KEY = 'hm_google_calendar_embed_preferred';
     var HM_GOOGLE_CALENDAR_CONNECTIONS_KEY = 'hm_google_calendar_connections_v1';
 
-    /* ---------- Supabase Jobs helpers ---------- */
-    // Load all jobs from Supabase — Supabase is the sole source of truth.
-    // localStorage is updated as a mirror/cache but never wins over Supabase.
+    /* ---------- Cloud Jobs compatibility helpers ---------- */
+    // Existing call sites keep these names, but the shared Neon cloud state is authoritative.
     async function loadJobsFromSupabase() {
-      try {
-        if (!window.auth || !window.auth.currentUser) {
-          console.warn('[loadJobsFromSupabase] verified employee session unavailable; using local cache');
-          return getJobs();
-        }
-        var { data, error } = await sb.from(JOBS_TABLE).select('id, data');
-        if (error) { console.error('[loadJobsFromSupabase] query error, falling back to local', error); return getJobs(); }
-        // Supabase succeeded — use its result even if empty
-        var result = [];
-        if (data && data.length) {
-          for (var i = 0; i < data.length; i++) {
-            var job = data[i].data || {};
-            job.id = data[i].id;
-            _propertyDataEnsureJob(job);
-            result.push(job);
-          }
-        }
-        console.log('[loadJobsFromSupabase] got ' + result.length + ' jobs from Supabase');
-        // Replace local cache with Supabase truth
-        try { localStorage.setItem('hmm_clean_jobs_v1', JSON.stringify(result)); } catch (e) {}
-        return result;
-      } catch (err) {
-        console.error('[loadJobsFromSupabase] network error, falling back to local', err);
-        return getJobs();
-      }
+      if (typeof window.hmCloudWhenReady === 'function') await window.hmCloudWhenReady();
+      return getJobs();
     }
 
-    // Upsert a single job to Supabase (fire-and-forget safe)
     async function saveJobToSupabase(job) {
-      if (!job || !job.id) return;
-      if (!window.auth || !window.auth.currentUser) {
-        console.warn('[saveJobToSupabase] verified employee session unavailable; kept in local cache');
-        return;
-      }
-      try {
-        _propertyDataEnsureJob(job);
-        var row = { id: job.id, data: job };
-        var { error } = await sb.from(JOBS_TABLE).upsert(row, { onConflict: 'id' });
-        if (error) console.error('[saveJobToSupabase]', error);
-      } catch (err) {
-        console.error('[saveJobToSupabase]', err);
-      }
+      // saveJobs()/localStorage.setItem() is intercepted by neon-cloud-source.js and
+      // persisted to the company cloud. Keep this function for older call sites.
+      return !!(job && job.id);
     }
 
-    // Load a single job from Supabase by id
     async function loadJobFromSupabase(jobId) {
       if (!jobId) return null;
-      try {
-        var { data, error } = await sb.from(JOBS_TABLE).select('id, data').eq('id', jobId).single();
-        if (error || !data) return null;
-        var job = data.data || {};
-        job.id = data.id;
-        _propertyDataEnsureJob(job);
-        return job;
-      } catch (err) {
-        console.error('[loadJobFromSupabase]', err);
-        return null;
+      if (typeof window.hmCloudWhenReady === 'function') await window.hmCloudWhenReady();
+      var jobs = getJobs();
+      for (var i = 0; i < jobs.length; i++) {
+        if (String(jobs[i] && jobs[i].id || '') === String(jobId)) return jobs[i];
       }
+      return null;
     }
 
     var pendingCheckFile = null; // file selected for check upload, held until modal Save
@@ -52457,6 +52401,18 @@ function mapsGoogleReady() {
             signedLead.jobFile.contingencyStorageProvider = signedLead.contingencyStorageProvider;
             signedLead.jobFile.contingencyStoragePath = signedLead.contingencyStoragePath;
             signedLead.jobFile.contingencyFileName = signedLead.contingencyFileName;
+            signedLead.jobFile.documents = Array.isArray(signedLead.jobFile.documents) ? signedLead.jobFile.documents : [];
+            signedLead.jobFile.documents = signedLead.jobFile.documents.filter(function (entry) {
+              return String(entry && (entry.fileId || entry.id) || '') !== signedLead.contingencyDocumentId;
+            });
+            signedLead.jobFile.documents.push(crmNormalizeJobFileDocumentMeta({
+              id: signedLead.contingencyDocumentId,
+              fileId: signedLead.contingencyDocumentId,
+              category: 'Contingency',
+              note: 'Signed contingency agreement',
+              uploadedBy: crmGetCurrentUserName() || currentRep || '',
+              uploadedAt: signedLead.contingencySignedAt
+            }));
             signedLead.contingencyFormInstances = Array.isArray(signedLead.contingencyFormInstances) ? signedLead.contingencyFormInstances : [];
             signedLead.contingencyFormInstances.push(inst);
             signedLead.updatedAt = new Date().toISOString();
@@ -57691,6 +57647,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       tx.onerror    = function (e) { callback(e.target.error); };
     }
     function crmDbGetBlob(db, storageKey, callback) {
+      if (String(storageKey || '').indexOf('neon:') === 0 && typeof window.hmCloudGetFileBlobById === 'function') {
+        window.hmCloudGetFileBlobById(String(storageKey).slice(5)).then(function (blob) {
+          callback(null, blob || null);
+        }).catch(function (error) {
+          callback(error, null);
+        });
+        return;
+      }
       var tx  = db.transaction(CRM_FILES_STORE, 'readonly');
       var req = tx.objectStore(CRM_FILES_STORE).get(storageKey);
       req.onsuccess = function () { callback(null, req.result || null); };
@@ -57706,72 +57670,48 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         onDone = function () {};
       }
       metaOptions = metaOptions && typeof metaOptions === 'object' ? metaOptions : {};
-      /* Accept plain array or FileList; always snapshot to a real Array here */
-      var files = Array.isArray(fileList) ? fileList : Array.prototype.slice.call(fileList);
-      console.log('[CRM Upload] crmSaveFilesToDb — leadId:', leadId, 'type:', type, 'files:', files.length);
-      if (!files.length) { console.warn('[CRM Upload] No files to save'); onDone(0); return; }
+      var files = Array.isArray(fileList) ? fileList : Array.prototype.slice.call(fileList || []);
+      if (!files.length) { onDone(0, []); return; }
 
-      crmOpenFilesDb(function (dbErr, db) {
-        if (dbErr) { console.error('[CRM Upload] IndexedDB open error:', dbErr); }
+      (async function () {
+        if (typeof window.hmCloudUploadLeadFile !== 'function') throw new Error('Hail Money cloud file storage is not ready.');
         var allMeta = crmGetLeadFiles();
-        var now = new Date().toISOString();
-        var saved = 0;
         var savedMeta = [];
-
-        function saveOne(i) {
-          if (i >= files.length) {
-            crmSaveLeadFiles(allMeta);
-            console.log('[CRM Upload] Metadata saved to localStorage. Total records for lead:', allMeta.filter(function(m){ return m.leadId === leadId; }).length);
-            if (String(type || '').trim().toLowerCase() === 'signed_contingency' && savedMeta.length) {
-              crmApplySignedContingencyFileToLead(leadId, savedMeta[savedMeta.length - 1]);
-            }
-            onDone(saved, savedMeta);
-            return;
-          }
+        for (var i = 0; i < files.length; i++) {
           var file = files[i];
-          var id = crmGenId();
-          var storageKey = (!dbErr && db) ? ('crm_file_' + id) : null;
-          var meta = {
-            id:         id,
-            leadId:     leadId,
-            jobId:      String(metaOptions.jobId || '').trim(),
-            type:       type,
-            fileName:   file.name,
-            mimeType:   file.type || '',
-            size:       file.size || 0,
-            category:   String(metaOptions.category || '').trim(),
-            caption:    String(metaOptions.caption || '').trim(),
-            note:       String(metaOptions.note || '').trim(),
+          var cloudMeta = await window.hmCloudUploadLeadFile(leadId, type, file, {
+            jobId: String(metaOptions.jobId || '').trim(),
+            category: String(metaOptions.category || '').trim(),
+            docCategory: String(metaOptions.docCategory || metaOptions.category || '').trim(),
+            caption: String(metaOptions.caption || '').trim(),
+            note: String(metaOptions.note || '').trim(),
             uploadedBy: String(metaOptions.uploadedBy || crmGetCurrentUserName() || currentRep || '').trim(),
-            docCategory: String(metaOptions.docCategory || '').trim(),
             photoPhase: String(metaOptions.photoPhase || '').trim(),
-            uploadedAt: now,
-            storageKey: storageKey
-          };
-          console.log('[CRM Upload] Saving file', i + 1, '/', files.length, '—', file.name, 'storageKey:', storageKey);
-          if (!db || dbErr || !storageKey) {
-            /* Metadata-only fallback when IndexedDB unavailable */
-            allMeta.push(meta);
-            savedMeta.push(crmNormalizeLeadFileMeta(meta));
-            saved++;
-            saveOne(i + 1);
-            return;
-          }
-          crmDbSaveBlob(db, storageKey, file, function (blobErr) {
-            if (blobErr) {
-              console.error('[CRM Upload] IndexedDB blob save failed for', file.name, ':', blobErr);
-              meta.storageKey = null;
-            } else {
-              console.log('[CRM Upload] IndexedDB blob saved OK:', storageKey);
+            metadata: {
+              jobId: String(metaOptions.jobId || '').trim(),
+              caption: String(metaOptions.caption || '').trim(),
+              photoPhase: String(metaOptions.photoPhase || '').trim()
             }
-            allMeta.push(meta);
-            savedMeta.push(crmNormalizeLeadFileMeta(meta));
-            saved++;
-            saveOne(i + 1);
           });
+          cloudMeta.jobId = String(metaOptions.jobId || '').trim();
+          cloudMeta.caption = String(metaOptions.caption || '').trim();
+          cloudMeta.photoPhase = String(metaOptions.photoPhase || '').trim();
+          cloudMeta.docCategory = String(metaOptions.docCategory || metaOptions.category || cloudMeta.category || '').trim();
+          cloudMeta.storageKey = 'neon:' + cloudMeta.id;
+          var normalized = crmNormalizeLeadFileMeta(cloudMeta);
+          allMeta = allMeta.filter(function (item) { return String(item && item.id || '') !== String(normalized.id || ''); });
+          allMeta.push(normalized);
+          savedMeta.push(normalized);
         }
-
-        saveOne(0);
+        crmSaveLeadFiles(allMeta);
+        if (String(type || '').trim().toLowerCase() === 'signed_contingency' && savedMeta.length) {
+          crmApplySignedContingencyFileToLead(leadId, savedMeta[savedMeta.length - 1]);
+        }
+        onDone(savedMeta.length, savedMeta);
+      }()).catch(function (error) {
+        console.error('[CRM Upload] Cloud upload failed:', error);
+        if (typeof showUploadToast === 'function') showUploadToast(error.message || 'Cloud upload failed.');
+        onDone(0, []);
       });
     }
 
@@ -60019,46 +59959,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return rows;
     }
 
-    var _crmContingencyDashboardCloudRun = 0;
     async function crmRefreshContingencySignedDashboardFromCloud() {
-      var listEl = document.getElementById('dash-contingency-signed-rows');
-      if (!listEl || !window.auth || !window.auth.currentUser) return [];
-      var runId = ++_crmContingencyDashboardCloudRun;
       try {
-        var token = await window.auth.currentUser.getIdToken(false);
-        var response = await fetch('/api/contingency-dashboard', { headers: { Authorization: 'Bearer ' + token } });
-        var payload = await response.json().catch(function () { return {}; });
-        if (!response.ok) throw new Error(payload.error || 'Contingency dashboard could not load.');
-        if (runId !== _crmContingencyDashboardCloudRun) return [];
-        var now = new Date();
-        var weekStart = crmGetContingencyPeriodStartCentral('week', now);
-        var monthStart = crmGetContingencyPeriodStartCentral('month', now);
-        var yearStart = crmGetContingencyPeriodStartCentral('year', now);
-        var byId = {}, byName = {};
-        var rows = (Array.isArray(payload.members) ? payload.members : []).map(function (member) {
-          var row = { id: String(member.id || ''), name: String(member.name || ''), week: 0, month: 0, year: 0, allTime: 0 };
-          if (row.id) byId[row.id] = row;
-          byName[crmNormalizeTeamMemberKey(row.name)] = row;
-          return row;
-        });
-        (Array.isArray(payload.events) ? payload.events : []).forEach(function (event) {
-          var row = byId[String(event.employeeId || '')] || byName[crmNormalizeTeamMemberKey(event.employeeName || '')];
-          if (!row) return;
-          row.allTime += 1;
-          var signedAt = crmParseDashboardTimestamp(event.signedAt);
-          if (!signedAt || signedAt.getTime() > now.getTime()) return;
-          if (signedAt.getTime() >= yearStart.getTime()) row.year += 1;
-          if (signedAt.getTime() >= monthStart.getTime()) row.month += 1;
-          if (signedAt.getTime() >= weekStart.getTime()) row.week += 1;
-        });
-        rows.sort(function (a, b) {
-          if (b.week !== a.week) return b.week - a.week;
-          if (b.month !== a.month) return b.month - a.month;
-          if (b.year !== a.year) return b.year - a.year;
-          if (b.allTime !== a.allTime) return b.allTime - a.allTime;
-          return a.name.localeCompare(b.name);
-        });
-        return crmRenderContingencySignedRows(rows);
+        if (typeof window.hmCloudWhenReady === 'function') await window.hmCloudWhenReady();
+        return crmRenderContingencySignedRows(crmGetContingencySignedDashboardRows());
       } catch (error) {
         console.warn('[Contingency Dashboard] cloud refresh failed', error);
         return [];
@@ -83481,448 +83385,53 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 <script src="./region-lead-sync.js?v=20261003-1"></script>
 <script id="hm-company-documents-script">
 (function(){
-  var MAX_BYTES=25*1024*1024, docs=[], templates=[], currentCategory='', currentRegion='', currentState='';
+  'use strict';
+  var MAX_BYTES=25*1024*1024;
+  var DOCS_KEY='hm_company_documents_v2';
+  var TEMPLATES_KEY='formTemplates';
+  var docs=[],templates=[],currentCategory='',currentRegion='',currentState='';
+
   function status(msg,bad){var e=document.getElementById('crm-company-docs-status');if(!e)return;e.textContent=String(msg||'');e.classList.toggle('is-error',!!bad)}
   function roleCanManage(v){return ['owner','admin','manager'].indexOf(String(v||'').trim().toLowerCase())!==-1}
   function canManage(){return roleCanManage(typeof crmGetRole==='function'?crmGetRole():'')}
   async function tokenCanManage(){
     var u=window.auth&&window.auth.currentUser;if(!u)return false;
-    try{
-      var t=await u.getIdTokenResult(true),c=t.claims||{};
-      if(c.employee===true&&roleCanManage(c.hmRole))return true;
-      if(window.db){try{var s=await window.db.collection('hmEmployees').doc(u.uid).get();if(s.exists){var d=s.data()||{};if(d.active!==false&&roleCanManage(d.role))return true}}catch(_){}}
-      var localRole=typeof crmGetRole==='function'?crmGetRole():'';
-      return roleCanManage(localRole)&&/@hailmoney\.test$/i.test(String(u.email||''));
-    }catch(e){
-      var fallbackRole=typeof crmGetRole==='function'?crmGetRole():'';
-      return roleCanManage(fallbackRole)&&/@hailmoney\.test$/i.test(String(u.email||''));
-    }
+    try{var t=await u.getIdTokenResult(false),c=t.claims||{};if(c.employee===true&&roleCanManage(c.hmRole))return true}catch(_){}
+    return canManage();
   }
-  async function orgId(){
-    var id='';
-    if(typeof crmResolveFirestoreOrgId==='function'){
-      try{id=String(await crmResolveFirestoreOrgId()||'').trim().toLowerCase()}catch(_){}
-      if(id)return id;
-    }
-    var u=window.auth&&window.auth.currentUser;
-    if(u){
-      try{
-        var t=await u.getIdTokenResult(true),c=t&&t.claims||{};
-        id=String(c.hmOrganizationId||'').trim().toLowerCase();
-        if(id)return id;
-      }catch(_){}
-      if(window.db){
-        try{
-          var s=await window.db.collection('hmEmployees').doc(u.uid).get();
-          if(s.exists){
-            var d=s.data()||{};
-            id=String(d.organizationId||d.hmOrganizationId||'').trim().toLowerCase();
-            if(id)return id;
-          }
-        }catch(_){}
-      }
-      if(/@hailmoney\.test$/i.test(String(u.email||'')))return'yopro';
-    }
-    return'';
-  }
-  function ref(id){return window.db.collection('organizations').doc(id).collection('appState').doc('companyDocuments')}
-  function safe(v){return String(v||'x').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120)||'x'}
+  function parse(key){try{var v=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(v)?v:[]}catch(_){return[]}}
+  function saveDocs(){localStorage.setItem(DOCS_KEY,JSON.stringify(docs))}
+  function saveTemplates(){localStorage.setItem(TEMPLATES_KEY,JSON.stringify(templates));window.savedFormTemplates=templates.slice();try{savedFormTemplates=templates.slice()}catch(_){}}
   function fmt(n){n=Number(n||0);return n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB'}
   function find(id){return docs.find(function(d){return String(d&&d.id||'')===String(id||'')})||null}
-  function client(){return (typeof sb!=='undefined'&&sb)||window.supabaseClient||null}
-  async function docStoreToken(){
-    var u=window.auth&&window.auth.currentUser;
-    if(!u)throw new Error('Sign in is required.');
-    return u.getIdToken(false);
-  }
-  function docStoreUrl(params){
-    var q=new URLSearchParams();
-    Object.keys(params||{}).forEach(function(k){var v=params[k];if(v!==undefined&&v!==null&&String(v)!=='')q.set(k,String(v))});
-    return '/api/document-store?'+q.toString();
-  }
-  async function uploadFirebaseDocument(scope,opts,blob){
-    opts=opts||{};
-    var token=await docStoreToken();
-    var response=await fetch(docStoreUrl({action:'upload',scope:scope,name:opts.name||'document',documentId:opts.documentId||'',category:opts.category||'',leadId:opts.leadId||'',type:opts.type||''}),{
-      method:'POST',
-      headers:{Authorization:'Bearer '+token,'Content-Type':blob.type||opts.contentType||'application/octet-stream'},
-      body:blob
-    });
-    var data=await response.json().catch(function(){return{}});
-    if(!response.ok)throw new Error(data.error||'Document upload failed.');
-    return data;
-  }
-  async function downloadFirebaseDocument(d){
-    if(!d||!d.storagePath)throw new Error('Document storage path is missing.');
-    var token=await docStoreToken();
-    var response=await fetch(docStoreUrl({action:'download',path:d.storagePath,name:d.name||d.fileName||'document'}),{headers:{Authorization:'Bearer '+token}});
-    if(!response.ok){
-      var data=await response.json().catch(function(){return{}});
-      throw new Error(data.error||'Document download failed.');
-    }
-    return response.blob();
-  }
-  async function deleteFirebaseDocument(d){
-    if(!d||!d.storagePath)return;
-    var token=await docStoreToken();
-    var response=await fetch(docStoreUrl({action:'delete',path:d.storagePath}),{method:'DELETE',headers:{Authorization:'Bearer '+token}});
-    if(!response.ok){
-      var data=await response.json().catch(function(){return{}});
-      throw new Error(data.error||'Document delete failed.');
-    }
-  }
-  function categoryLabel(cat){
-    return ({contingencies:'Contingencies',contracts:'Contracts',specifications:'Shingle & Manufacturer Specifications',insurance:'Company Insurance Documents',licenses:'Roofing Licenses',other:'Other Company Documents'})[String(cat||'')]||'Documents';
-  }
-  function regionRows(){
-    try{
-      var rows=JSON.parse(localStorage.getItem('hmm_document_regions_v1')||'[]');
-      if(Array.isArray(rows)&&rows.length)return rows;
-    }catch(_){}
-    return[
-      {id:'region_1',name:'Region 1',states:[]},
-      {id:'region_2',name:'Region 2',states:[]},
-      {id:'region_3',name:'Region 3',states:[]},
-      {id:'region_4',name:'Region 4',states:[]}
-    ];
-  }
-  function stateLabel(code){
-    code=String(code||'').toUpperCase();
-    var option=document.querySelector('#fl-state option[value="'+code+'"]');
-    var name=option?String(option.textContent||'').trim():'';
-    return name&&name!==code?code+' – '+name:code;
-  }
-  function routeForDoc(d){
-    var region=String(d&&d.region||'').trim(),state=String(d&&d.state||'').trim().toUpperCase();
-    if(region&&state)return{region:region,state:state};
-    var linked=templates.find(function(t){return String(t&&t.sourceCompanyDocumentId||'')===String(d&&d.id||'')});
-    return linked?{region:String(linked.region||'').trim(),state:String(linked.state||'').trim().toUpperCase()}:{region:'',state:''};
-  }
-  function templateForDoc(d){
-    return templates.filter(function(t){
-      return String(t&&t.sourceCompanyDocumentId||'')===String(d&&d.id||'') &&
-        String(t&&t.documentType||'contingency')==='contingency' &&
-        String(t&&t.region||'')===currentRegion &&
-        String(t&&t.state||'').toUpperCase()===currentState;
-    }).sort(function(a,b){
-      return Number(b&&b.activeDefault===true)-Number(a&&a.activeDefault===true) ||
-        String(b&&b.effectiveDate||'').localeCompare(String(a&&a.effectiveDate||'')) ||
-        Number(b&&b.version||1)-Number(a&&a.version||1);
-    })[0]||null;
-  }
-  function setStep(name){
-    var region=document.getElementById('crm-company-docs-region-step');
-    var state=document.getElementById('crm-company-docs-state-step');
-    var file=document.getElementById('crm-company-docs-file-step');
-    if(region)region.hidden=name!=='region';
-    if(state)state.hidden=name!=='state';
-    if(file)file.hidden=name!=='file';
-  }
-  function updateBrowserPath(){
-    var path=document.getElementById('crm-company-docs-browser-path');
-    if(!path)return;
-    var parts=[categoryLabel(currentCategory)];
-    if(currentCategory==='contingencies'&&currentRegion)parts.push(currentRegion);
-    if(currentCategory==='contingencies'&&currentState)parts.push(stateLabel(currentState));
-    path.textContent=parts.join(' / ');
-  }
-  function showHome(){
-    currentCategory='';currentRegion='';currentState='';
-    window.hmCompanyDocumentsCurrentRegion='';
-    window.hmCompanyDocumentsCurrentState='';
-    window.hmCompanyDocumentsCurrentFileId='';
-    var home=document.getElementById('crm-company-docs-home'),browser=document.getElementById('crm-company-docs-browser'),sub=document.getElementById('crm-company-docs-subtitle');
-    if(home)home.hidden=false;if(browser)browser.hidden=true;if(sub)sub.textContent='Choose a document section.';
-  }
-  function renderRegions(){
-    setStep('region');updateBrowserPath();
-    var host=document.getElementById('crm-company-docs-region-buttons');if(!host)return;host.innerHTML='';
-    regionRows().forEach(function(row){
-      var btn=document.createElement('button');btn.className='crm-company-docs-choice-button';btn.type='button';
-      btn.textContent=String(row&&row.name||'Region');
-      btn.onclick=function(){currentRegion=String(row&&row.name||'').trim();currentState='';renderStates()};
-      host.appendChild(btn);
-    });
-  }
-  function renderStates(){
-    setStep('state');updateBrowserPath();
-    var host=document.getElementById('crm-company-docs-state-buttons');if(!host)return;host.innerHTML='';
-    var row=regionRows().find(function(r){return String(r&&r.name||'')===currentRegion});
-    var states=row&&Array.isArray(row.states)?row.states:[];
-    if(!states.length){
-      var empty=document.createElement('div');empty.className='crm-company-docs-empty';empty.textContent='No states are assigned to '+currentRegion+'. Add states in Settings → Regions.';host.appendChild(empty);return;
-    }
-    states.forEach(function(code){
-      var btn=document.createElement('button');btn.className='crm-company-docs-choice-button';btn.type='button';btn.textContent=stateLabel(code);
-      btn.onclick=function(){currentState=String(code||'').toUpperCase();showFileStep()};
-      host.appendChild(btn);
-    });
-  }
-  function renderFiles(){
-    var host=document.getElementById('crm-company-docs-file-list');if(!host)return;host.innerHTML='';
-    var items=docs.filter(function(d){
-      if(String(d&&d.category||'')!==currentCategory)return false;
-      if(currentCategory!=='contingencies')return true;
-      var route=routeForDoc(d);return route.region===currentRegion&&route.state===currentState;
-    }).sort(function(a,b){return String(b&&b.uploadedAt||'').localeCompare(String(a&&a.uploadedAt||''))});
-    if(!items.length){var empty=document.createElement('div');empty.className='crm-company-docs-empty';empty.textContent='No files uploaded here yet.';host.appendChild(empty);return}
-    items.forEach(function(d){
-      var row=document.createElement('div');row.className='crm-company-docs-file-row';
-      var open=document.createElement('button');open.className='crm-company-docs-file-button';open.type='button';
-      var strong=document.createElement('strong');strong.textContent=String(d.name||'Document');
-      var meta=document.createElement('span'),when=d.uploadedAt?new Date(d.uploadedAt).toLocaleDateString():'';
-      var ready=currentCategory==='contingencies'?templateForDoc(d):null;
-      meta.textContent=[fmt(d.size),d.uploadedBy||'',when,ready?(String(ready.status||'active')==='active'?'DocuSign ready':'Template inactive'):''].filter(Boolean).join(' • ');
-      open.append(strong,meta);open.onclick=function(){openDoc(d.id)};
-      var tools=document.createElement('div');tools.className='crm-company-docs-file-tools';
-      if(canManage()){var del=document.createElement('button');del.className='btn';del.type='button';del.textContent='Delete';del.onclick=function(){deleteDoc(d.id)};tools.appendChild(del)}
-      row.append(open,tools);host.appendChild(row);
-    });
-  }
-  function showFileStep(){
-    setStep('file');updateBrowserPath();
-    window.hmCompanyDocumentsCurrentRegion=currentRegion;
-    window.hmCompanyDocumentsCurrentState=currentState;
-    window.hmCompanyDocumentsCurrentFileId='';
-    var uploadBtn=document.getElementById('crm-company-doc-upload-btn');
-    if(uploadBtn)uploadBtn.style.display=canManage()?'inline-flex':'none';
-    var editor=document.getElementById('crm-company-doc-template-editor');
-    if(editor)editor.style.display=canManage()&&currentCategory==='contingencies'&&currentRegion&&currentState?'inline-flex':'none';
-    renderFiles();
-  }
-  function openCategory(cat){
-    currentCategory=String(cat||'other');currentRegion='';currentState='';
-    var home=document.getElementById('crm-company-docs-home'),browser=document.getElementById('crm-company-docs-browser'),sub=document.getElementById('crm-company-docs-subtitle'),title=document.getElementById('crm-company-docs-browser-title');
-    if(home)home.hidden=true;if(browser)browser.hidden=false;if(sub)sub.textContent=currentCategory==='contingencies'?'Choose the region, then the state.':'Open an uploaded file or add a new one.';if(title)title.textContent='Uploads';
-    if(currentCategory==='contingencies')renderRegions();else showFileStep();
-  }
-  function render(){
-    if(!currentCategory){showHome();return}
-    if(currentCategory==='contingencies'&&!currentRegion){renderRegions();return}
-    if(currentCategory==='contingencies'&&!currentState){renderStates();return}
-    showFileStep();
-  }
-  async function load(){
-    try{
-      status('Loading company documents…');
-      var id=await orgId();if(!id)throw new Error('Company access is not ready yet. Sign out and back in, then try again.');
-      var s=await ref(id).get(),data=s.exists?(s.data()||{}):{};
-      docs=Array.isArray(data.documents)?data.documents:[];
-      templates=Array.isArray(data.formTemplates)?data.formTemplates:[];
-      render();
-      status(canManage()?'Choose a section to manage company files.':'Choose a section to open company files.');
-    }catch(e){docs=[];templates=[];render();status(e&&e.message?e.message:'Company documents could not be loaded.',true)}
-  }
-  function choose(cat,region,state){
-    if(!canManage())return;
-    var i=document.getElementById('crm-company-doc-file-input');if(!i)return;
-    i.setAttribute('data-category',String(cat||'other'));
-    i.setAttribute('data-region',String(region||''));
-    i.setAttribute('data-state',String(state||'').toUpperCase());
-    i.value='';i.click();
-  }
-  async function upload(input){
-    var file=input&&input.files&&input.files[0],cat=String(input&&input.getAttribute('data-category')||'other'),region=String(input&&input.getAttribute('data-region')||'').trim(),state=String(input&&input.getAttribute('data-state')||'').trim().toUpperCase();
-    if(!file)return;
-    try{
-      if(file.size>MAX_BYTES)throw new Error('Documents must be 25 MB or smaller.');
-      if(cat==='contingencies'&&(!region||!state))throw new Error('Choose the contingency region and state before uploading.');
-      if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can upload company documents.');
-      var id=await orgId();if(!id)throw new Error('Company access is not ready yet.');
-      var docId='company_doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
-      status('Uploading '+file.name+'…');
-      var storageCategory=cat==='contingencies'?'contingencies_'+safe(region)+'_'+safe(state):cat;
-      var stored=await uploadFirebaseDocument('company',{category:storageCategory,documentId:docId,name:file.name,contentType:file.type},file);
-      var r=ref(id),snap=await r.get(),data=snap.exists?(snap.data()||{}):{},arr=Array.isArray(data.documents)?data.documents.slice():[],u=window.auth&&window.auth.currentUser;
-      arr.push({id:docId,category:cat,region:region,state:state,name:file.name,size:Number(stored.size||file.size||0),contentType:stored.contentType||file.type||'application/octet-stream',storageProvider:'firebase',storagePath:stored.storagePath,uploadedAt:new Date().toISOString(),uploadedBy:(typeof crmGetCurrentUserName==='function'&&crmGetCurrentUserName())||(u&&u.email)||'Admin',uploadedByUid:(u&&u.uid)||''});
-      await r.set({documents:arr,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-      docs=arr;renderFiles();status(file.name+' uploaded to '+(cat==='contingencies'?region+' / '+state:categoryLabel(cat))+'.');
-    }catch(e){status(e&&e.message?e.message:'Document upload failed.',true)}
-    finally{if(input)input.value=''}
-  }
-  window.hmListCompanyDocuments=async function(category){
-    await load();
-    return docs.filter(function(d){return !category||String(d&&d.category||'')===String(category)}).map(function(d){
-      var route=routeForDoc(d);
-      return{id:d.id,name:d.name,category:d.category,region:route.region,state:route.state,contentType:d.contentType,size:d.size,uploadedAt:d.uploadedAt,uploadedBy:d.uploadedBy||'',storageProvider:d.storageProvider||'',storagePath:d.storagePath||''};
-    });
-  };
-  window.hmLoadCompanyDocumentForTemplate=async function(id){
-    var d=find(id);if(!d){await load();d=find(id)}
-    if(!d)throw new Error('That uploaded contingency could not be found.');
-    var type=String(d.contentType||'').toLowerCase();
-    if(type&&type!=='application/pdf'&&type.indexOf('image/')!==0)throw new Error('Fillable fields can be added to PDF or image contingencies.');
-    var blob=null;
-    if(String(d.storageProvider||'').toLowerCase()==='firebase'){
-      blob=await downloadFirebaseDocument(d);
-    }else{
-      var c=client();
-      if(!c||!d.storagePath)throw new Error('This older document is not available. Re-save it to move it into Hail Money cloud storage.');
-      var oldDownload=await c.storage.from('hail-money-files').download(d.storagePath);
-      if(oldDownload.error)throw oldDownload.error;
-      blob=oldDownload.data;
-    }
-    if(!blob)throw new Error('The uploaded contingency could not be downloaded.');
-    var dataUrl=await new Promise(function(resolve,reject){var reader=new FileReader();reader.onload=function(){resolve(reader.result)};reader.onerror=function(){reject(reader.error||new Error('Could not read the uploaded contingency.'))};reader.readAsDataURL(blob)});
-    return{id:d.id,name:d.name||'Contingency',category:d.category||'contingencies',contentType:d.contentType||blob.type||'application/pdf',size:d.size||blob.size||0,dataUrl:dataUrl};
-  };
-  function sourceDocForTemplate(tpl,documents){
-    var rows=documents||[];
-    var explicit=String(tpl&&tpl.sourceCompanyDocumentId||'').trim();
-    if(explicit){
-      var explicitDoc=rows.find(function(d){return String(d&&d.id||'')===explicit});
-      if(explicitDoc&&String(explicitDoc.storageProvider||'').toLowerCase()==='firebase')return explicit;
-    }
-    var name=String(tpl&&tpl.fileName||'').trim().toLowerCase();if(!name)return'';
-    var wantedRegion=String(tpl&&tpl.region||'').trim(),wantedState=String(tpl&&tpl.state||'').trim().toUpperCase();
-    var match=rows.find(function(d){
-      var route=routeForDoc(d);
-      return String(d&&d.category||'')==='contingencies' &&
-        String(d&&d.name||'').trim().toLowerCase()===name &&
-        String(d&&d.storageProvider||'').toLowerCase()==='firebase' &&
-        (!wantedRegion||route.region===wantedRegion) &&
-        (!wantedState||route.state===wantedState);
-    });
-    return match?String(match.id||''):'';
-  }
-  async function ensureTemplateSource(tpl,documents,oid){
-    var existing=sourceDocForTemplate(tpl,documents);if(existing)return existing;
-    if(!tpl||!tpl.fileDataUrl)return'';
-    var blob=await fetch(tpl.fileDataUrl).then(function(r){if(!r.ok)throw new Error('The contingency source could not be read.');return r.blob()});
-    if(!blob||!blob.size||blob.size>MAX_BYTES)return'';
-    var name=tpl.fileName||tpl.name||'Contingency.pdf',tplRegion=String(tpl.region||'').trim(),tplState=String(tpl.state||'').trim().toUpperCase();
-    var stale=(documents||[]).find(function(d){var route=routeForDoc(d);return String(d&&d.category||'')==='contingencies'&&String(d&&d.name||'').trim().toLowerCase()===String(name).trim().toLowerCase()&&(!tplRegion||route.region===tplRegion)&&(!tplState||route.state===tplState)});
-    var docId=String(stale&&stale.id||'').trim()||('company_doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9));
-    var storageCategory='contingencies_'+safe(tplRegion||'unassigned')+'_'+safe(tplState||'unassigned');
-    var stored=await uploadFirebaseDocument('company',{category:storageCategory,documentId:docId,name:name,contentType:tpl.fileType||blob.type||'application/pdf'},blob);
-    var u=window.auth&&window.auth.currentUser,meta={id:docId,category:'contingencies',region:tplRegion,state:tplState,name:name,size:Number(stored.size||blob.size||0),contentType:stored.contentType||tpl.fileType||blob.type||'application/pdf',storageProvider:'firebase',storagePath:stored.storagePath,uploadedAt:new Date().toISOString(),uploadedBy:(typeof crmGetCurrentUserName==='function'&&crmGetCurrentUserName())||(u&&u.email)||'Admin',uploadedByUid:(u&&u.uid)||''};
-    var staleIndex=(documents||[]).findIndex(function(d){return String(d&&d.id||'')===docId});
-    if(staleIndex>=0)documents[staleIndex]=meta;else documents.push(meta);
-    return docId;
-  }
-  function cleanTemplateMeta(tpl,sourceId){var copy=JSON.parse(JSON.stringify(tpl||{}));delete copy.fileDataUrl;copy.sourceCompanyDocumentId=String(sourceId||copy.sourceCompanyDocumentId||'');return copy;}
-  window.hmGetCompanyFormTemplates=async function(){
-    var oid=await orgId();if(!oid)throw new Error('Company access is not ready yet.');
-    var r=ref(oid),snap=await r.get(),data=snap.exists?(snap.data()||{}):{};
-    var documents=Array.isArray(data.documents)?data.documents.slice():[],remote=Array.isArray(data.formTemplates)?data.formTemplates.slice():[],local=[];
-    try{local=JSON.parse(localStorage.getItem('formTemplates')||'[]')}catch(_){}
-    var changed=false;
-    if(Array.isArray(local)&&local.length&&canManage()&&await tokenCanManage()){
-      for(var i=0;i<local.length;i++){
-        var localTpl=local[i],tid=String(localTpl&&localTpl.id||'').trim();
-        if(!tid)continue;
-        var remoteIndex=remote.findIndex(function(t){return String(t&&t.id||'')===tid});
-        var remoteTpl=remoteIndex>=0?remote[remoteIndex]:null;
-        var source=sourceDocForTemplate(remoteTpl||localTpl,documents);
-        if(!source&&localTpl.fileDataUrl){
-          source=await ensureTemplateSource(localTpl,documents,oid);
-          if(source){
-            var repaired=cleanTemplateMeta(localTpl,source);
-            if(remoteIndex>=0)remote[remoteIndex]=repaired;else remote.push(repaired);
-            changed=true;
-          }
-        }else if(source&&remoteIndex<0){
-          remote.push(cleanTemplateMeta(localTpl,source));
-          changed=true;
-        }
-      }
-      if(changed){
-        await r.set({documents:documents,formTemplates:remote,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-        docs=documents.slice();
-        render();
-      }
-    }
-    templates=remote.slice();
-    return remote.map(function(t){return JSON.parse(JSON.stringify(t))});
-  };
-  window.hmSaveCompanyFormTemplate=async function(tpl){
-    if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can save company templates.');var oid=await orgId();if(!oid)throw new Error('Company access is not ready yet.');
-    var r=ref(oid),snap=await r.get(),data=snap.exists?(snap.data()||{}):{},documents=Array.isArray(data.documents)?data.documents.slice():[];
-    var source=await ensureTemplateSource(tpl,documents,oid);if(!source)throw new Error('This contingency could not be linked to company storage.');
-    var sourceIndex=documents.findIndex(function(d){return String(d&&d.id||'')===String(source)});
-    if(sourceIndex>=0&&String(tpl&&tpl.documentType||'contingency')==='contingency'){
-      documents[sourceIndex].category='contingencies';
-      documents[sourceIndex].region=String(tpl.region||'').trim();
-      documents[sourceIndex].state=String(tpl.state||'').trim().toUpperCase();
-    }
-    var meta=cleanTemplateMeta(tpl,source);
-    var arr=Array.isArray(data.formTemplates)?data.formTemplates.slice():[],idx=arr.findIndex(function(x){return String(x&&x.id||'')===String(meta.id||'')});if(idx>=0)arr[idx]=meta;else arr.push(meta);
-    await r.set({documents:documents,formTemplates:arr,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    docs=documents.slice();templates=arr.slice();if(currentCategory==='contingencies'&&currentRegion&&currentState)renderFiles();
-    return meta;
-  };
-  window.hmUploadLeadDocumentToCloud=async function(leadId,type,file,metaOptions){
-    metaOptions=metaOptions||{};
-    if(!leadId||!file)throw new Error('Lead document information is incomplete.');
-    var documentId='lead_doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
-    var stored=await uploadFirebaseDocument('lead',{leadId:leadId,type:type||'document',documentId:documentId,name:file.name||'document',contentType:file.type||'application/octet-stream'},file);
-    return{
-      id:documentId,leadId:String(leadId),type:String(type||'document'),fileName:file.name||'document',
-      mimeType:stored.contentType||file.type||'application/octet-stream',size:Number(stored.size||file.size||0),
-      category:String(metaOptions.category||''),note:String(metaOptions.note||''),uploadedBy:String(metaOptions.uploadedBy||(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||''),
-      uploadedAt:new Date().toISOString(),storageProvider:'firebase',storagePath:stored.storagePath
-    };
-  };
-  async function openDoc(id){
-    var d=find(id);if(!d)return;
-    var pop=window.open('about:blank','_blank');
-    try{
-      status('Opening '+(d.name||'document')+'…');
-      var blob=null;
-      if(String(d.storageProvider||'').toLowerCase()==='firebase'){
-        blob=await downloadFirebaseDocument(d);
-      }else{
-        var c=client();if(!c||!d.storagePath)throw new Error('This older document is not available.');
-        var oldDownload=await c.storage.from('hail-money-files').download(d.storagePath);
-        if(oldDownload.error)throw oldDownload.error;blob=oldDownload.data;
-      }
-      if(!blob)throw new Error('This document could not be opened.');
-      var url=URL.createObjectURL(blob);
-      if(pop)pop.location.href=url;else window.location.href=url;
-      setTimeout(function(){try{URL.revokeObjectURL(url)}catch(_){}},60000);
-      status('Company documents are ready.');
-    }catch(e){if(pop)pop.close();status(e&&e.message?e.message:'This document could not be opened.',true)}
-  }
-  async function deleteDoc(id){
-    var d=find(id);if(!d||!window.confirm('Delete "'+String(d.name||'this document')+'" for the entire company?'))return;
-    try{
-      if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can delete company documents.');
-      var oid=await orgId();if(!oid)throw new Error('Company access is not ready yet.');
-      status('Deleting '+(d.name||'document')+'…');
-      if(String(d.storageProvider||'').toLowerCase()==='firebase'){
-        await deleteFirebaseDocument(d);
-      }else{
-        var c=client();if(c&&d.storagePath){var rem=await c.storage.from('hail-money-files').remove([d.storagePath]);if(rem.error)throw rem.error}
-      }
-      var r=ref(oid),snap=await r.get(),data=snap.exists?(snap.data()||{}):{},arr=(Array.isArray(data.documents)?data.documents:[]).filter(function(x){return String(x&&x.id||'')!==String(id)});
-      await r.set({documents:arr,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-      docs=arr;render();status('Document deleted.');
-    }catch(e){status(e&&e.message?e.message:'Document could not be deleted.',true)}
-  }
-  function bind(){
-    document.querySelectorAll('[data-company-doc-open-category]').forEach(function(b){
-      if(b.dataset.companyDocBound)return;b.dataset.companyDocBound='1';
-      b.addEventListener('click',function(){openCategory(b.getAttribute('data-company-doc-open-category'))});
-    });
-    var back=document.getElementById('crm-company-docs-back');if(back&&!back.dataset.companyDocBound){back.dataset.companyDocBound='1';back.addEventListener('click',showHome)}
-    var stateBack=document.getElementById('crm-company-docs-state-back');if(stateBack&&!stateBack.dataset.companyDocBound){stateBack.dataset.companyDocBound='1';stateBack.addEventListener('click',function(){currentRegion='';currentState='';renderRegions()})}
-    var uploadBtn=document.getElementById('crm-company-doc-upload-btn');if(uploadBtn&&!uploadBtn.dataset.companyDocBound){uploadBtn.dataset.companyDocBound='1';uploadBtn.addEventListener('click',function(){choose(currentCategory,currentRegion,currentState)})}
-    var i=document.getElementById('crm-company-doc-file-input');if(i&&!i.dataset.companyDocBound){i.dataset.companyDocBound='1';i.addEventListener('change',function(){upload(i)})}
-    showHome();
-    document.addEventListener('hm:document-regions-updated',function(){
-      if(currentCategory==='contingencies'){
-        if(currentRegion&&!regionRows().some(function(row){return String(row&&row.name||'')===currentRegion})){currentRegion='';currentState=''}
-        render();
-      }
-    });
-    setTimeout(function(){if(typeof window.hmGetCompanyFormTemplates==='function')window.hmGetCompanyFormTemplates().catch(function(e){console.warn('[Template Cloud] migration deferred',e)});},1500);
-    var page=document.getElementById('page-company-docs');
-    if(page){
-      var obs=new MutationObserver(function(){if(page.classList.contains('active')){showHome();load()}});
-      obs.observe(page,{attributes:true,attributeFilter:['class']});
-      if(page.classList.contains('active'))load();
-    }
-  }
+  function categoryLabel(cat){return({contingencies:'Contingencies',contracts:'Contracts',specifications:'Shingle & Manufacturer Specifications',insurance:'Company Insurance Documents',licenses:'Roofing Licenses',other:'Other Company Documents'})[String(cat||'')]||'Documents'}
+  function regionRows(){try{var rows=JSON.parse(localStorage.getItem('hmm_document_regions_v1')||'[]');if(Array.isArray(rows)&&rows.length)return rows}catch(_){}return[{id:'region_1',name:'Region 1',states:[]},{id:'region_2',name:'Region 2',states:[]},{id:'region_3',name:'Region 3',states:[]},{id:'region_4',name:'Region 4',states:[]}]}
+  function stateLabel(code){code=String(code||'').toUpperCase();var option=document.querySelector('#fl-state option[value="'+code+'"]');var name=option?String(option.textContent||'').trim():'';return name&&name!==code?code+' – '+name:code}
+  function routeForDoc(d){var region=String(d&&d.region||'').trim(),state=String(d&&d.state||'').trim().toUpperCase();if(region&&state)return{region:region,state:state};var linked=templates.find(function(t){return String(t&&t.sourceCompanyDocumentId||'')===String(d&&d.id||'')});return linked?{region:String(linked.region||'').trim(),state:String(linked.state||'').trim().toUpperCase()}:{region:'',state:''}}
+  function templateForDoc(d){return templates.filter(function(t){return String(t&&t.sourceCompanyDocumentId||'')===String(d&&d.id||'')&&String(t&&t.documentType||'contingency')==='contingency'&&String(t&&t.region||'')===currentRegion&&String(t&&t.state||'').toUpperCase()===currentState}).sort(function(a,b){return Number(b&&b.activeDefault===true)-Number(a&&a.activeDefault===true)||String(b&&b.effectiveDate||'').localeCompare(String(a&&a.effectiveDate||''))||Number(b&&b.version||1)-Number(a&&a.version||1)})[0]||null}
+  function setStep(name){var r=document.getElementById('crm-company-docs-region-step'),s=document.getElementById('crm-company-docs-state-step'),f=document.getElementById('crm-company-docs-file-step');if(r)r.hidden=name!=='region';if(s)s.hidden=name!=='state';if(f)f.hidden=name!=='file'}
+  function updateBrowserPath(){var p=document.getElementById('crm-company-docs-browser-path');if(!p)return;var a=[categoryLabel(currentCategory)];if(currentCategory==='contingencies'&&currentRegion)a.push(currentRegion);if(currentCategory==='contingencies'&&currentState)a.push(stateLabel(currentState));p.textContent=a.join(' / ')}
+  function showHome(){currentCategory='';currentRegion='';currentState='';window.hmCompanyDocumentsCurrentRegion='';window.hmCompanyDocumentsCurrentState='';window.hmCompanyDocumentsCurrentFileId='';var h=document.getElementById('crm-company-docs-home'),b=document.getElementById('crm-company-docs-browser'),s=document.getElementById('crm-company-docs-subtitle');if(h)h.hidden=false;if(b)b.hidden=true;if(s)s.textContent='Choose a document section.'}
+  function renderRegions(){setStep('region');updateBrowserPath();var host=document.getElementById('crm-company-docs-region-buttons');if(!host)return;host.innerHTML='';regionRows().forEach(function(row){var btn=document.createElement('button');btn.className='crm-company-docs-choice-button';btn.type='button';btn.textContent=String(row&&row.name||'Region');btn.onclick=function(){currentRegion=String(row&&row.name||'').trim();currentState='';renderStates()};host.appendChild(btn)})}
+  function renderStates(){setStep('state');updateBrowserPath();var host=document.getElementById('crm-company-docs-state-buttons');if(!host)return;host.innerHTML='';var row=regionRows().find(function(r){return String(r&&r.name||'')===currentRegion}),states=row&&Array.isArray(row.states)?row.states:[];if(!states.length){var e=document.createElement('div');e.className='crm-company-docs-empty';e.textContent='No states are assigned to '+currentRegion+'. Add states in Settings → Regions.';host.appendChild(e);return}states.forEach(function(code){var btn=document.createElement('button');btn.className='crm-company-docs-choice-button';btn.type='button';btn.textContent=stateLabel(code);btn.onclick=function(){currentState=String(code||'').toUpperCase();showFileStep()};host.appendChild(btn)})}
+  function renderFiles(){var host=document.getElementById('crm-company-docs-file-list');if(!host)return;host.innerHTML='';var items=docs.filter(function(d){if(String(d&&d.category||'')!==currentCategory)return false;if(currentCategory!=='contingencies')return true;var route=routeForDoc(d);return route.region===currentRegion&&route.state===currentState}).sort(function(a,b){return String(b&&b.uploadedAt||'').localeCompare(String(a&&a.uploadedAt||''))});if(!items.length){var e=document.createElement('div');e.className='crm-company-docs-empty';e.textContent='No files uploaded here yet.';host.appendChild(e);return}items.forEach(function(d){var row=document.createElement('div');row.className='crm-company-docs-file-row';var open=document.createElement('button');open.className='crm-company-docs-file-button';open.type='button';var strong=document.createElement('strong');strong.textContent=String(d.name||'Document');var meta=document.createElement('span'),when=d.uploadedAt?new Date(d.uploadedAt).toLocaleDateString():'',ready=currentCategory==='contingencies'?templateForDoc(d):null;meta.textContent=[fmt(d.size),d.uploadedBy||'',when,ready?(String(ready.status||'active')==='active'?'DocuSign ready':'Template inactive'):''].filter(Boolean).join(' • ');open.append(strong,meta);open.onclick=function(){window.hmCompanyDocumentsCurrentFileId=d.id;openDoc(d.id)};var tools=document.createElement('div');tools.className='crm-company-docs-file-tools';if(canManage()){var del=document.createElement('button');del.className='btn';del.type='button';del.textContent='Delete';del.onclick=function(){deleteDoc(d.id)};tools.appendChild(del)}row.append(open,tools);host.appendChild(row)})}
+  function showFileStep(){setStep('file');updateBrowserPath();window.hmCompanyDocumentsCurrentRegion=currentRegion;window.hmCompanyDocumentsCurrentState=currentState;window.hmCompanyDocumentsCurrentFileId='';var u=document.getElementById('crm-company-doc-upload-btn');if(u)u.style.display=canManage()?'inline-flex':'none';var e=document.getElementById('crm-company-doc-template-editor');if(e)e.style.display=canManage()&&currentCategory==='contingencies'&&currentRegion&&currentState?'inline-flex':'none';renderFiles()}
+  function openCategory(cat){currentCategory=String(cat||'other');currentRegion='';currentState='';var h=document.getElementById('crm-company-docs-home'),b=document.getElementById('crm-company-docs-browser'),s=document.getElementById('crm-company-docs-subtitle'),t=document.getElementById('crm-company-docs-browser-title');if(h)h.hidden=true;if(b)b.hidden=false;if(s)s.textContent=currentCategory==='contingencies'?'Choose the region, then the state.':'Open an uploaded file or add a new one.';if(t)t.textContent='Uploads';if(currentCategory==='contingencies')renderRegions();else showFileStep()}
+  function render(){if(!currentCategory){showHome();return}if(currentCategory==='contingencies'&&!currentRegion){renderRegions();return}if(currentCategory==='contingencies'&&!currentState){renderStates();return}showFileStep()}
+  async function load(){try{status('Loading company documents…');if(typeof window.hmCloudWhenReady==='function')await window.hmCloudWhenReady();docs=parse(DOCS_KEY);templates=parse(TEMPLATES_KEY);window.savedFormTemplates=templates.slice();try{savedFormTemplates=templates.slice()}catch(_){}render();status(canManage()?'Choose a section to manage company files.':'Choose a section to open company files.')}catch(e){docs=[];templates=[];render();status(e&&e.message?e.message:'Company documents could not be loaded.',true)}}
+  function choose(cat,region,state){if(!canManage())return;var i=document.getElementById('crm-company-doc-file-input');if(!i)return;i.setAttribute('data-category',String(cat||'other'));i.setAttribute('data-region',String(region||''));i.setAttribute('data-state',String(state||'').toUpperCase());i.value='';i.click()}
+  async function upload(input){var file=input&&input.files&&input.files[0],cat=String(input&&input.getAttribute('data-category')||'other'),region=String(input&&input.getAttribute('data-region')||'').trim(),state=String(input&&input.getAttribute('data-state')||'').trim().toUpperCase();if(!file)return;try{if(file.size>MAX_BYTES)throw new Error('Documents must be 25 MB or smaller.');if(cat==='contingencies'&&(!region||!state))throw new Error('Choose the contingency region and state before uploading.');if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can upload company documents.');if(typeof window.hmCloudUploadLeadFile!=='function')throw new Error('Hail Money cloud storage is not ready.');status('Uploading '+file.name+'…');var meta=await window.hmCloudUploadLeadFile('', 'company_document', file,{category:cat,uploadedBy:(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'',metadata:{region:region,state:state,companyCategory:cat}});var doc={id:meta.id,category:cat,region:region,state:state,name:meta.fileName||file.name,size:Number(meta.size||file.size||0),contentType:meta.mimeType||file.type||'application/octet-stream',storageProvider:'neon',storagePath:meta.storagePath||meta.objectKey||'',uploadedAt:meta.uploadedAt||new Date().toISOString(),uploadedBy:meta.uploadedBy||''};docs=docs.filter(function(d){return String(d&&d.id||'')!==String(doc.id)});docs.push(doc);saveDocs();renderFiles();status(file.name+' uploaded to '+(cat==='contingencies'?region+' / '+state:categoryLabel(cat))+'.')}catch(e){status(e&&e.message?e.message:'Document upload failed.',true)}finally{if(input)input.value=''}}
+  window.hmListCompanyDocuments=async function(category){await load();return docs.filter(function(d){return !category||String(d&&d.category||'')===String(category)}).map(function(d){var route=routeForDoc(d);return{id:d.id,name:d.name,category:d.category,region:route.region,state:route.state,contentType:d.contentType,size:d.size,uploadedAt:d.uploadedAt,uploadedBy:d.uploadedBy||'',storageProvider:'neon',storagePath:d.storagePath||''}})};
+  window.hmLoadCompanyDocumentForTemplate=async function(id){var d=find(id);if(!d){await load();d=find(id)}if(!d)throw new Error('That uploaded contingency could not be found.');var type=String(d.contentType||'').toLowerCase();if(type&&type!=='application/pdf'&&type.indexOf('image/')!==0)throw new Error('Fillable fields can be added to PDF or image contingencies.');if(typeof window.hmCloudGetFileBlobById!=='function')throw new Error('Hail Money cloud storage is not ready.');var blob=await window.hmCloudGetFileBlobById(d.id);var dataUrl=await new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(){resolve(r.result)};r.onerror=function(){reject(r.error||new Error('Could not read the uploaded contingency.'))};r.readAsDataURL(blob)});return{id:d.id,name:d.name||'Contingency',category:d.category||'contingencies',contentType:d.contentType||blob.type||'application/pdf',size:d.size||blob.size||0,dataUrl:dataUrl}};
+  function sourceDocForTemplate(tpl,documents){var rows=documents||[],explicit=String(tpl&&tpl.sourceCompanyDocumentId||'').trim();if(explicit&&rows.some(function(d){return String(d&&d.id||'')===explicit}))return explicit;var name=String(tpl&&tpl.fileName||'').trim().toLowerCase();if(!name)return'';var wr=String(tpl&&tpl.region||'').trim(),ws=String(tpl&&tpl.state||'').trim().toUpperCase(),match=rows.find(function(d){var route=routeForDoc(d);return String(d&&d.category||'')==='contingencies'&&String(d&&d.name||'').trim().toLowerCase()===name&&(!wr||route.region===wr)&&(!ws||route.state===ws)});return match?String(match.id||''):''}
+  async function ensureTemplateSource(tpl,documents){var existing=sourceDocForTemplate(tpl,documents);if(existing)return existing;if(!tpl||!tpl.fileDataUrl)return'';var blob=await fetch(tpl.fileDataUrl).then(function(r){if(!r.ok)throw new Error('The contingency source could not be read.');return r.blob()});if(!blob||!blob.size||blob.size>MAX_BYTES)return'';var name=tpl.fileName||tpl.name||'Contingency.pdf',region=String(tpl.region||'').trim(),state=String(tpl.state||'').trim().toUpperCase(),stale=(documents||[]).find(function(d){var route=routeForDoc(d);return String(d&&d.category||'')==='contingencies'&&String(d&&d.name||'').trim().toLowerCase()===String(name).trim().toLowerCase()&&(!region||route.region===region)&&(!state||route.state===state)}),id=String(stale&&stale.id||'').trim()||('company_doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9));var file=new File([blob],name,{type:tpl.fileType||blob.type||'application/pdf'});var meta=await window.hmCloudUploadLeadFile('', 'company_document', file,{id:id,category:'contingencies',uploadedBy:(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'',metadata:{region:region,state:state,companyCategory:'contingencies'}});var doc={id:meta.id,category:'contingencies',region:region,state:state,name:name,size:Number(meta.size||blob.size||0),contentType:meta.mimeType||file.type,storageProvider:'neon',storagePath:meta.storagePath||meta.objectKey||'',uploadedAt:meta.uploadedAt||new Date().toISOString(),uploadedBy:meta.uploadedBy||''},idx=(documents||[]).findIndex(function(d){return String(d&&d.id||'')===String(doc.id)});if(idx>=0)documents[idx]=doc;else documents.push(doc);return doc.id}
+  function cleanTemplateMeta(tpl,sourceId){var copy=JSON.parse(JSON.stringify(tpl||{}));delete copy.fileDataUrl;copy.sourceCompanyDocumentId=String(sourceId||copy.sourceCompanyDocumentId||'');return copy}
+  window.hmGetCompanyFormTemplates=async function(){if(typeof window.hmCloudWhenReady==='function')await window.hmCloudWhenReady();docs=parse(DOCS_KEY);templates=parse(TEMPLATES_KEY);window.savedFormTemplates=templates.slice();try{savedFormTemplates=templates.slice()}catch(_){}return templates.map(function(t){return JSON.parse(JSON.stringify(t))})};
+  window.hmSaveCompanyFormTemplate=async function(tpl){if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can save company templates.');if(typeof window.hmCloudWhenReady==='function')await window.hmCloudWhenReady();docs=parse(DOCS_KEY);templates=parse(TEMPLATES_KEY);var source=await ensureTemplateSource(tpl,docs);if(!source)throw new Error('This contingency could not be linked to company storage.');var si=docs.findIndex(function(d){return String(d&&d.id||'')===String(source)});if(si>=0&&String(tpl&&tpl.documentType||'contingency')==='contingency'){docs[si].category='contingencies';docs[si].region=String(tpl.region||'').trim();docs[si].state=String(tpl.state||'').trim().toUpperCase()}var meta=cleanTemplateMeta(tpl,source),idx=templates.findIndex(function(x){return String(x&&x.id||'')===String(meta.id||'')});if(idx>=0)templates[idx]=meta;else templates.push(meta);saveDocs();saveTemplates();if(currentCategory==='contingencies'&&currentRegion&&currentState)renderFiles();return meta};
+  window.hmUploadLeadDocumentToCloud=async function(leadId,type,file,metaOptions){metaOptions=metaOptions||{};if(!leadId||!file)throw new Error('Lead document information is incomplete.');if(typeof window.hmCloudUploadLeadFile!=='function')throw new Error('Hail Money cloud storage is not ready.');var category=String(metaOptions.category||((type==='signed_contingency')?'Contingency':(type==='signed_contract'?'Contract':''))).trim(),meta=await window.hmCloudUploadLeadFile(leadId,type||'document',file,{category:category,docCategory:category,note:String(metaOptions.note||''),uploadedBy:String(metaOptions.uploadedBy||(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'')});meta.docCategory=category;meta.category=category;meta.storageProvider='neon';meta.storageKey='neon:'+meta.id;try{var all=crmGetLeadFiles();all=all.filter(function(x){return String(x&&x.id||'')!==String(meta.id)});all.push(crmNormalizeLeadFileMeta(meta));crmSaveLeadFiles(all)}catch(e){console.error('[Lead Document] metadata registration failed',e);throw e}return meta};
+  async function openDoc(id){var d=find(id);if(!d)return;var pop=window.open('about:blank','_blank');try{status('Opening '+(d.name||'document')+'…');var blob=await window.hmCloudGetFileBlobById(d.id);if(!blob)throw new Error('This document could not be opened.');var url=URL.createObjectURL(blob);if(pop)pop.location.href=url;else window.location.href=url;setTimeout(function(){try{URL.revokeObjectURL(url)}catch(_){}},60000);status('Company documents are ready.')}catch(e){if(pop)pop.close();status(e&&e.message?e.message:'This document could not be opened.',true)}}
+  async function deleteDoc(id){var d=find(id);if(!d||!window.confirm('Delete "'+String(d.name||'this document')+'" for the entire company?'))return;try{if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can delete company documents.');status('Deleting '+(d.name||'document')+'…');await window.hmCloudApi('/files/'+encodeURIComponent(d.id),{method:'DELETE'});docs=docs.filter(function(x){return String(x&&x.id||'')!==String(id)});templates=templates.filter(function(t){return String(t&&t.sourceCompanyDocumentId||'')!==String(id)});saveDocs();saveTemplates();render();status('Document deleted.')}catch(e){status(e&&e.message?e.message:'Document could not be deleted.',true)}}
+  function bind(){document.querySelectorAll('[data-company-doc-open-category]').forEach(function(b){if(b.dataset.companyDocBound)return;b.dataset.companyDocBound='1';b.addEventListener('click',function(){openCategory(b.getAttribute('data-company-doc-open-category'))})});var back=document.getElementById('crm-company-docs-back');if(back&&!back.dataset.companyDocBound){back.dataset.companyDocBound='1';back.addEventListener('click',showHome)}var stateBack=document.getElementById('crm-company-docs-state-back');if(stateBack&&!stateBack.dataset.companyDocBound){stateBack.dataset.companyDocBound='1';stateBack.addEventListener('click',function(){currentRegion='';currentState='';renderRegions()})}var uploadBtn=document.getElementById('crm-company-doc-upload-btn');if(uploadBtn&&!uploadBtn.dataset.companyDocBound){uploadBtn.dataset.companyDocBound='1';uploadBtn.addEventListener('click',function(){choose(currentCategory,currentRegion,currentState)})}var i=document.getElementById('crm-company-doc-file-input');if(i&&!i.dataset.companyDocBound){i.dataset.companyDocBound='1';i.addEventListener('change',function(){upload(i)})}showHome();document.addEventListener('hm:document-regions-updated',function(){if(currentCategory==='contingencies'){if(currentRegion&&!regionRows().some(function(row){return String(row&&row.name||'')===currentRegion})){currentRegion='';currentState=''}render()}});var page=document.getElementById('page-company-docs');if(page){var obs=new MutationObserver(function(){if(page.classList.contains('active')){showHome();load()}});obs.observe(page,{attributes:true,attributeFilter:['class']});if(page.classList.contains('active'))load()}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 </script>

@@ -29,6 +29,9 @@ serviceAccount.json
 # Firebase / GCP
 .firebase/
 firebase-debug.log*
+
+# Neon local project/auth context
+.neon
 gcloud-debug.log*
 *.log
 
