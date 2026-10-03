@@ -78585,6 +78585,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }());
 
     document.getElementById('fl-save-btn').addEventListener('click', async function () {
+      var fieldLeadSaveButton = this;
+      if (fieldLeadSaveButton.dataset.hmSaving === '1') return;
+      fieldLeadSaveButton.dataset.hmSaving = '1';
+      fieldLeadSaveButton.disabled = true;
+      try {
       var valMsg = document.getElementById('fl-validation-msg');
       var savedMsg = document.getElementById('fl-saved-msg');
       var warningMsg = document.getElementById('fl-warning-msg');
@@ -78812,6 +78817,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           goToMainMenuFromHeader();
         }
       }, 1400);
+      } finally {
+        setTimeout(function () {
+          fieldLeadSaveButton.dataset.hmSaving = '';
+          fieldLeadSaveButton.disabled = false;
+        }, 1600);
+      }
     });
 
     document.getElementById('ol-leadSource').addEventListener('change', function () {

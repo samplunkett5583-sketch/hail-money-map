@@ -193,35 +193,8 @@
     var snap = await col.get();
     var cloud = snap.docs.map(function (doc) { var x = doc.data() || {}; if (!x.id) x.id = doc.id; return x; });
 
-    // Existing company cloud data is authoritative. Browser-local leads are
-    // used only to bootstrap a company whose cloud collection is empty.
-    if (cloud.length) {
-      setMemory(cloud);
-      lastCloudById = leadMap(cloud);
-      nativeRemove.call(window.localStorage, 'crm_leads');
-      nativeRemove.call(window.localStorage, 'app.leads');
-      cleanLeadSnapshot();
-      ready = true;
-      refreshUi();
-      return true;
-    }
-
-    var cloudById = leadMap(cloud), cloudByIdentity = Object.create(null);
-    cloud.forEach(function (lead) { var identity = stableIdentity(lead); if (identity) cloudByIdentity[identity] = lead; });
-    var batch = window.db.batch(), changed = 0;
-    local.forEach(function (lead) {
-      var id = String(lead && lead.id || '').trim(); if (!id) return;
-      var existing = cloudById[id] || cloudByIdentity[stableIdentity(lead)] || null;
-      if (!existing) {
-        batch.set(col.doc(id), lead, { merge: false }); cloudById[id] = lead; changed += 1; return;
-      }
-      if (String(existing.id || '') === id && timestamp(lead) > timestamp(existing)) {
-        batch.set(col.doc(id), lead, { merge: false }); cloudById[id] = lead; changed += 1;
-      }
-    });
-    if (changed) await batch.commit();
-    snap = await col.get();
-    cloud = snap.docs.map(function (doc) { var x = doc.data() || {}; if (!x.id) x.id = doc.id; return x; });
+    // Company cloud is always authoritative, including when it contains zero leads.
+    // Never repopulate deleted company leads from stale browser-local data.
     setMemory(cloud);
     lastCloudById = leadMap(cloud);
     nativeRemove.call(window.localStorage, 'crm_leads');
