@@ -36,7 +36,7 @@ const ABC_USER_SCOPES = [
 
 function permitCors(req, res) {
   const origin = String(req.get("origin") || "");
-  const allowed = /^https:\/\/(hailmoneymap\.web\.app|hailmoneymap\.firebaseapp\.com)$/i.test(origin) ||
+  const allowed = /^https:\/\/(hailmoneymap\.web\.app|hailmoneymap\.firebaseapp\.com|hail\.money|www\.hail\.money)$/i.test(origin) ||
     /^http:\/\/(127\.0\.0\.1|localhost):\d+$/i.test(origin);
   if (allowed) res.set("Access-Control-Allow-Origin", origin);
   res.set("Vary", "Origin");

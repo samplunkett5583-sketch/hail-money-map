@@ -79188,9 +79188,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     async function hmLoginVerifiedEmployee(email, password) {
       var testUser = CRM_TEST_USERS.find(function (user) { return user.email === email; }) || null;
       if (testUser) {
-        var testCredential = await window.auth.signInWithEmailAndPassword(email, password);
+        var testLogin = await hmEmployeeRequest('employeeTestLogin', { email: email, password: password }, false);
+        if (!testLogin || !testLogin.token) throw new Error('Employee login could not be completed.');
+        var testCredential = await window.auth.signInWithCustomToken(testLogin.token);
         await testCredential.user.getIdToken(true);
-        await hmCompleteVerifiedLogin({ email: testUser.email, displayName: testUser.displayName, role: testUser.role });
+        await hmCompleteVerifiedLogin(testLogin.profile || { email: testUser.email, displayName: testUser.displayName, role: testUser.role });
         return;
       }
       var credential = await window.auth.signInWithEmailAndPassword(email, password);
