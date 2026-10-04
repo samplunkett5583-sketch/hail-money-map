@@ -33825,12 +33825,10 @@ function mapsGoogleReady() {
       { threshold: 2.00, label: '2\u2013 3\u2033',             fill: '#FF0000', stroke: '#B50000', zIndex: 2103 }, // red
       { threshold: 3.000001, label: '>3\u2033',                 fill: '#800080', stroke: '#560056', zIndex: 2104 }  // purple
     ];
-    var MAPS_INCOMING_HAIL_SWATH_STYLE_START_DATE = '2026-07-29';
-
+    // Disabled: the old recent-date "incoming" style invented long storm
+    // tracks from sparse/single hail reports and produced capsule-like swaths.
     function mapsUsesIncomingHailSwathStyle(dateStr) {
-      var normalized = mapsNormalizeDate(dateStr || '');
-      return /^\d{4}-\d{2}-\d{2}$/.test(normalized || '') &&
-        normalized >= MAPS_INCOMING_HAIL_SWATH_STYLE_START_DATE;
+      return false;
     }
 
     // ── Wind speed bands (blue palette) — z-index below hail (45-47 < 70) ──
@@ -35316,43 +35314,42 @@ function mapsGoogleReady() {
             var maxHail = cluster.reduce(function(m,p){return Math.max(m,p.hail_in||0);},0);
             if (n <= 1 && maxHail < 0.5) { return; }
             var ax = _fitStormAxis(cluster);
-            var incomingSingleton = mapsUsesIncomingHailSwathStyle(dateStr) && n === 1;
-            if (incomingSingleton) {
-              ax.sin = 0.34;
-              ax.cos = 0.94;
-            }
-            // Interpolate densely along storm axis → continuous overlapping streak
+            var singletonReport = n === 1;
+            // Interpolate densely along a real multi-report storm axis. A lone
+            // report has no defensible storm-track direction, so keep it local.
             var yInterp = _snapDedup(_interpAxis(cluster, ax, GRID), GRID);
-            // Outer halo: all points at full CELL_HS_OUTER width (broad light yellow)
-            // z=600: above storm polygon fills (z=150+) and below envelope polylines (z=500+)
-            // Wait — z=600 is above z=500 envelope, which is correct: corridors are the top detail layer
             yInterp.slice(0, 400).forEach(function(p) {
-              var outerPath = incomingSingleton
-                ? _makeIncomingHailSwath(p.lat, p.lon, 0.90, 0.12, ax.sin, ax.cos)
+              var outerPath = singletonReport
+                ? _makeEllipse(p.lat, p.lon, 0.050, 0.065)
                 : _makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_OUTER, ax.sin, ax.cos);
               if (_addRawPoly(outerPath, swathSeverityColor(0.5), 600, 'hail'))
                 { result.hail = true; totalCells++; }
             });
-            // Inner bands use CELL_HS_INNER so cores sit tight inside the outer halo
+
+            // Nested intensity bands stay inside the same local/track footprint.
             var mPts = cluster.filter(function(p){return (p.hail_in||0)>=1.25;});
             if (mPts.length) _snapDedup(_interpAxis(mPts, ax, GRID), GRID).forEach(function(p) {
-              _addRawPoly(incomingSingleton
-                ? _makeIncomingHailSwath(p.lat, p.lon, 0.70, 0.075, ax.sin, ax.cos)
+              _addRawPoly(singletonReport
+                ? _makeEllipse(p.lat, p.lon, 0.036, 0.047)
                 : _makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.90, ax.sin, ax.cos), swathSeverityColor(1.35), 601, 'hail');
             });
             var oPts = cluster.filter(function(p){return (p.hail_in||0)>=1.75;});
             if (oPts.length) _snapDedup(_interpAxis(oPts, ax, GRID), GRID).forEach(function(p) {
-              _addRawPoly(incomingSingleton
-                ? _makeIncomingHailSwath(p.lat, p.lon, 0.52, 0.045, ax.sin, ax.cos)
+              _addRawPoly(singletonReport
+                ? _makeEllipse(p.lat, p.lon, 0.027, 0.035)
                 : _makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.75, ax.sin, ax.cos), swathSeverityColor(1.85), 602, 'hail');
             });
-            var rPts = cluster.filter(function(p){return (p.hail_in||0)>=2.25;});
+            var rPts = cluster.filter(function(p){return (p.hail_in||0)>=2.00;});
             if (rPts.length) _snapDedup(_interpAxis(rPts, ax, GRID), GRID).forEach(function(p) {
-              _addRawPoly(_makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.58, ax.sin, ax.cos), swathSeverityColor(2.50), 603, 'hail');
+              _addRawPoly(singletonReport
+                ? _makeEllipse(p.lat, p.lon, 0.020, 0.026)
+                : _makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.58, ax.sin, ax.cos), swathSeverityColor(2.50), 603, 'hail');
             });
             var pPts = cluster.filter(function(p){return (p.hail_in||0)>3.00;});
             if (pPts.length) _snapDedup(_interpAxis(pPts, ax, GRID), GRID).forEach(function(p) {
-              _addRawPoly(_makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.44, ax.sin, ax.cos), swathSeverityColor(3.5), 604, 'hail');
+              _addRawPoly(singletonReport
+                ? _makeEllipse(p.lat, p.lon, 0.014, 0.018)
+                : _makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.44, ax.sin, ax.cos), swathSeverityColor(3.5), 604, 'hail');
             });
             var hlats = cluster.map(function(p){return p.lat;}), hlons = cluster.map(function(p){return p.lon;});
             var hDiagMi = Math.sqrt(Math.pow((Math.max.apply(null,hlats)-Math.min.apply(null,hlats))*69,2)+Math.pow((Math.max.apply(null,hlons)-Math.min.apply(null,hlons))*55,2));
@@ -38569,6 +38566,7 @@ function mapsGoogleReady() {
       // One overlay per Polygon outer ring keeps the swath broad and faithful without
       // exploding narrow nexrad_iem rows into tens of thousands of grid-cell overlays.
       var _overlayDefs = [];
+      var _autoYellowTrackSeeds = [];
       // Precompute bbox for fast fitBounds — avoids iterating all polygon paths at zoom time.
       var _dateBbox = { minLat: Infinity, maxLat: -Infinity, minLon: Infinity, maxLon: -Infinity, hasAny: false };
 
@@ -38791,42 +38789,36 @@ function mapsGoogleReady() {
               });
             }
           }
-          var autoYellowEnvelopePaths = null;
-          if (!isWind && !isTornado && !isEnvelope && effectiveBand > 1.0) {
-            // Every hail swath must retain a visible low-hail outer band.
-            // A high-severity-only source polygon therefore gets a wider .50"
-            // yellow envelope underneath it. Existing low-band polygons still
-            // render normally above this safety envelope.
-            autoYellowEnvelopePaths = paths.map(function (polygonPath) {
-              return _widenStoredHailPath(polygonPath, 1.38);
-            }).map(mapsSimplifySwathRenderPath);
-          }
-          paths = paths.map(mapsSimplifySwathRenderPath);
-          if (autoYellowEnvelopePaths && autoYellowEnvelopePaths.length) {
-            var yellowRgba = swathSeverityColor(0.5);
-            _overlayDefs.push({
-              path: path,
-              paths: autoYellowEnvelopePaths,
-              canonicalGeometry: null,
-              canonicalBbox: canonicalBbox,
-              fill: 'rgb(' + yellowRgba[0] + ',' + yellowRgba[1] + ',' + yellowRgba[2] + ')',
-              opacity: yellowRgba[3],
-              zIndex: 90,
-              stormType: 'hail',
-              bandMin: 0.5,
-              storedBandMin: 0.5,
-              storedBandMax: 1.0,
-              sourcePriority: Number(row.source_priority),
-              sourceClassification: rowProvenance && rowProvenance.sourceClassification,
-              qualityStatus: row.quality_status || (rowProvenance && rowProvenance.qualityStatus) || 'legacy_unverified',
-              acceptedForCustomerDisplay: false,
-              rowId: null,
-              source: rowSrcLower,
-              sourceProduct: String(row.source_product || '').toLowerCase() + '_auto_yellow_envelope',
-              constructionFunction: 'mapsDrawSavedStormPolygonForDate:autoYellowEnvelope',
-              show: _showRow
+          if (!isWind && !isTornado && !isEnvelope && effectiveBand > 1.0 && _showRow) {
+            // Do not widen every high-hail polygon independently. That produced
+            // stacked yellow "petals" when several polygons belonged to one storm.
+            // Save one center/width seed here; after all rows are processed these
+            // are merged into a single yellow outer envelope per storm track.
+            paths.forEach(function (polygonPath) {
+              if (!polygonPath || polygonPath.length < 3) return;
+              var seedBox = polygonPath.reduce(function (bbox, pt) {
+                bbox.minLat = Math.min(bbox.minLat, Number(pt.lat));
+                bbox.maxLat = Math.max(bbox.maxLat, Number(pt.lat));
+                bbox.minLng = Math.min(bbox.minLng, Number(pt.lng));
+                bbox.maxLng = Math.max(bbox.maxLng, Number(pt.lng));
+                return bbox;
+              }, { minLat:Infinity, maxLat:-Infinity, minLng:Infinity, maxLng:-Infinity });
+              var latSpan = seedBox.maxLat - seedBox.minLat;
+              var lngSpan = seedBox.maxLng - seedBox.minLng;
+              _autoYellowTrackSeeds.push({
+                lat:(seedBox.minLat + seedBox.maxLat) / 2,
+                lon:(seedBox.minLng + seedBox.maxLng) / 2,
+                hail_in:0.5,
+                halfWidth:Math.max(0.018, Math.min(0.18, Math.min(Math.max(latSpan, 0.001), Math.max(lngSpan, 0.001)) * 0.78)),
+                path:polygonPath,
+                sourcePriority:Number(row.source_priority) || 99,
+                source:rowSrcLower,
+                sourceClassification:rowProvenance && rowProvenance.sourceClassification,
+                qualityStatus:row.quality_status || (rowProvenance && rowProvenance.qualityStatus) || 'legacy_unverified'
+              });
             });
           }
+          paths = paths.map(mapsSimplifySwathRenderPath);
           if (_trackFocusGeometry && _showRow) {
             path.forEach(function (pt) {
               if (pt.lat < _dateBbox.minLat) _dateBbox.minLat = pt.lat;
@@ -38860,6 +38852,110 @@ function mapsGoogleReady() {
           });
         });
       });
+
+      // Build ONE low-hail yellow envelope per storm track, not one envelope per
+      // polygon. This preserves the required yellow outer band without producing
+      // the stacked capsule/petal artifacts that appear when adjacent polygons are
+      // each widened independently.
+      if (_autoYellowTrackSeeds.length) {
+        var yellowRgba = swathSeverityColor(0.5);
+        var yellowClusters = _clusterByDistance(_autoYellowTrackSeeds, 0.22);
+        yellowClusters.forEach(function (cluster, clusterIndex) {
+          if (!cluster || !cluster.length) return;
+          var envelopePaths = [];
+
+          if (cluster.length === 1) {
+            var singlePath = _widenStoredHailPath(cluster[0].path, 1.38);
+            singlePath = mapsSimplifySwathRenderPath(singlePath);
+            if (singlePath && singlePath.length >= 3) envelopePaths.push(singlePath);
+          } else {
+            var cx = 0, cy = 0;
+            cluster.forEach(function (seed) { cx += seed.lon; cy += seed.lat; });
+            cx /= cluster.length;
+            cy /= cluster.length;
+
+            var sxx = 0, sxy = 0, syy = 0;
+            cluster.forEach(function (seed) {
+              var dx = seed.lon - cx;
+              var dy = seed.lat - cy;
+              sxx += dx * dx;
+              sxy += dx * dy;
+              syy += dy * dy;
+            });
+            var angle = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+            var axCos = Math.cos(angle), axSin = Math.sin(angle);
+            if (axCos < 0) { axCos = -axCos; axSin = -axSin; }
+
+            var centerline = cluster.slice().sort(function (a, b) {
+              return ((a.lat - cy) * axSin + (a.lon - cx) * axCos) -
+                ((b.lat - cy) * axSin + (b.lon - cx) * axCos);
+            });
+            var deduped = [];
+            centerline.forEach(function (seed) {
+              if (deduped.length) {
+                var prev = deduped[deduped.length - 1];
+                var gap = Math.sqrt(Math.pow(seed.lat - prev.lat, 2) + Math.pow(seed.lon - prev.lon, 2));
+                if (gap < 0.010) return;
+              }
+              deduped.push({ lat:seed.lat, lon:seed.lon, hail_in:0.5 });
+            });
+
+            if (deduped.length >= 2) {
+              var widestSeed = cluster.reduce(function (maxWidth, seed) {
+                return Math.max(maxWidth, Number(seed.halfWidth) || 0);
+              }, 0);
+              var yellowHalfWidth = Math.max(0.028, Math.min(0.18, widestSeed * 1.45 + 0.012));
+              var trackRing = _bufferPolylineSwab(deduped, yellowHalfWidth);
+              if (trackRing && trackRing.length >= 3) {
+                envelopePaths.push(mapsSimplifySwathRenderPath(trackRing.map(function (pt) {
+                  return { lat:Number(pt.lat), lng:Number(pt.lon) };
+                })));
+              }
+            } else {
+              var fallbackPath = _widenStoredHailPath(cluster[0].path, 1.38);
+              fallbackPath = mapsSimplifySwathRenderPath(fallbackPath);
+              if (fallbackPath && fallbackPath.length >= 3) envelopePaths.push(fallbackPath);
+            }
+          }
+
+          envelopePaths = envelopePaths.filter(function (p) { return p && p.length >= 3; });
+          if (!envelopePaths.length) return;
+
+          var envelopeBbox = envelopePaths.reduce(function (bbox, polygonPath) {
+            polygonPath.forEach(function (pt) {
+              bbox.minLat = Math.min(bbox.minLat, Number(pt.lat));
+              bbox.maxLat = Math.max(bbox.maxLat, Number(pt.lat));
+              bbox.minLng = Math.min(bbox.minLng, Number(pt.lng));
+              bbox.maxLng = Math.max(bbox.maxLng, Number(pt.lng));
+            });
+            return bbox;
+          }, { minLat:Infinity, maxLat:-Infinity, minLng:Infinity, maxLng:-Infinity });
+
+          var seedMeta = cluster[0];
+          _overlayDefs.push({
+            path: envelopePaths[0],
+            paths: envelopePaths,
+            canonicalGeometry: null,
+            canonicalBbox: envelopeBbox,
+            fill: 'rgb(' + yellowRgba[0] + ',' + yellowRgba[1] + ',' + yellowRgba[2] + ')',
+            opacity: yellowRgba[3],
+            zIndex: 90,
+            stormType: 'hail',
+            bandMin: 0.5,
+            storedBandMin: 0.5,
+            storedBandMax: 1.0,
+            sourcePriority: seedMeta.sourcePriority,
+            sourceClassification: seedMeta.sourceClassification,
+            qualityStatus: seedMeta.qualityStatus,
+            acceptedForCustomerDisplay: false,
+            rowId: null,
+            source: seedMeta.source || 'hail',
+            sourceProduct: 'auto_yellow_track_envelope',
+            constructionFunction: 'mapsDrawSavedStormPolygonForDate:autoYellowTrackEnvelope',
+            show: true
+          });
+        });
+      }
 
       // Batch same-style rings into a small number of persistent overlays. Thousands
       // of individual Polygon objects make Google Maps drop/rebuild the swath during
@@ -43303,10 +43399,9 @@ function mapsGoogleReady() {
               return String(row && row.storm_type || 'hail').toLowerCase() === 'hail' &&
                 !!(row.polygon_geojson || row.geometry);
             });
-            if (!_hasSavedHailGeometry) {
-              _drawSmallHailLayer(dateStr, rows, points);
-              _drawHailEnvelope(dateStr, rows, points);
-            }
+            // If saved hail geometry is unavailable, use exactly ONE fallback
+            // swath builder below. Layering multiple independent fallback renderers
+            // created stacked/offset artificial swaths from the same reports.
             if (!_hasSavedHailGeometry) {
               var _corridorHailPts = (points || []).slice();
               (rows || []).forEach(function(row) {
@@ -43339,11 +43434,9 @@ function mapsGoogleReady() {
               mapsDrawWeakFallbackCorridors(dateStr, _corridorHailPts, windPts, tornadoPts);
             }
 
-            if (!_hasSavedHailGeometry) {
-              _drawHailCoreRibbons(dateStr, points, rows);
-            } else {
-              // Keep the already-approved May 3 reviewed overlay, but do not
-              // manufacture a second report ribbon on other saved products.
+            if (_hasSavedHailGeometry) {
+              // Keep the already-approved reviewed overlay on saved products,
+              // but never manufacture a second fallback ribbon.
               _drawReviewedHailDisplayTracks(dateStr);
             }
             mapsApplySwathOpacity(mapsState.swathOpacity != null ? mapsState.swathOpacity : 0.55);
@@ -43777,10 +43870,9 @@ function mapsGoogleReady() {
               !!(row.polygon_geojson || row.geometry);
           });
           if (!hasSavedHailGeometry) {
-            _drawSmallHailLayer(dateStr, rows, points);
-            _drawHailEnvelope(dateStr, rows, points);
+            // Exactly one fallback renderer. Do not stack independent synthetic
+            // envelopes/ribbons over the same hail reports.
             mapsDrawWeakFallbackCorridors(dateStr, points || [], windPts, tornadoPts);
-            _drawHailCoreRibbons(dateStr, points, rows);
           } else {
             _drawReviewedHailDisplayTracks(dateStr);
           }
