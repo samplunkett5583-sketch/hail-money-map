@@ -5153,7 +5153,7 @@
       .tpl-preview-area { min-height:500px; }
     }
 
-    /* ── Roofer AI ChatGPT-style layout ── */
+    /* Ask Hail Money ChatGPT-style layout */
     .rai-layout { display:flex; height:calc(100vh - 64px); overflow:hidden; }
     .rai-sidebar {
       width:260px; min-width:200px; max-width:320px;
@@ -21776,7 +21776,7 @@
               <button class="nav-item" type="button" data-dashboard-action="meetings" aria-label="Meetings">
                 <span class="dash-icon" data-dash-icon="calendar" aria-hidden="true"></span><span class="nav-label">Meetings</span>
               </button>
-              <button class="nav-item" type="button" data-dashboard-action="roofer-ai" aria-label="Roofer AI">
+              <button class="nav-item" type="button" data-dashboard-action="roofer-ai" aria-label="Ask Hail Money">
                 <span class="dash-icon" data-dash-icon="robot" aria-hidden="true"></span><span class="nav-label">AI</span>
               </button>
               <button class="nav-item" type="button" data-dashboard-action="tester-training" aria-label="Tester Training">
@@ -23954,7 +23954,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <div class="rai-header">
               <button class="btn" type="button" id="back-from-ai" style="padding:6px 10px;font-size:13px;">Back</button>
               <button class="rai-sidebar-toggle" type="button" id="rai-sidebar-toggle">&#9776;</button>
-              <div class="rai-header-title" id="rai-header-title">Roofer AI</div>
+              <div class="rai-header-title" id="rai-header-title">Ask Hail Money</div>
               <span class="rai-job-badge" id="rai-job-badge" style="display:none;"></span>
               <div class="rai-header-actions">
                 <button class="btn" type="button" id="rai-rename-btn">Rename</button>
@@ -23965,8 +23965,8 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             </div>
             <div class="rai-thread" id="rai-thread">
               <div class="rai-empty-state" id="rai-empty-state">
-                <h2>Roofer AI</h2>
-                <p>Ask anything about roofing &#8212; codes, materials, damage, claims, job questions, objection handling, and more.</p>
+                <h2>Ask Hail Money</h2>
+                <p>Ask anything &#8212; roofing, business, writing, math, technology, vehicles, travel, everyday questions, and more.</p>
                 <p style="font-size:12px;color:var(--muted);margin-top:6px;">Start a new chat or select a saved conversation.</p>
               </div>
             </div>
@@ -23984,7 +23984,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                 <button class="rai-chip" type="button" data-rai-prompt="Give me motivation and encouragement to keep knocking doors today.">Motivate Me</button>
               </div>
               <div class="rai-input-row">
-                <textarea class="rai-input" id="rai-input" rows="1" placeholder="Ask Roofer AI anything&#8230;"></textarea>
+                <textarea class="rai-input" id="rai-input" rows="1" placeholder="Ask Hail Money anything&#8230;"></textarea>
                 <button class="rai-send-btn" type="button" id="rai-send-btn" title="Send">&#9654;</button>
               </div>
             </div>
@@ -25024,7 +25024,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
               <button class="nav-item" type="button" data-dashboard-action="meetings" aria-label="Meetings">
                 <span class="dash-icon" data-dash-icon="calendar" aria-hidden="true"></span><span class="nav-label">Meetings</span>
               </button>
-              <button class="nav-item" type="button" data-dashboard-action="roofer-ai" aria-label="Roofer AI">
+              <button class="nav-item" type="button" data-dashboard-action="roofer-ai" aria-label="Ask Hail Money">
                 <span class="dash-icon" data-dash-icon="robot" aria-hidden="true"></span><span class="nav-label">AI</span>
               </button>
               <button class="nav-item nav-item-admin-only" type="button" data-dashboard-action="employee" aria-label="Employee">
@@ -28772,9 +28772,9 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
   html += '</div>';
 
   html += '<div class="job-detail-section">';
-  html += '<div class="job-detail-section-header">ROOFER AI</div>';
+  html += '<div class="job-detail-section-header">ASK HAIL MONEY</div>';
   html += '<div class="job-detail-grid">';
-  html += '<div class="job-detail-field full"><button class="btn btn-primary" type="button" id="open-ai-from-job" data-job-id="' + job.id + '">Ask Roofer AI About This Job</button></div>';
+  html += '<div class="job-detail-field full"><button class="btn btn-primary" type="button" id="open-ai-from-job" data-job-id="' + job.id + '">Ask Hail Money About This Job</button></div>';
   html += '</div>';
   html += '</div>';
 
@@ -46555,7 +46555,7 @@ function mapsGoogleReady() {
         ];
         return motivations[Math.floor(Math.random() * motivations.length)];
       }
-      return 'Roofer AI received your question:\n\n"' + userText + '"\n\nAI backend is not connected yet. When connected, Roofer AI will provide expert answers about roofing codes, materials, damage interpretation, claims, estimates, and more.' + jobCtx;
+      return 'Ask Hail Money received your question:\n\n"' + userText + '"\n\nAsk Hail Money can answer general questions and use linked job context when relevant.' + jobCtx;
     }
 
     // ── Render Functions ──
@@ -46649,7 +46649,7 @@ function mapsGoogleReady() {
           linkBtn.style.display = '';
         }
       } else {
-        title.textContent = 'Roofer AI';
+        title.textContent = 'Ask Hail Money';
         badge.style.display = 'none';
         unlinkBtn.style.display = 'none';
         linkBtn.style.display = '';
@@ -60534,7 +60534,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           '<button class="nav-item" type="button" data-dashboard-action="meetings" aria-label="Meetings">',
             '<span class="dash-icon" data-dash-icon="calendar" aria-hidden="true"></span><span class="nav-label">Meetings</span>',
           '</button>',
-          '<button class="nav-item" type="button" data-dashboard-action="roofer-ai" aria-label="Roofer AI">',
+          '<button class="nav-item" type="button" data-dashboard-action="roofer-ai" aria-label="Ask Hail Money">',
             '<span class="dash-icon" data-dash-icon="robot" aria-hidden="true"></span><span class="nav-label">AI</span>',
           '</button>',
           '<button class="nav-item" type="button" data-dashboard-action="tester-training" aria-label="Tester Training">',
@@ -83613,7 +83613,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
     { key:'new', labels:['New'], actions:[] },
     { key:'start', labels:['Start'], actions:['start-inspection'] },
     { key:'pipeline', labels:['Pipeline'], actions:['pipeline'] },
-    { key:'ai', labels:['AI','Roofer AI'], actions:['roofer-ai'] },
+    { key:'ai', labels:['AI','Ask Hail Money','Roofer AI'], actions:['roofer-ai'] },
     { key:'contacts', labels:['Contacts'], actions:['contacts'] },
     { key:'leads', labels:['Leads'], actions:['leads'] },
     { key:'photos', labels:['Photos',"Photo's"], actions:['photos','photo-files','job-photos'] },

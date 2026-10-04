@@ -3,14 +3,15 @@ const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
-const { FieldValue, Timestamp } = require("firebase-admin/firestore");
+const { Pool } = require("pg");
 
 admin.initializeApp();
 
-const db = admin.firestore();
+let abcPool = null;
 const ABC_CLIENT_ID = defineSecret("ABC_CLIENT_ID");
 const ABC_CLIENT_SECRET = defineSecret("ABC_CLIENT_SECRET");
 const ABC_TOKEN_ENCRYPTION_KEY = defineSecret("ABC_TOKEN_ENCRYPTION_KEY");
+const DATABASE_URL = defineSecret("DATABASE_URL");
 const ABC_SANDBOX_AUTH_BASE = "https://sandbox.auth.partners.abcsupply.com/oauth2/aus1vp07knpuqf6Xz0h8/v1";
 const ABC_SANDBOX_API_BASE = "https://partners-sb.abcsupply.com";
 const ABC_PRODUCTION_AUTH_BASE = "https://auth.partners.abcsupply.com/oauth2/ausvvp0xuwGKLenYy357/v1";
@@ -116,6 +117,124 @@ function normalizeOrganizationId(value) {
   return /^[a-z0-9][a-z0-9_-]{1,63}$/.test(id) ? id : "";
 }
 
+function abcDatabase() {
+  if (!abcPool) {
+    abcPool = new Pool({
+      connectionString: DATABASE_URL.value(),
+      max: 3,
+      idleTimeoutMillis: 30000
+    });
+  }
+  return abcPool;
+}
+
+function abcTimestampMs(value) {
+  if (!value) return 0;
+  if (value instanceof Date) return value.getTime();
+  const parsed = Date.parse(String(value));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+async function abcGetConnection(uid) {
+  const result = await abcDatabase().query(
+    "SELECT data FROM abc_supply_connections WHERE uid=$1",
+    [String(uid || "")]
+  );
+  return result.rows[0] ? (result.rows[0].data || {}) : null;
+}
+
+async function abcSetConnection(uid, data, merge = true) {
+  uid = String(uid || "").trim();
+  const existing = merge ? await abcGetConnection(uid) : null;
+  const next = Object.assign({}, existing || {}, data || {});
+  const organizationId = normalizeOrganizationId(next.organizationId);
+  if (!uid || !organizationId) {
+    throw makeHttpError(500, "ABC Supply connection storage is missing company information.", "abc_storage_org_missing");
+  }
+  next.uid = uid;
+  next.organizationId = organizationId;
+  await abcDatabase().query(
+    `INSERT INTO abc_supply_connections(uid,org_id,data,updated_at)
+     VALUES($1,$2,$3::jsonb,now())
+     ON CONFLICT(uid) DO UPDATE
+       SET org_id=EXCLUDED.org_id,data=EXCLUDED.data,updated_at=now()`,
+    [uid, organizationId, JSON.stringify(next)]
+  );
+  return next;
+}
+
+async function abcDeleteConnection(uid) {
+  await abcDatabase().query("DELETE FROM abc_supply_connections WHERE uid=$1", [String(uid || "")]);
+}
+
+async function abcGetOnboarding(uid) {
+  const result = await abcDatabase().query(
+    "SELECT data FROM abc_user_onboarding WHERE uid=$1",
+    [String(uid || "")]
+  );
+  return result.rows[0] ? (result.rows[0].data || {}) : null;
+}
+
+async function abcSetOnboarding(uid, data, merge = true) {
+  uid = String(uid || "").trim();
+  const existing = merge ? await abcGetOnboarding(uid) : null;
+  const next = Object.assign({}, existing || {}, data || {});
+  let organizationId = normalizeOrganizationId(next.organizationId);
+  if (!organizationId) {
+    const connection = await abcGetConnection(uid);
+    organizationId = normalizeOrganizationId(connection && connection.organizationId);
+  }
+  if (!uid || !organizationId) {
+    throw makeHttpError(500, "ABC Supply onboarding storage is missing company information.", "abc_storage_org_missing");
+  }
+  next.uid = uid;
+  next.organizationId = organizationId;
+  await abcDatabase().query(
+    `INSERT INTO abc_user_onboarding(uid,org_id,data,updated_at)
+     VALUES($1,$2,$3::jsonb,now())
+     ON CONFLICT(uid) DO UPDATE
+       SET org_id=EXCLUDED.org_id,data=EXCLUDED.data,updated_at=now()`,
+    [uid, organizationId, JSON.stringify(next)]
+  );
+  return next;
+}
+
+async function abcSetOAuthState(state, data) {
+  const organizationId = normalizeOrganizationId(data && data.organizationId);
+  const uid = String(data && data.uid || "").trim();
+  const expiresAt = new Date(data && data.expiresAt || (Date.now() + 10 * 60 * 1000));
+  await abcDatabase().query(
+    `INSERT INTO abc_oauth_states(state,org_id,uid,data,expires_at,created_at)
+     VALUES($1,$2,$3,$4::jsonb,$5,now())
+     ON CONFLICT(state) DO UPDATE
+       SET org_id=EXCLUDED.org_id,uid=EXCLUDED.uid,data=EXCLUDED.data,expires_at=EXCLUDED.expires_at,created_at=now()`,
+    [state, organizationId, uid, JSON.stringify(data || {}), expiresAt.toISOString()]
+  );
+}
+
+async function abcConsumeOAuthState(state) {
+  const client = await abcDatabase().connect();
+  try {
+    await client.query("BEGIN");
+    const result = await client.query(
+      "SELECT data FROM abc_oauth_states WHERE state=$1 FOR UPDATE",
+      [String(state || "")]
+    );
+    if (!result.rows.length) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    await client.query("DELETE FROM abc_oauth_states WHERE state=$1", [String(state || "")]);
+    await client.query("COMMIT");
+    return result.rows[0].data || {};
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 async function requireAbcOrganizationUser(req) {
   const header = String(req.get("authorization") || "");
   const match = header.match(/^Bearer\s+(.+)$/i);
@@ -127,38 +246,19 @@ async function requireAbcOrganizationUser(req) {
     if (decoded.employee !== true) {
       throw makeHttpError(403, "An authorized Hail Money company user is required.", "employee_claim_required");
     }
-    const employeeSnapshot = await db.collection("hmEmployees").doc(decoded.uid).get();
-    if (!employeeSnapshot.exists) {
-      throw makeHttpError(403, "A verified Hail Money company membership is required.", "organization_membership_record_required");
-    }
-    const employee = employeeSnapshot.exists ? employeeSnapshot.data() || {} : {};
-    if (employee.active === false) {
-      throw makeHttpError(403, "This Hail Money company membership is inactive.", "organization_membership_inactive");
-    }
-    const claimOrg = normalizeOrganizationId(decoded.hmOrganizationId || decoded.organizationId);
-    const recordOrg = normalizeOrganizationId(employee.organizationId);
-    if (!recordOrg) {
+    const organizationId = normalizeOrganizationId(decoded.hmOrganizationId || decoded.organizationId);
+    if (!organizationId) {
       throw makeHttpError(403, "A verified Hail Money company membership is required.", "organization_membership_org_required");
     }
-    if (claimOrg && recordOrg && claimOrg !== recordOrg) {
-      throw makeHttpError(403, "Company membership could not be verified.", "organization_membership_mismatch");
-    }
-    const organizationId = recordOrg;
-    const role = String(employee.role || decoded.hmRole || "").trim();
-    const organizationName = String(employee.organizationName || (organizationId === ABC_PRODUCTION_PILOT_ORGANIZATION_ID ? "YoPro Construction" : "Your company")).trim();
+    const role = String(decoded.hmRole || decoded.role || "").trim();
+    const organizationName = organizationId === ABC_PRODUCTION_PILOT_ORGANIZATION_ID
+      ? "YoPro Construction"
+      : "Your company";
     return { uid: decoded.uid, organizationId, organizationName, role, canManageConnection: true };
-  } catch (_) {
-    if (_ && _.status) throw _;
+  } catch (error) {
+    if (error && error.status) throw error;
     throw makeHttpError(401, "Your Hail Money session has expired. Sign in again.", "hail_money_auth_invalid");
   }
-}
-
-function abcConnectionRef(uid) {
-  return db.collection("abcSupplyConnections").doc(uid);
-}
-
-function abcOnboardingRef(uid) {
-  return db.collection("hailMoneyUserOnboarding").doc(uid);
 }
 
 function abcEncryptionKey() {
@@ -235,19 +335,15 @@ async function abcTokenRequest(params, environment = abcRuntimeEnvironment()) {
 }
 
 async function getFreshAbcUserToken(uid) {
-  const ref = abcConnectionRef(uid);
-  const snap = await ref.get();
-  if (!snap.exists) {
+  const connection = await abcGetConnection(uid);
+  if (!connection) {
     throw makeHttpError(409, "Connect your ABC Supply account first.", "abc_not_connected");
   }
-  const connection = snap.data();
   const runtimeEnvironment = abcRuntimeEnvironment();
   if (String(connection.environment || "sandbox") !== runtimeEnvironment) {
     throw makeHttpError(409, "Reconnect your ABC Supply account in this environment.", "abc_environment_mismatch");
   }
-  const expiresAtMs = connection.expiresAt && connection.expiresAt.toMillis
-    ? connection.expiresAt.toMillis()
-    : 0;
+  const expiresAtMs = abcTimestampMs(connection.expiresAt);
   const accessToken = decryptAbcToken(connection.accessTokenEncrypted);
   if (accessToken && expiresAtMs > Date.now() + 60000) {
     return accessToken;
@@ -262,13 +358,13 @@ async function getFreshAbcUserToken(uid) {
     scope: ABC_USER_SCOPES
   }, runtimeEnvironment);
   const expiresIn = Number(refreshed.expires_in || 1800);
-  await ref.set({
+  await abcSetConnection(uid, {
     accessTokenEncrypted: encryptAbcToken(refreshed.access_token),
     refreshTokenEncrypted: encryptAbcToken(refreshed.refresh_token || refreshToken),
-    expiresAt: Timestamp.fromMillis(Date.now() + expiresIn * 1000),
+    expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
     scope: refreshed.scope || connection.scope || ABC_USER_SCOPES,
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
+    updatedAt: new Date().toISOString()
+  }, true);
   return refreshed.access_token;
 }
 
@@ -299,11 +395,10 @@ async function abcApiRequest(uid, path, options = {}) {
 }
 
 async function getAbcUserConnection(uid) {
-  const snapshot = await abcConnectionRef(uid).get();
-  if (!snapshot.exists) {
+  const connection = await abcGetConnection(uid);
+  if (!connection) {
     throw makeHttpError(409, "Connect your ABC Supply account first.", "abc_not_connected");
   }
-  const connection = snapshot.data() || {};
   if (String(connection.environment || "sandbox") !== abcRuntimeEnvironment()) {
     throw makeHttpError(409, "Reconnect your ABC Supply account in this environment.", "abc_environment_mismatch");
   }
@@ -479,7 +574,7 @@ async function getAbcUserAccounts(uid) {
 }
 
 exports.abcOAuthStart = onRequest(
-  { secrets: [ABC_CLIENT_ID], timeoutSeconds: 30, memory: "256MiB" },
+  { secrets: [DATABASE_URL, ABC_CLIENT_ID], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
@@ -492,14 +587,14 @@ exports.abcOAuthStart = onRequest(
       }
       const state = crypto.randomBytes(32).toString("hex");
       const { redirectUri, returnOrigin } = abcOAuthRequestContext(req);
-      await db.collection("abcOAuthStates").doc(state).set({
+      await abcSetOAuthState(state, {
         organizationId: user.organizationId,
         uid: user.uid,
         environment: config.environment,
         redirectUri,
         returnOrigin,
-        createdAt: FieldValue.serverTimestamp(),
-        expiresAt: Timestamp.fromMillis(Date.now() + 10 * 60 * 1000)
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString()
       });
       const url = new URL(`${config.authBase}/authorize`);
       url.searchParams.set("client_id", ABC_CLIENT_ID.value());
@@ -515,7 +610,7 @@ exports.abcOAuthStart = onRequest(
 );
 
 exports.abcOAuthCallback = onRequest(
-  { secrets: [ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
+  { secrets: [DATABASE_URL, ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
@@ -524,12 +619,9 @@ exports.abcOAuthCallback = onRequest(
       const code = String((req.body && req.body.code) || req.query.code || "");
       const state = String((req.body && req.body.state) || req.query.state || "");
       if (!code || !state) return res.status(400).json({ error: "Missing ABC authorization code or state." });
-      const stateRef = db.collection("abcOAuthStates").doc(state);
-      const stateSnap = await stateRef.get();
-      if (!stateSnap.exists) return res.status(400).json({ error: "This ABC connection request is invalid or has already been used." });
-      const stateData = stateSnap.data();
-      await stateRef.delete();
-      if (!stateData.expiresAt || stateData.expiresAt.toMillis() < Date.now()) {
+      const stateData = await abcConsumeOAuthState(state);
+      if (!stateData) return res.status(400).json({ error: "This ABC connection request is invalid or has already been used." });
+      if (!stateData.expiresAt || abcTimestampMs(stateData.expiresAt) < Date.now()) {
         return res.status(400).json({ error: "This ABC connection request expired. Start again from Hail Money." });
       }
       const environment = String(stateData.environment || "sandbox");
@@ -545,14 +637,14 @@ exports.abcOAuthCallback = onRequest(
       const uid = String(stateData.uid || stateData.initiatedByUid || "").trim();
       const organizationId = normalizeOrganizationId(stateData.organizationId);
       if (!uid || !organizationId) return res.status(400).json({ error: "This ABC connection request is invalid." });
-      await abcConnectionRef(uid).set({
+      await abcSetConnection(uid, {
         uid,
         organizationId,
         accessTokenEncrypted: encryptAbcToken(tokens.access_token),
         refreshTokenEncrypted: encryptAbcToken(tokens.refresh_token || null),
         tokenType: tokens.token_type || "Bearer",
         scope: tokens.scope || ABC_USER_SCOPES,
-        expiresAt: Timestamp.fromMillis(Date.now() + expiresIn * 1000),
+        expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
         environment,
         status: "connected",
         selectedShipToNumber: null,
@@ -560,16 +652,17 @@ exports.abcOAuthCallback = onRequest(
         selectedAccountName: null,
         selectedBranchNumber: null,
         selectedBranchName: null,
-        connectedAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
-      await abcOnboardingRef(uid).set({
+        connectedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, false);
+      await abcSetOnboarding(uid, {
         uid,
+        organizationId,
         onboardingComplete: true,
         abcConnectionStatus: "connected",
-        completedAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
+        completedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, true);
       return res.status(200).json({ connected: true, connectionScope: "user", onboardingComplete: true, environment, returnOrigin: abcSafeReturnOrigin(stateData.returnOrigin) });
     } catch (error) {
       return sendAbcError(res, "abcOAuthCallback failed", error);
@@ -578,21 +671,21 @@ exports.abcOAuthCallback = onRequest(
 );
 
 exports.abcConnectionStatus = onRequest(
-  { timeoutSeconds: 30, memory: "256MiB" },
+  { secrets: [DATABASE_URL], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
     if (req.method !== "GET") return res.status(405).json({ error: "GET required." });
     try {
       const user = await requireAbcOrganizationUser(req);
-      const [snapshot, onboardingSnapshot] = await Promise.all([
-        abcConnectionRef(user.uid).get(),
-        abcOnboardingRef(user.uid).get()
+      const [connectionRecord, onboardingRecord] = await Promise.all([
+        abcGetConnection(user.uid),
+        abcGetOnboarding(user.uid)
       ]);
-      const connection = snapshot.exists ? snapshot.data() || {} : {};
-      const onboarding = onboardingSnapshot.exists ? onboardingSnapshot.data() || {} : {};
+      const connection = connectionRecord || {};
+      const onboarding = onboardingRecord || {};
       const environment = abcRuntimeEnvironment();
-      const sameEnvironment = snapshot.exists && String(connection.environment || "sandbox") === environment;
+      const sameEnvironment = !!connectionRecord && String(connection.environment || "sandbox") === environment;
       const productionAccessRequired = user.organizationId === ABC_PRODUCTION_PILOT_ORGANIZATION_ID && environment !== "production";
       return res.status(200).json({
         connected: sameEnvironment && connection.status === "connected",
@@ -614,7 +707,7 @@ exports.abcConnectionStatus = onRequest(
 );
 
 exports.abcDisconnect = onRequest(
-  { timeoutSeconds: 30, memory: "256MiB" },
+  { secrets: [DATABASE_URL], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
@@ -622,12 +715,13 @@ exports.abcDisconnect = onRequest(
     try {
       const user = await requireAbcOrganizationUser(req);
       await Promise.all([
-        abcConnectionRef(user.uid).delete(),
-        abcOnboardingRef(user.uid).set({
+        abcDeleteConnection(user.uid),
+        abcSetOnboarding(user.uid, {
           uid: user.uid,
+          organizationId: user.organizationId,
           abcConnectionStatus: "disconnected",
-          updatedAt: FieldValue.serverTimestamp()
-        }, { merge: true })
+          updatedAt: new Date().toISOString()
+        }, true)
       ]);
       return res.status(200).json({ connected: false, connectionScope: "user" });
     } catch (error) {
@@ -637,7 +731,7 @@ exports.abcDisconnect = onRequest(
 );
 
 exports.abcAccounts = onRequest(
-  { secrets: [ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
+  { secrets: [DATABASE_URL, ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
@@ -675,7 +769,7 @@ exports.abcAccounts = onRequest(
 );
 
 exports.abcSaveOrganizationSelection = onRequest(
-  { secrets: [ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
+  { secrets: [DATABASE_URL, ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
@@ -694,15 +788,15 @@ exports.abcSaveOrganizationSelection = onRequest(
       if (!account || !branch) {
         throw makeHttpError(403, "That account or branch is not authorized for your ABC Supply user.", "abc_selection_not_authorized");
       }
-      await abcConnectionRef(user.uid).set({
+      await abcSetConnection(user.uid, {
         selectedShipToNumber: account.shipToNumber,
         selectedBillToNumber: account.billToNumber || null,
         selectedAccountName: account.name,
         selectedBranchNumber: branch.number,
         selectedBranchName: branch.name,
-        selectionUpdatedAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
+        selectionUpdatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, true);
       return res.status(200).json({
         connected: true,
         connectionScope: "user",
@@ -715,7 +809,7 @@ exports.abcSaveOrganizationSelection = onRequest(
 );
 
 exports.abcEligibleBranchesForProperty = onRequest(
-  { secrets: [ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
+  { secrets: [DATABASE_URL, ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
@@ -743,7 +837,7 @@ exports.abcEligibleBranchesForProperty = onRequest(
 );
 
 exports.abcPriceItems = onRequest(
-  { secrets: [ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
+  { secrets: [DATABASE_URL, ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
@@ -810,7 +904,7 @@ exports.abcPriceItems = onRequest(
 );
 
 exports.abcFavoriteItems = onRequest(
-  { secrets: [ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
+  { secrets: [DATABASE_URL, ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
@@ -836,7 +930,7 @@ exports.abcFavoriteItems = onRequest(
 );
 
 exports.abcSearchProducts = onRequest(
-  { secrets: [ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
+  { secrets: [DATABASE_URL, ABC_CLIENT_ID, ABC_CLIENT_SECRET, ABC_TOKEN_ENCRYPTION_KEY], timeoutSeconds: 30, memory: "256MiB" },
   async (req, res) => {
     setAbcCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");

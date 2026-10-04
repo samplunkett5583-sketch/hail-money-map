@@ -3,6 +3,7 @@ const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
+const { Pool } = require("pg");
 const { FieldValue, Timestamp } = require("firebase-admin/firestore");
 const fetch = require("node-fetch");
 const qs = require("querystring");
@@ -12,11 +13,11 @@ const { rasterMeasurements } = require("./roof-raster-measurements");
 
 admin.initializeApp();
 const db = admin.firestore();
-const YOUTUBE_API_KEY = defineSecret("YOUTUBE_API_KEY");
 const ABC_CLIENT_ID = defineSecret("ABC_CLIENT_ID");
 const ABC_CLIENT_SECRET = defineSecret("ABC_CLIENT_SECRET");
 const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
 const GOOGLE_SOLAR_API_KEY = defineSecret("GOOGLE_SOLAR_API_KEY");
+const DATABASE_URL = defineSecret("DATABASE_URL");
 const ABC_SANDBOX_AUTH_BASE = "https://sandbox.auth.partners.abcsupply.com/oauth2/aus1vp07knpuqf6Xz0h8/v1";
 const ABC_SANDBOX_API_BASE = "https://partners-sb.abcsupply.com";
 const ABC_REDIRECT_URI = "https://hailmoneymap.web.app/abc-oauth-callback.html";
@@ -322,8 +323,10 @@ function groupAndBuildPolygons(events) {
   return results;
 }
 
-// Main HTTPS function: fetch NOAA, build polygons, cache to Firestore, return items
-exports.fetchAndCacheStorms = onRequest(async (req, res) => {
+const legacyStormFunctions = {};
+
+// Legacy Firestore storm writers retained only for source history; Neon owns storm persistence.
+legacyStormFunctions.fetchAndCacheStorms = onRequest(async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
   if (req.method === "OPTIONS") return res.status(204).send("");
 
@@ -385,121 +388,6 @@ exports.fetchAndCacheStorms = onRequest(async (req, res) => {
   }
 });
 
-// Automatically discover geographically tagged public hail videos for the
-// Maps "Social Media Pictures" layer. Results are cached to protect quota.
-exports.searchStormMedia = onRequest(
-  { secrets: [YOUTUBE_API_KEY], timeoutSeconds: 30, memory: "256MiB" },
-  async (req, res) => {
-    res.set("Access-Control-Allow-Origin", "*");
-    res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
-    res.set("Access-Control-Allow-Headers", "Content-Type");
-    res.set("Cache-Control", "public, max-age=900");
-    if (req.method === "OPTIONS") return res.status(204).send("");
-    if (req.method !== "GET") return res.status(405).json({ error: "GET required" });
-
-    try {
-      const lat = Number(req.query.lat);
-      const lng = Number(req.query.lng);
-      const radiusMiles = Math.max(5, Math.min(200, Number(req.query.radiusMiles) || 75));
-      const date = String(req.query.date || "").slice(0, 10);
-      if (!Number.isFinite(lat) || lat < -90 || lat > 90 ||
-          !Number.isFinite(lng) || lng < -180 || lng > 180 ||
-          !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return res.status(400).json({ error: "Valid lat, lng, and date are required" });
-      }
-
-      const cacheId = [
-        date,
-        lat.toFixed(2).replace(".", "_"),
-        lng.toFixed(2).replace(".", "_"),
-        Math.round(radiusMiles)
-      ].join("-");
-      const cacheRef = db.collection("stormMediaCache").doc(cacheId);
-      const cached = await cacheRef.get();
-      if (cached.exists) {
-        const cachedData = cached.data() || {};
-        const cachedAt = cachedData.cachedAt && cachedData.cachedAt.toMillis
-          ? cachedData.cachedAt.toMillis() : 0;
-        if (Date.now() - cachedAt < 30 * 60 * 1000 && Array.isArray(cachedData.items)) {
-          return res.json({ items: cachedData.items, cached: true });
-        }
-      }
-
-      const apiKey = YOUTUBE_API_KEY.value();
-      if (!apiKey) return res.status(503).json({ error: "YouTube storm media is not configured" });
-      const publishedAfter = new Date(date + "T00:00:00Z");
-      publishedAfter.setUTCDate(publishedAfter.getUTCDate() - 1);
-      const publishedBefore = new Date(date + "T23:59:59Z");
-      publishedBefore.setUTCDate(publishedBefore.getUTCDate() + 1);
-
-      const searchParams = new URLSearchParams({
-        key: apiKey,
-        part: "snippet",
-        type: "video",
-        q: "hail storm|hail damage|large hail",
-        location: lat.toFixed(6) + "," + lng.toFixed(6),
-        locationRadius: radiusMiles.toFixed(0) + "mi",
-        publishedAfter: publishedAfter.toISOString(),
-        publishedBefore: publishedBefore.toISOString(),
-        order: "date",
-        safeSearch: "strict",
-        videoEmbeddable: "true",
-        maxResults: "25"
-      });
-      const searchResponse = await fetch("https://www.googleapis.com/youtube/v3/search?" + searchParams);
-      const searchJson = await searchResponse.json();
-      if (!searchResponse.ok) {
-        throw new Error((searchJson.error && searchJson.error.message) || "YouTube search failed");
-      }
-
-      const searchItems = Array.isArray(searchJson.items) ? searchJson.items : [];
-      const videoIds = searchItems.map(item => item && item.id && item.id.videoId).filter(Boolean);
-      if (!videoIds.length) {
-        await cacheRef.set({ items: [], cachedAt: FieldValue.serverTimestamp() });
-        return res.json({ items: [], cached: false });
-      }
-
-      const detailParams = new URLSearchParams({
-        key: apiKey,
-        part: "snippet,recordingDetails,status",
-        id: videoIds.join(",")
-      });
-      const detailResponse = await fetch("https://www.googleapis.com/youtube/v3/videos?" + detailParams);
-      const detailJson = await detailResponse.json();
-      if (!detailResponse.ok) {
-        throw new Error((detailJson.error && detailJson.error.message) || "YouTube video lookup failed");
-      }
-
-      const items = (detailJson.items || []).map(video => {
-        const location = video.recordingDetails && video.recordingDetails.location;
-        const snippet = video.snippet || {};
-        const thumbnails = snippet.thumbnails || {};
-        const thumbnail = thumbnails.medium || thumbnails.high || thumbnails.default || {};
-        if (!location || !Number.isFinite(Number(location.latitude)) ||
-            !Number.isFinite(Number(location.longitude))) return null;
-        return {
-          id: String(video.id || ""),
-          title: String(snippet.title || "Storm video").slice(0, 180),
-          channelTitle: String(snippet.channelTitle || "YouTube"),
-          publishedAt: String(snippet.publishedAt || ""),
-          thumbnailUrl: String(thumbnail.url || ""),
-          lat: Number(location.latitude),
-          lng: Number(location.longitude),
-          url: "https://www.youtube.com/watch?v=" + encodeURIComponent(video.id)
-        };
-      }).filter(Boolean).slice(0, 20);
-
-      await cacheRef.set({
-        items,
-        cachedAt: FieldValue.serverTimestamp()
-      });
-      return res.json({ items, cached: false });
-    } catch (error) {
-      logger.error("searchStormMedia failed", error);
-      return res.status(500).json({ error: error.message || String(error) });
-    }
-  }
-);
 const functions = require("firebase-functions");   
 // Cloud Functions config: functions:config:set noaa.token="YOUR_TOKEN"
 exports.getNOAAStorms = functions.https.onRequest(async (req, res) => {
@@ -686,7 +574,7 @@ const downloadAndParseCSV = (url) => {
   });
 };
 
-exports.ingestStormEventsLast12Months = ingestStormEventsLast12Months;
+legacyStormFunctions.ingestStormEventsLast12Months = ingestStormEventsLast12Months;
 // Proxy NOAA SWDI PLSR CSV data (fixes browser CORS)
 exports.noaaPlsrProxy = functions.https.onRequest(
   { secrets: ["NOAA_TOKEN"], timeoutSeconds: 120, memory: "1GiB" },
@@ -1497,17 +1385,42 @@ function aiEstimatorCheckMinuteLimit(uid) {
   aiEstimatorMinuteUsage.set(uid, previous);
 }
 
-async function aiEstimatorReserveUsage(uid, estimatedInputTokens, imageCount) {
+let aiEstimatorNeonPool = null;
+
+function aiEstimatorDatabase() {
+  if (!aiEstimatorNeonPool) {
+    aiEstimatorNeonPool = new Pool({
+      connectionString: DATABASE_URL.value(),
+      max: 3,
+      idleTimeoutMillis: 30000
+    });
+  }
+  return aiEstimatorNeonPool;
+}
+
+function aiEstimatorOrganizationId(user) {
+  const org = String(user && (user.hmOrganizationId || user.organizationId) || "").trim().toLowerCase();
+  if (org) return org;
+  const email = String(user && user.email || "").trim().toLowerCase();
+  if (/@hailmoney\.test$/.test(email) || /@yoproconstruction\.com$/.test(email) || email === "samplunkett5583@gmail.com") return "yopro";
+  return "";
+}
+
+async function aiEstimatorReserveUsage(user, estimatedInputTokens, imageCount) {
+  const uid = String(user && user.uid || "");
   aiEstimatorCheckMinuteLimit(uid);
   const uidHash = aiEstimatorUidHash(uid);
+  const orgId = aiEstimatorOrganizationId(user);
+  if (!orgId) {
+    throw Object.assign(new Error("No Hail Money company is assigned to this account."), { statusCode: 403 });
+  }
   const now = new Date();
   const day = now.toISOString().slice(0, 10);
   const hour = now.toISOString().slice(0, 13);
   const worstCaseInputTokens = Math.max(estimatedInputTokens, 1200) + (Math.max(0, imageCount) * 12000);
   const reservedCostUsd = aiEstimatorCost(worstCaseInputTokens, AI_ESTIMATOR_MAX_OUTPUT_TOKENS);
 
-  // The local Functions emulator keeps its guard in memory so development
-  // never writes usage records to the production Firestore project.
+  // Development keeps the guard in memory and never writes production usage.
   if (process.env.FUNCTIONS_EMULATOR === "true") {
     const key = `${uidHash}:${day}`;
     const current = aiEstimatorMinuteUsage.get(key) || { dayCount: 0, hour, hourCount: 0, reservedCostUsd: 0 };
@@ -1521,49 +1434,70 @@ async function aiEstimatorReserveUsage(uid, estimatedInputTokens, imageCount) {
     current.hour = hour;
     current.reservedCostUsd += reservedCostUsd;
     aiEstimatorMinuteUsage.set(key, current);
-    return { uidHash, day, reservedCostUsd, local: true, requestCount: current.dayCount };
+    return { orgId, uidHash, day, reservedCostUsd, local: true, requestCount: current.dayCount };
   }
 
-  const ref = db.collection("aiEstimatorUsage").doc(`${uidHash}_${day}`);
-  let requestCount = 0;
-  await db.runTransaction(async (transaction) => {
-    const snapshot = await transaction.get(ref);
-    const current = snapshot.exists ? snapshot.data() || {} : {};
-    const currentHourCount = current.currentHour === hour ? Number(current.currentHourCount || 0) : 0;
-    const currentDayCount = Number(current.requestCount || 0);
-    const currentReservedCost = Number(current.reservedCostUsd || 0);
+  const client = await aiEstimatorDatabase().connect();
+  try {
+    await client.query("BEGIN");
+    const found = await client.query(
+      `SELECT request_count,current_hour,current_hour_count,reserved_cost_usd
+         FROM ai_estimator_usage
+        WHERE org_id=$1 AND uid_hash=$2 AND day=$3
+        FOR UPDATE`,
+      [orgId, uidHash, day]
+    );
+    const current = found.rows[0] || {};
+    const currentDayCount = Number(current.request_count || 0);
+    const currentHourCount = String(current.current_hour || "") === hour ? Number(current.current_hour_count || 0) : 0;
+    const currentReservedCost = Number(current.reserved_cost_usd || 0);
     if (currentDayCount >= AI_ESTIMATOR_MAX_REQUESTS_PER_DAY ||
         currentHourCount >= AI_ESTIMATOR_MAX_REQUESTS_PER_HOUR ||
         currentReservedCost + reservedCostUsd > AI_ESTIMATOR_DAILY_SPEND_LIMIT_USD) {
       throw Object.assign(new Error("AI estimator daily usage limit reached."), { statusCode: 429 });
     }
-    requestCount = currentDayCount + 1;
-    transaction.set(ref, {
-      uidHash,
-      day,
-      requestCount,
-      currentHour: hour,
-      currentHourCount: currentHourCount + 1,
-      reservedCostUsd: Number((currentReservedCost + reservedCostUsd).toFixed(6)),
-      inputTokens: Number(current.inputTokens || 0),
-      outputTokens: Number(current.outputTokens || 0),
-      actualCostUsd: Number(current.actualCostUsd || 0),
-      updatedAt: FieldValue.serverTimestamp()
-    }, { merge: true });
-  });
-  return { uidHash, day, reservedCostUsd, local: false, requestCount };
+    const requestCount = currentDayCount + 1;
+    await client.query(
+      `INSERT INTO ai_estimator_usage(
+         org_id,uid_hash,day,request_count,current_hour,current_hour_count,reserved_cost_usd,updated_at
+       ) VALUES($1,$2,$3,$4,$5,$6,$7,now())
+       ON CONFLICT(org_id,uid_hash,day) DO UPDATE SET
+         request_count=EXCLUDED.request_count,
+         current_hour=EXCLUDED.current_hour,
+         current_hour_count=EXCLUDED.current_hour_count,
+         reserved_cost_usd=EXCLUDED.reserved_cost_usd,
+         updated_at=now()`,
+      [orgId, uidHash, day, requestCount, hour, currentHourCount + 1, Number((currentReservedCost + reservedCostUsd).toFixed(6))]
+    );
+    await client.query("COMMIT");
+    return { orgId, uidHash, day, reservedCostUsd, local: false, requestCount };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function aiEstimatorRecordUsage(reservation, inputTokens, outputTokens) {
   const actualCostUsd = aiEstimatorCost(inputTokens, outputTokens);
   if (!reservation || reservation.local) return actualCostUsd;
-  const ref = db.collection("aiEstimatorUsage").doc(`${reservation.uidHash}_${reservation.day}`);
-  await ref.set({
-    inputTokens: FieldValue.increment(Number(inputTokens || 0)),
-    outputTokens: FieldValue.increment(Number(outputTokens || 0)),
-    actualCostUsd: FieldValue.increment(actualCostUsd),
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
+  await aiEstimatorDatabase().query(
+    `UPDATE ai_estimator_usage SET
+       input_tokens=input_tokens+$1,
+       output_tokens=output_tokens+$2,
+       actual_cost_usd=actual_cost_usd+$3,
+       updated_at=now()
+     WHERE org_id=$4 AND uid_hash=$5 AND day=$6`,
+    [
+      Number(inputTokens || 0),
+      Number(outputTokens || 0),
+      actualCostUsd,
+      reservation.orgId,
+      reservation.uidHash,
+      reservation.day
+    ]
+  );
   return actualCostUsd;
 }
 
@@ -1723,7 +1657,7 @@ exports.getSolarRoofData = onRequest(
 );
 
 exports.analyzeRoofEstimate = onRequest(
-  { secrets: [OPENAI_API_KEY], timeoutSeconds: 120, memory: "512MiB", cors: false },
+  { secrets: [OPENAI_API_KEY, DATABASE_URL], timeoutSeconds: 120, memory: "512MiB", cors: false },
   async (req, res) => {
     permitCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).send("");
@@ -1752,7 +1686,7 @@ exports.analyzeRoofEstimate = onRequest(
       }
 
       const estimatedInputTokens = Math.ceil(serializedLength / 4);
-      reservation = await aiEstimatorReserveUsage(user.uid, estimatedInputTokens, photos.length);
+      reservation = await aiEstimatorReserveUsage(user, estimatedInputTokens, photos.length);
       const prompt = [
         "You are the Hail Money roof-estimate intake analyst.",
         "Use only the supplied connected-source facts and user answers.",
