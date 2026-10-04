@@ -671,44 +671,100 @@
   }
 
   /* ── Photo picker (Step 3: Add Photos) ────────────────────────────── */
+  function pickerPhotoKey(photo, index) {
+    var stable = photo && (photo.id || photo.fileId || photo.imageKey || photo.storageKey);
+    return String(stable || (index != null ? index : ''));
+  }
+
+  function pickerCategoryRank(name) {
+    name = String(name || 'Inspection').trim();
+    var exact = {
+      'Front Elevation': 10,
+      'Right Elevation': 20,
+      'Rear Elevation': 30,
+      'Left Elevation': 40,
+      'Off the ladder pictures': 50,
+      'Front Slope': 70,
+      'Back Slope': 80
+    };
+    if (exact[name] != null) return exact[name];
+    if (/^Roof Projections:/i.test(name)) return 60;
+    if (/^Slope:/i.test(name)) return 90;
+    return 100;
+  }
+
   function openPhotoPicker(sectionId) {
     var p = findProject(rb.projectId);
     if (!p) return;
     rb.pickerSectionIndex = rb.draft.sections.findIndex(function (s) { return s.id === sectionId; });
     if (rb.pickerSectionIndex < 0) return;
-    rb.selectedPhotoIds = [];
+
     var overlay = document.getElementById('phr-picker-overlay');
     var grid = document.getElementById('phr-picker-grid');
     var title = document.getElementById('phr-picker-title');
     if (!overlay || !grid) return;
+
     var section = rb.draft.sections[rb.pickerSectionIndex];
     var selectedIds = {};
-    section.photos.forEach(function (photo) { selectedIds[String(photo.id || photo.imageKey || '')] = true; });
-    title.textContent = 'Add Photos — ' + (section.title || 'Section');
-    grid.innerHTML = p.photos.length
-      ? p.photos.map(function (photo, index) {
-          var key = String(photo.id || photo.imageKey || index);
+    (section.photos || []).forEach(function (photo, index) {
+      selectedIds[pickerPhotoKey(photo, index)] = true;
+    });
+    rb.selectedPhotoIds = Object.keys(selectedIds);
+
+    title.textContent = 'Select Photos for ' + (section.title || 'Section');
+
+    if (!p.photos.length) {
+      grid.innerHTML = '<div class="crm-empty-state">No photos in this project yet. Add photos first.</div>';
+    } else {
+      var grouped = {};
+      p.photos.forEach(function (photo, index) {
+        var category = String(photo.category || 'Inspection').trim() || 'Inspection';
+        if (!grouped[category]) grouped[category] = [];
+        grouped[category].push({ photo: photo, index: index });
+      });
+      var categories = Object.keys(grouped).sort(function (a, b) {
+        var rankDiff = pickerCategoryRank(a) - pickerCategoryRank(b);
+        return rankDiff || a.localeCompare(b);
+      });
+
+      grid.innerHTML = categories.map(function (category) {
+        var cards = grouped[category].map(function (item) {
+          var photo = item.photo;
+          var key = pickerPhotoKey(photo, item.index);
           var selected = !!selectedIds[key];
+          var name = String(photo.name || photo.fileName || ('Photo ' + (item.index + 1)));
           return '<button type="button" class="phr-picker-photo' + (selected ? ' selected' : '') + '" data-phr-picker-key="' + esc(key) + '">' +
-            '<span class="phr-picker-thumb"><img data-phr-picker-img="' + esc(key) + '" alt="" /></span>' +
+            '<span class="phr-picker-thumb"><img data-phr-picker-img="' + esc(key) + '" alt="' + esc(name) + '" /></span>' +
+            '<span class="phr-picker-name">' + esc(name) + '</span>' +
             '<span class="phr-picker-check">' + (selected ? '&#10003;' : '') + '</span>' +
             '</button>';
-        }).join('')
-      : '<div class="crm-empty-state">No photos in this project yet. Add photos first.</div>';
+        }).join('');
+        return '<section class="phr-picker-section">' +
+          '<h3 class="phr-picker-section-title">' + esc(category) + '</h3>' +
+          '<div class="phr-picker-section-grid">' + cards + '</div>' +
+          '</section>';
+      }).join('');
+    }
+
     overlay.hidden = false;
+
     Array.prototype.forEach.call(grid.querySelectorAll('[data-phr-picker-key]'), function (btn) {
       btn.onclick = function () {
         var key = btn.getAttribute('data-phr-picker-key');
         var wasSelected = btn.classList.contains('selected');
         btn.classList.toggle('selected', !wasSelected);
         btn.querySelector('.phr-picker-check').innerHTML = !wasSelected ? '&#10003;' : '';
-        if (!wasSelected) rb.selectedPhotoIds.push(key);
-        else rb.selectedPhotoIds = rb.selectedPhotoIds.filter(function (k) { return k !== key; });
+        if (!wasSelected) {
+          if (rb.selectedPhotoIds.indexOf(key) === -1) rb.selectedPhotoIds.push(key);
+        } else {
+          rb.selectedPhotoIds = rb.selectedPhotoIds.filter(function (k) { return k !== key; });
+        }
       };
     });
+
     Array.prototype.forEach.call(grid.querySelectorAll('[data-phr-picker-img]'), function (img) {
       var key = img.getAttribute('data-phr-picker-img');
-      var photo = p.photos[key] || p.photos.find(function (ph) { return String(ph.id || ph.imageKey || '') === key; });
+      var photo = p.photos.find(function (ph, index) { return pickerPhotoKey(ph, index) === key; });
       if (photo) loadPhotoInto(img, photo, function (f) { f.style.background = '#eef1f5'; });
     });
   }
@@ -719,21 +775,20 @@
     var p = findProject(rb.projectId);
     var section = rb.draft.sections[rb.pickerSectionIndex];
     var existing = {};
-    section.photos.forEach(function (photo) { existing[String(photo.id || photo.imageKey || '')] = photo; });
+    (section.photos || []).forEach(function (photo, index) {
+      existing[pickerPhotoKey(photo, index)] = photo;
+    });
+
     var chosen = [];
     rb.selectedPhotoIds.forEach(function (key) {
-      var photo = p.photos.find(function (ph) { return String(ph.id || ph.imageKey || '') === key; });
+      var photo = p.photos.find(function (ph, index) { return pickerPhotoKey(ph, index) === key; });
       if (!photo) return;
       var copy = JSON.parse(JSON.stringify(photo));
-      copy.description = (existing[String(copy.id || copy.imageKey || '')] || {}).description || '';
+      copy.description = (existing[key] || {}).description || '';
       chosen.push(copy);
     });
-    // Merge without duplicates.
-    var byKey = {};
-    section.photos.concat(chosen).forEach(function (photo) {
-      byKey[String(photo.id || photo.imageKey || '')] = photo;
-    });
-    section.photos = Object.keys(byKey).map(function (k) { return byKey[k]; });
+
+    section.photos = chosen;
     overlay.hidden = true;
     renderBuilder();
   }

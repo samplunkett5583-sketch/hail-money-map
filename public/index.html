@@ -21478,15 +21478,30 @@
     .phr-custom-notes{min-height:90px;padding:10px;border:1px solid #cbd2dd;border-radius:8px;resize:vertical;font-size:13px}
     .phr-picker-overlay{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:18px;background:rgba(12,14,25,.62)}
     .phr-picker-overlay[hidden]{display:none!important}
-    .phr-picker-card{width:min(860px,100%);max-height:84vh;display:flex;flex-direction:column;background:#fff;border-radius:14px;box-shadow:0 22px 60px rgba(0,0,0,.32);overflow:hidden}
-    .phr-picker-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 20px;border-bottom:1px solid #e3e8f0}
-    .phr-picker-head h2{margin:0;font-size:17px;font-weight:800;color:#1f2937}
-    .phr-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;padding:16px 20px;overflow-y:auto}
-    .phr-picker-photo{position:relative;border:2px solid #d8dde6;border-radius:10px;background:#fff;padding:0;overflow:hidden;cursor:pointer;aspect-ratio:4/3}
+    .phr-picker-card{width:min(1180px,100%);max-height:92vh;display:flex;flex-direction:column;background:#fffaf0;border-radius:14px;box-shadow:0 22px 60px rgba(0,0,0,.32);overflow:hidden}
+    .phr-picker-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 20px;border-bottom:1px solid #e3e8f0;background:#fff}
+    .phr-picker-head h2{margin:0;font-size:19px;font-weight:800;color:#1f2937}
+    .phr-picker-grid{display:block;padding:14px 16px 22px;overflow-y:auto;background:linear-gradient(180deg,#fff8df,#fff3c8)}
+    .phr-picker-section{margin-bottom:18px}
+    .phr-picker-section:last-child{margin-bottom:0}
+    .phr-picker-section-title{margin:0 0 9px;padding:8px 11px;border-left:5px solid #c7921e;border-radius:6px;background:rgba(255,255,255,.9);font-size:15px;font-weight:900;color:#1f2937}
+    .phr-picker-section-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+    .phr-picker-photo{position:relative;border:2px solid #d8dde6;border-radius:10px;background:#fff;padding:5px;overflow:hidden;cursor:pointer;min-width:0;text-align:center}
+    .phr-picker-thumb{display:block;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:6px;background:#eef1f5}
     .phr-picker-photo img{width:100%;height:100%;object-fit:cover;display:block}
+    .phr-picker-name{display:block;padding:7px 4px 2px;font-size:11px;font-weight:700;line-height:1.25;color:#1f2937;overflow-wrap:anywhere}
     .phr-picker-photo.selected{border-color:#b88722;box-shadow:0 0 0 2px rgba(184,135,34,.35)}
     .phr-picker-check{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:999px;background:#fff;border:2px solid #b88722;display:grid;place-items:center;font-size:13px;font-weight:900;color:#b88722}
-    .phr-picker-actions{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #e3e8f0}
+    .phr-picker-actions{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #e3e8f0;background:#fff;position:sticky;bottom:0;z-index:2}
+    @media(max-width:700px){
+      .phr-picker-overlay{padding:6px}
+      .phr-picker-card{max-height:96vh;border-radius:10px}
+      .phr-picker-head{padding:12px 14px}
+      .phr-picker-grid{padding:10px}
+      .phr-picker-section-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+      .phr-picker-name{font-size:10px}
+      .phr-picker-actions{padding:10px 12px}
+    }
     .phr-preview-toolbar{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,.2);border:1px solid rgba(112,78,10,.28);border-radius:14px 14px 0 0;flex-wrap:wrap}
     .phr-preview-toolbar-title{flex:1;font:800 18px/1.1 "Times New Roman",serif;text-transform:uppercase;color:#303644;min-width:0}
     .phr-preview-stages{background:#fff;border:1px solid rgba(114,91,31,.2);border-top:0;border-radius:0 0 12px 12px;padding:18px;min-height:400px}
@@ -84345,7 +84360,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
 <script src="./contingency-locked-pdf.js?v=20260920"></script>
 <script src="./assets/crm-cross-links.js?v=20260914"></script>
-<script src="./assets/photo-reports.js?v=20261004-1"></script>
+<script src="./assets/photo-reports.js?v=20261004-2"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
 <script id="hm-region-document-routing-script">
 (function(){
