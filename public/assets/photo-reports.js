@@ -25,7 +25,8 @@
     projectId: '',
     draft: null,          // { title, sections: [] }
     pickerSectionIndex: -1,
-    selectedPhotoIds: []
+    selectedPhotoIds: [],
+    currentReport: null
   };
 
   function esc(v) {
@@ -1044,6 +1045,7 @@
     var report = reports.find(function (r) { return String(r.id || '') === String(reportId || ''); }) || reports[0];
     if (!report) { if (typeof showUploadToast === 'function') showUploadToast('No report found for this project.'); return; }
     rb.projectId = projectId;
+    rb.currentReport = report;
     renderReportPage(report);
     showPage('page-photo-report-preview');
   }
@@ -1160,14 +1162,335 @@
     });
   }
 
-  /* ── Print to PDF (mirrors existing invoice print pattern) ────────── */
-  function printReport() {
-    var titleEl = document.getElementById('phr-preview-title');
-    if (titleEl) document.title = titleEl.textContent || 'Property Photo Report';
-    if (typeof showUploadToast === 'function') {
-      showUploadToast('Choose Save as PDF. Turn off Headers and footers in the browser print dialog.');
+  /* ── Direct PDF download ─────────────────────────────────────────── */
+  function safePdfFileName(value) {
+    return String(value || 'Property Photo Report')
+      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 120) || 'Property Photo Report';
+  }
+
+  function sourceToDataUrl(src) {
+    return new Promise(function (resolve) {
+      if (!src) { resolve(''); return; }
+      if (/^data:/i.test(src)) { resolve(src); return; }
+      fetch(src).then(function (res) {
+        if (!res.ok) throw new Error('Image request failed');
+        return res.blob();
+      }).then(function (blob) {
+        var reader = new FileReader();
+        reader.onload = function () { resolve(String(reader.result || '')); };
+        reader.onerror = function () { resolve(''); };
+        reader.readAsDataURL(blob);
+      }).catch(function () { resolve(''); });
+    });
+  }
+
+  function compressImageForPdf(dataUrl) {
+    return new Promise(function (resolve) {
+      if (!dataUrl) { resolve(''); return; }
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var maxSide = 1600;
+          var scale = Math.min(1, maxSide / Math.max(img.naturalWidth || img.width || maxSide, img.naturalHeight || img.height || maxSide));
+          var width = Math.max(1, Math.round((img.naturalWidth || img.width || maxSide) * scale));
+          var height = Math.max(1, Math.round((img.naturalHeight || img.height || maxSide) * scale));
+          var canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          var ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        } catch (_) {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = function () { resolve(dataUrl); };
+      img.src = dataUrl;
+    });
+  }
+
+  function photoToDataUrl(photo) {
+    return new Promise(function (resolve) {
+      photoSrc(photo || {}, function (src) {
+        sourceToDataUrl(src)
+          .then(compressImageForPdf)
+          .then(resolve)
+          .catch(function () { resolve(''); });
+      });
+    });
+  }
+
+  function fitImageRect(doc, dataUrl, x, y, boxW, boxH) {
+    try {
+      var props = doc.getImageProperties(dataUrl);
+      var iw = Number(props && props.width) || boxW;
+      var ih = Number(props && props.height) || boxH;
+      var scale = Math.min(boxW / iw, boxH / ih);
+      var w = iw * scale;
+      var h = ih * scale;
+      return { x:x + (boxW - w) / 2, y:y + (boxH - h) / 2, w:w, h:h };
+    } catch (_) {
+      return { x:x, y:y, w:boxW, h:boxH };
     }
-    setTimeout(function () { window.print(); }, 900);
+  }
+
+  function pdfText(doc, value, x, y, maxWidth, options) {
+    var text = String(value || '').trim();
+    if (!text) return y;
+    options = options || {};
+    doc.setFont(options.bold ? 'helvetica' : 'helvetica', options.bold ? 'bold' : 'normal');
+    doc.setFontSize(options.size || 10);
+    var lines = maxWidth ? doc.splitTextToSize(text, maxWidth) : [text];
+    doc.text(lines, x, y, options.align ? { align: options.align } : undefined);
+    return y + (lines.length * ((options.size || 10) * 1.2));
+  }
+
+  async function printReport() {
+    var report = rb.currentReport;
+    if (!report) {
+      if (typeof showUploadToast === 'function') showUploadToast('Open a report before saving the PDF.');
+      return;
+    }
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      if (typeof showUploadToast === 'function') showUploadToast('PDF library is unavailable. Reload the app and try again.');
+      return;
+    }
+
+    var button = document.getElementById('phr-preview-print');
+    var oldText = button ? button.textContent : '';
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Creating PDF…';
+    }
+    if (typeof showUploadToast === 'function') showUploadToast('Creating PDF…');
+
+    try {
+      var options = report.options || {};
+      var cover = report.cover || {};
+      var layout = options.layout || {};
+      var perPage = [1,2,4].indexOf(Number(layout.perPage)) !== -1 ? Number(layout.perPage) : 4;
+      var portrait = layout.portrait !== false;
+      var showDesc = layout.showDescriptions !== false;
+      var showNum = layout.photoNumbering !== false;
+
+      var jsPDF = window.jspdf.jsPDF;
+      var doc = new jsPDF({ unit:'pt', format:'letter', orientation:'portrait', compress:true });
+
+      function pageWidth() { return doc.internal.pageSize.getWidth(); }
+      function pageHeight() { return doc.internal.pageSize.getHeight(); }
+      function addPage(orientation) {
+        doc.addPage('letter', orientation === 'landscape' ? 'landscape' : 'portrait');
+      }
+      function rule(y) {
+        doc.setDrawColor(184,135,34);
+        doc.setLineWidth(1.2);
+        doc.line(42, y, pageWidth() - 42, y);
+      }
+
+      // Cover page.
+      var y = 64;
+      if (options.cover && options.cover.companyLogo !== false && cover.companyLogo) {
+        var logoData = await sourceToDataUrl(cover.companyLogo);
+        if (logoData) {
+          var logoRect = fitImageRect(doc, logoData, (pageWidth() - 150) / 2, y, 150, 65);
+          try { doc.addImage(logoData, logoRect.x, logoRect.y, logoRect.w, logoRect.h, undefined, 'FAST'); } catch (_) {}
+          y += 78;
+        }
+      }
+      doc.setTextColor(31,41,55);
+      if (!options.cover || options.cover.companyName !== false) {
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(18);
+        doc.text(String(cover.companyName || ''), pageWidth()/2, y, { align:'center' });
+        if (cover.companyName) y += 24;
+      }
+      var companyLine = [
+        !options.cover || options.cover.companyAddress !== false ? cover.companyAddress : '',
+        !options.cover || options.cover.companyPhone !== false ? cover.companyPhone : '',
+        !options.cover || options.cover.companyEmail !== false ? cover.companyEmail : ''
+      ].filter(Boolean).join('  •  ');
+      if (companyLine) {
+        doc.setFont('helvetica','normal');
+        doc.setFontSize(9);
+        doc.text(doc.splitTextToSize(companyLine, 480), pageWidth()/2, y, { align:'center' });
+        y += 28;
+      }
+      y += 18;
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(24);
+      doc.text(String((!options.cover || options.cover.reportTitle !== false) ? (report.title || 'Property Photo Report') : ''), pageWidth()/2, y, { align:'center' });
+      y += 18;
+      rule(y);
+      y += 28;
+
+      var coverRows = [
+        ['Homeowner', cover.homeowner, !options.cover || options.cover.homeowner !== false],
+        ['Property Address', cover.propertyAddress, !options.cover || options.cover.propertyAddress !== false],
+        ['Inspection Date', cover.inspectionDate, !options.cover || options.cover.inspectionDate !== false],
+        ['Report Date', cover.reportDate, !options.cover || options.cover.reportDate !== false],
+        ['Representative', cover.representativeName, !options.cover || options.cover.representativeName !== false],
+        ['Representative Phone', cover.representativePhone, !options.cover || options.cover.representativePhone !== false],
+        ['Representative Email', cover.representativeEmail, !options.cover || options.cover.representativeEmail !== false],
+        ['Claim Number', cover.claimNumber, !options.cover || options.cover.claimNumber !== false],
+        ['Carrier', cover.carrier, !options.cover || options.cover.carrier !== false],
+        ['Policy Number', cover.policyNumber, !options.cover || options.cover.policyNumber !== false],
+        ['Adjuster', cover.adjuster, !options.cover || options.cover.adjuster !== false]
+      ];
+      coverRows.forEach(function (row) {
+        if (!row[2] || !String(row[1] || '').trim()) return;
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(9);
+        doc.setTextColor(138,109,34);
+        doc.text(String(row[0]).toUpperCase(), 74, y);
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(31,41,55);
+        var lines = doc.splitTextToSize(String(row[1]), 330);
+        doc.text(lines, 210, y);
+        y += Math.max(19, lines.length * 12);
+      });
+      if ((!options.cover || options.cover.customNotes !== false) && String(cover.customNotes || '').trim()) {
+        y += 10;
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(9);
+        doc.setTextColor(138,109,34);
+        doc.text('NOTES', 74, y);
+        y += 14;
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(55,65,81);
+        doc.text(doc.splitTextToSize(String(cover.customNotes), 460), 74, y);
+      }
+
+      var pageCounter = 1;
+      var photoCounter = 1;
+      var sections = Array.isArray(report.sections) ? report.sections : [];
+      for (var s = 0; s < sections.length; s++) {
+        var section = sections[s] || {};
+        var photos = (section.photos || []).filter(function (ph) {
+          return ph && (ph.id || ph.fileId || ph.storageKey || ph.storagePath || ph.imageKey || ph.fullUrl);
+        });
+        if (!photos.length) continue;
+
+        for (var offset = 0; offset < photos.length; offset += perPage) {
+          var chunk = photos.slice(offset, offset + perPage);
+          addPage(portrait ? 'portrait' : 'landscape');
+          pageCounter++;
+
+          var pw = pageWidth();
+          var ph = pageHeight();
+          var margin = 42;
+          var top = 44;
+
+          doc.setTextColor(31,41,55);
+          if (!options.page || options.page.titleEveryPage !== false || options.page.header !== false) {
+            doc.setFont('helvetica','bold');
+            doc.setFontSize(13);
+            doc.text(String(report.title || 'Property Photo Report'), margin, top);
+            var rightBits = [];
+            if ((!options.page || options.page.pagePropertyAddress !== false) && cover.propertyAddress) rightBits.push(cover.propertyAddress);
+            if ((!options.page || options.page.pageRepresentative !== false) && cover.representativeName) rightBits.push('Rep: ' + cover.representativeName);
+            if (rightBits.length) {
+              doc.setFont('helvetica','normal');
+              doc.setFontSize(8);
+              doc.text(doc.splitTextToSize(rightBits.join('  •  '), pw * 0.42), pw - margin, top, { align:'right' });
+            }
+            rule(top + 12);
+            top += 34;
+          }
+
+          doc.setFont('helvetica','bold');
+          doc.setFontSize(15);
+          doc.text(String(section.title || ('Section ' + (s + 1))), margin, top);
+          top += 18;
+
+          var cols = perPage === 1 ? 1 : 2;
+          var rowsCount = perPage === 4 ? 2 : 1;
+          var gap = 14;
+          var footerReserve = 34;
+          var cellW = (pw - margin*2 - gap*(cols-1)) / cols;
+          var availableH = ph - top - footerReserve - margin;
+          var cellH = (availableH - gap*(rowsCount-1)) / rowsCount;
+          var descReserve = showDesc ? 32 : 10;
+          var imageH = Math.max(80, cellH - descReserve);
+
+          for (var j = 0; j < chunk.length; j++) {
+            var photo = chunk[j];
+            var row = Math.floor(j / cols);
+            var col = j % cols;
+            var x = margin + col * (cellW + gap);
+            var cy = top + row * (cellH + gap);
+
+            doc.setDrawColor(216,221,230);
+            doc.setFillColor(248,250,252);
+            doc.roundedRect(x, cy, cellW, cellH, 5, 5, 'FD');
+
+            if (showNum) {
+              doc.setFillColor(184,135,34);
+              doc.circle(x + 16, cy + 16, 10, 'F');
+              doc.setTextColor(255,255,255);
+              doc.setFont('helvetica','bold');
+              doc.setFontSize(8);
+              doc.text(String(photoCounter), x + 16, cy + 19, { align:'center' });
+            }
+
+            var dataUrl = await photoToDataUrl(photo);
+            if (dataUrl) {
+              try {
+                var rect = fitImageRect(doc, dataUrl, x + 6, cy + 6, cellW - 12, imageH - 8);
+                doc.addImage(dataUrl, rect.x, rect.y, rect.w, rect.h, undefined, 'FAST');
+              } catch (_) {
+                doc.setTextColor(120,120,120);
+                doc.setFont('helvetica','normal');
+                doc.setFontSize(9);
+                doc.text('Photo unavailable', x + cellW/2, cy + imageH/2, { align:'center' });
+              }
+            } else {
+              doc.setTextColor(120,120,120);
+              doc.setFont('helvetica','normal');
+              doc.setFontSize(9);
+              doc.text('Photo unavailable', x + cellW/2, cy + imageH/2, { align:'center' });
+            }
+
+            if (showDesc && String(photo.description || '').trim()) {
+              doc.setTextColor(55,65,81);
+              doc.setFont('helvetica','normal');
+              doc.setFontSize(8);
+              var descLines = doc.splitTextToSize(String(photo.description), cellW - 12);
+              doc.text(descLines.slice(0, 3), x + 6, cy + imageH + 12);
+            }
+            photoCounter++;
+          }
+
+          if (!options.page || options.page.footer !== false || options.page.pageNumbers !== false) {
+            doc.setTextColor(105,113,125);
+            doc.setFont('helvetica','normal');
+            doc.setFontSize(8);
+            if (!options.page || options.page.footer !== false) {
+              doc.text(String(report.title || ''), margin, ph - 20);
+            }
+            if (!options.page || options.page.pageNumbers !== false) {
+              doc.text(String(pageCounter), pw - margin, ph - 20, { align:'right' });
+            }
+          }
+        }
+      }
+
+      var fileName = safePdfFileName(report.title) + '.pdf';
+      doc.save(fileName);
+      if (typeof showUploadToast === 'function') showUploadToast(fileName + ' saved.');
+    } catch (err) {
+      console.error('[Photo Reports] PDF save failed', err);
+      if (typeof showUploadToast === 'function') showUploadToast('Could not create the PDF. Please try again.');
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = oldText || 'Save as PDF';
+      }
+    }
   }
 
   /* ════════════════════════════════════════════════════════════════════
