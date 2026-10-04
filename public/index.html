@@ -22900,11 +22900,11 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <!-- Hail Size Band Legend -->
             <div id="hail-band-legend" class="hail-band-legend" style="display:none;">
               <div class="hail-band-legend-title">Hail Size</div>
-              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#FFF59D;border-color:#D7CD72;"></span>&frac12;&ndash; 1&Prime;</div>
-              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#EFAE36;border-color:#C58A24;"></span>1&ndash; 1&frac12;&Prime;</div>
-              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#E2891C;border-color:#B66B16;"></span>1&frac12;&ndash; 2&Prime;</div>
-              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#DC1E1E;border-color:#A01616;"></span>2&ndash; 2&frac12;&Prime;</div>
-              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#9419B4;border-color:#6B1080;"></span>2&frac12;&Prime; +</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#FFF200;border-color:#C8BC00;"></span>&frac12;&ndash; 1&Prime; Yellow</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#F4C430;border-color:#BE961D;"></span>1&frac14;&ndash; 1&frac12;&Prime; Dark Yellow</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#FF8000;border-color:#C76300;"></span>1&frac34;&ndash; &lt;2&Prime; Orange</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#FF0000;border-color:#B50000;"></span>2&ndash; 3&Prime; Red</div>
+              <div class="hail-band-legend-row"><span class="hail-band-swatch" style="background:#800080;border-color:#560056;"></span>&gt;3&Prime; Purple</div>
             </div>
             <!-- Bare live swath opacity slider -->
             <div class="maps-opacity-ctrl">
@@ -33070,13 +33070,12 @@ function mapsGoogleReady() {
 
     function hailInToColor(hailIn) {
       var h = Number(hailIn);
-      if (!isFinite(h)) return '#fff59d';
-      if (h >= 3)   return '#9419b4'; // deep purple
-      if (h >= 2.5) return '#c81e78'; // magenta
-      if (h >= 2)   return '#dc1e1e'; // red
-      if (h >= 1.5) return '#e2891c'; // Hail Recon dark orange
-      if (h > 1)    return '#efae36'; // Hail Recon light orange (>1.00" to <1.50")
-      return '#fff59d';               // Hail Recon light yellow (0.50" through 1.00")
+      if (!isFinite(h)) return '#FFF200';
+      if (h > 3.00)  return '#800080'; // purple: over 3.00"
+      if (h >= 2.00) return '#FF0000'; // red: 2.00" through 3.00"
+      if (h >= 1.75) return '#FF8000'; // orange: 1.75" through under 2.00"
+      if (h >= 1.25) return '#F4C430'; // dark yellow: 1.25" through 1.50"
+      return '#FFF200';                // yellow: 0.50" through 1.00"
     }
 
     function drawLsrPointsOnMap(points) {
@@ -33398,26 +33397,25 @@ function mapsGoogleReady() {
     // ══════════════════════════════════════════════════════════════
 
     // ── Severity → color ──
-    // Match the approved storm-map legend without changing swath geometry/style:
-    // yellow 1.00-1.25", orange 1.50-1.75", red 2.00-2.75", purple 3.00"+.
+    // One canonical hail palette for every map renderer:
+    // 0.50-1.00" yellow, 1.25-1.50" dark yellow, 1.75-<2.00" orange,
+    // 2.00-3.00" red, and >3.00" purple.
     function swathSeverityColor(hailIn) {
-      // RGB follows the approved legend. Existing alpha/opacity tiers are kept
-      // exactly so the swath's visual style does not change.
-      if (hailIn >= 3.00) return [130,  99, 191, 0.65]; // purple
-      if (hailIn >= 2.50) return [230,  66,  85, 0.62]; // red
-      if (hailIn >= 2.00) return [230,  66,  85, 0.60]; // red
-      if (hailIn >= 1.74) return [255, 126,  40, 0.58]; // orange
-      if (hailIn >  1.50) return [255, 126,  40, 0.56]; // orange
-      if (hailIn >= 1.50) return [255, 126,  40, 0.60]; // orange
-      return                     [240, 193,  77, 0.60]; // yellow
+      var h = Number(hailIn);
+      if (!isFinite(h)) h = 0.5;
+      if (h > 3.00)  return [128,   0, 128, 0.65]; // purple
+      if (h >= 2.00) return [255,   0,   0, 0.62]; // red
+      if (h >= 1.75) return [255, 128,   0, 0.60]; // orange
+      if (h >= 1.25) return [244, 196,  48, 0.60]; // dark yellow
+      return          [255, 242,   0, 0.60];       // yellow
     }
 
     function swathVisualHailValue(bandMin, bandMax) {
       var min = Number(bandMin) || 0;
       var max = Number(bandMax);
-      // Some stored top bins are 2.50-3.xx. Those are the storm core and must
-      // render as the 3.00"+ purple zone instead of being flattened to red.
-      if (min >= 3.00 || (min >= 2.50 && Number.isFinite(max) && max > 3.00)) return 3.00;
+      // Purple is reserved for hail greater than 3.00". If a stored range
+      // crosses above 3.00", use a value above 3 so its visible color matches.
+      if (min > 3.00 || (min >= 2.50 && Number.isFinite(max) && max > 3.00)) return Math.max(min, 3.25);
       return min;
     }
 
@@ -33486,14 +33484,14 @@ function mapsGoogleReady() {
     //  feathered edges, and variable corridor width.
     // ══════════════════════════════════════════════════════════════
 
-    // Hail size → color band (RGB).  Used by HailFieldOverlay.
-    // Nested ramp: yellow → orange-yellow → dark orange → red → purple
+    // Hail size → color band (RGB). Used by HailFieldOverlay.
+    // Keep this identical to the polygon/legend palette.
     var HAIL_FIELD_BANDS = [
-      { min: 0.00, max: 1.00, r: 255, g: 245, b: 157 }, // light yellow #FFF59D
-      { min: 1.00, max: 1.50, r: 239, g: 174, b:  54 }, // light orange #EFAE36
-      { min: 1.50, max: 2.00, r: 226, g: 137, b:  28 }, // dark orange  #E2891C
-      { min: 2.00, max: 2.50, r: 220, g:  30, b:  30 }, // red          #DC1E1E
-      { min: 2.50, max: 99,   r: 148, g:  25, b: 180 }  // deep purple  #9419B4
+      { min: 0.00,     max: 1.25, r: 255, g: 242, b:   0 }, // yellow
+      { min: 1.25,     max: 1.75, r: 244, g: 196, b:  48 }, // dark yellow
+      { min: 1.75,     max: 2.00, r: 255, g: 128, b:   0 }, // orange
+      { min: 2.00,     max: 3.000001, r: 255, g: 0, b: 0 }, // red
+      { min: 3.000001, max: 99,   r: 128, g:   0, b: 128 }  // purple
     ];
 
     function _hailFieldColor(hailIn) {
@@ -33781,14 +33779,11 @@ function mapsGoogleReady() {
     // ══════════════════════════════════════════════════════════════
 
     var HAIL_SIZE_BANDS = [
-      { threshold: 0.50, label: '\u00BD\u2013 1\u2033',    fill: '#FFF59D', stroke: '#D7CD72' },  // light yellow
-      { threshold: 1.00, label: '1\u2013 1\u00BD\u2033',   fill: '#FFF59D', stroke: '#D7CD72' },  // light yellow
-      { threshold: 1.50, label: '1\u00BD\u2013 1.74\u2033', fill: '#F9E76B', stroke: '#D8C45A' },  // subtle yellow
-      { threshold: 1.500001, label: '> 1\u00BD\u2013 1.74\u2033', fill: '#EFAE36', stroke: '#C58A24' }, // light orange
-      { threshold: 1.74, label: '1.74\u2013 2\u2033',       fill: '#E2891C', stroke: '#B66B16' },  // darker orange
-      { threshold: 2.00, label: '2\u2013 2\u00BD\u2033',   fill: '#DC4B1E', stroke: '#A83917' },  // orange-red
-      { threshold: 2.50, label: '2\u00BD\u2013 3\u2033',   fill: '#DC1E1E', stroke: '#A01616' },  // red
-      { threshold: 3.00, label: '3\u2033 +',                fill: '#7B1FA2', stroke: '#581170' }   // purple
+      { threshold: 0.50, label: '\u00BD\u2013 1\u2033',       fill: '#FFF200', stroke: '#C8BC00', zIndex: 2100 }, // yellow
+      { threshold: 1.25, label: '1\u00BC\u2013 1\u00BD\u2033', fill: '#F4C430', stroke: '#BE961D', zIndex: 2101 }, // dark yellow
+      { threshold: 1.75, label: '1\u00BE\u2013 <2\u2033',     fill: '#FF8000', stroke: '#C76300', zIndex: 2102 }, // orange
+      { threshold: 2.00, label: '2\u2013 3\u2033',             fill: '#FF0000', stroke: '#B50000', zIndex: 2103 }, // red
+      { threshold: 3.000001, label: '>3\u2033',                 fill: '#800080', stroke: '#560056', zIndex: 2104 }  // purple
     ];
     var MAPS_INCOMING_HAIL_SWATH_STYLE_START_DATE = '2026-07-29';
 
@@ -36487,10 +36482,10 @@ function mapsGoogleReady() {
       return _refPixelToHailIn(raw.data[idx], raw.data[idx + 1], raw.data[idx + 2], raw.data[idx + 3]);
     }
 
-    // Reverse-map a pixel RGBA from a reference swath image to hail size.
-    // Uses the user-specified color scale:
-    //   yellow = 1.00"   dark yellow = 1.25"
-    //   orange = 1.75-2.50"   red = 2.50-3.00"   purple = >3.00"
+    // Reverse-map a reference-image pixel to a hail-size bucket, then the
+    // display layer remaps that bucket into Hail Money's canonical palette:
+    // yellow <=1.00", dark yellow 1.25-1.50", orange 1.75-<2.00",
+    // red 2.00-3.00", purple >3.00".
     // Blue/green/gray/transparent → null (not a hail color)
     function _refPixelToHailIn(r, g, b, a) {
       if (a < 30) return null; // transparent
@@ -36508,10 +36503,10 @@ function mapsGoogleReady() {
       var L = (cMax + cMin) / (2 * 255);
       // Purple zone (hue 260-340): >3"
       if (hue >= 260 && hue <= 340) return 3.50;
-      // Red zone (hue 340-360 or 0-15): 2.50-3.00"
-      if (hue > 340 || hue < 15) return 2.75;
-      // Orange zone (hue 15-42): 1.75-2.50"
-      if (hue >= 15 && hue < 42) return 2.00;
+      // Red source pixels map into Hail Money's red bucket.
+      if (hue > 340 || hue < 15) return 2.50;
+      // Orange source pixels map into Hail Money's orange bucket.
+      if (hue >= 15 && hue < 42) return 1.75;
       // Yellow family (hue 42-70): distinguish dark-yellow vs yellow by lightness
       if (hue >= 42 && hue < 70) return L < 0.45 ? 1.25 : 1.00;
       // Green (70-150) or blue/cyan (150-260) → not hail
@@ -36540,10 +36535,10 @@ function mapsGoogleReady() {
 
     // ── Convert hail severity (inches) to user-facing label ──
     function swathSeverityLabel(hailIn) {
-      if (hailIn >= 2.5)  return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 purple zone';
-      if (hailIn >= 2)    return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 red zone';
-      if (hailIn >= 1.5)  return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 orange zone';
-      if (hailIn >= 1)    return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 yellow-orange zone';
+      if (hailIn > 3.00)  return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 purple zone';
+      if (hailIn >= 2.00) return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 red zone';
+      if (hailIn >= 1.75) return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 orange zone';
+      if (hailIn >= 1.25) return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 dark yellow zone';
       if (hailIn > 0)     return 'Approx. ' + hailIn.toFixed(2) + '\u2033 hail here \u2014 yellow zone';
       return '';
     }
@@ -37039,9 +37034,7 @@ function mapsGoogleReady() {
     }
 
     function mapsMrmsReviewStyleForBand(bandMin) {
-      var numericBand = Number(bandMin) || 0.5;
-      var rgba = numericBand === 0.5 ? [255, 245, 157] :
-        (numericBand === 1.0 ? [242, 140, 0] : swathSeverityColor(numericBand));
+      var rgba = swathSeverityColor(Number(bandMin) || 0.5);
       return 'rgb(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ')';
     }
 
@@ -37566,8 +37559,20 @@ function mapsGoogleReady() {
                 // Desaturated (gray labels, roads, white attribution) → transparent
                 px[i + 3] = 0;
               } else {
-                // Saturated pixel (swath color) → keep with soft edge alpha
-                px[i + 3] = Math.min(255, Math.round(Math.min(1, (sat - 0.10) / 0.25) * 255));
+                // Saturated hail pixel: translate the source image color into
+                // Hail Money's canonical hail-size palette before displaying it.
+                // This prevents an external orange raster from covering a .50"
+                // yellow Hail Money result with a conflicting color scale.
+                var refHail = _refPixelToHailIn(r, g, b, 255);
+                if (refHail != null) {
+                  var canonical = swathSeverityColor(refHail);
+                  px[i] = canonical[0];
+                  px[i + 1] = canonical[1];
+                  px[i + 2] = canonical[2];
+                  px[i + 3] = Math.min(255, Math.round(Math.min(1, (sat - 0.10) / 0.25) * 255));
+                } else {
+                  px[i + 3] = 0;
+                }
               }
             }
             ctx.putImageData(imageData, 0, 0);
@@ -38655,13 +38660,9 @@ function mapsGoogleReady() {
         var _showRow = ((stormType === 'wind' && mapsState.swathToggles.wind) ||
           (stormType === 'tornado' && mapsState.swathToggles.tornado) ||
           ((stormType !== 'wind' && stormType !== 'tornado') && mapsState.swathToggles.hail));
-        // Swath COLOR follows the stored severity band, but every other swath
-        // behavior stays exactly as before. This intentionally does not change
-        // geometry, width, opacity, edge treatment, or the report-calibrated
-        // effective band used elsewhere.
-        var visualBand = (!isWind && !isTornado)
-          ? swathVisualHailValue(bandMin, bandMax)
-          : bandMin;
+        // Calibrate hail first, then derive BOTH the displayed size and the color
+        // from that same calibrated value. Previously visualBand was calculated
+        // before calibration, allowing an orange polygon to report .50" on click.
         if (!isWind && !isTornado) {
           var localReportedMax = mapsMaxReportedHailInsideGeometry(dateStr, row.polygon_geojson);
           bandMin = mapsCalibratedHailSize(bandMin, localReportedMax);
@@ -38670,8 +38671,12 @@ function mapsGoogleReady() {
           if (Number.isFinite(bandMax) && localReportedMax > 0) bandMax = Math.min(bandMax, localReportedMax);
           if (Number.isFinite(bandMax) && reviewedGeometryCap > 0) bandMax = Math.min(bandMax, reviewedGeometryCap);
         }
+        var visualBand = (!isWind && !isTornado)
+          ? swathVisualHailValue(bandMin, bandMax)
+          : bandMin;
         var isEnvelope = (row.source_product || '') === 'nexrad_iem_envelope';
         var effectiveBand = isEnvelope ? 0.5 : Math.max(bandMin, 0.5);
+        if (!isWind && !isTornado && isEnvelope) visualBand = 0.5;
         var rgba = isTornado
           ? tornadoSeverityColor(effectiveBand)
           : (isWind ? windSeverityColor(effectiveBand) : swathSeverityColor(visualBand));
@@ -38746,7 +38751,42 @@ function mapsGoogleReady() {
               });
             }
           }
+          var autoYellowEnvelopePaths = null;
+          if (!isWind && !isTornado && !isEnvelope && effectiveBand > 1.0) {
+            // Every hail swath must retain a visible low-hail outer band.
+            // A high-severity-only source polygon therefore gets a wider .50"
+            // yellow envelope underneath it. Existing low-band polygons still
+            // render normally above this safety envelope.
+            autoYellowEnvelopePaths = paths.map(function (polygonPath) {
+              return _widenStoredHailPath(polygonPath, 1.38);
+            }).map(mapsSimplifySwathRenderPath);
+          }
           paths = paths.map(mapsSimplifySwathRenderPath);
+          if (autoYellowEnvelopePaths && autoYellowEnvelopePaths.length) {
+            var yellowRgba = swathSeverityColor(0.5);
+            _overlayDefs.push({
+              path: path,
+              paths: autoYellowEnvelopePaths,
+              canonicalGeometry: null,
+              canonicalBbox: canonicalBbox,
+              fill: 'rgb(' + yellowRgba[0] + ',' + yellowRgba[1] + ',' + yellowRgba[2] + ')',
+              opacity: yellowRgba[3],
+              zIndex: 90,
+              stormType: 'hail',
+              bandMin: 0.5,
+              storedBandMin: 0.5,
+              storedBandMax: 1.0,
+              sourcePriority: Number(row.source_priority),
+              sourceClassification: rowProvenance && rowProvenance.sourceClassification,
+              qualityStatus: row.quality_status || (rowProvenance && rowProvenance.qualityStatus) || 'legacy_unverified',
+              acceptedForCustomerDisplay: false,
+              rowId: null,
+              source: rowSrcLower,
+              sourceProduct: String(row.source_product || '').toLowerCase() + '_auto_yellow_envelope',
+              constructionFunction: 'mapsDrawSavedStormPolygonForDate:autoYellowEnvelope',
+              show: _showRow
+            });
+          }
           if (_trackFocusGeometry && _showRow) {
             path.forEach(function (pt) {
               if (pt.lat < _dateBbox.minLat) _dateBbox.minLat = pt.lat;
@@ -54722,11 +54762,11 @@ function mapsGoogleReady() {
 
       function cmpHailBandColor(value) {
         value = Number(value) || 0;
-        if (value >= 2.5) return '#9419B4';
-        if (value >= 2.0) return '#DC1E1E';
-        if (value >= 1.5) return '#E2891C';
-        if (value >= 1.0) return '#EFAE36';
-        return '#FFF59D';
+        if (value > 3.00) return '#800080';
+        if (value >= 2.00) return '#FF0000';
+        if (value >= 1.75) return '#FF8000';
+        if (value >= 1.25) return '#F4C430';
+        return '#FFF200';
       }
 
       function cmpFetchStormRows(dateStr, preferredOnly) {
