@@ -17,7 +17,7 @@ except ImportError as exc:
 
 gdal.UseExceptions()
 
-BANDS_INCHES = [round(value / 4, 2) for value in range(3, 17)]
+BANDS_INCHES = [round(value / 4, 2) for value in range(2, 17)]
 MIN_AREA_SQ_MI = 0.50
 SQ_METERS_PER_SQ_MILE = 2_589_988.110336
 METERS_PER_MILE = 1609.344
@@ -140,6 +140,7 @@ def apply_ground_anchors(values, dataset, source_srs, anchors):
     original = values.copy()
     correction_sum = np.zeros_like(values, dtype=np.float32)
     weight_sum = np.zeros_like(values, dtype=np.float32)
+    seed_floor = np.zeros_like(values, dtype=np.float32)
     wgs84 = osr.SpatialReference()
     wgs84.ImportFromEPSG(4326)
     wgs84.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
@@ -158,12 +159,15 @@ def apply_ground_anchors(values, dataset, source_srs, anchors):
     radius_cells = max(1, int(math.ceil(GROUND_ANCHOR_RADIUS_MILES / cell_miles)))
     sigma_cells = max(1.0, GROUND_ANCHOR_SIGMA_MILES / cell_miles)
     accepted = 0
+    seeded = 0
     for anchor in anchors:
         try:
             lat = float(anchor["lat"])
             lon = float(anchor["lon"])
             hail_mm = float(anchor["hail_in"]) * 25.4
             confidence = max(0.0, min(1.0, float(anchor.get("confidence", 0.9))))
+            allow_seed = bool(anchor.get("allow_seed", False))
+            seed_radius_miles = max(0.5, min(8.0, float(anchor.get("seed_radius_miles", 2.0))))
         except (KeyError, TypeError, ValueError):
             continue
         point = ogr.Geometry(ogr.wkbPoint)
@@ -176,18 +180,64 @@ def apply_ground_anchors(values, dataset, source_srs, anchors):
         pixel, line = pixel_line
         if line < 0 or line >= rows or pixel < 0 or pixel >= cols:
             continue
+
+        # A verified point is allowed to preserve a small local hail footprint
+        # even when MRMS undershoots or misses the exact grid cell. This is
+        # intentionally local: it cannot move the severe core across a city.
+        if allow_seed and hail_mm >= 12.7:
+            seed_cells = max(1, int(math.ceil(seed_radius_miles / cell_miles)))
+            srow_min, srow_max = max(0, line - seed_cells), min(rows, line + seed_cells + 1)
+            scol_min, scol_max = max(0, pixel - seed_cells), min(cols, pixel + seed_cells + 1)
+            syy, sxx = np.ogrid[srow_min:srow_max, scol_min:scol_max]
+            seed_distance_miles = np.sqrt((syy - line) ** 2 + (sxx - pixel) ** 2) * cell_miles
+            seed_mask = seed_distance_miles <= seed_radius_miles
+            seed_values = np.full(seed_distance_miles.shape, 12.7, dtype=np.float32)
+            if hail_mm > 12.7:
+                inner_radius_miles = max(0.5, seed_radius_miles * 0.35)
+                taper_span = max(0.25, seed_radius_miles - inner_radius_miles)
+                inner_fraction = np.where(
+                    seed_distance_miles <= inner_radius_miles,
+                    1.0,
+                    np.clip(
+                        1.0 - ((seed_distance_miles - inner_radius_miles) / taper_span),
+                        0.0,
+                        1.0,
+                    ),
+                )
+                seed_values += (hail_mm - 12.7) * inner_fraction.astype(np.float32)
+            seed_slice = seed_floor[srow_min:srow_max, scol_min:scol_max]
+            seed_slice[seed_mask] = np.maximum(seed_slice[seed_mask], seed_values[seed_mask])
+            seeded += 1
+
         radar_mm = float(original[line, pixel])
         if not math.isfinite(radar_mm) or radar_mm < 12.7:
-            # Reports calibrate a radar-defined footprint; they do not create a
-            # new swath where MRMS detected no hail-producing storm.
+            if allow_seed:
+                accepted += 1
             continue
+
+        # A 0.50" geographic verification anchor extends only the yellow
+        # footprint; it must never drag a nearby severe-hail core into the city.
+        if allow_seed and hail_mm <= 12.7:
+            accepted += 1
+            continue
+
         delta = max(-50.8, min(50.8, hail_mm - radar_mm))
-        row_min, row_max = max(0, line - radius_cells), min(rows, line + radius_cells + 1)
-        col_min, col_max = max(0, pixel - radius_cells), min(cols, pixel + radius_cells + 1)
+        correction_radius_miles = min(
+            GROUND_ANCHOR_RADIUS_MILES,
+            max(3.0, seed_radius_miles * 2.0) if allow_seed else GROUND_ANCHOR_RADIUS_MILES,
+        )
+        correction_sigma_miles = min(
+            GROUND_ANCHOR_SIGMA_MILES,
+            max(1.5, correction_radius_miles * 0.45),
+        )
+        correction_radius_cells = max(1, int(math.ceil(correction_radius_miles / cell_miles)))
+        correction_sigma_cells = max(1.0, correction_sigma_miles / cell_miles)
+        row_min, row_max = max(0, line - correction_radius_cells), min(rows, line + correction_radius_cells + 1)
+        col_min, col_max = max(0, pixel - correction_radius_cells), min(cols, pixel + correction_radius_cells + 1)
         yy, xx = np.ogrid[row_min:row_max, col_min:col_max]
         distance_sq = (yy - line) ** 2 + (xx - pixel) ** 2
-        weights = np.exp(-distance_sq / (2 * sigma_cells ** 2)).astype(np.float32)
-        weights[distance_sq > radius_cells ** 2] = 0
+        weights = np.exp(-distance_sq / (2 * correction_sigma_cells ** 2)).astype(np.float32)
+        weights[distance_sq > correction_radius_cells ** 2] = 0
         weights *= confidence
         correction_sum[row_min:row_max, col_min:col_max] += weights * delta
         weight_sum[row_min:row_max, col_min:col_max] += weights
@@ -195,11 +245,18 @@ def apply_ground_anchors(values, dataset, source_srs, anchors):
     calibrated = values.copy()
     affected = weight_sum > 0
     calibrated[affected] += correction_sum[affected] / weight_sum[affected]
-    calibrated[np.isfinite(original) & (original < 12.7)] = original[
-        np.isfinite(original) & (original < 12.7)
-    ]
+    low_original = np.isfinite(original) & (original < 12.7) & (seed_floor <= 0)
+    calibrated[low_original] = original[low_original]
+    seed_mask = seed_floor > 0
+    calibrated[seed_mask] = np.maximum(
+        np.nan_to_num(calibrated[seed_mask], nan=0.0),
+        seed_floor[seed_mask],
+    )
     calibrated[calibrated < 0] = 0
-    print(f"[MRMS-CALIBRATION] applied {accepted} verified ground anchor(s)", flush=True)
+    print(
+        f"[MRMS-CALIBRATION] applied {accepted} verified anchor(s), seeded {seeded} local footprint(s)",
+        flush=True,
+    )
     return calibrated
 
 

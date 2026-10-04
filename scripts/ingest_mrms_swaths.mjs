@@ -239,7 +239,7 @@ async function loadGroundAnchors(client, dateIso) {
       .limit(5000),
     client
       .from("hail_ground_truth_evidence")
-      .select("lat,lon,hail_in,confidence")
+      .select("lat,lon,hail_in,confidence,allow_seed,seed_radius_miles")
       .eq("event_date", dateIso)
       .eq("accepted", true)
       .gte("confidence", 0.75)
@@ -253,6 +253,8 @@ async function loadGroundAnchors(client, dateIso) {
       lon:Number(row.lon),
       hail_in:Number(row.hail_in),
       confidence:/google_grounded/i.test(String(row.source || "")) ? 0.8 : 0.95,
+      allow_seed:true,
+      seed_radius_miles:2.5,
     });
   }
   if (!evidenceResult.error) {
@@ -262,6 +264,8 @@ async function loadGroundAnchors(client, dateIso) {
         lon:Number(row.lon),
         hail_in:Number(row.hail_in),
         confidence:Number(row.confidence),
+        allow_seed:row.allow_seed === true,
+        seed_radius_miles:Number(row.seed_radius_miles) || 2.0,
       });
     }
   }
