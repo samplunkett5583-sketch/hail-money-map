@@ -652,19 +652,41 @@
         if (!dragState.moved && Math.abs(e.clientY - dragState.startY) < 5) return;
         dragState.moved = true;
 
-        var hit = document.elementFromPoint(e.clientX, e.clientY);
-        var target = hit && hit.closest ? hit.closest('[data-phr-section]') : null;
-        if (!target || target === dragState.card || target.parentElement !== host) {
-          e.preventDefault();
-          return;
+        // Reorder by the pointer's Y position relative to the other section
+        // cards. Do not rely on elementFromPoint/closest because controls inside
+        // a section also carry data attributes and can be mistaken for the card.
+        var cards = Array.prototype.slice.call(
+          host.querySelectorAll(':scope > .phr-section[data-phr-section]')
+        ).filter(function (card) {
+          return card !== dragState.card;
+        });
+
+        var beforeCard = null;
+        for (var i = 0; i < cards.length; i++) {
+          var rect = cards[i].getBoundingClientRect();
+          if (e.clientY < rect.top + rect.height / 2) {
+            beforeCard = cards[i];
+            break;
+          }
         }
 
-        var rect = target.getBoundingClientRect();
-        if (e.clientY < rect.top + rect.height / 2) {
-          host.insertBefore(dragState.card, target);
-        } else {
-          host.insertBefore(dragState.card, target.nextSibling);
+        if (beforeCard) {
+          if (dragState.card.nextElementSibling !== beforeCard) {
+            host.insertBefore(dragState.card, beforeCard);
+          }
+        } else if (host.lastElementChild !== dragState.card) {
+          host.appendChild(dragState.card);
         }
+
+        // Keep long section lists usable on touch devices by nudging the page
+        // when the pointer approaches the viewport edge.
+        var edge = Math.min(90, Math.max(50, window.innerHeight * 0.12));
+        if (e.clientY < edge) {
+          window.scrollBy(0, -Math.max(8, Math.round((edge - e.clientY) * 0.22)));
+        } else if (e.clientY > window.innerHeight - edge) {
+          window.scrollBy(0, Math.max(8, Math.round((e.clientY - (window.innerHeight - edge)) * 0.22)));
+        }
+
         e.preventDefault();
       });
 
