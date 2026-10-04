@@ -33004,6 +33004,17 @@ function mapsGoogleReady() {
           mapsState._hailHoverRaf = null;
         }
         mapsState._hailHoverPendingLatLng = null;
+
+        // MRMS overview continuity is intentionally scale-dependent: at broad
+        // zoom it visually joins nearby low-hail fragments from the same storm;
+        // at street/detail zoom it disappears so the real radar edges remain.
+        var showOverviewContinuity = Number(map.getZoom() || 0) <= 9;
+        Object.keys(mapsState.swathPolygons || {}).forEach(function (dateKey) {
+          (mapsState.swathPolygons[dateKey] || []).forEach(function (poly) {
+            if (!poly || !poly._overviewOnly || typeof poly.setVisible !== 'function') return;
+            poly.setVisible(showOverviewContinuity);
+          });
+        });
       });
       map.addListener('idle', function() {
         mapsState._mapCameraMoving = false;
@@ -38621,6 +38632,7 @@ function mapsGoogleReady() {
       // exploding narrow nexrad_iem rows into tens of thousands of grid-cell overlays.
       var _overlayDefs = [];
       var _autoYellowTrackSeeds = [];
+      var _mrmsOverviewContinuitySeeds = [];
       // Precompute bbox for fast fitBounds — avoids iterating all polygon paths at zoom time.
       var _dateBbox = { minLat: Infinity, maxLat: -Infinity, minLon: Infinity, maxLon: -Infinity, hasAny: false };
 
@@ -38822,6 +38834,30 @@ function mapsGoogleReady() {
             bbox.maxLng = Math.max(bbox.maxLng, pt.lng);
             return bbox;
           }, { minLat: Infinity, maxLat: -Infinity, minLng: Infinity, maxLng: -Infinity });
+
+          // Generic MRMS overview continuity. Preserve every real radar polygon
+          // exactly, but collect low-hail pieces so nearby fragments from the
+          // SAME storm read as one outer yellow footprint when zoomed out.
+          // This applies to every historical date and every future MRMS ingest.
+          if (isCanonicalMrms && effectiveBand <= 1.0 && _showRow) {
+            var continuityLat = (canonicalBbox.minLat + canonicalBbox.maxLat) / 2;
+            var continuityLng = (canonicalBbox.minLng + canonicalBbox.maxLng) / 2;
+            _mrmsOverviewContinuitySeeds.push({
+              lat: continuityLat,
+              lon: continuityLng,
+              hail_in: 0.5,
+              halfWidth: Math.max(
+                0.020,
+                Math.min(
+                  0.085,
+                  Math.min(
+                    Math.max(canonicalBbox.maxLat - canonicalBbox.minLat, 0.001),
+                    Math.max(canonicalBbox.maxLng - canonicalBbox.minLng, 0.001)
+                  ) * 0.75
+                )
+              )
+            });
+          }
           if (mapsReviewedHailRingSuppressed(
             dateStr,
             String(row.source_product || '').toLowerCase(),
@@ -38916,6 +38952,103 @@ function mapsGoogleReady() {
           });
         });
       });
+
+      // Generic overview continuity for every MRMS date. Nearby low-hail
+      // fragments are clustered first, so separate storms remain separate. Each
+      // cluster gets only a narrow yellow bridge underneath the real MRMS polygons.
+      // The bridge is visual-only and disappears when the user zooms in.
+      if (_mrmsOverviewContinuitySeeds.length >= 2) {
+        var mrmsContinuityClusters = _clusterByDistance(_mrmsOverviewContinuitySeeds, 0.34);
+        mrmsContinuityClusters.forEach(function (cluster) {
+          if (!cluster || cluster.length < 2) return;
+
+          var cx = 0, cy = 0;
+          cluster.forEach(function (seed) {
+            cx += seed.lon;
+            cy += seed.lat;
+          });
+          cx /= cluster.length;
+          cy /= cluster.length;
+
+          var sxx = 0, sxy = 0, syy = 0;
+          cluster.forEach(function (seed) {
+            var dx = seed.lon - cx;
+            var dy = seed.lat - cy;
+            sxx += dx * dx;
+            sxy += dx * dy;
+            syy += dy * dy;
+          });
+          var angle = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+          var axCos = Math.cos(angle), axSin = Math.sin(angle);
+          if (axCos < 0) { axCos = -axCos; axSin = -axSin; }
+
+          var centerline = cluster.slice().sort(function (a, b) {
+            return ((a.lat - cy) * axSin + (a.lon - cx) * axCos) -
+              ((b.lat - cy) * axSin + (b.lon - cx) * axCos);
+          });
+          var deduped = [];
+          centerline.forEach(function (seed) {
+            if (deduped.length) {
+              var prev = deduped[deduped.length - 1];
+              var gap = Math.sqrt(
+                Math.pow(seed.lat - prev.lat, 2) +
+                Math.pow(seed.lon - prev.lon, 2)
+              );
+              if (gap < 0.010) return;
+              // Never bridge a large break even if single-link clustering found
+              // an indirect chain between two otherwise separate storm cells.
+              if (gap > 0.34) return;
+            }
+            deduped.push({ lat:seed.lat, lon:seed.lon, hail_in:0.5 });
+          });
+          if (deduped.length < 2) return;
+
+          var width = cluster.reduce(function (maxWidth, seed) {
+            return Math.max(maxWidth, Number(seed.halfWidth) || 0);
+          }, 0);
+          width = Math.max(0.028, Math.min(0.055, width * 1.05 + 0.008));
+
+          var ring = _bufferPolylineSwab(deduped, width);
+          if (!ring || ring.length < 3) return;
+          var paths = [mapsSimplifySwathRenderPath(ring.map(function (pt) {
+            return { lat:Number(pt.lat), lng:Number(pt.lon) };
+          }))];
+          if (!paths[0] || paths[0].length < 3) return;
+
+          var bbox = paths[0].reduce(function (out, pt) {
+            out.minLat = Math.min(out.minLat, pt.lat);
+            out.maxLat = Math.max(out.maxLat, pt.lat);
+            out.minLng = Math.min(out.minLng, pt.lng);
+            out.maxLng = Math.max(out.maxLng, pt.lng);
+            return out;
+          }, { minLat:Infinity, maxLat:-Infinity, minLng:Infinity, maxLng:-Infinity });
+
+          var yellow = swathSeverityColor(0.5);
+          _overlayDefs.push({
+            path:paths[0],
+            paths:paths,
+            canonicalGeometry:null,
+            canonicalBbox:bbox,
+            fill:'rgb(' + yellow[0] + ',' + yellow[1] + ',' + yellow[2] + ')',
+            opacity:Math.min(yellow[3], 0.52),
+            zIndex:95,
+            stormType:'hail',
+            bandMin:0.5,
+            storedBandMin:0.5,
+            storedBandMax:1.0,
+            sourcePriority:1,
+            sourceClassification:'overview_continuity',
+            qualityStatus:'accepted',
+            acceptedForCustomerDisplay:false,
+            rowId:null,
+            source:'mrms_overview_continuity',
+            sourceProduct:'mrms_low_hail_overview_bridge',
+            constructionFunction:'mapsDrawSavedStormPolygonForDate:mrmsOverviewContinuity',
+            overviewOnly:true,
+            show:true
+          });
+        });
+      }
 
       // Build ONE low-hail yellow envelope per storm track, not one envelope per
       // polygon. This preserves the required yellow outer band without producing
@@ -39030,7 +39163,7 @@ function mapsGoogleReady() {
           def.stormType, def.fill, Number(def.opacity).toFixed(3), def.zIndex,
           def.bandMin, def.storedBandMin, def.storedBandMax, def.sourcePriority,
           def.sourceClassification, def.qualityStatus, def.acceptedForCustomerDisplay,
-          def.source, def.sourceProduct, def.show
+          def.source, def.sourceProduct, !!def.overviewOnly, def.show
         ].join('|');
         var list = _overlayBatches[key] || (_overlayBatches[key] = []);
         var batch = list.length ? list[list.length - 1] : null;
@@ -39091,6 +39224,7 @@ function mapsGoogleReady() {
           fillOpacity: g.opacity,
           zIndex: g.zIndex,
           clickable: false,
+          visible: !g.overviewOnly || Number(mapsState.map && mapsState.map.getZoom && mapsState.map.getZoom() || 0) <= 9,
           map: (_selectedDateVisible && g.show) ? mapsState.map : null
         });
         _poly._bandMin = g.bandMin;
@@ -39113,6 +39247,7 @@ function mapsGoogleReady() {
         _poly._sourceClassification = g.sourceClassification;
         _poly._overlayCollection = 'swathPolygons';
         _poly._constructionFunction = g.constructionFunction;
+        _poly._overviewOnly = !!g.overviewOnly;
         _poly._verifiedHailCoverage = !!(
           _poly._canonicalGeometry
           && _poly._canonicalBandMin != null
