@@ -26,7 +26,10 @@
     draft: null,          // { title, sections: [] }
     pickerSectionIndex: -1,
     selectedPhotoIds: [],
-    currentReport: null
+    currentReport: null,
+    pendingReport: null,
+    mode: 'report',
+    templateId: ''
   };
 
   function esc(v) {
@@ -39,12 +42,57 @@
     return (prefix || 'id_') + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
   }
 
+  var TEMPLATE_LIBRARY_ID = '__hm_report_templates__';
+
   function projects() {
-    return getPhotoFiles().map(function (p) {
+    return getPhotoFiles().filter(function (p) {
+      return p && p.id !== TEMPLATE_LIBRARY_ID && p.recordType !== 'report_template_library';
+    }).map(function (p) {
       p.photos = Array.isArray(p.photos) ? p.photos : [];
       p.reports = Array.isArray(p.reports) ? p.reports : [];
       return p;
     });
+  }
+
+  function getTemplates() {
+    var rows = getPhotoFiles();
+    var library = rows.find(function (p) {
+      return p && (p.id === TEMPLATE_LIBRARY_ID || p.recordType === 'report_template_library');
+    });
+    return library && Array.isArray(library.templates) ? library.templates.slice() : [];
+  }
+
+  function saveTemplates(templates) {
+    var rows = getPhotoFiles();
+    var now = new Date().toISOString();
+    var found = false;
+    rows = rows.map(function (p) {
+      if (!p || (p.id !== TEMPLATE_LIBRARY_ID && p.recordType !== 'report_template_library')) return p;
+      found = true;
+      return {
+        id:TEMPLATE_LIBRARY_ID,
+        recordType:'report_template_library',
+        projectName:'Report Templates',
+        createdAt:p.createdAt || now,
+        updatedAt:now,
+        photos:[],
+        reports:[],
+        templates:templates
+      };
+    });
+    if (!found) {
+      rows.push({
+        id:TEMPLATE_LIBRARY_ID,
+        recordType:'report_template_library',
+        projectName:'Report Templates',
+        createdAt:now,
+        updatedAt:now,
+        photos:[],
+        reports:[],
+        templates:templates
+      });
+    }
+    savePhotoFiles(rows);
   }
 
   function findProject(id) {
@@ -52,7 +100,13 @@
   }
 
   function saveProjects(ps) {
-    savePhotoFiles(ps);
+    var rows = getPhotoFiles();
+    var library = rows.find(function (p) {
+      return p && (p.id === TEMPLATE_LIBRARY_ID || p.recordType === 'report_template_library');
+    });
+    var next = Array.isArray(ps) ? ps.slice() : [];
+    if (library) next.push(library);
+    savePhotoFiles(next);
   }
 
   function getUserName() {
@@ -172,6 +226,8 @@
           projectId: projectId,
           title: report.title || 'Property Photo Report',
           type: 'photo_report',
+          pdfFileId: report.pdfFileId || '',
+          photoCount: (report.sections || []).reduce(function (sum, section) { return sum + ((section && section.photos) ? section.photos.length : 0); }, 0),
           createdAt: report.createdAt || new Date().toISOString(),
           updatedAt: report.updatedAt || report.createdAt || new Date().toISOString()
         };
@@ -338,20 +394,84 @@
     openBuilder: openBuilder,
     openReport: openReport,
     getReportsForProject: getReportsForProject,
+    getAllReports: getAllReports,
+    getTemplates: getTemplates,
+    openTemplateBuilder: openTemplateBuilder,
+    openBuilderFromTemplate: openBuilderFromTemplate,
     openChatFromMessage: openChatFromMessage,
     printReport: printReport,
     confirmPhotoPicker: confirmPhotoPicker,
     cancelPhotoPicker: cancelPhotoPicker
   };
 
-  function openBuilder(projectId) {
+  function getAllReports() {
+    var out = [];
+    projects().forEach(function (project) {
+      getReportsForProject(project.id).forEach(function (report) {
+        if (!report || !report.id || !Array.isArray(report.sections)) return;
+        out.push({ project:project, report:report });
+      });
+    });
+    return out.sort(function (a, b) {
+      return String((b.report && (b.report.savedAt || b.report.updatedAt || b.report.createdAt)) || '')
+        .localeCompare(String((a.report && (a.report.savedAt || a.report.updatedAt || a.report.createdAt)) || ''));
+    });
+  }
+
+  function cloneTemplateDraft(template) {
+    var source = template && template.draft ? template.draft : {};
+    var next = JSON.parse(JSON.stringify(source || {}));
+    next.title = String(next.title || template && template.name || '').trim();
+    next.sections = Array.isArray(next.sections) && next.sections.length
+      ? next.sections.map(function (section, index) {
+          return {
+            id:genId('sec_'),
+            title:String(section && section.title || ('Section ' + (index + 1))),
+            photos:[]
+          };
+        })
+      : [{ id:genId('sec_'), title:'Section 1', photos:[] }];
+    return next;
+  }
+
+  function openBuilder(projectId, template) {
     var p = findProject(projectId);
     if (!p) return;
     rb.projectId = projectId;
+    rb.mode = 'report';
+    rb.templateId = template && template.id ? String(template.id) : '';
     rb.step = 'title';
-    rb.draft = {
+    rb.currentReport = null;
+    rb.pendingReport = null;
+    rb.draft = template ? cloneTemplateDraft(template) : {
       title: '',
       sections: [{ id: genId('sec_'), title: 'Section 1', photos: [] }]
+    };
+    showPage('page-photo-report-builder');
+    renderBuilder();
+  }
+
+  function openBuilderFromTemplate(projectId, templateId) {
+    var template = getTemplates().find(function (item) {
+      return String(item && item.id || '') === String(templateId || '');
+    });
+    if (!template) {
+      if (typeof showUploadToast === 'function') showUploadToast('That report template could not be found.');
+      return;
+    }
+    openBuilder(projectId, template);
+  }
+
+  function openTemplateBuilder() {
+    rb.projectId = '';
+    rb.mode = 'template';
+    rb.templateId = '';
+    rb.step = 'title';
+    rb.currentReport = null;
+    rb.pendingReport = null;
+    rb.draft = {
+      title:'',
+      sections:[{ id:genId('sec_'), title:'Section 1', photos:[] }]
     };
     showPage('page-photo-report-builder');
     renderBuilder();
@@ -362,18 +482,20 @@
     if (!page) return;
     var content = document.getElementById('phr-content');
     if (!content) return;
-    var p = findProject(rb.projectId);
+    var p = rb.mode === 'template'
+      ? { id:'', projectName:'Create Report Template', homeownerName:'', photos:[] }
+      : findProject(rb.projectId);
     if (!p) { content.innerHTML = '<div class="crm-empty-state">Photo project not found.</div>'; return; }
 
     var html = '<div class="phr-toolbar"><button class="btn" type="button" id="phr-back">Back</button>' +
-      '<div class="phr-toolbar-title">' + esc(p.projectName || p.homeownerName || 'Photo Project') + '</div>' +
+      '<div class="phr-toolbar-title">' + esc(rb.mode === 'template' ? 'Create Report Template' : (p.projectName || p.homeownerName || 'Photo Project')) + '</div>' +
       '<span class="phr-step-indicator">Step ' + (rb.step === 'title' ? '1' : rb.step === 'sections' ? '2' : '3') + ' of 3</span></div>';
 
     if (rb.step === 'title') {
       html += '<div class="phr-card phr-step-title">';
       html += '<div class="phr-step-label">Step 1</div>';
-      html += '<div class="phr-step-heading">Report Title</div>';
-      html += '<input type="text" id="phr-title-input" class="phr-title-input" placeholder="Report title" value="' + esc(rb.draft.title) + '" />';
+      html += '<div class="phr-step-heading">' + (rb.mode === 'template' ? 'Template Name' : 'Report Title') + '</div>';
+      html += '<input type="text" id="phr-title-input" class="phr-title-input" placeholder="' + (rb.mode === 'template' ? 'Template name' : 'Report title') + '" value="' + esc(rb.draft.title) + '" />';
       html += '<div class="phr-actions"><button class="btn btn-primary" type="button" id="phr-continue">Continue</button></div>';
       html += '</div>';
     } else if (rb.step === 'sections') {
@@ -415,22 +537,26 @@
     html += '<button class="btn" type="button" data-phr-delete-section="' + esc(section.id) + '">Delete</button>';
     html += '</div>';
     html += '</div>';
-    html += '<div class="phr-photo-grid" data-phr-photo-grid="' + esc(section.id) + '">';
-    if (!section.photos.length) {
-      html += '<div class="phr-empty-photos">No photos in this section yet.</div>';
+    if (rb.mode === 'template') {
+      html += '<div class="phr-empty-photos">Template sections save the layout only. Photos are added when the template is used for a report.</div>';
+    } else {
+      html += '<div class="phr-photo-grid" data-phr-photo-grid="' + esc(section.id) + '">';
+      if (!section.photos.length) {
+        html += '<div class="phr-empty-photos">No photos in this section yet.</div>';
+      }
+      section.photos.forEach(function (photo, photoIndex) {
+        html += '<div class="phr-photo" data-phr-photo="' + esc(photo.id || photo.fileId || photo.imageKey || photoIndex) + '" data-phr-photo-section="' + esc(section.id) + '">';
+        html += '<div class="phr-photo-thumb"><img data-phr-photo-img="' + esc(photo.id || photo.fileId || photo.imageKey || photoIndex) + '" alt="" /></div>';
+        html += '<input type="text" class="phr-photo-desc" placeholder="Description (optional)" value="' + esc(photo.description || photo.caption || photo.note || '') + '" data-phr-photo-desc="' + esc(photo.id || photo.fileId || photo.imageKey || photoIndex) + '" />';
+        html += '<div class="phr-photo-tools">';
+        html += '<button class="btn" type="button" data-phr-photo-move="up" data-phr-photo-section="' + esc(section.id) + '" data-phr-photo-key="' + esc(photo.id || photo.fileId || photo.imageKey || photoIndex) + '">&#8593;</button>';
+        html += '<button class="btn" type="button" data-phr-photo-move="down" data-phr-photo-section="' + esc(section.id) + '" data-phr-photo-key="' + esc(photo.id || photo.fileId || photo.imageKey || photoIndex) + '">&#8595;</button>';
+        html += '<button class="btn" type="button" data-phr-photo-remove="' + esc(photo.id || photo.fileId || photo.imageKey || photoIndex) + '" data-phr-photo-section="' + esc(section.id) + '">Remove</button>';
+        html += '</div></div>';
+      });
+      html += '</div>';
+      html += '<button class="btn btn-primary" type="button" data-phr-add-photos="' + esc(section.id) + '">Add Photos</button>';
     }
-    section.photos.forEach(function (photo, photoIndex) {
-      html += '<div class="phr-photo" data-phr-photo="' + esc(photo.id || photo.imageKey || photoIndex) + '" data-phr-photo-section="' + esc(section.id) + '">';
-      html += '<div class="phr-photo-thumb"><img data-phr-photo-img="' + esc(photo.id || photo.imageKey || photoIndex) + '" alt="" /></div>';
-      html += '<input type="text" class="phr-photo-desc" placeholder="Description (optional)" value="' + esc(photo.description || photo.caption || photo.note || '') + '" data-phr-photo-desc="' + esc(photo.id || photo.imageKey || photoIndex) + '" />';
-      html += '<div class="phr-photo-tools">';
-      html += '<button class="btn" type="button" data-phr-photo-move="up" data-phr-photo-section="' + esc(section.id) + '" data-phr-photo-key="' + esc(photo.id || photo.imageKey || photoIndex) + '">&#8593;</button>';
-      html += '<button class="btn" type="button" data-phr-photo-move="down" data-phr-photo-section="' + esc(section.id) + '" data-phr-photo-key="' + esc(photo.id || photo.imageKey || photoIndex) + '">&#8595;</button>';
-      html += '<button class="btn" type="button" data-phr-photo-remove="' + esc(photo.id || photo.imageKey || photoIndex) + '" data-phr-photo-section="' + esc(section.id) + '">Remove</button>';
-      html += '</div></div>';
-    });
-    html += '</div>';
-    html += '<button class="btn btn-primary" type="button" data-phr-add-photos="' + esc(section.id) + '">Add Photos</button>';
     html += '</div>';
     return html;
   }
@@ -448,7 +574,7 @@
     html += '<label>Custom notes (cover page)</label>';
     html += '<textarea id="phr-custom-notes" class="phr-custom-notes">' + esc(rb.draft.customNotes || '') + '</textarea>';
     html += '</div>';
-    html += '<div class="phr-actions"><button class="btn" type="button" id="phr-back-to-sections">Back</button><button class="btn btn-primary" type="button" id="phr-create-pdf">Create Report</button></div>';
+    html += '<div class="phr-actions"><button class="btn" type="button" id="phr-back-to-sections">Back</button><button class="btn btn-primary" type="button" id="phr-create-pdf">' + (rb.mode === 'template' ? 'Save Template' : 'Create Report') + '</button></div>';
     html += '</div>';
     return html;
   }
@@ -509,8 +635,14 @@
     var backBtn = document.getElementById('phr-back');
     if (backBtn) backBtn.onclick = function () {
       if (rb.step === 'title' || rb.step === 'sections') {
-        if (typeof window.openPhotoFileDetail === 'function') window.openPhotoFileDetail(rb.projectId);
-        else showPage('page-photo-file-detail');
+        if (rb.mode === 'template') {
+          showPage('page-photo-files');
+          if (typeof window.hmProjectsShowView === 'function') window.hmProjectsShowView('create');
+        } else if (typeof window.openPhotoFileDetail === 'function') {
+          window.openPhotoFileDetail(rb.projectId);
+        } else {
+          showPage('page-photo-file-detail');
+        }
       } else {
         rb.step = 'sections';
         renderBuilder();
@@ -539,7 +671,7 @@
 
     var titleInput = document.getElementById('phr-title-input');
     if (titleInput) titleInput.addEventListener('input', function () { rb.draft.title = titleInput.value; });
-    content.addEventListener('input', function (e) {
+    content.oninput = function (e) {
       var titleInput = e.target.closest('[data-phr-section-title]');
       if (titleInput) {
         var section = findDraftSection(titleInput.getAttribute('data-phr-section-title'));
@@ -551,15 +683,15 @@
       }
       var notes = document.getElementById('phr-custom-notes');
       if (notes && e.target === notes) rb.draft.customNotes = notes.value;
-    });
-    content.addEventListener('change', function (e) {
+    };
+    content.onchange = function (e) {
       var option = e.target.closest('[data-phr-option]');
       if (option) rb.draft[option.getAttribute('data-phr-option')] = option.checked;
       var notes = document.getElementById('phr-custom-notes');
       if (notes && e.target === notes) rb.draft.customNotes = notes.value;
-    });
+    };
 
-    content.addEventListener('click', function (e) {
+    content.onclick = function (e) {
       var addPhotosBtn = e.target.closest('[data-phr-add-photos]');
       if (addPhotosBtn) { openPhotoPicker(addPhotosBtn.getAttribute('data-phr-add-photos')); return; }
       var renameBtn = e.target.closest('[data-phr-rename]');
@@ -591,7 +723,7 @@
       }
       var createPdf = e.target.closest('#phr-create-pdf');
       if (createPdf) { createReport(); return; }
-    });
+    };
 
     wireSectionReorder(content);
 
@@ -1023,19 +1155,50 @@
   }
 
   function createReport() {
+    if (rb.mode === 'template') {
+      var templateName = String(rb.draft && rb.draft.title || '').trim();
+      if (!templateName) {
+        if (typeof showUploadToast === 'function') showUploadToast('Enter a template name.');
+        rb.step = 'title';
+        renderBuilder();
+        return;
+      }
+      var templates = getTemplates();
+      var now = new Date().toISOString();
+      var template = {
+        id:'report_template_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+        name:templateName,
+        createdAt:now,
+        updatedAt:now,
+        createdBy:getUserName() || 'User',
+        draft:JSON.parse(JSON.stringify(rb.draft))
+      };
+      template.draft.sections = (template.draft.sections || []).map(function (section, index) {
+        return {
+          id:'template_section_' + (index + 1),
+          title:String(section && section.title || ('Section ' + (index + 1))),
+          photos:[]
+        };
+      });
+      templates.push(template);
+      saveTemplates(templates);
+      if (typeof showUploadToast === 'function') showUploadToast('Report template saved for the company.');
+      showPage('page-photo-files');
+      if (typeof window.hmProjectsShowView === 'function') window.hmProjectsShowView('create');
+      window.dispatchEvent(new CustomEvent('hmreporttemplateschanged'));
+      return;
+    }
+
     if (!rb.draft.title.trim()) {
       var lead = findLeadByProject(rb.projectId);
       rb.draft.title = String((lead ? crmGetJobFileLeadName(lead) : '') || 'Property Photo Report').trim();
     }
     var report = buildReportObject();
-    saveReportToProject(rb.projectId, report);
-    syncReportRefToJobs(rb.projectId, report, false);
-    var reportLead = findLeadByProject(rb.projectId);
-    if (reportLead && typeof crmPushLeadActivity === 'function' && typeof crmGetJobFileLeadName === 'function') {
-      try { crmPushLeadActivity(reportLead, 'Photo report created: ' + report.title, 'note', getUserName() || 'User'); } catch (e) {}
-    }
-    if (typeof showUploadToast === 'function') showUploadToast('Report saved — generating PDF…');
-    openReport(rb.projectId, report.id);
+    rb.pendingReport = report;
+    rb.currentReport = report;
+    renderReportPage(report);
+    showPage('page-photo-report-preview');
+    if (typeof showUploadToast === 'function') showUploadToast('Report ready. Save as PDF to add it to company Reports.');
   }
 
   function openReport(projectId, reportId) {
@@ -1046,6 +1209,7 @@
     if (!report) { if (typeof showUploadToast === 'function') showUploadToast('No report found for this project.'); return; }
     rb.projectId = projectId;
     rb.currentReport = report;
+    rb.pendingReport = null;
     renderReportPage(report);
     showPage('page-photo-report-preview');
   }
@@ -1062,8 +1226,11 @@
   function buildReportHtml(report) {
     var html = '';
     var options = report.options || {};
+    options.cover = options.cover || {};
+    options.page = options.page || {};
+    options.layout = options.layout || {};
     var cover = report.cover || {};
-    var layout = options.layout || { perPage: 4, portrait: true, preserveAspectRatio: true, showDescriptions: true, photoNumbering: true };
+    var layout = Object.assign({ perPage: 4, portrait: true, preserveAspectRatio: true, showDescriptions: true, photoNumbering: true }, options.layout);
     var perPage = [1, 2, 4].indexOf(Number(layout.perPage)) !== -1 ? Number(layout.perPage) : 4;
     var portrait = layout.portrait !== false;
     var showDesc = layout.showDescriptions !== false;
@@ -1480,8 +1647,52 @@
       }
 
       var fileName = safePdfFileName(report.title) + '.pdf';
+      var wasAlreadySaved = !!report.savedAt;
+      var pdfBlob = doc.output('blob');
+
+      // Saving as PDF is the publish point for a report. Store the actual PDF
+      // in Neon, then persist the report metadata on the cloud-synced project
+      // and add the same report reference to the linked lead's Reports tab.
+      if (!report.pdfFileId && typeof window.hmCloudUploadLeadFile === 'function') {
+        var reportLead = findLeadByProject(rb.projectId);
+        var pdfFile = new File([pdfBlob], fileName, { type:'application/pdf' });
+        var pdfMeta = await window.hmCloudUploadLeadFile(
+          reportLead && reportLead.id ? reportLead.id : '',
+          'photo_report_pdf',
+          pdfFile,
+          {
+            id:'photo_report_pdf_' + String(report.id || '').replace(/[^a-zA-Z0-9._-]/g, '_'),
+            category:'Reports',
+            docCategory:'Reports',
+            metadata:{
+              projectId:rb.projectId,
+              reportId:report.id,
+              title:report.title || 'Property Photo Report'
+            }
+          }
+        );
+        report.pdfFileId = pdfMeta && pdfMeta.id ? pdfMeta.id : report.pdfFileId || '';
+        report.pdfStorageKey = report.pdfFileId ? ('neon:' + report.pdfFileId) : '';
+      }
+
+      report.savedAt = report.savedAt || new Date().toISOString();
+      report.updatedAt = new Date().toISOString();
+      saveReportToProject(rb.projectId, report);
+      syncReportRefToJobs(rb.projectId, report, false);
+      rb.currentReport = report;
+      rb.pendingReport = null;
+
+      if (!wasAlreadySaved) {
+        var activityLead = findLeadByProject(rb.projectId);
+        if (activityLead && typeof crmPushLeadActivity === 'function') {
+          try { crmPushLeadActivity(activityLead, 'Photo report saved: ' + report.title, 'note', getUserName() || 'User'); } catch (_) {}
+        }
+      }
+
       doc.save(fileName);
-      if (typeof showUploadToast === 'function') showUploadToast(fileName + ' saved.');
+      window.dispatchEvent(new CustomEvent('hmphotoreportssaved', { detail:{ projectId:rb.projectId, reportId:report.id } }));
+      if (typeof window.hmProjectsRenderReports === 'function') window.hmProjectsRenderReports();
+      if (typeof showUploadToast === 'function') showUploadToast(fileName + ' saved to Reports.');
     } catch (err) {
       console.error('[Photo Reports] PDF save failed', err);
       if (typeof showUploadToast === 'function') showUploadToast('Could not create the PDF. Please try again.');
