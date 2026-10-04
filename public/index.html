@@ -38627,6 +38627,8 @@ function mapsGoogleReady() {
       validRows.forEach(function (row, ri) {
         var gj = row && (row.polygon_geojson || row.geometry);
         var rowSrcLower = (row.source || '').toLowerCase();
+        var rowProductLower = String(row.source_product || '').toLowerCase();
+        var isCanonicalMrms = rowSrcLower === 'mrms_mesh' && rowProductLower.indexOf('mesh') !== -1;
         var isPreferred = PREFERRED_CORRIDOR_SOURCES.indexOf(rowSrcLower) !== -1;
         // Parse if still a string
         if (gj && typeof gj === 'string') {
@@ -38755,13 +38757,21 @@ function mapsGoogleReady() {
         // Calibrate hail first, then derive BOTH the displayed size and the color
         // from that same calibrated value. Previously visualBand was calculated
         // before calibration, allowing an orange polygon to report .50" on click.
-        if (!isWind && !isTornado) {
+        if (!isWind && !isTornado && !isCanonicalMrms) {
           var localReportedMax = mapsMaxReportedHailInsideGeometry(dateStr, row.polygon_geojson);
           bandMin = mapsCalibratedHailSize(bandMin, localReportedMax);
           var reviewedGeometryCap = mapsGeometryIntersectsReviewedHailRule(dateStr, row.polygon_geojson);
           if (reviewedGeometryCap > 0) bandMin = Math.min(bandMin, reviewedGeometryCap);
           if (Number.isFinite(bandMax) && localReportedMax > 0) bandMax = Math.min(bandMax, localReportedMax);
           if (Number.isFinite(bandMax) && reviewedGeometryCap > 0) bandMax = Math.min(bandMax, reviewedGeometryCap);
+        } else if (!isWind && !isTornado && isCanonicalMrms) {
+          // MRMS rows were already calibrated against verified ground anchors
+          // during ingest. Preserve the stored radar band and geometry exactly.
+          var reviewedMrmsCap = mapsGeometryIntersectsReviewedHailRule(dateStr, row.polygon_geojson);
+          if (reviewedMrmsCap > 0) {
+            bandMin = Math.min(bandMin, reviewedMrmsCap);
+            if (Number.isFinite(bandMax)) bandMax = Math.min(bandMax, reviewedMrmsCap);
+          }
         }
         var visualBand = (!isWind && !isTornado)
           ? swathVisualHailValue(bandMin, bandMax)
@@ -38832,7 +38842,7 @@ function mapsGoogleReady() {
           // Apply the same hand-cut sidewall treatment to every hail source.
           // Compact MRMS cells retain their end shape; long stored corridors
           // no longer fall back to perfectly straight, smooth sides.
-          if (!isWind && !isTornado) {
+          if (!isWind && !isTornado && !isCanonicalMrms) {
             var handCutSeed = [dateStr, row.id || ri, row.source_product || row.source || 'hail', effectiveBand, ringIndex].join(':');
             paths = paths.map(function(polygonPath, pathIndex) {
               return _handCutStoredHailPath(polygonPath, handCutSeed + ':' + pathIndex);
@@ -38843,7 +38853,7 @@ function mapsGoogleReady() {
               });
             }
           }
-          if (!isWind && !isTornado && !isEnvelope && effectiveBand > 1.0 && _showRow) {
+          if (!isWind && !isTornado && !isCanonicalMrms && !isEnvelope && effectiveBand > 1.0 && _showRow) {
             // Do not widen every high-hail polygon independently. That produced
             // stacked yellow "petals" when several polygons belonged to one storm.
             // Save one center/width seed here; after all rows are processed these
