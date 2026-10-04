@@ -30337,7 +30337,8 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       var nearbyReport = mapsFindNearbyHailReportAt(lat, lng, 5);
       var size = mapsCalibratedHailSize(
         Number(band.displayValue),
-        nearbyReport ? Number(nearbyReport.hailIn) : 0
+        nearbyReport ? Number(nearbyReport.hailIn) : 0,
+        true
       );
       return size > 0 ? size.toFixed(2) + '"' : '';
     }
