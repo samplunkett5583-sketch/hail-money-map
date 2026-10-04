@@ -7055,10 +7055,15 @@
       #page-map .maps-opacity-ctrl { display:none !important; }
       #page-map .maps-mobile-controls-toggle {
         position:fixed; top:calc(var(--maps-topbar-h) + 12px); left:8px; z-index:160;
-        display:inline-flex; align-items:center; justify-content:center;
-        width:38px; height:38px; padding:0; border:1px solid #bfc6ce; border-radius:6px;
+        display:inline-flex; align-items:center; justify-content:center; gap:6px;
+        width:auto; min-width:112px; height:38px; padding:0 12px; border:1px solid #bfc6ce; border-radius:6px;
         background:#fff; color:#26313b; box-shadow:0 2px 8px rgba(0,0,0,.2);
-        font:800 20px/1 Arial,Helvetica,sans-serif; cursor:pointer;
+        font:800 12px/1 Arial,Helvetica,sans-serif; cursor:pointer;
+      }
+      #page-map .maps-mobile-controls-toggle::before {
+        content:'☰';
+        font-size:17px;
+        line-height:1;
       }
       #page-map .maps-mobile-controls-toggle[aria-expanded="true"] {
         background:#2879bd; border-color:#2879bd; color:#fff;
@@ -22618,17 +22623,17 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             </div>
           </div>
 
-          <button type="button" id="maps-mobile-controls-toggle" class="maps-mobile-controls-toggle" aria-expanded="false" aria-controls="maps-mobile-controls-drawer" aria-label="Open map controls" title="Map controls">&#9776;</button>
-          <div id="maps-mobile-controls-drawer" class="maps-mobile-controls-drawer" aria-label="Mobile map controls">
-            <div class="maps-mobile-controls-heading">Map Controls</div>
-            <button type="button" id="maps-mobile-refresh-btn" class="maps-mobile-controls-refresh">Refresh</button>
-            <div class="maps-mobile-controls-heading">Map Options / Map Styles</div>
+          <button type="button" id="maps-mobile-controls-toggle" class="maps-mobile-controls-toggle" aria-expanded="false" aria-controls="maps-mobile-controls-drawer" aria-label="Open map options" title="Map Options">Map Options</button>
+          <div id="maps-mobile-controls-drawer" class="maps-mobile-controls-drawer" aria-label="Mobile map options">
+            <div class="maps-mobile-controls-heading">Map Options</div>
+            <button type="button" id="maps-mobile-refresh-btn" class="maps-mobile-controls-refresh">Refresh Storm Data</button>
+            <div class="maps-mobile-controls-heading">Map Type</div>
             <div class="maps-mobile-style-choices" role="group" aria-label="Mobile map styles">
               <button type="button" class="maps-mobile-style-choice active" data-map-style="roadmap">Map</button>
               <button type="button" class="maps-mobile-style-choice" data-map-style="satellite">Satellite</button>
               <button type="button" class="maps-mobile-style-choice" data-map-style="hybrid">Hybrid</button>
             </div>
-            <label class="maps-mobile-controls-heading" for="maps-mobile-opacity-slider">Opacity</label>
+            <label class="maps-mobile-controls-heading" for="maps-mobile-opacity-slider">Swath Opacity</label>
             <div class="maps-mobile-opacity-row">
               <input type="range" id="maps-mobile-opacity-slider" class="maps-mobile-opacity-slider" min="0" max="100" value="55" aria-label="Storm and swath overlay opacity" />
               <span id="maps-mobile-opacity-value" class="maps-mobile-opacity-value">55%</span>
@@ -46371,7 +46376,7 @@ function mapsGoogleReady() {
       function setOpen(open) {
         drawer.classList.toggle('open', !!open);
         toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        toggle.setAttribute('aria-label', open ? 'Close map controls' : 'Open map controls');
+        toggle.setAttribute('aria-label', open ? 'Close map options' : 'Open map options');
       }
 
       toggle.addEventListener('click', function (event) {
