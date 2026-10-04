@@ -15187,6 +15187,131 @@
       font-weight: 600;
       color: #8a620c;
     }
+    .crm-inspection-camera-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1350;
+      background: #05070b;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+    }
+    .crm-inspection-camera-overlay[hidden] { display: none; }
+    .crm-inspection-camera-bar {
+      display: grid;
+      grid-template-columns: minmax(76px, auto) 1fr minmax(76px, auto);
+      align-items: center;
+      gap: 10px;
+      padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px;
+      background: rgba(5, 7, 11, 0.96);
+    }
+    .crm-inspection-camera-title {
+      min-width: 0;
+      text-align: center;
+      font-size: 16px;
+      line-height: 1.2;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .crm-inspection-camera-bar .btn {
+      min-width: 0;
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+    .crm-inspection-camera-stage {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .crm-inspection-camera-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #000;
+    }
+    .crm-inspection-camera-flash {
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .crm-inspection-camera-flash.is-active {
+      animation: crmInspectionCameraFlash 160ms ease-out;
+    }
+    @keyframes crmInspectionCameraFlash {
+      0% { opacity: .76; }
+      100% { opacity: 0; }
+    }
+    .crm-inspection-camera-status {
+      position: absolute;
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%);
+      max-width: calc(100% - 32px);
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: rgba(5, 7, 11, 0.7);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .crm-inspection-camera-controls {
+      flex: 0 0 auto;
+      min-height: 112px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 18px;
+      padding: 14px 22px calc(14px + env(safe-area-inset-bottom, 0px));
+      background: #05070b;
+    }
+    .crm-inspection-camera-count {
+      justify-self: end;
+      font-size: 13px;
+      font-weight: 700;
+      color: #e5e7eb;
+    }
+    .crm-inspection-camera-hint {
+      justify-self: start;
+      font-size: 12px;
+      color: #aeb7c5;
+    }
+    .crm-inspection-camera-shutter {
+      width: 72px;
+      height: 72px;
+      padding: 0;
+      border-radius: 50%;
+      border: 5px solid #fff;
+      background: transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .crm-inspection-camera-shutter::after {
+      content: '';
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform .08s ease, opacity .08s ease;
+    }
+    .crm-inspection-camera-shutter:active::after { transform: scale(.9); }
+    .crm-inspection-camera-shutter:disabled { opacity: .5; cursor: wait; }
+    .crm-inspection-camera-canvas { display: none; }
+
     .crm-inspection-image-modal {
       position: fixed;
       inset: 0;
@@ -23410,6 +23535,25 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           <div class="crm-inspection-report-excluded" id="crm-inspection-report-excluded" hidden></div>
         </div>
       </section>
+
+      <div class="crm-inspection-camera-overlay" id="crm-inspection-camera-overlay" role="dialog" aria-modal="true" aria-label="Inspection camera" hidden>
+        <div class="crm-inspection-camera-bar">
+          <button class="btn" type="button" id="crm-inspection-camera-back-btn">Back</button>
+          <div class="crm-inspection-camera-title" id="crm-inspection-camera-title">Inspection Photos</div>
+          <button class="btn btn-primary" type="button" id="crm-inspection-camera-done-btn">Done</button>
+        </div>
+        <div class="crm-inspection-camera-stage">
+          <video class="crm-inspection-camera-video" id="crm-inspection-camera-video" autoplay muted playsinline></video>
+          <div class="crm-inspection-camera-flash" id="crm-inspection-camera-flash" aria-hidden="true"></div>
+          <div class="crm-inspection-camera-status" id="crm-inspection-camera-status">Point the camera and take as many photos as needed.</div>
+        </div>
+        <div class="crm-inspection-camera-controls">
+          <div class="crm-inspection-camera-hint">Tap Done when finished</div>
+          <button class="crm-inspection-camera-shutter" type="button" id="crm-inspection-camera-shutter-btn" aria-label="Take picture"></button>
+          <div class="crm-inspection-camera-count" id="crm-inspection-camera-count">0 photos</div>
+        </div>
+        <canvas class="crm-inspection-camera-canvas" id="crm-inspection-camera-canvas"></canvas>
+      </div>
 
       <div class="crm-inspection-image-modal" id="crm-inspection-image-modal" role="dialog" aria-modal="true" aria-label="Photo preview" hidden>
         <div class="crm-inspection-image-dialog">
@@ -50727,6 +50871,7 @@ function mapsGoogleReady() {
     var _crmSavedInspectionReportContext = null;
     var _crmPostLeadContingencyContext = null;
     var _crmInspectionReportLeadId = '';
+    var _crmInspectionCameraSession = null;
 
     function crmCreateGroundInspectionState() {
       var photosByStep = {};
@@ -51497,23 +51642,271 @@ function mapsGoogleReady() {
       if (typeof renderTopBrand === 'function') renderTopBrand();
     }
 
-    function crmAddGroundInspectionFiles(fileList) {
-      if (!fileList || !fileList.length) return;
+    function crmGetGroundInspectionCaptureContext() {
       var state = crmGetGroundInspectionState();
       var step = crmGetGroundInspectionCurrentStep();
       var files = crmGetGroundInspectionFiles(step);
       var category = state && state.currentAdditionalSlopeIndex >= 0
         ? ('Slope: ' + String((state.additionalSlopes[state.currentAdditionalSlopeIndex] || {}).name || 'Additional Slope'))
         : String(step && step.title || 'Inspection');
+      return {
+        category: category,
+        sectionKey: category,
+        sectionLabel: category,
+        targetFiles: files,
+        continueMode: (crmIsGroundInspectionBackSlopeStep(step) || state.currentAdditionalSlopeIndex >= 0) ? 'slope-decision' : 'advance',
+        continueLabel: 'Continue',
+        penetrationSection: '',
+        fallbackInputId: 'crm-ground-inspection-camera-input'
+      };
+    }
+
+    function crmGetPenetrationCaptureContext(section) {
+      section = String(section || '').trim();
+      return {
+        category: 'Roof Projections: ' + section,
+        sectionKey: 'Roof Projections: ' + section,
+        sectionLabel: 'Roof Projections — ' + section,
+        targetFiles: crmGetPenetrationSectionFiles(section),
+        continueMode: 'return',
+        continueLabel: 'Back to Roof Projections',
+        penetrationSection: section,
+        fallbackInputId: 'crm-penetrations-camera-input'
+      };
+    }
+
+    function crmStopInspectionCameraStream(session) {
+      session = session || _crmInspectionCameraSession;
+      if (!session || !session.stream) return;
+      try {
+        session.stream.getTracks().forEach(function (track) { track.stop(); });
+      } catch (e) {}
+      session.stream = null;
+      var video = document.getElementById('crm-inspection-camera-video');
+      if (video) {
+        try { video.pause(); } catch (e2) {}
+        video.srcObject = null;
+      }
+    }
+
+    function crmUpdateInspectionCameraUi() {
+      var session = _crmInspectionCameraSession;
+      var titleEl = document.getElementById('crm-inspection-camera-title');
+      var countEl = document.getElementById('crm-inspection-camera-count');
+      var statusEl = document.getElementById('crm-inspection-camera-status');
+      var doneBtn = document.getElementById('crm-inspection-camera-done-btn');
+      var shutterBtn = document.getElementById('crm-inspection-camera-shutter-btn');
+      if (!session) return;
+      var count = session.pendingFiles.length;
+      if (titleEl) titleEl.textContent = session.sectionLabel || 'Inspection Photos';
+      if (countEl) countEl.textContent = count + ' photo' + (count === 1 ? '' : 's');
+      if (statusEl) {
+        statusEl.textContent = session.finishing
+          ? ('Saving ' + count + ' photo' + (count === 1 ? '' : 's') + '…')
+          : (count
+            ? (count + ' captured — keep taking photos or tap Done.')
+            : 'Point the camera and take as many photos as needed.');
+      }
+      if (doneBtn) {
+        doneBtn.disabled = !!session.finishing;
+        doneBtn.textContent = session.finishing ? 'Saving…' : 'Done';
+      }
+      if (shutterBtn) shutterBtn.disabled = !!session.finishing;
+    }
+
+    function crmCloseInspectionCamera(discardPending) {
+      var session = _crmInspectionCameraSession;
+      crmStopInspectionCameraStream(session);
+      var overlay = document.getElementById('crm-inspection-camera-overlay');
+      if (overlay) overlay.hidden = true;
+      if (discardPending && session) session.pendingFiles = [];
+      _crmInspectionCameraSession = null;
+    }
+
+    function crmFallbackInspectionCamera(session) {
+      if (!session) return;
+      crmCloseInspectionCamera(true);
+      showUploadToast('Opening the device camera.');
+      if (session.penetrationSection) _crmActivePenetrationSection = session.penetrationSection;
+      var input = document.getElementById(session.fallbackInputId || 'crm-ground-inspection-camera-input');
+      if (input) input.click();
+    }
+
+    function crmOpenInspectionCameraSession(options) {
+      options = options || {};
+      var targetFiles = Array.isArray(options.targetFiles) ? options.targetFiles : [];
+      var session = {
+        category: String(options.category || options.sectionKey || 'Inspection').trim(),
+        sectionKey: String(options.sectionKey || options.category || 'Inspection').trim(),
+        sectionLabel: String(options.sectionLabel || options.category || 'Inspection Photos').trim(),
+        targetFiles: targetFiles,
+        continueMode: String(options.continueMode || 'advance'),
+        continueLabel: String(options.continueLabel || 'Continue'),
+        penetrationSection: String(options.penetrationSection || '').trim(),
+        fallbackInputId: String(options.fallbackInputId || 'crm-ground-inspection-camera-input'),
+        pendingFiles: [],
+        encoding: 0,
+        finishing: false,
+        stream: null
+      };
+      _crmInspectionCameraSession = session;
+      var overlay = document.getElementById('crm-inspection-camera-overlay');
+      var video = document.getElementById('crm-inspection-camera-video');
+      if (overlay) overlay.hidden = false;
+      crmUpdateInspectionCameraUi();
+
+      if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function' || !video) {
+        crmFallbackInspectionCamera(session);
+        return;
+      }
+
+      navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false
+      }).then(function (stream) {
+        if (_crmInspectionCameraSession !== session) {
+          try { stream.getTracks().forEach(function (track) { track.stop(); }); } catch (e) {}
+          return;
+        }
+        session.stream = stream;
+        video.srcObject = stream;
+        var playResult = video.play();
+        if (playResult && typeof playResult.catch === 'function') playResult.catch(function () {});
+      }).catch(function () {
+        if (_crmInspectionCameraSession === session) crmFallbackInspectionCamera(session);
+      });
+    }
+
+    function crmOpenGroundInspectionCamera() {
+      crmOpenInspectionCameraSession(crmGetGroundInspectionCaptureContext());
+    }
+
+    function crmOpenPenetrationInspectionCamera(section) {
+      if (!section) return;
+      crmOpenInspectionCameraSession(crmGetPenetrationCaptureContext(section));
+    }
+
+    function crmOpenInspectionCameraFromReview() {
+      var context = _crmInspectionPhotoReviewContext;
+      if (!context) return;
+      crmOpenInspectionCameraSession({
+        category: context.sectionKey,
+        sectionKey: context.sectionKey,
+        sectionLabel: context.sectionLabel,
+        targetFiles: context.photos,
+        continueMode: context.continueMode,
+        continueLabel: context.continueLabel,
+        penetrationSection: context.penetrationSection,
+        fallbackInputId: context.penetrationSection ? 'crm-penetrations-camera-input' : 'crm-ground-inspection-camera-input'
+      });
+    }
+
+    function crmCaptureInspectionCameraFrame() {
+      var session = _crmInspectionCameraSession;
+      var video = document.getElementById('crm-inspection-camera-video');
+      var canvas = document.getElementById('crm-inspection-camera-canvas');
+      if (!session || session.finishing || !video || !canvas) return;
+      var sourceWidth = Number(video.videoWidth || 0);
+      var sourceHeight = Number(video.videoHeight || 0);
+      if (!sourceWidth || !sourceHeight) {
+        showUploadToast('Camera is still starting. Try again in a moment.');
+        return;
+      }
+
+      var maxEdge = 2400;
+      var scale = Math.min(1, maxEdge / Math.max(sourceWidth, sourceHeight));
+      var width = Math.max(1, Math.round(sourceWidth * scale));
+      var height = Math.max(1, Math.round(sourceHeight * scale));
+      canvas.width = width;
+      canvas.height = height;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, width, height);
+
+      session.encoding += 1;
+      var flash = document.getElementById('crm-inspection-camera-flash');
+      if (flash) {
+        flash.classList.remove('is-active');
+        void flash.offsetWidth;
+        flash.classList.add('is-active');
+      }
+
+      canvas.toBlob(function (blob) {
+        if (_crmInspectionCameraSession !== session) return;
+        session.encoding = Math.max(0, session.encoding - 1);
+        if (blob) {
+          var safeSection = String(session.sectionLabel || 'inspection')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'inspection';
+          var sequence = session.pendingFiles.length + 1;
+          var fileName = safeSection + '-' + Date.now() + '-' + sequence + '.jpg';
+          var photoFile = blob;
+          try {
+            photoFile = new File([blob], fileName, { type: 'image/jpeg', lastModified: Date.now() });
+          } catch (e) {
+            try {
+              blob.name = fileName;
+              blob.lastModified = Date.now();
+            } catch (e2) {}
+          }
+          session.pendingFiles.push(photoFile);
+        } else {
+          showUploadToast('That photo could not be captured. Please try again.');
+        }
+        crmUpdateInspectionCameraUi();
+        if (session.finishing && session.encoding === 0) crmFinishInspectionCameraSession();
+      }, 'image/jpeg', 0.9);
+    }
+
+    function crmFinishInspectionCameraSession() {
+      var session = _crmInspectionCameraSession;
+      if (!session) return;
+      session.finishing = true;
+      crmUpdateInspectionCameraUi();
+      if (session.encoding > 0) return;
+
+      var capturedFiles = session.pendingFiles.slice();
+      var finish = function (count) {
+        if (_crmInspectionCameraSession !== session) return;
+        crmStopInspectionCameraStream(session);
+        var overlay = document.getElementById('crm-inspection-camera-overlay');
+        if (overlay) overlay.hidden = true;
+        _crmInspectionCameraSession = null;
+        if (count > 0) showUploadToast(count + ' photo' + (count === 1 ? '' : 's') + ' added.');
+        crmOpenInspectionPhotoReview({
+          sectionKey: session.sectionKey,
+          sectionLabel: session.sectionLabel,
+          photos: session.targetFiles,
+          continueMode: session.continueMode,
+          continueLabel: session.continueLabel,
+          penetrationSection: session.penetrationSection
+        });
+      };
+
+      if (!capturedFiles.length) {
+        finish(0);
+        return;
+      }
+      crmAddInspectionFilesToTemporaryRecord(capturedFiles, session.category, session.targetFiles, finish);
+    }
+
+    function crmAddGroundInspectionFiles(fileList) {
+      if (!fileList || !fileList.length) return;
+      var capture = crmGetGroundInspectionCaptureContext();
       var capturedFiles = Array.prototype.slice.call(fileList);
-      crmAddInspectionFilesToTemporaryRecord(capturedFiles, category, files, function (count) {
+      crmAddInspectionFilesToTemporaryRecord(capturedFiles, capture.category, capture.targetFiles, function (count) {
         showUploadToast(count + ' file' + (count === 1 ? '' : 's') + ' added.');
         crmOpenInspectionPhotoReview({
-          sectionKey: category,
-          sectionLabel: category,
-          photos: files,
-          continueMode: (crmIsGroundInspectionBackSlopeStep(step) || state.currentAdditionalSlopeIndex >= 0) ? 'slope-decision' : 'advance',
-          continueLabel: 'Continue'
+          sectionKey: capture.sectionKey,
+          sectionLabel: capture.sectionLabel,
+          photos: capture.targetFiles,
+          continueMode: capture.continueMode,
+          continueLabel: capture.continueLabel
         });
       });
     }
@@ -51584,11 +51977,11 @@ function mapsGoogleReady() {
     });
 
     document.getElementById('crm-ground-inspection-camera-btn').addEventListener('click', function () {
-      document.getElementById('crm-ground-inspection-camera-input').click();
+      crmOpenGroundInspectionCamera();
     });
 
     document.getElementById('crm-ground-inspection-elevation-camera-btn').addEventListener('click', function () {
-      document.getElementById('crm-ground-inspection-camera-input').click();
+      crmOpenGroundInspectionCamera();
     });
 
     document.getElementById('crm-ground-inspection-prev-btn').addEventListener('click', function () {
@@ -51738,7 +52131,7 @@ function mapsGoogleReady() {
       if (!section) return;
       _crmActivePenetrationSection = section;
       if (btn.classList.contains('crm-pen-camera-btn')) {
-        document.getElementById('crm-penetrations-camera-input').click();
+        crmOpenPenetrationInspectionCamera(section);
       } else {
         document.getElementById('crm-penetrations-upload-input').click();
       }
@@ -51756,15 +52149,20 @@ function mapsGoogleReady() {
       this.value = '';
     });
 
+    document.getElementById('crm-inspection-camera-shutter-btn').addEventListener('click', function () {
+      crmCaptureInspectionCameraFrame();
+    });
+
+    document.getElementById('crm-inspection-camera-done-btn').addEventListener('click', function () {
+      crmFinishInspectionCameraSession();
+    });
+
+    document.getElementById('crm-inspection-camera-back-btn').addEventListener('click', function () {
+      crmCloseInspectionCamera(true);
+    });
+
     document.getElementById('crm-inspection-review-camera-btn').addEventListener('click', function () {
-      var context = _crmInspectionPhotoReviewContext;
-      if (!context) return;
-      if (context.penetrationSection) {
-        _crmActivePenetrationSection = context.penetrationSection;
-        document.getElementById('crm-penetrations-camera-input').click();
-      } else {
-        document.getElementById('crm-ground-inspection-camera-input').click();
-      }
+      crmOpenInspectionCameraFromReview();
     });
 
     document.getElementById('crm-inspection-review-device-btn').addEventListener('click', function () {
