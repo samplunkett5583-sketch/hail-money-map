@@ -402,14 +402,14 @@
 
   function renderSectionCard(p, section, index) {
     var html = '<div class="phr-section" data-phr-section="' + esc(section.id) + '">';
-    html += '<div class="phr-section-head">';
+    html += '<div class="phr-section-head" data-phr-section-drag-handle="' + esc(section.id) + '" title="Drag to reorder this section">';
+    html += '<div class="phr-section-drag-grip" aria-hidden="true">&#8942;&#8942;</div>';
     html += '<div class="phr-section-title-row">';
     html += '<span class="phr-section-number">Section ' + (index + 1) + '</span>';
     html += '<input type="text" class="phr-section-title-input" value="' + esc(section.title) + '" data-phr-section-title="' + esc(section.id) + '" placeholder="Section title" />';
     html += '</div>';
     html += '<div class="phr-section-tools">';
-    html += '<button class="btn" type="button" data-phr-move="up" data-phr-section="' + esc(section.id) + '">&#8593;</button>';
-    html += '<button class="btn" type="button" data-phr-move="down" data-phr-section="' + esc(section.id) + '">&#8595;</button>';
+    html += '<span class="phr-section-drag-copy">Drag section to reorder</span>';
     html += '<button class="btn" type="button" data-phr-rename="' + esc(section.id) + '">Rename</button>';
     html += '<button class="btn" type="button" data-phr-delete-section="' + esc(section.id) + '">Delete</button>';
     html += '</div>';
@@ -561,11 +561,6 @@
     content.addEventListener('click', function (e) {
       var addPhotosBtn = e.target.closest('[data-phr-add-photos]');
       if (addPhotosBtn) { openPhotoPicker(addPhotosBtn.getAttribute('data-phr-add-photos')); return; }
-      var moveSection = e.target.closest('[data-phr-move]');
-      if (moveSection) {
-        moveDraftSection(moveSection.getAttribute('data-phr-section'), moveSection.getAttribute('data-phr-move'));
-        return;
-      }
       var renameBtn = e.target.closest('[data-phr-rename]');
       if (renameBtn) {
         var section = findDraftSection(renameBtn.getAttribute('data-phr-rename'));
@@ -597,8 +592,85 @@
       if (createPdf) { createReport(); return; }
     });
 
+    wireSectionReorder(content);
+
     // Hydrate thumbnails after each render.
     hydrateBuilderThumbnails(content);
+  }
+
+  function syncDraftSectionOrderFromDom(host) {
+    if (!host) return;
+    var byId = {};
+    rb.draft.sections.forEach(function (section) { byId[String(section.id)] = section; });
+    var next = [];
+    Array.prototype.forEach.call(host.querySelectorAll(':scope > [data-phr-section]'), function (card) {
+      var section = byId[String(card.getAttribute('data-phr-section') || '')];
+      if (section) next.push(section);
+    });
+    if (next.length === rb.draft.sections.length) rb.draft.sections = next;
+  }
+
+  function wireSectionReorder(content) {
+    var host = content && content.querySelector('#phr-sections');
+    if (!host) return;
+
+    Array.prototype.forEach.call(host.querySelectorAll('[data-phr-section-drag-handle]'), function (handle) {
+      var dragState = null;
+
+      function finishDrag(e) {
+        if (!dragState) return;
+        if (e && e.pointerId != null && dragState.pointerId !== e.pointerId) return;
+        try {
+          if (handle.hasPointerCapture && handle.hasPointerCapture(dragState.pointerId)) {
+            handle.releasePointerCapture(dragState.pointerId);
+          }
+        } catch (_) {}
+        dragState.card.classList.remove('phr-section-dragging');
+        syncDraftSectionOrderFromDom(host);
+        dragState = null;
+        renderBuilder();
+      }
+
+      handle.addEventListener('pointerdown', function (e) {
+        if (e.button != null && e.button !== 0) return;
+        if (e.target && e.target.closest && e.target.closest('input,button,textarea,select,a')) return;
+        var card = handle.closest('[data-phr-section]');
+        if (!card) return;
+        dragState = {
+          card: card,
+          pointerId: e.pointerId,
+          startY: e.clientY,
+          moved: false
+        };
+        card.classList.add('phr-section-dragging');
+        try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+        e.preventDefault();
+      });
+
+      handle.addEventListener('pointermove', function (e) {
+        if (!dragState || e.pointerId !== dragState.pointerId) return;
+        if (!dragState.moved && Math.abs(e.clientY - dragState.startY) < 5) return;
+        dragState.moved = true;
+
+        var hit = document.elementFromPoint(e.clientX, e.clientY);
+        var target = hit && hit.closest ? hit.closest('[data-phr-section]') : null;
+        if (!target || target === dragState.card || target.parentElement !== host) {
+          e.preventDefault();
+          return;
+        }
+
+        var rect = target.getBoundingClientRect();
+        if (e.clientY < rect.top + rect.height / 2) {
+          host.insertBefore(dragState.card, target);
+        } else {
+          host.insertBefore(dragState.card, target.nextSibling);
+        }
+        e.preventDefault();
+      });
+
+      handle.addEventListener('pointerup', finishDrag);
+      handle.addEventListener('pointercancel', finishDrag);
+    });
   }
 
   function findDraftSection(id) {

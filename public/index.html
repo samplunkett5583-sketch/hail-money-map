@@ -21453,8 +21453,13 @@
     .phr-title-input{width:100%;max-width:560px;padding:14px 16px;border:1px solid #cbd2dd;border-radius:10px;font-size:18px}
     .phr-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
     .phr-section{border:1px solid #d8dde6;border-radius:12px;padding:14px;margin-bottom:14px;background:#fff}
-    .phr-section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-    .phr-section-title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .phr-section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;cursor:grab;touch-action:none;user-select:none}
+    .phr-section-head:active{cursor:grabbing}
+    .phr-section-head input,.phr-section-head button{touch-action:auto;user-select:auto}
+    .phr-section-drag-grip{flex:0 0 auto;padding:4px 2px;color:#9a7118;font-size:22px;font-weight:900;line-height:1;letter-spacing:-6px;cursor:grab}
+    .phr-section-drag-copy{align-self:center;color:#7a6330;font-size:11px;font-weight:800;white-space:nowrap}
+    .phr-section.phr-section-dragging{opacity:.82;border-color:#b88722;box-shadow:0 12px 28px rgba(75,54,14,.24);transform:scale(.995);position:relative;z-index:5}
+    .phr-section-title-row{display:flex;align-items:center;gap:8px;flex:1 1 320px;flex-wrap:wrap}
     .phr-section-number{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8a6d22;background:rgba(212,168,66,.14);padding:4px 8px;border-radius:6px}
     .phr-section-title-input{min-width:220px;flex:1;padding:9px 11px;border:1px solid #cbd2dd;border-radius:8px;font-size:15px;font-weight:700}
     .phr-section-tools{display:flex;gap:6px;flex-wrap:wrap}
@@ -84360,7 +84365,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
 <script src="./contingency-locked-pdf.js?v=20260920"></script>
 <script src="./assets/crm-cross-links.js?v=20260914"></script>
-<script src="./assets/photo-reports.js?v=20261004-2"></script>
+<script src="./assets/photo-reports.js?v=20261004-3"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
 <script id="hm-region-document-routing-script">
 (function(){
