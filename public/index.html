@@ -27047,6 +27047,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./neon-cloud-source.js?v=20261003-neon-cloud-1"></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly&loading=async&callback=mapsGoogleReady" defer></script>
   <script src="demo_swaths.js"></script>
@@ -27140,6 +27141,124 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     if (typeof firebase !== 'undefined') {
       window.auth = firebase.auth();
     }
+
+    /* ---------- Neon Data API compatibility ---------- */
+    /* Keep the existing PostgREST query code, but point it at Neon instead of Supabase. */
+    var SUPABASE_URL = 'https://ep-late-dream-b4icnzwo.apirest.c-6.us-east-2.aws.neon.tech/neondb';
+    var SUPABASE_ANON_KEY = 'neon-data-api';
+    var HM_NEON_FUNCTION_URL = 'https://br-super-wildflower-b4eatcc2-cloudapi.compute.c-6.us-east-2.aws.neon.tech';
+    var HM_NEON_SWATH_URL = 'https://br-super-wildflower-b4eatcc2-swathrender.compute.c-6.us-east-2.aws.neon.tech';
+    var hmNativeFetch = window.fetch.bind(window);
+    window.fetch = async function (input, init) {
+      var requestUrl = typeof input === 'string' ? input : (input && input.url) || '';
+      if (requestUrl.indexOf(SUPABASE_URL) === 0) {
+        var nextInit = Object.assign({}, init || {});
+        var nextHeaders = new Headers(nextInit.headers || (input instanceof Request ? input.headers : undefined) || {});
+        nextHeaders.delete('apikey');
+        var authValue = nextHeaders.get('Authorization') || '';
+        if (!authValue || authValue === 'Bearer ' + SUPABASE_ANON_KEY) {
+          var user = window.auth && window.auth.currentUser;
+          if (user) nextHeaders.set('Authorization', 'Bearer ' + await user.getIdToken(false));
+        }
+        nextInit.headers = nextHeaders;
+        var functionPrefix = SUPABASE_URL + '/functions/v1/';
+        if (requestUrl.indexOf(functionPrefix) === 0) {
+          var functionPath = requestUrl.slice(functionPrefix.length);
+          var functionTarget = functionPath.indexOf('swath-render') === 0
+            ? HM_NEON_SWATH_URL + '/' + functionPath.slice('swath-render'.length)
+            : HM_NEON_FUNCTION_URL + '/' + functionPath;
+          return hmNativeFetch(functionTarget, nextInit);
+        }
+        return hmNativeFetch(input, nextInit);
+      }
+      return hmNativeFetch(input, init);
+    };
+    var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      accessToken: async function () {
+        return window.auth && window.auth.currentUser
+          ? await window.auth.currentUser.getIdToken(false)
+          : null;
+      },
+      global: { fetch: window.fetch }
+    });
+    window.supabaseClient = sb;
+
+    /* ---------- Neon Object Storage compatibility ---------- */
+    var hmNeonStorageUrls = Object.create(null);
+    function hmNeonStorageId(bucket, path) {
+      var text = String(bucket || '') + ':' + String(path || '');
+      var hash = 2166136261;
+      for (var i = 0; i < text.length; i++) {
+        hash ^= text.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return 'legacy_' + (hash >>> 0).toString(16) + '_' + String(text.length);
+    }
+    function hmNeonStorageLeadId(path) {
+      var parts = String(path || '').split('/').filter(Boolean);
+      if (parts[0] === 'checks' || parts[0] === 'photos') return parts[1] || '';
+      return parts[0] || '';
+    }
+    function hmNeonStorageFile(path, blob, contentType) {
+      if (blob instanceof File && blob.name) return blob;
+      var name = String(path || 'file').split('/').pop() || 'file';
+      return new File([blob], name, { type: contentType || (blob && blob.type) || 'application/octet-stream' });
+    }
+    function hmNeonStorageFrom(bucket) {
+      return {
+        upload: async function (path, blob, options) {
+          try {
+            options = options || {};
+            var id = hmNeonStorageId(bucket, path);
+            var file = hmNeonStorageFile(path, blob, options.contentType);
+            var meta = await window.hmCloudUploadLeadFile(
+              hmNeonStorageLeadId(path),
+              String(file.type || '').indexOf('image/') === 0 ? 'photo' : 'document',
+              file,
+              {
+                id: id,
+                category: bucket,
+                metadata: { legacyBucket: bucket, legacyPath: path }
+              }
+            );
+            try { hmNeonStorageUrls[bucket + ':' + path] = await window.hmCloudGetFileUrl(meta.id); } catch (_) {}
+            return { data: { path: path, id: meta.id }, error: null };
+          } catch (error) {
+            return { data: null, error: error };
+          }
+        },
+        createSignedUrl: async function (path) {
+          try {
+            var id = hmNeonStorageId(bucket, path);
+            var signedUrl = await window.hmCloudGetFileUrl(id);
+            hmNeonStorageUrls[bucket + ':' + path] = signedUrl;
+            return { data: { signedUrl: signedUrl }, error: null };
+          } catch (error) {
+            return { data: null, error: error };
+          }
+        },
+        getPublicUrl: function (path) {
+          return { data: { publicUrl: hmNeonStorageUrls[bucket + ':' + path] || '' } };
+        },
+        remove: async function (paths) {
+          try {
+            var list = Array.isArray(paths) ? paths : [paths];
+            for (var i = 0; i < list.length; i++) {
+              var path = String(list[i] || '');
+              if (!path) continue;
+              var id = hmNeonStorageId(bucket, path);
+              await window.hmCloudApi('/files/' + encodeURIComponent(id), { method: 'DELETE' });
+              delete hmNeonStorageUrls[bucket + ':' + path];
+            }
+            return { data: list, error: null };
+          } catch (error) {
+            return { data: null, error: error };
+          }
+        }
+      };
+    }
+    if (sb && sb.storage) sb.storage.from = hmNeonStorageFrom;
+
     var JOB_PHOTOS_BUCKET = 'job-photos';
     var JOBS_TABLE = 'jobs';
     var HM_GOOGLE_CALENDAR_CLIENT_ID = '153623806900-eh8su07gp2du3ou8mtql11g4hn4lveeh.apps.googleusercontent.com';
@@ -83080,7 +83199,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       created_at: project.createdAt || new Date().toISOString(),
       updated_at: project.updatedAt
     };
-    var result = await sb.from(TABLE).upsert(row, { onConflict: 'id' });
+    var result = await sb.from(TABLE).upsert(row, { onConflict: 'org_id,id' });
     if (result.error) throw result.error;
   }
 
@@ -83123,7 +83242,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     var deletedAt = new Date().toISOString();
     var tombstone = { id:id, deleted:true, deletedAt:deletedAt, photos:[] };
     var row = { id:id, data:tombstone, created_by_uid:user.uid, created_at:project.createdAt || deletedAt, updated_at:deletedAt };
-    var result = await sb.from(TABLE).upsert(row, { onConflict:'id' });
+    var result = await sb.from(TABLE).upsert(row, { onConflict:'org_id,id' });
     if (result.error) throw result.error;
     return true;
   };

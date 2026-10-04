@@ -1,20 +1,34 @@
 #!/usr/bin/env node
 
 import crypto from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
+import pg from "pg";
 import { parse } from "csv-parse/sync";
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const DATABASE_URL = process.env.DATABASE_URL;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+if (!DATABASE_URL) {
+  console.error("Missing DATABASE_URL");
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+const pool = new pg.Pool({ connectionString: DATABASE_URL, max: 3 });
+
+async function upsertRows(table, rows) {
+  if (!rows.length) return;
+  const columns = Object.keys(rows[0]);
+  const params = [];
+  const tuples = rows.map((row, rowIndex) => {
+    return '(' + columns.map((column, columnIndex) => {
+      params.push(column === 'raw' ? JSON.stringify(row[column] || {}) : row[column]);
+      return '$' + (rowIndex * columns.length + columnIndex + 1);
+    }).join(',') + ')';
+  });
+  const updates = columns.filter((column) => column !== 'id')
+    .map((column) => '"' + column + '"=EXCLUDED."' + column + '"').join(',');
+  const sql = 'INSERT INTO public."' + table + '" (' + columns.map((c) => '"' + c + '"').join(',') + ') VALUES ' +
+    tuples.join(',') + ' ON CONFLICT ("id") DO UPDATE SET ' + updates;
+  await pool.query(sql, params);
+}
 
 function ymd(date) {
   return date.toISOString().slice(0, 10);
@@ -180,75 +194,16 @@ async function main() {
 
   for (let i = 0; i < deduped.length; i += BATCH_SIZE) {
     const batch = deduped.slice(i, i + BATCH_SIZE);
-    const { error } = await supabase
-      .from("hail_lsr_raw")
-      .upsert(batch, { onConflict: "id" });
-    if (error) throw error;
+    await upsertRows("hail_lsr_raw", batch);
     upserted += batch.length;
     console.log(`[LSR] upserted_batch=${batch.length} total_upserted=${upserted}`);
   }
 
   console.log(`[LSR] done. fetched=${fetched} upserted=${upserted}`);
 
-  // ── Trigger swath-render for each ingested date to keep corridors fresh ──
   const distinctDates = [...new Set(deduped.map((r) => r.event_date))].sort();
-  console.log(`[LSR] triggering swath-render for ${distinctDates.length} date(s): ${distinctDates.join(", ")}`);
-
-  const SWATH_RENDER_URL = `${SUPABASE_URL}/functions/v1/swath-render`;
-  let swathOk = 0;
-  let swathFail = 0;
-  for (const d of distinctDates) {
-    console.log(`[INGEST] recent swath generation attempted ${d}`);
-    try {
-      const resp = await fetch(`${SWATH_RENDER_URL}?date=${d}&persist=1`, {
-        headers: {
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-        },
-      });
-      if (resp.ok) {
-        const body = await resp.json();
-        console.log(`[LSR] swath-render ${d}: persisted=${body.persisted || false} corridors=${(body.corridors || []).length} points=${body.pointCount || 0}`);
-        swathOk++;
-      } else {
-        const raw = await resp.text();
-        console.warn(`[LSR] swath-render ${d}: HTTP ${resp.status} ${raw.slice(0, 200)}`);
-        swathFail++;
-      }
-    } catch (err) {
-      console.warn(`[LSR] swath-render ${d}: ${err.message}`);
-      swathFail++;
-    }
-  }
-  console.log(`[LSR] swath-render complete: ok=${swathOk} fail=${swathFail}`);
-
-  // ── Probe HailTrace for each ingested date to check swath availability ──
-  const HT_SWATH_URL = `${SUPABASE_URL}/functions/v1/hailtrace-swath`;
-  let htOk = 0;
-  let htFail = 0;
-  console.log(`[LSR] checking HailTrace swaths for ${distinctDates.length} date(s)…`);
-  for (const d of distinctDates) {
-    try {
-      const resp = await fetch(`${HT_SWATH_URL}?date=${d}`, {
-        headers: {
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-        },
-      });
-      if (resp.ok) {
-        const body = await resp.json();
-        console.log(`[LSR] hailtrace-swath ${d}: available=${body.available} image=${body.imageUrl ? 'yes' : 'no'}`);
-        htOk++;
-      } else {
-        console.warn(`[LSR] hailtrace-swath ${d}: HTTP ${resp.status}`);
-        htFail++;
-      }
-    } catch (err) {
-      console.warn(`[LSR] hailtrace-swath ${d}: ${err.message}`);
-      htFail++;
-    }
-  }
-  console.log(`[LSR] HailTrace check complete: ok=${htOk} fail=${htFail}`);
+  console.log(`[LSR] Neon ingest complete for ${distinctDates.length} storm date(s): ${distinctDates.join(", ")}`);
+  await pool.end();
 }
 
 main().catch((err) => {
