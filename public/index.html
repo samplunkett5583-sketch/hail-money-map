@@ -35293,68 +35293,122 @@ function mapsGoogleReady() {
           return result;
         }
 
+        var GRID = 0.018;
+
+        function _sortedActualTrackPoints(points, axis) {
+          var ordered = (points || []).slice().sort(function(a, b) {
+            return ((a.lat-axis.cy)*axis.sin+(a.lon-axis.cx)*axis.cos) -
+              ((b.lat-axis.cy)*axis.sin+(b.lon-axis.cx)*axis.cos);
+          });
+          var out = [];
+          ordered.forEach(function(p) {
+            if (!out.length) {
+              out.push({ lat:Number(p.lat), lon:Number(p.lon), hail_in:Number(p.hail_in)||0.5 });
+              return;
+            }
+            var prev = out[out.length - 1];
+            var gap = Math.sqrt(Math.pow(Number(p.lat)-prev.lat,2)+Math.pow(Number(p.lon)-prev.lon,2));
+            if (gap < 0.006) return;
+            if (gap <= 0.22 && gap > 0.055) {
+              var steps = Math.min(8, Math.max(2, Math.ceil(gap / 0.045)));
+              for (var si = 1; si < steps; si++) {
+                var st = si / steps;
+                out.push({
+                  lat:prev.lat + (Number(p.lat)-prev.lat) * st,
+                  lon:prev.lon + (Number(p.lon)-prev.lon) * st,
+                  hail_in:Math.min(prev.hail_in, Number(p.hail_in)||0.5)
+                });
+              }
+            }
+            out.push({ lat:Number(p.lat), lon:Number(p.lon), hail_in:Number(p.hail_in)||0.5 });
+          });
+          return out;
+        }
+
+        function _makeCompactOrganicHailCell(point, axis, halfLong, halfShort, seed) {
+          var count = 16;
+          var path = [];
+          var phase = ((seed || 0) % 17) * 0.37;
+          var perpSin = axis.cos, perpCos = -axis.sin;
+          for (var pi = 0; pi < count; pi++) {
+            var t = (pi / count) * Math.PI * 2;
+            var edgeA = 1 + 0.12 * Math.sin(3 * t + phase) + 0.05 * Math.sin(7 * t + phase * 0.7);
+            var edgeB = 1 + 0.09 * Math.sin(5 * t + 1.1 + phase);
+            var along = halfLong * Math.cos(t) * edgeA;
+            var across = halfShort * Math.sin(t) * edgeB;
+            path.push({
+              lat:Number(point.lat) + along * axis.sin + across * perpSin,
+              lon:Number(point.lon) + (along * axis.cos + across * perpCos) * LS
+            });
+          }
+          return path;
+        }
+
+        function _buildOrganicHailBand(cluster, threshold, halfWidth, singleLong, singleShort, colorValue, zIndex, bandIndex) {
+          var bandPts = (cluster || []).filter(function(p) {
+            return (Number(p.hail_in) || 0) >= threshold;
+          });
+          if (!bandPts.length) return false;
+
+          var axis = _fitStormAxis(cluster);
+          var path;
+          if (bandPts.length === 1) {
+            path = _makeCompactOrganicHailCell(bandPts[0], axis, singleLong, singleShort, bandIndex + cluster.length * 7);
+          } else {
+            var track = _sortedActualTrackPoints(bandPts, axis);
+            if (track.length < 2) {
+              path = _makeCompactOrganicHailCell(bandPts[0], axis, singleLong, singleShort, bandIndex + cluster.length * 7);
+            } else {
+              var crossSpread = 0;
+              bandPts.forEach(function(p) {
+                var dx = Number(p.lon) - axis.cx;
+                var dy = Number(p.lat) - axis.cy;
+                crossSpread = Math.max(crossSpread, Math.abs(dy * axis.cos - dx * axis.sin));
+              });
+              var width = Math.min(halfWidth * 1.55, halfWidth + crossSpread * 0.55);
+              path = _bufferPolylineSwab(track, width);
+            }
+          }
+
+          if (!path || path.length < 3) return false;
+          var poly = _addRawPoly(path, swathSeverityColor(colorValue), zIndex, 'hail');
+          if (poly) {
+            poly._bandMin = threshold;
+            poly._sourceProduct = 'organic_report_cluster';
+            poly._constructionFunction = 'mapsDrawWeakFallbackCorridors:organicHailBand';
+            totalCells++;
+            return true;
+          }
+          return false;
+        }
+
         // ── Hail ────────────────────────────────────────────────────────
         if (hailRaw && hailRaw.length >= 1) {
-          // Cluster at 5 km, then bridge nearby aligned clusters into storm tracks
-          var hailClusters = _bridgeClusters(_clusterByDistance(hailRaw, 0.045));
-          console.log('[FALLBACK-CELL-RENDER] date='+dateStr+' type=hail tracks='+hailClusters.length+' pts='+hailRaw.length);
-          if (hailRaw.length) {
-            var _hl = hailRaw.map(function(p){return p.lat;}), _hln = hailRaw.map(function(p){return p.lon;});
-            console.log('[HAIL-RAW] date='+dateStr+' count='+hailRaw.length+' lat='+Math.min.apply(null,_hl).toFixed(2)+'–'+Math.max.apply(null,_hl).toFixed(2)+' lon='+Math.min.apply(null,_hln).toFixed(2)+'–'+Math.max.apply(null,_hln).toFixed(2));
-          }
-          // CELL_HS_OUTER: broad light-yellow outer band (0.5"–1.0" hail influence zone).
-          //   0.065° ≈ 3.6 mi half-width → ~7 mi corridor, matching Hail Recon outer halo.
-          // CELL_HS_INNER: tighter base for nested higher-intensity bands.
-          //   0.032° ≈ 1.8 mi half-width. Fractions (0.90, 0.75, 0.58, 0.44) nest inside.
-          var GRID = 0.018, CELL_HL = 0.022;
-          var CELL_HS_OUTER = 0.130, CELL_HS_INNER = 0.065;
+          // Nearby reports become one storm cluster. The customer-facing shape is
+          // one irregular polygon per hail-size band — never a grid of rectangles.
+          var hailClusters = _bridgeClusters(_clusterByDistance(hailRaw, 0.075));
+          console.log('[FALLBACK-ORGANIC-RENDER] date='+dateStr+' type=hail tracks='+hailClusters.length+' pts='+hailRaw.length);
 
           hailClusters.forEach(function(cluster, ci) {
-            var n = cluster.length;
-            var maxHail = cluster.reduce(function(m,p){return Math.max(m,p.hail_in||0);},0);
-            if (n <= 1 && maxHail < 0.5) { return; }
-            var ax = _fitStormAxis(cluster);
-            var singletonReport = n === 1;
-            // Interpolate densely along a real multi-report storm axis. A lone
-            // report has no defensible storm-track direction, so keep it local.
-            var yInterp = _snapDedup(_interpAxis(cluster, ax, GRID), GRID);
-            yInterp.slice(0, 400).forEach(function(p) {
-              var outerPath = singletonReport
-                ? _makeEllipse(p.lat, p.lon, 0.050, 0.065)
-                : _makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_OUTER, ax.sin, ax.cos);
-              if (_addRawPoly(outerPath, swathSeverityColor(0.5), 600, 'hail'))
-                { result.hail = true; totalCells++; }
-            });
+            if (!cluster || !cluster.length) return;
+            var maxHail = cluster.reduce(function(m,p){return Math.max(m,Number(p.hail_in)||0);},0);
+            if (maxHail < 0.5) return;
 
-            // Nested intensity bands stay inside the same local/track footprint.
-            var mPts = cluster.filter(function(p){return (p.hail_in||0)>=1.25;});
-            if (mPts.length) _snapDedup(_interpAxis(mPts, ax, GRID), GRID).forEach(function(p) {
-              _addRawPoly(singletonReport
-                ? _makeEllipse(p.lat, p.lon, 0.036, 0.047)
-                : _makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.90, ax.sin, ax.cos), swathSeverityColor(1.35), 601, 'hail');
-            });
-            var oPts = cluster.filter(function(p){return (p.hail_in||0)>=1.75;});
-            if (oPts.length) _snapDedup(_interpAxis(oPts, ax, GRID), GRID).forEach(function(p) {
-              _addRawPoly(singletonReport
-                ? _makeEllipse(p.lat, p.lon, 0.027, 0.035)
-                : _makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.75, ax.sin, ax.cos), swathSeverityColor(1.85), 602, 'hail');
-            });
-            var rPts = cluster.filter(function(p){return (p.hail_in||0)>=2.00;});
-            if (rPts.length) _snapDedup(_interpAxis(rPts, ax, GRID), GRID).forEach(function(p) {
-              _addRawPoly(singletonReport
-                ? _makeEllipse(p.lat, p.lon, 0.020, 0.026)
-                : _makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.58, ax.sin, ax.cos), swathSeverityColor(2.50), 603, 'hail');
-            });
-            var pPts = cluster.filter(function(p){return (p.hail_in||0)>3.00;});
-            if (pPts.length) _snapDedup(_interpAxis(pPts, ax, GRID), GRID).forEach(function(p) {
-              _addRawPoly(singletonReport
-                ? _makeEllipse(p.lat, p.lon, 0.014, 0.018)
-                : _makeRotatedRect(p.lat, p.lon, CELL_HL, CELL_HS_INNER*0.44, ax.sin, ax.cos), swathSeverityColor(3.5), 604, 'hail');
-            });
-            var hlats = cluster.map(function(p){return p.lat;}), hlons = cluster.map(function(p){return p.lon;});
-            var hDiagMi = Math.sqrt(Math.pow((Math.max.apply(null,hlats)-Math.min.apply(null,hlats))*69,2)+Math.pow((Math.max.apply(null,hlons)-Math.min.apply(null,hlons))*55,2));
-            if (hDiagMi > 60) console.warn('[swath-renderer] WARNING: oversize polygon date='+dateStr+' source=fallback extent='+hDiagMi.toFixed(0)+'mi');
-            console.log('[swath-renderer] cluster='+ci+' pts='+n+' cells='+yInterp.length+' unioned-paths='+yInterp.length+' maxHail='+maxHail.toFixed(2));
+            var drewOuter = _buildOrganicHailBand(cluster, 0.50, 0.105, 0.064, 0.050, 0.50, 600, ci * 10);
+            if (drewOuter) result.hail = true;
+            _buildOrganicHailBand(cluster, 1.25, 0.078, 0.050, 0.039, 1.25, 601, ci * 10 + 1);
+            _buildOrganicHailBand(cluster, 1.75, 0.057, 0.038, 0.030, 1.75, 602, ci * 10 + 2);
+            _buildOrganicHailBand(cluster, 2.00, 0.041, 0.029, 0.023, 2.00, 603, ci * 10 + 3);
+            _buildOrganicHailBand(cluster, 3.000001, 0.030, 0.021, 0.017, 3.25, 604, ci * 10 + 4);
+
+            var hlats = cluster.map(function(p){return Number(p.lat);});
+            var hlons = cluster.map(function(p){return Number(p.lon);});
+            var hDiagMi = Math.sqrt(
+              Math.pow((Math.max.apply(null,hlats)-Math.min.apply(null,hlats))*69,2) +
+              Math.pow((Math.max.apply(null,hlons)-Math.min.apply(null,hlons))*55,2)
+            );
+            if (hDiagMi > 60) console.warn('[swath-renderer] WARNING: oversize hail cluster date='+dateStr+' extent='+hDiagMi.toFixed(0)+'mi');
+            console.log('[swath-renderer] organic cluster='+ci+' reports='+cluster.length+' maxHail='+maxHail.toFixed(2));
           });
         }
 
