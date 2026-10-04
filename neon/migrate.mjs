@@ -13,12 +13,19 @@ for (const line of envText.split(/\r?\n/)) {
   process.env[m[1]] = value;
 }
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is missing.');
-const sql = fs.readFileSync(path.join(root, 'neon', 'migrations', '001_hail_money_cloud.sql'), 'utf8');
+const migrationsDir = path.join(root, 'neon', 'migrations');
+const migrations = fs.readdirSync(migrationsDir)
+  .filter((name) => /^\d+_.*\.sql$/i.test(name))
+  .sort();
 const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
 await client.connect();
 try {
-  await client.query(sql);
-  const r = await client.query("select to_regclass('public.hm_app_state') as state_table, to_regclass('public.hm_files') as files_table, to_regclass('public.hm_audit_events') as audit_table");
+  for (const migration of migrations) {
+    const sql = fs.readFileSync(path.join(migrationsDir, migration), 'utf8');
+    console.log('Applying', migration);
+    await client.query(sql);
+  }
+  const r = await client.query("select to_regclass('public.hm_app_state') as state_table, to_regclass('public.hm_files') as files_table, to_regclass('public.hm_audit_events') as audit_table, to_regclass('public.hail_lsr_raw') as hail_table, to_regclass('public.storm_polygons') as storm_polygons_table");
   console.log(JSON.stringify(r.rows[0]));
 } finally {
   await client.end();

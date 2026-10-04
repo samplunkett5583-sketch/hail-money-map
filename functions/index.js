@@ -95,14 +95,7 @@ exports.employeeTestLogin = onRequest({ cors: false, region: "us-central1" }, as
       hmRole: seed.role,
       hmOrganizationId: HM_PRIMARY_ORGANIZATION_ID
     });
-    await db.collection("hmEmployees").doc(userRecord.uid).set({
-      email,
-      displayName: seed.displayName,
-      role: seed.role,
-      organizationId: HM_PRIMARY_ORGANIZATION_ID,
-      active: true,
-      updatedAt: FieldValue.serverTimestamp()
-    }, { merge: true });
+    // Firebase stores authentication only. Team/member records live in Neon.
     userRecord = await admin.auth().getUser(userRecord.uid);
     const token = await admin.auth().createCustomToken(userRecord.uid);
     return res.status(200).json({ token, profile: safeEmployeeProfile(userRecord, seed) });
@@ -159,15 +152,7 @@ exports.provisionEmployee = onRequest({ cors: false, region: "us-central1" }, as
       hmRole,
       hmOrganizationId: organizationId
     });
-    await db.collection("hmEmployees").doc(userRecord.uid).set({
-      email,
-      displayName,
-      role: hmRole,
-      organizationId,
-      active: body.active !== false,
-      updatedAt: FieldValue.serverTimestamp(),
-      updatedBy: caller.uid
-    }, { merge: true });
+    // Firebase stores authentication only. Team/member records live in Neon.
     userRecord = await admin.auth().getUser(userRecord.uid);
     return res.status(200).json({ profile: safeEmployeeProfile(userRecord, { role: hmRole, displayName }) });
   } catch (error) {

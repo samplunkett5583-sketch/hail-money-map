@@ -117,6 +117,68 @@ async function route(request) {
 
   const user = await authenticate(request);
 
+  if (url.pathname === '/hail-dates' && request.method === 'GET') {
+    const result = await pool.query(
+      `SELECT event_date
+         FROM (
+           SELECT DISTINCT event_date FROM hail_lsr_raw
+           UNION
+           SELECT DISTINCT event_date FROM storm_lsr_raw
+           UNION
+           SELECT DISTINCT event_date FROM storm_polygons
+           UNION
+           SELECT DISTINCT event_date FROM hail_radar_days
+         ) dates
+         WHERE event_date IS NOT NULL
+         ORDER BY event_date DESC
+         LIMIT 1500`
+    );
+    return json({ dates: result.rows.map((row) => String(row.event_date).slice(0, 10)) }, 200, origin);
+  }
+
+  if (url.pathname === '/hail-lsr-by-date' && request.method === 'GET') {
+    const date = String(url.searchParams.get('date') || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: 'Invalid date. Use date=YYYY-MM-DD' }, 400, origin);
+    let result = await pool.query(
+      'SELECT lat,lon,hail_in,event_time FROM hail_lsr_raw WHERE event_date=$1 ORDER BY event_time ASC',
+      [date]
+    );
+    if (!result.rows.length) {
+      result = await pool.query(
+        'SELECT lat,lon,hail_in,event_time FROM hail_reports WHERE event_date=$1 ORDER BY event_time ASC',
+        [date]
+      );
+    }
+    return json({ points: result.rows }, 200, origin);
+  }
+
+  if (url.pathname === '/storm-lsr-by-date' && request.method === 'GET') {
+    const date = String(url.searchParams.get('date') || '').trim();
+    const stormType = String(url.searchParams.get('type') || '').trim().toLowerCase();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: 'Invalid date. Use date=YYYY-MM-DD' }, 400, origin);
+    if (stormType !== 'wind' && stormType !== 'tornado') return json({ error: 'Invalid type. Use type=wind or type=tornado' }, 400, origin);
+    const result = await pool.query(
+      'SELECT lat,lon,magnitude,magnitude_unit,event_time FROM storm_lsr_raw WHERE event_date=$1 AND event_type=$2 ORDER BY event_time ASC',
+      [date, stormType]
+    );
+    return json({ points: result.rows, storm_type: stormType }, 200, origin);
+  }
+
+  if (url.pathname === '/storm-polygons-by-date' && request.method === 'GET') {
+    const date = String(url.searchParams.get('date') || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: 'Invalid date. Use date=YYYY-MM-DD' }, 400, origin);
+    const result = await pool.query(
+      `SELECT id,event_date,storm_type,source,source_product,source_priority,quality_status,swath_index,
+              polygon_geojson,centroid_lat,centroid_lon,area_sq_mi,threshold_value,band_min,band_max,band_label,
+              event_start_utc,event_end_utc,metadata_json
+         FROM storm_polygons
+        WHERE event_date=$1
+        ORDER BY source_priority ASC, swath_index ASC NULLS LAST`,
+      [date]
+    );
+    return json({ polygons: result.rows }, 200, origin);
+  }
+
   if (url.pathname === '/state' && request.method === 'GET') {
     const result = await pool.query('SELECT key,value,updated_at FROM hm_app_state WHERE org_id=$1 ORDER BY key', [user.orgId]);
     const state = {};

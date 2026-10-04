@@ -4,20 +4,34 @@
 // Dates YYYY-MM-DD. Defaults to 7-day rolling window.
 
 import crypto from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
+import pg from "pg";
 import { parse } from "csv-parse/sync";
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const DATABASE_URL = process.env.DATABASE_URL;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+if (!DATABASE_URL) {
+  console.error("Missing DATABASE_URL");
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+const pool = new pg.Pool({ connectionString: DATABASE_URL, max: 3 });
+
+async function upsertRows(table, rows) {
+  if (!rows.length) return;
+  const columns = Object.keys(rows[0]);
+  const params = [];
+  const tuples = rows.map((row, rowIndex) => {
+    return '(' + columns.map((column, columnIndex) => {
+      params.push(column === 'raw' ? JSON.stringify(row[column] || {}) : row[column]);
+      return '$' + (rowIndex * columns.length + columnIndex + 1);
+    }).join(',') + ')';
+  });
+  const updates = columns.filter((column) => column !== 'id')
+    .map((column) => '"' + column + '"=EXCLUDED."' + column + '"').join(',');
+  const sql = 'INSERT INTO public."' + table + '" (' + columns.map((c) => '"' + c + '"').join(',') + ') VALUES ' +
+    tuples.join(',') + ' ON CONFLICT ("id") DO UPDATE SET ' + updates;
+  await pool.query(sql, params);
+}
 
 function ymd(date) { return date.toISOString().slice(0, 10); }
 
@@ -150,8 +164,7 @@ async function main() {
   let upserted = 0;
   for (let i = 0; i < deduped.length; i += BATCH) {
     const batch = deduped.slice(i, i + BATCH);
-    const { error } = await supabase.from("storm_lsr_raw").upsert(batch, { onConflict: "id" });
-    if (error) throw error;
+    await upsertRows("storm_lsr_raw", batch);
     upserted += batch.length;
     console.log(`[LSR-WT] upserted batch=${batch.length} total=${upserted}`);
   }
@@ -160,33 +173,8 @@ async function main() {
   console.log(`[LSR-WT] done. wind=${wc} tornado=${tc} upserted=${upserted} dates=${dates.length}`);
   console.log("[INGEST] recent damaging wind rows upserted", wc);
 
-  const SWATH_RENDER_URL = `${SUPABASE_URL}/functions/v1/swath-render`;
-  let swathOk = 0;
-  let swathFail = 0;
-  for (const d of dates) {
-    console.log(`[INGEST] recent swath generation attempted ${d}`);
-    try {
-      const resp = await fetch(`${SWATH_RENDER_URL}?date=${d}&persist=1`, {
-        headers: {
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-        },
-      });
-      if (resp.ok) {
-        const body = await resp.json();
-        console.log(`[LSR-WT] swath-render ${d}: persisted=${body.persisted || false} corridors=${(body.corridors || []).length} points=${body.pointCount || 0}`);
-        swathOk++;
-      } else {
-        const raw = await resp.text();
-        console.warn(`[LSR-WT] swath-render ${d}: HTTP ${resp.status} ${raw.slice(0, 200)}`);
-        swathFail++;
-      }
-    } catch (err) {
-      console.warn(`[LSR-WT] swath-render ${d}: ${err.message}`);
-      swathFail++;
-    }
-  }
-  console.log(`[LSR-WT] swath-render complete: ok=${swathOk} fail=${swathFail}`);
+  console.log(`[LSR-WT] Neon ingest complete for ${dates.length} storm date(s): ${dates.join(", ")}`);
+  await pool.end();
 }
 
 main().catch(err => { console.error("[LSR-WT] FATAL:", err); process.exit(1); });
