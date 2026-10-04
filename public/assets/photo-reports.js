@@ -620,12 +620,30 @@
       function finishDrag(e) {
         if (!dragState) return;
         if (e && e.pointerId != null && dragState.pointerId !== e.pointerId) return;
+        window.removeEventListener('pointermove', moveDrag, false);
+        window.removeEventListener('pointerup', finishDrag, false);
+        window.removeEventListener('pointercancel', finishDrag, false);
         try {
           if (handle.hasPointerCapture && handle.hasPointerCapture(dragState.pointerId)) {
             handle.releasePointerCapture(dragState.pointerId);
           }
         } catch (_) {}
-        dragState.card.classList.remove('phr-section-dragging');
+
+        var card = dragState.card;
+        var placeholder = dragState.placeholder;
+        card.classList.remove('phr-section-dragging');
+        card.style.left = '';
+        card.style.top = '';
+        card.style.width = '';
+        card.style.height = '';
+
+        if (placeholder && placeholder.parentNode === host) {
+          host.insertBefore(card, placeholder);
+          placeholder.remove();
+        } else {
+          host.appendChild(card);
+        }
+
         syncDraftSectionOrderFromDom(host);
         dragState = null;
         renderBuilder();
@@ -636,30 +654,55 @@
         if (e.target && e.target.closest && e.target.closest('input,button,textarea,select,a')) return;
         var card = handle.closest('[data-phr-section]');
         if (!card) return;
+
+        var rect = card.getBoundingClientRect();
+        var placeholder = document.createElement('div');
+        placeholder.className = 'phr-section-drag-placeholder';
+        placeholder.style.height = Math.max(70, rect.height) + 'px';
+        host.insertBefore(placeholder, card);
+
         dragState = {
           card: card,
+          placeholder: placeholder,
           pointerId: e.pointerId,
           startY: e.clientY,
+          offsetY: e.clientY - rect.top,
           moved: false
         };
+
+        try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+
+        document.body.appendChild(card);
+        card.style.left = rect.left + 'px';
+        card.style.top = rect.top + 'px';
+        card.style.width = rect.width + 'px';
+        card.style.height = rect.height + 'px';
         card.classList.add('phr-section-dragging');
+
+        // Track at the window level while the card is floating so movement
+        // remains continuous even if pointer capture is interrupted by reparenting.
+        window.addEventListener('pointermove', moveDrag, { passive:false });
+        window.addEventListener('pointerup', finishDrag, false);
+        window.addEventListener('pointercancel', finishDrag, false);
         try { handle.setPointerCapture(e.pointerId); } catch (_) {}
         e.preventDefault();
       });
 
-      handle.addEventListener('pointermove', function (e) {
+      function moveDrag(e) {
         if (!dragState || e.pointerId !== dragState.pointerId) return;
-        if (!dragState.moved && Math.abs(e.clientY - dragState.startY) < 5) return;
+
+        // Make the grabbed section visibly follow the pointer immediately.
+        dragState.card.style.top = (e.clientY - dragState.offsetY) + 'px';
+
+        if (!dragState.moved && Math.abs(e.clientY - dragState.startY) < 5) {
+          e.preventDefault();
+          return;
+        }
         dragState.moved = true;
 
-        // Reorder by the pointer's Y position relative to the other section
-        // cards. Do not rely on elementFromPoint/closest because controls inside
-        // a section also carry data attributes and can be mistaken for the card.
         var cards = Array.prototype.slice.call(
           host.querySelectorAll(':scope > .phr-section[data-phr-section]')
-        ).filter(function (card) {
-          return card !== dragState.card;
-        });
+        );
 
         var beforeCard = null;
         for (var i = 0; i < cards.length; i++) {
@@ -671,11 +714,11 @@
         }
 
         if (beforeCard) {
-          if (dragState.card.nextElementSibling !== beforeCard) {
-            host.insertBefore(dragState.card, beforeCard);
+          if (dragState.placeholder.nextElementSibling !== beforeCard) {
+            host.insertBefore(dragState.placeholder, beforeCard);
           }
-        } else if (host.lastElementChild !== dragState.card) {
-          host.appendChild(dragState.card);
+        } else if (host.lastElementChild !== dragState.placeholder) {
+          host.appendChild(dragState.placeholder);
         }
 
         // Keep long section lists usable on touch devices by nudging the page
@@ -688,10 +731,7 @@
         }
 
         e.preventDefault();
-      });
-
-      handle.addEventListener('pointerup', finishDrag);
-      handle.addEventListener('pointercancel', finishDrag);
+      }
     });
   }
 

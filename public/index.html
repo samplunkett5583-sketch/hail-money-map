@@ -21458,7 +21458,9 @@
     .phr-section-head input,.phr-section-head button{touch-action:auto;user-select:auto}
     .phr-section-drag-grip{flex:0 0 auto;padding:4px 2px;color:#9a7118;font-size:22px;font-weight:900;line-height:1;letter-spacing:-6px;cursor:grab}
     .phr-section-drag-copy{align-self:center;color:#7a6330;font-size:11px;font-weight:800;white-space:nowrap}
-    .phr-section.phr-section-dragging{opacity:.82;border-color:#b88722;box-shadow:0 12px 28px rgba(75,54,14,.24);transform:scale(.995);position:relative;z-index:5}
+    .phr-section.phr-section-dragging{opacity:.94;border-color:#b88722;box-shadow:0 18px 42px rgba(75,54,14,.32);transform:rotate(.2deg) scale(1.01);position:fixed!important;z-index:10050!important;pointer-events:none;margin:0!important;cursor:grabbing}
+    .phr-section-drag-placeholder{border:2px dashed #c7921e;border-radius:12px;background:rgba(245,199,78,.18);box-shadow:inset 0 0 0 2px rgba(255,255,255,.5);margin-bottom:14px;transition:height .12s ease}
+    .phr-section-drag-placeholder::after{content:'Drop section here';display:flex;align-items:center;justify-content:center;height:100%;min-height:54px;color:#8a6414;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
     .phr-section-title-row{display:flex;align-items:center;gap:8px;flex:1 1 320px;flex-wrap:wrap}
     .phr-section-number{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8a6d22;background:rgba(212,168,66,.14);padding:4px 8px;border-radius:6px}
     .phr-section-title-input{min-width:220px;flex:1;padding:9px 11px;border:1px solid #cbd2dd;border-radius:8px;font-size:15px;font-weight:700}
@@ -84365,7 +84367,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
 <script src="./contingency-locked-pdf.js?v=20260920"></script>
 <script src="./assets/crm-cross-links.js?v=20260914"></script>
-<script src="./assets/photo-reports.js?v=20261004-4"></script>
+<script src="./assets/photo-reports.js?v=20261004-5"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
 <script id="hm-region-document-routing-script">
 (function(){
