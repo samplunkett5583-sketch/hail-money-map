@@ -234,18 +234,54 @@
 
   /* ── Photo source rendering (real thumbnails) ─────────────────────── */
   function photoSrc(photo, cb) {
-    if (typeof window.hmPhotoSignedUrl === 'function' && photo.storagePath) {
-      window.hmPhotoSignedUrl(photo.storagePath).then(cb).catch(function () { cb(''); });
-      return;
+    photo = photo || {};
+    var finished = false;
+    function done(src) {
+      if (finished) return;
+      finished = true;
+      cb(src || '');
     }
-    if (photo.fullUrl) { cb(photo.fullUrl); return; }
+    function tryRemotePath() {
+      if (photo.fullUrl) { done(photo.fullUrl); return; }
+      if (typeof window.hmPhotoSignedUrl === 'function' && photo.storagePath) {
+        window.hmPhotoSignedUrl(photo.storagePath).then(function (src) {
+          if (src) done(src);
+          else done('');
+        }).catch(function () { done(''); });
+        return;
+      }
+      done('');
+    }
+    function tryCloudFile() {
+      var cloudId = String(photo.fileId || photo.id || '').trim();
+      if (!cloudId && String(photo.storageKey || '').indexOf('neon:') === 0) cloudId = String(photo.storageKey).slice(5);
+      if (cloudId && typeof window.hmCloudGetFileBlobById === 'function') {
+        window.hmCloudGetFileBlobById(cloudId).then(function (blob) {
+          if (blob) { done(URL.createObjectURL(blob)); return; }
+          tryRemotePath();
+        }).catch(tryRemotePath);
+        return;
+      }
+      tryRemotePath();
+    }
     if (photo.imageKey && typeof getPhotoBlob === 'function') {
       getPhotoBlob(photo.imageKey).then(function (blob) {
-        cb(blob ? URL.createObjectURL(blob) : '');
+        if (blob) { done(URL.createObjectURL(blob)); return; }
+        tryCloudFile();
+      }).catch(tryCloudFile);
+      return;
+    }
+    if (photo.storageKey && typeof crmOpenFilesDb === 'function' && typeof crmDbGetBlob === 'function') {
+      crmOpenFilesDb(function (dbErr, db) {
+        if (dbErr || !db) { tryCloudFile(); return; }
+        crmDbGetBlob(db, photo.storageKey, function (blobErr, blob) {
+          if (!blobErr && blob) { done(URL.createObjectURL(blob)); return; }
+          tryCloudFile();
+        });
       });
       return;
     }
-    cb('');
+    tryCloudFile();
   }
 
   function loadPhotoInto(img, photo, fallback) {
@@ -734,8 +770,10 @@
           title: String(section.title || 'Section').trim(),
           photos: section.photos.map(function (photo) {
             return {
-              id: photo.id || photo.imageKey || '',
+              id: photo.id || photo.fileId || photo.imageKey || '',
+              fileId: photo.fileId || photo.id || '',
               imageKey: photo.imageKey || '',
+              storageKey: photo.storageKey || '',
               storagePath: photo.storagePath || '',
               name: photo.name || '',
               description: String(photo.description || '').trim(),
@@ -880,7 +918,7 @@
     /* Section pages */
     var photoNumber = 1;
     (report.sections || []).forEach(function (section, sectionIndex) {
-      var photos = (section.photos || []).filter(function (ph) { return ph.storagePath || ph.imageKey || ph.fullUrl; });
+      var photos = (section.photos || []).filter(function (ph) { return ph.id || ph.fileId || ph.storageKey || ph.storagePath || ph.imageKey || ph.fullUrl; });
       if (!photos.length) return;
       var chunkHtml = '';
       for (var offset = 0; offset < photos.length; offset += perPage) {
@@ -900,7 +938,7 @@
         chunk.forEach(function (photo) {
           chunkHtml += '<div class="phr-pdf-photo">';
           if (showNum) chunkHtml += '<span class="phr-pdf-photo-num">' + photoNumber + '</span>';
-          chunkHtml += '<img data-phr-report-photo="' + esc(photo.id || photo.imageKey || '') + '" alt="' + esc(photo.name || '') + '" />';
+          chunkHtml += '<img data-phr-report-photo="' + esc(photo.id || photo.fileId || photo.imageKey || '') + '" alt="' + esc(photo.name || '') + '" />';
           if (showDesc && String(photo.description || '').trim()) {
             chunkHtml += '<div class="phr-pdf-photo-desc">' + esc(photo.description) + '</div>';
           }
@@ -926,7 +964,7 @@
     Array.prototype.forEach.call(container.querySelectorAll('[data-phr-report-photo]'), function (img) {
       var key = img.getAttribute('data-phr-report-photo');
       var photo = project.photos.find(function (ph) {
-        return String(ph.id || ph.imageKey || '') === String(key || '');
+        return String(ph.id || ph.fileId || ph.imageKey || '') === String(key || '');
       });
       if (!photo) return;
       loadPhotoInto(img, photo, function (fallback) { fallback.style.display = 'none'; });

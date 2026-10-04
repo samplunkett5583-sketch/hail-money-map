@@ -12999,6 +12999,17 @@
       flex: 0 0 auto;
       margin-left: auto;
     }
+    .crm-workspace-header-clear {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: 7px 12px;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .crm-workspace-header-clear[hidden] { display: none !important; }
     .crm-admin-sales-reps-search {
       max-width: 420px;
     }
@@ -21766,6 +21777,7 @@
       </div>
       <div class="topbar-right">
         <div class="topbar-controls">
+          <button class="btn crm-workspace-header-clear" type="button" id="crm-workspace-header-clear" hidden>Return to Admin</button>
           <button class="jf-notif-btn" type="button" id="jf-notif-btn" title="Notifications" aria-label="Notifications">
             🔔<span class="jf-notif-badge" id="jf-notif-badge"></span>
           </button>
@@ -49852,7 +49864,7 @@ function mapsGoogleReady() {
       });
     });
 
-    document.getElementById('crm-workspace-banner-clear').addEventListener('click', function () {
+    function crmReturnToAdminWorkspace() {
       _appPageHistoryLocked = true;
       try {
         _appPageHistory = [];
@@ -49863,7 +49875,11 @@ function mapsGoogleReady() {
       } finally {
         _appPageHistoryLocked = false;
       }
-    });
+    }
+
+    document.getElementById('crm-workspace-banner-clear').addEventListener('click', crmReturnToAdminWorkspace);
+    var workspaceHeaderClear = document.getElementById('crm-workspace-header-clear');
+    if (workspaceHeaderClear) workspaceHeaderClear.addEventListener('click', crmReturnToAdminWorkspace);
 
     document.getElementById('admin-sales-reps-search').addEventListener('input', function () {
       crmRenderAdminSalesRepsPage(this.value || '');
@@ -75930,10 +75946,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var banner = document.getElementById('crm-workspace-banner');
       var ownerLine = document.getElementById('crm-workspace-banner-owner');
       var signedInLine = document.getElementById('crm-workspace-banner-signedin');
+      var headerClear = document.getElementById('crm-workspace-header-clear');
       if (!banner || !ownerLine || !signedInLine) return;
       var owner = crmGetWorkspaceOwnerMember();
       var show = !!owner && _appCurrentPageId !== 'page-login';
       banner.classList.toggle('is-visible', show);
+      if (headerClear) {
+        headerClear.hidden = !show;
+        headerClear.textContent = owner ? ('Return to Admin') : 'Return to Admin';
+        headerClear.title = owner ? ('Exit ' + owner.name + '\'s workspace') : 'Return to Admin';
+      }
       if (!show) return;
       ownerLine.textContent = 'Viewing workspace as: ' + owner.name;
       signedInLine.textContent = 'Signed in as: ' + crmGetRole() + ' (Full Permissions)';
@@ -84323,7 +84345,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
 <script src="./contingency-locked-pdf.js?v=20260920"></script>
 <script src="./assets/crm-cross-links.js?v=20260914"></script>
-<script src="./assets/photo-reports.js?v=20260914"></script>
+<script src="./assets/photo-reports.js?v=20261004-1"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
 <script id="hm-region-document-routing-script">
 (function(){
