@@ -27523,6 +27523,8 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     var _appPageHistory = [];
     var _appCurrentPageId = '';
     var _appPageHistoryLocked = false;
+    var _appBrowserHistoryReady = false;
+    var _appBrowserHistoryPop = false;
 
     /* Phase 1 shared-shell contract. This is the single route-context source
        for shell chrome; page renderers continue to own their existing data. */
@@ -27574,6 +27576,53 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       return !!pageId && pageId !== 'page-login';
     }
 
+    function crmBuildBrowserHistoryState(pageId) {
+      return {
+        hailMoneyApp: true,
+        pageId: String(pageId || '').trim(),
+        appPageHistory: _appPageHistory.slice(-60)
+      };
+    }
+
+    function crmSyncBrowserHistory(pageId, previousPageId) {
+      if (_appBrowserHistoryPop || !window.history || typeof window.history.replaceState !== 'function') return;
+      pageId = String(pageId || '').trim();
+      previousPageId = String(previousPageId || '').trim();
+      if (!pageId) return;
+      var state = crmBuildBrowserHistoryState(pageId);
+      try {
+        if (
+          !_appBrowserHistoryReady ||
+          pageId === 'page-login' ||
+          previousPageId === 'page-login' ||
+          _appPageHistoryLocked ||
+          typeof window.history.pushState !== 'function'
+        ) {
+          window.history.replaceState(state, document.title);
+        } else if (previousPageId !== pageId) {
+          window.history.pushState(state, document.title);
+        } else {
+          window.history.replaceState(state, document.title);
+        }
+        _appBrowserHistoryReady = true;
+      } catch (e) {}
+    }
+
+    window.addEventListener('popstate', function (event) {
+      var state = event && event.state;
+      if (!state || state.hailMoneyApp !== true || !state.pageId) return;
+      if (!document.getElementById(state.pageId)) return;
+      _appBrowserHistoryPop = true;
+      _appPageHistoryLocked = true;
+      try {
+        _appPageHistory = Array.isArray(state.appPageHistory) ? state.appPageHistory.slice(-60) : [];
+        showPage(state.pageId);
+      } finally {
+        _appPageHistoryLocked = false;
+        _appBrowserHistoryPop = false;
+      }
+    });
+
     function peekAppHeaderBackTarget() {
       for (var i = _appPageHistory.length - 1; i >= 0; i--) {
         var candidate = _appPageHistory[i];
@@ -27608,6 +27657,18 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     }
 
     function goToPreviousAppPage() {
+      var browserState = window.history && window.history.state;
+      if (
+        browserState &&
+        browserState.hailMoneyApp === true &&
+        Array.isArray(browserState.appPageHistory) &&
+        browserState.appPageHistory.length &&
+        window.history &&
+        typeof window.history.back === 'function'
+      ) {
+        window.history.back();
+        return;
+      }
       _appPageHistoryLocked = true;
       try {
         showPage(getAppHeaderBackTarget());
@@ -27627,6 +27688,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     }
 
     function showPage(pageId) {
+      var previousPageId = _appCurrentPageId;
       allPages = document.querySelectorAll('.page');
       if (pageId === 'page-photo-files' && typeof window.hmPhotoLoadFromSupabase === 'function') {
         window.hmPhotoLoadFromSupabase();
@@ -27681,6 +27743,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
         target.classList.add('active');
       }
       _appCurrentPageId = pageId;
+      if (target) crmSyncBrowserHistory(pageId, previousPageId);
       var pageContext = crmGetPageContext(pageId);
       document.body.classList.toggle('app-page-active', pageId !== 'page-login');
       document.body.classList.toggle('map-page-active', pageId === 'page-map');
