@@ -27298,17 +27298,49 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     var HM_NEON_FUNCTION_URL = 'https://br-super-wildflower-b4eatcc2-cloudapi.compute.c-6.us-east-2.aws.neon.tech';
     var HM_NEON_SWATH_URL = 'https://br-super-wildflower-b4eatcc2-swathrender.compute.c-6.us-east-2.aws.neon.tech';
     var hmNativeFetch = window.fetch.bind(window);
+
+    async function hmWaitForFirebaseDataApiUser() {
+      var authInstance = window.auth;
+      if (!authInstance) return null;
+      if (authInstance.currentUser) return authInstance.currentUser;
+
+      // Firebase can restore persistence a fraction of a second after the app
+      // starts. Never send Neon's placeholder token during that window.
+      if (typeof authInstance.authStateReady === 'function') {
+        try { await authInstance.authStateReady(); } catch (_) {}
+        if (authInstance.currentUser) return authInstance.currentUser;
+      }
+
+      for (var attempt = 0; attempt < 100; attempt++) {
+        if (authInstance.currentUser) return authInstance.currentUser;
+        await new Promise(function (resolve) { setTimeout(resolve, 50); });
+      }
+      return authInstance.currentUser || null;
+    }
+
+    async function hmApplyNeonDataApiAuth(headers, forceRefresh) {
+      headers.delete('apikey');
+      var authValue = headers.get('Authorization') || '';
+      var needsFirebaseToken = !!forceRefresh || !authValue || authValue === 'Bearer ' + SUPABASE_ANON_KEY;
+      if (!needsFirebaseToken) return headers;
+
+      var user = await hmWaitForFirebaseDataApiUser();
+      if (user) {
+        headers.set('Authorization', 'Bearer ' + await user.getIdToken(!!forceRefresh));
+      } else {
+        // Do not ever send "Bearer neon-data-api": Neon correctly rejects it
+        // as an invalid JWT and that used to strand desktop Recent Storms.
+        headers.delete('Authorization');
+      }
+      return headers;
+    }
+
     window.fetch = async function (input, init) {
       var requestUrl = typeof input === 'string' ? input : (input && input.url) || '';
       if (requestUrl.indexOf(SUPABASE_URL) === 0) {
         var nextInit = Object.assign({}, init || {});
         var nextHeaders = new Headers(nextInit.headers || (input instanceof Request ? input.headers : undefined) || {});
-        nextHeaders.delete('apikey');
-        var authValue = nextHeaders.get('Authorization') || '';
-        if (!authValue || authValue === 'Bearer ' + SUPABASE_ANON_KEY) {
-          var user = window.auth && window.auth.currentUser;
-          if (user) nextHeaders.set('Authorization', 'Bearer ' + await user.getIdToken(false));
-        }
+        await hmApplyNeonDataApiAuth(nextHeaders, false);
         nextInit.headers = nextHeaders;
         var functionPrefix = SUPABASE_URL + '/functions/v1/';
         if (requestUrl.indexOf(functionPrefix) === 0) {
@@ -27318,7 +27350,15 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             : HM_NEON_FUNCTION_URL + '/' + functionPath;
           return hmNativeFetch(functionTarget, nextInit);
         }
-        return hmNativeFetch(input, nextInit);
+
+        var response = await hmNativeFetch(input, nextInit);
+        if ((response.status === 401 || response.status === 403) && window.auth && window.auth.currentUser) {
+          var retryHeaders = new Headers(nextHeaders);
+          await hmApplyNeonDataApiAuth(retryHeaders, true);
+          var retryInit = Object.assign({}, nextInit, { headers: retryHeaders });
+          return hmNativeFetch(input, retryInit);
+        }
+        return response;
       }
       return hmNativeFetch(input, init);
     };
