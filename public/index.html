@@ -23622,7 +23622,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
         <div class="tpl-builder-wrap">
           <h1 class="page-title">DocuSign Field Setup</h1>
           <p class="page-subtitle">Place the signing and customer-data fields on this contingency before it can be used for signing.</p>
-          <div id="tpl-company-doc-help" class="tpl-company-doc-help"><strong>Add DocuSign fields:</strong> choose Homeowner Signature, Rep Signature, Homeowner Name, Address, Email, Phone Number, Claim Number, Insurance Company, Date of Loss, Date, or another field below. Tap and drag on the document to size it. On a phone, choose a field and tap the document to place it.</div>
+          <div id="tpl-company-doc-help" class="tpl-company-doc-help"><strong>Add DocuSign fields:</strong> choose Homeowner Signature, Rep Signature, Homeowner Name, Address, Email, Phone Number, Claim Number, Policy Number, Insurance Company, Date of Loss, Date, or another field below. Tap and drag on the document to size it. On a phone, choose a field and tap the document to place it.</div>
 
           <div class="page-actions" style="margin-bottom:14px;">
             <button class="btn" type="button" id="back-from-tpl-builder">Back</button>
@@ -52864,6 +52864,7 @@ function mapsGoogleReady() {
       'email':               function (j) { return j.email || ''; },
       'phone':               function (j) { return j.primaryPhone || j.phone || ''; },
       'claim_number':        function (j) { return j.claimNumber || ''; },
+      'policy_number':       function (j) { return j.policyNumber || ''; },
       'insurance_company':   function (j) { return j.insuranceCompany || ''; },
       'dol':                 function (j) { return j.dateOfLoss || ''; },
       'rep_name':            function (j) { return j.assignedRep || ''; },
@@ -53128,21 +53129,26 @@ function mapsGoogleReady() {
               ? '<span style="font-size:inherit;font-weight:900;color:#333;line-height:1;">\u2713</span>'
               : '';
           });
-        } else if (f.key === 'claim_number') {
+        } else if (f.key === 'claim_number' || f.key === 'policy_number') {
           box.style.border = '1px solid #d4a017';
           box.style.background = '#fffdf4';
-          var claimInput = document.createElement('input');
-          claimInput.type = 'text';
-          claimInput.value = f.value || '';
-          claimInput.placeholder = 'Enter claim number';
-          claimInput.style.cssText = 'width:100%;height:100%;border:0;background:transparent;padding:1px 3px;box-sizing:border-box;font:inherit;';
-          claimInput.addEventListener('input', function () {
-            f.value = claimInput.value.trim();
+          var insuranceFieldInput = document.createElement('input');
+          insuranceFieldInput.type = 'text';
+          insuranceFieldInput.value = f.value || '';
+          insuranceFieldInput.placeholder = f.key === 'policy_number' ? 'Enter policy number' : 'Enter claim number';
+          insuranceFieldInput.style.cssText = 'width:100%;height:100%;border:0;background:transparent;padding:1px 3px;box-sizing:border-box;font:inherit;';
+          insuranceFieldInput.addEventListener('input', function () {
+            f.value = insuranceFieldInput.value.trim();
             var rows = crmGetLeads();
             var lead = rows.find(function (item) { return String(item && item.id || '') === String(jobId || ''); });
-            if (lead) { lead.claimNumber = f.value; lead.updatedAt = new Date().toISOString(); crmSaveLeads(rows); }
+            if (lead) {
+              if (f.key === 'policy_number') lead.policyNumber = f.value;
+              else lead.claimNumber = f.value;
+              lead.updatedAt = new Date().toISOString();
+              crmSaveLeads(rows);
+            }
           });
-          box.appendChild(claimInput);
+          box.appendChild(insuranceFieldInput);
         } else {
           // Text field — render value only, no label
           box.style.border = 'none';
@@ -53698,6 +53704,7 @@ function mapsGoogleReady() {
       { key: 'email',               label: 'Email',               w: 160, h: 24 },
       { key: 'phone',               label: 'Phone Number',        w: 130, h: 24 },
       { key: 'claim_number',        label: 'Claim Number',        w: 130, h: 24 },
+      { key: 'policy_number',       label: 'Policy Number',       w: 130, h: 24 },
       { key: 'insurance_company',   label: 'Insurance Company',   w: 160, h: 24 },
       { key: 'dol',                 label: 'Date of Loss',        w: 120, h: 24 },
       { key: 'rep_name',            label: 'Rep Name',            w: 120, h: 24 },
