@@ -23339,7 +23339,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
               <div class="hm-create-new-options">
                 <button type="button" class="hm-create-new-option" data-hm-create-action="use-template"><strong>Use Template</strong><span>Choose a saved company template, select a project, then build the report.</span></button>
                 <button type="button" class="hm-create-new-option" data-hm-create-action="create-template"><strong>Create Template</strong><span>Build a reusable report layout and save it for the company.</span></button>
-                <button type="button" class="hm-create-new-option" data-hm-create-action="new-report"><strong>New Report</strong><span>Create a one-time report from scratch. It will not be saved as a template.</span></button>
+                <button type="button" class="hm-create-new-option" data-hm-create-action="new-project"><strong>New Project</strong><span>Create a new photo project. Reports are created from inside the project after it exists.</span></button>
               </div>
               <div id="hm-create-new-detail"></div>
             </div>
@@ -23364,7 +23364,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       </section>
 
       <section id="page-photo-file-detail" class="page" data-crm-header-title="Photo Project">
-        <div class="hm-photo-workspace hm-photo-detail-workspace"><div class="hm-photo-workspace-head"><div><h1 class="hm-photo-ice-title" id="pf-detail-title">Photo Project</h1><p id="pf-detail-subtitle"></p></div><div class="hm-photo-primary-actions"><button class="btn" type="button" id="pf-detail-back">Back</button><button class="btn" type="button" id="hm-pf-take-photo">Take Pictures</button><button class="btn" type="button" id="hm-pf-upload-photo">Upload Photos</button><button class="btn btn-primary" type="button" id="pf-detail-report" hidden>Create Report</button><input type="file" id="hm-pf-camera-input" accept="image/*" capture="environment" multiple hidden /><input type="file" id="hm-pf-upload-input" accept="image/*" multiple hidden /></div></div><div class="hm-photo-project-surface"><div id="pf-detail-meta" class="hm-photo-detail-meta"></div><div class="hm-photo-detail-tabs" id="pf-detail-tabs"><button class="active" type="button" data-hm-tab="photos">Photos</button><button type="button" data-hm-tab="reports">Reports</button><button type="button" data-hm-tab="chat">Photos Chat</button></div><div id="pf-detail-tab-photos" class="hm-photo-detail-tab active"><div id="pf-detail-grid" class="hm-photo-grid"></div></div><div id="pf-detail-tab-reports" class="hm-photo-detail-tab"><div id="pf-reports-surface"></div></div><div id="pf-detail-tab-chat" class="hm-photo-detail-tab"><div id="pf-chat-surface"></div></div></div></div>
+        <div class="hm-photo-workspace hm-photo-detail-workspace"><div class="hm-photo-workspace-head"><div><h1 class="hm-photo-ice-title" id="pf-detail-title">Photo Project</h1><p id="pf-detail-subtitle"></p></div><div class="hm-photo-primary-actions"><button class="btn" type="button" id="pf-detail-back">Back</button><button class="btn" type="button" id="hm-pf-take-photo">Take Pictures</button><button class="btn" type="button" id="hm-pf-upload-photo">Upload Photos</button><button class="btn btn-primary" type="button" id="pf-detail-report">Create Report</button><input type="file" id="hm-pf-camera-input" accept="image/*" capture="environment" multiple hidden /><input type="file" id="hm-pf-upload-input" accept="image/*" multiple hidden /></div></div><div class="hm-photo-project-surface"><div id="pf-detail-meta" class="hm-photo-detail-meta"></div><div class="hm-photo-detail-tabs" id="pf-detail-tabs"><button class="active" type="button" data-hm-tab="photos">Photos</button><button type="button" data-hm-tab="reports">Reports</button><button type="button" data-hm-tab="chat">Photos Chat</button></div><div id="pf-detail-tab-photos" class="hm-photo-detail-tab active"><div id="pf-detail-grid" class="hm-photo-grid"></div></div><div id="pf-detail-tab-reports" class="hm-photo-detail-tab"><div id="pf-reports-surface"></div></div><div id="pf-detail-tab-chat" class="hm-photo-detail-tab"><div id="pf-chat-surface"></div></div></div></div>
       </section>
 
       <section id="page-photo-markup" class="page" data-crm-header-title="Photo Markup">
@@ -84531,8 +84531,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
   function renderCreateDetail(action){
     var detail=document.getElementById('hm-create-new-detail');if(!detail)return;
-    if(action==='new-report'){
-      detail.innerHTML='<div class="hm-create-detail-card"><div class="hm-create-detail-title">New Report — Select Project</div>'+createChoiceProjectRows('report','')+'</div>';
+    if(action==='new-project'){
+      uploadAfterCreate=false;
+      showModal('hm-photo-project-modal',true);
       return;
     }
     if(action==='create-template'){
@@ -84616,7 +84617,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   var createHome=document.getElementById('hm-projects-view-create');
   if(createHome)createHome.addEventListener('click',function(e){
     var action=e.target.closest('[data-hm-create-action]');if(action){renderCreateDetail(action.getAttribute('data-hm-create-action'));return;}
-    var newReport=e.target.closest('[data-hm-new-report-project]');if(newReport){if(window.hmPhotoReports&&typeof window.hmPhotoReports.openBuilder==='function')window.hmPhotoReports.openBuilder(newReport.getAttribute('data-hm-new-report-project'));return;}
     var startTemplate=e.target.closest('[data-hm-start-template-builder]');if(startTemplate){if(window.hmPhotoReports&&typeof window.hmPhotoReports.openTemplateBuilder==='function')window.hmPhotoReports.openTemplateBuilder();return;}
     var pickTemplate=e.target.closest('[data-hm-pick-template]');if(pickTemplate){var tid=pickTemplate.getAttribute('data-hm-pick-template');var templates=window.hmPhotoReports&&window.hmPhotoReports.getTemplates?window.hmPhotoReports.getTemplates():[],template=templates.find(function(t){return String(t&&t.id||'')===String(tid||'');});var detail=document.getElementById('hm-create-new-detail');if(detail)detail.innerHTML='<div class="hm-create-detail-card"><div class="hm-create-detail-title">Use '+esc(template&&template.name||'Template')+' — Select Project</div>'+createChoiceProjectRows('template',tid)+'</div>';return;}
     var useTemplate=e.target.closest('[data-hm-use-template-project]');if(useTemplate){if(window.hmPhotoReports&&typeof window.hmPhotoReports.openBuilderFromTemplate==='function')window.hmPhotoReports.openBuilderFromTemplate(useTemplate.getAttribute('data-hm-use-template-project'),useTemplate.getAttribute('data-hm-template-id'));return;}
