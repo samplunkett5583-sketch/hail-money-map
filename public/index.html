@@ -23279,11 +23279,11 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           </div>
           <div class="hm-photo-project-surface hm-projects-home">
             <div class="hm-projects-home-tabs" id="hm-projects-home-tabs">
-              <button type="button" class="active" data-hm-projects-view="projects">Projects</button>
+              <button type="button" data-hm-projects-view="projects">Projects</button>
               <button type="button" data-hm-projects-view="reports">Reports</button>
               <button type="button" data-hm-projects-view="create">Create New</button>
             </div>
-            <div class="hm-projects-home-view active" id="hm-projects-view-projects">
+            <div class="hm-projects-home-view" id="hm-projects-view-projects">
               <div class="hm-photo-filter-row">
                 <input type="search" id="photo-files-search" placeholder="Search projects, addresses, or people" />
                 <button class="btn btn-primary" type="button" id="hm-photo-create-project">Create Project</button>
@@ -56128,7 +56128,7 @@ function mapsGoogleReady() {
       }
       renderPhotoFiles();
       showPage('page-photo-files');
-      if (typeof window.hmProjectsShowView === 'function') window.hmProjectsShowView('projects');
+      if (typeof window.hmProjectsShowView === 'function') window.hmProjectsShowView('home');
     });
 
     document.getElementById('photo-files-search').addEventListener('input', function () {
@@ -61745,7 +61745,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           return true;
         case 'page-photo-files':
           showPage('page-photo-files');
-          if (typeof window.hmProjectsShowView === 'function') window.hmProjectsShowView('projects');
+          if (typeof window.hmProjectsShowView === 'function') window.hmProjectsShowView('home');
           else if (typeof window.renderPhotoFiles === 'function') window.renderPhotoFiles();
           return true;
         case 'page-map':
@@ -84356,8 +84356,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   }
 
   function showProjectsView(view){
-    view=['projects','reports','create'].indexOf(view)!==-1?view:'projects';
-    document.querySelectorAll('#hm-projects-home-tabs [data-hm-projects-view]').forEach(function(btn){btn.classList.toggle('active',btn.getAttribute('data-hm-projects-view')===view);});
+    view=['projects','reports','create'].indexOf(view)!==-1?view:'home';
+    document.querySelectorAll('#hm-projects-home-tabs [data-hm-projects-view]').forEach(function(btn){btn.classList.toggle('active',view!=='home'&&btn.getAttribute('data-hm-projects-view')===view);});
     ['projects','reports','create'].forEach(function(name){var el=document.getElementById('hm-projects-view-'+name);if(el)el.classList.toggle('active',name===view);});
     if(view==='projects')render();
     if(view==='reports')renderReports();
