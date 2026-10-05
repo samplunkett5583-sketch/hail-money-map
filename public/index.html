@@ -23314,7 +23314,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           <div class="hm-photo-project-surface hm-projects-home">
             <div class="hm-projects-home-tabs" id="hm-projects-home-tabs">
               <button type="button" data-hm-projects-view="projects">All Projects</button>
-              <button type="button" data-hm-projects-view="reports">All Records</button>
+              <button type="button" data-hm-projects-view="reports">All Reports</button>
               <button type="button" data-hm-projects-view="create">Create New</button>
               <button type="button" data-hm-projects-view="my-projects">My Projects</button>
             </div>
@@ -84550,7 +84550,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     var validViews=['projects','reports','create','my-projects','my-records'];
     view=validViews.indexOf(view)!==-1?view:'home';
     window.hmProjectsCurrentView=view;
-    var titleMap={home:'Projects',projects:'All Projects',reports:'All Records',create:'Create New','my-projects':'My Projects','my-records':'My Records'};
+    var titleMap={home:'Projects',projects:'All Projects',reports:'All Reports',create:'Create New','my-projects':'My Projects','my-records':'My Records'};
     var page=document.getElementById('page-photo-files');
     if(page){
       page.setAttribute('data-crm-header-title',titleMap[view]||'Projects');
