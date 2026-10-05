@@ -21506,6 +21506,12 @@
     .phr-option input{width:16px;height:16px;accent-color:#b88722}
     .phr-custom-notes-row{display:grid;gap:6px;margin-top:16px}
     .phr-custom-notes-row label{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8a6d22}
+    .phr-cover-photo-option{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;margin-top:16px;padding:14px;border:1px solid #d8dde6;border-radius:12px;background:#fff}
+    .phr-cover-photo-option strong{display:block;font-size:13px;color:#1f2937}
+    .phr-cover-photo-help{margin-top:4px;font-size:11px;color:#667085}
+    .phr-cover-photo-choice{display:flex;align-items:center;gap:10px}
+    #phr-cover-photo-preview{width:110px;height:78px;object-fit:cover;border:1px solid #d8dde6;border-radius:8px;background:#f3f4f6}
+    .phr-cover-photo-buttons{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
     .phr-custom-notes{min-height:90px;padding:10px;border:1px solid #cbd2dd;border-radius:8px;resize:vertical;font-size:13px}
     .phr-picker-overlay{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:18px;background:rgba(12,14,25,.62)}
     .phr-picker-overlay[hidden]{display:none!important}
@@ -21537,12 +21543,17 @@
     .phr-preview-toolbar-title{flex:1;font:800 18px/1.1 "Times New Roman",serif;text-transform:uppercase;color:#303644;min-width:0}
     .phr-preview-stages{background:#fff;border:1px solid rgba(114,91,31,.2);border-top:0;border-radius:0 0 12px 12px;padding:18px;min-height:400px}
     .phr-pdf-page{width:100%;max-width:820px;margin:0 auto 18px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.18);page-break-after:always}
-    .phr-cover-page{display:grid;place-items:center;min-height:600px;padding:40px 32px}
-    .phr-cover-inner{width:100%;text-align:center}
-    .phr-cover-logo{max-height:90px;max-width:220px;object-fit:contain;margin:0 auto 14px}
-    .phr-cover-company{font-size:24px;font-weight:800;color:#1f2937;margin:4px 0}
-    .phr-cover-company-info{font-size:13px;color:#5f6673;margin-bottom:22px}
-    .phr-cover-title{font-size:32px;font-weight:800;color:#111827;margin:20px 0 6px}
+    .phr-cover-page{display:block;min-height:760px;padding:28px 32px}
+    .phr-cover-inner{width:100%;min-height:704px;text-align:center;display:flex;flex-direction:column}
+    .phr-cover-upper{min-height:340px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+    .phr-cover-logo{max-height:68px;max-width:190px;object-fit:contain;margin:0 auto 8px}
+    .phr-cover-company{font-size:20px;font-weight:800;color:#1f2937;margin:2px 0}
+    .phr-cover-company-info{font-size:11px;color:#5f6673;margin-bottom:10px}
+    .phr-cover-photo-wrap{width:min(560px,92%);height:250px;margin:8px auto 0;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:10px;background:#f8fafc}
+    .phr-cover-photo-wrap.phr-cover-photo-empty{background:transparent}
+    .phr-cover-photo{width:100%;height:100%;object-fit:contain;display:block}
+    .phr-cover-lower{flex:1;min-height:330px;display:flex;flex-direction:column;justify-content:center;padding:18px 0 8px}
+    .phr-cover-title{font-size:32px;font-weight:800;color:#111827;margin:0 0 6px}
     .phr-cover-rule{width:160px;height:4px;background:#b88722;margin:16px auto 22px;border-radius:99px}
     .phr-cover-details{display:grid;gap:8px;max-width:430px;margin:0 auto;text-align:left}
     .phr-cover-row{display:flex;gap:12px;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef1f5}
@@ -84533,7 +84544,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
 <script src="./contingency-locked-pdf.js?v=20260920"></script>
 <script src="./assets/crm-cross-links.js?v=20260914"></script>
-<script src="./assets/photo-reports.js?v=20261005-1"></script>
+<script src="./assets/photo-reports.js?v=20261005-2"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
 <script id="hm-region-document-routing-script">
 (function(){

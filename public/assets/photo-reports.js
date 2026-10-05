@@ -29,7 +29,8 @@
     currentReport: null,
     pendingReport: null,
     mode: 'report',
-    templateId: ''
+    templateId: '',
+    pickerMode: 'section'
   };
 
   function esc(v) {
@@ -604,6 +605,15 @@
     html += renderOptionGroup('Page Options', ['pageNumbers', 'sectionNumbers', 'logoEveryPage', 'titleEveryPage', 'header', 'footer', 'pagePropertyAddress', 'pageRepresentative'], rb.draft);
     html += renderOptionGroup('Photo Layout', ['photosPerPage1', 'photosPerPage2', 'photosPerPage4', 'orientationPortrait', 'orientationLandscape', 'preserveAspectRatio', 'useEdited', 'useOriginal', 'showDescriptions', 'photoNumbering'], rb.draft);
     html += '</div>';
+    if (rb.mode !== 'template') {
+      html += '<div class="phr-cover-photo-option">';
+      html += '<div><strong>Cover Photo</strong><div class="phr-cover-photo-help">Choose one project photo for the upper half of the cover page.</div></div>';
+      html += '<div class="phr-cover-photo-choice">';
+      if (rb.draft.coverPhoto) html += '<img id="phr-cover-photo-preview" alt="Selected cover photo" />';
+      html += '<div class="phr-cover-photo-buttons"><button class="btn" type="button" id="phr-cover-photo-choose">' + (rb.draft.coverPhoto ? 'Change Cover Photo' : 'Choose Cover Photo') + '</button>';
+      if (rb.draft.coverPhoto) html += '<button class="btn" type="button" id="phr-cover-photo-clear">Remove</button>';
+      html += '</div></div></div>';
+    }
     html += '<div class="phr-custom-notes-row">';
     html += '<label>Custom notes (cover page)</label>';
     html += '<textarea id="phr-custom-notes" class="phr-custom-notes">' + esc(rb.draft.customNotes || '') + '</textarea>';
@@ -726,8 +736,12 @@
     };
 
     content.onclick = function (e) {
+      var coverPhotoChoose = e.target.closest('#phr-cover-photo-choose');
+      if (coverPhotoChoose) { openPhotoPicker('', 'cover'); return; }
+      var coverPhotoClear = e.target.closest('#phr-cover-photo-clear');
+      if (coverPhotoClear) { rb.draft.coverPhoto = null; renderBuilder(); return; }
       var addPhotosBtn = e.target.closest('[data-phr-add-photos]');
-      if (addPhotosBtn) { openPhotoPicker(addPhotosBtn.getAttribute('data-phr-add-photos')); return; }
+      if (addPhotosBtn) { openPhotoPicker(addPhotosBtn.getAttribute('data-phr-add-photos'), 'section'); return; }
       var renameBtn = e.target.closest('[data-phr-rename]');
       if (renameBtn) {
         var section = findDraftSection(renameBtn.getAttribute('data-phr-rename'));
@@ -763,6 +777,10 @@
 
     // Hydrate thumbnails after each render.
     hydrateBuilderThumbnails(content);
+    var coverPreview = document.getElementById('phr-cover-photo-preview');
+    if (coverPreview && rb.draft.coverPhoto) {
+      loadPhotoInto(coverPreview, rb.draft.coverPhoto, function (fallback) { fallback.style.display = 'none'; });
+    }
   }
 
   function syncDraftSectionOrderFromDom(host) {
@@ -994,25 +1012,34 @@
     return 100;
   }
 
-  function openPhotoPicker(sectionId) {
+  function openPhotoPicker(sectionId, pickerMode) {
     var p = findProject(rb.projectId);
     if (!p) return;
-    rb.pickerSectionIndex = rb.draft.sections.findIndex(function (s) { return s.id === sectionId; });
-    if (rb.pickerSectionIndex < 0) return;
+    rb.pickerMode = pickerMode === 'cover' ? 'cover' : 'section';
+    rb.pickerSectionIndex = rb.pickerMode === 'section'
+      ? rb.draft.sections.findIndex(function (s) { return s.id === sectionId; })
+      : -1;
+    if (rb.pickerMode === 'section' && rb.pickerSectionIndex < 0) return;
 
     var overlay = document.getElementById('phr-picker-overlay');
     var grid = document.getElementById('phr-picker-grid');
     var title = document.getElementById('phr-picker-title');
     if (!overlay || !grid) return;
 
-    var section = rb.draft.sections[rb.pickerSectionIndex];
+    var section = rb.pickerMode === 'section' ? rb.draft.sections[rb.pickerSectionIndex] : null;
     var selectedIds = {};
-    (section.photos || []).forEach(function (photo, index) {
-      selectedIds[pickerPhotoKey(photo, index)] = true;
-    });
+    if (rb.pickerMode === 'cover') {
+      if (rb.draft.coverPhoto) selectedIds[pickerPhotoKey(rb.draft.coverPhoto, 0)] = true;
+    } else {
+      (section.photos || []).forEach(function (photo, index) {
+        selectedIds[pickerPhotoKey(photo, index)] = true;
+      });
+    }
     rb.selectedPhotoIds = Object.keys(selectedIds);
 
-    title.textContent = 'Select Photos for ' + (section.title || 'Section');
+    title.textContent = rb.pickerMode === 'cover'
+      ? 'Choose Cover Photo'
+      : 'Select Photos for ' + (section.title || 'Section');
 
     if (!p.photos.length) {
       grid.innerHTML = '<div class="crm-empty-state">No photos in this project yet. Add photos first.</div>';
@@ -1052,6 +1079,15 @@
     Array.prototype.forEach.call(grid.querySelectorAll('[data-phr-picker-key]'), function (btn) {
       btn.onclick = function () {
         var key = btn.getAttribute('data-phr-picker-key');
+        if (rb.pickerMode === 'cover') {
+          rb.selectedPhotoIds = [key];
+          Array.prototype.forEach.call(grid.querySelectorAll('[data-phr-picker-key]'), function (other) {
+            var selected = other.getAttribute('data-phr-picker-key') === key;
+            other.classList.toggle('selected', selected);
+            other.querySelector('.phr-picker-check').innerHTML = selected ? '&#10003;' : '';
+          });
+          return;
+        }
         var wasSelected = btn.classList.contains('selected');
         btn.classList.toggle('selected', !wasSelected);
         btn.querySelector('.phr-picker-check').innerHTML = !wasSelected ? '&#10003;' : '';
@@ -1074,6 +1110,17 @@
     var overlay = document.getElementById('phr-picker-overlay');
     if (!overlay) return;
     var p = findProject(rb.projectId);
+    if (!p) return;
+
+    if (rb.pickerMode === 'cover') {
+      var coverKey = rb.selectedPhotoIds[0] || '';
+      var coverPhoto = p.photos.find(function (ph, index) { return pickerPhotoKey(ph, index) === coverKey; });
+      rb.draft.coverPhoto = coverPhoto ? JSON.parse(JSON.stringify(coverPhoto)) : null;
+      overlay.hidden = true;
+      renderBuilder();
+      return;
+    }
+
     var section = rb.draft.sections[rb.pickerSectionIndex];
     var existing = {};
     (section.photos || []).forEach(function (photo, index) {
@@ -1120,6 +1167,14 @@
         page: {},
         layout: {}
       },
+      coverPhoto: draft.coverPhoto ? {
+        id: draft.coverPhoto.id || draft.coverPhoto.fileId || draft.coverPhoto.imageKey || '',
+        fileId: draft.coverPhoto.fileId || draft.coverPhoto.id || '',
+        imageKey: draft.coverPhoto.imageKey || '',
+        storageKey: draft.coverPhoto.storageKey || '',
+        storagePath: draft.coverPhoto.storagePath || '',
+        name: draft.coverPhoto.name || ''
+      } : null,
       sections: draft.sections.map(function (section) {
         return {
           id: section.id,
@@ -1273,6 +1328,7 @@
     /* Cover page */
     html += '<article class="phr-pdf-page phr-cover-page" data-phr-page="cover">';
     html += '<div class="phr-cover-inner">';
+    html += '<div class="phr-cover-upper">';
     if (options.cover.companyLogo !== false && cover.companyLogo) {
       html += '<img class="phr-cover-logo" src="' + esc(cover.companyLogo) + '" alt="Company logo" />';
     }
@@ -1281,6 +1337,13 @@
     }
     var companyLine = [options.cover.companyAddress !== false ? cover.companyAddress : '', options.cover.companyPhone !== false ? cover.companyPhone : '', options.cover.companyEmail !== false ? cover.companyEmail : ''].filter(Boolean).join(' · ');
     if (companyLine) html += '<div class="phr-cover-company-info">' + esc(companyLine) + '</div>';
+    if (report.coverPhoto) {
+      html += '<div class="phr-cover-photo-wrap"><img class="phr-cover-photo" data-phr-report-photo="' + esc(report.coverPhoto.id || report.coverPhoto.fileId || report.coverPhoto.imageKey || '') + '" alt="Cover photo" /></div>';
+    } else {
+      html += '<div class="phr-cover-photo-wrap phr-cover-photo-empty"></div>';
+    }
+    html += '</div>';
+    html += '<div class="phr-cover-lower">';
     html += '<div class="phr-cover-title">' + esc(options.cover.reportTitle !== false ? (report.title || 'Property Photo Report') : '') + '</div>';
     html += '<div class="phr-cover-rule"></div>';
     html += '<div class="phr-cover-details">';
@@ -1305,7 +1368,7 @@
     if (options.cover.customNotes !== false && String(cover.customNotes || '').trim()) {
       html += '<div class="phr-cover-notes">' + esc(cover.customNotes) + '</div>';
     }
-    html += '</div></div></article>';
+    html += '</div></div></div></article>';
 
     /* Section pages */
     var photoNumber = 1;
@@ -1493,22 +1556,23 @@
         doc.line(42, y, pageWidth() - 42, y);
       }
 
-      // Cover page.
-      var y = 64;
+      // Cover page: branding/photo in the upper half, report details centered
+      // in the lower half.
+      var y = 38;
       if (options.cover && options.cover.companyLogo !== false && cover.companyLogo) {
         var logoData = await sourceToDataUrl(cover.companyLogo);
         if (logoData) {
-          var logoRect = fitImageRect(doc, logoData, (pageWidth() - 150) / 2, y, 150, 65);
+          var logoRect = fitImageRect(doc, logoData, (pageWidth() - 130) / 2, y, 130, 48);
           try { doc.addImage(logoData, logoRect.x, logoRect.y, logoRect.w, logoRect.h, undefined, 'FAST'); } catch (_) {}
-          y += 78;
+          y += 58;
         }
       }
       doc.setTextColor(31,41,55);
       if (!options.cover || options.cover.companyName !== false) {
         doc.setFont('helvetica','bold');
-        doc.setFontSize(18);
+        doc.setFontSize(16);
         doc.text(String(cover.companyName || ''), pageWidth()/2, y, { align:'center' });
-        if (cover.companyName) y += 24;
+        if (cover.companyName) y += 19;
       }
       var companyLine = [
         !options.cover || options.cover.companyAddress !== false ? cover.companyAddress : '',
@@ -1517,11 +1581,21 @@
       ].filter(Boolean).join('  •  ');
       if (companyLine) {
         doc.setFont('helvetica','normal');
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.text(doc.splitTextToSize(companyLine, 480), pageWidth()/2, y, { align:'center' });
-        y += 28;
+        y += 18;
       }
-      y += 18;
+
+      if (report.coverPhoto) {
+        var coverPhotoData = await photoToDataUrl(report.coverPhoto);
+        if (coverPhotoData) {
+          var coverBoxY = Math.max(92, y + 8);
+          var coverRect = fitImageRect(doc, coverPhotoData, 68, coverBoxY, pageWidth() - 136, 245);
+          try { doc.addImage(coverPhotoData, coverRect.x, coverRect.y, coverRect.w, coverRect.h, undefined, 'FAST'); } catch (_) {}
+        }
+      }
+
+      y = Math.max(pageHeight() * 0.56, y + 285);
       doc.setFont('helvetica','bold');
       doc.setFontSize(24);
       doc.text(String((!options.cover || options.cover.reportTitle !== false) ? (report.title || 'Property Photo Report') : ''), pageWidth()/2, y, { align:'center' });
