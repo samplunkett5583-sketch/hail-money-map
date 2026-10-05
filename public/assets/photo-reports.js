@@ -30,7 +30,8 @@
     pendingReport: null,
     mode: 'report',
     templateId: '',
-    pickerMode: 'section'
+    pickerMode: 'section',
+    showTemplateMenu: false
   };
 
   function esc(v) {
@@ -469,19 +470,62 @@
     return next;
   }
 
+  function saveCurrentDraftAsTemplate() {
+    if (!rb.draft) return;
+    var name = window.prompt('Template name', '');
+    if (name == null) return;
+    name = String(name || '').trim();
+    if (!name) {
+      if (typeof showUploadToast === 'function') showUploadToast('Enter a template name.');
+      return;
+    }
+    var now = new Date().toISOString();
+    var templateDraft = JSON.parse(JSON.stringify(rb.draft));
+    templateDraft.title = name;
+    templateDraft.sections = (templateDraft.sections || []).map(function (section, index) {
+      return {
+        id:'template_section_' + (index + 1),
+        title:String(section && section.title || ('Section ' + (index + 1))),
+        photos:[]
+      };
+    });
+    templateDraft.coverPhoto = null;
+    templateDraft.coverPhotoOption = false;
+    var templates = getTemplates();
+    var existingIndex = templates.findIndex(function (item) {
+      return String(item && item.name || '').trim().toLowerCase() === name.toLowerCase();
+    });
+    var template = {
+      id: existingIndex >= 0 ? templates[existingIndex].id : genId('report_template_'),
+      name:name,
+      createdAt: existingIndex >= 0 ? (templates[existingIndex].createdAt || now) : now,
+      updatedAt:now,
+      createdBy:getUserName() || 'User',
+      draft:templateDraft
+    };
+    if (existingIndex >= 0) templates[existingIndex] = template;
+    else templates.push(template);
+    saveTemplates(templates);
+    window.dispatchEvent(new CustomEvent('hmreporttemplateschanged'));
+    if (typeof showUploadToast === 'function') showUploadToast('Template saved.');
+  }
+
   function openBuilder(projectId, template) {
     var p = findProject(projectId);
     if (!p) return;
     rb.projectId = projectId;
     rb.mode = 'report';
     rb.templateId = template && template.id ? String(template.id) : '';
-    rb.step = 'title';
+    rb.step = 'sections';
     rb.currentReport = null;
     rb.pendingReport = null;
+    rb.showTemplateMenu = false;
     rb.draft = template ? cloneTemplateDraft(template) : {
-      title: '',
+      title: 'Damage Report',
       sections: [{ id: genId('sec_'), title: 'Section 1', photos: [] }]
     };
+    var builderPage = document.getElementById('page-photo-report-builder');
+    if (builderPage) builderPage.setAttribute('data-crm-header-title', 'Create New');
     showPage('page-photo-report-builder');
     renderBuilder();
   }
@@ -508,6 +552,8 @@
       title:'',
       sections:[{ id:genId('sec_'), title:'Section 1', photos:[] }]
     };
+    var builderPage = document.getElementById('page-photo-report-builder');
+    if (builderPage) builderPage.setAttribute('data-crm-header-title', 'Create Template');
     showPage('page-photo-report-builder');
     renderBuilder();
   }
@@ -522,9 +568,30 @@
       : findProject(rb.projectId);
     if (!p) { content.innerHTML = '<div class="crm-empty-state">Photo project not found.</div>'; return; }
 
-    var html = '<div class="phr-toolbar"><button class="btn" type="button" id="phr-back">Back</button>' +
-      '<div class="phr-toolbar-title">' + esc(rb.mode === 'template' ? 'Create Report Template' : (p.projectName || p.homeownerName || 'Photo Project')) + '</div>' +
-      '<span class="phr-step-indicator">Step ' + (rb.step === 'title' ? '1' : rb.step === 'sections' ? '2' : '3') + ' of 3</span></div>';
+    var html = '<div class="phr-toolbar">' +
+      (rb.mode === 'template' ? '<button class="btn" type="button" id="phr-back">Back</button>' : '') +
+      '<div class="phr-toolbar-title">' + esc(rb.mode === 'template' ? 'Create Report Template' : (p.projectName || p.homeownerName || 'Photo Project')) + '</div>';
+    if (rb.mode === 'report') {
+      html += '<div class="phr-toolbar-actions">' +
+        '<button class="btn phr-mini-action" type="button" id="phr-use-template">Use Template</button>' +
+        '<button class="btn phr-mini-action" type="button" id="phr-save-template">Create Template</button>' +
+      '</div>';
+    } else {
+      html += '<span class="phr-step-indicator">Step ' + (rb.step === 'title' ? '1' : rb.step === 'sections' ? '2' : '3') + ' of 3</span>';
+    }
+    html += '</div>';
+    if (rb.mode === 'report' && rb.showTemplateMenu) {
+      var templates = getTemplates();
+      html += '<div class="phr-template-popover">';
+      if (!templates.length) {
+        html += '<div class="phr-template-empty">No saved templates yet.</div>';
+      } else {
+        templates.forEach(function (template) {
+          html += '<button class="phr-template-pick" type="button" data-phr-apply-template="' + esc(template.id || '') + '"><strong>' + esc(template.name || 'Report Template') + '</strong></button>';
+        });
+      }
+      html += '</div>';
+    }
 
     if (rb.step === 'title') {
       html += '<div class="phr-card phr-step-title">';
@@ -545,15 +612,17 @@
 
   function renderSectionsEditor(p) {
     var html = '<div class="phr-card">';
-    html += '<div class="phr-step-label">Step 2</div>';
+    if (rb.mode === 'template') html += '<div class="phr-step-label">Step 2</div>';
     html += '<div class="phr-step-heading">Sections</div>';
     html += '<div id="phr-sections">';
     rb.draft.sections.forEach(function (section, index) {
       html += renderSectionCard(p, section, index);
     });
     html += '</div>';
-    html += '<div class="phr-section-add-row"><button class="btn" type="button" id="phr-add-section">+ Add Section</button></div>';
-    html += '<div class="phr-actions"><button class="btn" type="button" id="phr-back-to-title">Back</button><button class="btn btn-primary" type="button" id="phr-to-options">Finish</button></div>';
+    html += '<div class="phr-section-add-row"><button class="btn" type="button" id="phr-add-section">+ New Section</button></div>';
+    html += '<div class="phr-actions">' +
+      (rb.mode === 'template' ? '<button class="btn" type="button" id="phr-back-to-title">Back</button>' : '') +
+      '<button class="btn btn-primary" type="button" id="phr-to-options">Finish</button></div>';
     html += '</div>';
     return html;
   }
@@ -670,6 +739,16 @@
     var content = document.getElementById('phr-content');
     if (!content) return;
 
+    var useTemplateBtn = document.getElementById('phr-use-template');
+    if (useTemplateBtn) useTemplateBtn.onclick = function () {
+      rb.showTemplateMenu = !rb.showTemplateMenu;
+      renderBuilder();
+    };
+    var saveTemplateBtn = document.getElementById('phr-save-template');
+    if (saveTemplateBtn) saveTemplateBtn.onclick = function () {
+      saveCurrentDraftAsTemplate();
+    };
+
     var backBtn = document.getElementById('phr-back');
     if (backBtn) backBtn.onclick = function () {
       if (rb.step === 'title' || rb.step === 'sections') {
@@ -740,6 +819,23 @@
     };
 
     content.onclick = function (e) {
+      var applyTemplate = e.target.closest('[data-phr-apply-template]');
+      if (applyTemplate) {
+        var templateId = applyTemplate.getAttribute('data-phr-apply-template');
+        var template = getTemplates().find(function (item) {
+          return String(item && item.id || '') === String(templateId || '');
+        });
+        if (template) {
+          var currentTitle = String(rb.draft && rb.draft.title || 'Damage Report').trim() || 'Damage Report';
+          rb.draft = cloneTemplateDraft(template);
+          rb.draft.title = currentTitle;
+          rb.templateId = String(template.id || '');
+          rb.showTemplateMenu = false;
+          renderBuilder();
+          if (typeof showUploadToast === 'function') showUploadToast('Template applied.');
+        }
+        return;
+      }
       var addPhotosBtn = e.target.closest('[data-phr-add-photos]');
       if (addPhotosBtn) { openPhotoPicker(addPhotosBtn.getAttribute('data-phr-add-photos'), 'section'); return; }
       var renameBtn = e.target.closest('[data-phr-rename]');

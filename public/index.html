@@ -21502,8 +21502,14 @@
     /* ── Photo Report Builder / Preview / Picker / Chat ── */
     #page-photo-report-builder,#page-photo-report-preview{background:linear-gradient(180deg,#e9c55d,#d7a832)!important}
     .phr-workspace{width:min(1180px,calc(100% - 28px));margin:14px auto 28px}
-    .phr-toolbar{display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,.2);border:1px solid rgba(112,78,10,.28);border-radius:14px 14px 0 0}
+    .phr-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:14px;background:rgba(255,255,255,.2);border:1px solid rgba(112,78,10,.28);border-radius:14px 14px 0 0}
     .phr-toolbar-title{flex:1;font:800 18px/1.1 "Times New Roman",serif;text-transform:uppercase;color:#303644}
+    .phr-toolbar-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+    .phr-mini-action{padding:7px 11px!important;font-size:11px!important;font-weight:800!important}
+    .phr-template-popover{width:min(360px,calc(100% - 24px));margin:8px 12px 0 auto;padding:8px;display:grid;gap:6px;background:#fff;border:1px solid #d8dde6;border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.12)}
+    .phr-template-pick{display:block;width:100%;padding:9px 10px;text-align:left;border:1px solid #e1e5eb;border-radius:8px;background:#fff;cursor:pointer}
+    .phr-template-pick:hover{border-color:#c7921e;background:#fffaf0}
+    .phr-template-empty{padding:10px;font-size:12px;color:#667085}
     .phr-step-indicator{font-size:12px;font-weight:700;color:#725d2a}
     .phr-card{position:relative;isolation:isolate;padding:22px;background:rgba(255,255,255,.92);border:1px solid rgba(114,91,31,.2);border-top:0;border-radius:0 0 12px 12px;min-height:480px}
     .phr-step-label{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#8a6d22;margin-bottom:6px}
@@ -23347,11 +23353,6 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             </div>
             <div class="hm-projects-home-view" id="hm-projects-view-create">
               <div class="hm-projects-subview-head"><button class="btn" type="button" data-hm-projects-back>Back</button></div>
-              <div class="hm-create-new-options">
-                <button type="button" class="hm-create-new-option" data-hm-create-action="use-template"><strong>Use Template</strong><span>Choose a saved company template, select a project, then build the report.</span></button>
-                <button type="button" class="hm-create-new-option" data-hm-create-action="create-template"><strong>Create Template</strong><span>Build a reusable report layout and save it for the company.</span></button>
-                <button type="button" class="hm-create-new-option" data-hm-create-action="new-project"><strong>New Project</strong><span>Create a new photo project. Reports are created from inside the project after it exists.</span></button>
-              </div>
               <div id="hm-create-new-detail"></div>
             </div>
             <div class="hm-projects-home-view" id="hm-projects-view-my-projects">
@@ -84542,6 +84543,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
   function renderCreateDetail(action){
     var detail=document.getElementById('hm-create-new-detail');if(!detail)return;
+    if(action==='select-project'){
+      detail.innerHTML='<div class="hm-create-detail-card"><div class="hm-create-detail-title">Select Project</div><div class="hm-create-choice-meta" style="margin-bottom:12px">Choose the project this report belongs to.</div>'+createChoiceProjectRows('report','')+'</div>';
+      return;
+    }
     if(action==='new-project'){
       uploadAfterCreate=false;
       showModal('hm-photo-project-modal',true);
@@ -84578,7 +84583,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     if(typeof crmSyncMobilePageChrome==='function')crmSyncMobilePageChrome('page-photo-files');
     if(view==='projects')render();
     if(view==='reports')renderReports();
-    if(view==='create'){var detail=document.getElementById('hm-create-new-detail');if(detail)detail.innerHTML='';}
+    if(view==='create')renderCreateDetail('select-project');
     if(view==='my-projects')renderMyProjects();
     if(view==='my-records')renderMyRecords();
   }
@@ -84628,11 +84633,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   var createHome=document.getElementById('hm-projects-view-create');
   if(createHome)createHome.addEventListener('click',function(e){
     var action=e.target.closest('[data-hm-create-action]');if(action){renderCreateDetail(action.getAttribute('data-hm-create-action'));return;}
+    var newReport=e.target.closest('[data-hm-new-report-project]');if(newReport){var pid=newReport.getAttribute('data-hm-new-report-project');currentProjectId=pid;window.hmPhotoReportReturnTo='project';if(window.hmPhotoReports&&typeof window.hmPhotoReports.openBuilder==='function')window.hmPhotoReports.openBuilder(pid);return;}
     var startTemplate=e.target.closest('[data-hm-start-template-builder]');if(startTemplate){if(window.hmPhotoReports&&typeof window.hmPhotoReports.openTemplateBuilder==='function')window.hmPhotoReports.openTemplateBuilder();return;}
     var pickTemplate=e.target.closest('[data-hm-pick-template]');if(pickTemplate){var tid=pickTemplate.getAttribute('data-hm-pick-template');var templates=window.hmPhotoReports&&window.hmPhotoReports.getTemplates?window.hmPhotoReports.getTemplates():[],template=templates.find(function(t){return String(t&&t.id||'')===String(tid||'');});var detail=document.getElementById('hm-create-new-detail');if(detail)detail.innerHTML='<div class="hm-create-detail-card"><div class="hm-create-detail-title">Use '+esc(template&&template.name||'Template')+' — Select Project</div>'+createChoiceProjectRows('template',tid)+'</div>';return;}
     var useTemplate=e.target.closest('[data-hm-use-template-project]');if(useTemplate){if(window.hmPhotoReports&&typeof window.hmPhotoReports.openBuilderFromTemplate==='function')window.hmPhotoReports.openBuilderFromTemplate(useTemplate.getAttribute('data-hm-use-template-project'),useTemplate.getAttribute('data-hm-template-id'));return;}
   });
-  window.addEventListener('hmreporttemplateschanged',function(){if(document.getElementById('hm-projects-view-create')&&document.getElementById('hm-projects-view-create').classList.contains('active'))renderCreateDetail('use-template');});
+  window.addEventListener('hmreporttemplateschanged',function(){if(document.getElementById('hm-projects-view-create')&&document.getElementById('hm-projects-view-create').classList.contains('active'))renderCreateDetail('select-project');});
   window.addEventListener('hmphotoreportssaved',function(){renderReports();renderMyRecords();});
   var reportBtn=document.getElementById('pf-detail-report');var reportClone=reportBtn.cloneNode(true);reportBtn.parentNode.replaceChild(reportClone,reportBtn);reportClone.onclick=function(){window.hmPhotoReportReturnTo='project';if(!currentProjectId)return;if(typeof window.hmPhotoReports!=='undefined'&&typeof window.hmPhotoReports.openBuilder==='function'){window.hmPhotoReports.openBuilder(currentProjectId);}else{showUploadToast('Report builder is not ready yet.');}};
   document.getElementById('phr-preview-back').addEventListener('click',function(){if(window.hmPhotoReportReturnTo==='lead'&&window.hmPhotoReportReturnLeadId&&typeof crmOpenJobFile==='function'){var lid=window.hmPhotoReportReturnLeadId;window.hmPhotoReportReturnTo='';window.hmPhotoReportReturnLeadId='';crmOpenJobFile(lid,'reports','page','page-all-leads');return;}if(window.hmPhotoReportReturnTo==='my-records'){showPage('page-photo-files');showProjectsView('my-records');window.hmPhotoReportReturnTo='';return;}if(window.hmPhotoReportReturnTo==='reports'){showPage('page-photo-files');showProjectsView('reports');window.hmPhotoReportReturnTo='';return;}if(currentProjectId){open(currentProjectId);}else{showPage('page-photo-files');showProjectsView('reports');}});
@@ -84748,7 +84754,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
 <script src="./contingency-locked-pdf.js?v=20260920"></script>
 <script src="./assets/crm-cross-links.js?v=20260914"></script>
-<script src="./assets/photo-reports.js?v=20261005-3"></script>
+<script src="./assets/photo-reports.js?v=20261005-4"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
 <script id="hm-region-document-routing-script">
 (function(){
