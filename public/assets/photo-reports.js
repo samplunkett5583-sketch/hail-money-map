@@ -601,19 +601,12 @@
     html += '<div class="phr-step-label">Step 3</div>';
     html += '<div class="phr-step-heading">Report Options</div>';
     html += '<div class="phr-options-grid">';
-    html += renderOptionGroup('Cover Page', ['companyLogo', 'companyName', 'companyAddress', 'companyPhone', 'companyEmail', 'representativeName', 'representativePhone', 'representativeEmail', 'homeowner', 'propertyAddress', 'inspectionDate', 'reportTitle', 'reportDate', 'claimNumber', 'carrier', 'policyNumber', 'adjuster', 'customNotes'], rb.draft);
+    var coverOptionKeys = ['companyLogo', 'companyName', 'companyAddress', 'companyPhone', 'companyEmail', 'representativeName', 'representativePhone', 'representativeEmail', 'homeowner', 'propertyAddress', 'inspectionDate', 'reportTitle', 'reportDate', 'claimNumber', 'carrier', 'policyNumber', 'adjuster', 'customNotes'];
+    if (rb.mode !== 'template') coverOptionKeys.push('coverPhotoOption');
+    html += renderOptionGroup('Cover Page', coverOptionKeys, rb.draft);
     html += renderOptionGroup('Page Options', ['pageNumbers', 'sectionNumbers', 'logoEveryPage', 'titleEveryPage', 'header', 'footer', 'pagePropertyAddress', 'pageRepresentative'], rb.draft);
     html += renderOptionGroup('Photo Layout', ['photosPerPage1', 'photosPerPage2', 'photosPerPage4', 'orientationPortrait', 'orientationLandscape', 'preserveAspectRatio', 'useEdited', 'useOriginal', 'showDescriptions', 'photoNumbering'], rb.draft);
     html += '</div>';
-    if (rb.mode !== 'template') {
-      html += '<div class="phr-cover-photo-option">';
-      html += '<div><strong>Cover Photo</strong><div class="phr-cover-photo-help">Choose one project photo for the upper half of the cover page.</div></div>';
-      html += '<div class="phr-cover-photo-choice">';
-      if (rb.draft.coverPhoto) html += '<img id="phr-cover-photo-preview" alt="Selected cover photo" />';
-      html += '<div class="phr-cover-photo-buttons"><button class="btn" type="button" id="phr-cover-photo-choose">' + (rb.draft.coverPhoto ? 'Change Cover Photo' : 'Choose Cover Photo') + '</button>';
-      if (rb.draft.coverPhoto) html += '<button class="btn" type="button" id="phr-cover-photo-clear">Remove</button>';
-      html += '</div></div></div>';
-    }
     html += '<div class="phr-custom-notes-row">';
     html += '<label>Custom notes (cover page)</label>';
     html += '<textarea id="phr-custom-notes" class="phr-custom-notes">' + esc(rb.draft.customNotes || '') + '</textarea>';
@@ -642,6 +635,7 @@
     policyNumber: 'Policy Number',
     adjuster: 'Adjuster',
     customNotes: 'Custom Notes',
+    coverPhotoOption: 'Cover Photo',
     pageNumbers: 'Page Numbers',
     sectionNumbers: 'Section Numbers',
     logoEveryPage: 'Logo on Every Page',
@@ -665,7 +659,7 @@
   function renderOptionGroup(title, keys, draft) {
     var html = '<div class="phr-option-group"><div class="phr-option-group-title">' + esc(title) + '</div>';
     keys.forEach(function (key) {
-      var checked = draft[key] !== false;
+      var checked = draft[key] === true;
       html += '<label class="phr-option"><input type="checkbox" data-phr-option="' + esc(key) + '"' + (checked ? ' checked' : '') + ' /> <span>' + esc(OPTION_LABELS[key] || key) + '</span></label>';
     });
     html += '</div>';
@@ -730,16 +724,22 @@
     };
     content.onchange = function (e) {
       var option = e.target.closest('[data-phr-option]');
-      if (option) rb.draft[option.getAttribute('data-phr-option')] = option.checked;
+      if (option) {
+        var optionKey = option.getAttribute('data-phr-option');
+        rb.draft[optionKey] = option.checked;
+        if (optionKey === 'coverPhotoOption') {
+          if (option.checked) {
+            openPhotoPicker('', 'cover');
+          } else {
+            rb.draft.coverPhoto = null;
+          }
+        }
+      }
       var notes = document.getElementById('phr-custom-notes');
       if (notes && e.target === notes) rb.draft.customNotes = notes.value;
     };
 
     content.onclick = function (e) {
-      var coverPhotoChoose = e.target.closest('#phr-cover-photo-choose');
-      if (coverPhotoChoose) { openPhotoPicker('', 'cover'); return; }
-      var coverPhotoClear = e.target.closest('#phr-cover-photo-clear');
-      if (coverPhotoClear) { rb.draft.coverPhoto = null; renderBuilder(); return; }
       var addPhotosBtn = e.target.closest('[data-phr-add-photos]');
       if (addPhotosBtn) { openPhotoPicker(addPhotosBtn.getAttribute('data-phr-add-photos'), 'section'); return; }
       var renameBtn = e.target.closest('[data-phr-rename]');
@@ -1116,7 +1116,9 @@
       var coverKey = rb.selectedPhotoIds[0] || '';
       var coverPhoto = p.photos.find(function (ph, index) { return pickerPhotoKey(ph, index) === coverKey; });
       rb.draft.coverPhoto = coverPhoto ? JSON.parse(JSON.stringify(coverPhoto)) : null;
+      rb.draft.coverPhotoOption = !!rb.draft.coverPhoto;
       overlay.hidden = true;
+      rb.pickerMode = 'section';
       renderBuilder();
       return;
     }
@@ -1144,6 +1146,11 @@
   function cancelPhotoPicker() {
     var overlay = document.getElementById('phr-picker-overlay');
     if (overlay) overlay.hidden = true;
+    if (rb.pickerMode === 'cover') {
+      rb.draft.coverPhotoOption = !!rb.draft.coverPhoto;
+      rb.pickerMode = 'section';
+      renderBuilder();
+    }
   }
 
   /* ════════════════════════════════════════════════════════════════════
@@ -1167,7 +1174,7 @@
         page: {},
         layout: {}
       },
-      coverPhoto: draft.coverPhoto ? {
+      coverPhoto: draft.coverPhotoOption === true && draft.coverPhoto ? {
         id: draft.coverPhoto.id || draft.coverPhoto.fileId || draft.coverPhoto.imageKey || '',
         fileId: draft.coverPhoto.fileId || draft.coverPhoto.id || '',
         imageKey: draft.coverPhoto.imageKey || '',
@@ -1195,21 +1202,21 @@
       })
     };
 
-    // Explicit option booleans (default true unless turned off).
+    // Options are opt-in. A new report starts with every box unchecked.
     ['companyLogo','companyName','companyAddress','companyPhone','companyEmail','representativeName','representativePhone','representativeEmail','homeowner','propertyAddress','inspectionDate','reportTitle','reportDate','claimNumber','carrier','policyNumber','adjuster','customNotes'].forEach(function (key) {
-      report.options.cover[key] = draft[key] !== false;
+      report.options.cover[key] = draft[key] === true;
     });
     ['pageNumbers','sectionNumbers','logoEveryPage','titleEveryPage','header','footer','pagePropertyAddress','pageRepresentative'].forEach(function (key) {
-      report.options.page[key] = draft[key] !== false;
+      report.options.page[key] = draft[key] === true;
     });
-    // Photo layout: one selection for per-page count + orientation.
-    report.options.layout.perPage = draft.photosPerPage1 ? 1 : (draft.photosPerPage2 ? 2 : (draft.photosPerPage4 ? 4 : 4));
-    report.options.layout.portrait = draft.orientationLandscape !== true;
-    report.options.layout.preserveAspectRatio = draft.preserveAspectRatio !== false;
-    report.options.layout.useEdited = draft.useEdited !== false;
-    report.options.layout.useOriginal = draft.useOriginal !== false;
-    report.options.layout.showDescriptions = draft.showDescriptions !== false;
-    report.options.layout.photoNumbering = draft.photoNumbering !== false;
+    // Photo layout still needs deterministic fallbacks if no layout box is selected.
+    report.options.layout.perPage = draft.photosPerPage1 === true ? 1 : (draft.photosPerPage2 === true ? 2 : 4);
+    report.options.layout.portrait = draft.orientationLandscape === true ? false : true;
+    report.options.layout.preserveAspectRatio = draft.preserveAspectRatio === true;
+    report.options.layout.useEdited = draft.useEdited === true;
+    report.options.layout.useOriginal = draft.useOriginal === true;
+    report.options.layout.showDescriptions = draft.showDescriptions === true;
+    report.options.layout.photoNumbering = draft.photoNumbering === true;
 
     // Cover data.
     var representative = String(lead && lead.assignedRep || getUserName() || '').trim();
