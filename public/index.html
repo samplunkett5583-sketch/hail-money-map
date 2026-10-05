@@ -21447,7 +21447,10 @@
 .hm-projects-home.hm-projects-home-landing .hm-projects-home-tabs{min-height:390px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:30px;padding:70px 0 80px;border-bottom:0;margin:0}
 .hm-projects-home.hm-projects-home-landing .hm-projects-home-tabs button{width:min(260px,76%);min-height:48px;padding:12px 26px;font-size:16px;justify-content:center;background:#d4a017;color:#17172a;border-color:#b8860b;box-shadow:0 3px 9px rgba(0,0,0,.08)}
 .hm-projects-home.hm-projects-home-landing .hm-projects-home-tabs button:hover{background:#e2b426;border-color:#b8860b}
+.hm-projects-home:not(.hm-projects-home-landing) .hm-projects-home-tabs{display:none}
 .hm-projects-home-view{display:none}.hm-projects-home-view.active{display:block}
+.hm-projects-subview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px}
+.hm-projects-subview-head h2{margin:0;font-size:20px;color:#1f2937}
 .hm-create-new-heading{font-size:22px;font-weight:900;margin:4px 0 14px;color:#1f2937}
 .hm-create-new-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .hm-create-new-option{display:grid;gap:7px;text-align:left;padding:20px;border:1px solid #d5dae3;border-radius:12px;background:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.05)}
@@ -23298,6 +23301,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
               <button type="button" data-hm-projects-view="create">Create New</button>
             </div>
             <div class="hm-projects-home-view" id="hm-projects-view-projects">
+              <div class="hm-projects-subview-head"><button class="btn" type="button" data-hm-projects-back>Back</button><h2>Projects</h2></div>
               <div class="hm-photo-filter-row">
                 <input type="search" id="photo-files-search" placeholder="Search projects, addresses, or people" />
                 <button class="btn btn-primary" type="button" id="hm-photo-create-project">Create Project</button>
@@ -23306,11 +23310,12 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
               <div id="photo-files-list" class="hm-photo-project-list"></div>
             </div>
             <div class="hm-projects-home-view" id="hm-projects-view-reports">
+              <div class="hm-projects-subview-head"><button class="btn" type="button" data-hm-projects-back>Back</button><h2>Reports</h2></div>
               <div class="hm-photo-filter-row"><input type="search" id="hm-photo-reports-search" placeholder="Search reports, projects, addresses, or homeowners" /></div>
               <div id="hm-photo-reports-list" class="hm-photo-project-list"></div>
             </div>
             <div class="hm-projects-home-view" id="hm-projects-view-create">
-              <div class="hm-create-new-heading">Create New</div>
+              <div class="hm-projects-subview-head"><button class="btn" type="button" data-hm-projects-back>Back</button><h2>Create New</h2></div>
               <div class="hm-create-new-options">
                 <button type="button" class="hm-create-new-option" data-hm-create-action="use-template"><strong>Use Template</strong><span>Choose a saved company template, select a project, then build the report.</span></button>
                 <button type="button" class="hm-create-new-option" data-hm-create-action="create-template"><strong>Create Template</strong><span>Build a reusable report layout and save it for the company.</span></button>
@@ -23324,7 +23329,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       </section>
 
       <section id="page-photo-file-detail" class="page" data-crm-header-title="Photo Project">
-        <div class="hm-photo-workspace hm-photo-detail-workspace"><div class="hm-photo-workspace-head"><div><h1 class="hm-photo-ice-title" id="pf-detail-title">Photo Project</h1><p id="pf-detail-subtitle"></p></div><div class="hm-photo-primary-actions"><button class="btn" type="button" id="pf-detail-back">Back</button><button class="btn" type="button" id="hm-pf-take-photo">Take Pictures</button><button class="btn" type="button" id="hm-pf-upload-photo">Upload Photos</button><button class="btn btn-primary" type="button" id="pf-detail-report">Create Report</button><input type="file" id="hm-pf-camera-input" accept="image/*" capture="environment" multiple hidden /><input type="file" id="hm-pf-upload-input" accept="image/*" multiple hidden /></div></div><div class="hm-photo-project-surface"><div id="pf-detail-meta" class="hm-photo-detail-meta"></div><div class="hm-photo-detail-tabs" id="pf-detail-tabs"><button class="active" type="button" data-hm-tab="photos">Photos</button><button type="button" data-hm-tab="reports">Reports</button><button type="button" data-hm-tab="chat">Photos Chat</button></div><div id="pf-detail-tab-photos" class="hm-photo-detail-tab active"><div id="pf-detail-grid" class="hm-photo-grid"></div></div><div id="pf-detail-tab-reports" class="hm-photo-detail-tab"><div id="pf-reports-surface"></div></div><div id="pf-detail-tab-chat" class="hm-photo-detail-tab"><div id="pf-chat-surface"></div></div></div></div>
+        <div class="hm-photo-workspace hm-photo-detail-workspace"><div class="hm-photo-workspace-head"><div><h1 class="hm-photo-ice-title" id="pf-detail-title">Photo Project</h1><p id="pf-detail-subtitle"></p></div><div class="hm-photo-primary-actions"><button class="btn" type="button" id="pf-detail-back">Back</button><button class="btn" type="button" id="hm-pf-take-photo">Take Pictures</button><button class="btn" type="button" id="hm-pf-upload-photo">Upload Photos</button><button class="btn btn-primary" type="button" id="pf-detail-report" hidden>Create Report</button><input type="file" id="hm-pf-camera-input" accept="image/*" capture="environment" multiple hidden /><input type="file" id="hm-pf-upload-input" accept="image/*" multiple hidden /></div></div><div class="hm-photo-project-surface"><div id="pf-detail-meta" class="hm-photo-detail-meta"></div><div class="hm-photo-detail-tabs" id="pf-detail-tabs"><button class="active" type="button" data-hm-tab="photos">Photos</button><button type="button" data-hm-tab="reports">Reports</button><button type="button" data-hm-tab="chat">Photos Chat</button></div><div id="pf-detail-tab-photos" class="hm-photo-detail-tab active"><div id="pf-detail-grid" class="hm-photo-grid"></div></div><div id="pf-detail-tab-reports" class="hm-photo-detail-tab"><div id="pf-reports-surface"></div></div><div id="pf-detail-tab-chat" class="hm-photo-detail-tab"><div id="pf-chat-surface"></div></div></div></div>
       </section>
 
       <section id="page-photo-markup" class="page" data-crm-header-title="Photo Markup">
@@ -56284,6 +56289,7 @@ function mapsGoogleReady() {
     document.getElementById('pf-detail-back').addEventListener('click', function () {
       renderPhotoFiles();
       showPage('page-photo-files');
+      if (typeof window.hmProjectsShowView === 'function') window.hmProjectsShowView('home');
     });
 
     document.getElementById('pf-detail-report').addEventListener('click', function () {
@@ -84418,6 +84424,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   document.querySelectorAll('[data-photo-status]').forEach(function(b){b.onclick=function(){statusFilter=this.dataset.photoStatus;document.querySelectorAll('[data-photo-status]').forEach(function(x){x.classList.toggle('active',x===b);});render();};});
   var projectsHomeTabs=document.getElementById('hm-projects-home-tabs');
   if(projectsHomeTabs)projectsHomeTabs.addEventListener('click',function(e){var btn=e.target.closest('[data-hm-projects-view]');if(btn)showProjectsView(btn.getAttribute('data-hm-projects-view'));});
+  document.querySelectorAll('[data-hm-projects-back]').forEach(function(btn){btn.addEventListener('click',function(){showProjectsView('home');});});
   var reportsSearch=document.getElementById('hm-photo-reports-search');
   if(reportsSearch)reportsSearch.addEventListener('input',function(){renderReports(this.value);});
   var createHome=document.getElementById('hm-projects-view-create');
