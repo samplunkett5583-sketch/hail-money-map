@@ -52913,13 +52913,32 @@ function mapsGoogleReady() {
         var reportRef = (Array.isArray(reportJobFile.photoReports) ? reportJobFile.photoReports : []).find(function (item) {
           return String(item && item.id || '') === String(reportId || '');
         });
-        if (reportRef && reportRef.projectId && window.hmPhotoReports && typeof window.hmPhotoReports.openReport === 'function') {
-          window.hmPhotoReportReturnTo = 'lead';
-          window.hmPhotoReportReturnLeadId = reportLeadId;
-          window.hmPhotoReports.openReport(reportRef.projectId, reportId);
-        } else {
-          crmOpenSavedInspectionPhotoReport(reportLeadId, reportId);
+        if (reportRef) {
+          var pdfFileId = String(reportRef.pdfFileId || '').trim();
+          if (!pdfFileId && reportRef.projectId && window.hmPhotoReports && typeof window.hmPhotoReports.getReportsForProject === 'function') {
+            var projectReports = window.hmPhotoReports.getReportsForProject(reportRef.projectId) || [];
+            var normalizedTitle = String(reportRef.title || 'Property Photo Report').trim().toLowerCase();
+            var fullReport = projectReports.find(function (item) {
+              return String(item && item.id || '') === String(reportId || '') ||
+                String(item && item.title || 'Property Photo Report').trim().toLowerCase() === normalizedTitle;
+            });
+            if (fullReport) pdfFileId = String(fullReport.pdfFileId || '').trim();
+          }
+          if (pdfFileId && typeof window.hmCloudGetFileUrl === 'function') {
+            var pdfWindow = window.open('about:blank', '_blank');
+            window.hmCloudGetFileUrl(pdfFileId).then(function (url) {
+              if (!url) throw new Error('PDF URL is unavailable.');
+              if (pdfWindow && !pdfWindow.closed) pdfWindow.location.href = url;
+              else window.location.href = url;
+            }).catch(function (error) {
+              try { if (pdfWindow && !pdfWindow.closed) pdfWindow.close(); } catch (_) {}
+              console.error('[Lead Reports] PDF open failed', error);
+              showUploadToast('The saved PDF could not be opened.');
+            });
+            return;
+          }
         }
+        showUploadToast('This report does not have a saved PDF yet.');
         return;
       }
       var leadDetailTabBtn = e.target && e.target.closest ? e.target.closest('#page-lead-detail [data-jf-tab]') : null;
@@ -73394,13 +73413,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmRenderJobFilePhotoReportEntry(lead, report) {
-      var inspectionDate = String(report && report.cover && report.cover.inspectionDate || '').trim();
-      var html = '<button class="crm-job-file-thumbnail-card crm-job-file-report-thumbnail" type="button" data-jf-open-photo-report="' + crmEscapeHtml(report.id || '') + '" data-jf-report-lead="' + crmEscapeHtml(lead.id || '') + '">';
-      html += '<span class="crm-job-file-thumbnail-image" aria-hidden="true">📷</span>';
-      html += '<span class="crm-job-file-report-stamp">REPORT</span>';
-      html += '<span class="crm-job-file-thumbnail-meta"><span class="crm-job-file-thumbnail-title">' + crmEscapeHtml(report.title || 'Property Photo Report') + '</span>';
-      if (inspectionDate) html += '<span class="crm-job-file-thumbnail-subtitle">' + crmEscapeHtml(inspectionDate) + '</span>';
-      html += '</span></button>';
+      var html = '<button class="crm-job-file-file-link" type="button" data-jf-open-photo-report="' + crmEscapeHtml(report.id || '') + '" data-jf-report-lead="' + crmEscapeHtml(lead.id || '') + '">';
+      html += '<strong>' + crmEscapeHtml(report.title || 'Property Photo Report') + '</strong>';
+      html += '<span style="display:block;font-size:11px;color:var(--muted);margin-top:4px;">PDF report</span>';
+      html += '</button>';
       return html;
     }
 
@@ -73491,58 +73507,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmRenderJobFileReportsHtml(lead, jobFile) {
-      var canFinance = crmCanAccessJobFinancialPages(lead) && crmCanViewLeadManagerTools();
-      var canViewWorksheet = crmCanViewFinancialWorksheet(lead);
       var html = '<div class="crm-job-folder-card-grid">';
-      var photoReports = Array.isArray(jobFile.photoReports) ? jobFile.photoReports : [];
+      var photoReports = Array.isArray(jobFile.photoReports) ? jobFile.photoReports.slice() : [];
+      photoReports.sort(function (a, b) {
+        return String(b && (b.updatedAt || b.createdAt) || '').localeCompare(String(a && (a.updatedAt || a.createdAt) || ''));
+      });
+      var seenTitles = {};
+      photoReports = photoReports.filter(function (report) {
+        var key = String(report && report.title || 'Property Photo Report').trim().toLowerCase();
+        if (seenTitles[key]) return false;
+        seenTitles[key] = true;
+        return true;
+      });
       html += '<div class="crm-job-folder-card full">';
-      html += '<div class="crm-job-folder-section-title">Reports</div>';
       if (photoReports.length) {
-        html += '<div class="crm-job-file-thumbnail-grid">';
+        html += '<div class="crm-job-file-list">';
         photoReports.forEach(function (report) { html += crmRenderJobFilePhotoReportEntry(lead, report); });
         html += '</div>';
       } else {
-        html += '<div class="crm-job-file-empty">No saved photo reports yet. Reports saved as PDF from Projects will appear here.</div>';
+        html += '<div class="crm-job-file-empty">No saved reports yet.</div>';
       }
-      html += '</div>';
-      html += '<div class="crm-job-folder-card">';
-      html += '<div class="crm-job-folder-section-title">Insurance Snapshot</div>';
-      html += '<div class="crm-job-folder-detail-list">';
-      [
-        ['Insurance Company', jobFile.insurance.company || lead.insuranceCompany || ''],
-        ['Claim Number', jobFile.insurance.claimNumber || lead.claimNumber || ''],
-        ['Approved Amount', jobFile.insurance.approvedAmount || ''],
-        ['Deductible', jobFile.insurance.deductible || '']
-      ].forEach(function (row) {
-        html += '<div class="crm-job-folder-detail-item"><div class="crm-job-folder-detail-label">' + crmEscapeHtml(row[0]) + '</div><div class="crm-job-folder-detail-value' + (!row[1] ? ' empty' : '') + '">' + crmEscapeHtml(row[1] || '—') + '</div></div>';
-      });
       html += '</div></div>';
-      html += '<div class="crm-job-folder-card">';
-      html += '<div class="crm-job-folder-section-title">Estimate & Production</div>';
-      html += '<div class="crm-job-folder-detail-list">';
-      [
-        ['Estimate Status', jobFile.estimate.status || ''],
-        ['Estimate Amount', jobFile.estimate.amount || ''],
-        ['Production Status', jobFile.production.status || ''],
-        ['Scheduled Build Date', jobFile.production.scheduledBuildDate || jobFile.production.startDate || '']
-      ].forEach(function (row) {
-        html += '<div class="crm-job-folder-detail-item"><div class="crm-job-folder-detail-label">' + crmEscapeHtml(row[0]) + '</div><div class="crm-job-folder-detail-value' + (!row[1] ? ' empty' : '') + '">' + crmEscapeHtml(row[1] || '—') + '</div></div>';
-      });
-      html += '</div></div>';
-      html += '<div class="crm-job-folder-card full">';
-      html += '<div class="crm-job-folder-section-title">Report Actions</div>';
-      html += '<div class="crm-job-file-inline-note">Open the financial pages or supporting records for more reporting detail.</div>';
-      html += '<div class="crm-job-file-inline-actions">';
-      if (canViewWorksheet) {
-        html += '<button class="btn" type="button" data-jf-action="financial-worksheet">Financial Worksheet</button>';
-      }
-      if (canFinance) {
-        html += '<button class="btn" type="button" data-jf-action="job-profitability">Profit & Loss</button>';
-      }
-      html += '<button class="btn" type="button" data-jf-tab-shortcut="documents">Open Documents</button>';
-      html += '<button class="btn" type="button" data-jf-tab-shortcut="photos">Open Photos</button>';
-      html += '</div></div>';
-      html += '</div>';
       return html;
     }
 
@@ -84225,11 +84210,29 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var result = await sb.from(TABLE).select('id,data,updated_at').order('updated_at', { ascending: false });
       if (result.error) throw result.error;
       var rows = result.data || [];
+      var reportCleanupNeeded = false;
       var remote = rows.map(function (row) {
         var project = row.data || {};
         project.id = row.id;
         project.updatedAt = row.updated_at || project.updatedAt;
         project.photos = Array.isArray(project.photos) ? project.photos : [];
+        if (Array.isArray(project.reports) && project.reports.length > 1) {
+          var sortedReports = project.reports.slice().sort(function (a, b) {
+            return String(b && (b.savedAt || b.updatedAt || b.createdAt) || '').localeCompare(String(a && (a.savedAt || a.updatedAt || a.createdAt) || ''));
+          });
+          var seenReportTitles = {};
+          var dedupedReports = sortedReports.filter(function (report) {
+            var key = String(report && report.title || 'Property Photo Report').trim().toLowerCase();
+            if (seenReportTitles[key]) return false;
+            seenReportTitles[key] = true;
+            return true;
+          });
+          if (dedupedReports.length !== project.reports.length) {
+            project.reports = dedupedReports;
+            project.updatedAt = new Date().toISOString();
+            reportCleanupNeeded = true;
+          }
+        }
         return project;
       }).filter(function (project) { return project.deleted !== true; });
       var local = getPhotoFiles();
@@ -84239,6 +84242,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
       window.hmPhotoRemoteLoadActive = true;
       localStorage.setItem('hmm_photo_files_v1', JSON.stringify(remote));
+      window.hmPhotoRemoteLoadActive = false;
+      if (reportCleanupNeeded && remote.length) await window.hmPhotoSyncAll(remote);
+      window.hmPhotoRemoteLoadActive = true;
       if (typeof window.renderPhotoFiles === 'function') window.renderPhotoFiles();
     } catch (error) {
       console.error('[Photo Load]', error);
@@ -84527,7 +84533,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
 <script src="./contingency-locked-pdf.js?v=20260920"></script>
 <script src="./assets/crm-cross-links.js?v=20260914"></script>
-<script src="./assets/photo-reports.js?v=20261004-8"></script>
+<script src="./assets/photo-reports.js?v=20261005-1"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
 <script id="hm-region-document-routing-script">
 (function(){

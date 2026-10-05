@@ -135,8 +135,19 @@
     stored.concat(inProject).forEach(function (r) {
       if (r && r.id) byId[r.id] = r;
     });
-    return Object.keys(byId).map(function (id) { return byId[id]; })
-      .sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
+    var rows = Object.keys(byId).map(function (id) { return byId[id]; })
+      .sort(function (a, b) {
+        return String(b.savedAt || b.updatedAt || b.createdAt || '').localeCompare(String(a.savedAt || a.updatedAt || a.createdAt || ''));
+      });
+    // Keep only the newest saved report for a given project/title. This also
+    // cleans up legacy duplicate-save rows in every report list.
+    var seenTitles = {};
+    return rows.filter(function (r) {
+      var key = String(r && r.title || 'Property Photo Report').trim().toLowerCase();
+      if (seenTitles[key]) return false;
+      seenTitles[key] = true;
+      return true;
+    });
   }
 
   function saveReportToProject(projectId, report) {
@@ -152,9 +163,24 @@
     for (var i = 0; i < ps.length; i++) {
       if (ps[i].id !== projectId) continue;
       ps[i].reports = Array.isArray(ps[i].reports) ? ps[i].reports : [];
-      var idx = ps[i].reports.findIndex(function (r) { return r.id === report.id; });
-      if (idx >= 0) ps[i].reports[idx] = report;
-      else ps[i].reports.push(report);
+      var normalizedTitle = String(report.title || 'Property Photo Report').trim().toLowerCase();
+      var idx = ps[i].reports.findIndex(function (r) {
+        return String(r && r.id || '') === String(report.id || '') ||
+          String(r && r.title || 'Property Photo Report').trim().toLowerCase() === normalizedTitle;
+      });
+      if (idx >= 0) {
+        var existing = ps[i].reports[idx] || {};
+        if (!report.pdfFileId && existing.pdfFileId) report.pdfFileId = existing.pdfFileId;
+        if (!report.pdfStorageKey && existing.pdfStorageKey) report.pdfStorageKey = existing.pdfStorageKey;
+        if (!report.createdAt && existing.createdAt) report.createdAt = existing.createdAt;
+        ps[i].reports[idx] = report;
+        ps[i].reports = ps[i].reports.filter(function (r, reportIndex) {
+          if (reportIndex === idx) return true;
+          return String(r && r.title || 'Property Photo Report').trim().toLowerCase() !== normalizedTitle;
+        });
+      } else {
+        ps[i].reports.push(report);
+      }
       ps[i].updatedAt = new Date().toISOString();
     }
     saveProjects(ps);
@@ -217,7 +243,11 @@
       if (String(leads[i].id || '') !== String(lead.id || '')) continue;
       var jobFile = typeof crmGetLeadJobFileData === 'function' ? crmGetLeadJobFileData(leads[i]) : {};
       jobFile.photoReports = Array.isArray(jobFile.photoReports) ? jobFile.photoReports : [];
-      var idx = jobFile.photoReports.findIndex(function (r) { return String(r && r.id || '') === String(report.id || ''); });
+      var normalizedTitle = String(report.title || 'Property Photo Report').trim().toLowerCase();
+      var idx = jobFile.photoReports.findIndex(function (r) {
+        return String(r && r.id || '') === String(report.id || '') ||
+          String(r && r.title || 'Property Photo Report').trim().toLowerCase() === normalizedTitle;
+      });
       if (remove) {
         if (idx >= 0) jobFile.photoReports.splice(idx, 1);
       } else {
@@ -233,6 +263,10 @@
         };
         if (idx >= 0) jobFile.photoReports[idx] = ref;
         else jobFile.photoReports.push(ref);
+        jobFile.photoReports = jobFile.photoReports.filter(function (item, reportIndex) {
+          if (reportIndex === (idx >= 0 ? idx : jobFile.photoReports.length - 1)) return true;
+          return String(item && item.title || 'Property Photo Report').trim().toLowerCase() !== normalizedTitle;
+        });
       }
       if (typeof crmApplyLeadJobFileData === 'function') {
         crmApplyLeadJobFileData(leads[i], jobFile);
