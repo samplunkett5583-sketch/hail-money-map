@@ -27395,7 +27395,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./neon-cloud-source.js?v=20261005-shared-test-cloud-1"></script>
+  <script src="./neon-cloud-source.js?v=20261006-shared-test-cloud-cleanup-1"></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly&loading=async&callback=mapsGoogleReady" defer></script>
   <script src="demo_swaths.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
@@ -77839,32 +77839,57 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       setTimeout(function () { msg.style.display = 'none'; }, 3000);
     });
 
-    document.getElementById('settings-clear-btn').addEventListener('click', function () {
+    document.getElementById('settings-clear-btn').addEventListener('click', async function () {
       if (!crmCanEditAllData()) {
         showUploadToast('You do not have permission to clear CRM data.');
         return;
       }
-      if (!confirm('Delete ALL CRM leads, tasks, and notes? This cannot be undone.')) return;
-      crmSaveLeads([]);
-      localStorage.removeItem(CRM_TASKS_KEY);
-      localStorage.removeItem(CRM_APPOINTMENTS_KEY);
-      localStorage.removeItem(APP_PAYROLL_ITEMS_KEY);
-      localStorage.removeItem(APP_PAYROLL_REVIEWS_KEY);
-      localStorage.removeItem(CRM_LEAD_FILES_KEY);
-      localStorage.removeItem(CRM_DATA_MODEL_KEY);
-      localStorage.removeItem(APP_JOBS_KEY);
-      localStorage.removeItem(APP_JOB_ACTIVITIES_KEY);
-      localStorage.removeItem(APP_JOB_NOTES_KEY);
-      localStorage.removeItem(APP_JOB_TASKS_KEY);
-      localStorage.removeItem(APP_JOB_PHOTOS_KEY);
-      localStorage.removeItem(APP_JOB_DOCUMENTS_KEY);
-      localStorage.removeItem(APP_JOB_PAYMENTS_KEY);
+      if (!confirm('Delete ALL test CRM leads, projects, inspections, tasks, notes, photos, and lead documents? Company employees, regions, and company templates will be kept. This cannot be undone.')) return;
       var msg = document.getElementById('settings-msg');
-      msg.textContent = 'All CRM data cleared.';
+      msg.textContent = 'Clearing test CRM data and stored test files…';
       msg.style.display = 'block';
-      crmUpdateTasksBadge();
-      crmToggleTestLeadButtons(true);
-      setTimeout(function () { msg.style.display = 'none'; }, 2000);
+      try {
+        crmSaveLeads([]);
+        localStorage.removeItem(CRM_TASKS_KEY);
+        localStorage.removeItem(CRM_APPOINTMENTS_KEY);
+        localStorage.removeItem(APP_PAYROLL_ITEMS_KEY);
+        localStorage.removeItem(APP_PAYROLL_REVIEWS_KEY);
+        localStorage.removeItem(CRM_LEAD_FILES_KEY);
+        localStorage.removeItem(CRM_DATA_MODEL_KEY);
+        localStorage.removeItem(APP_JOBS_KEY);
+        localStorage.removeItem(APP_JOB_ACTIVITIES_KEY);
+        localStorage.removeItem(APP_JOB_NOTES_KEY);
+        localStorage.removeItem(APP_JOB_TASKS_KEY);
+        localStorage.removeItem(APP_JOB_PHOTOS_KEY);
+        localStorage.removeItem(APP_JOB_DOCUMENTS_KEY);
+        localStorage.removeItem(APP_JOB_PAYMENTS_KEY);
+        localStorage.removeItem('hmm_clean_jobs_v1');
+        localStorage.removeItem('hmm_photo_files_v1');
+        if (typeof crmClearPendingInspectionRecord === 'function') crmClearPendingInspectionRecord();
+        if (typeof crmClearFieldLeadDraft === 'function') crmClearFieldLeadDraft();
+
+        var purgeSummary = { deletedFiles: 0, keptCompanyDocuments: 0 };
+        if (typeof window.hmCloudPurgeTestCrmFiles === 'function') {
+          purgeSummary = await window.hmCloudPurgeTestCrmFiles();
+        }
+
+        try {
+          ['hmmCleanPhotoDb', 'crmLeadFilesDb'].forEach(function (dbName) {
+            var deleteReq = indexedDB.deleteDatabase(dbName);
+            deleteReq.onerror = function () {};
+            deleteReq.onblocked = function () {};
+          });
+        } catch (_) {}
+
+        if (typeof window.hmCloudRefresh === 'function') await window.hmCloudRefresh();
+        msg.textContent = 'Test CRM data cleared. Removed ' + Number(purgeSummary.deletedFiles || 0) + ' stored test file' + (Number(purgeSummary.deletedFiles || 0) === 1 ? '' : 's') + '. Company setup and templates were kept.';
+        crmUpdateTasksBadge();
+        crmToggleTestLeadButtons(true);
+      } catch (error) {
+        console.error('[Clear Test CRM Data]', error);
+        msg.textContent = error && error.message ? error.message : 'Test CRM data could not be fully cleared.';
+      }
+      setTimeout(function () { msg.style.display = 'none'; }, 4000);
     });
 
     /* ════════════════════════════════════════════════════

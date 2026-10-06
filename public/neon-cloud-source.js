@@ -499,6 +499,37 @@
     return result.files || [];
   };
 
+  window.hmCloudPurgeTestCrmFiles = async function () {
+    if (!SHARED_TEST_CLOUD) return { deletedFiles: 0, keptCompanyDocuments: 0 };
+    var metaRows = await testRequest('/fileMeta', { method: 'GET' }) || {};
+    var dataRows = await testRequest('/fileData', { method: 'GET' }) || {};
+    var keepDataKeys = Object.create(null);
+    var deleteMetaKeys = [];
+    var kept = 0;
+
+    Object.keys(metaRows).forEach(function (nodeKey) {
+      var meta = metaRows[nodeKey] || {};
+      if (String(meta.type || '') === 'company_document') {
+        keepDataKeys[safeKey(String(meta.id || ''))] = true;
+        kept++;
+      } else {
+        deleteMetaKeys.push(nodeKey);
+      }
+    });
+
+    var deleteDataKeys = Object.keys(dataRows).filter(function (nodeKey) {
+      return !keepDataKeys[nodeKey];
+    });
+
+    await Promise.all(deleteMetaKeys.map(function (nodeKey) {
+      return testRequest('/fileMeta/' + nodeKey, { method: 'DELETE' });
+    }).concat(deleteDataKeys.map(function (nodeKey) {
+      return testRequest('/fileData/' + nodeKey, { method: 'DELETE' });
+    })));
+
+    return { deletedFiles: deleteDataKeys.length, keptCompanyDocuments: kept };
+  };
+
   function installAuthWatcher() {
     if (!window.auth || typeof window.auth.onAuthStateChanged !== 'function') {
       setTimeout(installAuthWatcher, 100);
