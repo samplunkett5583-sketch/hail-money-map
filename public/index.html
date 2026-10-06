@@ -27395,7 +27395,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./neon-cloud-source.js?v=20261003-neon-cloud-1"></script>
+  <script src="./neon-cloud-source.js?v=20261005-shared-test-cloud-1"></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly&loading=async&callback=mapsGoogleReady" defer></script>
   <script src="demo_swaths.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
@@ -28370,7 +28370,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     function savePhotoFiles(pfs) {
       try {
         localStorage.setItem('hmm_photo_files_v1', JSON.stringify(pfs));
-        if (typeof window.hmPhotoSyncAll === 'function' && !window.hmPhotoRemoteLoadActive) {
+        if (window.hmCloudBackendMode !== 'shared-free-test' && typeof window.hmPhotoSyncAll === 'function' && !window.hmPhotoRemoteLoadActive) {
           window.hmPhotoSyncAll(pfs);
         }
         return true;
@@ -28837,6 +28837,17 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           tx.oncomplete = function () { resolve(); };
           tx.onerror = function () { reject(tx.error); };
         });
+      }).then(function () {
+        if (window.hmCloudBackendMode !== 'shared-free-test' || typeof window.hmCloudUploadLeadFile !== 'function') return;
+        var uploadBlob = blob;
+        try {
+          if (!(blob instanceof File)) uploadBlob = new File([blob], String(imageKey || 'project-photo') + '.jpg', { type: blob.type || 'image/jpeg', lastModified: Date.now() });
+        } catch (_) {}
+        return window.hmCloudUploadLeadFile('', 'photo_project_blob', uploadBlob, {
+          id: String(imageKey || ''),
+          category: 'Photo Project',
+          metadata: { imageKey: String(imageKey || '') }
+        }).then(function () { return; });
       });
     }
 
@@ -28845,8 +28856,21 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
         return new Promise(function (resolve, reject) {
           var tx = db.transaction('photos', 'readonly');
           var req = tx.objectStore('photos').get(imageKey);
-          req.onsuccess = function () { resolve(req.result); };
+          req.onsuccess = function () { resolve(req.result || null); };
           req.onerror = function () { reject(req.error); };
+        });
+      }).then(function (localBlob) {
+        if (localBlob) return localBlob;
+        if (window.hmCloudBackendMode !== 'shared-free-test' || typeof window.hmCloudGetFileBlobById !== 'function') return null;
+        return window.hmCloudGetFileBlobById(String(imageKey || '')).then(function (cloudBlob) {
+          if (!cloudBlob) return null;
+          openPhotoDb().then(function (db) {
+            try {
+              var tx = db.transaction('photos', 'readwrite');
+              tx.objectStore('photos').put(cloudBlob, imageKey);
+            } catch (_) {}
+          }).catch(function () {});
+          return cloudBlob;
         });
       });
     }
@@ -51756,6 +51780,17 @@ function mapsGoogleReady() {
     function crmLoadInspectionPhotoUrl(photo, callback) {
       photo = photo || {};
       var storageKey = String(photo.storageKey || '').trim();
+      var cloudId = String(photo.fileId || photo.id || '').trim();
+      if (storageKey.indexOf('neon:') === 0) cloudId = storageKey.slice(5) || cloudId;
+      if ((storageKey.indexOf('neon:') === 0 || (!storageKey && cloudId)) && typeof window.hmCloudGetFileUrl === 'function') {
+        window.hmCloudGetFileUrl(cloudId).then(function (url) {
+          callback(String(url || ''));
+        }).catch(function (error) {
+          console.error('[Inspection Photo Preview] Cloud load failed', error);
+          callback('');
+        });
+        return;
+      }
       if (!storageKey) { callback(''); return; }
       crmOpenFilesDb(function (dbErr, db) {
         if (dbErr || !db) { callback(''); return; }
@@ -84528,6 +84563,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   }
 
   window.hmPhotoSyncAll = async function (projects) {
+    if (window.hmCloudBackendMode === 'shared-free-test') return;
     if (syncRunning) return;
     syncRunning = true;
     try {
@@ -84548,6 +84584,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
   window.hmPhotoSignedUrl = async function (path) {
     if (!path) return '';
+    if (window.hmCloudBackendMode === 'shared-free-test' && typeof window.hmCloudGetFileUrl === 'function') {
+      return window.hmCloudGetFileUrl(path);
+    }
     var result = await sb.storage.from(BUCKET).createSignedUrl(path, 3600);
     if (result.error) throw result.error;
     return result.data && result.data.signedUrl ? result.data.signedUrl : '';
@@ -84558,6 +84597,19 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     if (!user) throw new Error('Sign in before deleting a photo project.');
     var id = String(project && project.id || '').trim();
     if (!id) throw new Error('Photo project ID is missing.');
+    if (window.hmCloudBackendMode === 'shared-free-test' && typeof window.hmCloudApi === 'function') {
+      var keys = [];
+      (project.photos || []).forEach(function (photo) {
+        [photo && photo.imageKey, photo && photo.thumbnailKey].forEach(function (key) {
+          key = String(key || '').trim();
+          if (key && keys.indexOf(key) === -1) keys.push(key);
+        });
+      });
+      await Promise.all(keys.map(function (key) {
+        return window.hmCloudApi('/files/' + encodeURIComponent(key), { method:'DELETE' }).catch(function () {});
+      }));
+      return true;
+    }
     var paths = (project.photos || []).map(function (photo) { return String(photo && photo.storagePath || '').trim(); }).filter(Boolean);
     if (paths.length) {
       var storageResult = await sb.storage.from(BUCKET).remove(paths);
@@ -84572,6 +84624,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   };
 
   window.hmPhotoLoadFromSupabase = async function () {
+    if (window.hmCloudBackendMode === 'shared-free-test') {
+      try {
+        if (typeof window.hmCloudRefresh === 'function') await window.hmCloudRefresh();
+        if (typeof window.renderPhotoFiles === 'function') window.renderPhotoFiles();
+      } catch (error) {
+        console.error('[Photo Load Test Cloud]', error);
+        if (typeof showUploadToast === 'function') showUploadToast('Company photos could not refresh.');
+      }
+      return;
+    }
     if (loadRunning) return;
     loadRunning = true;
     try {
