@@ -559,7 +559,8 @@
     openChatFromMessage: openChatFromMessage,
     printReport: printReport,
     confirmPhotoPicker: confirmPhotoPicker,
-    cancelPhotoPicker: cancelPhotoPicker
+    cancelPhotoPicker: cancelPhotoPicker,
+    repairProjectCloudPhotos: repairProjectCloudPhotos
   };
 
   function getAllReports() {
