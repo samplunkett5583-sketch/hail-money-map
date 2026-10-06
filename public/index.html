@@ -85920,7 +85920,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
         '<h2 class="hm-project-wizard-title">Photo Preview</h2>' +
         '<div><strong>' + state.photos.length + ' photo' + (state.photos.length === 1 ? '' : 's') + '</strong></div>' +
         '<div class="hm-project-wizard-preview-grid" id="hm-pw-preview-grid">' + cards + '</div>' +
-        '<div class="hm-project-wizard-actions"><button class="btn" type="button" id="hm-pw-take-more">Take More Pics</button><button class="btn btn-primary" type="button" id="hm-pw-finish-photos">Finish</button></div>' +
+        '<div class="hm-project-wizard-actions"><button class="btn" type="button" id="hm-pw-take-more">Take More Pics</button><button class="btn" type="button" id="hm-pw-upload-more">Upload More Pics</button><button class="btn btn-primary" type="button" id="hm-pw-finish-photos">Finish</button></div>' +
       '</div>';
     hydratePreview();
   }
@@ -86031,6 +86031,11 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
       return;
     }
     if (target.closest('#hm-pw-take-more')) { openCamera(); return; }
+    if (target.closest('#hm-pw-upload-more')) {
+      var uploadMore = document.getElementById('hm-project-wizard-upload');
+      if (uploadMore) uploadMore.click();
+      return;
+    }
     if (target.closest('#hm-pw-finish-photos')) { renderFinish(); return; }
     if (target.closest('#hm-pw-finish-back')) { renderPreview(); return; }
     if (target.closest('#hm-pw-save-project')) {
