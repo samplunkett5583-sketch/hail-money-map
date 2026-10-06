@@ -21482,6 +21482,28 @@
 #page-photo-files.hm-projects-page-create .hm-create-new-option span{font-size:10px;line-height:1.35;color:#4b5563}
 #page-photo-files.hm-projects-page-create #hm-create-new-detail{width:min(520px,90%);margin:18px auto 0}
 @media(max-width:767px){#page-photo-files.hm-projects-page-list .hm-photo-workspace{width:calc(100% - 28px)}#page-photo-files.hm-projects-page-landing .hm-photo-workspace,#page-photo-files.hm-projects-page-create .hm-photo-workspace{width:calc(100% - 28px)}}
+#page-photo-project-create{background:#d3ad59!important}
+.hm-project-wizard-shell{width:min(760px,calc(100% - 28px));margin:18px auto 32px}
+.hm-project-wizard-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:22px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+.hm-project-wizard-title{margin:0 0 18px;font-size:24px;font-weight:800;color:var(--text)}
+.hm-project-wizard-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.hm-project-wizard-grid .full{grid-column:1/-1}
+.hm-project-wizard-field{display:grid;gap:6px}
+.hm-project-wizard-field label{font-weight:800;font-size:13px;color:var(--text)}
+.hm-project-wizard-field input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd2dd;border-radius:8px;background:#fff}
+.hm-project-wizard-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:20px}
+.hm-project-wizard-choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.hm-project-wizard-choice{min-height:130px;border:1px solid var(--accent);border-radius:12px;background:var(--accent-2);padding:20px;font-size:18px;font-weight:800;cursor:pointer}
+.hm-project-wizard-choice span{display:block;margin-top:8px;font-size:12px;font-weight:500;color:#4b5563}
+#hm-project-wizard-map{height:420px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#eef1f4}
+.hm-project-wizard-map-note{margin:0 0 12px;color:#4b5563;font-size:13px}
+.hm-project-wizard-preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:14px}
+.hm-project-wizard-preview-card{background:#fff;border:1px solid #d8dde6;border-radius:8px;overflow:hidden}
+.hm-project-wizard-preview-card img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.hm-project-wizard-preview-card span{display:block;padding:6px 8px;font-size:11px;color:#667085;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-project-wizard-summary{display:grid;gap:8px;margin:10px 0 18px;padding:14px;background:#f7f8fa;border-radius:10px}
+.hm-project-wizard-summary strong{color:var(--text)}
+@media(max-width:640px){.hm-project-wizard-grid,.hm-project-wizard-choice-grid{grid-template-columns:1fr}#hm-project-wizard-map{height:330px}}
 .hm-create-new-heading{font-size:22px;font-weight:900;margin:4px 0 14px;color:#1f2937}
 .hm-create-new-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .hm-create-new-option{display:grid;gap:7px;text-align:left;padding:20px;border:1px solid #d5dae3;border-radius:12px;background:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.05)}
@@ -23358,7 +23380,10 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <div class="hm-projects-home-view" id="hm-projects-view-my-projects">
               <div class="hm-projects-subview-head">
                 <button class="btn" type="button" data-hm-projects-back>Back</button>
-                <button class="btn btn-primary" type="button" data-hm-projects-view="my-records">My Records</button>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <button class="btn btn-primary" type="button" id="hm-my-projects-new">New Project</button>
+                  <button class="btn btn-primary" type="button" data-hm-projects-view="my-records">My Records</button>
+                </div>
               </div>
               <label class="hm-projects-search-label" for="hm-my-projects-search">Search</label>
               <div class="hm-photo-filter-row"><input type="search" id="hm-my-projects-search" placeholder="Search my projects, addresses, or homeowners" /></div>
@@ -23373,6 +23398,14 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           </div>
         </div>
         <div class="hm-photo-modal" id="hm-photo-project-modal" hidden><div class="hm-photo-modal-card"><button class="hm-photo-modal-x" type="button" data-photo-modal-close>&times;</button><h2>Create Photo Project</h2><label>Project Name<input id="hm-photo-project-name" type="text" placeholder="Project or homeowner name" /></label><label>Property Address<input id="hm-photo-project-address" type="text" placeholder="Street, city, state, ZIP" /></label><label>Assigned To<input id="hm-photo-project-assignee" type="text" placeholder="Team member" /></label><div class="hm-photo-modal-actions"><button class="btn" type="button" data-photo-modal-close>Cancel</button><button class="btn btn-primary" type="button" id="hm-photo-project-save">Create Project</button></div></div></div>
+      </section>
+
+      <section id="page-photo-project-create" class="page" data-crm-header-title="New Project">
+        <div class="hm-project-wizard-shell">
+          <div id="hm-project-wizard-content"></div>
+          <input type="file" id="hm-project-wizard-camera-fallback" accept="image/*" capture="environment" multiple hidden />
+          <input type="file" id="hm-project-wizard-upload" accept="image/*" multiple hidden />
+        </div>
       </section>
 
       <section id="page-photo-file-detail" class="page" data-crm-header-title="Photo Project">
@@ -52351,6 +52384,7 @@ function mapsGoogleReady() {
         continueLabel: String(options.continueLabel || 'Continue'),
         penetrationSection: String(options.penetrationSection || '').trim(),
         fallbackInputId: String(options.fallbackInputId || 'crm-ground-inspection-camera-input'),
+        onFinishFiles: typeof options.onFinishFiles === 'function' ? options.onFinishFiles : null,
         pendingFiles: [],
         encoding: 0,
         finishing: false,
@@ -52494,6 +52528,15 @@ function mapsGoogleReady() {
           penetrationSection: session.penetrationSection
         });
       };
+
+      if (session.onFinishFiles) {
+        crmStopInspectionCameraStream(session);
+        var callbackOverlay = document.getElementById('crm-inspection-camera-overlay');
+        if (callbackOverlay) callbackOverlay.hidden = true;
+        _crmInspectionCameraSession = null;
+        session.onFinishFiles(capturedFiles);
+        return;
+      }
 
       if (!capturedFiles.length) {
         finish(0);
@@ -60587,6 +60630,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           manualStageOverride: false,
           createdByName: crmGetCurrentUserName() || currentRep || '',
           createdByRole: crmGetRole(),
+          photoProjectId: String(window.hmPendingPhotoProjectLeadLink && window.hmPendingPhotoProjectLeadLink.projectId || '').trim(),
           activityNotes: []
         };
         var nowTs = lead.updatedAt;
@@ -60609,6 +60653,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         if (!crmSaveLeads(leads)) {
           alert('Save failed — storage may be full.');
           return;
+        }
+
+        if (window.hmPendingPhotoProjectLeadLink && window.hmPendingPhotoProjectLeadLink.projectId) {
+          try {
+            var linkedProjectId = String(window.hmPendingPhotoProjectLeadLink.projectId || '').trim();
+            var linkedProjects = getPhotoFiles();
+            var linkedProjectIndex = linkedProjects.findIndex(function (item) {
+              return String(item && item.id || '') === linkedProjectId;
+            });
+            if (linkedProjectIndex >= 0) {
+              linkedProjects[linkedProjectIndex].leadId = lead.id;
+              linkedProjects[linkedProjectIndex].homeownerName = ((lead.firstName || '') + ' ' + (lead.lastName || '')).trim();
+              linkedProjects[linkedProjectIndex].firstName = lead.firstName || '';
+              linkedProjects[linkedProjectIndex].lastName = lead.lastName || '';
+              linkedProjects[linkedProjectIndex].updatedAt = new Date().toISOString();
+              savePhotoFiles(linkedProjects);
+            }
+          } catch (projectLinkError) {
+            console.error('[Project Lead Link]', projectLinkError);
+          }
+          window.hmPendingPhotoProjectLeadLink = null;
         }
         (function() {
           var _lcName = ((lead.firstName || '') + ' ' + (lead.lastName || '')).trim();
@@ -71990,6 +72055,19 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return type === 'after_photo' ? 'completion' : 'inspection';
     }
 
+    function crmGetLinkedPhotoProject(lead) {
+      if (!lead || typeof getPhotoFiles !== 'function') return null;
+      var rows = getPhotoFiles();
+      var projectId = String(lead.photoProjectId || '').trim();
+      if (projectId) {
+        var byId = rows.find(function (item) { return String(item && item.id || '') === projectId; });
+        if (byId) return byId;
+      }
+      return rows.find(function (item) {
+        return String(item && item.leadId || '') === String(lead.id || '');
+      }) || null;
+    }
+
     function crmGetJobFilePhotoEntries(lead) {
       if (!lead) return [];
       var jobFile = crmGetLeadJobFileData(lead);
@@ -71997,7 +72075,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       jobFile.photos.forEach(function (entry) {
         if (entry.fileId) byFileId[entry.fileId] = entry;
       });
-      return crmGetLeadFilesFor(lead.id).filter(function (file) {
+      var entries = crmGetLeadFilesFor(lead.id).filter(function (file) {
         return file.type === 'inspection_photo' || file.type === 'after_photo';
       }).map(function (file) {
         var meta = byFileId[file.id] || {};
@@ -72012,7 +72090,32 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           photoPhase: String(meta.photoPhase || file.photoPhase || crmGetJobFilePhotoPhaseFromType(file.type)).trim() || 'inspection',
           file: file
         };
-      }).sort(function (a, b) {
+      });
+      var linkedProject = crmGetLinkedPhotoProject(lead);
+      if (linkedProject && Array.isArray(linkedProject.photos)) {
+        linkedProject.photos.forEach(function (photo, index) {
+          var photoKey = String(photo && (photo.id || photo.fileId || photo.imageKey) || index);
+          entries.push({
+            id: 'project_photo_' + String(linkedProject.id || '') + '_' + photoKey,
+            fileId: '',
+            projectId: String(linkedProject.id || ''),
+            projectPhotoKey: photoKey,
+            projectPhoto: photo,
+            isProjectPhoto: true,
+            category: String(photo && (photo.category || photo.sectionKey) || 'Project Photos').trim() || 'Project Photos',
+            caption: String(photo && (photo.caption || photo.note) || '').trim(),
+            note: String(photo && photo.note || '').trim(),
+            uploadedBy: String(linkedProject.assignedRep || linkedProject.createdBy || '').trim(),
+            uploadedAt: String(photo && (photo.takenAt || photo.uploadedAt) || linkedProject.updatedAt || linkedProject.createdAt || '').trim(),
+            photoPhase: 'inspection',
+            file: {
+              fileName: String(photo && photo.name || ('Project Photo ' + (index + 1))),
+              name: String(photo && photo.name || ('Project Photo ' + (index + 1)))
+            }
+          });
+        });
+      }
+      return entries.sort(function (a, b) {
         return String(b.uploadedAt || '').localeCompare(String(a.uploadedAt || ''));
       });
     }
@@ -72391,22 +72494,55 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       crmClearJobFileThumbnailUrls();
       if (!root) return;
       var images = root.querySelectorAll('[data-jf-photo-thumb-id]');
-      if (!images.length) return;
-      var files = crmGetLeadFiles();
-      crmOpenFilesDb(function (dbErr, db) {
-        if (dbErr || !db) return;
-        images.forEach(function (img) {
-          var fileId = String(img.getAttribute('data-jf-photo-thumb-id') || '').trim();
-          var meta = files.find(function (item) { return String(item && item.id || '') === fileId; }) || null;
-          if (!meta || !meta.storageKey) return;
-          crmDbGetBlob(db, meta.storageKey, function (blobErr, blob) {
-            if (blobErr || !blob || !img.isConnected) return;
-            var url = URL.createObjectURL(blob);
-            _crmJobFileThumbnailUrls.push(url);
-            img.src = url;
+      var projectImages = root.querySelectorAll('[data-jf-project-photo-project]');
+
+      if (images.length) {
+        var files = crmGetLeadFiles();
+        crmOpenFilesDb(function (dbErr, db) {
+          if (dbErr || !db) return;
+          images.forEach(function (img) {
+            var fileId = String(img.getAttribute('data-jf-photo-thumb-id') || '').trim();
+            var meta = files.find(function (item) { return String(item && item.id || '') === fileId; }) || null;
+            if (!meta || !meta.storageKey) return;
+            crmDbGetBlob(db, meta.storageKey, function (blobErr, blob) {
+              if (blobErr || !blob || !img.isConnected) return;
+              var url = URL.createObjectURL(blob);
+              _crmJobFileThumbnailUrls.push(url);
+              img.src = url;
+            });
           });
         });
-      });
+      }
+
+      if (projectImages.length && typeof getPhotoFiles === 'function') {
+        var projects = getPhotoFiles();
+        projectImages.forEach(function (img) {
+          var projectId = String(img.getAttribute('data-jf-project-photo-project') || '').trim();
+          var photoKey = String(img.getAttribute('data-jf-project-photo-key') || '').trim();
+          var project = projects.find(function (item) { return String(item && item.id || '') === projectId; }) || null;
+          if (!project || !Array.isArray(project.photos)) return;
+          var photo = project.photos.find(function (item, index) {
+            return String(item && (item.id || item.fileId || item.imageKey) || index) === photoKey;
+          }) || null;
+          if (!photo) return;
+
+          if (photo.imageKey && typeof getPhotoBlob === 'function') {
+            getPhotoBlob(photo.imageKey).then(function (blob) {
+              if (!blob || !img.isConnected) return;
+              var url = URL.createObjectURL(blob);
+              _crmJobFileThumbnailUrls.push(url);
+              img.src = url;
+            }).catch(function () {});
+            return;
+          }
+
+          if (photo.storagePath && window.hmPhotoSignedUrl) {
+            window.hmPhotoSignedUrl(photo.storagePath).then(function (url) {
+              if (url && img.isConnected) img.src = url;
+            }).catch(function () {});
+          }
+        });
+      }
     }
 
     function crmGetJobFileJobTypeLabel(lead) {
@@ -73480,8 +73616,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmRenderJobFilePhotoEntry(entry) {
       var metaBits = [entry.category || '', entry.uploadedBy || '', entry.uploadedAt ? crmFormatDateTimeLabel(entry.uploadedAt) : ''].filter(Boolean);
       var detailBits = [];
-      var html = '<button class="crm-job-file-thumbnail-card" type="button" data-jf-open-file="' + crmEscapeHtml(entry.fileId) + '">';
-      html += '<img class="crm-job-file-thumbnail-image" data-jf-photo-thumb-id="' + crmEscapeHtml(entry.fileId) + '" alt="' + crmEscapeHtml(entry.file.fileName || entry.file.name || 'Photo') + '" />';
+      var openAttr = entry.isProjectPhoto
+        ? ' data-jf-open-project-photo="' + crmEscapeHtml(entry.projectId || '') + '" data-jf-project-photo-key="' + crmEscapeHtml(entry.projectPhotoKey || '') + '"'
+        : ' data-jf-open-file="' + crmEscapeHtml(entry.fileId) + '"';
+      var imgAttr = entry.isProjectPhoto
+        ? ' data-jf-project-photo-project="' + crmEscapeHtml(entry.projectId || '') + '" data-jf-project-photo-key="' + crmEscapeHtml(entry.projectPhotoKey || '') + '"'
+        : ' data-jf-photo-thumb-id="' + crmEscapeHtml(entry.fileId) + '"';
+      var html = '<button class="crm-job-file-thumbnail-card" type="button"' + openAttr + '>';
+      html += '<img class="crm-job-file-thumbnail-image"' + imgAttr + ' alt="' + crmEscapeHtml(entry.file.fileName || entry.file.name || 'Photo') + '" />';
       html += '<span class="crm-job-file-thumbnail-meta"><span class="crm-job-file-thumbnail-title">' + crmEscapeHtml(entry.caption || entry.file.fileName || entry.file.name || 'Photo') + '</span>';
       if (detailBits.length) html += '<span style="display:block;font-size:12px;color:var(--text);margin-top:6px;">' + crmEscapeHtml(detailBits.join(' · ')) + '</span>';
       if (metaBits.length) html += '<span style="display:block;font-size:11px;color:var(--muted);margin-top:4px;">' + crmEscapeHtml(metaBits.join(' · ')) + '</span>';
@@ -75053,6 +75195,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var docTypeMap = { Contingency: 'signed_contingency', Contract: 'signed_contract', Estimate: 'estimate_document',
           'Insurance Paperwork': 'insurance_paperwork', Invoice: 'invoice_document', Supplements: 'supplement_document', 'Other Documents': 'job_document' };
         crmOpenJobFileDocumentPicker(lead, docTypeMap[selectedCategory] || 'job_document', selectedCategory, String((document.getElementById('jf-doc-note') || {}).value || '').trim());
+        return;
+      }
+
+      var openProjectPhotoBtn = e.target.closest('[data-jf-open-project-photo]');
+      if (openProjectPhotoBtn) {
+        var linkedProjectId = String(openProjectPhotoBtn.getAttribute('data-jf-open-project-photo') || '').trim();
+        if (linkedProjectId && typeof window.openPhotoFileDetail === 'function') {
+          window.hmProjectDetailReturnView = 'my-projects';
+          window.openPhotoFileDetail(linkedProjectId);
+        }
         return;
       }
 
@@ -85451,6 +85603,428 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
     observer.observe(document.body, { childList:true, subtree:true });
   }
 })();
+</script>
+
+
+<script>
+/* Plain My Projects -> New Project field workflow. Templates intentionally untouched. */
+(function () {
+  var state = null;
+  var map = null;
+  var marker = null;
+  var previewUrls = [];
+
+  function esc(value) {
+    if (typeof crmEscapeHtml === 'function') return crmEscapeHtml(value);
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+
+  function content() { return document.getElementById('hm-project-wizard-content'); }
+
+  function scopedRepName() {
+    var name = '';
+    try { if (typeof crmGetWorkspaceScopedRepName === 'function') name = crmGetWorkspaceScopedRepName() || ''; } catch (_) {}
+    if (!name) {
+      try { if (typeof crmGetCurrentUserName === 'function') name = crmGetCurrentUserName() || ''; } catch (_) {}
+    }
+    return String(name || '').trim();
+  }
+
+  function scopedRepMember() {
+    try { if (typeof crmGetWorkspaceScopedRepMember === 'function') return crmGetWorkspaceScopedRepMember(); } catch (_) {}
+    return null;
+  }
+
+  function newState() {
+    var rep = scopedRepMember();
+    state = {
+      id: 'photo_project_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
+      step: 'details',
+      firstName: '',
+      lastName: '',
+      propertyAddress: '',
+      formattedAddress: '',
+      street: '',
+      city: '',
+      state: '',
+      zip: '',
+      latitude: null,
+      longitude: null,
+      photos: [],
+      assignedRep: scopedRepName(),
+      assignedRepId: rep ? String(rep.id || rep.uid || '') : '',
+      assignedRepEmail: rep ? String(rep.email || '') : '',
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  function setHeader(title) {
+    var page = document.getElementById('page-photo-project-create');
+    if (page) page.setAttribute('data-crm-header-title', title || 'New Project');
+    try { if (typeof renderTopBrand === 'function') renderTopBrand(); } catch (_) {}
+    try { if (typeof crmSyncMobilePageChrome === 'function') crmSyncMobilePageChrome('page-photo-project-create'); } catch (_) {}
+  }
+
+  function start() {
+    newState();
+    setHeader('New Project');
+    if (typeof showPage === 'function') showPage('page-photo-project-create');
+    renderDetails();
+  }
+
+  function renderDetails() {
+    state.step = 'details';
+    var el = content();
+    if (!el) return;
+    el.innerHTML =
+      '<div class="hm-project-wizard-card">' +
+        '<h2 class="hm-project-wizard-title">New Project</h2>' +
+        '<div class="hm-project-wizard-grid">' +
+          '<div class="hm-project-wizard-field"><label for="hm-pw-first">First Name</label><input id="hm-pw-first" type="text" autocomplete="given-name" value="' + esc(state.firstName) + '" /></div>' +
+          '<div class="hm-project-wizard-field"><label for="hm-pw-last">Last Name</label><input id="hm-pw-last" type="text" autocomplete="family-name" value="' + esc(state.lastName) + '" /></div>' +
+          '<div class="hm-project-wizard-field full"><label for="hm-pw-address">Property Address</label><input id="hm-pw-address" type="text" autocomplete="street-address" placeholder="Street, city, state, ZIP" value="' + esc(state.propertyAddress) + '" /></div>' +
+        '</div>' +
+        '<div class="hm-project-wizard-actions"><button class="btn btn-primary" type="button" id="hm-pw-find-property">Continue</button></div>' +
+      '</div>';
+  }
+
+  function addressPart(result, type, shortName) {
+    var parts = result && result.address_components || [];
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i].types && parts[i].types.indexOf(type) !== -1) return shortName ? parts[i].short_name : parts[i].long_name;
+    }
+    return '';
+  }
+
+  function applyGeocodeResult(result) {
+    var number = addressPart(result, 'street_number', false);
+    var route = addressPart(result, 'route', false);
+    state.street = [number, route].filter(Boolean).join(' ') || state.propertyAddress.split(',')[0].trim();
+    state.city = addressPart(result, 'locality', false) || addressPart(result, 'postal_town', false) || addressPart(result, 'sublocality', false);
+    state.state = addressPart(result, 'administrative_area_level_1', true);
+    state.zip = addressPart(result, 'postal_code', false);
+    state.formattedAddress = String(result.formatted_address || state.propertyAddress).trim();
+    var loc = result.geometry && result.geometry.location;
+    if (loc) {
+      state.latitude = Number(typeof loc.lat === 'function' ? loc.lat() : loc.lat);
+      state.longitude = Number(typeof loc.lng === 'function' ? loc.lng() : loc.lng);
+    }
+  }
+
+  function waitForGoogleMaps() {
+    return new Promise(function (resolve, reject) {
+      var attempts = 0;
+      (function check() {
+        if (window.google && google.maps && google.maps.Geocoder && google.maps.Map) { resolve(); return; }
+        attempts++;
+        if (attempts > 50) { reject(new Error('Google Maps is not ready.')); return; }
+        setTimeout(check, 100);
+      }());
+    });
+  }
+
+  function geocodeAndMap() {
+    var first = String((document.getElementById('hm-pw-first') || {}).value || '').trim();
+    var last = String((document.getElementById('hm-pw-last') || {}).value || '').trim();
+    var address = String((document.getElementById('hm-pw-address') || {}).value || '').trim();
+    if (!first || !last || !address) {
+      if (typeof showUploadToast === 'function') showUploadToast('Enter first name, last name, and property address.');
+      return;
+    }
+    state.firstName = first;
+    state.lastName = last;
+    state.propertyAddress = address;
+    if (typeof showUploadToast === 'function') showUploadToast('Finding the property…');
+    waitForGoogleMaps().then(function () {
+      var geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: address }, function (results, status) {
+        if (status !== 'OK' || !results || !results[0]) {
+          if (typeof showUploadToast === 'function') showUploadToast('That property address could not be located.');
+          return;
+        }
+        applyGeocodeResult(results[0]);
+        renderMap();
+      });
+    }).catch(function (error) {
+      if (typeof showUploadToast === 'function') showUploadToast(error.message || 'Google Maps is unavailable.');
+    });
+  }
+
+  function renderMap() {
+    state.step = 'map';
+    var el = content();
+    if (!el) return;
+    el.innerHTML =
+      '<div class="hm-project-wizard-card">' +
+        '<h2 class="hm-project-wizard-title">Confirm Property</h2>' +
+        '<p class="hm-project-wizard-map-note">Move the marker so it is directly over the correct property, then confirm.</p>' +
+        '<div id="hm-project-wizard-map"></div>' +
+        '<div class="hm-project-wizard-actions"><button class="btn" type="button" id="hm-pw-map-back">Back</button><button class="btn btn-primary" type="button" id="hm-pw-confirm-property">Confirm Property</button></div>' +
+      '</div>';
+    waitForGoogleMaps().then(function () {
+      var pos = { lat:Number(state.latitude), lng:Number(state.longitude) };
+      map = new google.maps.Map(document.getElementById('hm-project-wizard-map'), {
+        center:pos, zoom:20, mapTypeId:'satellite', streetViewControl:false, fullscreenControl:true
+      });
+      marker = new google.maps.Marker({ position:pos, map:map, draggable:true, title:'Property' });
+      marker.addListener('dragend', function () {
+        var p = marker.getPosition();
+        if (!p) return;
+        state.latitude = Number(p.lat());
+        state.longitude = Number(p.lng());
+      });
+      map.addListener('click', function (event) {
+        if (!event || !event.latLng) return;
+        marker.setPosition(event.latLng);
+        state.latitude = Number(event.latLng.lat());
+        state.longitude = Number(event.latLng.lng());
+      });
+    }).catch(function () {});
+  }
+
+  function renderPhotoChoice() {
+    state.step = 'photo-choice';
+    var el = content();
+    if (!el) return;
+    el.innerHTML =
+      '<div class="hm-project-wizard-card">' +
+        '<h2 class="hm-project-wizard-title">Add Project Photos</h2>' +
+        '<div class="hm-project-wizard-choice-grid">' +
+          '<button class="hm-project-wizard-choice" type="button" id="hm-pw-take-pictures">Take Pictures<span>Use the camera and take as many pictures as you need. Tap Done when finished.</span></button>' +
+          '<button class="hm-project-wizard-choice" type="button" id="hm-pw-upload-pictures">Upload Photos<span>Select one or more pictures already saved on this device.</span></button>' +
+        '</div>' +
+        '<div class="hm-project-wizard-actions"><button class="btn" type="button" id="hm-pw-photo-back">Back</button></div>' +
+      '</div>';
+  }
+
+  function addFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList || []).filter(Boolean);
+    if (!files.length) {
+      if (state.photos.length) renderPreview();
+      return Promise.resolve(0);
+    }
+    var chain = Promise.resolve();
+    var added = 0;
+    files.forEach(function (file, index) {
+      chain = chain.then(function () {
+        var key = 'project_' + state.id + '_' + Date.now() + '_' + index + '_' + Math.random().toString(36).slice(2, 5);
+        return savePhotoBlob(key, file).then(function () {
+          state.photos.push({
+            id:'project_photo_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 5),
+            imageKey:key,
+            name:file.name || ('project-photo-' + (state.photos.length + 1) + '.jpg'),
+            takenAt:new Date().toISOString(),
+            category:'Project Photos',
+            sectionKey:'Project Photos'
+          });
+          added++;
+        });
+      });
+    });
+    return chain.then(function () {
+      renderPreview();
+      return added;
+    }).catch(function (error) {
+      console.error('[Project Photo Add]', error);
+      if (typeof showUploadToast === 'function') showUploadToast('That photo could not be added. Please try again.');
+      return 0;
+    });
+  }
+
+  function openCamera() {
+    if (typeof crmOpenInspectionCameraSession === 'function') {
+      crmOpenInspectionCameraSession({
+        category:'Project Photos',
+        sectionKey:'Project Photos',
+        sectionLabel:'Project Photos',
+        fallbackInputId:'hm-project-wizard-camera-fallback',
+        onFinishFiles:function (files) { addFiles(files); }
+      });
+      return;
+    }
+    var input = document.getElementById('hm-project-wizard-camera-fallback');
+    if (input) input.click();
+  }
+
+  function clearPreviewUrls() {
+    previewUrls.forEach(function (url) { try { URL.revokeObjectURL(url); } catch (_) {} });
+    previewUrls = [];
+  }
+
+  function hydratePreview() {
+    var grid = document.getElementById('hm-pw-preview-grid');
+    if (!grid) return;
+    grid.querySelectorAll('[data-hm-pw-photo-key]').forEach(function (img) {
+      var key = String(img.getAttribute('data-hm-pw-photo-key') || '');
+      getPhotoBlob(key).then(function (blob) {
+        if (!blob || !img.isConnected) return;
+        var url = URL.createObjectURL(blob);
+        previewUrls.push(url);
+        img.src = url;
+      }).catch(function () {});
+    });
+  }
+
+  function renderPreview() {
+    state.step = 'preview';
+    clearPreviewUrls();
+    var el = content();
+    if (!el) return;
+    var cards = state.photos.map(function (photo, index) {
+      return '<div class="hm-project-wizard-preview-card"><img data-hm-pw-photo-key="' + esc(photo.imageKey) + '" alt="Project photo ' + (index + 1) + '" /><span>' + esc(photo.name || ('Photo ' + (index + 1))) + '</span></div>';
+    }).join('');
+    el.innerHTML =
+      '<div class="hm-project-wizard-card">' +
+        '<h2 class="hm-project-wizard-title">Photo Preview</h2>' +
+        '<div><strong>' + state.photos.length + ' photo' + (state.photos.length === 1 ? '' : 's') + '</strong></div>' +
+        '<div class="hm-project-wizard-preview-grid" id="hm-pw-preview-grid">' + cards + '</div>' +
+        '<div class="hm-project-wizard-actions"><button class="btn" type="button" id="hm-pw-take-more">Take More Pics</button><button class="btn btn-primary" type="button" id="hm-pw-finish-photos">Finish</button></div>' +
+      '</div>';
+    hydratePreview();
+  }
+
+  function renderFinish() {
+    if (!state.photos.length) {
+      if (typeof showUploadToast === 'function') showUploadToast('Add at least one project photo first.');
+      return;
+    }
+    state.step = 'finish';
+    var el = content();
+    if (!el) return;
+    var name = [state.firstName, state.lastName].filter(Boolean).join(' ');
+    el.innerHTML =
+      '<div class="hm-project-wizard-card">' +
+        '<h2 class="hm-project-wizard-title">Finish Project</h2>' +
+        '<div class="hm-project-wizard-summary"><div><strong>Homeowner:</strong> ' + esc(name) + '</div><div><strong>Property:</strong> ' + esc(state.formattedAddress || state.propertyAddress) + '</div><div><strong>Photos:</strong> ' + state.photos.length + '</div></div>' +
+        '<div class="hm-project-wizard-choice-grid">' +
+          '<button class="hm-project-wizard-choice" type="button" id="hm-pw-save-project">Save Project<span>Save the project and return to the Dashboard.</span></button>' +
+          '<button class="hm-project-wizard-choice" type="button" id="hm-pw-create-lead">Create Lead<span>Save the project, then continue to the New Lead form with the homeowner and property already filled in.</span></button>' +
+        '</div>' +
+        '<div class="hm-project-wizard-actions"><button class="btn" type="button" id="hm-pw-finish-back">Back to Photos</button></div>' +
+      '</div>';
+  }
+
+  function buildProject() {
+    var now = new Date().toISOString();
+    var rep = scopedRepMember();
+    return {
+      id:state.id,
+      projectName:[state.firstName, state.lastName].filter(Boolean).join(' ') || state.formattedAddress || 'Photo Project',
+      homeownerName:[state.firstName, state.lastName].filter(Boolean).join(' '),
+      firstName:state.firstName,
+      lastName:state.lastName,
+      propertyAddress:state.formattedAddress || state.propertyAddress,
+      street:state.street,
+      city:state.city,
+      state:state.state,
+      zip:state.zip,
+      latitude:state.latitude,
+      longitude:state.longitude,
+      propertyLat:state.latitude,
+      propertyLng:state.longitude,
+      assignedRep:state.assignedRep || scopedRepName(),
+      assignedRepId:state.assignedRepId || (rep ? String(rep.id || rep.uid || '') : ''),
+      assignedRepEmail:state.assignedRepEmail || (rep ? String(rep.email || '') : ''),
+      createdBy:scopedRepName(),
+      createdByName:scopedRepName(),
+      createdAt:state.createdAt || now,
+      updatedAt:now,
+      photos:state.photos.slice(),
+      reports:[]
+    };
+  }
+
+  function persistProject() {
+    var project = buildProject();
+    var rows = typeof getPhotoFiles === 'function' ? getPhotoFiles() : [];
+    var index = rows.findIndex(function (item) { return item && String(item.id || '') === String(project.id); });
+    if (index >= 0) project = Object.assign({}, rows[index], project);
+    if (index >= 0) rows[index] = project;
+    else rows.push(project);
+    if (typeof savePhotoFiles === 'function' && !savePhotoFiles(rows)) return Promise.reject(new Error('Project could not be saved.'));
+    return Promise.resolve(project);
+  }
+
+  function prefillLead(project) {
+    window.hmPendingPhotoProjectLeadLink = {
+      projectId:project.id,
+      firstName:state.firstName,
+      lastName:state.lastName
+    };
+    try { if (typeof resetNewLeadForm === 'function') resetNewLeadForm(); } catch (_) {}
+    if (typeof showPage === 'function') showPage('page-new-lead');
+    var values = {
+      firstName:state.firstName,
+      lastName:state.lastName,
+      street:state.street || state.propertyAddress.split(',')[0].trim(),
+      city:state.city,
+      state:state.state,
+      zip:state.zip,
+      assignedRep:state.assignedRep || scopedRepName()
+    };
+    Object.keys(values).forEach(function (id) {
+      var node = document.getElementById(id);
+      if (!node) return;
+      node.value = values[id] || '';
+      try { node.dispatchEvent(new Event('input', { bubbles:true })); } catch (_) {}
+      try { node.dispatchEvent(new Event('change', { bubbles:true })); } catch (_) {}
+    });
+    if (typeof showUploadToast === 'function') showUploadToast('Project saved. Finish the lead information and save the lead.');
+  }
+
+  document.addEventListener('click', function (event) {
+    var target = event.target;
+    if (target && target.closest && target.closest('#hm-my-projects-new')) { start(); return; }
+    if (!state) return;
+    if (target.closest('#hm-pw-find-property')) { geocodeAndMap(); return; }
+    if (target.closest('#hm-pw-map-back')) { renderDetails(); return; }
+    if (target.closest('#hm-pw-confirm-property')) { renderPhotoChoice(); return; }
+    if (target.closest('#hm-pw-photo-back')) { renderMap(); return; }
+    if (target.closest('#hm-pw-take-pictures')) { openCamera(); return; }
+    if (target.closest('#hm-pw-upload-pictures')) {
+      var upload = document.getElementById('hm-project-wizard-upload');
+      if (upload) upload.click();
+      return;
+    }
+    if (target.closest('#hm-pw-take-more')) { openCamera(); return; }
+    if (target.closest('#hm-pw-finish-photos')) { renderFinish(); return; }
+    if (target.closest('#hm-pw-finish-back')) { renderPreview(); return; }
+    if (target.closest('#hm-pw-save-project')) {
+      persistProject().then(function () {
+        if (typeof showUploadToast === 'function') showUploadToast('Project saved.');
+        state = null;
+        if (typeof showPage === 'function') showPage('page-main-menu');
+      }).catch(function (error) {
+        if (typeof showUploadToast === 'function') showUploadToast(error.message || 'Project could not be saved.');
+      });
+      return;
+    }
+    if (target.closest('#hm-pw-create-lead')) {
+      persistProject().then(function (project) { prefillLead(project); }).catch(function (error) {
+        if (typeof showUploadToast === 'function') showUploadToast(error.message || 'Project could not be saved.');
+      });
+    }
+  }, true);
+
+  var uploadInput = document.getElementById('hm-project-wizard-upload');
+  if (uploadInput) uploadInput.addEventListener('change', function () {
+    var files = this.files;
+    this.value = '';
+    addFiles(files);
+  });
+
+  var fallbackInput = document.getElementById('hm-project-wizard-camera-fallback');
+  if (fallbackInput) fallbackInput.addEventListener('change', function () {
+    var files = this.files;
+    this.value = '';
+    addFiles(files);
+  });
+
+  window.hmStartPlainPhotoProject = start;
+  window.hmProjectWizardAddFiles = addFiles;
+}());
 </script>
 
   <script src="assets/docusign-integration.js"></script>
