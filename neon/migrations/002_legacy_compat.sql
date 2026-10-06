@@ -122,8 +122,10 @@ CREATE TABLE IF NOT EXISTS public.hail_radar_polygons (
 CREATE TABLE IF NOT EXISTS public.hail_radar_days (
   event_date date PRIMARY KEY,
   max_mesh_in numeric,
+  source text,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE public.hail_radar_days ADD COLUMN IF NOT EXISTS source text;
 
 CREATE TABLE IF NOT EXISTS public.storm_google_impact_verification (
   id bigserial PRIMARY KEY,
