@@ -22417,23 +22417,23 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
         <div class="crm-layout">
           <div class="crm-main-column">
             <div class="main-menu-wrap">
-              <h1 class="page-title">Sales Reps</h1>
-              <p class="page-subtitle">Choose a sales rep workspace to view.</p>
+              <h1 class="page-title" id="employee-page-title">Employee</h1>
+              <p class="page-subtitle" id="employee-page-subtitle">Company employee directory.</p>
               <div class="page-actions">
                 <button class="btn back-to-menu" type="button">Back to Main Menu</button>
               </div>
 
               <div class="crm-detail-card">
                 <div class="field crm-admin-sales-reps-search">
-                  <label for="admin-sales-reps-search">Search Sales Reps</label>
-                  <input id="admin-sales-reps-search" type="search" placeholder="Search by name, email, phone, team, or manager" autocomplete="off" />
+                  <label for="admin-sales-reps-search">Search Employees</label>
+                  <input id="admin-sales-reps-search" type="search" placeholder="Search by name, email, phone, role, team, or manager" autocomplete="off" />
                 </div>
               </div>
 
               <div class="crm-detail-card">
-                <div class="crm-detail-section-header">Sales Reps</div>
+                <div class="crm-detail-section-header" id="employee-list-heading">Employees</div>
                 <div id="admin-sales-reps-list" class="crm-admin-sales-reps-list">
-                  <div class="crm-empty-state">No sales reps found.</div>
+                  <div class="crm-empty-state">No employees found.</div>
                 </div>
               </div>
             </div>
@@ -50338,22 +50338,11 @@ function mapsGoogleReady() {
     });
 
     document.getElementById('admin-sales-reps-list').addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-sales-rep-id]');
+      var btn = e.target.closest('[data-employee-member-id]');
       if (!btn) return;
-      var repId = String(btn.getAttribute('data-sales-rep-id') || '').trim();
-      if (!crmSetWorkspaceOwner(repId)) {
-        showUploadToast('That sales rep workspace is not available.');
-        return;
-      }
-      _appPageHistoryLocked = true;
-      try {
-        _appPageHistory = [];
-        crmRenderMainMenu();
-        crmRenderWorkspaceBanner();
-        showPage('page-main-menu');
-      } finally {
-        _appPageHistoryLocked = false;
-      }
+      var memberId = String(btn.getAttribute('data-employee-member-id') || '').trim();
+      if (!memberId) return;
+      crmOpenSettingsTeamModal(memberId, false);
     });
 
     (function () {
@@ -62575,6 +62564,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var sidebarIsAdmin = (sidebarRole !== 'Sales Rep' && sidebarRole !== 'Canvasser' && sidebarRole !== 'Viewer');
       root.querySelectorAll('.nav-item-admin-only').forEach(function (el) {
         el.style.display = sidebarIsAdmin ? '' : 'none';
+      });
+      var employeeMenuAllowed = sidebarRole === 'Admin' || sidebarRole === 'Manager';
+      root.querySelectorAll('[data-dashboard-action="employee"]').forEach(function (el) {
+        el.style.display = employeeMenuAllowed ? '' : 'none';
       });
       var ownerAdminOnly = sidebarRole === 'Owner' || sidebarRole === 'Admin';
       root.querySelectorAll('.nav-item-owner-admin-only').forEach(function (el) {
@@ -78975,7 +78968,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         h += makeRow('upload-leads',   'Upload Leads',  '', true);
         h += makeRow('call-in-leads',  'Call In Leads', '');
         h += makeRow('rotation',       'Lead Rotation', '');
-        h += makeRow('sales-reps',     'Sales Reps',    '');
+        h += makeRow('sales-reps',     'Employee',      'Managers');
         h += makeRow('manager-tools',  'Manager',       '');
         h += makeRow('calendar',       'Calendar',      '');
         h += makeRow('payroll',        'Payroll',       '');
@@ -79057,10 +79050,32 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderAdminSalesRepsPage(query) {
       var list = document.getElementById('admin-sales-reps-list');
+      var heading = document.getElementById('employee-list-heading');
+      var subtitle = document.getElementById('employee-page-subtitle');
       if (!list) return;
       query = String(query || '').trim().toLowerCase();
-      var activeOwnerId = crmGetWorkspaceOwnerId();
-      var reps = crmGetCompanySalesRepMembers().slice().sort(function (a, b) {
+
+      var role = crmGetRole();
+      var targetRole = role === 'Admin' ? 'Manager' : (role === 'Manager' ? 'Sales Rep' : '');
+      var employees = [];
+      if (targetRole === 'Manager') {
+        employees = crmGetStoredTeamMembersOnly().filter(function (member) {
+          return member && member.role === 'Manager' && member.active !== false;
+        });
+      } else if (targetRole === 'Sales Rep') {
+        employees = crmGetCompanySalesRepMembers().filter(function (member) {
+          return member && member.active !== false;
+        });
+      }
+
+      if (heading) heading.textContent = targetRole === 'Manager' ? 'Managers' : 'Sales Reps';
+      if (subtitle) {
+        subtitle.textContent = targetRole === 'Manager'
+          ? 'Managers in your company.'
+          : 'Sales reps in your company.';
+      }
+
+      employees = employees.slice().sort(function (a, b) {
         return String(a.name || '').localeCompare(String(b.name || ''));
       }).filter(function (member) {
         if (!query) return true;
@@ -79068,41 +79083,52 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           member.name,
           member.email,
           member.phone,
+          member.role,
           member.teamName,
           member.managerName
         ].join(' ').toLowerCase();
         return haystack.indexOf(query) !== -1;
       });
-      if (!reps.length) {
-        list.innerHTML = '<div class="crm-empty-state">No sales reps found.</div>';
+
+      if (!employees.length) {
+        list.innerHTML = '<div class="crm-empty-state">No ' +
+          (targetRole === 'Manager' ? 'managers' : 'sales reps') +
+          ' found.</div>';
         return;
       }
-      list.innerHTML = reps.map(function (member) {
-        var isActive = String(member.id || '').trim() === activeOwnerId;
+
+      list.innerHTML = employees.map(function (member) {
         var meta = [
-          member.teamName || 'No team assigned',
-          member.managerName ? ('Manager: ' + member.managerName) : '',
+          member.role || '',
           member.email || '',
-          member.phone || ''
+          member.phone || '',
+          member.teamName || '',
+          member.managerName ? ('Manager: ' + member.managerName) : ''
         ].filter(Boolean).map(function (text) {
           return '<span>' + crmEscapeHtml(text) + '</span>';
         }).join('');
-        return '<button class="crm-admin-sales-rep-card' + (isActive ? ' active' : '') + '" type="button" data-sales-rep-id="' + crmEscapeHtml(member.id) + '">' +
+        return '<button class="crm-admin-sales-rep-card" type="button" data-employee-member-id="' + crmEscapeHtml(member.id) + '">' +
           '<div>' +
             '<div class="crm-admin-sales-rep-name">' + crmEscapeHtml(member.name) + '</div>' +
             '<div class="crm-admin-sales-rep-meta">' + meta + '</div>' +
           '</div>' +
-          '<div class="crm-admin-sales-rep-open">' + (isActive ? 'Viewing Workspace' : 'Open Workspace') + '</div>' +
+          '<div class="crm-admin-sales-rep-open">View Employee</div>' +
         '</button>';
       }).join('');
     }
 
     function crmOpenAdminSalesRepsPage() {
+      var role = crmGetRole();
+      if (role !== 'Admin' && role !== 'Manager') {
+        showUploadToast('Employee is available to Admins and Managers only.');
+        return false;
+      }
       var searchInput = document.getElementById('admin-sales-reps-search');
-      if (!searchInput) return;
+      if (!searchInput) return false;
       searchInput.value = '';
       crmRenderAdminSalesRepsPage('');
       showPage('page-admin-sales-reps');
+      return true;
     }
 
     var CRM_PERMIT_RESEARCH_KEY = 'app.permitResearch';
@@ -81310,7 +81336,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var dynamicPhotoTitle = String(photoPage && photoPage.getAttribute('data-crm-header-title') || '').trim();
         if (dynamicPhotoTitle) return dynamicPhotoTitle;
       }
-      var aliases = {'page-main-menu':'Dashboard','page-photo-files':'Projects','page-photo-file-detail':'Projects','page-map':'Maps','page-ai':'AI','page-company-docs':'Documents','page-template-builder':'Document Editor','page-crm-pipeline':'Pipeline','page-crm-contacts':'Contacts','page-all-leads':'Leads','page-my-assigned-leads':'Leads','page-estimates':'Estimates','page-crm-calendar':'Calendar','page-crm-production':'Production','page-tester-training':'Training','page-admin-sales-reps':'Employees','page-crm-settings':'Settings'};
+      var aliases = {'page-main-menu':'Dashboard','page-photo-files':'Projects','page-photo-file-detail':'Projects','page-map':'Maps','page-ai':'AI','page-company-docs':'Documents','page-template-builder':'Document Editor','page-crm-pipeline':'Pipeline','page-crm-contacts':'Contacts','page-all-leads':'Leads','page-my-assigned-leads':'Leads','page-estimates':'Estimates','page-crm-calendar':'Calendar','page-crm-production':'Production','page-tester-training':'Training','page-admin-sales-reps':'Employee','page-crm-settings':'Settings'};
       return aliases[pageId] || crmGetHeaderPageTitle(pageId) || 'Hail Money';
     }
 
