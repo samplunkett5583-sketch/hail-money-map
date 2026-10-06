@@ -31,7 +31,8 @@
     mode: 'report',
     templateId: '',
     pickerMode: 'section',
-    showTemplateMenu: false
+    showTemplateMenu: false,
+    cloudRepairProjects: {}
   };
 
   function esc(v) {
@@ -348,14 +349,41 @@
     function tryCloudFile() {
       var cloudId = String(photo.fileId || photo.id || '').trim();
       if (!cloudId && String(photo.storageKey || '').indexOf('neon:') === 0) cloudId = String(photo.storageKey).slice(5);
-      if (cloudId && typeof window.hmCloudGetFileBlobById === 'function') {
-        window.hmCloudGetFileBlobById(cloudId).then(function (blob) {
-          if (blob) { done(URL.createObjectURL(blob)); return; }
+      function tryLegacyDraftBlob() {
+        if (!cloudId || typeof crmOpenFilesDb !== 'function' || typeof crmDbGetBlob !== 'function') {
           tryRemotePath();
-        }).catch(tryRemotePath);
+          return;
+        }
+        crmOpenFilesDb(function (dbErr, db) {
+          if (dbErr || !db) { tryRemotePath(); return; }
+          crmDbGetBlob(db, cloudId, function (blobErr, blob) {
+            if (!blobErr && blob) { done(URL.createObjectURL(blob)); return; }
+            tryRemotePath();
+          });
+        });
+      }
+      function tryCloudBlob() {
+        if (cloudId && typeof window.hmCloudGetFileBlobById === 'function') {
+          window.hmCloudGetFileBlobById(cloudId).then(function (blob) {
+            if (blob) { done(URL.createObjectURL(blob)); return; }
+            tryLegacyDraftBlob();
+          }).catch(tryLegacyDraftBlob);
+          return;
+        }
+        tryLegacyDraftBlob();
+      }
+      if (cloudId && typeof window.hmCloudGetFileUrl === 'function') {
+        window.hmCloudGetFileUrl(cloudId).then(function (src) {
+          if (src) { done(src); return; }
+          tryCloudBlob();
+        }).catch(tryCloudBlob);
         return;
       }
-      tryRemotePath();
+      tryCloudBlob();
+    }
+    if (String(photo.storageKey || '').indexOf('neon:') === 0) {
+      tryCloudFile();
+      return;
     }
     if (photo.imageKey && typeof getPhotoBlob === 'function') {
       getPhotoBlob(photo.imageKey).then(function (blob) {
@@ -381,6 +409,100 @@
     photoSrc(photo, function (src) {
       if (src && img.isConnected) img.src = src;
       else if (fallback) fallback(img);
+    });
+  }
+
+  function readLegacyInspectionDraftBlob(fileId) {
+    fileId = String(fileId || '').trim();
+    if (!fileId || typeof crmOpenFilesDb !== 'function' || typeof crmDbGetBlob !== 'function') return Promise.resolve(null);
+    return new Promise(function (resolve) {
+      crmOpenFilesDb(function (dbErr, db) {
+        if (dbErr || !db) { resolve(null); return; }
+        crmDbGetBlob(db, fileId, function (blobErr, blob) {
+          resolve(!blobErr && blob ? blob : null);
+        });
+      });
+    });
+  }
+
+  function repairProjectCloudPhotos(project) {
+    if (!project || !project.id || !Array.isArray(project.photos)) return;
+    var projectId = String(project.id || '').trim();
+    if (!projectId || rb.cloudRepairProjects[projectId]) return;
+    if (typeof window.hmCloudGetFileUrl !== 'function' || typeof window.hmCloudUploadLeadFile !== 'function') return;
+    var leadId = String(project.leadId || project.jobId || '').trim();
+    if (!leadId) return;
+
+    var candidates = project.photos.filter(function (photo) {
+      return photo && String(photo.storageKey || '').indexOf('neon:') === 0 && String(photo.fileId || photo.id || '').trim();
+    });
+    if (!candidates.length) return;
+
+    rb.cloudRepairProjects[projectId] = 'running';
+    var cursor = 0;
+    var repaired = 0;
+    var missingLocal = 0;
+    var repairFailures = 0;
+
+    async function worker() {
+      while (true) {
+        var index = cursor++;
+        if (index >= candidates.length) return;
+        var photo = candidates[index];
+        var fileId = String(photo.fileId || photo.id || '').trim();
+        try {
+          var existingUrl = await window.hmCloudGetFileUrl(fileId);
+          if (existingUrl) continue;
+        } catch (_) {}
+
+        var blob = await readLegacyInspectionDraftBlob(fileId);
+        if (!blob) {
+          missingLocal++;
+          continue;
+        }
+
+        var file = blob;
+        try {
+          if (!(blob instanceof File)) {
+            file = new File([blob], String(photo.fileName || photo.name || (fileId + '.jpg')), {
+              type: String(photo.mimeType || blob.type || 'image/jpeg'),
+              lastModified: Date.now()
+            });
+          }
+        } catch (_) {}
+
+        try {
+          await window.hmCloudUploadLeadFile(leadId, 'inspection_photo', file, {
+            id: fileId,
+            category: String(photo.category || 'Inspection'),
+            photoPhase: 'inspection',
+            note: String(photo.note || photo.caption || ''),
+            caption: String(photo.caption || photo.note || ''),
+            metadata: { repairedFromFinalizedInspectionDraft: true, photoProjectId: projectId }
+          });
+          repaired++;
+        } catch (uploadError) {
+          repairFailures++;
+          console.error('[Photo Report Repair] Could not restore ' + fileId + '.', uploadError);
+        }
+      }
+    }
+
+    Promise.all([worker(), worker(), worker()]).then(function () {
+      rb.cloudRepairProjects[projectId] = 'done';
+      if (repaired && typeof showUploadToast === 'function') {
+        showUploadToast('Recovered ' + repaired + ' missing inspection photo' + (repaired === 1 ? '' : 's') + ' to cloud storage.');
+      }
+      if (missingLocal) {
+        console.warn('[Photo Report Repair] ' + missingLocal + ' cloud photo(s) were missing and no local recovery copy was available.');
+      }
+      if (repairFailures) {
+        console.warn('[Photo Report Repair] ' + repairFailures + ' recovery upload(s) failed and can retry the next time the report builder is opened.');
+        rb.cloudRepairProjects[projectId] = '';
+      }
+    }).catch(function (error) {
+      rb.cloudRepairProjects[projectId] = 'failed';
+      console.error('[Photo Report Repair] Cloud photo repair failed.', error);
     });
   }
 
@@ -1111,6 +1233,7 @@
   function openPhotoPicker(sectionId, pickerMode) {
     var p = findProject(rb.projectId);
     if (!p) return;
+    repairProjectCloudPhotos(p);
     rb.pickerMode = pickerMode === 'cover' ? 'cover' : 'section';
     rb.pickerSectionIndex = rb.pickerMode === 'section'
       ? rb.draft.sections.findIndex(function (s) { return s.id === sectionId; })
@@ -1158,7 +1281,7 @@
           var selected = !!selectedIds[key];
           var name = String(photo.name || photo.fileName || ('Photo ' + (item.index + 1)));
           return '<button type="button" class="phr-picker-photo' + (selected ? ' selected' : '') + '" data-phr-picker-key="' + esc(key) + '">' +
-            '<span class="phr-picker-thumb"><img data-phr-picker-img="' + esc(key) + '" alt="' + esc(name) + '" /></span>' +
+            '<span class="phr-picker-thumb"><img data-phr-picker-img="' + esc(key) + '" alt="' + esc(name) + '" loading="eager" decoding="async" draggable="false" /></span>' +
             '<span class="phr-picker-name">' + esc(name) + '</span>' +
             '<span class="phr-picker-check">' + (selected ? '&#10003;' : '') + '</span>' +
             '</button>';

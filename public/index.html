@@ -21848,7 +21848,7 @@
     .phr-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:12px 0}
     .phr-photo{background:#f8fafc;border:1px solid #d8dde6;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:8px}
     .phr-photo-thumb{aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:#eef1f5;display:grid;place-items:center}
-    .phr-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .phr-photo-thumb img{width:100%;height:100%;object-fit:contain;display:block;background:#eef1f5}
     .phr-photo-desc{width:100%;padding:7px 9px;border:1px solid #cbd2dd;border-radius:7px;font-size:12px}
     .phr-photo-tools{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
     .phr-photo-tools .btn{padding:4px 8px;font-size:11px}
@@ -21865,7 +21865,7 @@
     .phr-cover-photo-option strong{display:block;font-size:13px;color:#1f2937}
     .phr-cover-photo-help{margin-top:4px;font-size:11px;color:#667085}
     .phr-cover-photo-choice{display:flex;align-items:center;gap:10px}
-    #phr-cover-photo-preview{width:110px;height:78px;object-fit:cover;border:1px solid #d8dde6;border-radius:8px;background:#f3f4f6}
+    #phr-cover-photo-preview{width:110px;height:78px;object-fit:contain;border:1px solid #d8dde6;border-radius:8px;background:#f3f4f6}
     .phr-cover-photo-buttons{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
     .phr-custom-notes{min-height:90px;padding:10px;border:1px solid #cbd2dd;border-radius:8px;resize:vertical;font-size:13px}
     .phr-picker-overlay{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:18px;background:rgba(12,14,25,.62)}
@@ -21877,10 +21877,10 @@
     .phr-picker-section{margin-bottom:18px}
     .phr-picker-section:last-child{margin-bottom:0}
     .phr-picker-section-title{margin:0 0 9px;padding:8px 11px;border-left:5px solid #c7921e;border-radius:6px;background:rgba(255,255,255,.9);font-size:15px;font-weight:900;color:#1f2937}
-    .phr-picker-section-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+    .phr-picker-section-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
     .phr-picker-photo{position:relative;border:2px solid #d8dde6;border-radius:10px;background:#fff;padding:5px;overflow:hidden;cursor:pointer;min-width:0;text-align:center}
-    .phr-picker-thumb{display:block;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:6px;background:#eef1f5}
-    .phr-picker-photo img{width:100%;height:100%;object-fit:cover;display:block}
+    .phr-picker-thumb{display:flex;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:6px;background:#eef1f5;align-items:center;justify-content:center}
+    .phr-picker-photo img{width:100%;height:100%;object-fit:contain;display:block;background:#eef1f5}
     .phr-picker-name{display:block;padding:7px 4px 2px;font-size:11px;font-weight:700;line-height:1.25;color:#1f2937;overflow-wrap:anywhere}
     .phr-picker-photo.selected{border-color:#b88722;box-shadow:0 0 0 2px rgba(184,135,34,.35)}
     .phr-picker-check{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:999px;background:#fff;border:2px solid #b88722;display:grid;place-items:center;font-size:13px;font-weight:900;color:#b88722}
@@ -60010,11 +60010,21 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           var photo = unique[id];
           var storageKey = String(photo.storageKey || '').trim();
           if (storageKey.indexOf('neon:') === 0) {
-            replacements[id] = photo;
-            continue;
+            var confirmedCloudBlob = null;
+            if (typeof window.hmCloudGetFileBlobById === 'function') {
+              try { confirmedCloudBlob = await window.hmCloudGetFileBlobById(id); } catch (_) { confirmedCloudBlob = null; }
+            }
+            if (confirmedCloudBlob) {
+              replacements[id] = photo;
+              continue;
+            }
+            storageKey = id;
           }
           var blob = await crmReadTemporaryInspectionBlob(storageKey);
-          if (!blob) throw new Error('An inspection photo could not be read from the temporary draft.');
+          if (!blob && storageKey !== id) {
+            try { blob = await crmReadTemporaryInspectionBlob(id); } catch (_) { blob = null; }
+          }
+          if (!blob) throw new Error('An inspection photo could not be confirmed in cloud storage or recovered from the finalized inspection draft.');
           var file = blob;
           try {
             if (!(blob instanceof File)) file = new File([blob], String(photo.fileName || photo.name || (id + '.jpg')), { type:String(photo.mimeType || blob.type || 'image/jpeg'), lastModified:Date.now() });
@@ -86115,7 +86125,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
 <script src="./contingency-locked-pdf.js?v=20261006-transactional-save-1"></script>
 <script src="./assets/crm-cross-links.js?v=20260914"></script>
-<script src="./assets/photo-reports.js?v=20261005-4"></script>
+<script src="./assets/photo-reports.js?v=20261006-photos-full"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
 <script id="hm-region-document-routing-script">
 (function(){
