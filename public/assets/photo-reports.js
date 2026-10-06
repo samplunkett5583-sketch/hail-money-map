@@ -349,41 +349,14 @@
     function tryCloudFile() {
       var cloudId = String(photo.fileId || photo.id || '').trim();
       if (!cloudId && String(photo.storageKey || '').indexOf('neon:') === 0) cloudId = String(photo.storageKey).slice(5);
-      function tryLegacyDraftBlob() {
-        if (!cloudId || typeof crmOpenFilesDb !== 'function' || typeof crmDbGetBlob !== 'function') {
+      if (cloudId && typeof window.hmCloudGetFileBlobById === 'function') {
+        window.hmCloudGetFileBlobById(cloudId).then(function (blob) {
+          if (blob) { done(URL.createObjectURL(blob)); return; }
           tryRemotePath();
-          return;
-        }
-        crmOpenFilesDb(function (dbErr, db) {
-          if (dbErr || !db) { tryRemotePath(); return; }
-          crmDbGetBlob(db, cloudId, function (blobErr, blob) {
-            if (!blobErr && blob) { done(URL.createObjectURL(blob)); return; }
-            tryRemotePath();
-          });
-        });
-      }
-      function tryCloudBlob() {
-        if (cloudId && typeof window.hmCloudGetFileBlobById === 'function') {
-          window.hmCloudGetFileBlobById(cloudId).then(function (blob) {
-            if (blob) { done(URL.createObjectURL(blob)); return; }
-            tryLegacyDraftBlob();
-          }).catch(tryLegacyDraftBlob);
-          return;
-        }
-        tryLegacyDraftBlob();
-      }
-      if (cloudId && typeof window.hmCloudGetFileUrl === 'function') {
-        window.hmCloudGetFileUrl(cloudId).then(function (src) {
-          if (src) { done(src); return; }
-          tryCloudBlob();
-        }).catch(tryCloudBlob);
+        }).catch(tryRemotePath);
         return;
       }
-      tryCloudBlob();
-    }
-    if (String(photo.storageKey || '').indexOf('neon:') === 0) {
-      tryCloudFile();
-      return;
+      tryRemotePath();
     }
     if (photo.imageKey && typeof getPhotoBlob === 'function') {
       getPhotoBlob(photo.imageKey).then(function (blob) {
@@ -1251,7 +1224,6 @@
   function openPhotoPicker(sectionId, pickerMode) {
     var p = findProject(rb.projectId);
     if (!p) return;
-    repairProjectCloudPhotos(p);
     rb.pickerMode = pickerMode === 'cover' ? 'cover' : 'section';
     rb.pickerSectionIndex = rb.pickerMode === 'section'
       ? rb.draft.sections.findIndex(function (s) { return s.id === sectionId; })
