@@ -22507,6 +22507,13 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                 </div>
 
                 <div class="field">
+                  <label for="leadRegion">Region <span class="req">*</span></label>
+                  <select id="leadRegion">
+                    <option value="">Select region</option>
+                  </select>
+                </div>
+
+                <div class="field">
                   <label for="stormDate">Storm Date</label>
                   <input id="stormDate" type="date" />
                 </div>
@@ -22561,6 +22568,9 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                 <div class="field full">
                   <label for="crm-lead-contingency-upload">Contingency Document</label>
                   <input id="crm-lead-contingency-upload" type="file" accept="application/pdf,.pdf,image/*" />
+                  <div style="margin-top:10px;display:flex;justify-content:flex-start;">
+                    <button class="btn btn-primary" type="button" id="crm-lead-contingency-sign-btn">Click to Sign</button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -22599,7 +22609,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <div style="margin-top:20px; display:flex; justify-content:flex-end;">
               <button class="btn btn-primary" type="button" id="crm-save-lead-btn">Save Lead</button>
             </div>
-            <div id="crm-lead-validation-msg" class="validation-msg">Please fill in all required fields (First Name, Last Name, Phone, Street, City, State).</div>
+            <div id="crm-lead-validation-msg" class="validation-msg">Please fill in all required fields (First Name, Last Name, Phone, Street, City, State, Region).</div>
             <div id="crm-lead-saved-msg" class="save-confirmation">Lead saved.</div>
             <div id="crm-lead-duplicate-preview-overlay" class="settings-modal-overlay" style="display:none;">
               <div class="settings-modal-card crm-crossref-preview-card" role="dialog" aria-modal="true" aria-labelledby="crm-lead-duplicate-preview-title">
@@ -27921,6 +27931,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     }
 
     function showPage(pageId) {
+      if (pageId === 'page-office-lead' || pageId === 'page-field-lead' || pageId === 'page-canvasser-lead') pageId = 'page-new-lead';
       var previousPageId = _appCurrentPageId;
       allPages = document.querySelectorAll('.page');
       if (pageId === 'page-photo-files' && typeof window.hmPhotoLoadFromSupabase === 'function') {
@@ -28956,12 +28967,14 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
         });
     }
 
+    var _crmUniversalLeadSignAfterSave = false;
+
     function resetNewLeadForm() {
       [
-        'firstName','lastName','primaryPhone','secondaryPhone','email',
-        'street','city','state','zip','leadSource','canvasser',
+        'firstName','lastName','primaryPhone','secondaryPhone','email','assignedRep',
+        'street','city','state','zip','leadSource','leadRegion','canvasser','stormDate','dateOfLoss',
         'insuranceCompany','claimNumber','policyNumber','adjusterName',
-        'adjusterInspected','adjusterFoundDamage','notes'
+        'adjusterInspected','adjusterFoundDamage','insuranceCompanyVisible','claimNumberVisible','notes'
       ].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) {
@@ -28980,7 +28993,82 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       document.getElementById('lead-validation-msg').style.display = 'none';
       document.getElementById('lead-saved-msg').style.display = 'none';
       document.getElementById('canvasserField').style.display = 'none';
+      var contingencySignedEl = document.getElementById('contingencySigned');
+      if (contingencySignedEl) contingencySignedEl.checked = false;
+      var contingencyUploadEl = document.getElementById('crm-lead-contingency-upload');
+      if (contingencyUploadEl) contingencyUploadEl.value = '';
+      ['roof','gutters','siding','windows','fence','other'].forEach(function (c) {
+        var cb = document.getElementById('crm-concern-' + c);
+        if (cb) cb.checked = false;
+      });
+      _crmUniversalLeadSignAfterSave = false;
       crmResetNewLeadDuplicateChecks();
+    }
+
+    function crmPopulateUniversalLeadRegion(stateCode, selectedRegion) {
+      var select = document.getElementById('leadRegion');
+      if (!select) return '';
+      var rows = typeof window.hmGetConfiguredDocumentRegions === 'function'
+        ? window.hmGetConfiguredDocumentRegions()
+        : [];
+      rows = Array.isArray(rows) ? rows : [];
+      var state = String(stateCode || (document.getElementById('state') || {}).value || '').trim().toUpperCase();
+      var inferred = typeof window.hmResolveRegionForState === 'function' ? window.hmResolveRegionForState(state) : '';
+      var desired = String(selectedRegion || inferred || select.value || '').trim();
+      select.innerHTML = '<option value="">Select region</option>' + rows.map(function (row) {
+        var name = String(row && row.name || '').trim();
+        return name ? '<option value="' + crmEscapeHtml(name) + '">' + crmEscapeHtml(name) + '</option>' : '';
+      }).join('');
+      if (desired && rows.some(function (row) { return String(row && row.name || '').trim() === desired; })) select.value = desired;
+      else select.value = '';
+      return String(select.value || '');
+    }
+
+    function crmApplyPendingContactUniversalLeadPrefill() {
+      var prefill = _crmPendingContactLeadPrefill;
+      if (!prefill) return;
+      function setIfBlank(id, value) {
+        var el = document.getElementById(id);
+        if (!el || String(el.value || '').trim()) return;
+        el.value = value || '';
+      }
+      setIfBlank('firstName', prefill.firstName);
+      setIfBlank('lastName', prefill.lastName);
+      setIfBlank('primaryPhone', prefill.phone);
+      setIfBlank('email', prefill.email);
+      setIfBlank('notes', prefill.notes);
+      _crmPendingContactLeadPrefill = null;
+    }
+
+    function crmOpenUniversalNewLead(prefill) {
+      prefill = prefill && typeof prefill === 'object' ? prefill : {};
+      resetNewLeadForm();
+      var assigned = String(prefill.assignedRep || crmGetCurrentUserName() || currentRep || '').trim();
+      var values = {
+        firstName: prefill.firstName || '',
+        lastName: prefill.lastName || '',
+        primaryPhone: prefill.primaryPhone || prefill.phone || '',
+        email: prefill.email || '',
+        assignedRep: assigned,
+        street: prefill.street || '',
+        city: prefill.city || '',
+        state: String(prefill.state || '').toUpperCase(),
+        zip: prefill.zip || '',
+        leadSource: prefill.leadSource || '',
+        stormDate: prefill.stormDate || '',
+        dateOfLoss: prefill.dateOfLoss || '',
+        notes: prefill.notes || ''
+      };
+      Object.keys(values).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.value = values[id] || '';
+      });
+      crmPopulateUniversalLeadRegion(values.state, prefill.region || '');
+      crmApplyPendingContactUniversalLeadPrefill();
+      if (typeof initAddressAutocomplete === 'function') initAddressAutocomplete();
+      showPage('page-new-lead');
+      return true;
     }
 
     async function renderPipeline(preloadedJobs) {
@@ -29759,8 +29847,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     });
 
     document.getElementById('open-new-lead').addEventListener('click', function () {
-      crmInitFieldLead();
-      showPage('page-field-lead');
+      crmOpenUniversalNewLead();
     });
 
     document.getElementById('open-my-jobs').addEventListener('click', function () {
@@ -50371,6 +50458,7 @@ function mapsGoogleReady() {
         if (config.cityId) crmAddressAutocompleteFillField(config.cityId, city);
         if (config.stateId) crmAddressAutocompleteFillField(config.stateId, state);
         if (config.zipId) crmAddressAutocompleteFillField(config.zipId, zip);
+        if (config.stateId === 'state' && typeof crmPopulateUniversalLeadRegion === 'function') crmPopulateUniversalLeadRegion(state, '');
         if (config.countyId) crmAddressAutocompleteFillField(config.countyId, county);
         if (config.countryId && country) crmAddressAutocompleteFillField(config.countryId, country === 'United States' ? 'USA' : country);
         if (config.latId) crmAddressAutocompleteFillField(config.latId, isFinite(lat) ? Number(lat).toFixed(6) : '');
@@ -52602,8 +52690,7 @@ function mapsGoogleReady() {
         state.reportApproved = false;
         state.photoReport = null;
         crmSavePendingInspectionRecord(state, 'completed_pending_lead');
-        crmInitFieldLead();
-        showPage('page-field-lead');
+        crmOpenUniversalNewLead();
         showUploadToast('Inspection complete. Add the homeowner and claim information to save the lead.');
         return;
       }
@@ -56260,8 +56347,8 @@ function mapsGoogleReady() {
         showUploadToast('Take at least one photo first');
         return;
       }
-      // Go to New Lead; _inspectionSession stays alive until save
-      showPage('page-new-lead');
+      // Go to the universal New Lead form; _inspectionSession stays alive until save
+      crmOpenUniversalNewLead();
       showUploadToast(_inspectionSession.photos.length + ' inspection photo(s) ready — fill out the lead');
     });
 
@@ -59014,7 +59101,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       return parts[1] + '/' + parts[2] + '/' + parts[0];
     }
 
-    var CRM_NEW_LEAD_VALIDATION_DEFAULT_TEXT = 'Please fill in all required fields (First Name, Last Name, Phone, Street, City, State).';
+    var CRM_NEW_LEAD_VALIDATION_DEFAULT_TEXT = 'Please fill in all required fields (First Name, Last Name, Phone, Street, City, State, Region).';
     var CRM_NEW_LEAD_DUPLICATE_REVIEW_TEXT = 'Review the possible existing customer/property warnings below or choose Ignore and Continue before saving this lead.';
     var CRM_FIELD_LEAD_VALIDATION_DEFAULT_TEXT = 'Please fill in all required fields (First Name, Last Name, Phone, Street, City, State, Job Category, Insurance Company).';
     var CRM_FIELD_LEAD_DUPLICATE_REVIEW_TEXT = 'Review the possible existing customer/property warnings below or ignore the matches before saving this lead.';
@@ -60528,7 +60615,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         el.addEventListener('input', clearRequiredError);
         el.addEventListener('change', clearRequiredError);
       });
-      btn.addEventListener('click', function () {
+      btn.addEventListener('click', async function () {
+        var requestSignAfterSave = _crmUniversalLeadSignAfterSave === true;
+        _crmUniversalLeadSignAfterSave = false;
         var valMsg = document.getElementById('crm-lead-validation-msg');
         var savedMsg = document.getElementById('crm-lead-saved-msg');
 
@@ -60542,6 +60631,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         });
 
         var requiredIds = ['firstName', 'lastName', 'primaryPhone', 'street', 'city', 'state'];
+        var configuredRegions = typeof window.hmGetConfiguredDocumentRegions === 'function' ? window.hmGetConfiguredDocumentRegions() : [];
+        if (Array.isArray(configuredRegions) && configuredRegions.length) requiredIds.push('leadRegion');
         var missing = [];
         requiredIds.forEach(function (id) {
           var el = document.getElementById(id);
@@ -60596,7 +60687,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         var repMember = crmLookupTeamMemberByName(fieldVal('assignedRep'));
         var canvasserMember = crmLookupTeamMemberById(canvasserIdVal);
         var assignedRepName = fieldVal('assignedRep') || (crmGetRole() === 'Sales Rep' ? (crmGetCurrentUserName() || currentRep || '') : '');
-        var leadStage = (_inspectionSession && _inspectionSession.photos && _inspectionSession.photos.length)
+        var pendingInspection = typeof crmGetPendingInspectionRecord === 'function' ? crmGetPendingInspectionRecord() : null;
+        var hasPendingInspection = !!(pendingInspection && pendingInspection.status === 'completed_pending_lead');
+        var leadStage = ((_inspectionSession && _inspectionSession.photos && _inspectionSession.photos.length) || hasPendingInspection)
           ? 'Inspected'
           : 'Lead';
         if (!repMember && assignedRepName) repMember = crmLookupTeamMemberByName(assignedRepName);
@@ -60613,6 +60706,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           city:        fieldVal('city'),
           state:       fieldVal('state'),
           zip:         fieldVal('zip'),
+          region:      fieldVal('leadRegion') || (typeof window.hmResolveRegionForState === 'function' ? window.hmResolveRegionForState(fieldVal('state')) : ''),
+          regionState: fieldVal('state'),
           leadSource:  leadSourceVal,
           canvasserId: leadSourceVal === 'Canvasser' ? canvasserIdVal : '',
           canvasserName: leadSourceVal === 'Canvasser' && canvasserMember ? canvasserMember.name : '',
@@ -60638,6 +60733,30 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           photoProjectId: String(window.hmPendingPhotoProjectLeadLink && window.hmPendingPhotoProjectLeadLink.projectId || '').trim(),
           activityNotes: []
         };
+        if (hasPendingInspection && typeof crmAttachPendingInspectionToLead === 'function') {
+          crmAttachPendingInspectionToLead(lead, pendingInspection);
+        }
+        var openContingencyAfterSave = requestSignAfterSave || hasPendingInspection;
+        var pendingContingencyIndex = -1;
+        if (openContingencyAfterSave) {
+          if (typeof window.hmGetCompanyFormTemplates === 'function') {
+            try {
+              var companyTemplates = await window.hmGetCompanyFormTemplates();
+              if (Array.isArray(companyTemplates) && companyTemplates.length) {
+                savedFormTemplates = companyTemplates;
+                window.savedFormTemplates = companyTemplates;
+              }
+            } catch (templateSyncError) {
+              console.warn('[Universal Lead Contingency] Company template lookup failed', templateSyncError);
+            }
+          }
+          pendingContingencyIndex = typeof hmFindTemplateForLead === 'function' ? hmFindTemplateForLead(lead, 'contingency') : -1;
+          if (pendingContingencyIndex < 0) {
+            valMsg.textContent = 'No active contingency matches ' + String(lead.region || 'the selected region') + ' + ' + String(lead.regionState || lead.state || 'the selected state') + '. Nothing was cleared or saved.';
+            valMsg.style.display = 'block';
+            return;
+          }
+        }
         var nowTs = lead.updatedAt;
         if (lead.stage === 'Inspected') {
           lead.activityNotes.push({ text: 'Inspection completed', kind: 'inspection', author: lead.createdByName || lead.createdByRole || 'User', ts: nowTs });
@@ -60679,6 +60798,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
             console.error('[Project Lead Link]', projectLinkError);
           }
           window.hmPendingPhotoProjectLeadLink = null;
+        }
+        if (hasPendingInspection) {
+          if (typeof crmMovePendingInspectionFilesToLead === 'function') crmMovePendingInspectionFilesToLead(pendingInspection.id, lead.id, pendingInspection);
+          if (typeof crmCreateInspectionPhotoProject === 'function') crmCreateInspectionPhotoProject(lead, pendingInspection);
         }
         (function() {
           var _lcName = ((lead.firstName || '') + ' ' + (lead.lastName || '')).trim();
@@ -60750,8 +60873,28 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         }, 1400);
 
         crmUpdateTasksBadge();
-        showPage('page-all-leads');
-        crmRenderAllLeads('');
+        if (openContingencyAfterSave) {
+          setTimeout(async function () {
+            var opened = await crmOpenLeadContingencyAfterInspection(lead.id, pendingContingencyIndex);
+            if (opened && hasPendingInspection && typeof crmClearPendingInspectionRecord === 'function') crmClearPendingInspectionRecord();
+          }, 120);
+        } else {
+          showPage('page-all-leads');
+          crmRenderAllLeads('');
+        }
+      });
+
+      var universalState = document.getElementById('state');
+      if (universalState) universalState.addEventListener('change', function () {
+        crmPopulateUniversalLeadRegion(this.value, '');
+      });
+      document.addEventListener('hm:document-regions-updated', function () {
+        crmPopulateUniversalLeadRegion(String((document.getElementById('state') || {}).value || ''), String((document.getElementById('leadRegion') || {}).value || ''));
+      });
+      var signBtn = document.getElementById('crm-lead-contingency-sign-btn');
+      if (signBtn) signBtn.addEventListener('click', function () {
+        _crmUniversalLeadSignAfterSave = true;
+        btn.click();
       });
     }());
 
@@ -61863,20 +62006,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           showPage('page-crm-leaderboard');
           return true;
         case 'page-new-lead':
-          crmInitFieldLead();
-          showPage('page-field-lead');
-          return true;
         case 'page-office-lead':
-          crmInitOfficeLead();
-          showPage('page-office-lead');
-          return true;
         case 'page-field-lead':
-          crmInitFieldLead();
-          showPage('page-field-lead');
-          return true;
         case 'page-canvasser-lead':
-          crmInitCanvasserLead();
-          showPage('page-canvasser-lead');
+          crmOpenUniversalNewLead();
           return true;
         case 'page-all-leads':
           crmRenderAllLeads(document.getElementById('al-search') ? (document.getElementById('al-search').value || '') : '');
@@ -63299,14 +63432,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     /* New Lead from sub-pages */
     document.getElementById('al-new-lead-btn').addEventListener('click', function () {
-      crmInitFieldLead();
-      showPage('page-field-lead');
+      crmOpenUniversalNewLead();
     });
     var pipelineNewLeadBtn = document.getElementById('pipeline-new-lead-btn');
     if (pipelineNewLeadBtn) {
       pipelineNewLeadBtn.addEventListener('click', function () {
-        crmInitFieldLead();
-        showPage('page-field-lead');
+        crmOpenUniversalNewLead();
       });
     }
     var pipelineAssignedLeadsBtn = document.getElementById('pipeline-assigned-leads-btn');
@@ -78394,10 +78525,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         case 'assign-leads':       crmRenderAssignLeads();       showPage('page-assign-leads'); break;
         case 'team-leads':         crmRenderTeamLeads();         showPage('page-team-leads'); break;
         case 'my-assigned-leads':  crmRenderMyAssignedLeads();   showPage('page-my-assigned-leads'); break;
-        case 'office-lead':        crmInitOfficeLead();          showPage('page-office-lead'); break;
-        case 'call-in-leads':      crmInitOfficeLead();          showPage('page-office-lead'); break;
-        case 'field-lead':         crmInitFieldLead();           showPage('page-field-lead'); break;
-        case 'canvass-lead':       crmInitCanvasserLead();       showPage('page-canvasser-lead'); break;
+        case 'office-lead':
+        case 'call-in-leads':
+        case 'field-lead':
+        case 'canvass-lead':       crmOpenUniversalNewLead(); break;
         case 'canvasser-leads':    crmRenderCanvasserLeads();    showPage('page-canvasser-leads'); break;
         case 'canvasser-credits':  crmRenderCanvasserCredits();  showPage('page-canvasser-credits'); break;
         case 'rotation':           crmRenderRotation();          showPage('page-rotation'); break;
@@ -86009,8 +86140,6 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
       firstName:state.firstName,
       lastName:state.lastName
     };
-    try { if (typeof resetNewLeadForm === 'function') resetNewLeadForm(); } catch (_) {}
-    if (typeof showPage === 'function') showPage('page-new-lead');
     var values = {
       firstName:state.firstName,
       lastName:state.lastName,
@@ -86020,13 +86149,17 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
       zip:state.zip,
       assignedRep:state.assignedRep || scopedRepName()
     };
-    Object.keys(values).forEach(function (id) {
-      var node = document.getElementById(id);
-      if (!node) return;
-      node.value = values[id] || '';
-      try { node.dispatchEvent(new Event('input', { bubbles:true })); } catch (_) {}
-      try { node.dispatchEvent(new Event('change', { bubbles:true })); } catch (_) {}
-    });
+    if (typeof crmOpenUniversalNewLead === 'function') {
+      crmOpenUniversalNewLead(values);
+    } else {
+      try { if (typeof resetNewLeadForm === 'function') resetNewLeadForm(); } catch (_) {}
+      if (typeof showPage === 'function') showPage('page-new-lead');
+      Object.keys(values).forEach(function (id) {
+        var node = document.getElementById(id);
+        if (!node) return;
+        node.value = values[id] || '';
+      });
+    }
     if (typeof showUploadToast === 'function') showUploadToast('Project saved. Finish the lead information and save the lead.');
   }
 
