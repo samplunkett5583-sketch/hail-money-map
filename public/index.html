@@ -60004,22 +60004,26 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var replacements = {};
       var uploadedIds = [];
       var normalizedFiles = [];
+      var existingCloudIds = {};
+      if (typeof window.hmCloudListFiles === 'function') {
+        try {
+          var existingCloudFiles = await window.hmCloudListFiles(leadId, 'inspection_photo');
+          (Array.isArray(existingCloudFiles) ? existingCloudFiles : []).forEach(function (item) {
+            var cloudId = String(item && item.id || '').trim();
+            if (cloudId && String(item && item.status || 'active') === 'active') existingCloudIds[cloudId] = true;
+          });
+        } catch (_) {}
+      }
       try {
         for (var id in unique) {
           if (!Object.prototype.hasOwnProperty.call(unique, id)) continue;
           var photo = unique[id];
           var storageKey = String(photo.storageKey || '').trim();
-          if (storageKey.indexOf('neon:') === 0) {
-            var confirmedCloudBlob = null;
-            if (typeof window.hmCloudGetFileBlobById === 'function') {
-              try { confirmedCloudBlob = await window.hmCloudGetFileBlobById(id); } catch (_) { confirmedCloudBlob = null; }
-            }
-            if (confirmedCloudBlob) {
-              replacements[id] = photo;
-              continue;
-            }
-            storageKey = id;
+          if (storageKey.indexOf('neon:') === 0 && existingCloudIds[id]) {
+            replacements[id] = photo;
+            continue;
           }
+          if (storageKey.indexOf('neon:') === 0) storageKey = id;
           var blob = await crmReadTemporaryInspectionBlob(storageKey);
           if (!blob && storageKey !== id) {
             try { blob = await crmReadTemporaryInspectionBlob(id); } catch (_) { blob = null; }
@@ -60056,6 +60060,28 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         }
         throw error;
       }
+      async function rollbackUploadedInspectionFiles() {
+        if (typeof window.hmCloudApi !== 'function' || !uploadedIds.length) return;
+        await Promise.all(uploadedIds.map(function (uploadedId) {
+          return window.hmCloudApi('/files/' + encodeURIComponent(uploadedId), { method:'DELETE' }).catch(function () {});
+        }));
+      }
+      if (typeof window.hmCloudListFiles !== 'function') {
+        await rollbackUploadedInspectionFiles();
+        throw new Error('Hail Money could not verify the inspection photo upload.');
+      }
+      var verifiedCloudFiles = await window.hmCloudListFiles(leadId, 'inspection_photo');
+      var verifiedCloudIds = {};
+      (Array.isArray(verifiedCloudFiles) ? verifiedCloudFiles : []).forEach(function (item) {
+        var verifiedId = String(item && item.id || '').trim();
+        if (verifiedId && String(item && item.status || 'active') === 'active') verifiedCloudIds[verifiedId] = true;
+      });
+      var missingCloudIds = Object.keys(unique).filter(function (photoId) { return !verifiedCloudIds[photoId]; });
+      if (missingCloudIds.length) {
+        await rollbackUploadedInspectionFiles();
+        throw new Error(missingCloudIds.length + ' inspection photo' + (missingCloudIds.length === 1 ? '' : 's') + ' did not reach cloud storage. Nothing will be finalized until every photo is confirmed.');
+      }
+
       crmReplacePendingInspectionPhotoRefs(pendingInspection, replacements);
       if (normalizedFiles.length) {
         var allFiles = crmGetLeadFiles();
@@ -60084,11 +60110,28 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmCleanupOrphanInspectionDraftBlobs() {
       var referenced = {};
+      function keepPhotoRecoveryKey(photo) {
+        photo = photo || {};
+        var storageKey = String(photo.storageKey || '').trim();
+        var id = String(photo.id || photo.fileId || '').trim();
+        if (storageKey && storageKey.indexOf('neon:') !== 0) referenced[storageKey] = true;
+        if (storageKey.indexOf('neon:') === 0 && id) referenced[id] = true;
+      }
       var pending = crmGetPendingInspectionRecord();
-      (pending && Array.isArray(pending.inspectionPhotos) ? pending.inspectionPhotos : []).forEach(function (photo) {
-        var key = String(photo && photo.storageKey || '').trim();
-        if (key) referenced[key] = true;
-      });
+      (pending && Array.isArray(pending.inspectionPhotos) ? pending.inspectionPhotos : []).forEach(keepPhotoRecoveryKey);
+      try {
+        (typeof getPhotoFiles === 'function' ? getPhotoFiles() : []).forEach(function (project) {
+          (project && Array.isArray(project.photos) ? project.photos : []).forEach(keepPhotoRecoveryKey);
+        });
+      } catch (_) {}
+      try {
+        (typeof crmGetLeads === 'function' ? crmGetLeads() : []).forEach(function (lead) {
+          var rows = lead && lead.inspection && Array.isArray(lead.inspection.inspectionPhotos)
+            ? lead.inspection.inspectionPhotos
+            : [];
+          rows.forEach(keepPhotoRecoveryKey);
+        });
+      } catch (_) {}
       crmOpenFilesDb(function (dbErr, db) {
         if (dbErr || !db) return;
         try {
@@ -86185,7 +86228,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
 <script src="./contingency-locked-pdf.js?v=20261006-transactional-save-1"></script>
 <script src="./assets/crm-cross-links.js?v=20260914"></script>
-<script src="./assets/photo-reports.js?v=20261006-photos-full2"></script>
+<script src="./assets/photo-reports.js?v=20261006-photos-full3"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
 <script id="hm-region-document-routing-script">
 (function(){
