@@ -21482,7 +21482,7 @@
 #page-photo-files.hm-projects-page-create .hm-create-new-option span{font-size:10px;line-height:1.35;color:#4b5563}
 #page-photo-files.hm-projects-page-create #hm-create-new-detail{width:min(520px,90%);margin:18px auto 0}
 @media(max-width:767px){#page-photo-files.hm-projects-page-list .hm-photo-workspace{width:calc(100% - 28px)}#page-photo-files.hm-projects-page-landing .hm-photo-workspace,#page-photo-files.hm-projects-page-create .hm-photo-workspace{width:calc(100% - 28px)}}
-#page-photo-project-create{background:#d3ad59!important}
+#page-photo-project-create,#page-photo-project-preview{background:#d3ad59!important}
 .hm-project-wizard-shell{width:min(760px,calc(100% - 28px));margin:18px auto 32px}
 .hm-project-wizard-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:22px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
 .hm-project-wizard-title{margin:0 0 18px;font-size:24px;font-weight:800;color:var(--text)}
@@ -23404,6 +23404,12 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           <div id="hm-project-wizard-content"></div>
           <input type="file" id="hm-project-wizard-camera-fallback" accept="image/*" capture="environment" multiple hidden />
           <input type="file" id="hm-project-wizard-upload" accept="image/*" multiple hidden />
+        </div>
+      </section>
+
+      <section id="page-photo-project-preview" class="page" data-crm-header-title="Photo Preview">
+        <div class="hm-project-wizard-shell">
+          <div id="hm-project-wizard-preview-content"></div>
         </div>
       </section>
 
@@ -85622,6 +85628,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   }
 
   function content() { return document.getElementById('hm-project-wizard-content'); }
+  function previewContent() { return document.getElementById('hm-project-wizard-preview-content'); }
 
   function scopedRepName() {
     var name = '';
@@ -85900,8 +85907,11 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   function renderPreview() {
     state.step = 'preview';
     clearPreviewUrls();
-    var el = content();
+    var el = previewContent();
     if (!el) return;
+    var previewPage = document.getElementById('page-photo-project-preview');
+    if (previewPage) previewPage.setAttribute('data-crm-header-title', 'Photo Preview');
+    if (typeof showPage === 'function') showPage('page-photo-project-preview');
     var cards = state.photos.map(function (photo, index) {
       return '<div class="hm-project-wizard-preview-card"><img data-hm-pw-photo-key="' + esc(photo.imageKey) + '" alt="Project photo ' + (index + 1) + '" /><span>' + esc(photo.name || ('Photo ' + (index + 1))) + '</span></div>';
     }).join('');
@@ -85921,6 +85931,8 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
       return;
     }
     state.step = 'finish';
+    setHeader('Finish Project');
+    if (typeof showPage === 'function') showPage('page-photo-project-create');
     var el = content();
     if (!el) return;
     var name = [state.firstName, state.lastName].filter(Boolean).join(' ');
