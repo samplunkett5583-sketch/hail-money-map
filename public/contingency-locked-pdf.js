@@ -74,13 +74,11 @@
     }
     return doc.output('blob');
   }
-  window.hmCreateAndUploadLockedContingencyPdf = async function (leadId, instance, lead, template) {
+  window.hmCreateLockedContingencyPdfDraft = async function (instance, lead, template) {
     var blob = await buildPdf(instance);
     var stamp = new Date().toISOString().replace(/[:.]/g, '-');
     var file = new File([blob], 'signed-contingency-' + stamp + '.pdf', { type: 'application/pdf' });
-    var meta = await saveFile(leadId, file, 'Locked signed contingency agreement');
     return {
-      meta: meta,
       file: file,
       templateId: String(template && template.id || instance.templateId || ''),
       templateVersion: Number(template && template.version || 1),
@@ -91,5 +89,10 @@
       representative: String(instance.completedBy || (typeof crmGetCurrentUserName === 'function' ? crmGetCurrentUserName() : '') || ''),
       signedAt: String(instance.signedAt || new Date().toISOString())
     };
+  };
+  window.hmCreateAndUploadLockedContingencyPdf = async function (leadId, instance, lead, template) {
+    var result = await window.hmCreateLockedContingencyPdfDraft(instance, lead, template);
+    result.meta = await saveFile(leadId, result.file, 'Locked signed contingency agreement');
+    return result;
   };
 })();

@@ -31,6 +31,7 @@
   function isCloudKey(key) {
     key = String(key || '');
     if (!key || SESSION_KEYS[key]) return false;
+    if (key.indexOf('hailmoney.crm.pendingInspection:') === 0 || key.indexOf('hailmoney.crm.createLeadDraft:') === 0) return false;
     return key === 'formTemplates' ||
       key.indexOf('app.') === 0 ||
       key.indexOf('crm_') === 0 ||

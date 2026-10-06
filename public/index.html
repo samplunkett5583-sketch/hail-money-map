@@ -27395,7 +27395,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./neon-cloud-source.js?v=20261006-shared-test-cloud-cleanup-1"></script>
+  <script src="./neon-cloud-source.js?v=20261006-transactional-save-1"></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly&loading=async&callback=mapsGoogleReady" defer></script>
   <script src="demo_swaths.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
@@ -27933,6 +27933,16 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     function showPage(pageId) {
       if (pageId === 'page-office-lead' || pageId === 'page-field-lead' || pageId === 'page-canvasser-lead') pageId = 'page-new-lead';
       var previousPageId = _appCurrentPageId;
+      var projectDraftPages = ['page-photo-project-create','page-photo-project-preview'];
+      if (projectDraftPages.indexOf(previousPageId) !== -1 && projectDraftPages.indexOf(pageId) === -1 && typeof window.hmDiscardPlainPhotoProjectDraft === 'function') {
+        window.hmDiscardPlainPhotoProjectDraft();
+      }
+      if (typeof window.hmShouldDiscardUniversalLeadDraftOnNavigation === 'function' && window.hmShouldDiscardUniversalLeadDraftOnNavigation(previousPageId, pageId)) {
+        if (typeof window.hmDiscardUniversalLeadDraft === 'function') window.hmDiscardUniversalLeadDraft();
+      }
+      if (typeof window.hmShouldDiscardInspectionDraftOnNavigation === 'function' && window.hmShouldDiscardInspectionDraftOnNavigation(previousPageId, pageId)) {
+        if (typeof window.hmDiscardInspectionDraft === 'function') window.hmDiscardInspectionDraft();
+      }
       allPages = document.querySelectorAll('.page');
       if (pageId === 'page-photo-files' && typeof window.hmPhotoLoadFromSupabase === 'function') {
         window.hmPhotoLoadFromSupabase();
@@ -28829,7 +28839,8 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       });
     }
 
-    function savePhotoBlob(imageKey, blob) {
+    function savePhotoBlob(imageKey, blob, options) {
+      options = options || {};
       return openPhotoDb().then(function (db) {
         return new Promise(function (resolve, reject) {
           var tx = db.transaction('photos', 'readwrite');
@@ -28838,6 +28849,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           tx.onerror = function () { reject(tx.error); };
         });
       }).then(function () {
+        if (options.deferCloud === true) return;
         if (window.hmCloudBackendMode !== 'shared-free-test' || typeof window.hmCloudUploadLeadFile !== 'function') return;
         var uploadBlob = blob;
         try {
@@ -28992,6 +29004,47 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     }
 
     var _crmUniversalLeadSignAfterSave = false;
+    var _crmUniversalLeadDraft = null;
+    var _crmUniversalLeadDraftSigned = null;
+    var _crmUniversalLeadDraftActive = false;
+    var _crmUniversalLeadDraftCommitted = false;
+
+    function crmDiscardUniversalLeadDraft() {
+      if (_crmUniversalLeadDraftCommitted) {
+        _crmUniversalLeadDraft = null;
+        _crmUniversalLeadDraftSigned = null;
+        _crmUniversalLeadDraftActive = false;
+        _crmUniversalLeadDraftCommitted = false;
+        window.hmPendingPhotoProjectLeadLink = null;
+        return;
+      }
+      try {
+        if (typeof crmDiscardInspectionDraft === 'function') crmDiscardInspectionDraft();
+        else if (typeof crmDiscardPendingInspectionDraft === 'function') crmDiscardPendingInspectionDraft();
+      } catch (_) {}
+      try { if (typeof crmClearFieldLeadDraft === 'function') crmClearFieldLeadDraft(); } catch (_) {}
+      _crmUniversalLeadDraft = null;
+      _crmUniversalLeadDraftSigned = null;
+      _crmUniversalLeadSignAfterSave = false;
+      _crmUniversalLeadDraftActive = false;
+      _crmUniversalLeadDraftCommitted = false;
+      try { _crmPostLeadContingencyContext = null; } catch (_) {}
+      try { _activeFormInstance = null; } catch (_) {}
+      try { docusignJobId = null; } catch (_) {}
+      window.hmPendingPhotoProjectLeadLink = null;
+    }
+
+    function crmShouldDiscardUniversalLeadDraftOnNavigation(previousPageId, nextPageId) {
+      if (!_crmUniversalLeadDraftActive || _crmUniversalLeadDraftCommitted) return false;
+      var flowPages = ['page-new-lead','page-docusign'];
+      return flowPages.indexOf(String(previousPageId || '')) !== -1 && flowPages.indexOf(String(nextPageId || '')) === -1;
+    }
+
+    window.hmDiscardUniversalLeadDraft = crmDiscardUniversalLeadDraft;
+    window.hmShouldDiscardUniversalLeadDraftOnNavigation = crmShouldDiscardUniversalLeadDraftOnNavigation;
+    window.addEventListener('pagehide', function () {
+      if (_crmUniversalLeadDraftActive && !_crmUniversalLeadDraftCommitted) crmDiscardUniversalLeadDraft();
+    });
 
     function resetNewLeadForm() {
       [
@@ -29066,7 +29119,12 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
 
     function crmOpenUniversalNewLead(prefill) {
       prefill = prefill && typeof prefill === 'object' ? prefill : {};
+      if (_crmUniversalLeadDraftActive && !_crmUniversalLeadDraftCommitted) crmDiscardUniversalLeadDraft();
       resetNewLeadForm();
+      _crmUniversalLeadDraft = null;
+      _crmUniversalLeadDraftSigned = null;
+      _crmUniversalLeadDraftActive = true;
+      _crmUniversalLeadDraftCommitted = false;
       var assigned = String(prefill.assignedRep || crmGetCurrentUserName() || currentRep || '').trim();
       var values = {
         firstName: prefill.firstName || '',
@@ -51906,10 +51964,11 @@ function mapsGoogleReady() {
       var state = crmGetGroundInspectionState();
       var allMeta = crmGetLeadFiles();
       var storageKey = String(removed.storageKey || '').trim();
+      var metaCountBefore = allMeta.length;
       allMeta = allMeta.filter(function (file) {
         return !(String(file && file.leadId || '').trim() === state.id && String(file && file.id || '').trim() === photoId);
       });
-      crmSaveLeadFiles(allMeta);
+      if (allMeta.length !== metaCountBefore) crmSaveLeadFiles(allMeta);
       if (storageKey) {
         crmOpenFilesDb(function (dbErr, db) {
           if (dbErr || !db) return;
@@ -52690,6 +52749,7 @@ function mapsGoogleReady() {
     }
 
     function crmOpenStartInspectionWorkflow() {
+      if (typeof crmCleanupOrphanInspectionDraftBlobs === 'function') crmCleanupOrphanInspectionDraftBlobs();
       showPage('page-start-inspection-workflow');
       _crmGroundInspectionState = crmCreateGroundInspectionState();
       crmRenderStartInspectionLanding();
@@ -53251,6 +53311,9 @@ function mapsGoogleReady() {
 
     function crmGetDocuSignSourceRecord(recordId) {
       if (_crmPostLeadContingencyContext && String(_crmPostLeadContingencyContext.leadId || '') === String(recordId || '')) {
+        if (_crmPostLeadContingencyContext.returnMode === 'draft_lead' && _crmUniversalLeadDraft && String(_crmUniversalLeadDraft.id || '') === String(recordId || '')) {
+          return _crmUniversalLeadDraft;
+        }
         return crmGetLeads().find(function (lead) { return String(lead && lead.id || '') === String(recordId || ''); }) || null;
       }
       return getJobs().find(function (job) { return String(job && job.id || '') === String(recordId || ''); }) || null;
@@ -53297,6 +53360,27 @@ function mapsGoogleReady() {
       _crmPostLeadContingencyContext = { leadId: leadId, returnMode: 'post_inspection', documentType: 'contingency' };
       openDocuSign(leadId);
       createAndOpenFormInstance(leadId, idx);
+      return true;
+    }
+
+    async function crmOpenDraftLeadContingency(lead, matchedTemplateIndex) {
+      if (!lead || !lead.id) { showUploadToast('Lead draft is not ready.'); return false; }
+      var idx = Number.isInteger(matchedTemplateIndex) ? matchedTemplateIndex : (typeof hmFindTemplateForLead === 'function' ? hmFindTemplateForLead(lead, 'contingency') : -1);
+      if (idx < 0) {
+        showUploadToast('No active contingency matches ' + String(lead.region || 'the selected region') + ' + ' + String(lead.state || 'the selected state') + '. Nothing has been saved.');
+        return false;
+      }
+      try { await crmEnsureTemplateDocumentLoaded(savedFormTemplates[idx]); }
+      catch (error) {
+        console.error('[Draft Contingency] Document load failed', error);
+        showUploadToast(error && error.message ? error.message : 'The contingency could not be loaded. Nothing has been saved.');
+        return false;
+      }
+      _crmUniversalLeadDraft = lead;
+      _crmUniversalLeadDraftActive = true;
+      _crmPostLeadContingencyContext = { leadId:String(lead.id), returnMode:'draft_lead', documentType:'contingency' };
+      openDocuSign(lead.id);
+      createAndOpenFormInstance(lead.id, idx);
       return true;
     }
 
@@ -53510,11 +53594,16 @@ function mapsGoogleReady() {
             f.value = insuranceFieldInput.value.trim();
             var rows = crmGetLeads();
             var lead = rows.find(function (item) { return String(item && item.id || '') === String(jobId || ''); });
+            var isDraftLead = false;
+            if (!lead && _crmUniversalLeadDraft && String(_crmUniversalLeadDraft.id || '') === String(jobId || '')) {
+              lead = _crmUniversalLeadDraft;
+              isDraftLead = true;
+            }
             if (lead) {
               if (f.key === 'policy_number') lead.policyNumber = f.value;
               else lead.claimNumber = f.value;
               lead.updatedAt = new Date().toISOString();
-              crmSaveLeads(rows);
+              if (!isDraftLead) crmSaveLeads(rows);
             }
           });
           box.appendChild(insuranceFieldInput);
@@ -53645,9 +53734,11 @@ function mapsGoogleReady() {
       }
 
       // --- Actions ---
+      var isDraftLeadForm = !!(_crmPostLeadContingencyContext && _crmPostLeadContingencyContext.returnMode === 'draft_lead' && String(_crmPostLeadContingencyContext.leadId || '') === String(jobId || ''));
+      var completeFormLabel = isDraftLeadForm ? 'Finish Signature' : 'Complete & Save to Saved Docs';
       var actionsHtml = '';
-      actionsHtml += '<button class="btn btn-primary" type="button" id="docusign-complete-form" style="width:100%;">Complete &amp; Save to Saved Docs</button>';
-      actionsHtml += '<div style="margin-top:8px;padding:10px;background:var(--surface,#f5f5f5);border-radius:6px;font-size:12px;color:var(--muted,#888);text-align:center;">Sign all signature fields and check all checkmarks, then complete.</div>';
+      actionsHtml += '<button class="btn btn-primary" type="button" id="docusign-complete-form" style="width:100%;">' + completeFormLabel + '</button>';
+      actionsHtml += '<div style="margin-top:8px;padding:10px;background:var(--surface,#f5f5f5);border-radius:6px;font-size:12px;color:var(--muted,#888);text-align:center;">' + (isDraftLeadForm ? 'This remains a draft until you return to New Lead and click Save Lead.' : 'Sign all signature fields and check all checkmarks, then complete.') + '</div>';
       document.getElementById('docusign-form-actions').innerHTML = actionsHtml;
 
       // Wire complete button
@@ -53674,6 +53765,52 @@ function mapsGoogleReady() {
           inst.status = 'signed';
           inst.signedAt = new Date().toISOString();
           inst.completedBy = currentRep;
+
+          if (_crmPostLeadContingencyContext && _crmPostLeadContingencyContext.returnMode === 'draft_lead' && String(_crmPostLeadContingencyContext.leadId || '') === String(jobId || '')) {
+            var draftLead = _crmUniversalLeadDraft;
+            if (!draftLead) { showUploadToast('The lead draft is no longer available. Nothing was saved.'); return; }
+            var draftTemplateMeta = savedFormTemplates.find(function (tpl) { return String(tpl && tpl.id || '') === String(inst.templateId || ''); }) || null;
+            try {
+              if (typeof window.hmCreateLockedContingencyPdfDraft !== 'function') throw new Error('Signed PDF creation is not ready.');
+              completeBtn.disabled = true;
+              completeBtn.textContent = 'Creating signed draft...';
+              var draftLockedResult = await window.hmCreateLockedContingencyPdfDraft(inst, draftLead, draftTemplateMeta);
+              _crmUniversalLeadDraftSigned = {
+                file:draftLockedResult.file,
+                result:draftLockedResult,
+                instance:JSON.parse(JSON.stringify(inst))
+              };
+              draftLead.contingencySigned = true;
+              draftLead.contingencySignedAt = draftLockedResult.signedAt || inst.signedAt;
+              draftLead.contingencyStatus = 'signed_draft_not_saved';
+              draftLead.contingencyTemplateId = String(draftLockedResult.templateId || inst.templateId || '');
+              draftLead.contingencyTemplateVersion = Number(draftLockedResult.templateVersion || 1);
+              draftLead.contingencyTemplateRegion = String(draftLockedResult.region || '');
+              draftLead.contingencyTemplateState = String(draftLockedResult.state || '');
+              draftLead.contingencyTemplateEffectiveDate = String(draftLockedResult.effectiveDate || '');
+              draftLead.contingencySigner = String(draftLockedResult.signer || '');
+              draftLead.contingencyRepresentative = String(draftLockedResult.representative || '');
+              draftLead.contingencyFormInstances = [JSON.parse(JSON.stringify(inst))];
+              var signedCheckbox = document.getElementById('contingencySigned');
+              if (signedCheckbox) signedCheckbox.checked = true;
+              var claimInput = document.getElementById('claimNumberVisible');
+              if (claimInput && draftLead.claimNumber) claimInput.value = draftLead.claimNumber;
+              var policyInput = document.getElementById('policyNumber');
+              if (policyInput && draftLead.policyNumber) policyInput.value = draftLead.policyNumber;
+              _activeFormInstance = null;
+              _crmPostLeadContingencyContext = null;
+              completeBtn.disabled = false;
+              completeBtn.textContent = completeFormLabel;
+              showPage('page-new-lead');
+              showUploadToast('Contingency signed as a draft. Nothing is in the cloud yet. Click Save Lead to finish.');
+              return;
+            } catch (draftPdfError) {
+              completeBtn.disabled = false;
+              completeBtn.textContent = completeFormLabel;
+              showUploadToast(draftPdfError && draftPdfError.message ? draftPdfError.message : 'The signed draft could not be created. Nothing was saved.');
+              return;
+            }
+          }
 
           if (_crmPostLeadContingencyContext && String(_crmPostLeadContingencyContext.leadId || '') === String(jobId || '')) {
             var leadRows = crmGetLeads();
@@ -54049,6 +54186,13 @@ function mapsGoogleReady() {
 
     document.getElementById('back-from-docusign').addEventListener('click', function () {
       if (_crmPostLeadContingencyContext && _crmPostLeadContingencyContext.leadId) {
+        if (_crmPostLeadContingencyContext.returnMode === 'draft_lead') {
+          _activeFormInstance = null;
+          _crmPostLeadContingencyContext = null;
+          showPage('page-new-lead');
+          showUploadToast('Returned to the lead draft. Nothing has been saved yet.');
+          return;
+        }
         if (String(_crmPostLeadContingencyContext.documentType || '') === 'contract' && _crmPostLeadContingencyContext.returnMode === 'documents') { var contractLeadId=_crmPostLeadContingencyContext.leadId; _crmPostLeadContingencyContext=null; _jfDocSelectedCategory='Contract'; crmOpenJobFileSection(contractLeadId,'documents'); return; }
         if (_crmPostLeadContingencyContext.returnMode === 'documents') { var leadId=_crmPostLeadContingencyContext.leadId; _crmPostLeadContingencyContext=null; _jfDocSelectedCategory='Contingency'; crmOpenJobFileSection(leadId,'documents'); return; }
         crmOpenLeadContingencyActions(_crmPostLeadContingencyContext.leadId); return;
@@ -59338,8 +59482,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmSavePendingInspectionRecord(state, status) {
       var record = crmBuildPendingInspectionRecord(state, status);
-      try { localStorage.setItem(crmGetPendingInspectionStorageKey(), JSON.stringify(record)); }
-      catch (e) { console.warn('Unable to preserve the pending inspection locally.', e); }
+      try { sessionStorage.setItem(crmGetPendingInspectionStorageKey(), JSON.stringify(record)); }
+      catch (e) { console.warn('Unable to preserve the pending inspection for this session.', e); }
       return record;
     }
 
@@ -59357,31 +59501,253 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmGetPendingInspectionRecord() {
       try {
-        var parsed = JSON.parse(localStorage.getItem(crmGetPendingInspectionStorageKey()) || 'null');
+        var parsed = JSON.parse(sessionStorage.getItem(crmGetPendingInspectionStorageKey()) || 'null');
         return parsed && typeof parsed === 'object' ? parsed : null;
       } catch (e) { return null; }
     }
 
     function crmClearPendingInspectionRecord() {
-      localStorage.removeItem(crmGetPendingInspectionStorageKey());
+      sessionStorage.removeItem(crmGetPendingInspectionStorageKey());
     }
 
     function crmAddInspectionFilesToTemporaryRecord(fileList, category, targetFiles, onDone) {
       var state = crmGetGroundInspectionState();
       var capturedFiles = Array.prototype.slice.call(fileList || []);
       if (!capturedFiles.length) { if (onDone) onDone(0); return; }
-      crmSaveFilesToDb(state.id, 'inspection_photo', capturedFiles, function (count, savedMeta) {
-        (savedMeta || []).forEach(function (meta) {
-          targetFiles.push(crmGetSerializableInspectionPhoto(meta, category));
+      crmOpenFilesDb(function (dbErr, db) {
+        if (dbErr || !db) {
+          console.error('[Inspection Draft] Temporary photo database could not open.', dbErr);
+          if (onDone) onDone(0);
+          return;
+        }
+        var saved = 0;
+        var chain = Promise.resolve();
+        capturedFiles.forEach(function (file, index) {
+          chain = chain.then(function () {
+            var id = 'inspection_draft_' + String(state.id || 'inspection') + '_' + Date.now() + '_' + index + '_' + Math.random().toString(36).slice(2, 6);
+            var storageKey = id;
+            var prepared = typeof processPhotoFile === 'function'
+              ? processPhotoFile(file).then(function (result) { return result && result.viewerBlob ? result.viewerBlob : file; }).catch(function () { return file; })
+              : Promise.resolve(file);
+            return prepared.then(function (blob) {
+              return new Promise(function (resolve, reject) {
+                crmDbSaveBlob(db, storageKey, blob, function (saveErr) {
+                  if (saveErr) { reject(saveErr); return; }
+                  var meta = {
+                    id:id,
+                    fileId:id,
+                    fileName:String(file.name || ('inspection-' + (index + 1) + '.jpg')),
+                    name:String(file.name || ('inspection-' + (index + 1) + '.jpg')),
+                    mimeType:String(blob.type || file.type || 'image/jpeg'),
+                    size:Number(blob.size || file.size || 0),
+                    category:String(category || 'Inspection'),
+                    photoPhase:'inspection',
+                    uploadedBy:crmGetCurrentUserName() || currentRep || '',
+                    uploadedAt:new Date().toISOString(),
+                    storageKey:storageKey,
+                    caption:'',
+                    note:''
+                  };
+                  targetFiles.push(crmGetSerializableInspectionPhoto(meta, category));
+                  saved++;
+                  resolve();
+                });
+              });
+            });
+          });
         });
-        crmSavePendingInspectionRecord(state, 'in_progress');
-        if (onDone) onDone(count);
-      }, {
-        category: category,
-        photoPhase: 'inspection',
-        note: ''
+        chain.then(function () {
+          crmSavePendingInspectionRecord(state, 'in_progress');
+          if (onDone) onDone(saved);
+        }).catch(function (error) {
+          console.error('[Inspection Draft] Photo save failed.', error);
+          crmSavePendingInspectionRecord(state, 'in_progress');
+          if (onDone) onDone(saved);
+        });
       });
     }
+
+    function crmReadTemporaryInspectionBlob(storageKey) {
+      return new Promise(function (resolve, reject) {
+        crmOpenFilesDb(function (dbErr, db) {
+          if (dbErr || !db) { reject(dbErr || new Error('Temporary inspection storage is unavailable.')); return; }
+          crmDbGetBlob(db, storageKey, function (blobErr, blob) {
+            if (blobErr) { reject(blobErr); return; }
+            resolve(blob || null);
+          });
+        });
+      });
+    }
+
+    function crmDeleteTemporaryInspectionBlob(storageKey) {
+      storageKey = String(storageKey || '').trim();
+      if (!storageKey || storageKey.indexOf('neon:') === 0) return Promise.resolve();
+      return new Promise(function (resolve) {
+        crmOpenFilesDb(function (dbErr, db) {
+          if (dbErr || !db) { resolve(); return; }
+          try {
+            var tx = db.transaction(CRM_FILES_STORE, 'readwrite');
+            tx.objectStore(CRM_FILES_STORE).delete(storageKey);
+            tx.oncomplete = function () { resolve(); };
+            tx.onerror = function () { resolve(); };
+          } catch (_) { resolve(); }
+        });
+      });
+    }
+
+    function crmReplacePendingInspectionPhotoRefs(record, replacements) {
+      function replaceArray(rows) {
+        return (Array.isArray(rows) ? rows : []).map(function (photo) {
+          var id = String(photo && (photo.id || photo.fileId) || '').trim();
+          return replacements[id] ? Object.assign({}, photo, replacements[id]) : photo;
+        });
+      }
+      record.inspectionPhotos = replaceArray(record.inspectionPhotos);
+      Object.keys(record.photosByStep || {}).forEach(function (stepName) {
+        record.photosByStep[stepName] = replaceArray(record.photosByStep[stepName]);
+      });
+      if (record.slopes && Array.isArray(record.slopes.additional)) {
+        record.slopes.additional.forEach(function (slope) { slope.photos = replaceArray(slope.photos); });
+      }
+      if (Array.isArray(record.additionalSlopes)) {
+        record.additionalSlopes.forEach(function (slope) { slope.photos = replaceArray(slope.photos); });
+      }
+      if (record.slopes) {
+        record.slopes.front = replaceArray(record.slopes.front);
+        record.slopes.back = replaceArray(record.slopes.back);
+      }
+      record.elevationPhotos = replaceArray(record.elevationPhotos);
+      record.offTheLadderPhotos = replaceArray(record.offTheLadderPhotos);
+      Object.keys(record.roofProjections || {}).forEach(function (key) {
+        record.roofProjections[key] = replaceArray(record.roofProjections[key]);
+      });
+      return record;
+    }
+
+    async function crmCommitPendingInspectionFiles(pendingInspection, leadId) {
+      if (!pendingInspection || !leadId) return pendingInspection;
+      if (typeof window.hmCloudUploadLeadFile !== 'function') throw new Error('Hail Money cloud file storage is not ready.');
+      var photos = Array.isArray(pendingInspection.inspectionPhotos) ? pendingInspection.inspectionPhotos : [];
+      var unique = {};
+      photos.forEach(function (photo) {
+        var id = String(photo && (photo.id || photo.fileId) || '').trim();
+        if (id && !unique[id]) unique[id] = photo;
+      });
+      var replacements = {};
+      var uploadedIds = [];
+      var normalizedFiles = [];
+      try {
+        for (var id in unique) {
+          if (!Object.prototype.hasOwnProperty.call(unique, id)) continue;
+          var photo = unique[id];
+          var storageKey = String(photo.storageKey || '').trim();
+          if (storageKey.indexOf('neon:') === 0) {
+            replacements[id] = photo;
+            continue;
+          }
+          var blob = await crmReadTemporaryInspectionBlob(storageKey);
+          if (!blob) throw new Error('An inspection photo could not be read from the temporary draft.');
+          var file = blob;
+          try {
+            if (!(blob instanceof File)) file = new File([blob], String(photo.fileName || photo.name || (id + '.jpg')), { type:String(photo.mimeType || blob.type || 'image/jpeg'), lastModified:Date.now() });
+          } catch (_) {}
+          var cloudMeta = await window.hmCloudUploadLeadFile(leadId, 'inspection_photo', file, {
+            id:id,
+            category:String(photo.category || 'Inspection'),
+            photoPhase:'inspection',
+            note:String(photo.note || photo.caption || ''),
+            caption:String(photo.caption || photo.note || ''),
+            uploadedBy:String(photo.uploadedBy || crmGetCurrentUserName() || currentRep || ''),
+            metadata:{ draftInspectionId:String(pendingInspection.id || ''), category:String(photo.category || 'Inspection') }
+          });
+          uploadedIds.push(String(cloudMeta.id || id));
+          cloudMeta.storageKey = 'neon:' + String(cloudMeta.id || id);
+          cloudMeta.photoPhase = 'inspection';
+          cloudMeta.category = String(photo.category || cloudMeta.category || 'Inspection');
+          cloudMeta.caption = String(photo.caption || photo.note || '');
+          cloudMeta.note = String(photo.note || photo.caption || '');
+          var serial = crmGetSerializableInspectionPhoto(cloudMeta, cloudMeta.category);
+          replacements[id] = serial;
+          normalizedFiles.push(crmNormalizeLeadFileMeta(cloudMeta));
+        }
+      } catch (error) {
+        if (typeof window.hmCloudApi === 'function') {
+          await Promise.all(uploadedIds.map(function (uploadedId) {
+            return window.hmCloudApi('/files/' + encodeURIComponent(uploadedId), { method:'DELETE' }).catch(function () {});
+          }));
+        }
+        throw error;
+      }
+      crmReplacePendingInspectionPhotoRefs(pendingInspection, replacements);
+      if (normalizedFiles.length) {
+        var allFiles = crmGetLeadFiles();
+        normalizedFiles.forEach(function (meta) {
+          allFiles = allFiles.filter(function (item) { return String(item && item.id || '') !== String(meta.id || ''); });
+          allFiles.push(meta);
+        });
+        crmSaveLeadFiles(allFiles);
+      }
+      await Promise.all(Object.keys(unique).map(function (id) {
+        var photo = unique[id] || {};
+        return crmDeleteTemporaryInspectionBlob(photo.storageKey);
+      }));
+      return pendingInspection;
+    }
+
+    function crmDiscardPendingInspectionDraft() {
+      var pending = crmGetPendingInspectionRecord();
+      var photos = pending && Array.isArray(pending.inspectionPhotos) ? pending.inspectionPhotos : [];
+      photos.forEach(function (photo) {
+        var storageKey = String(photo && photo.storageKey || '').trim();
+        if (storageKey && storageKey.indexOf('neon:') !== 0) crmDeleteTemporaryInspectionBlob(storageKey);
+      });
+      crmClearPendingInspectionRecord();
+    }
+
+    function crmCleanupOrphanInspectionDraftBlobs() {
+      var referenced = {};
+      var pending = crmGetPendingInspectionRecord();
+      (pending && Array.isArray(pending.inspectionPhotos) ? pending.inspectionPhotos : []).forEach(function (photo) {
+        var key = String(photo && photo.storageKey || '').trim();
+        if (key) referenced[key] = true;
+      });
+      crmOpenFilesDb(function (dbErr, db) {
+        if (dbErr || !db) return;
+        try {
+          var tx = db.transaction(CRM_FILES_STORE, 'readwrite');
+          var store = tx.objectStore(CRM_FILES_STORE);
+          var req = store.openCursor();
+          req.onsuccess = function () {
+            var cursor = req.result;
+            if (!cursor) return;
+            var key = String(cursor.key || '');
+            if (key.indexOf('inspection_draft_') === 0 && !referenced[key]) cursor.delete();
+            cursor.continue();
+          };
+        } catch (_) {}
+      });
+    }
+
+    function crmDiscardInspectionDraft() {
+      crmDiscardPendingInspectionDraft();
+      _crmGroundInspectionState = null;
+      _crmInspectionPhotoReviewContext = null;
+      clearTimeout(_crmInspectionNoteSaveTimer);
+    }
+
+    function crmShouldDiscardInspectionDraftOnNavigation(previousPageId, nextPageId) {
+      if (_crmInspectionReportLeadId) return false;
+      var pending = crmGetPendingInspectionRecord();
+      if (!pending) return false;
+      var draftPages = ['page-start-inspection-workflow','page-start-inspection-step','page-inspection-photo-review','page-inspection-report-preview'];
+      if (draftPages.indexOf(String(previousPageId || '')) === -1) return false;
+      if (draftPages.indexOf(String(nextPageId || '')) !== -1) return false;
+      if (String(nextPageId || '') === 'page-new-lead') return false;
+      return true;
+    }
+
+    window.hmDiscardInspectionDraft = crmDiscardInspectionDraft;
+    window.hmShouldDiscardInspectionDraftOnNavigation = crmShouldDiscardInspectionDraftOnNavigation;
 
     function crmBuildDuplicateAddressParts(record) {
       record = record || {};
@@ -60635,6 +61001,92 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
     }());
 
+    async function crmCommitDraftSignedContingency(lead) {
+      if (!_crmUniversalLeadDraftSigned || !_crmUniversalLeadDraftSigned.file) return null;
+      if (!lead || !lead.id) throw new Error('The lead draft is not ready to save.');
+      if (typeof window.hmCloudUploadLeadFile !== 'function') throw new Error('Hail Money cloud file storage is not ready.');
+      var signed = _crmUniversalLeadDraftSigned;
+      var result = signed.result || {};
+      var meta = await window.hmCloudUploadLeadFile(lead.id, 'signed_contingency', signed.file, {
+        category:'Contingency',
+        docCategory:'Contingency',
+        note:'Locked signed contingency agreement',
+        uploadedBy:crmGetCurrentUserName() || currentRep || '',
+        metadata:{ templateId:String(result.templateId || ''), templateVersion:Number(result.templateVersion || 1), region:String(result.region || ''), state:String(result.state || '') }
+      });
+      meta.storageKey = 'neon:' + String(meta.id || '');
+      meta.docCategory = 'Contingency';
+      meta.category = 'Contingency';
+      var normalizedMeta = crmNormalizeLeadFileMeta(meta);
+      var allFiles = crmGetLeadFiles().filter(function (item) { return String(item && item.id || '') !== String(normalizedMeta.id || ''); });
+      allFiles.push(normalizedMeta);
+      crmSaveLeadFiles(allFiles);
+
+      lead.contingencySigned = true;
+      lead.contingencySignedAt = String(result.signedAt || (signed.instance && signed.instance.signedAt) || new Date().toISOString());
+      lead.contingencyStatus = 'signed_locked_pdf_uploaded';
+      lead.contingencyDocumentId = String(meta.id || '');
+      lead.contingencyStorageProvider = String(meta.storageProvider || '');
+      lead.contingencyStoragePath = String(meta.storagePath || meta.objectKey || '');
+      lead.contingencyFileName = String(meta.fileName || signed.file.name || 'Signed Contingency.pdf');
+      lead.contingencyTemplateId = String(result.templateId || '');
+      lead.contingencyTemplateVersion = Number(result.templateVersion || 1);
+      lead.contingencyTemplateRegion = String(result.region || lead.region || '');
+      lead.contingencyTemplateState = String(result.state || lead.state || '').toUpperCase();
+      lead.contingencyTemplateEffectiveDate = String(result.effectiveDate || '');
+      lead.contingencySigner = String(result.signer || '');
+      lead.contingencyRepresentative = String(result.representative || '');
+      lead.contingencyFormInstances = Array.isArray(lead.contingencyFormInstances) ? lead.contingencyFormInstances : [];
+      if (signed.instance) lead.contingencyFormInstances.push(JSON.parse(JSON.stringify(signed.instance)));
+      lead.jobFile = lead.jobFile && typeof lead.jobFile === 'object' ? lead.jobFile : {};
+      lead.jobFile.contingencySigned = true;
+      lead.jobFile.contingencyDocumentId = lead.contingencyDocumentId;
+      lead.jobFile.contingencyStorageProvider = lead.contingencyStorageProvider;
+      lead.jobFile.contingencyStoragePath = lead.contingencyStoragePath;
+      lead.jobFile.contingencyFileName = lead.contingencyFileName;
+      lead.jobFile.documents = Array.isArray(lead.jobFile.documents) ? lead.jobFile.documents : [];
+      lead.jobFile.documents = lead.jobFile.documents.filter(function (entry) { return String(entry && (entry.fileId || entry.id) || '') !== lead.contingencyDocumentId; });
+      lead.jobFile.documents.push(crmNormalizeJobFileDocumentMeta({
+        id:lead.contingencyDocumentId,
+        fileId:lead.contingencyDocumentId,
+        category:'Contingency',
+        note:'Signed contingency agreement',
+        uploadedBy:crmGetCurrentUserName() || currentRep || '',
+        uploadedAt:lead.contingencySignedAt
+      }));
+      crmPushLeadActivity(lead, 'Locked signed contingency PDF uploaded', 'document', crmGetCurrentUserName() || currentRep || '', lead.contingencySignedAt);
+      if (typeof crmLeadMeetsProspectRequirements === 'function' && crmLeadMeetsProspectRequirements(lead)) lead.stage = 'Prospect';
+      return { meta:meta, signed:signed };
+    }
+
+    async function crmEmailCommittedDraftContingency(lead, committed) {
+      if (!lead || !committed || !committed.signed || !committed.signed.file) return;
+      var homeownerEmail = String(lead.email || '').trim();
+      if (!homeownerEmail || !window.HailMoneyDocuSign || typeof window.HailMoneyDocuSign.sendCompletedCopy !== 'function' || typeof window.HailMoneyDocuSign.fileToBase64 !== 'function') return;
+      try {
+        var homeownerName = String(lead.homeownerName || ((lead.firstName || '') + ' ' + (lead.lastName || '')).trim() || 'Homeowner');
+        var pdfBase64 = await window.HailMoneyDocuSign.fileToBase64(committed.signed.file);
+        var delivery = await window.HailMoneyDocuSign.sendCompletedCopy({
+          documentBase64:pdfBase64,
+          documentName:committed.signed.file.name || 'Signed Contingency.pdf',
+          emailSubject:'Your signed contingency agreement',
+          emailBlurb:'Attached is a copy of your signed contingency agreement for your records.',
+          recipient:{ name:homeownerName, email:homeownerEmail }
+        });
+        var rows = crmGetLeads();
+        var savedLead = rows.find(function (item) { return String(item && item.id || '') === String(lead.id || ''); });
+        if (!savedLead) return;
+        savedLead.contingencyEmailStatus = 'sent';
+        savedLead.contingencyEmailedAt = new Date().toISOString();
+        savedLead.contingencyEmailedTo = homeownerEmail;
+        savedLead.contingencyEmailEnvelopeId = String(delivery && delivery.envelopeId || '');
+        crmPushLeadActivity(savedLead, 'Signed contingency emailed to ' + homeownerEmail, 'document', crmGetCurrentUserName() || currentRep || '', savedLead.contingencyEmailedAt);
+        crmSaveLeads(rows);
+      } catch (error) {
+        console.warn('[Draft Contingency Email]', error);
+      }
+    }
+
     /* ── Save lead from CRM New Lead form ── */
     (function () {
       var btn = document.getElementById('crm-save-lead-btn');
@@ -60729,9 +61181,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           : 'Lead';
         if (!repMember && assignedRepName) repMember = crmLookupTeamMemberByName(assignedRepName);
 
+        var existingDraftLead = _crmUniversalLeadDraftActive && _crmUniversalLeadDraft ? _crmUniversalLeadDraft : null;
         var lead = {
-          id:          crmGenId(),
-          createdAt:   new Date().toISOString(),
+          id:          existingDraftLead && existingDraftLead.id ? existingDraftLead.id : crmGenId(),
+          createdAt:   existingDraftLead && existingDraftLead.createdAt ? existingDraftLead.createdAt : new Date().toISOString(),
           updatedAt:   new Date().toISOString(),
           firstName:   fieldVal('firstName'),
           lastName:    fieldVal('lastName'),
@@ -60754,7 +61207,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           stormDate:   fieldVal('dateOfLoss') || fieldVal('stormDate'),
           dateOfLoss:  fieldVal('dateOfLoss') || fieldVal('stormDate'),
           insuranceCompany: fieldVal('insuranceCompanyVisible'),
-          claimNumber: fieldVal('claimNumberVisible'),
+          claimNumber: fieldVal('claimNumberVisible') || String(existingDraftLead && existingDraftLead.claimNumber || ''),
+          policyNumber: fieldVal('policyNumber') || String(existingDraftLead && existingDraftLead.policyNumber || ''),
           contingencySigned: !!((document.getElementById('contingencySigned') || {}).checked),
           contingencySignedAt: ((document.getElementById('contingencySigned') || {}).checked) ? new Date().toISOString() : '',
           contingencyDocumentId: '',
@@ -60768,10 +61222,18 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           photoProjectId: String(window.hmPendingPhotoProjectLeadLink && window.hmPendingPhotoProjectLeadLink.projectId || '').trim(),
           activityNotes: []
         };
-        if (hasPendingInspection && typeof crmAttachPendingInspectionToLead === 'function') {
-          crmAttachPendingInspectionToLead(lead, pendingInspection);
+        if (hasPendingInspection && !requestSignAfterSave) {
+          try {
+            pendingInspection = await crmCommitPendingInspectionFiles(pendingInspection, lead.id);
+            if (typeof crmAttachPendingInspectionToLead === 'function') crmAttachPendingInspectionToLead(lead, pendingInspection);
+          } catch (inspectionCommitError) {
+            console.error('[Inspection Commit]', inspectionCommitError);
+            valMsg.textContent = inspectionCommitError && inspectionCommitError.message ? inspectionCommitError.message : 'Inspection photos could not be saved. The lead was not created.';
+            valMsg.style.display = 'block';
+            return;
+          }
         }
-        var openContingencyAfterSave = requestSignAfterSave || hasPendingInspection;
+        var openContingencyAfterSave = requestSignAfterSave;
         var pendingContingencyIndex = -1;
         if (openContingencyAfterSave) {
           if (typeof window.hmGetCompanyFormTemplates === 'function') {
@@ -60792,6 +61254,25 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
             return;
           }
         }
+        if (requestSignAfterSave) {
+          _crmUniversalLeadDraft = lead;
+          _crmUniversalLeadDraftActive = true;
+          await crmOpenDraftLeadContingency(lead, pendingContingencyIndex);
+          return;
+        }
+
+        var committedDraftContingency = null;
+        if (_crmUniversalLeadDraftSigned && _crmUniversalLeadDraftSigned.file) {
+          try {
+            committedDraftContingency = await crmCommitDraftSignedContingency(lead);
+          } catch (signedCommitError) {
+            console.error('[Signed Contingency Commit]', signedCommitError);
+            valMsg.textContent = signedCommitError && signedCommitError.message ? signedCommitError.message : 'The signed contingency could not be saved. The lead was not created.';
+            valMsg.style.display = 'block';
+            return;
+          }
+        }
+
         var nowTs = lead.updatedAt;
         if (lead.stage === 'Inspected') {
           lead.activityNotes.push({ text: 'Inspection completed', kind: 'inspection', author: lead.createdByName || lead.createdByRole || 'User', ts: nowTs });
@@ -60837,6 +61318,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         if (hasPendingInspection) {
           if (typeof crmMovePendingInspectionFilesToLead === 'function') crmMovePendingInspectionFilesToLead(pendingInspection.id, lead.id, pendingInspection);
           if (typeof crmCreateInspectionPhotoProject === 'function') crmCreateInspectionPhotoProject(lead, pendingInspection);
+          if (typeof crmClearPendingInspectionRecord === 'function') crmClearPendingInspectionRecord();
+        } else if (pendingInspection && typeof crmDiscardInspectionDraft === 'function') {
+          crmDiscardInspectionDraft();
         }
         (function() {
           var _lcName = ((lead.firstName || '') + ' ' + (lead.lastName || '')).trim();
@@ -60908,15 +61392,14 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         }, 1400);
 
         crmUpdateTasksBadge();
-        if (openContingencyAfterSave) {
-          setTimeout(async function () {
-            var opened = await crmOpenLeadContingencyAfterInspection(lead.id, pendingContingencyIndex);
-            if (opened && hasPendingInspection && typeof crmClearPendingInspectionRecord === 'function') crmClearPendingInspectionRecord();
-          }, 120);
-        } else {
-          showPage('page-all-leads');
-          crmRenderAllLeads('');
-        }
+        _crmUniversalLeadDraftCommitted = true;
+        _crmUniversalLeadDraftActive = false;
+        _crmUniversalLeadDraft = null;
+        _crmUniversalLeadDraftSigned = null;
+        _crmUniversalLeadSignAfterSave = false;
+        if (typeof crmRenderMainMenu === 'function') crmRenderMainMenu();
+        showPage('page-main-menu');
+        if (committedDraftContingency) void crmEmailCommittedDraftContingency(lead, committedDraftContingency);
       });
 
       var universalState = document.getElementById('state');
@@ -79598,8 +80081,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (_crmRestoringFieldLeadDraft) return;
       var draft = crmCaptureFieldLeadDraft();
       if (!draft) return;
-      try { localStorage.setItem(crmGetFieldLeadDraftStorageKey(), JSON.stringify(draft)); }
-      catch (e) { console.warn('Unable to preserve the Create New Lead draft locally.', e); }
+      try { sessionStorage.setItem(crmGetFieldLeadDraftStorageKey(), JSON.stringify(draft)); }
+      catch (e) { console.warn('Unable to preserve the Create New Lead draft for this session.', e); }
     }
 
     function crmScheduleFieldLeadDraftSave() {
@@ -79610,7 +80093,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmClearFieldLeadDraft() {
       clearTimeout(_crmFieldLeadDraftTimer);
-      localStorage.removeItem(crmGetFieldLeadDraftStorageKey());
+      sessionStorage.removeItem(crmGetFieldLeadDraftStorageKey());
     }
 
     function crmCreateFieldLeadDraftRow(sourceId, hostId, values, group) {
@@ -79656,7 +80139,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRestoreFieldLeadDraft() {
       var draft = null;
-      try { draft = JSON.parse(localStorage.getItem(crmGetFieldLeadDraftStorageKey()) || 'null'); }
+      try { draft = JSON.parse(sessionStorage.getItem(crmGetFieldLeadDraftStorageKey()) || 'null'); }
       catch (e) { draft = null; }
       if (!draft || !draft.controls) return false;
       _crmRestoringFieldLeadDraft = true;
@@ -85128,7 +85611,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 </script>
 <script src="./vendor-jspdf.umd.min.js?v=2.5.1"></script>
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
-<script src="./contingency-locked-pdf.js?v=20260920"></script>
+<script src="./contingency-locked-pdf.js?v=20261006-transactional-save-1"></script>
 <script src="./assets/crm-cross-links.js?v=20260914"></script>
 <script src="./assets/photo-reports.js?v=20261005-4"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
@@ -85893,6 +86376,8 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   }
 
   function start() {
+    cleanupOrphanProjectDraftBlobs();
+    if (state && state.committed !== true) discardDraftProject();
     newState();
     setHeader('New Project');
     if (typeof showPage === 'function') showPage('page-photo-project-create');
@@ -86066,7 +86551,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
       chain = chain.then(function () {
         if (typeof showUploadToast === 'function') showUploadToast('Processing photo ' + (index + 1) + ' of ' + files.length + '…');
         return new Promise(function (resolve) { setTimeout(resolve, 0); }).then(function () {
-          var key = 'project_' + state.id + '_' + Date.now() + '_' + index + '_' + Math.random().toString(36).slice(2, 5);
+          var key = 'project_draft_' + state.id + '_' + Date.now() + '_' + index + '_' + Math.random().toString(36).slice(2, 5);
           var processed = typeof processPhotoFile === 'function'
             ? processPhotoFile(file).catch(function () { return { viewerBlob:file, thumbBlob:null }; })
             : Promise.resolve({ viewerBlob:file, thumbBlob:null });
@@ -86074,8 +86559,8 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
             var viewerBlob = result && result.viewerBlob ? result.viewerBlob : file;
             var thumbBlob = result && result.thumbBlob ? result.thumbBlob : null;
             var thumbKey = thumbBlob ? key + '_thumb' : '';
-            return savePhotoBlob(key, viewerBlob).then(function () {
-              return thumbBlob ? savePhotoBlob(thumbKey, thumbBlob) : null;
+            return savePhotoBlob(key, viewerBlob, { deferCloud:true }).then(function () {
+              return thumbBlob ? savePhotoBlob(thumbKey, thumbBlob, { deferCloud:true }) : null;
             }).then(function () {
               state.photos.push({
                 id:'project_photo_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 5),
@@ -86210,15 +86695,112 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
     };
   }
 
+  function deleteDraftPhotoBlob(key) {
+    key = String(key || '').trim();
+    if (!key) return Promise.resolve();
+    return openPhotoDb().then(function (db) {
+      return new Promise(function (resolve) {
+        try {
+          var tx = db.transaction('photos', 'readwrite');
+          tx.objectStore('photos').delete(key);
+          tx.oncomplete = function () { resolve(); };
+          tx.onerror = function () { resolve(); };
+        } catch (_) { resolve(); }
+      });
+    }).catch(function () {});
+  }
+
+  function cleanupOrphanProjectDraftBlobs() {
+    var referenced = {};
+    try {
+      (typeof getPhotoFiles === 'function' ? getPhotoFiles() : []).forEach(function (project) {
+        (project && Array.isArray(project.photos) ? project.photos : []).forEach(function (photo) {
+          [photo && photo.imageKey, photo && photo.thumbnailKey].forEach(function (key) {
+            key = String(key || '').trim();
+            if (key) referenced[key] = true;
+          });
+        });
+      });
+    } catch (_) {}
+    openPhotoDb().then(function (db) {
+      try {
+        var tx = db.transaction('photos', 'readwrite');
+        var store = tx.objectStore('photos');
+        var req = store.openCursor();
+        req.onsuccess = function () {
+          var cursor = req.result;
+          if (!cursor) return;
+          var key = String(cursor.key || '');
+          if (key.indexOf('project_draft_') === 0 && !referenced[key]) cursor.delete();
+          cursor.continue();
+        };
+      } catch (_) {}
+    }).catch(function () {});
+  }
+
+  function syncDraftProjectPhotosToCloud() {
+    if (!state || window.hmCloudBackendMode !== 'shared-free-test' || typeof window.hmCloudUploadLeadFile !== 'function') return Promise.resolve();
+    var jobs = [];
+    var uploadedKeys = [];
+    (state.photos || []).forEach(function (photo) {
+      [photo && photo.imageKey, photo && photo.thumbnailKey].forEach(function (key) {
+        key = String(key || '').trim();
+        if (!key) return;
+        jobs.push(function () {
+          return getPhotoBlob(key).then(function (blob) {
+            if (!blob) throw new Error('A project photo could not be read from the temporary draft.');
+            var file = blob;
+            try {
+              if (!(blob instanceof File)) file = new File([blob], key + (String(blob.type || '').indexOf('png') !== -1 ? '.png' : '.jpg'), { type:blob.type || 'image/jpeg', lastModified:Date.now() });
+            } catch (_) {}
+            return window.hmCloudUploadLeadFile('', 'photo_project_blob', file, {
+              id:key,
+              category:'Photo Project',
+              metadata:{ imageKey:key, committedProjectId:String(state.id || '') }
+            }).then(function (meta) {
+              uploadedKeys.push(String(meta && meta.id || key));
+              return meta;
+            });
+          });
+        });
+      });
+    });
+    var chain = Promise.resolve();
+    jobs.forEach(function (job) { chain = chain.then(job); });
+    return chain.catch(function (error) {
+      if (typeof window.hmCloudApi !== 'function') throw error;
+      return Promise.all(uploadedKeys.map(function (key) {
+        return window.hmCloudApi('/files/' + encodeURIComponent(key), { method:'DELETE' }).catch(function () {});
+      })).then(function () { throw error; });
+    });
+  }
+
+  function discardDraftProject() {
+    if (!state || state.committed === true) { state = null; return; }
+    var keys = [];
+    (state.photos || []).forEach(function (photo) {
+      [photo && photo.imageKey, photo && photo.thumbnailKey].forEach(function (key) {
+        key = String(key || '').trim();
+        if (key && keys.indexOf(key) === -1) keys.push(key);
+      });
+    });
+    keys.forEach(function (key) { deleteDraftPhotoBlob(key); });
+    clearPreviewUrls();
+    state = null;
+  }
+
   function persistProject() {
     var project = buildProject();
-    var rows = typeof getPhotoFiles === 'function' ? getPhotoFiles() : [];
-    var index = rows.findIndex(function (item) { return item && String(item.id || '') === String(project.id); });
-    if (index >= 0) project = Object.assign({}, rows[index], project);
-    if (index >= 0) rows[index] = project;
-    else rows.push(project);
-    if (typeof savePhotoFiles === 'function' && !savePhotoFiles(rows)) return Promise.reject(new Error('Project could not be saved.'));
-    return Promise.resolve(project);
+    return syncDraftProjectPhotosToCloud().then(function () {
+      var rows = typeof getPhotoFiles === 'function' ? getPhotoFiles() : [];
+      var index = rows.findIndex(function (item) { return item && String(item.id || '') === String(project.id); });
+      if (index >= 0) project = Object.assign({}, rows[index], project);
+      if (index >= 0) rows[index] = project;
+      else rows.push(project);
+      if (typeof savePhotoFiles === 'function' && !savePhotoFiles(rows)) throw new Error('Project could not be saved.');
+      if (state) state.committed = true;
+      return project;
+    });
   }
 
   function prefillLead(project) {
@@ -86305,6 +86887,10 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 
   window.hmStartPlainPhotoProject = start;
   window.hmProjectWizardAddFiles = addFiles;
+  window.hmDiscardPlainPhotoProjectDraft = discardDraftProject;
+  window.addEventListener('pagehide', function () {
+    if (state && state.committed !== true) discardDraftProject();
+  });
 }());
 </script>
 
