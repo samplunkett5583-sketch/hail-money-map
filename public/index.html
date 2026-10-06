@@ -85684,10 +85684,32 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
         '<div class="hm-project-wizard-grid">' +
           '<div class="hm-project-wizard-field"><label for="hm-pw-first">First Name</label><input id="hm-pw-first" type="text" autocomplete="given-name" value="' + esc(state.firstName) + '" /></div>' +
           '<div class="hm-project-wizard-field"><label for="hm-pw-last">Last Name</label><input id="hm-pw-last" type="text" autocomplete="family-name" value="' + esc(state.lastName) + '" /></div>' +
-          '<div class="hm-project-wizard-field full"><label for="hm-pw-address">Property Address</label><input id="hm-pw-address" type="text" autocomplete="street-address" placeholder="Street, city, state, ZIP" value="' + esc(state.propertyAddress) + '" /></div>' +
+          '<div class="hm-project-wizard-field full"><label for="hm-pw-address">Address</label><input id="hm-pw-address" type="text" autocomplete="off" placeholder="Start typing the street address" value="' + esc(state.street || state.propertyAddress) + '" /></div>' +
+          '<div class="hm-project-wizard-field full"><label for="hm-pw-city">City</label><input id="hm-pw-city" type="text" autocomplete="address-level2" value="' + esc(state.city) + '" /></div>' +
+          '<div class="hm-project-wizard-field"><label for="hm-pw-state">State</label><input id="hm-pw-state" type="text" autocomplete="address-level1" maxlength="2" placeholder="IL" value="' + esc(state.state) + '" /></div>' +
+          '<div class="hm-project-wizard-field"><label for="hm-pw-zip">ZIP</label><input id="hm-pw-zip" type="text" inputmode="numeric" autocomplete="postal-code" placeholder="62002" value="' + esc(state.zip) + '" /></div>' +
         '</div>' +
         '<div class="hm-project-wizard-actions"><button class="btn btn-primary" type="button" id="hm-pw-find-property">Continue</button></div>' +
       '</div>';
+    bindProjectAddressAutocomplete();
+  }
+
+  function bindProjectAddressAutocomplete() {
+    var attempts = 0;
+    (function bind() {
+      var ready = typeof crmBindAddressAutocomplete === 'function' && window.google && google.maps && google.maps.places && google.maps.places.Autocomplete;
+      if (ready) {
+        crmBindAddressAutocomplete({
+          streetId:'hm-pw-address',
+          cityId:'hm-pw-city',
+          stateId:'hm-pw-state',
+          zipId:'hm-pw-zip'
+        });
+        return;
+      }
+      attempts++;
+      if (attempts < 50 && state && state.step === 'details') setTimeout(bind, 100);
+    }());
   }
 
   function addressPart(result, type, shortName) {
@@ -85729,17 +85751,25 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
     var first = String((document.getElementById('hm-pw-first') || {}).value || '').trim();
     var last = String((document.getElementById('hm-pw-last') || {}).value || '').trim();
     var address = String((document.getElementById('hm-pw-address') || {}).value || '').trim();
-    if (!first || !last || !address) {
-      if (typeof showUploadToast === 'function') showUploadToast('Enter first name, last name, and property address.');
+    var city = String((document.getElementById('hm-pw-city') || {}).value || '').trim();
+    var propertyState = String((document.getElementById('hm-pw-state') || {}).value || '').trim().toUpperCase();
+    var zip = String((document.getElementById('hm-pw-zip') || {}).value || '').trim();
+    if (!first || !last || !address || !city || !propertyState || !zip) {
+      if (typeof showUploadToast === 'function') showUploadToast('Enter first name, last name, address, city, state, and ZIP.');
       return;
     }
     state.firstName = first;
     state.lastName = last;
     state.propertyAddress = address;
+    state.street = address;
+    state.city = city;
+    state.state = propertyState;
+    state.zip = zip;
+    var fullAddress = [address, city, propertyState, zip].join(', ');
     if (typeof showUploadToast === 'function') showUploadToast('Finding the property…');
     waitForGoogleMaps().then(function () {
       var geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ address: address }, function (results, status) {
+      geocoder.geocode({ address: fullAddress }, function (results, status) {
         if (status !== 'OK' || !results || !results[0]) {
           if (typeof showUploadToast === 'function') showUploadToast('That property address could not be located.');
           return;
