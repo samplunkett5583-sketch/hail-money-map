@@ -84718,6 +84718,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   function showProjectsView(view){
     var validViews=['projects','reports','create','my-projects','my-records'];
     view=validViews.indexOf(view)!==-1?view:'home';
+    if(view==='create' && typeof window.hmStartPlainPhotoProject==='function'){window.hmStartPlainPhotoProject();return;}
     window.hmProjectsCurrentView=view;
     var titleMap={home:'Projects',projects:'All Projects',reports:'All Reports',create:'Create New','my-projects':'My Projects','my-records':'My Records'};
     var page=document.getElementById('page-photo-files');
