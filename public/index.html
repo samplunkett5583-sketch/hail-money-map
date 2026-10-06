@@ -85846,17 +85846,31 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
     var added = 0;
     files.forEach(function (file, index) {
       chain = chain.then(function () {
-        var key = 'project_' + state.id + '_' + Date.now() + '_' + index + '_' + Math.random().toString(36).slice(2, 5);
-        return savePhotoBlob(key, file).then(function () {
-          state.photos.push({
-            id:'project_photo_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 5),
-            imageKey:key,
-            name:file.name || ('project-photo-' + (state.photos.length + 1) + '.jpg'),
-            takenAt:new Date().toISOString(),
-            category:'Project Photos',
-            sectionKey:'Project Photos'
+        if (typeof showUploadToast === 'function') showUploadToast('Processing photo ' + (index + 1) + ' of ' + files.length + '…');
+        return new Promise(function (resolve) { setTimeout(resolve, 0); }).then(function () {
+          var key = 'project_' + state.id + '_' + Date.now() + '_' + index + '_' + Math.random().toString(36).slice(2, 5);
+          var processed = typeof processPhotoFile === 'function'
+            ? processPhotoFile(file).catch(function () { return { viewerBlob:file, thumbBlob:null }; })
+            : Promise.resolve({ viewerBlob:file, thumbBlob:null });
+          return processed.then(function (result) {
+            var viewerBlob = result && result.viewerBlob ? result.viewerBlob : file;
+            var thumbBlob = result && result.thumbBlob ? result.thumbBlob : null;
+            var thumbKey = thumbBlob ? key + '_thumb' : '';
+            return savePhotoBlob(key, viewerBlob).then(function () {
+              return thumbBlob ? savePhotoBlob(thumbKey, thumbBlob) : null;
+            }).then(function () {
+              state.photos.push({
+                id:'project_photo_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 5),
+                imageKey:key,
+                thumbnailKey:thumbKey,
+                name:file.name || ('project-photo-' + (state.photos.length + 1) + '.jpg'),
+                takenAt:new Date().toISOString(),
+                category:'Project Photos',
+                sectionKey:'Project Photos'
+              });
+              added++;
+            });
           });
-          added++;
         });
       });
     });
@@ -85894,7 +85908,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
     var grid = document.getElementById('hm-pw-preview-grid');
     if (!grid) return;
     grid.querySelectorAll('[data-hm-pw-photo-key]').forEach(function (img) {
-      var key = String(img.getAttribute('data-hm-pw-photo-key') || '');
+      var key = String(img.getAttribute('data-hm-pw-photo-thumb-key') || img.getAttribute('data-hm-pw-photo-key') || '');
       getPhotoBlob(key).then(function (blob) {
         if (!blob || !img.isConnected) return;
         var url = URL.createObjectURL(blob);
@@ -85913,7 +85927,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
     if (previewPage) previewPage.setAttribute('data-crm-header-title', 'Photo Preview');
     if (typeof showPage === 'function') showPage('page-photo-project-preview');
     var cards = state.photos.map(function (photo, index) {
-      return '<div class="hm-project-wizard-preview-card"><img data-hm-pw-photo-key="' + esc(photo.imageKey) + '" alt="Project photo ' + (index + 1) + '" /><span>' + esc(photo.name || ('Photo ' + (index + 1))) + '</span></div>';
+      return '<div class="hm-project-wizard-preview-card"><img loading="lazy" decoding="async" data-hm-pw-photo-key="' + esc(photo.imageKey) + '" data-hm-pw-photo-thumb-key="' + esc(photo.thumbnailKey || '') + '" alt="Project photo ' + (index + 1) + '" /><span>' + esc(photo.name || ('Photo ' + (index + 1))) + '</span></div>';
     }).join('');
     el.innerHTML =
       '<div class="hm-project-wizard-card">' +
