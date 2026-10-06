@@ -593,8 +593,14 @@
       if (window.hmCloudBackendMode !== 'neon-clean-test') throw new Error('CRM test purge is disabled outside the clean test environment.');
       var result = await neonApi('/files', { method:'GET' });
       var cloudFiles = Array.isArray(result.files) ? result.files : [];
-      var disposable = cloudFiles.filter(function (item) { return item && String(item.type || '') !== 'company_document'; });
-      var keptCompany = cloudFiles.length - disposable.length;
+      var disposable = cloudFiles.filter(function (item) {
+        if (!item) return false;
+        var type = String(item.type || '');
+        return type !== 'company_document' && type !== 'employee_profile_photo';
+      });
+      var keptCompany = cloudFiles.filter(function (item) {
+        return item && String(item.type || '') === 'company_document';
+      }).length;
       for (var index = 0; index < disposable.length; index++) {
         var id = String(disposable[index].id || '');
         if (id) await neonApi('/files/' + encodeURIComponent(id), { method:'DELETE' });
@@ -609,9 +615,9 @@
 
     Object.keys(metaRows).forEach(function (nodeKey) {
       var meta = metaRows[nodeKey] || {};
-      if (String(meta.type || '') === 'company_document') {
+      if (String(meta.type || '') === 'company_document' || String(meta.type || '') === 'employee_profile_photo') {
         keepDataKeys[safeKey(String(meta.id || ''))] = true;
-        kept++;
+        if (String(meta.type || '') === 'company_document') kept++;
       } else {
         deleteMetaKeys.push(nodeKey);
       }

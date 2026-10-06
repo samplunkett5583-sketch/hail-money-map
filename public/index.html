@@ -15711,6 +15711,61 @@
       gap: 8px;
       flex-wrap: wrap;
     }
+    #page-crm-contacts .crm-employee-directory {
+      margin-bottom: 22px;
+    }
+    #page-crm-contacts .crm-employee-directory-title {
+      margin: 0 0 10px;
+      font-size: 15px;
+      font-weight: 800;
+      color: #1b2434;
+    }
+    #page-crm-contacts .crm-employee-contact-list {
+      border: 1px solid #d8dde6;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+    }
+    #page-crm-contacts .crm-employee-contact-row {
+      display: grid;
+      grid-template-columns: 58px minmax(180px, 1.2fr) minmax(140px, 0.8fr) minmax(160px, 0.9fr);
+      gap: 14px;
+      align-items: center;
+      padding: 14px 18px;
+      border-top: 1px solid #e5e9f0;
+    }
+    #page-crm-contacts .crm-employee-contact-row:first-child {
+      border-top: 0;
+    }
+    #page-crm-contacts .crm-employee-contact-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      background: #eef2f7;
+      border: 1px solid #d8dde6;
+      color: #263247;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    #page-crm-contacts .crm-employee-contact-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    #page-crm-contacts .crm-employee-contact-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: #1b2434;
+    }
+    #page-crm-contacts .crm-employee-contact-role,
+    #page-crm-contacts .crm-employee-contact-phone {
+      font-size: 15px;
+      color: #3f4a5e;
+    }
     #page-crm-contacts .crm-contact-list-action {
       min-width: 86px;
       justify-content: center;
@@ -15776,6 +15831,18 @@
       #page-crm-contacts .crm-contact-list-actions {
         justify-content: flex-start;
         padding-top: 6px;
+      }
+      #page-crm-contacts .crm-employee-contact-row {
+        grid-template-columns: 52px minmax(0, 1fr);
+        gap: 8px 12px;
+        align-items: center;
+      }
+      #page-crm-contacts .crm-employee-contact-avatar {
+        grid-row: 1 / span 3;
+      }
+      #page-crm-contacts .crm-employee-contact-role,
+      #page-crm-contacts .crm-employee-contact-phone {
+        grid-column: 2;
       }
     }
     /* ── Lead Inbox sections ── */
@@ -26459,6 +26526,11 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <div class="field">
               <label for="settings-team-member-phone">Phone</label>
               <input id="settings-team-member-phone" type="tel" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="settings-team-member-photo">Picture</label>
+              <input id="settings-team-member-photo" type="file" accept="image/*" />
+              <div id="settings-team-member-photo-status" class="settings-team-helper-text">No picture saved.</div>
             </div>
             <div class="field">
               <label for="settings-team-member-temp-password">Temporary Password</label>
@@ -56819,7 +56891,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!member || typeof member !== 'object') return score;
       [
         'id', 'name', 'email', 'phone', 'role', 'managerId', 'managerName',
-        'teamId', 'teamName', 'calendarAccess', 'firebaseUid',
+        'teamId', 'teamName', 'calendarAccess', 'firebaseUid', 'profilePhotoFileId',
         'createdAt', 'updatedAt'
       ].forEach(function (key) {
         if (String(member[key] || '').trim()) score += 1;
@@ -56845,6 +56917,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         teamName: crmNormalizeTeamMemberText(preferred.teamName || fallback.teamName || ''),
         calendarAccess: String(preferred.calendarAccess || fallback.calendarAccess || 'role-based').trim() || 'role-based',
         firebaseUid: String(preferred.firebaseUid || fallback.firebaseUid || '').trim(),
+        profilePhotoFileId: String(preferred.profilePhotoFileId || fallback.profilePhotoFileId || '').trim(),
         authPassword: '',
         tempPassword: '',
         forcePasswordReset: false,
@@ -57166,7 +57239,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var currentRole = String(localStorage.getItem(CRM_ROLE_KEY) || (known && known.role) || 'Sales Rep').trim();
       if (!currentName && !currentEmail) return [];
       if (['Owner','Admin','Office','Manager','Production','Sales Rep','Canvasser','Viewer'].indexOf(currentRole) === -1) currentRole = 'Sales Rep';
-      return [{ id: currentRole === 'Manager' ? 'mgr_' + crmSettingsSlug(currentName || currentRole) : currentRole === 'Sales Rep' ? 'rep_' + crmSettingsSlug(currentName || currentRole) : 'user_' + crmSettingsSlug(currentName || currentRole), name: currentName || currentEmail || currentRole, email: currentEmail, phone: '', role: currentRole, active: true, managerId: '', managerName: '', teamId: '', teamName: '', calendarAccess: 'role-based', firebaseUid: authUser ? String(authUser.uid || '') : '', authPassword: '', tempPassword: '', forcePasswordReset: false }];
+      return [{ id: currentRole === 'Manager' ? 'mgr_' + crmSettingsSlug(currentName || currentRole) : currentRole === 'Sales Rep' ? 'rep_' + crmSettingsSlug(currentName || currentRole) : 'user_' + crmSettingsSlug(currentName || currentRole), name: currentName || currentEmail || currentRole, email: currentEmail, phone: '', role: currentRole, active: true, managerId: '', managerName: '', teamId: '', teamName: '', calendarAccess: 'role-based', firebaseUid: authUser ? String(authUser.uid || '') : '', profilePhotoFileId: '', authPassword: '', tempPassword: '', forcePasswordReset: false }];
     }
 
     function crmFinalizeTeamMembers(members) {
@@ -57237,6 +57310,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           teamName: String(item.teamName || '').trim(),
           calendarAccess: String(item.calendarAccess || 'role-based').trim() || 'role-based',
           firebaseUid: String(item.firebaseUid || item.authUid || '').trim(),
+          profilePhotoFileId: String(item.profilePhotoFileId || '').trim(),
           authPassword: '',
           tempPassword: '',
           forcePasswordReset: false,
@@ -58802,6 +58876,22 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       showPage('page-crm-contacts');
     }
 
+    function crmLoadEmployeeContactPictures(root) {
+      if (!root || typeof window.hmCloudGetFileUrl !== 'function') return;
+      Array.prototype.forEach.call(root.querySelectorAll('[data-employee-photo-file-id]'), function (avatar) {
+        var fileId = String(avatar.getAttribute('data-employee-photo-file-id') || '').trim();
+        if (!fileId) return;
+        window.hmCloudGetFileUrl(fileId).then(function (url) {
+          if (!url || !avatar.isConnected) return;
+          var img = document.createElement('img');
+          img.src = url;
+          img.alt = String(avatar.getAttribute('data-employee-photo-alt') || 'Employee profile picture');
+          avatar.textContent = '';
+          avatar.appendChild(img);
+        }).catch(function () {});
+      });
+    }
+
     function crmRenderContactsPage() {
       var listEl = document.getElementById('crm-contacts-list');
       var countEl = document.getElementById('crm-contacts-count');
@@ -58809,6 +58899,20 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!listEl) return;
       var selectedCategory = String(_crmContactsCategoryFilter || '').trim();
       if (titleEl) titleEl.textContent = selectedCategory || 'Contacts';
+
+      var employees = [];
+      if (!selectedCategory) {
+        try {
+          employees = (crmGetTeamMembers() || []).filter(function (member) {
+            return member && member.active !== false && String(member.name || '').trim();
+          }).sort(function (a, b) {
+            return String(a.name || '').localeCompare(String(b.name || ''));
+          });
+        } catch (e) {
+          employees = [];
+        }
+      }
+
       var contacts = crmGetContacts().filter(function (contact) {
         return crmContactMatchesCategory(contact, selectedCategory);
       }).sort(function (a, b) {
@@ -58817,42 +58921,91 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         if (bt !== at) return bt - at;
         return crmGetContactDisplayName(a).localeCompare(crmGetContactDisplayName(b));
       });
-      if (countEl) countEl.textContent = contacts.length + ' contact' + (contacts.length === 1 ? '' : 's');
-      if (!contacts.length) {
+
+      if (countEl) {
+        countEl.textContent = selectedCategory
+          ? contacts.length + ' contact' + (contacts.length === 1 ? '' : 's')
+          : employees.length + ' employee' + (employees.length === 1 ? '' : 's') + ' · ' +
+            contacts.length + ' other contact' + (contacts.length === 1 ? '' : 's');
+      }
+
+      var employeeHtml = '';
+      if (employees.length) {
+        var employeeRows = employees.map(function (member) {
+          var name = String(member.name || '').trim();
+          var initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) {
+            return part.charAt(0).toUpperCase();
+          }).join('') || 'HM';
+          var pictureUrl = '';
+          var photoFileId = String(member.profilePhotoFileId || '').trim();
+          try {
+            var authUser = window.auth && window.auth.currentUser;
+            if (authUser && String(member.firebaseUid || '').trim() === String(authUser.uid || '').trim()) {
+              pictureUrl = String(authUser.photoURL || '').trim();
+            }
+          } catch (e) {}
+          var avatarHtml = pictureUrl
+            ? '<img src="' + crmEscapeHtml(pictureUrl) + '" alt="' + crmEscapeHtml(name + ' profile picture') + '" />'
+            : crmEscapeHtml(initials);
+          var photoAttrs = photoFileId
+            ? ' data-employee-photo-file-id="' + crmEscapeHtml(photoFileId) + '" data-employee-photo-alt="' + crmEscapeHtml(name + ' profile picture') + '"'
+            : '';
+          return '<div class="crm-employee-contact-row">' +
+            '<div class="crm-employee-contact-avatar"' + photoAttrs + '>' + avatarHtml + '</div>' +
+            '<div class="crm-employee-contact-name">' + crmEscapeHtml(name) + '</div>' +
+            '<div class="crm-employee-contact-role">' + crmEscapeHtml(member.role || 'Employee') + '</div>' +
+            '<div class="crm-employee-contact-phone">' + crmEscapeHtml(member.phone || '—') + '</div>' +
+          '</div>';
+        }).join('');
+        employeeHtml =
+          '<section class="crm-employee-directory" aria-label="Employees">' +
+            '<h2 class="crm-employee-directory-title">Employees</h2>' +
+            '<div class="crm-employee-contact-list">' + employeeRows + '</div>' +
+          '</section>';
+      }
+
+      var contactHtml = '';
+      if (contacts.length) {
+        var rows = contacts.map(function (contact) {
+          var companyParts = [String(contact.companyName || '').trim(), String(contact.companyJobTitle || '').trim()].filter(Boolean);
+          var companyHtml = companyParts.length
+            ? crmEscapeHtml(companyParts[0]) + (companyParts[1] ? '<div class="crm-contact-list-secondary">' + crmEscapeHtml(companyParts[1]) + '</div>' : '')
+            : '—';
+          return '<div class="crm-contact-list-row">' +
+            '<div class="crm-contact-list-name">' + crmEscapeHtml(crmGetContactDisplayName(contact)) + '</div>' +
+            '<div class="crm-contact-list-cell">' + crmEscapeHtml(contact.contactType || '—') + '</div>' +
+            '<div class="crm-contact-list-cell">' + crmEscapeHtml(crmFormatContactPhone(contact)) + '</div>' +
+            '<div class="crm-contact-list-cell">' + companyHtml + '</div>' +
+            '<div class="crm-contact-list-cell">' + crmEscapeHtml(crmFormatContactTimestamp(contact.updatedAt)) + '</div>' +
+            '<div class="crm-contact-list-actions">' +
+              '<button class="btn crm-contact-list-action" type="button" data-contact-action="edit" data-contact-id="' + crmEscapeHtml(contact.id) + '">Edit</button>' +
+              '<button class="btn crm-contact-list-action" type="button" data-contact-action="delete" data-contact-id="' + crmEscapeHtml(contact.id) + '">Delete</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+        contactHtml =
+          (!selectedCategory && employees.length ? '<h2 class="crm-employee-directory-title">Other Contacts</h2>' : '') +
+          '<div class="crm-contact-list-table">' +
+            '<div class="crm-contact-list-row header">' +
+              '<div>Name</div>' +
+              '<div>Contact Type</div>' +
+              '<div>Phone</div>' +
+              '<div>Company</div>' +
+              '<div>Last Updated</div>' +
+              '<div>Actions</div>' +
+            '</div>' +
+            rows +
+          '</div>';
+      }
+
+      if (!employeeHtml && !contactHtml) {
         listEl.innerHTML = '<div class="crm-contact-empty">' + (selectedCategory
           ? 'No ' + crmEscapeHtml(selectedCategory) + ' contacts found.'
           : 'No contacts yet. Use New → Contact from the dashboard to add one.') + '</div>';
         return;
       }
-      var rows = contacts.map(function (contact) {
-        var companyParts = [String(contact.companyName || '').trim(), String(contact.companyJobTitle || '').trim()].filter(Boolean);
-        var companyHtml = companyParts.length
-          ? crmEscapeHtml(companyParts[0]) + (companyParts[1] ? '<div class="crm-contact-list-secondary">' + crmEscapeHtml(companyParts[1]) + '</div>' : '')
-          : '—';
-        return '<div class="crm-contact-list-row">' +
-          '<div class="crm-contact-list-name">' + crmEscapeHtml(crmGetContactDisplayName(contact)) + '</div>' +
-          '<div class="crm-contact-list-cell">' + crmEscapeHtml(contact.contactType || '—') + '</div>' +
-          '<div class="crm-contact-list-cell">' + crmEscapeHtml(crmFormatContactPhone(contact)) + '</div>' +
-          '<div class="crm-contact-list-cell">' + companyHtml + '</div>' +
-          '<div class="crm-contact-list-cell">' + crmEscapeHtml(crmFormatContactTimestamp(contact.updatedAt)) + '</div>' +
-          '<div class="crm-contact-list-actions">' +
-            '<button class="btn crm-contact-list-action" type="button" data-contact-action="edit" data-contact-id="' + crmEscapeHtml(contact.id) + '">Edit</button>' +
-            '<button class="btn crm-contact-list-action" type="button" data-contact-action="delete" data-contact-id="' + crmEscapeHtml(contact.id) + '">Delete</button>' +
-          '</div>' +
-        '</div>';
-      }).join('');
-      listEl.innerHTML =
-        '<div class="crm-contact-list-table">' +
-          '<div class="crm-contact-list-row header">' +
-            '<div>Name</div>' +
-            '<div>Contact Type</div>' +
-            '<div>Phone</div>' +
-            '<div>Company</div>' +
-            '<div>Last Updated</div>' +
-            '<div>Actions</div>' +
-          '</div>' +
-          rows +
-        '</div>';
+      listEl.innerHTML = employeeHtml + contactHtml;
+      crmLoadEmployeeContactPictures(listEl);
     }
 
     function crmSaveNewContactRecord() {
@@ -77433,7 +77586,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmSetSettingsTeamModalReadonly(isReadonly, noteText) {
-      ['settings-team-member-name','settings-team-member-email','settings-team-member-phone','settings-team-member-temp-password','settings-team-member-temp-password-confirm','settings-team-member-role','settings-team-member-active','settings-team-member-manager','settings-team-member-calendar-access'].forEach(function (id) {
+      ['settings-team-member-name','settings-team-member-email','settings-team-member-phone','settings-team-member-photo','settings-team-member-temp-password','settings-team-member-temp-password-confirm','settings-team-member-role','settings-team-member-active','settings-team-member-manager','settings-team-member-calendar-access'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.disabled = !!isReadonly;
       });
@@ -77543,6 +77696,10 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       document.getElementById('settings-team-member-name').value = member.name || '';
       document.getElementById('settings-team-member-email').value = member.email || '';
       document.getElementById('settings-team-member-phone').value = member.phone || '';
+      var photoInput = document.getElementById('settings-team-member-photo');
+      if (photoInput) photoInput.value = '';
+      var photoStatus = document.getElementById('settings-team-member-photo-status');
+      if (photoStatus) photoStatus.textContent = member.profilePhotoFileId ? 'Picture saved.' : 'No picture saved.';
       document.getElementById('settings-team-member-temp-password').value = '';
       document.getElementById('settings-team-member-temp-password-confirm').value = '';
       document.getElementById('settings-team-member-role').value = member.role || 'Sales Rep';
@@ -77627,6 +77784,48 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
     }
 
+    async function crmPrepareEmployeeProfilePhoto(file) {
+      if (!file || String(file.type || '').indexOf('image/') !== 0) {
+        throw new Error('Choose an image file for the employee picture.');
+      }
+      return new Promise(function (resolve, reject) {
+        var objectUrl = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var sourceWidth = Number(img.naturalWidth || img.width || 0);
+            var sourceHeight = Number(img.naturalHeight || img.height || 0);
+            if (!sourceWidth || !sourceHeight) throw new Error('The selected picture could not be read.');
+            var cropSize = Math.min(sourceWidth, sourceHeight);
+            var sx = Math.max(0, (sourceWidth - cropSize) / 2);
+            var sy = Math.max(0, (sourceHeight - cropSize) / 2);
+            var canvas = document.createElement('canvas');
+            canvas.width = 320;
+            canvas.height = 320;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('The selected picture could not be prepared.');
+            ctx.drawImage(img, sx, sy, cropSize, cropSize, 0, 0, 320, 320);
+            canvas.toBlob(function (blob) {
+              URL.revokeObjectURL(objectUrl);
+              if (!blob) {
+                reject(new Error('The selected picture could not be prepared.'));
+                return;
+              }
+              resolve(new File([blob], 'profile.jpg', { type: 'image/jpeg' }));
+            }, 'image/jpeg', 0.82);
+          } catch (error) {
+            URL.revokeObjectURL(objectUrl);
+            reject(error);
+          }
+        };
+        img.onerror = function () {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error('The selected picture could not be read.'));
+        };
+        img.src = objectUrl;
+      });
+    }
+
     async function crmSaveSettingsTeamModal() {
       if (!(crmGetRole() === 'Admin' || crmGetRole() === 'Owner')) return;
       var msg = document.getElementById('settings-team-modal-msg');
@@ -77637,6 +77836,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var nameKey = crmNormalizeTeamMemberKey(name);
       var email = String(document.getElementById('settings-team-member-email').value || '').trim();
       var phone = String(document.getElementById('settings-team-member-phone').value || '').trim();
+      var photoInput = document.getElementById('settings-team-member-photo');
+      var selectedPhotoFile = photoInput && photoInput.files && photoInput.files.length ? photoInput.files[0] : null;
       var tempPassword = String(document.getElementById('settings-team-member-temp-password').value || '').trim();
       var confirmTempPassword = String(document.getElementById('settings-team-member-temp-password-confirm').value || '').trim();
       var role = String(document.getElementById('settings-team-member-role').value || 'Sales Rep').trim();
@@ -77712,6 +77913,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         teamName: teamName,
         calendarAccess: calendarAccess,
         firebaseUid: existing ? String(existing.firebaseUid || '').trim() : '',
+        profilePhotoFileId: existing ? String(existing.profilePhotoFileId || '').trim() : '',
         authPassword: '',
         tempPassword: '',
         forcePasswordReset: false,
@@ -77746,9 +77948,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       try {
         var authResult = await hmProvisionEmployeeAccount(record, tempPassword);
         record.firebaseUid = String(authResult && authResult.profile && authResult.profile.uid || '').trim();
+        if (selectedPhotoFile) {
+          if (typeof window.hmCloudUploadLeadFile !== 'function') throw new Error('Cloud file storage is not ready.');
+          if (typeof window.hmCloudWhenReady === 'function') await window.hmCloudWhenReady();
+          saveButton.textContent = 'Uploading picture…';
+          var preparedPhoto = await crmPrepareEmployeeProfilePhoto(selectedPhotoFile);
+          var fixedPhotoId = 'employee_profile_' + crmSettingsSlug(record.id || name);
+          var uploadedPhoto = await window.hmCloudUploadLeadFile(
+            'employee:' + String(record.id || ''),
+            'employee_profile_photo',
+            preparedPhoto,
+            {
+              id: fixedPhotoId,
+              category: 'employee_profile',
+              metadata: { employeeId: record.id, employeeName: record.name }
+            }
+          );
+          record.profilePhotoFileId = String(uploadedPhoto && uploadedPhoto.id || fixedPhotoId).trim();
+        }
         members = members.map(function (member) { return member.id === record.id ? record : member; });
       } catch (error) {
-        msg.textContent = error && error.message ? error.message : 'Firebase Authentication account could not be synchronized.';
+        msg.textContent = error && error.message ? error.message : 'Employee account or profile picture could not be synchronized.';
         msg.style.display = 'block';
         saveButton.textContent = originalSaveText;
         crmUpdateSettingsTeamModalSaveState();
@@ -77774,6 +77994,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
       crmCloseSettingsTeamModal();
       crmRenderSettings();
+      crmRenderContactsPage();
       crmShowSettingsSectionMessage('team', mode === 'create' ? 'Team member added.' : 'Team member updated.');
     }
 
@@ -77820,6 +78041,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         }
         crmCloseSettingsTeamModal();
         crmRenderSettings();
+        crmRenderContactsPage();
         crmShowSettingsSectionMessage('team', 'User deactivated.');
         return;
       }
@@ -77838,8 +78060,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         msg.style.display = 'block';
         return;
       }
+      if (member.profilePhotoFileId && typeof window.hmCloudApi === 'function') {
+        try { await window.hmCloudApi('/files/' + encodeURIComponent(member.profilePhotoFileId), { method: 'DELETE' }); } catch (e) {}
+      }
       crmCloseSettingsTeamModal();
       crmRenderSettings();
+      crmRenderContactsPage();
       crmShowSettingsSectionMessage('team', 'User removed.');
     }
 
@@ -78281,6 +78507,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     document.getElementById('settings-team-member-role').addEventListener('change', function () {
       crmRefreshSettingsTeamManagerField(document.getElementById('settings-team-modal-save').style.display === 'none');
       crmUpdateSettingsTeamModalSaveState();
+    });
+    document.getElementById('settings-team-member-photo').addEventListener('change', function () {
+      var status = document.getElementById('settings-team-member-photo-status');
+      if (!status) return;
+      var file = this.files && this.files.length ? this.files[0] : null;
+      status.textContent = file ? 'Selected: ' + file.name + ' · uploads when Save Member is pressed.' : 'No new picture selected.';
     });
     ['settings-team-member-name','settings-team-member-temp-password','settings-team-member-temp-password-confirm'].forEach(function (id) {
       var el = document.getElementById(id);
