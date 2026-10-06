@@ -86052,14 +86052,14 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 
   var uploadInput = document.getElementById('hm-project-wizard-upload');
   if (uploadInput) uploadInput.addEventListener('change', function () {
-    var files = this.files;
+    var files = Array.prototype.slice.call(this.files || []);
     this.value = '';
     addFiles(files);
   });
 
   var fallbackInput = document.getElementById('hm-project-wizard-camera-fallback');
   if (fallbackInput) fallbackInput.addEventListener('change', function () {
-    var files = this.files;
+    var files = Array.prototype.slice.call(this.files || []);
     this.value = '';
     addFiles(files);
   });
