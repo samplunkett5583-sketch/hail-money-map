@@ -60002,7 +60002,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         if (id && !unique[id]) unique[id] = photo;
       });
       var replacements = {};
-      var uploadedIds = [];
       var normalizedFiles = [];
       var existingCloudIds = {};
       if (typeof window.hmCloudListFiles === 'function') {
@@ -60014,35 +60013,60 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           });
         } catch (_) {}
       }
-      try {
-        for (var id in unique) {
-          if (!Object.prototype.hasOwnProperty.call(unique, id)) continue;
-          var photo = unique[id];
-          var storageKey = String(photo.storageKey || '').trim();
-          if (storageKey.indexOf('neon:') === 0 && existingCloudIds[id]) {
-            replacements[id] = photo;
-            continue;
-          }
-          if (storageKey.indexOf('neon:') === 0) storageKey = id;
-          var blob = await crmReadTemporaryInspectionBlob(storageKey);
-          if (!blob && storageKey !== id) {
-            try { blob = await crmReadTemporaryInspectionBlob(id); } catch (_) { blob = null; }
-          }
-          if (!blob) throw new Error('An inspection photo could not be confirmed in cloud storage or recovered from the finalized inspection draft.');
-          var file = blob;
+
+      function waitForInspectionRetry(attempt) {
+        return new Promise(function (resolve) { setTimeout(resolve, 600 * attempt); });
+      }
+
+      async function uploadInspectionPhotoWithRetry(id, photo, file) {
+        var lastError = null;
+        for (var attempt = 1; attempt <= 3; attempt++) {
           try {
-            if (!(blob instanceof File)) file = new File([blob], String(photo.fileName || photo.name || (id + '.jpg')), { type:String(photo.mimeType || blob.type || 'image/jpeg'), lastModified:Date.now() });
-          } catch (_) {}
-          var cloudMeta = await window.hmCloudUploadLeadFile(leadId, 'inspection_photo', file, {
-            id:id,
-            category:String(photo.category || 'Inspection'),
-            photoPhase:'inspection',
-            note:String(photo.note || photo.caption || ''),
-            caption:String(photo.caption || photo.note || ''),
-            uploadedBy:String(photo.uploadedBy || crmGetCurrentUserName() || currentRep || ''),
-            metadata:{ draftInspectionId:String(pendingInspection.id || ''), category:String(photo.category || 'Inspection') }
-          });
-          uploadedIds.push(String(cloudMeta.id || id));
+            return await window.hmCloudUploadLeadFile(leadId, 'inspection_photo', file, {
+              id:id,
+              category:String(photo.category || 'Inspection'),
+              photoPhase:'inspection',
+              note:String(photo.note || photo.caption || ''),
+              caption:String(photo.caption || photo.note || ''),
+              uploadedBy:String(photo.uploadedBy || crmGetCurrentUserName() || currentRep || ''),
+              metadata:{ draftInspectionId:String(pendingInspection.id || ''), category:String(photo.category || 'Inspection') }
+            });
+          } catch (error) {
+            lastError = error;
+            if (attempt < 3) await waitForInspectionRetry(attempt);
+          }
+        }
+        throw lastError || new Error('Inspection photo upload failed.');
+      }
+
+      var uploadFailures = [];
+      for (var id in unique) {
+        if (!Object.prototype.hasOwnProperty.call(unique, id)) continue;
+        var photo = unique[id];
+        var storageKey = String(photo.storageKey || '').trim();
+        if (storageKey.indexOf('neon:') === 0 && existingCloudIds[id]) {
+          replacements[id] = photo;
+          continue;
+        }
+        if (storageKey.indexOf('neon:') === 0) storageKey = id;
+
+        var blob = await crmReadTemporaryInspectionBlob(storageKey);
+        if (!blob && storageKey !== id) {
+          try { blob = await crmReadTemporaryInspectionBlob(id); } catch (_) { blob = null; }
+        }
+        if (!blob) {
+          uploadFailures.push(id);
+          continue;
+        }
+
+        var file = blob;
+        try {
+          if (!(blob instanceof File)) file = new File([blob], String(photo.fileName || photo.name || (id + '.jpg')), { type:String(photo.mimeType || blob.type || 'image/jpeg'), lastModified:Date.now() });
+        } catch (_) {}
+
+        try {
+          var cloudMeta = await uploadInspectionPhotoWithRetry(id, photo, file);
+          existingCloudIds[id] = true;
           cloudMeta.storageKey = 'neon:' + String(cloudMeta.id || id);
           cloudMeta.photoPhase = 'inspection';
           cloudMeta.category = String(photo.category || cloudMeta.category || 'Inspection');
@@ -60051,23 +60075,17 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           var serial = crmGetSerializableInspectionPhoto(cloudMeta, cloudMeta.category);
           replacements[id] = serial;
           normalizedFiles.push(crmNormalizeLeadFileMeta(cloudMeta));
+        } catch (error) {
+          uploadFailures.push(id);
+          console.error('[Inspection Photo Upload] ' + id + ' failed after 3 attempts.', error);
         }
-      } catch (error) {
-        if (typeof window.hmCloudApi === 'function') {
-          await Promise.all(uploadedIds.map(function (uploadedId) {
-            return window.hmCloudApi('/files/' + encodeURIComponent(uploadedId), { method:'DELETE' }).catch(function () {});
-          }));
-        }
-        throw error;
       }
-      async function rollbackUploadedInspectionFiles() {
-        if (typeof window.hmCloudApi !== 'function' || !uploadedIds.length) return;
-        await Promise.all(uploadedIds.map(function (uploadedId) {
-          return window.hmCloudApi('/files/' + encodeURIComponent(uploadedId), { method:'DELETE' }).catch(function () {});
-        }));
+
+      if (uploadFailures.length) {
+        throw new Error(uploadFailures.length + ' inspection photo' + (uploadFailures.length === 1 ? '' : 's') + ' could not be uploaded. The photos that succeeded were kept in cloud storage and the failed photos can retry without starting over.');
       }
+
       if (typeof window.hmCloudListFiles !== 'function') {
-        await rollbackUploadedInspectionFiles();
         throw new Error('Hail Money could not verify the inspection photo upload.');
       }
       var verifiedCloudFiles = await window.hmCloudListFiles(leadId, 'inspection_photo');
@@ -60078,8 +60096,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       });
       var missingCloudIds = Object.keys(unique).filter(function (photoId) { return !verifiedCloudIds[photoId]; });
       if (missingCloudIds.length) {
-        await rollbackUploadedInspectionFiles();
-        throw new Error(missingCloudIds.length + ' inspection photo' + (missingCloudIds.length === 1 ? '' : 's') + ' did not reach cloud storage. Nothing will be finalized until every photo is confirmed.');
+        throw new Error(missingCloudIds.length + ' inspection photo' + (missingCloudIds.length === 1 ? '' : 's') + ' did not reach cloud storage. The photos that did upload were kept, and the missing photos can retry without starting over.');
       }
 
       crmReplacePendingInspectionPhotoRefs(pendingInspection, replacements);
@@ -86005,7 +86022,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   window.renderPhotoFiles=renderPhotoFiles=render;
   function switchTab(tab){currentProjectId=currentProjectId||'';document.querySelectorAll('#pf-detail-tabs [data-hm-tab]').forEach(function(btn){btn.classList.toggle('active',btn.getAttribute('data-hm-tab')===tab);});['photos','reports','chat'].forEach(function(t){var el=document.getElementById('pf-detail-tab-'+t);if(el)el.classList.toggle('active',t===tab);});if(tab==='reports'&&typeof window.renderPhotoProjectReports==='function'&&currentProjectId)window.renderPhotoProjectReports(currentProjectId);if(tab==='chat'&&typeof window.renderPhotoProjectChat==='function'&&currentProjectId)window.renderPhotoProjectChat(currentProjectId);}
   function open(id){
-    var p=find(id);if(!p)return;currentProjectId=id;
+    var p=find(id);if(!p)return;currentProjectId=id;if(window.hmPhotoReports&&typeof window.hmPhotoReports.repairProjectCloudPhotos==='function')window.hmPhotoReports.repairProjectCloudPhotos(p);
     var projectTitle=p.projectName||p.homeownerName||'Photo Project';
     var detailPage=document.getElementById('page-photo-file-detail');
     if(detailPage)detailPage.setAttribute('data-crm-header-title',projectTitle);
@@ -86168,7 +86185,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
 <script src="./contingency-locked-pdf.js?v=20261006-transactional-save-1"></script>
 <script src="./assets/crm-cross-links.js?v=20260914"></script>
-<script src="./assets/photo-reports.js?v=20261006-photo-loader-restore"></script>
+<script src="./assets/photo-reports.js?v=20261006-photo-recovery-lock"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
 <script id="hm-region-document-routing-script">
 (function(){

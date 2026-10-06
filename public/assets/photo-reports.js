@@ -483,6 +483,9 @@
       if (repaired && typeof showUploadToast === 'function') {
         showUploadToast('Recovered ' + repaired + ' missing inspection photo' + (repaired === 1 ? '' : 's') + ' to cloud storage.');
       }
+      if (repaired && typeof window.openPhotoFileDetail === 'function') {
+        setTimeout(function () { try { window.openPhotoFileDetail(projectId); } catch (_) {} }, 250);
+      }
       if (missingLocal) {
         console.warn('[Photo Report Repair] ' + missingLocal + ' cloud photo(s) were missing and no local recovery copy was available.');
       }
