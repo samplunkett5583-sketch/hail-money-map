@@ -13163,6 +13163,136 @@
         flex-direction: column;
       }
     }
+    /* Employees reference layout lock */
+    #page-admin-sales-reps {
+      min-height: calc(100vh - 118px) !important;
+      background: #d2ae5d !important;
+    }
+    #page-admin-sales-reps .crm-layout,
+    #page-admin-sales-reps .crm-main-column,
+    #page-admin-sales-reps .main-menu-wrap {
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 !important;
+    }
+    #page-admin-sales-reps .main-menu-wrap {
+      position: relative !important;
+      min-height: calc(100vh - 118px) !important;
+      padding: 0 !important;
+    }
+    #page-admin-sales-reps #employee-search-card {
+      position: absolute !important;
+      top: 12px !important;
+      right: 6vw !important;
+      left: auto !important;
+      width: 25vw !important;
+      min-width: 210px !important;
+      max-width: 420px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      z-index: 2;
+    }
+    #page-admin-sales-reps #employee-search-card .crm-admin-sales-reps-search {
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 !important;
+    }
+    #page-admin-sales-reps #employee-search-card input {
+      width: 100% !important;
+      height: 38px !important;
+      min-height: 38px !important;
+      margin: 0 !important;
+      padding: 0 12px !important;
+      border: 1px solid rgba(45,45,55,.16) !important;
+      border-radius: 6px !important;
+      background: #fff !important;
+      box-shadow: none !important;
+      font-size: 12px !important;
+    }
+    #page-admin-sales-reps #employee-list-card {
+      position: relative !important;
+      width: 78vw !important;
+      max-width: 78vw !important;
+      min-height: calc(100vh - 210px) !important;
+      margin: 92px 0 0 3.8vw !important;
+      padding: 20px 18px 28px !important;
+      border: 0 !important;
+      border-radius: 0 12px 12px 0 !important;
+      background: #fff !important;
+      box-shadow: none !important;
+    }
+    #page-admin-sales-reps #employee-list-card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: -10px;
+      width: 96%;
+      height: 5px;
+      background: rgba(255,255,255,.58);
+    }
+    #page-admin-sales-reps .crm-admin-sales-rep-card {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 14px !important;
+    }
+    #page-admin-sales-reps .crm-admin-sales-rep-left {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      gap: 12px;
+    }
+    #page-admin-sales-reps .crm-admin-sales-rep-avatar {
+      width: 50px;
+      height: 50px;
+      flex: 0 0 50px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      border: 1px solid #d9dde5;
+      background: #eef1f5;
+      color: #303746;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    #page-admin-sales-reps .crm-admin-sales-rep-avatar img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+    #page-admin-sales-reps .crm-admin-sales-rep-copy {
+      min-width: 0;
+    }
+    @media (max-width: 760px) {
+      #page-admin-sales-reps #employee-search-card {
+        top: 12px !important;
+        left: auto !important;
+        right: 16px !important;
+        width: min(52vw, 280px) !important;
+        min-width: 180px !important;
+      }
+      #page-admin-sales-reps #employee-list-card {
+        width: calc(100% - 32px) !important;
+        max-width: none !important;
+        min-height: calc(100vh - 210px) !important;
+        margin: 92px 16px 0 !important;
+        border-radius: 0 10px 10px 0 !important;
+      }
+      #page-admin-sales-reps .crm-admin-sales-rep-card {
+        flex-direction: row !important;
+        align-items: center !important;
+      }
+      #page-admin-sales-reps .crm-admin-sales-rep-open {
+        display: none !important;
+      }
+    }
+
     /* ── Contacts pages ── */
     body.new-contact-page-active,
     body.new-lead-page-active,
@@ -22519,14 +22649,14 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                 <button class="btn back-to-menu" type="button">Back to Main Menu</button>
               </div>
 
-              <div class="crm-detail-card">
+              <div class="crm-detail-card" id="employee-search-card">
                 <div class="field crm-admin-sales-reps-search">
                   <label for="admin-sales-reps-search">Search Employees</label>
                   <input id="admin-sales-reps-search" type="search" placeholder="Search by name, email, phone, team, or manager" autocomplete="off" />
                 </div>
               </div>
 
-              <div class="crm-detail-card">
+              <div class="crm-detail-card" id="employee-list-card">
                 <div class="crm-detail-section-header" id="employee-list-heading">Employees</div>
                 <div id="admin-sales-reps-list" class="crm-admin-sales-reps-list">
                   <div class="crm-empty-state">No employees found.</div>
@@ -79188,23 +79318,32 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
 
       list.innerHTML = employees.map(function (member) {
+        var name = String(member.name || '').trim();
+        var initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) {
+          return part.charAt(0).toUpperCase();
+        }).join('') || 'HM';
+        var photoFileId = String(member.profilePhotoFileId || '').trim();
+        var photoAttrs = photoFileId
+          ? ' data-employee-photo-file-id="' + crmEscapeHtml(photoFileId) + '" data-employee-photo-alt="' + crmEscapeHtml(name + ' profile picture') + '"'
+          : '';
         var meta = [
           member.role || '',
-          member.email || '',
-          member.phone || '',
-          member.teamName || '',
-          member.managerName ? ('Manager: ' + member.managerName) : ''
+          member.phone || ''
         ].filter(Boolean).map(function (text) {
           return '<span>' + crmEscapeHtml(text) + '</span>';
         }).join('');
         return '<button class="crm-admin-sales-rep-card" type="button" data-employee-member-id="' + crmEscapeHtml(member.id) + '">' +
-          '<div>' +
-            '<div class="crm-admin-sales-rep-name">' + crmEscapeHtml(member.name) + '</div>' +
-            '<div class="crm-admin-sales-rep-meta">' + meta + '</div>' +
+          '<div class="crm-admin-sales-rep-left">' +
+            '<div class="crm-admin-sales-rep-avatar"' + photoAttrs + '>' + crmEscapeHtml(initials) + '</div>' +
+            '<div class="crm-admin-sales-rep-copy">' +
+              '<div class="crm-admin-sales-rep-name">' + crmEscapeHtml(name) + '</div>' +
+              '<div class="crm-admin-sales-rep-meta">' + meta + '</div>' +
+            '</div>' +
           '</div>' +
           '<div class="crm-admin-sales-rep-open">View Employee</div>' +
         '</button>';
       }).join('');
+      crmLoadEmployeeContactPictures(list);
     }
 
     function crmOpenAdminSalesRepsPage() {
