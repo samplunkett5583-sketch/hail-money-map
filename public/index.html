@@ -27395,7 +27395,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./neon-cloud-source.js?v=20261006-transactional-save-1"></script>
+  <script src="./neon-cloud-source.js?v=20261006-clean-neon-test-1"></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly&loading=async&callback=mapsGoogleReady" defer></script>
   <script src="demo_swaths.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
@@ -28380,7 +28380,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
     function savePhotoFiles(pfs) {
       try {
         localStorage.setItem('hmm_photo_files_v1', JSON.stringify(pfs));
-        if (window.hmCloudBackendMode !== 'shared-free-test' && typeof window.hmPhotoSyncAll === 'function' && !window.hmPhotoRemoteLoadActive) {
+        if ((window.hmCloudBackendMode !== 'shared-free-test' && window.hmCloudBackendMode !== 'neon-clean-test') && typeof window.hmPhotoSyncAll === 'function' && !window.hmPhotoRemoteLoadActive) {
           window.hmPhotoSyncAll(pfs);
         }
         return true;
@@ -28850,7 +28850,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
         });
       }).then(function () {
         if (options.deferCloud === true) return;
-        if (window.hmCloudBackendMode !== 'shared-free-test' || typeof window.hmCloudUploadLeadFile !== 'function') return;
+        if ((window.hmCloudBackendMode !== 'shared-free-test' && window.hmCloudBackendMode !== 'neon-clean-test') || typeof window.hmCloudUploadLeadFile !== 'function') return;
         var uploadBlob = blob;
         try {
           if (!(blob instanceof File)) uploadBlob = new File([blob], String(imageKey || 'project-photo') + '.jpg', { type: blob.type || 'image/jpeg', lastModified: Date.now() });
@@ -28873,7 +28873,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
         });
       }).then(function (localBlob) {
         if (localBlob) return localBlob;
-        if (window.hmCloudBackendMode !== 'shared-free-test' || typeof window.hmCloudGetFileBlobById !== 'function') return null;
+        if ((window.hmCloudBackendMode !== 'shared-free-test' && window.hmCloudBackendMode !== 'neon-clean-test') || typeof window.hmCloudGetFileBlobById !== 'function') return null;
         return window.hmCloudGetFileBlobById(String(imageKey || '')).then(function (cloudBlob) {
           if (!cloudBlob) return null;
           openPhotoDb().then(function (db) {
@@ -61289,7 +61289,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         crmMaybeAutoMoveToClaimFiled(lead);
 
         var leads = crmGetLeads();
-        leads.push(lead);
+        var existingLeadSaveIndex = leads.findIndex(function (item) { return String(item && item.id || '') === String(lead.id || ''); });
+        if (existingLeadSaveIndex >= 0) leads[existingLeadSaveIndex] = lead;
+        else leads.push(lead);
+        _crmUniversalLeadDraft = lead;
+        _crmUniversalLeadDraftActive = true;
         if (!crmSaveLeads(leads)) {
           alert('Save failed — storage may be full.');
           return;
@@ -61352,6 +61356,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
             uploadedBy: crmGetCurrentUserName() || currentRep || '',
             note: 'Lead contingency upload'
           });
+        }
+
+        try {
+          if (typeof window.hmCloudFlush === 'function') await window.hmCloudFlush();
+        } catch (finalSaveError) {
+          console.error('[New Lead Cloud Commit]', finalSaveError);
+          valMsg.textContent = finalSaveError && finalSaveError.message ? finalSaveError.message : 'The cloud did not confirm the save. Please try again.';
+          valMsg.style.display = 'block';
+          btn.disabled = false;
+          return;
         }
 
         savedMsg.style.display = 'block';
@@ -78364,6 +78378,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           });
         } catch (_) {}
 
+        if (typeof window.hmCloudFlush === 'function') await window.hmCloudFlush();
         if (typeof window.hmCloudRefresh === 'function') await window.hmCloudRefresh();
         msg.textContent = 'Test CRM data cleared. Removed ' + Number(purgeSummary.deletedFiles || 0) + ' stored test file' + (Number(purgeSummary.deletedFiles || 0) === 1 ? '' : 's') + '. Company setup and templates were kept.';
         crmUpdateTasksBadge();
@@ -85071,7 +85086,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   }
 
   window.hmPhotoSyncAll = async function (projects) {
-    if (window.hmCloudBackendMode === 'shared-free-test') return;
+    if ((window.hmCloudBackendMode === 'shared-free-test' || window.hmCloudBackendMode === 'neon-clean-test')) return;
     if (syncRunning) return;
     syncRunning = true;
     try {
@@ -85092,7 +85107,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
   window.hmPhotoSignedUrl = async function (path) {
     if (!path) return '';
-    if (window.hmCloudBackendMode === 'shared-free-test' && typeof window.hmCloudGetFileUrl === 'function') {
+    if ((window.hmCloudBackendMode === 'shared-free-test' || window.hmCloudBackendMode === 'neon-clean-test') && typeof window.hmCloudGetFileUrl === 'function') {
       return window.hmCloudGetFileUrl(path);
     }
     var result = await sb.storage.from(BUCKET).createSignedUrl(path, 3600);
@@ -85105,7 +85120,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     if (!user) throw new Error('Sign in before deleting a photo project.');
     var id = String(project && project.id || '').trim();
     if (!id) throw new Error('Photo project ID is missing.');
-    if (window.hmCloudBackendMode === 'shared-free-test' && typeof window.hmCloudApi === 'function') {
+    if ((window.hmCloudBackendMode === 'shared-free-test' || window.hmCloudBackendMode === 'neon-clean-test') && typeof window.hmCloudApi === 'function') {
       var keys = [];
       (project.photos || []).forEach(function (photo) {
         [photo && photo.imageKey, photo && photo.thumbnailKey].forEach(function (key) {
@@ -85132,7 +85147,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   };
 
   window.hmPhotoLoadFromSupabase = async function () {
-    if (window.hmCloudBackendMode === 'shared-free-test') {
+    if ((window.hmCloudBackendMode === 'shared-free-test' || window.hmCloudBackendMode === 'neon-clean-test')) {
       try {
         if (typeof window.hmCloudRefresh === 'function') await window.hmCloudRefresh();
         if (typeof window.renderPhotoFiles === 'function') window.renderPhotoFiles();
@@ -86739,7 +86754,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   }
 
   function syncDraftProjectPhotosToCloud() {
-    if (!state || window.hmCloudBackendMode !== 'shared-free-test' || typeof window.hmCloudUploadLeadFile !== 'function') return Promise.resolve();
+    if (!state || (window.hmCloudBackendMode !== 'shared-free-test' && window.hmCloudBackendMode !== 'neon-clean-test') || typeof window.hmCloudUploadLeadFile !== 'function') return Promise.resolve();
     var jobs = [];
     var uploadedKeys = [];
     (state.photos || []).forEach(function (photo) {
@@ -86791,13 +86806,14 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 
   function persistProject() {
     var project = buildProject();
-    return syncDraftProjectPhotosToCloud().then(function () {
+    return syncDraftProjectPhotosToCloud().then(async function () {
       var rows = typeof getPhotoFiles === 'function' ? getPhotoFiles() : [];
       var index = rows.findIndex(function (item) { return item && String(item.id || '') === String(project.id); });
       if (index >= 0) project = Object.assign({}, rows[index], project);
       if (index >= 0) rows[index] = project;
       else rows.push(project);
       if (typeof savePhotoFiles === 'function' && !savePhotoFiles(rows)) throw new Error('Project could not be saved.');
+      if (typeof window.hmCloudFlush === 'function') await window.hmCloudFlush();
       if (state) state.committed = true;
       return project;
     });

@@ -32,7 +32,7 @@ function cors(origin) {
   return {
     'Access-Control-Allow-Origin': exact || local ? origin : 'https://www.hail.money',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Authorization,Content-Type',
+    'Access-Control-Allow-Headers': 'Authorization,Content-Type,X-HM-File-Meta',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin'
   };
@@ -179,6 +179,17 @@ async function route(request) {
     return json({ polygons: result.rows }, 200, origin);
   }
 
+  if (url.pathname === '/state/version' && request.method === 'GET') {
+    const [stateVersion, fileVersion] = await Promise.all([
+      pool.query('SELECT COUNT(*)::bigint AS count,MAX(updated_at) AS updated FROM hm_app_state WHERE org_id=$1', [user.orgId]),
+      pool.query("SELECT COUNT(*)::bigint AS count,MAX(uploaded_at) AS updated FROM hm_files WHERE org_id=$1 AND status='active'", [user.orgId])
+    ]);
+    const a = stateVersion.rows[0] || {};
+    const b = fileVersion.rows[0] || {};
+    const version = [String(a.count || 0), a.updated ? new Date(a.updated).toISOString() : '', String(b.count || 0), b.updated ? new Date(b.updated).toISOString() : ''].join('|');
+    return json({ ok: true, version }, 200, origin);
+  }
+
   if (url.pathname === '/state' && request.method === 'GET') {
     const result = await pool.query('SELECT key,value,updated_at FROM hm_app_state WHERE org_id=$1 ORDER BY key', [user.orgId]);
     const state = {};
@@ -253,6 +264,64 @@ async function route(request) {
     return json({ ok: true, files: result.rows.map(fileMeta) }, 200, origin);
   }
 
+  if (url.pathname === '/files/upload' && request.method === 'POST') {
+    const encoded = String(request.headers.get('x-hm-file-meta') || '').trim();
+    if (!encoded || encoded.length > 16000) return json({ error: 'File metadata is required.' }, 400, origin);
+    let body;
+    try { body = JSON.parse(Buffer.from(encoded, 'base64').toString('utf8')); }
+    catch (_) { return json({ error: 'File metadata is invalid.' }, 400, origin); }
+
+    const id = cleanSegment(body.id || ('lead_doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9)), 'file-' + Date.now());
+    const leadId = String(body.leadId || '').trim().slice(0, 160);
+    const type = String(body.type || 'document').trim().slice(0, 100) || 'document';
+    const category = String(body.category || body.docCategory || '').trim().slice(0, 160);
+    const fileName = String(body.fileName || 'document').trim().slice(0, 240) || 'document';
+    const mimeType = String(body.mimeType || request.headers.get('content-type') || 'application/octet-stream').trim().slice(0, 160);
+    const note = String(body.note || '').trim().slice(0, 2000);
+    const maxBytes = 25 * 1024 * 1024;
+    if (Number(request.headers.get('content-length') || 0) > maxBytes) return json({ error: 'File exceeds 25 MB maximum.' }, 413, origin);
+    const bytes = new Uint8Array(await request.arrayBuffer());
+    if (!bytes.length || bytes.byteLength > maxBytes) return json({ error: 'File is empty or exceeds 25 MB maximum.' }, 413, origin);
+    const objectKey = [
+      cleanSegment(user.orgId, 'company'),
+      cleanSegment(leadId || '_company', '_company'),
+      cleanSegment(type, 'document'),
+      id,
+      cleanSegment(fileName, 'document')
+    ].join('/');
+
+    await s3.send(new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: objectKey,
+      Body: bytes,
+      ContentType: mimeType
+    }));
+    try {
+      const result = await pool.query(
+        `INSERT INTO hm_files(id,org_id,lead_id,type,category,file_name,mime_type,size_bytes,bucket,object_key,note,uploaded_by,uploaded_by_email,status,metadata)
+         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'active',$14::jsonb)
+         ON CONFLICT(id) DO UPDATE SET
+           lead_id=EXCLUDED.lead_id,type=EXCLUDED.type,category=EXCLUDED.category,
+           file_name=EXCLUDED.file_name,mime_type=EXCLUDED.mime_type,size_bytes=EXCLUDED.size_bytes,
+           bucket=EXCLUDED.bucket,object_key=EXCLUDED.object_key,note=EXCLUDED.note,
+           uploaded_by=EXCLUDED.uploaded_by,uploaded_by_email=EXCLUDED.uploaded_by_email,
+           status='active',metadata=EXCLUDED.metadata,uploaded_at=now()
+         WHERE hm_files.org_id=EXCLUDED.org_id RETURNING *`,
+        [
+          id, user.orgId, leadId, type, category, fileName, mimeType, bytes.byteLength,
+          BUCKET, objectKey, note, String(body.uploadedBy || user.displayName || ''), user.email,
+          JSON.stringify(body.metadata || {})
+        ]
+      );
+      if (!result.rows.length) throw Object.assign(new Error('File ID belongs to a different company.'), { status: 409 });
+      await audit(user, 'file.upload', 'file', id, { leadId, type, size: bytes.byteLength });
+      return json({ ok: true, file: fileMeta(result.rows[0]) }, 200, origin);
+    } catch (error) {
+      try { await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: objectKey })); } catch (_) {}
+      throw error;
+    }
+  }
+
   if (url.pathname === '/files/init' && request.method === 'POST') {
     const body = await parseJson(request);
     const id = cleanSegment(body.id || ('lead_doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9)), 'file-' + Date.now());
@@ -304,6 +373,28 @@ async function route(request) {
     );
     await audit(user, 'file.complete', 'file', id, { leadId: row.lead_id, type: row.type, objectKey: row.object_key });
     return json({ ok: true, file: fileMeta(updated.rows[0]) }, 200, origin);
+  }
+
+  const blobMatch = url.pathname.match(/^\/files\/([^/]+)\/blob$/);
+  if (blobMatch && request.method === 'GET') {
+    const id = decodeURIComponent(blobMatch[1]);
+    const found = await pool.query(
+      "SELECT * FROM hm_files WHERE id=$1 AND org_id=$2 AND status='active'",
+      [id, user.orgId]
+    );
+    if (!found.rows.length) return json({ error:'File was not found.' }, 404, origin);
+    const row = found.rows[0];
+    const object = await s3.send(new GetObjectCommand({ Bucket:row.bucket, Key:row.object_key }));
+    const bytes = await object.Body.transformToByteArray();
+    return new Response(bytes, {
+      status:200,
+      headers:{
+        ...cors(origin),
+        'Content-Type':row.mime_type || 'application/octet-stream',
+        'Content-Length':String(bytes.byteLength),
+        'Cache-Control':'private, max-age=180'
+      }
+    });
   }
 
   const urlMatch = url.pathname.match(/^\/files\/([^/]+)\/url$/);

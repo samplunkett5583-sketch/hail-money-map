@@ -2,13 +2,13 @@
   'use strict';
 
   /*
-   * Hail Money cloud adapter.
-   * During pre-customer testing we use the shared Firebase Realtime Database
-   * test project so every tester/device sees the same data without paid storage.
-   * Set SHARED_TEST_CLOUD to false when production storage is enabled.
+   * Hail Money cloud adapter — the clean Neon Free test project.
+   * Firebase remains authentication/hosting only. CRM metadata is kept in
+   * Postgres and saved file bytes go into private Neon Object Storage.
+   * This does not change the independent historical storm/map endpoints.
    */
-  var SHARED_TEST_CLOUD = true;
-  var API_BASE = 'https://br-super-wildflower-b4eatcc2-cloudapi.compute.c-6.us-east-2.aws.neon.tech';
+  var SHARED_TEST_CLOUD = false;
+  var API_BASE = 'https://br-autumn-dew-b4hm4p90-cloudapi.compute.c-6.us-east-2.aws.neon.tech';
   var TEST_DB_ROOT = 'https://hailmoney-test-cloud-default-rtdb.firebaseio.com/test/be2b276ee47e6fdba0175b6ac3fb8a190f9f4b289fa7201c';
 
   var nativeGet = Storage.prototype.getItem;
@@ -27,6 +27,7 @@
     crm_current_user_name: true,
     crm_current_role: true
   };
+  var COMPANY_REGIONS_KEY = 'hmm_document_regions_v1';
 
   function isCloudKey(key) {
     key = String(key || '');
@@ -168,6 +169,18 @@
     return data;
   }
 
+  async function neonDownloadBlob(id) {
+    var headers = { Authorization:'Bearer ' + await token(false) };
+    var url = API_BASE + '/files/' + encodeURIComponent(id) + '/blob';
+    var response = await fetch(url, { method:'GET', headers:headers, cache:'no-store' });
+    if (response.status === 401) {
+      headers.Authorization = 'Bearer ' + await token(true);
+      response = await fetch(url, { method:'GET', headers:headers, cache:'no-store' });
+    }
+    if (!response.ok) throw new Error('Cloud file download failed (' + response.status + ').');
+    return response.blob();
+  }
+
   async function cloudApi(path, options) {
     if (!SHARED_TEST_CLOUD) return neonApi(path, options);
     options = options || {};
@@ -201,21 +214,58 @@
     throw new Error('That cloud operation is not available in shared test mode.');
   }
 
+  var inflightWrites = new Set();
+  var writeErrors = Object.create(null);
+  var lastCloudVersion = '';
+
+  function processPendingWrite(key) {
+    clearTimeout(timers[key]);
+    delete timers[key];
+    var item = pending[key];
+    delete pending[key];
+    if (!item) return Promise.resolve();
+    var operation;
+    if (item.mode === 'delete') {
+      operation = SHARED_TEST_CLOUD
+        ? testRequest('/state/' + safeKey(key), { method:'DELETE' })
+        : neonApi('/state?key=' + encodeURIComponent(key), { method:'DELETE' });
+    } else {
+      operation = SHARED_TEST_CLOUD
+        ? testRequest('/state/' + safeKey(key), {
+            method:'PUT',
+            body:JSON.stringify({ key:key, value:item.value, updatedAt:new Date().toISOString() })
+          })
+        : neonApi('/state', { method:'PUT', body:JSON.stringify({ key:key, value:item.value }) });
+      if (SHARED_TEST_CLOUD && key === COMPANY_REGIONS_KEY) {
+        operation = Promise.all([
+          operation,
+          Promise.resolve().then(function () {
+            var rows = JSON.parse(String(item.value || '[]'));
+            if (!Array.isArray(rows)) throw new Error('Region configuration is invalid.');
+            return testRequest('/companyConfig/regions', { method:'PUT', body:JSON.stringify(rows) });
+          })
+        ]);
+      }
+    }
+    var tracked = Promise.resolve(operation).then(function (result) {
+      delete writeErrors[key];
+      return result;
+    }).catch(function (error) {
+      writeErrors[key] = error;
+      throw error;
+    }).finally(function () {
+      inflightWrites.delete(tracked);
+    });
+    inflightWrites.add(tracked);
+    return tracked;
+  }
+
   function scheduleSave(key, value) {
-    pending[key] = { mode: 'save', value: value };
+    pending[key] = { mode:'save', value:value };
+    delete writeErrors[key];
     clearTimeout(timers[key]);
     timers[key] = setTimeout(function () {
-      var item = pending[key];
-      delete pending[key];
-      delete timers[key];
-      if (!item) return;
-      var savePromise = SHARED_TEST_CLOUD
-        ? testRequest('/state/' + safeKey(key), {
-            method: 'PUT',
-            body: JSON.stringify({ key: key, value: item.value, updatedAt: new Date().toISOString() })
-          })
-        : neonApi('/state', { method: 'PUT', body: JSON.stringify({ key: key, value: item.value }) });
-      void savePromise.catch(function (error) {
+      void processPendingWrite(key).catch(function (error) {
         console.error('[Hail Money Cloud] save failed for ' + key, error);
         if (typeof window.showUploadToast === 'function') window.showUploadToast('Cloud save failed. Please check your connection.');
       });
@@ -223,21 +273,28 @@
   }
 
   function scheduleDelete(key) {
-    pending[key] = { mode: 'delete' };
+    pending[key] = { mode:'delete' };
+    delete writeErrors[key];
     clearTimeout(timers[key]);
     timers[key] = setTimeout(function () {
-      var item = pending[key];
-      delete pending[key];
-      delete timers[key];
-      if (!item) return;
-      var deletePromise = SHARED_TEST_CLOUD
-        ? testRequest('/state/' + safeKey(key), { method: 'DELETE' })
-        : neonApi('/state?key=' + encodeURIComponent(key), { method: 'DELETE' });
-      void deletePromise.catch(function (error) {
+      void processPendingWrite(key).catch(function (error) {
         console.error('[Hail Money Cloud] delete failed for ' + key, error);
       });
     }, 120);
   }
+
+  window.hmCloudFlush = async function () {
+    for (var attempts = 0; attempts < 8; attempts++) {
+      var keys = Object.keys(pending);
+      var batch = keys.map(function (key) { return processPendingWrite(key); });
+      await Promise.all(batch.concat(Array.from(inflightWrites)));
+      if (!Object.keys(pending).length && !inflightWrites.size) break;
+    }
+    var errorKeys = Object.keys(writeErrors);
+    if (errorKeys.length) throw new Error('Cloud save failed for ' + errorKeys.join(', ') + '. Please retry before leaving.');
+    if (Object.keys(pending).length || inflightWrites.size) throw new Error('Cloud changes are still saving. Please retry.');
+    return true;
+  };
 
   function purgeBrowserCopies() {
     try {
@@ -251,7 +308,9 @@
   }
 
   function mergeCloudFiles(files) {
-    files = Array.isArray(files) ? files : [];
+    files = (Array.isArray(files) ? files : []).filter(function (item) {
+      return item && String(item.type || '') !== 'photo_project_blob';
+    });
     var existing = [];
     try { existing = JSON.parse(memory.crm_lead_files || '[]'); } catch (_) {}
     if (!Array.isArray(existing)) existing = [];
@@ -277,22 +336,53 @@
     }
   }
 
+  var cloudLoadPromise = null;
+
   async function loadCloud() {
-    var sessionMemory = preserveSessionMemory();
-    var stateResult = await cloudApi('/state', { method: 'GET' });
-    memory = Object.create(null);
-    restoreSessionMemory(sessionMemory);
-    Object.keys(stateResult.state || {}).forEach(function (key) {
-      if (isCloudKey(key)) memory[key] = String(stateResult.state[key]);
-    });
-    var fileResult = await cloudApi('/files', { method: 'GET' });
-    mergeCloudFiles(fileResult.files || []);
-    purgeBrowserCopies();
-    ready = true;
-    if (readyResolve) { readyResolve(true); readyResolve = null; }
-    window.dispatchEvent(new CustomEvent('hailmoneycloudready'));
-    refreshUi();
-    return true;
+    if (cloudLoadPromise) return cloudLoadPromise;
+    cloudLoadPromise = (async function () {
+      // Do not replace in-memory edits with an older server snapshot.
+      if (Object.keys(pending).length || inflightWrites.size) return false;
+      var nextVersion = '';
+      if (!SHARED_TEST_CLOUD) {
+        var versionResult = await cloudApi('/state/version', { method:'GET' });
+        nextVersion = String(versionResult && versionResult.version || '');
+        if (ready && nextVersion === lastCloudVersion) return true;
+      }
+      var sessionMemory = preserveSessionMemory();
+      var stateResult = await cloudApi('/state', { method:'GET' });
+      if (SHARED_TEST_CLOUD) {
+        var stateRegions = stateResult && stateResult.state ? stateResult.state[COMPANY_REGIONS_KEY] : null;
+        if (!stateRegions) {
+          try {
+            var protectedRegions = await testRequest('/companyConfig/regions', { method:'GET' });
+            if (Array.isArray(protectedRegions) && protectedRegions.length) {
+              stateResult.state = stateResult.state || {};
+              stateResult.state[COMPANY_REGIONS_KEY] = JSON.stringify(protectedRegions);
+            }
+          } catch (regionLoadError) {
+            console.warn('[Hail Money Cloud] protected Regions backup could not load', regionLoadError);
+          }
+        }
+      }
+      var fileResult = await cloudApi('/files', { method:'GET' });
+      if (Object.keys(pending).length || inflightWrites.size) return false;
+      memory = Object.create(null);
+      restoreSessionMemory(sessionMemory);
+      Object.keys(stateResult.state || {}).forEach(function (key) {
+        if (isCloudKey(key)) memory[key] = String(stateResult.state[key]);
+      });
+      mergeCloudFiles(fileResult.files || []);
+      lastCloudVersion = nextVersion;
+      purgeBrowserCopies();
+      ready = true;
+      if (readyResolve) { readyResolve(true); readyResolve = null; }
+      window.dispatchEvent(new CustomEvent('hailmoneycloudready'));
+      refreshUi();
+      return true;
+    })();
+    try { return await cloudLoadPromise; }
+    finally { cloudLoadPromise = null; }
   }
 
   async function boot() {
@@ -380,7 +470,7 @@
   }
 
   window.hmCloudApiBase = SHARED_TEST_CLOUD ? TEST_DB_ROOT : API_BASE;
-  window.hmCloudBackendMode = SHARED_TEST_CLOUD ? 'shared-free-test' : 'neon-production';
+  window.hmCloudBackendMode = SHARED_TEST_CLOUD ? 'shared-free-test' : 'neon-clean-test';
   window.hmCloudApi = cloudApi;
   window.hmCloudWhenReady = function () { return ready ? Promise.resolve(true) : readyPromise; };
   window.hmCloudRefresh = loadCloud;
@@ -428,31 +518,32 @@
       return meta;
     }
 
+    // Upload over the authenticated Neon Function, not through a browser-to-S3
+    // presigned PUT. This keeps files in the private bucket without CORS issues.
     var neonId = String(metaOptions.id || ('lead_doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9)));
-    var init = await neonApi('/files/init', {
+    var fileMetaRequest = {
+      id: neonId,
+      leadId: leadId || '',
+      type: type || 'document',
+      category: metaOptions.category || metaOptions.docCategory || '',
+      docCategory: metaOptions.docCategory || metaOptions.category || '',
+      fileName: file.name || 'document',
+      mimeType: file.type || 'application/octet-stream',
+      size: Number(file.size || 0),
+      note: metaOptions.note || '',
+      uploadedBy: metaOptions.uploadedBy || (typeof window.crmGetCurrentUserName === 'function' ? window.crmGetCurrentUserName() : ''),
+      metadata: metaOptions.metadata || {}
+    };
+    var encodedMeta = btoa(unescape(encodeURIComponent(JSON.stringify(fileMetaRequest))));
+    var uploaded = await neonApi('/files/upload', {
       method: 'POST',
-      body: JSON.stringify({
-        id: neonId,
-        leadId: leadId || '',
-        type: type || 'document',
-        category: metaOptions.category || metaOptions.docCategory || '',
-        docCategory: metaOptions.docCategory || metaOptions.category || '',
-        fileName: file.name || 'document',
-        mimeType: file.type || 'application/octet-stream',
-        size: Number(file.size || 0),
-        note: metaOptions.note || '',
-        uploadedBy: metaOptions.uploadedBy || (typeof window.crmGetCurrentUserName === 'function' ? window.crmGetCurrentUserName() : ''),
-        metadata: metaOptions.metadata || {}
-      })
-    });
-    var put = await fetch(init.uploadUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': init.contentType || file.type || 'application/octet-stream' },
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream',
+        'X-HM-File-Meta': encodedMeta
+      },
       body: file
     });
-    if (!put.ok) throw new Error('Cloud file upload failed (' + put.status + ').');
-    var completed = await neonApi('/files/complete', { method: 'POST', body: JSON.stringify({ id: init.id }) });
-    var neonMeta = completed.file || {};
+    var neonMeta = uploaded.file || {};
     neonMeta.storageKey = 'neon:' + neonMeta.id;
     return neonMeta;
   };
@@ -465,10 +556,7 @@
       if (!dataUrl) throw new Error('The test file could not be found.');
       return dataUrlToBlob(dataUrl);
     }
-    var result = await neonApi('/files/' + encodeURIComponent(id) + '/url', { method: 'GET' });
-    var response = await fetch(result.url, { cache: 'no-store' });
-    if (!response.ok) throw new Error('Cloud file download failed (' + response.status + ').');
-    return response.blob();
+    return neonDownloadBlob(id);
   };
 
   window.hmCloudGetFileUrl = async function (id) {
@@ -501,7 +589,18 @@
   };
 
   window.hmCloudPurgeTestCrmFiles = async function () {
-    if (!SHARED_TEST_CLOUD) return { deletedFiles: 0, keptCompanyDocuments: 0 };
+    if (!SHARED_TEST_CLOUD) {
+      if (window.hmCloudBackendMode !== 'neon-clean-test') throw new Error('CRM test purge is disabled outside the clean test environment.');
+      var result = await neonApi('/files', { method:'GET' });
+      var cloudFiles = Array.isArray(result.files) ? result.files : [];
+      var disposable = cloudFiles.filter(function (item) { return item && String(item.type || '') !== 'company_document'; });
+      var keptCompany = cloudFiles.length - disposable.length;
+      for (var index = 0; index < disposable.length; index++) {
+        var id = String(disposable[index].id || '');
+        if (id) await neonApi('/files/' + encodeURIComponent(id), { method:'DELETE' });
+      }
+      return { deletedFiles:disposable.length, keptCompanyDocuments:keptCompany };
+    }
     var metaRows = await testRequest('/fileMeta', { method: 'GET' }) || {};
     var dataRows = await testRequest('/fileData', { method: 'GET' }) || {};
     var keepDataKeys = Object.create(null);
@@ -540,10 +639,20 @@
       if (user) setTimeout(boot, 0);
       else {
         ready = false;
+        lastCloudVersion = '';
         memory = Object.create(null);
       }
     });
   }
+
+  // Low-frequency version checks: a few bytes rather than repeated full state
+  // downloads. Focus/visibility changes refresh immediately on other devices.
+  setInterval(function () {
+    if (!ready || booting || document.hidden) return;
+    loadCloud().catch(function (error) {
+      console.warn('[Hail Money Cloud] scheduled refresh failed', error);
+    });
+  }, 120000);
 
   window.addEventListener('focus', function () {
     if (ready && !booting) {
