@@ -50563,12 +50563,29 @@ function mapsGoogleReady() {
       crmCloseTopbarProfileMenu('dash-profile-menu', 'dash-profile-menu', 'dash-profile-dropdown');
     });
 
+    function crmEnterEmployeeWorkspace(memberId) {
+      if (!crmSetWorkspaceOwner(memberId)) {
+        showUploadToast('You do not have permission to act as this employee.');
+        return false;
+      }
+      _appPageHistoryLocked = true;
+      try {
+        _appPageHistory = [];
+        crmRenderMainMenu();
+        crmRenderWorkspaceBanner();
+        showPage('page-main-menu');
+      } finally {
+        _appPageHistoryLocked = false;
+      }
+      return true;
+    }
+
     document.getElementById('admin-sales-reps-list').addEventListener('click', function (e) {
       var btn = e.target.closest('[data-employee-member-id]');
       if (!btn) return;
       var memberId = String(btn.getAttribute('data-employee-member-id') || '').trim();
       if (!memberId) return;
-      crmOpenSettingsTeamModal(memberId, false);
+      crmEnterEmployeeWorkspace(memberId);
     });
 
     (function () {
@@ -64737,7 +64754,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderAllLeads(query) {
       var list = document.getElementById('al-lead-list');
-      var role = crmGetRole();
+      var role = crmGetWorkspaceMenuRole();
       var leads = role === 'Admin' || role === 'Owner' || role === 'Office'
         ? crmGetLeads()
         : (role === 'Manager' ? crmGetScopedLeads('team') : crmGetScopedLeads('self'));
@@ -77309,7 +77326,18 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmCanViewSalesRepWorkspace() {
       var role = crmGetRole();
-      return role === 'Admin' || role === 'Owner';
+      return role === 'Admin' || role === 'Owner' || role === 'Manager';
+    }
+
+    function crmCanActAsWorkspaceMember(member) {
+      if (!member || member.active === false) return false;
+      var role = crmGetRole();
+      var memberRole = String(member.role || '').trim();
+      if (role === 'Admin' || role === 'Owner') {
+        return memberRole === 'Manager' || memberRole === 'Sales Rep';
+      }
+      if (role === 'Manager') return memberRole === 'Sales Rep';
+      return false;
     }
 
     function crmGetWorkspaceOwnerId() {
@@ -77321,7 +77349,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var memberId = crmGetWorkspaceOwnerId();
       if (!memberId) return null;
       var member = crmLookupTeamMemberById(memberId);
-      if (!member || member.role !== 'Sales Rep' || member.active === false) {
+      if (!crmCanActAsWorkspaceMember(member)) {
         localStorage.removeItem(CRM_WORKSPACE_OWNER_ID_KEY);
         return null;
       }
@@ -77332,7 +77360,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (!crmCanViewSalesRepWorkspace()) return false;
       memberId = String(memberId || '').trim();
       var member = crmLookupTeamMemberById(memberId);
-      if (!member || member.role !== 'Sales Rep' || member.active === false) return false;
+      if (!crmCanActAsWorkspaceMember(member)) return false;
       localStorage.setItem(CRM_WORKSPACE_OWNER_ID_KEY, member.id);
       return true;
     }
@@ -77342,16 +77370,18 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmIsViewingWorkspaceAsRep() {
-      return !!crmGetWorkspaceOwnerMember();
+      var owner = crmGetWorkspaceOwnerMember();
+      return !!owner && owner.role === 'Sales Rep';
     }
 
     function crmGetWorkspaceMenuRole() {
-      return crmIsViewingWorkspaceAsRep() ? 'Sales Rep' : crmGetRole();
+      var owner = crmGetWorkspaceOwnerMember();
+      return owner ? String(owner.role || '').trim() : crmGetRole();
     }
 
     function crmGetWorkspaceScopedRepMember() {
       var owner = crmGetWorkspaceOwnerMember();
-      if (owner) return owner;
+      if (owner && owner.role === 'Sales Rep') return owner;
       if (crmGetRole() !== 'Sales Rep') return null;
       var current = crmGetCurrentTeamMember();
       if (current && current.role === 'Sales Rep') return current;
@@ -77366,20 +77396,25 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderWorkspaceBanner() {
       var banner = document.getElementById('crm-workspace-banner');
+      var bannerClear = document.getElementById('crm-workspace-banner-clear');
       var ownerLine = document.getElementById('crm-workspace-banner-owner');
       var signedInLine = document.getElementById('crm-workspace-banner-signedin');
       var headerClear = document.getElementById('crm-workspace-header-clear');
       if (!banner || !ownerLine || !signedInLine) return;
       var owner = crmGetWorkspaceOwnerMember();
       var show = !!owner && _appCurrentPageId !== 'page-login';
+      var returnRole = crmGetRole() === 'Manager' ? 'Manager' : 'Admin';
       banner.classList.toggle('is-visible', show);
       if (headerClear) {
         headerClear.hidden = !show;
-        headerClear.textContent = owner ? ('Return to Admin') : 'Return to Admin';
-        headerClear.title = owner ? ('Exit ' + owner.name + '\'s workspace') : 'Return to Admin';
+        headerClear.textContent = 'Return to ' + returnRole;
+        headerClear.title = owner ? ('Exit ' + owner.name + '\'s workspace') : ('Return to ' + returnRole);
+      }
+      if (bannerClear) {
+        bannerClear.textContent = 'Return to ' + returnRole + ' Main Menu';
       }
       if (!show) return;
-      ownerLine.textContent = 'Viewing workspace as: ' + owner.name;
+      ownerLine.textContent = 'Viewing workspace as: ' + owner.name + ' (' + owner.role + ')';
       signedInLine.textContent = 'Signed in as: ' + crmGetRole() + ' (Full Permissions)';
     }
 
@@ -77467,7 +77502,20 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmGetAllowedLeadRepMembers() {
       var role = crmGetRole();
       var current = crmGetCurrentTeamMember();
+      var workspaceMember = crmGetWorkspaceOwnerMember();
       var reps = crmGetActiveSalesRepMembers();
+      if (workspaceMember) {
+        if (workspaceMember.role === 'Sales Rep') {
+          return reps.filter(function (member) {
+            return String(member.id || '').trim() === String(workspaceMember.id || '').trim();
+          });
+        }
+        if (workspaceMember.role === 'Manager') {
+          return reps.filter(function (member) {
+            return String(member.managerId || '').trim() === String(workspaceMember.id || '').trim();
+          });
+        }
+      }
       if (role === 'Admin' || role === 'Owner') return reps;
       if (role === 'Manager') {
         return reps.filter(function (member) {
@@ -77503,20 +77551,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var current = crmGetCurrentTeamMember();
       var currentName = String(current.name || '').trim();
       var managedNames = crmGetAllowedLeadRepNames();
-      var workspaceRep = crmGetWorkspaceOwnerMember();
+      var workspaceMember = crmGetWorkspaceOwnerMember();
       var leads = crmGetLeads();
-      if ((role === 'Admin' || role === 'Owner') && workspaceRep) {
-        return leads.filter(function (lead) {
-          var repName = crmGetLeadAssignedRepName(lead);
-          var createdByWorkspace = String(lead.createdByName || '').trim() === String(workspaceRep.name || '').trim();
-          if (scope === 'assignable' || scope === 'inbox') {
-            return repName === workspaceRep.name || createdByWorkspace;
-          }
-          if (scope === 'self' || scope === 'team') {
-            return repName === workspaceRep.name || createdByWorkspace;
-          }
-          return repName === workspaceRep.name || createdByWorkspace;
-        });
+      if (workspaceMember) {
+        if (workspaceMember.role === 'Sales Rep') {
+          return leads.filter(function (lead) {
+            var repName = crmGetLeadAssignedRepName(lead);
+            var createdByWorkspace = String(lead.createdByName || '').trim() === String(workspaceMember.name || '').trim();
+            return repName === workspaceMember.name || createdByWorkspace;
+          });
+        }
+        if (workspaceMember.role === 'Manager') {
+          return leads.filter(function (lead) {
+            var repName = crmGetLeadAssignedRepName(lead);
+            var matchesTeam = repName && managedNames.indexOf(repName) !== -1;
+            var isMine = repName === String(workspaceMember.name || '').trim();
+            var createdByMe = String(lead.createdByName || '').trim() === String(workspaceMember.name || '').trim();
+            if (scope === 'assignable' || scope === 'inbox') return !repName || matchesTeam || isMine || createdByMe;
+            if (scope === 'self') return isMine || createdByMe;
+            return matchesTeam || isMine || createdByMe;
+          });
+        }
       }
       if (role === 'Admin' || role === 'Owner') return leads;
       if (role === 'Manager') {
@@ -79413,7 +79468,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
               '<div class="crm-admin-sales-rep-meta">' + meta + '</div>' +
             '</div>' +
           '</div>' +
-          '<div class="crm-admin-sales-rep-open">View Employee</div>' +
+          '<div class="crm-admin-sales-rep-open">Act as Employee</div>' +
         '</button>';
       }).join('');
       crmLoadEmployeeContactPictures(list);
@@ -79698,7 +79753,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     function crmRenderLeadInbox() {
       var container = document.getElementById('li-sections');
       if (!container) return;
-      var leads = crmGetRole() === 'Admin' || crmGetRole() === 'Owner' ? crmGetLeads() : crmGetScopedLeads('inbox');
+      var inboxRole = crmGetWorkspaceMenuRole();
+      var leads = inboxRole === 'Admin' || inboxRole === 'Owner' ? crmGetLeads() : crmGetScopedLeads('inbox');
 
       var unassigned    = leads.filter(function (l) { return !l.assignedRep || l.assignmentStatus === 'Unassigned'; });
       var assigned      = leads.filter(function (l) { return l.assignedRep && l.assignmentStatus === 'Assigned'; });
