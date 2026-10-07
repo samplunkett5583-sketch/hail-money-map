@@ -4,6 +4,8 @@ const patches=[{"kind":"between","file":"functions/index.js","from":"    if (!em
 const updated={};
 for(const p of patches){
  const current=Object.prototype.hasOwnProperty.call(updated,p.file)?updated[p.file]:fs.readFileSync(p.file,'utf8');
+ // The small Firebase function may already have been safely committed through the API.
+ if(p.file==='functions/index.js' && current.includes('exports.changeEmployeePassword = onRequest') && current.includes('hmPasswordSetupComplete: !mustChangePassword')){console.log('Already verified on server:',p.label);continue;}
  const start=current.indexOf(p.from);
  if(start<0 || start!==current.lastIndexOf(p.from))throw Error('Missing or ambiguous anchor: '+p.label);
  let output;
