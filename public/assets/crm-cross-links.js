@@ -208,3 +208,10 @@
     }, 0);
   }, true);
 })();
+
+/* Employee profile password form uses Firebase Authentication. */
+(function () {
+  var script = document.createElement('script');
+  script.src = './assets/profile-password-firebase.js?v=20261006';
+  document.head.appendChild(script);
+}());
