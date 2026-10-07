@@ -79352,13 +79352,16 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       query = String(query || '').trim().toLowerCase();
 
       var role = crmGetRole();
-      var targetRole = role === 'Admin' ? 'Manager' : (role === 'Manager' ? 'Sales Rep' : '');
       var employees = [];
-      if (targetRole === 'Manager') {
-        employees = crmGetStoredTeamMembersOnly().filter(function (member) {
+      if (role === 'Admin') {
+        var managers = crmGetStoredTeamMembersOnly().filter(function (member) {
           return member && member.role === 'Manager' && member.active !== false;
         });
-      } else if (targetRole === 'Sales Rep') {
+        var salesReps = crmGetCompanySalesRepMembers().filter(function (member) {
+          return member && member.active !== false;
+        });
+        employees = managers.concat(salesReps);
+      } else if (role === 'Manager') {
         employees = crmGetCompanySalesRepMembers().filter(function (member) {
           return member && member.active !== false;
         });
