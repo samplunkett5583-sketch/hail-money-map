@@ -127,6 +127,57 @@
     return role === 'Admin' || role === 'Owner';
   }
 
+  function normalizeIdentity(value) {
+    return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  function projectWasCreatedBy(project, member, fallbackName) {
+    if (!project) return false;
+    member = member && typeof member === 'object' ? member : {};
+    var memberId = String(member.id || member.uid || '').trim();
+    var memberEmail = normalizeIdentity(member.email);
+    var memberName = normalizeIdentity(member.name || fallbackName);
+    if (memberId && [project.createdByUserId, project.createdById].some(function (value) {
+      return String(value || '').trim() === memberId;
+    })) return true;
+    if (memberEmail && [project.createdByEmail].some(function (value) {
+      return normalizeIdentity(value) === memberEmail;
+    })) return true;
+    return !!memberName && [project.createdBy, project.createdByName].some(function (value) {
+      return normalizeIdentity(value) === memberName;
+    });
+  }
+
+  function isProjectCreator(project) {
+    var member = null;
+    try {
+      if (typeof crmGetCurrentTeamMember === 'function') member = crmGetCurrentTeamMember();
+    } catch (_) {}
+    return projectWasCreatedBy(project, member, getUserName());
+  }
+
+  function canCreateReportForProject(project) {
+    if (!project) return false;
+    if (isProjectCreator(project)) return true;
+
+    var role = String(getUserRole() || '').trim();
+    if (role !== 'Admin' && role !== 'Owner' && role !== 'Manager') return false;
+
+    /* Elevated report creation is allowed only through Employee -> My Projects. */
+    if (String(window.hmPhotoProjectAccessSource || '') !== 'my-projects') return false;
+    if (String(window.hmPhotoProjectAccessProjectId || '') !== String(project.id || '')) return false;
+
+    var workspaceMember = null;
+    try {
+      if (typeof crmGetWorkspaceOwnerMember === 'function') workspaceMember = crmGetWorkspaceOwnerMember();
+    } catch (_) {}
+    return !!workspaceMember && projectWasCreatedBy(project, workspaceMember, workspaceMember.name || '');
+  }
+
+  function canDeleteReportForProject(project) {
+    return isProjectCreator(project);
+  }
+
   /* ── Legacy photo-reports store migration ─────────────────────────── */
   function getReportsForProject(projectId) {
     var stored = [];
@@ -553,7 +604,8 @@
     printReport: printReport,
     confirmPhotoPicker: confirmPhotoPicker,
     cancelPhotoPicker: cancelPhotoPicker,
-    repairProjectCloudPhotos: repairProjectCloudPhotos
+    repairProjectCloudPhotos: repairProjectCloudPhotos,
+    canCreateReportForProject: canCreateReportForProject
   };
 
   function getAllReports() {
@@ -629,6 +681,10 @@
   function openBuilder(projectId, template) {
     var p = findProject(projectId);
     if (!p) return;
+    if (!canCreateReportForProject(p)) {
+      if (typeof showUploadToast === 'function') showUploadToast('This project is view only. Open the employee\'s workspace to create a report for them.');
+      return;
+    }
     rb.projectId = projectId;
     rb.mode = 'report';
     rb.templateId = template && template.id ? String(template.id) : '';
@@ -2040,6 +2096,8 @@
     var p = findProject(projectId);
     if (!p) { el.innerHTML = ''; return; }
     var reports = getReportsForProject(projectId);
+    var canDelete = canDeleteReportForProject(p);
+    var canCreate = canCreateReportForProject(p);
     el.innerHTML = reports.length
       ? '<div class="hm-photo-reports-list">' + reports.map(function (report) {
           return '<div class="hm-photo-report-row">' +
@@ -2049,10 +2107,10 @@
               '<span class="hm-photo-report-date">' + esc(new Date(report.createdAt).toLocaleDateString()) + '</span></span>' +
             '</div>' +
             '<button class="btn" type="button" data-hm-open-report="' + esc(report.id) + '">Open</button>' +
-            '<button class="btn" type="button" data-hm-delete-report="' + esc(report.id) + '" title="Delete report">Delete</button>' +
+            (canDelete ? '<button class="btn" type="button" data-hm-delete-report="' + esc(report.id) + '" title="Delete report">Delete</button>' : '') +
           '</div>';
         }).join('') + '</div>'
-      : '<div class="phr-empty-reports">No reports yet. Create your first report from this project.</div>';
+      : '<div class="phr-empty-reports">' + (canCreate ? 'No reports yet. Create your first report from this project.' : 'No reports have been created for this project yet.') + '</div>';
     el.querySelectorAll('[data-hm-open-report]').forEach(function (btn) {
       btn.onclick = function () { openReport(projectId, btn.getAttribute('data-hm-open-report')); };
     });

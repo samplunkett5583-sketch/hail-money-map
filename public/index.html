@@ -85882,7 +85882,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   function hmNormalizeRepName(value){return String(value||'').replace(/\s+/g,' ').trim().toLowerCase();}
   function hmScopedRepName(){
     var name='';
-    try{if(typeof crmGetWorkspaceScopedRepName==='function')name=crmGetWorkspaceScopedRepName()||'';}catch(_){}
+    try{if(typeof crmGetWorkspaceOwnerMember==='function'){var owner=crmGetWorkspaceOwnerMember();if(owner)name=owner.name||'';}}catch(_){}
+    if(!name){try{if(typeof crmGetWorkspaceScopedRepName==='function')name=crmGetWorkspaceScopedRepName()||'';}catch(_){}}
     if(!name){try{if(typeof crmGetCurrentUserName==='function')name=crmGetCurrentUserName()||'';}catch(_){}}
     return String(name||'').replace(/\s+/g,' ').trim();
   }
@@ -85890,7 +85891,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     var target=hmNormalizeRepName(repName);
     if(!target||!project)return false;
     var member=null;
-    try{if(typeof crmGetWorkspaceScopedRepMember==='function')member=crmGetWorkspaceScopedRepMember();}catch(_){}
+    try{if(typeof crmGetWorkspaceOwnerMember==='function')member=crmGetWorkspaceOwnerMember();}catch(_){}
+    if(!member){try{if(typeof crmGetWorkspaceScopedRepMember==='function')member=crmGetWorkspaceScopedRepMember();}catch(_){} }
     if(member){
       var memberId=String(member.id||member.uid||'').trim();
       var memberEmail=String(member.email||'').trim().toLowerCase();
@@ -85927,7 +85929,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     list.querySelectorAll('[data-hm-project]').forEach(function(row){
       row.addEventListener('click',function(){
         window.hmProjectDetailReturnView=returnView||'projects';
-        open(row.dataset.hmProject);
+        open(row.dataset.hmProject,returnView||'projects');
       });
     });
     rows.forEach(function(p){
@@ -86057,6 +86059,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     view=validViews.indexOf(view)!==-1?view:'home';
     if(view==='create' && typeof window.hmStartPlainPhotoProject==='function'){window.hmStartPlainPhotoProject();return;}
     window.hmProjectsCurrentView=view;
+    window.hmPhotoProjectAccessSource=view;
+    window.hmPhotoProjectAccessProjectId='';
     var titleMap={home:'Projects',projects:'All Projects',reports:'All Reports',create:'Create New','my-projects':'My Projects','my-records':'My Records'};
     var page=document.getElementById('page-photo-files');
     if(page){
@@ -86080,8 +86084,20 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
   window.hmProjectsShowView=showProjectsView;
   window.renderPhotoFiles=renderPhotoFiles=render;
   function switchTab(tab){currentProjectId=currentProjectId||'';document.querySelectorAll('#pf-detail-tabs [data-hm-tab]').forEach(function(btn){btn.classList.toggle('active',btn.getAttribute('data-hm-tab')===tab);});['photos','reports','chat'].forEach(function(t){var el=document.getElementById('pf-detail-tab-'+t);if(el)el.classList.toggle('active',t===tab);});if(tab==='reports'&&typeof window.renderPhotoProjectReports==='function'&&currentProjectId)window.renderPhotoProjectReports(currentProjectId);if(tab==='chat'&&typeof window.renderPhotoProjectChat==='function'&&currentProjectId)window.renderPhotoProjectChat(currentProjectId);}
-  function open(id){
-    var p=find(id);if(!p)return;currentProjectId=id;if(window.hmPhotoReports&&typeof window.hmPhotoReports.repairProjectCloudPhotos==='function')window.hmPhotoReports.repairProjectCloudPhotos(p);
+  function open(id,accessSource){
+    var p=find(id);if(!p)return;
+    if(accessSource){
+      window.hmPhotoProjectAccessSource=String(accessSource||'direct');
+      window.hmPhotoProjectAccessProjectId=String(id||'');
+    }else if(String(window.hmPhotoProjectAccessProjectId||'')!==String(id||'')){
+      window.hmPhotoProjectAccessSource='direct';
+      window.hmPhotoProjectAccessProjectId=String(id||'');
+    }
+    currentProjectId=id;if(window.hmPhotoReports&&typeof window.hmPhotoReports.repairProjectCloudPhotos==='function')window.hmPhotoReports.repairProjectCloudPhotos(p);
+    var reportAction=document.getElementById('pf-detail-report');
+    if(reportAction&&window.hmPhotoReports&&typeof window.hmPhotoReports.canCreateReportForProject==='function'){
+      reportAction.hidden=!window.hmPhotoReports.canCreateReportForProject(p);
+    }
     var projectTitle=p.projectName||p.homeownerName||'Photo Project';
     var detailPage=document.getElementById('page-photo-file-detail');
     if(detailPage)detailPage.setAttribute('data-crm-header-title',projectTitle);
