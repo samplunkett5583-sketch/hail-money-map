@@ -1645,7 +1645,7 @@
     ];
     rows.forEach(function (row) {
       if (row[2] !== false && String(row[1] || '').trim()) {
-        html += '<div class="phr-cover-row"><span class="phr-cover-label">' + esc(row[0]) + '</span><span class="phr-cover-value">' + esc(row[1]) + '</span></div>';
+        html += '<div class="phr-cover-row"><span class="phr-cover-value">' + esc(row[1]) + '</span></div>';
       }
     });
     if (options.cover.customNotes !== false && String(cover.customNotes || '').trim()) {
@@ -2084,6 +2084,10 @@
       window.dispatchEvent(new CustomEvent('hmphotoreportssaved', { detail:{ projectId:rb.projectId, reportId:report.id } }));
       if (typeof window.hmProjectsRenderReports === 'function') window.hmProjectsRenderReports();
       if (typeof showUploadToast === 'function') showUploadToast(fileName + ' saved to Reports.');
+      if (typeof window.openPhotoFileDetail === 'function') {
+        window.hmPhotoReportReturnTo = '';
+        window.openPhotoFileDetail(rb.projectId);
+      }
     } catch (err) {
       console.error('[Photo Reports] PDF save failed', err);
       if (typeof showUploadToast === 'function') showUploadToast('Could not create the PDF. Please try again.');

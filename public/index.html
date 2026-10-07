@@ -21910,10 +21910,9 @@
     .phr-cover-lower{flex:1;min-height:330px;display:flex;flex-direction:column;justify-content:center;padding:18px 0 8px}
     .phr-cover-title{font-size:32px;font-weight:800;color:#111827;margin:0 0 6px}
     .phr-cover-rule{width:160px;height:4px;background:#b88722;margin:16px auto 22px;border-radius:99px}
-    .phr-cover-details{display:grid;gap:8px;max-width:430px;margin:0 auto;text-align:left}
-    .phr-cover-row{display:flex;gap:12px;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef1f5}
-    .phr-cover-label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a6d22;flex:0 0 140px}
-    .phr-cover-value{font-size:14px;font-weight:600;color:#111827;text-align:right}
+    .phr-cover-details{display:grid;gap:8px;max-width:560px;margin:0 auto;text-align:center}
+    .phr-cover-row{display:flex;justify-content:center;padding:6px 0}
+    .phr-cover-value{display:block;width:100%;font-size:14px;font-weight:600;color:#111827;text-align:center}
     .phr-cover-notes{margin-top:18px;padding:12px 14px;background:#f8fafc;border:1px solid #e3e8f0;border-radius:8px;font-size:13px;color:#374151}
     .phr-pdf-page{min-height:600px;padding:34px 30px;position:relative;box-sizing:border-box}
     .phr-pdf-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:10px;border-bottom:2px solid #b88722;margin-bottom:14px}
@@ -23684,7 +23683,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
               <div class="hm-projects-subview-head">
                 <button class="btn" type="button" data-hm-projects-back>Back</button>
                 <div style="display:flex;gap:8px;align-items:center;">
-                  <button class="btn btn-primary" type="button" data-hm-projects-view="my-records">My Records</button>
+                  <button class="btn btn-primary" type="button" data-hm-projects-view="my-records">My Reports</button>
                 </div>
               </div>
               <label class="hm-projects-search-label" for="hm-my-projects-search">Search</label>
@@ -23694,7 +23693,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <div class="hm-projects-home-view" id="hm-projects-view-my-records">
               <div class="hm-projects-subview-head"><button class="btn" type="button" data-hm-projects-back="my-projects">Back to My Projects</button></div>
               <label class="hm-projects-search-label" for="hm-my-records-search">Search</label>
-              <div class="hm-photo-filter-row"><input type="search" id="hm-my-records-search" placeholder="Search my records, projects, addresses, or homeowners" /></div>
+              <div class="hm-photo-filter-row"><input type="search" id="hm-my-records-search" placeholder="Search my reports, projects, addresses, or homeowners" /></div>
               <div id="hm-my-records-list" class="hm-photo-project-list"></div>
             </div>
           </div>
@@ -86024,7 +86023,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     var repName=hmScopedRepName();
     var rows=window.hmPhotoReports&&typeof window.hmPhotoReports.getAllReports==='function'?window.hmPhotoReports.getAllReports():[];
     rows=rows.filter(function(item){return hmProjectBelongsToRep(item&&item.project,repName);});
-    hmRenderReportCollection('hm-my-records-list',hmFilterReportRows(rows,filter),repName?('No saved reports found for '+repName+'.'):'No rep is selected.','my-records');
+    hmRenderReportCollection('hm-my-records-list',hmFilterReportRows(rows,filter),repName?('No reports found for '+repName+'.'):'No rep is selected.','my-records');
   }
   window.hmProjectsRenderReports=renderReports;
   window.hmProjectsRenderMyRecords=renderMyRecords;
@@ -86067,7 +86066,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     window.hmProjectsCurrentView=view;
     window.hmPhotoProjectAccessSource=view;
     window.hmPhotoProjectAccessProjectId='';
-    var titleMap={home:'Projects',projects:'All Projects',reports:'All Reports',create:'Create New','my-projects':'My Projects','my-records':'My Records'};
+    var titleMap={home:'Projects',projects:'All Projects',reports:'All Reports',create:'Create New','my-projects':'My Projects','my-records':'My Reports'};
     var page=document.getElementById('page-photo-files');
     if(page){
       page.setAttribute('data-crm-header-title',titleMap[view]||'Projects');
