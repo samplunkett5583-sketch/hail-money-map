@@ -8,7 +8,7 @@ for(const p of patches){
  if(start<0 || start!==current.lastIndexOf(p.from))throw Error('Missing or ambiguous anchor: '+p.label);
  let output;
  if(p.kind==='between'){const end=current.indexOf(p.to,start+p.from.length);if(end<0)throw Error('Missing end anchor: '+p.label);output=current.slice(0,start)+p.replacement+current.slice(end)}
- else {output=current.slice(0,start)+p.from+'\n'+p.replacement+current.slice(start+p.from.length)}
+ else {output=current.slice(0,start)+p.replacement+'\n'+current.slice(start)}
  updated[p.file]=output;console.log('Verified: '+p.label);
 }
 for(const [file,content] of Object.entries(updated)){
