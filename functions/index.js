@@ -136,23 +136,40 @@ exports.provisionEmployee = onRequest({ cors: false, region: "us-central1" }, as
     // Organization membership is inherited from the authenticated admin. It is
     // never accepted from the browser request body.
     const organizationId = String(caller.hmOrganizationId || HM_PRIMARY_ORGANIZATION_ID).trim().toLowerCase();
-    if (!email || !password || password.length < 6) {
-      return res.status(400).json({ error: "A valid email and password of at least 6 characters are required." });
+    if (!email || (password && password.length < 6)) {
+      return res.status(400).json({ error: "A valid email and temporary password of at least 6 characters are required." });
     }
     let userRecord;
+    let priorClaims = {};
+    let wasCreated = false;
     try {
       userRecord = await admin.auth().getUserByEmail(email);
-      userRecord = await admin.auth().updateUser(userRecord.uid, { password, displayName, disabled: body.active === false });
+      priorClaims = userRecord.customClaims || {};
+      const changes = { displayName, disabled: body.active === false };
+      if (password) changes.password = password;
+      userRecord = await admin.auth().updateUser(userRecord.uid, changes);
     } catch (error) {
       if (error && error.code !== "auth/user-not-found") throw error;
+      if (!password || password.length < 6) {
+        return res.status(400).json({ error: "A temporary password of at least 6 characters is required for a new employee." });
+      }
       userRecord = await admin.auth().createUser({ email, password, displayName, disabled: body.active === false });
+      wasCreated = true;
     }
+    // Firebase claims, not editable browser data, are the source of truth.
+    const mustChangePassword = wasCreated || !!password ||
+      priorClaims.hmForcePasswordReset === true ||
+      priorClaims.hmPasswordSetupComplete !== true;
     await admin.auth().setCustomUserClaims(userRecord.uid, {
+      ...priorClaims,
       role: "authenticated",
       employee: true,
       hmRole,
-      hmOrganizationId: organizationId
+      hmOrganizationId: organizationId,
+      hmForcePasswordReset: mustChangePassword,
+      hmPasswordSetupComplete: !mustChangePassword
     });
+
     // Firebase stores authentication only. Team/member records live in Neon.
     userRecord = await admin.auth().getUser(userRecord.uid);
     return res.status(200).json({ profile: safeEmployeeProfile(userRecord, { role: hmRole, displayName }) });
@@ -162,6 +179,38 @@ exports.provisionEmployee = onRequest({ cors: false, region: "us-central1" }, as
     return res.status(status).json({ error: error && error.message || "Employee could not be provisioned." });
   }
 });
+// Complete first-login password change on Firebase before releasing the auth gate.
+exports.changeEmployeePassword = onRequest({ cors: false, region: "us-central1" }, async (req, res) => {
+  permitCors(req, res);
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).json({ error: "POST required." });
+  try {
+    const caller = await requireFirebaseUser(req);
+    if (caller.employee !== true) return res.status(403).json({ error: "Employee access is required." });
+    const age = Math.floor(Date.now() / 1000) - Number(caller.auth_time || 0);
+    if (!Number.isFinite(age) || age < 0 || age > 900) {
+      return res.status(401).json({ error: "For security, sign in again before changing your password." });
+    }
+    const password = String(req.body && req.body.password || "");
+    if (password.length < 8) return res.status(400).json({ error: "Choose a new password of at least 8 characters." });
+    const user = await admin.auth().getUser(caller.uid);
+    if (user.disabled) return res.status(403).json({ error: "This employee account is disabled." });
+    await admin.auth().updateUser(caller.uid, { password });
+    await admin.auth().setCustomUserClaims(caller.uid, {
+      ...(user.customClaims || {}),
+      hmForcePasswordReset: false,
+      hmPasswordSetupComplete: true
+    });
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    logger.error("Employee password setup failed", { code: String(error && error.code || "unknown") });
+    return res.status(Number(error && error.statusCode) || 500).json({
+      error: error && error.statusCode ? error.message : "Unable to save the new password. Please try again."
+    });
+  }
+});
+
+
 function responseOutputText(response) {
   if (response && typeof response.output_text === "string") return response.output_text;
   const output = response && Array.isArray(response.output) ? response.output : [];
