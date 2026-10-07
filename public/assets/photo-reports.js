@@ -156,8 +156,15 @@
     return projectWasCreatedBy(project, member, getUserName());
   }
 
+  function isAllProjectsViewOnly(project) {
+    return !!project &&
+      String(window.hmPhotoProjectAccessSource || '') === 'projects' &&
+      String(window.hmPhotoProjectAccessProjectId || '') === String(project.id || '');
+  }
+
   function canCreateReportForProject(project) {
     if (!project) return false;
+    if (isAllProjectsViewOnly(project)) return false;
     if (isProjectCreator(project)) return true;
 
     var role = String(getUserRole() || '').trim();
@@ -175,6 +182,7 @@
   }
 
   function canDeleteReportForProject(project) {
+    if (isAllProjectsViewOnly(project)) return false;
     return isProjectCreator(project);
   }
 
@@ -2133,6 +2141,7 @@
     var p = findProject(projectId);
     if (!p) { el.innerHTML = ''; return; }
     var messages = getChatMessages(projectId);
+    var readOnly = isAllProjectsViewOnly(p);
     var html = '<div class="hm-photo-chat">';
     html += '<div class="hm-photo-chat-head">Photos Chat</div>';
     html += '<div class="hm-photo-chat-list" id="hm-photo-chat-list">';
@@ -2144,10 +2153,13 @@
       });
     }
     html += '</div>';
-    html += '<div class="hm-photo-chat-composer">';
-    html += '<input type="text" id="hm-photo-chat-input" placeholder="Message" />';
-    html += '<button class="btn btn-primary" type="button" id="hm-photo-chat-send">Send</button>';
-    html += '</div></div>';
+    if (!readOnly) {
+      html += '<div class="hm-photo-chat-composer">';
+      html += '<input type="text" id="hm-photo-chat-input" placeholder="Message" />';
+      html += '<button class="btn btn-primary" type="button" id="hm-photo-chat-send">Send</button>';
+      html += '</div>';
+    }
+    html += '</div>';
     el.innerHTML = html;
     var input = document.getElementById('hm-photo-chat-input');
     var send = document.getElementById('hm-photo-chat-send');
