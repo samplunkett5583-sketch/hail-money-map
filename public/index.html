@@ -75005,8 +75005,12 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmRenderJobFileInsuranceHtml(lead, jobFile) {
-      var contingencyEntry = crmGetJobFileDocumentEntries(lead).find(function (entry) {
+      var documentEntries = crmGetJobFileDocumentEntries(lead);
+      var contingencyEntry = documentEntries.find(function (entry) {
         return entry.category === 'Contingency';
+      }) || null;
+      var summaryOfLossEntry = documentEntries.find(function (entry) {
+        return entry && entry.file && String(entry.file.type || '').trim() === 'summary_of_loss';
       }) || null;
       var html = '<div class="crm-job-file-panel-block"><div class="crm-job-file-block-title">Insurance</div>';
       html += '<div class="crm-job-file-form-grid">';
@@ -75024,6 +75028,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       html += '<div class="field"><label for="jf-mortgage-check-status">Mortgage check status</label><input id="jf-mortgage-check-status" type="text" value="' + crmEscapeHtml(jobFile.insurance.mortgageCheckStatus || '') + '" placeholder="Received, endorsed, pending..." /></div>';
       html += '<div class="field full"><label class="crm-checkbox-item" for="jf-contingency-signed"><input id="jf-contingency-signed" type="checkbox"' + (jobFile.contingencySigned ? ' checked' : '') + ' /> Signed contingency agreement</label></div>';
       html += '<div class="field full"><label>Contingency document</label><div class="crm-job-file-inline-actions"><button class="btn" type="button" data-jf-upload-doc="signed_contingency" data-jf-doc-category="Contingency">Upload Contingency Document</button>' + (contingencyEntry ? '<button class="btn" type="button" data-jf-open-file="' + crmEscapeHtml(contingencyEntry.fileId) + '">Open Current Document</button>' : '') + '</div><div class="crm-job-file-inline-note">' + crmEscapeHtml(contingencyEntry ? ('Current file: ' + (contingencyEntry.file.fileName || 'Contingency document')) : 'No contingency document uploaded yet.') + '</div></div>';
+      html += '<div class="field full"><label>Summary of Loss</label><div class="crm-job-file-inline-actions"><button class="btn btn-primary" type="button" data-jf-upload-doc="summary_of_loss" data-jf-doc-category="Insurance Paperwork">Upload Summary of Loss</button>' + (summaryOfLossEntry ? '<button class="btn" type="button" data-jf-open-file="' + crmEscapeHtml(summaryOfLossEntry.fileId) + '">Open Current Summary of Loss</button>' : '') + '</div><div class="crm-job-file-inline-note">' + crmEscapeHtml(summaryOfLossEntry ? ('Current file: ' + (summaryOfLossEntry.file.fileName || 'Summary of Loss')) : 'No Summary of Loss uploaded yet.') + '</div></div>';
       html += '<div class="field full"><label for="jf-insurance-notes">Insurance notes</label><textarea id="jf-insurance-notes" placeholder="Carrier notes, adjuster feedback, claim detail...">' + crmEscapeHtml(jobFile.insurance.notes || '') + '</textarea></div>';
       html += '</div>';
       if (lead.adjusterAppointmentScheduled) {
