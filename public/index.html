@@ -53794,7 +53794,7 @@ function mapsGoogleReady() {
       host.innerHTML=CONTRACT_PAGE_TYPES.map(function(def){
         var row=pages.find(function(item){return item.key===def.key;});
         var disabled=!row||def.required;
-        var checked=!!row;
+        var checked=!!row&&!!def.required;
         return '<label style="display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid #d8d8d8;border-radius:9px;background:'+(row?'#fff':'#f5f5f5')+';">'+
           '<input type="checkbox" data-contract-page="'+def.key+'" '+(checked?'checked ':'')+(disabled?'disabled ':'')+'/>'+
           '<span style="flex:1;"><strong>'+def.label+'</strong>'+(row?'':'<span style="display:block;color:#b42318;font-size:11px;margin-top:2px;">Not configured for this region/state</span>')+'</span>'+
@@ -54708,6 +54708,19 @@ function mapsGoogleReady() {
     var currentTplFileType = null;
     var tplSelectedFieldKey = null;
     var tplRenderedPages = []; // { wrapper, width, height, offsetTop } per page from last PDF render
+    var currentTplRoutingLock = null;
+    var currentTplDocumentLock = null;
+
+    function applyTemplateRoutingLock(region, state, locked) {
+      region = String(region || '').trim();
+      state = String(state || '').trim().toUpperCase();
+      currentTplRoutingLock = locked && region && state ? { region:region, state:state } : null;
+      if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting(region, state);
+      var regionSelect = document.getElementById('tpl-region');
+      var stateSelect = document.getElementById('tpl-state');
+      if (regionSelect) { regionSelect.disabled = !!currentTplRoutingLock; regionSelect.title = currentTplRoutingLock ? 'Region is set by the Documents upload folder.' : ''; }
+      if (stateSelect) { stateSelect.disabled = !!currentTplRoutingLock || !region; stateSelect.title = currentTplRoutingLock ? 'State is set by the Documents upload folder.' : ''; }
+    }
 
     function setTemplateBuilderTypeUI(documentType, contractPageType) {
       documentType = String(documentType || 'contingency');
@@ -54719,6 +54732,17 @@ function mapsGoogleReady() {
       if (pageWrap) pageWrap.style.display = documentType === 'contract' ? 'grid' : 'none';
       if (pageSelect) pageSelect.value = documentType === 'contract' ? String(contractPageType || '') : '';
       if (existingLabel) existingLabel.textContent = documentType === 'contract' ? 'Use Existing Contract Page' : (documentType === 'contingency' ? 'Use Existing Contingency' : 'Use Existing Document');
+    }
+
+    function applyTemplateDocumentLock(documentType, contractPageType, locked) {
+      documentType = String(documentType || 'contingency');
+      contractPageType = String(contractPageType || '');
+      currentTplDocumentLock = locked ? { documentType:documentType, contractPageType:contractPageType } : null;
+      setTemplateBuilderTypeUI(documentType, contractPageType);
+      var typeSelect = document.getElementById('tpl-doc-type');
+      var pageSelect = document.getElementById('tpl-contract-page-type');
+      if (typeSelect) { typeSelect.disabled = !!currentTplDocumentLock; typeSelect.title = currentTplDocumentLock ? 'Document type is set by the Documents upload section.' : ''; }
+      if (pageSelect) { pageSelect.disabled = !!currentTplDocumentLock && documentType === 'contract'; pageSelect.title = currentTplDocumentLock && documentType === 'contract' ? 'Contract page type is set when the file is uploaded.' : ''; }
     }
 
     async function refreshExistingDocumentPicker(selectedId, region, state, documentType, contractPageType) {
@@ -54765,6 +54789,10 @@ function mapsGoogleReady() {
         var meta = metaRows.find(function (row) { return String(row && row.id || '') === String(id); }) || {};
         var documentType = String(forcedType || (meta.category === 'contracts' ? 'contract' : 'contingency'));
         var contractPageType = String(forcedPageType || meta.contractPageType || '');
+        var routedRegion = String(meta.region || currentTplRoutingLock && currentTplRoutingLock.region || '').trim();
+        var routedState = String(meta.state || currentTplRoutingLock && currentTplRoutingLock.state || '').trim().toUpperCase();
+        if (routedRegion && routedState) applyTemplateRoutingLock(routedRegion, routedState, true);
+        applyTemplateDocumentLock(documentType, contractPageType, true);
         var file = await window.hmLoadCompanyDocumentForTemplate(id);
         currentTplFileName = file.name || 'Document';
         currentTplFileType = file.contentType || 'application/pdf';
@@ -54798,8 +54826,8 @@ function mapsGoogleReady() {
       document.getElementById('tpl-doc-name').value = documentType === 'contract' && contractPageType ? crmContractPageLabel(contractPageType) : '';
       document.getElementById('tpl-save-btn').textContent = 'Save Template';
       document.getElementById('tpl-file-label').textContent = 'No document selected';
-      setTemplateBuilderTypeUI(documentType, contractPageType);
-      if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting(region, state);
+      applyTemplateDocumentLock(documentType, contractPageType, !!selectedId);
+      applyTemplateRoutingLock(region, state, !!(selectedId && region && state));
       refreshExistingDocumentPicker(selectedId, region, state, documentType, contractPageType).then(function () {
         if (selectedId) loadExistingDocumentIntoEditor(selectedId, documentType, contractPageType);
       });
@@ -55371,10 +55399,10 @@ function mapsGoogleReady() {
           }
           return entry;
         }),
-        documentType: String((document.getElementById('tpl-doc-type') || {}).value || 'contingency'),
-        contractPageType: String((document.getElementById('tpl-contract-page-type') || {}).value || ''),
-        region: String((document.getElementById('tpl-region') || {}).value || ''),
-        state: String((document.getElementById('tpl-state') || {}).value || '').toUpperCase(),
+        documentType: String(currentTplDocumentLock && currentTplDocumentLock.documentType || (document.getElementById('tpl-doc-type') || {}).value || 'contingency'),
+        contractPageType: String(currentTplDocumentLock && currentTplDocumentLock.contractPageType || (document.getElementById('tpl-contract-page-type') || {}).value || ''),
+        region: String(currentTplRoutingLock && currentTplRoutingLock.region || (document.getElementById('tpl-region') || {}).value || ''),
+        state: String(currentTplRoutingLock && currentTplRoutingLock.state || (document.getElementById('tpl-state') || {}).value || '').toUpperCase(),
         effectiveDate: String((document.getElementById('tpl-effective-date') || {}).value || ''),
         status: String((document.getElementById('tpl-status') || {}).value || 'active'),
         activeDefault: !!((document.getElementById('tpl-active-default') || {}).checked),
@@ -55414,10 +55442,11 @@ function mapsGoogleReady() {
       currentTplFileDataUrl = null;
       currentTplFileName = null;
       currentTplFileType = null;
+      currentTplRoutingLock = null;
+      currentTplDocumentLock = null;
       document.getElementById('tpl-doc-name').value = '';
-      setTemplateBuilderTypeUI('contingency', '');
-      document.getElementById('tpl-region').value = '';
-      document.getElementById('tpl-state').value = '';
+      applyTemplateDocumentLock('contingency', '', false);
+      applyTemplateRoutingLock('', '', false);
       document.getElementById('tpl-effective-date').value = '';
       document.getElementById('tpl-status').value = 'active';
       document.getElementById('tpl-active-default').checked = true;
@@ -55438,7 +55467,7 @@ function mapsGoogleReady() {
         html += '<div><strong>' + tpl.name + '</strong><br><span style="font-size:11px;color:var(--muted,#888);">' + ((tpl.fields || []).length) + ' fields' + (String(tpl.documentType || '') === 'contract' && tpl.contractPageType ? ' &middot; ' + crmContractPageLabel(tpl.contractPageType) : '') + ' &middot; ' + (tpl.fileName || 'unknown') + (tpl.region ? ' &middot; ' + tpl.region + ' / ' + (tpl.state || '') : '') + (tpl.effectiveDate ? ' &middot; Effective ' + tpl.effectiveDate : '') + ' &middot; v' + Number(tpl.version || 1) + ' &middot; ' + (String(tpl.status || 'active') === 'active' ? 'Active' : 'Inactive') + (tpl.activeDefault ? ' Default' : '') + '</span></div>';
         html += '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">';
         html += '<button class="btn" type="button" data-tpl-fields="' + i + '" style="font-size:12px;padding:4px 10px;">' + (tpl.fields && tpl.fields.length ? 'Edit Fillable Fields' : 'Add Fillable Fields') + '</button>';
-        html += '<button class="btn" type="button" data-tpl-new-document="' + i + '" style="font-size:12px;padding:4px 10px;">Upload New Document</button>';
+        if (String(tpl.documentType || 'contingency') !== 'contingency' && String(tpl.documentType || '') !== 'contract') html += '<button class="btn" type="button" data-tpl-new-document="' + i + '" style="font-size:12px;padding:4px 10px;">Upload New Document</button>';
         html += '<button class="btn" type="button" data-tpl-delete="' + i + '" style="font-size:12px;padding:4px 10px;color:#e53935;">Delete</button>';
         html += '</div></div>';
       });
@@ -55470,6 +55499,10 @@ function mapsGoogleReady() {
     function loadTemplateForNewDocument(idx) {
       var tpl = savedFormTemplates[idx];
       if (!tpl) return;
+      if (String(tpl.documentType || 'contingency') === 'contingency' || String(tpl.documentType || '') === 'contract') {
+        showUploadToast('Upload this document from Documents → ' + (String(tpl.documentType || '') === 'contract' ? 'Contracts' : 'Contingencies') + ' → Region → State so its routing is assigned automatically.');
+        return;
+      }
       document.getElementById('tpl-doc-name').value = tpl.name || '';
       setTemplateBuilderTypeUI(tpl.documentType || 'contingency', tpl.contractPageType || '');
       if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting(tpl.region || '', tpl.state || '');
@@ -55493,8 +55526,9 @@ function mapsGoogleReady() {
       var tpl = savedFormTemplates[idx];
       if (!tpl) return;
       document.getElementById('tpl-doc-name').value = tpl.name;
-      setTemplateBuilderTypeUI(tpl.documentType || 'contingency', tpl.contractPageType || '');
-      if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting(tpl.region || '', tpl.state || '');
+      var routedTemplate = String(tpl.documentType || 'contingency') === 'contingency' || String(tpl.documentType || '') === 'contract';
+      applyTemplateDocumentLock(tpl.documentType || 'contingency', tpl.contractPageType || '', routedTemplate);
+      applyTemplateRoutingLock(tpl.region || '', tpl.state || '', routedTemplate);
       document.getElementById('tpl-effective-date').value = tpl.effectiveDate || '';
       document.getElementById('tpl-status').value = tpl.status || (tpl.activeDefault === false ? 'inactive' : 'active');
       document.getElementById('tpl-active-default').checked = tpl.activeDefault !== false;
