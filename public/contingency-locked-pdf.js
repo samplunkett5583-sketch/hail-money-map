@@ -96,6 +96,32 @@
     return result;
   };
 
+  window.hmBuildContractSelectionPdf = async function (sourceDataUrl, selectedPageIndexes) {
+    var api = window.jspdf && window.jspdf.jsPDF;
+    if (!api) throw new Error('PDF generator is not available.');
+    if (!window.pdfjsLib) throw new Error('PDF rendering is not available.');
+    var src = String(sourceDataUrl || '');
+    if (!src || src.indexOf('data:application/pdf') !== 0) throw new Error('The complete contract PDF is not available.');
+    var pageIndexes = Array.isArray(selectedPageIndexes) ? selectedPageIndexes.map(function (v) { return Number(v); }).filter(function (v) { return Number.isInteger(v) && v >= 0; }) : [];
+    if (!pageIndexes.length) throw new Error('No contract pages were selected.');
+    var bytes = await fetch(src).then(function (r) { return r.arrayBuffer(); });
+    var pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
+    var doc = null;
+    for (var i = 0; i < pageIndexes.length; i++) {
+      var sourcePageIndex = pageIndexes[i];
+      if (sourcePageIndex >= pdf.numPages) throw new Error('A selected contract page is missing from the uploaded contract.');
+      var page = await pdf.getPage(sourcePageIndex + 1), viewport = page.getViewport({ scale: 1.5 });
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+      var w = viewport.width, h = viewport.height;
+      if (!doc) doc = new api({ unit:'pt', format:[w,h], orientation:w>h?'landscape':'portrait', compress:true });
+      else doc.addPage([w,h], w>h?'landscape':'portrait');
+      doc.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,w,h,undefined,'FAST');
+    }
+    return doc.output('datauristring');
+  };
+
   async function buildContractBundlePdf(instances) {
     var api = window.jspdf && window.jspdf.jsPDF;
     if (!api) throw new Error('PDF generator is not available.');
@@ -147,7 +173,7 @@
       file:file,
       meta:meta,
       signedAt:new Date().toISOString(),
-      pageTypes:instances.map(function(inst){return String(inst && inst.contractPageType || '');}),
+      pageTypes:(instances[0] && Array.isArray(instances[0].contractSections) ? instances[0].contractSections.map(function(section){return String(section && section.key || '');}) : []),
       templateIds:(templates || []).map(function(t){return String(t && t.id || '');}),
       region:String(lead && lead.region || ''),
       state:String(lead && (lead.regionState || lead.state) || '').toUpperCase()
