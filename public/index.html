@@ -24106,7 +24106,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           <div style="background:#fff;border-radius:14px;padding:20px;max-width:560px;width:100%;box-shadow:0 12px 36px rgba(0,0,0,.32);max-height:88vh;overflow:auto;">
             <h3 style="margin:0 0 6px;font-size:20px;font-weight:800;">Customize Your Contract</h3>
             <div id="contract-customizer-route" style="font-size:12px;color:var(--muted,#777);margin-bottom:14px;"></div>
-            <p style="margin:0 0 12px;font-size:13px;color:#333;">Choose the pages needed for this contract. Production Agreement is required.</p>
+            <p style="margin:0 0 12px;font-size:13px;color:#333;">Choose the individual contracts needed for this job. The homeowner will complete and sign them one after another.</p>
             <div id="contract-customizer-pages" style="display:grid;gap:9px;"></div>
             <div id="contract-customizer-msg" style="display:none;margin-top:10px;padding:9px 10px;border-radius:8px;background:#fff1f1;color:#a11;font-size:12px;"></div>
             <div style="display:flex;gap:10px;margin-top:16px;">
@@ -24147,6 +24147,10 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <button class="btn" type="button" id="back-from-tpl-builder">Back</button>
             <button class="btn btn-primary" type="button" id="tpl-save-btn">Save Template</button>
           </div>
+          <div id="tpl-contract-batch-bar" style="display:none;margin:0 0 14px;padding:12px;border:1px solid var(--border,#d8d8d8);border-radius:10px;background:var(--surface,#f7f7f7);">
+            <div id="tpl-contract-batch-status" style="font-size:12px;font-weight:800;margin-bottom:8px;"></div>
+            <div id="tpl-contract-batch-tabs" style="display:flex;gap:7px;flex-wrap:wrap;"></div>
+          </div>
           <div class="tpl-builder-row">
             <input type="text" id="tpl-doc-name" class="field-input" placeholder="Template name, e.g. Contingency Agreement v2" />
           </div>
@@ -24155,7 +24159,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Region *<select id="tpl-region" class="field-input" aria-label="Region" required><option value="">Select region</option></select></label>
             <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">State *<select id="tpl-state" class="field-input" aria-label="State" required disabled><option value="">Select a region first</option></select></label>
           </div>
-          <div id="tpl-contract-package-note" style="display:none;margin:-2px 0 12px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface,#f7f7f7);font-size:12px;line-height:1.45;"><strong>Complete 5-page contract:</strong> Page 1 Production Agreement · Page 2 1A Shingle Roofing · Page 3 2B Gutters · Page 4 3B Siding · Page 5 Misc.</div>
+          <div id="tpl-contract-package-note" style="display:none;margin:-2px 0 12px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface,#f7f7f7);font-size:12px;line-height:1.45;"><strong>Individual contracts:</strong> each PDF is saved as its own contract for this Region and State. Use Upload Contracts to select several PDFs at one time.</div>
           <div class="tpl-builder-row" id="tpl-versioning-row" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
             <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Effective date<input type="date" id="tpl-effective-date" class="field-input" /></label>
             <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Status<select id="tpl-status" class="field-input"><option value="active">Active</option><option value="inactive">Inactive</option></select></label>
@@ -53753,7 +53757,7 @@ function mapsGoogleReady() {
 
     var _contractSigningSession = null;
 
-    function crmGetContractTemplateForLead(lead) {
+    function crmGetContractTemplatesForLead(lead) {
       var state=String(lead&&(lead.regionState||lead.state)||'').trim().toUpperCase();
       var region=String(lead&&lead.region||'').trim();
       if(!region&&typeof hmResolveRegionForState==='function')region=String(hmResolveRegionForState(state)||'').trim();
@@ -53761,71 +53765,67 @@ function mapsGoogleReady() {
       var matches=savedFormTemplates.map(function(t,i){return{template:t,index:i}}).filter(function(row){
         var t=row.template||{};
         return String(t.documentType||'')==='contract' &&
-          String(t.contractPackageMode||'')==='single_pdf_v1' &&
-          Number(t.contractPageCount||0)===5 &&
+          String(t.contractPackageMode||'')==='individual_pdf_v1' &&
           String(t.region||'')===region &&
           String(t.state||'').toUpperCase()===state &&
           String(t.status||'active')==='active' &&
           (!t.effectiveDate||String(t.effectiveDate)<=today);
       }).sort(function(a,b){
-        return Number(b.template.activeDefault===true)-Number(a.template.activeDefault===true) ||
-          String(b.template.effectiveDate||'').localeCompare(String(a.template.effectiveDate||'')) ||
-          Number(b.template.version||1)-Number(a.template.version||1);
+        return String(b.template.effectiveDate||'').localeCompare(String(a.template.effectiveDate||'')) ||
+          Number(b.template.version||1)-Number(a.template.version||1) ||
+          String(a.template.name||'').localeCompare(String(b.template.name||''));
       });
-      return matches[0]||null;
+      var seen={};
+      return matches.filter(function(row){
+        var t=row.template||{};
+        var key=String(t.sourceCompanyDocumentId||'').trim()||String(t.name||'').trim().toLowerCase();
+        if(seen[key])return false;
+        seen[key]=true;
+        return true;
+      }).sort(function(a,b){return String(a.template.name||'').localeCompare(String(b.template.name||''));});
     }
 
-    async function crmBuildSelectedContractInstance(leadId, templateIndex, selectedSections) {
-      var tpl=savedFormTemplates[templateIndex];
-      if(!tpl)throw new Error('The complete contract template could not be found.');
+    async function crmOpenCurrentContractSigningDocument() {
+      if(!_contractSigningSession)return;
+      var row=_contractSigningSession.contracts[_contractSigningSession.position];
+      if(!row||!savedFormTemplates[row.index])throw new Error('The next contract could not be found.');
+      var tpl=savedFormTemplates[row.index];
       await crmEnsureTemplateDocumentLoaded(tpl);
-      if(typeof window.hmBuildContractSelectionPdf!=='function')throw new Error('Contract page selection is not ready.');
-      var job=crmGetDocuSignSourceRecord(leadId);
+      var job=crmGetDocuSignSourceRecord(_contractSigningSession.leadId);
       if(!job)throw new Error('Lead not found.');
-      selectedSections=(selectedSections||[]).slice().sort(function(a,b){return Number(a.pageIndex)-Number(b.pageIndex);});
-      var sourcePageIndexes=selectedSections.map(function(section){return Number(section.pageIndex);});
-      var pageRemap={};
-      sourcePageIndexes.forEach(function(sourceIndex,newIndex){pageRemap[sourceIndex]=newIndex;});
       var inst=createFormInstance(tpl,job);
-      inst.fields=inst.fields.filter(function(field){
-        return Object.prototype.hasOwnProperty.call(pageRemap,Number(field.pageIndex||0));
-      }).map(function(field){
-        var copy=Object.assign({},field);
-        copy.sourcePageIndex=Number(field.pageIndex||0);
-        copy.pageIndex=pageRemap[copy.sourcePageIndex];
-        return copy;
-      });
-      inst.fileDataUrl=await window.hmBuildContractSelectionPdf(tpl.fileDataUrl,sourcePageIndexes);
-      inst.fileType='application/pdf';
-      inst.fileName='Contract.pdf';
-      inst.templateName='Contract';
-      inst.contractPackageMode='single_pdf_v1';
-      inst.contractSections=selectedSections.map(function(section){return{key:section.key,label:section.label,pageIndex:section.pageIndex,required:!!section.required};});
-      inst.selectedOriginalPageIndexes=sourcePageIndexes;
-      return inst;
+      inst.contractTemplateId=String(tpl.id||'');
+      inst.contractTemplateName=String(tpl.name||tpl.fileName||'Contract');
+      inst.contractSequencePosition=_contractSigningSession.position;
+      inst.contractSequenceTotal=_contractSigningSession.contracts.length;
+      _activeFormInstance=inst;
+      _contractSigningSession.instance=inst;
+      openFormInstance(_contractSigningSession.leadId,inst);
     }
 
     async function crmOpenLeadContractFromDocuments(leadId) {
       leadId=String(leadId||'').trim();
       var lead=crmGetLeads().find(function(item){return String(item&&item.id||'')===leadId;});
       if(!lead){showUploadToast('Lead not found.');return;}
-      var contractRow=crmGetContractTemplateForLead(lead);
-      if(!contractRow){showUploadToast('No active complete contract is configured for '+String(lead.region||'this region')+' / '+String(lead.regionState||lead.state||'this state')+'.');return;}
+      var contractRows=crmGetContractTemplatesForLead(lead);
+      if(!contractRows.length){showUploadToast('No active contracts are configured for '+String(lead.region||'this region')+' / '+String(lead.regionState||lead.state||'this state')+'.');return;}
       var modal=document.getElementById('contract-customizer-modal');
       var host=document.getElementById('contract-customizer-pages');
       var route=document.getElementById('contract-customizer-route');
       var msg=document.getElementById('contract-customizer-msg');
       route.textContent=[String(lead.region||''),String(lead.regionState||lead.state||'').toUpperCase()].filter(Boolean).join(' / ');
       if(msg){msg.style.display='none';msg.textContent='';}
-      host.innerHTML=CONTRACT_PAGE_TYPES.map(function(def){
+      host.innerHTML=contractRows.map(function(row){
+        var tpl=row.template||{};
+        var safeName=String(tpl.name||tpl.fileName||'Contract').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+        var safeFile=String(tpl.fileName||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
         return '<label style="display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid #d8d8d8;border-radius:9px;background:#fff;">'+
-          '<input type="checkbox" data-contract-page="'+def.key+'" '+(def.required?'checked disabled ':'')+'/>'+
-          '<span style="flex:1;"><strong>'+def.label+'</strong><span style="display:block;color:#777;font-size:11px;margin-top:2px;">Page '+(def.pageIndex+1)+'</span></span>'+
-          (def.required?'<span style="font-size:10px;font-weight:800;color:#8a6500;">REQUIRED</span>':'')+
+          '<input type="checkbox" data-contract-template-index="'+row.index+'"/>'+
+          '<span style="flex:1;"><strong>'+safeName+'</strong>'+(safeFile&&safeFile!==safeName?'<span style="display:block;color:#777;font-size:11px;margin-top:2px;">'+safeFile+'</span>':'')+'</span>'+
           '</label>';
       }).join('');
       modal.dataset.leadId=leadId;
-      modal._contractTemplateRow=contractRow;
+      modal._contractTemplateRows=contractRows;
       modal.style.display='flex';
     }
 
@@ -53835,31 +53835,29 @@ function mapsGoogleReady() {
     document.getElementById('contract-customizer-continue').addEventListener('click',async function(){
       var modal=document.getElementById('contract-customizer-modal');
       var leadId=String(modal.dataset.leadId||'');
-      var contractRow=modal._contractTemplateRow||null;
+      var available=Array.isArray(modal._contractTemplateRows)?modal._contractTemplateRows:[];
       var selected=[];
-      modal.querySelectorAll('[data-contract-page]').forEach(function(cb){
+      modal.querySelectorAll('[data-contract-template-index]').forEach(function(cb){
         if(!cb.checked)return;
-        var def=CONTRACT_PAGE_TYPES.find(function(item){return item.key===cb.getAttribute('data-contract-page');});
-        if(def)selected.push(def);
+        var idx=Number(cb.getAttribute('data-contract-template-index'));
+        var row=available.find(function(item){return Number(item.index)===idx;});
+        if(row)selected.push(row);
       });
-      selected.sort(function(a,b){return Number(a.pageIndex)-Number(b.pageIndex);});
       var msg=document.getElementById('contract-customizer-msg');
-      if(!contractRow){msg.textContent='The complete contract template is no longer available.';msg.style.display='block';return;}
-      if(!selected.length||!selected.some(function(row){return row.key==='production_agreement';})){
-        msg.textContent='Production Agreement is required.';msg.style.display='block';return;
-      }
+      if(!selected.length){msg.textContent='Choose at least one contract.';msg.style.display='block';return;}
       try{
-        this.disabled=true;this.textContent='Preparing contract...';
-        var inst=await crmBuildSelectedContractInstance(leadId,contractRow.index,selected);
-        _contractSigningSession={leadId:leadId,bundleId:'contract_bundle_'+Date.now(),templateIndex:contractRow.index,selectedSections:selected,instance:inst,startedAt:new Date().toISOString()};
+        this.disabled=true;this.textContent='Preparing contracts...';
+        _contractSigningSession={leadId:leadId,bundleId:'contract_batch_'+Date.now(),contracts:selected,position:0,instance:null,savedDocuments:[],startedAt:new Date().toISOString()};
         _crmPostLeadContingencyContext={leadId:leadId,returnMode:'documents',documentType:'contract',contractBundleId:_contractSigningSession.bundleId};
         modal.style.display='none';
         openDocuSign(leadId);
-        _activeFormInstance=inst;
-        openFormInstance(leadId,inst);
+        await crmOpenCurrentContractSigningDocument();
       }catch(err){
+        _contractSigningSession=null;
+        _crmPostLeadContingencyContext=null;
         console.error('[Contract Documents] load failed',err);
-        msg.textContent=err&&err.message?err.message:'The contract could not be prepared.';msg.style.display='block';
+        msg.textContent=err&&err.message?err.message:'The selected contracts could not be prepared.';msg.style.display='block';
+        modal.style.display='flex';
       }finally{this.disabled=false;this.textContent='Continue to Sign';}
     });
 
@@ -54179,11 +54177,15 @@ function mapsGoogleReady() {
       // --- Actions ---
       var isDraftLeadForm = !!(_crmPostLeadContingencyContext && _crmPostLeadContingencyContext.returnMode === 'draft_lead' && String(_crmPostLeadContingencyContext.leadId || '') === String(jobId || ''));
       var isContractBundle = !!(_contractSigningSession && String(_contractSigningSession.leadId || '') === String(jobId || ''));
-      var selectedContractLabels = isContractBundle ? (_contractSigningSession.selectedSections || []).map(function(section){ return section.label; }).join(', ') : '';
-      var completeFormLabel = isDraftLeadForm ? 'Finish Signature' : (isContractBundle ? 'Complete & Save Contract' : 'Complete & Save to Saved Docs');
+      var contractPosition = isContractBundle ? Number(_contractSigningSession.position || 0) : 0;
+      var contractCount = isContractBundle && Array.isArray(_contractSigningSession.contracts) ? _contractSigningSession.contracts.length : 0;
+      var contractRow = isContractBundle && _contractSigningSession.contracts[contractPosition] ? _contractSigningSession.contracts[contractPosition] : null;
+      var contractName = contractRow && contractRow.template ? String(contractRow.template.name || contractRow.template.fileName || 'Contract') : 'Contract';
+      var contractIsLast = isContractBundle && contractCount > 0 && contractPosition >= contractCount - 1;
+      var completeFormLabel = isDraftLeadForm ? 'Finish Signature' : (isContractBundle ? (contractIsLast ? 'Sign & Finish Contracts' : 'Sign & Continue') : 'Complete & Save to Saved Docs');
       var actionsHtml = '';
       actionsHtml += '<button class="btn btn-primary" type="button" id="docusign-complete-form" style="width:100%;">' + completeFormLabel + '</button>';
-      actionsHtml += '<div style="margin-top:8px;padding:10px;background:var(--surface,#f5f5f5);border-radius:6px;font-size:12px;color:var(--muted,#888);text-align:center;">' + (isDraftLeadForm ? 'This remains a draft until you return to New Lead and click Save Lead.' : (isContractBundle ? ('Selected contract pages: ' + selectedContractLabels + '. Fill any highlighted fields and sign every signature field, then complete.') : 'Sign all signature fields and check all checkmarks, then complete.')) + '</div>';
+      actionsHtml += '<div style="margin-top:8px;padding:10px;background:var(--surface,#f5f5f5);border-radius:6px;font-size:12px;color:var(--muted,#888);text-align:center;">' + (isDraftLeadForm ? 'This remains a draft until you return to New Lead and click Save Lead.' : (isContractBundle ? ('Contract ' + (contractPosition + 1) + ' of ' + contractCount + ': ' + contractName + '. Fill the highlighted fields and sign it. The next selected contract opens automatically.') : 'Sign all signature fields and check all checkmarks, then complete.')) + '</div>';
       document.getElementById('docusign-form-actions').innerHTML = actionsHtml;
 
       // Wire complete button
@@ -54265,50 +54267,78 @@ function mapsGoogleReady() {
               if (!_contractSigningSession || String(_contractSigningSession.leadId || '') !== String(jobId || '')) {
                 showUploadToast('The contract signing session expired. Reopen Sign Contract.'); return;
               }
+              var currentContractRow = _contractSigningSession.contracts[_contractSigningSession.position] || null;
+              var contractTemplate = currentContractRow && savedFormTemplates[currentContractRow.index] ? savedFormTemplates[currentContractRow.index] : null;
+              if (!contractTemplate) { showUploadToast('The current contract template could not be found.'); return; }
               inst.contractBundleId = _contractSigningSession.bundleId;
-              inst.contractSections = (_contractSigningSession.selectedSections || []).map(function(section){
-                return { key:section.key, label:section.label, pageIndex:section.pageIndex, required:!!section.required };
-              });
+              inst.contractTemplateId = String(contractTemplate.id || '');
+              inst.contractTemplateName = String(contractTemplate.name || contractTemplate.fileName || 'Contract');
               try {
                 if (typeof window.hmCreateAndUploadLockedContractPdf !== 'function') throw new Error('Signed contract PDF creation is not ready.');
                 completeBtn.disabled = true;
-                completeBtn.textContent = 'Creating signed contract PDF...';
-                var contractTemplate = savedFormTemplates[_contractSigningSession.templateIndex] || null;
-                var contractResult = await window.hmCreateAndUploadLockedContractPdf(signedLead.id, [inst], signedLead, contractTemplate ? [contractTemplate] : []);
+                completeBtn.textContent = 'Saving ' + inst.contractTemplateName + '...';
+                var contractResult = await window.hmCreateAndUploadLockedContractPdf(signedLead.id, [inst], signedLead, [contractTemplate]);
                 var contractMeta = contractResult && contractResult.meta ? contractResult.meta : null;
                 if (!contractMeta || !contractMeta.id) throw new Error('The signed contract was not saved to cloud storage.');
-                signedLead.contractSigned = true;
-                signedLead.contractSignedAt = contractResult.signedAt || inst.signedAt;
-                signedLead.contractStatus = 'signed_locked_pdf_uploaded';
-                signedLead.contractDocumentId = String(contractMeta.id || '');
-                signedLead.contractStorageProvider = String(contractMeta.storageProvider || 'neon');
-                signedLead.contractStoragePath = String(contractMeta.storagePath || contractMeta.objectKey || '');
-                signedLead.contractFileName = String(contractMeta.fileName || 'Signed Contract.pdf');
+                var contractSignedAt = contractResult.signedAt || inst.signedAt;
+                var signedContractRecord = {
+                  documentId:String(contractMeta.id || ''),
+                  templateId:String(contractTemplate.id || ''),
+                  name:String(contractTemplate.name || contractTemplate.fileName || 'Contract'),
+                  fileName:String(contractMeta.fileName || ('Signed ' + (contractTemplate.name || 'Contract') + '.pdf')),
+                  storageProvider:String(contractMeta.storageProvider || 'neon'),
+                  storagePath:String(contractMeta.storagePath || contractMeta.objectKey || ''),
+                  signedAt:contractSignedAt
+                };
+                _contractSigningSession.savedDocuments.push(signedContractRecord);
+                signedLead.contractDocuments = Array.isArray(signedLead.contractDocuments) ? signedLead.contractDocuments : [];
+                signedLead.contractDocuments = signedLead.contractDocuments.filter(function(row){return String(row && row.documentId || '') !== signedContractRecord.documentId;});
+                signedLead.contractDocuments.push(signedContractRecord);
+                signedLead.contractDocumentId = signedContractRecord.documentId;
+                signedLead.contractStorageProvider = signedContractRecord.storageProvider;
+                signedLead.contractStoragePath = signedContractRecord.storagePath;
+                signedLead.contractFileName = signedContractRecord.fileName;
                 signedLead.contractBundleId = String(_contractSigningSession.bundleId || '');
-                signedLead.contractPages = (_contractSigningSession.selectedSections || []).map(function(section){return String(section.key || '');});
                 signedLead.contractFormInstances = Array.isArray(signedLead.contractFormInstances) ? signedLead.contractFormInstances : [];
                 signedLead.contractFormInstances.push(JSON.parse(JSON.stringify(inst)));
                 signedLead.jobFile = signedLead.jobFile && typeof signedLead.jobFile === 'object' ? signedLead.jobFile : {};
                 signedLead.jobFile.contract = signedLead.jobFile.contract && typeof signedLead.jobFile.contract === 'object' ? signedLead.jobFile.contract : {};
-                signedLead.jobFile.contract.status = 'Signed';
-                signedLead.jobFile.contract.signedAt = signedLead.contractSignedAt;
-                signedLead.jobFile.contract.documentId = signedLead.contractDocumentId;
-                signedLead.jobFile.contract.pages = signedLead.contractPages.slice();
+                signedLead.jobFile.contract.status = _contractSigningSession.position >= _contractSigningSession.contracts.length - 1 ? 'Signed' : 'In Progress';
+                signedLead.jobFile.contract.signedAt = contractSignedAt;
+                signedLead.jobFile.contract.documentIds = _contractSigningSession.savedDocuments.map(function(row){return row.documentId;});
+                signedLead.jobFile.contract.contracts = _contractSigningSession.savedDocuments.map(function(row){return {documentId:row.documentId,templateId:row.templateId,name:row.name,fileName:row.fileName,signedAt:row.signedAt};});
                 signedLead.jobFile.documents = Array.isArray(signedLead.jobFile.documents) ? signedLead.jobFile.documents : [];
-                signedLead.jobFile.documents = signedLead.jobFile.documents.filter(function(entry){return String(entry && (entry.fileId || entry.id) || '') !== signedLead.contractDocumentId;});
+                signedLead.jobFile.documents = signedLead.jobFile.documents.filter(function(entry){return String(entry && (entry.fileId || entry.id) || '') !== signedContractRecord.documentId;});
                 signedLead.jobFile.documents.push(crmNormalizeJobFileDocumentMeta({
-                  id:signedLead.contractDocumentId,fileId:signedLead.contractDocumentId,category:'Contract',
-                  note:'Signed contract',uploadedBy:crmGetCurrentUserName() || currentRep || '',uploadedAt:signedLead.contractSignedAt
+                  id:signedContractRecord.documentId,fileId:signedContractRecord.documentId,category:'Contract',
+                  note:'Signed contract — ' + signedContractRecord.name,uploadedBy:crmGetCurrentUserName() || currentRep || '',uploadedAt:contractSignedAt
                 }));
                 signedLead.updatedAt = new Date().toISOString();
-                crmPushLeadActivity(signedLead, 'Signed contract completed and uploaded', 'document', crmGetCurrentUserName() || currentRep || '', signedLead.contractSignedAt);
+                crmPushLeadActivity(signedLead, signedContractRecord.name + ' signed and uploaded', 'document', crmGetCurrentUserName() || currentRep || '', contractSignedAt);
+                var hasMoreContracts = _contractSigningSession.position < _contractSigningSession.contracts.length - 1;
+                if (hasMoreContracts) {
+                  signedLead.contractSigned = false;
+                  signedLead.contractStatus = 'signing_in_progress';
+                  crmSaveLeads(leadRows);
+                  _contractSigningSession.position += 1;
+                  _activeFormInstance = null;
+                  var nextRow = _contractSigningSession.contracts[_contractSigningSession.position];
+                  var nextName = nextRow && nextRow.template ? String(nextRow.template.name || nextRow.template.fileName || 'next contract') : 'next contract';
+                  await crmOpenCurrentContractSigningDocument();
+                  showUploadToast(signedContractRecord.name + ' saved. Continue to ' + nextName + '.');
+                  return;
+                }
+                signedLead.contractSigned = true;
+                signedLead.contractSignedAt = contractSignedAt;
+                signedLead.contractStatus = 'signed_individual_contracts_uploaded';
+                signedLead.jobFile.contract.status = 'Signed';
                 crmSaveLeads(leadRows);
                 _activeFormInstance = null;
                 _contractSigningSession = null;
                 _jfDocSelectedCategory = 'Contract'; _crmCurrentJobFileLeadId = signedLead.id;
                 _crmPostLeadContingencyContext = null;
                 crmOpenJobFileSection(signedLead.id, 'documents');
-                showUploadToast('Signed contract saved to the cloud.');
+                showUploadToast('All selected contracts are signed and saved to the cloud.');
               } catch(contractError) {
                 completeBtn.disabled = false;
                 completeBtn.textContent = completeFormLabel;
@@ -54694,15 +54724,6 @@ function mapsGoogleReady() {
 
     var canManageFormTemplates = ['owner','admin','manager'].indexOf(String(currentRole || '').trim().toLowerCase()) !== -1;
 
-    var CONTRACT_PAGE_TYPES = [
-      { key:'production_agreement', label:'Production Agreement', order:0, pageIndex:0, required:true },
-      { key:'shingle_1a', label:'1A Shingle Roofing', order:1, pageIndex:1 },
-      { key:'gutters_2b', label:'2B Gutters', order:2, pageIndex:2 },
-      { key:'siding_3b', label:'3B Siding', order:3, pageIndex:3 },
-      { key:'misc_5', label:'5 Misc', order:4, pageIndex:4 }
-    ];
-    function crmContractPageLabel(key){ var row=CONTRACT_PAGE_TYPES.find(function(item){return item.key===String(key||'');}); return row?row.label:String(key||'Contract Page'); }
-
     var TEMPLATE_FIELD_PALETTE = [
       { key: 'homeowner_signature', label: 'Homeowner Signature', w: 160, h: 40 },
       { key: 'rep_signature',       label: 'Rep Signature',       w: 160, h: 40 },
@@ -54731,6 +54752,101 @@ function mapsGoogleReady() {
     var tplRenderedPages = []; // { wrapper, width, height, offsetTop } per page from last PDF render
     var currentTplRoutingLock = null;
     var currentTplDocumentLock = null;
+    var currentTplContractBatch = [];
+    var currentTplContractBatchIndex = -1;
+    var currentTplContractBatchMode = false;
+
+    function crmCloneTemplateFields(fields) {
+      return (Array.isArray(fields) ? fields : []).map(function (field) { return Object.assign({}, field); });
+    }
+
+    function crmSaveCurrentContractBatchEditorState() {
+      if (!currentTplContractBatchMode || currentTplContractBatchIndex < 0 || !currentTplContractBatch[currentTplContractBatchIndex]) return;
+      var item = currentTplContractBatch[currentTplContractBatchIndex];
+      item.name = String((document.getElementById('tpl-doc-name') || {}).value || item.name || '').trim() || String(item.fileName || 'Contract').replace(/\.[^.]+$/, '');
+      item.fields = crmCloneTemplateFields(currentTplFields);
+    }
+
+    function crmRenderContractBatchTabs() {
+      var bar = document.getElementById('tpl-contract-batch-bar');
+      var status = document.getElementById('tpl-contract-batch-status');
+      var host = document.getElementById('tpl-contract-batch-tabs');
+      if (!bar || !host || !status) return;
+      bar.style.display = currentTplContractBatchMode ? 'block' : 'none';
+      if (!currentTplContractBatchMode) { host.innerHTML = ''; status.textContent = ''; return; }
+      status.textContent = 'Set up fields for each contract — ' + (currentTplContractBatchIndex + 1) + ' of ' + currentTplContractBatch.length;
+      host.innerHTML = currentTplContractBatch.map(function (item, index) {
+        var active = index === currentTplContractBatchIndex;
+        var label = String(item.name || item.fileName || ('Contract ' + (index + 1))).replace(/\.[^.]+$/, '');
+        return '<button class="btn' + (active ? ' btn-primary' : '') + '" type="button" data-tpl-contract-batch-index="' + index + '" style="font-size:12px;padding:6px 10px;">' + label.replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}) + '</button>';
+      }).join('');
+      host.querySelectorAll('[data-tpl-contract-batch-index]').forEach(function (button) {
+        button.addEventListener('click', function () { crmActivateContractBatchItem(Number(button.getAttribute('data-tpl-contract-batch-index'))); });
+      });
+    }
+
+    function crmActivateContractBatchItem(index) {
+      if (!currentTplContractBatchMode || !currentTplContractBatch[index]) return;
+      crmSaveCurrentContractBatchEditorState();
+      currentTplContractBatchIndex = index;
+      var item = currentTplContractBatch[index];
+      currentTplFileName = item.fileName;
+      currentTplFileType = item.fileType || 'application/pdf';
+      currentTplFileDataUrl = item.fileDataUrl;
+      currentTplFields = crmCloneTemplateFields(item.fields);
+      tplSelectedFieldKey = null;
+      tplRenderedPages = [];
+      document.getElementById('tpl-doc-name').value = item.name || String(item.fileName || 'Contract').replace(/\.[^.]+$/, '');
+      document.getElementById('tpl-file-label').textContent = item.fileName + ' — contract ' + (index + 1) + ' of ' + currentTplContractBatch.length;
+      renderTemplateFieldPalette();
+      crmRenderContractBatchTabs();
+      renderTplPreview();
+    }
+
+    function crmReadTemplateBatchFile(file) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function (event) { resolve(event.target.result); };
+        reader.onerror = function () { reject(reader.error || new Error('Could not read ' + String(file && file.name || 'contract') + '.')); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function openContractBatchTemplateBuilder(region, state, files) {
+      region = String(region || '').trim();
+      state = String(state || '').trim().toUpperCase();
+      files = Array.prototype.slice.call(files || []);
+      if (!files.length) return;
+      var items = [];
+      for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        var dataUrl = await crmReadTemplateBatchFile(file);
+        items.push({
+          name:String(file.name || ('Contract ' + (i + 1))).replace(/\.[^.]+$/, ''),
+          fileName:String(file.name || ('Contract-' + (i + 1) + '.pdf')),
+          fileType:String(file.type || 'application/pdf'),
+          fileDataUrl:dataUrl,
+          fields:[]
+        });
+      }
+      currentTplContractBatch = items;
+      currentTplContractBatchIndex = -1;
+      currentTplContractBatchMode = true;
+      _editingTemplateSourceId = '';
+      applyTemplateDocumentLock('contract', true);
+      applyTemplateRoutingLock(region, state, true);
+      setTemplateBuilderTypeUI('contract');
+      var existingRow = document.getElementById('tpl-existing-document-row');
+      if (existingRow) existingRow.style.display = 'none';
+      var defaultWrap = document.getElementById('tpl-active-default-wrap');
+      if (defaultWrap) defaultWrap.style.display = 'none';
+      document.getElementById('tpl-effective-date').value = new Date().toISOString().slice(0,10);
+      document.getElementById('tpl-status').value = 'active';
+      document.getElementById('tpl-save-btn').textContent = 'Save All Contracts';
+      showPage('page-template-builder');
+      crmActivateContractBatchItem(0);
+    }
+    window.hmOpenContractBatchTemplateBuilder = openContractBatchTemplateBuilder;
 
     function applyTemplateRoutingLock(region, state, locked) {
       region = String(region || '').trim();
@@ -54748,9 +54864,11 @@ function mapsGoogleReady() {
       var typeSelect = document.getElementById('tpl-doc-type');
       var packageNote = document.getElementById('tpl-contract-package-note');
       var existingLabel = document.getElementById('tpl-existing-document-label');
+      var defaultWrap = document.getElementById('tpl-active-default-wrap');
       if (typeSelect) typeSelect.value = documentType;
       if (packageNote) packageNote.style.display = documentType === 'contract' ? 'block' : 'none';
-      if (existingLabel) existingLabel.textContent = documentType === 'contract' ? 'Use Existing Complete Contract' : (documentType === 'contingency' ? 'Use Existing Contingency' : 'Use Existing Document');
+      if (existingLabel) existingLabel.textContent = documentType === 'contract' ? 'Use Existing Contract' : (documentType === 'contingency' ? 'Use Existing Contingency' : 'Use Existing Document');
+      if (defaultWrap && !currentTplContractBatchMode) defaultWrap.style.display = documentType === 'contract' ? 'none' : 'flex';
     }
 
     function applyTemplateDocumentLock(documentType, locked) {
@@ -54780,7 +54898,7 @@ function mapsGoogleReady() {
           select.innerHTML = '<option value="">No uploaded ' + noun + ' found</option>';
           return;
         }
-        select.innerHTML = '<option value="">Choose an uploaded ' + (documentType === 'contract' ? 'complete contract' : 'contingency') + '</option>' + items.map(function (d) {
+        select.innerHTML = '<option value="">Choose an uploaded ' + (documentType === 'contract' ? 'contract' : 'contingency') + '</option>' + items.map(function (d) {
           var name = String(d.name || 'Document').replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
           return '<option value="' + String(d.id || '') + '">' + name + '</option>';
         }).join('');
@@ -54813,7 +54931,7 @@ function mapsGoogleReady() {
         tplRenderedPages = [];
         setTemplateBuilderTypeUI(documentType);
         if (!document.getElementById('tpl-doc-name').value.trim()) {
-          document.getElementById('tpl-doc-name').value = documentType === 'contract' ? 'Complete Contract' : String(file.name || 'Document').replace(/\.[^.]+$/, '');
+          document.getElementById('tpl-doc-name').value = String(file.name || 'Document').replace(/\.[^.]+$/, '');
         }
         if (label) label.textContent = 'Using existing document: ' + currentTplFileName;
         renderTplPreview();
@@ -54828,13 +54946,19 @@ function mapsGoogleReady() {
       state = String(state || '').trim().toUpperCase();
       selectedId = String(selectedId || '').trim();
       documentType = String(documentType || 'contingency');
+      currentTplContractBatchMode = false;
+      currentTplContractBatch = [];
+      currentTplContractBatchIndex = -1;
+      crmRenderContractBatchTabs();
+      var existingRow = document.getElementById('tpl-existing-document-row');
+      if (existingRow) existingRow.style.display = 'grid';
       currentTplFields = [];
       currentTplFileDataUrl = null;
       currentTplFileName = null;
       currentTplFileType = null;
       tplSelectedFieldKey = null;
       tplRenderedPages = [];
-      document.getElementById('tpl-doc-name').value = documentType === 'contract' ? 'Complete Contract' : '';
+      document.getElementById('tpl-doc-name').value = '';
       document.getElementById('tpl-save-btn').textContent = 'Save Template';
       document.getElementById('tpl-file-label').textContent = 'No document selected';
       applyTemplateDocumentLock(documentType, !!selectedId);
@@ -55340,7 +55464,7 @@ function mapsGoogleReady() {
     document.getElementById('tpl-doc-type').addEventListener('change', function () {
       var type = String(this.value || 'contingency');
       setTemplateBuilderTypeUI(type);
-      if (type === 'contract' && !document.getElementById('tpl-doc-name').value.trim()) document.getElementById('tpl-doc-name').value = 'Complete Contract';
+      if (type === 'contract' && !document.getElementById('tpl-doc-name').value.trim()) document.getElementById('tpl-doc-name').value = 'Contract';
       refreshExistingDocumentPicker('', String((document.getElementById('tpl-region') || {}).value || ''), String((document.getElementById('tpl-state') || {}).value || ''), type);
     });
 
@@ -55371,8 +55495,78 @@ function mapsGoogleReady() {
       reader.readAsDataURL(file);
     });
 
+    async function crmSaveContractTemplateBatch() {
+      crmSaveCurrentContractBatchEditorState();
+      if (!currentTplContractBatch.length) { alert('No contracts are loaded.'); return; }
+      var region = String(currentTplRoutingLock && currentTplRoutingLock.region || '').trim();
+      var state = String(currentTplRoutingLock && currentTplRoutingLock.state || '').trim().toUpperCase();
+      var effectiveDate = String((document.getElementById('tpl-effective-date') || {}).value || '').trim() || new Date().toISOString().slice(0,10);
+      var statusValue = String((document.getElementById('tpl-status') || {}).value || 'active');
+      if (!region || !state) { alert('The contract Region and State are missing.'); return; }
+      for (var i = 0; i < currentTplContractBatch.length; i++) {
+        var item = currentTplContractBatch[i];
+        if (!item.fileDataUrl || String(item.fileType || '').toLowerCase() !== 'application/pdf') { alert(String(item.fileName || 'A contract') + ' is not a valid PDF.'); return; }
+        if (!String(item.name || '').trim()) { alert('Give every contract a name before saving.'); crmActivateContractBatchItem(i); return; }
+        if (!Array.isArray(item.fields) || !item.fields.some(function (field) { return String(field && field.key || '') === 'homeowner_signature'; })) {
+          alert('Add a Homeowner Signature field to ' + String(item.name || item.fileName || ('Contract ' + (i + 1))) + ' before saving.');
+          crmActivateContractBatchItem(i);
+          return;
+        }
+      }
+      if (typeof window.hmSaveCompanyFormTemplate !== 'function') { alert('Company contract storage is not ready.'); return; }
+      var saveBtn = document.getElementById('tpl-save-btn');
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving Contracts...'; }
+      try {
+        for (var j = 0; j < currentTplContractBatch.length; j++) {
+          var batchItem = currentTplContractBatch[j];
+          var tpl = {
+            id:'tpl_' + Date.now() + '_' + j + '_' + Math.random().toString(36).slice(2,7),
+            name:String(batchItem.name || '').trim(),
+            fileName:batchItem.fileName,
+            fileType:batchItem.fileType || 'application/pdf',
+            fileDataUrl:batchItem.fileDataUrl,
+            sourceCompanyDocumentId:'',
+            fields:crmCloneTemplateFields(batchItem.fields),
+            documentType:'contract',
+            contractPackageMode:'individual_pdf_v1',
+            region:region,
+            state:state,
+            effectiveDate:effectiveDate,
+            status:statusValue,
+            activeDefault:false,
+            forceNewCompanyDocument:true,
+            version:1,
+            createdAt:new Date().toISOString()
+          };
+          await window.hmSaveCompanyFormTemplate(tpl);
+        }
+        if (typeof window.hmGetCompanyFormTemplates === 'function') savedFormTemplates = await window.hmGetCompanyFormTemplates();
+        alert(currentTplContractBatch.length + (currentTplContractBatch.length === 1 ? ' contract saved.' : ' contracts saved.'));
+        currentTplContractBatchMode = false;
+        currentTplContractBatch = [];
+        currentTplContractBatchIndex = -1;
+        crmRenderContractBatchTabs();
+        var existingRow = document.getElementById('tpl-existing-document-row');
+        if (existingRow) existingRow.style.display = 'grid';
+        currentTplFields = [];
+        currentTplFileDataUrl = null;
+        currentTplFileName = null;
+        currentTplFileType = null;
+        tplRenderedPages = [];
+        renderTplPreview();
+        renderSavedTemplates();
+        if (typeof showPage === 'function') showPage('page-company-docs');
+      } catch (err) {
+        console.error('[Contract Batch] save failed', err);
+        alert(err && err.message ? err.message : 'The contracts could not be saved.');
+      } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Template'; }
+      }
+    }
+
     // Save template
-    document.getElementById('tpl-save-btn').addEventListener('click', function () {
+    document.getElementById('tpl-save-btn').addEventListener('click', async function () {
+      if (currentTplContractBatchMode) { await crmSaveContractTemplateBatch(); return; }
       var name = document.getElementById('tpl-doc-name').value.trim();
       if (!name) { alert('Please enter a template name.'); return; }
       if (!currentTplFileDataUrl) { alert('Please upload a document first.'); return; }
@@ -55416,17 +55610,10 @@ function mapsGoogleReady() {
       if ((tpl.documentType === 'contingency' || tpl.documentType === 'contract') && (!tpl.region || !tpl.state)) { alert('Select a region and state for this document.'); return; }
       if ((tpl.documentType === 'contingency' || tpl.documentType === 'contract') && !tpl.effectiveDate) { alert('Select an effective date for this document.'); return; }
       if (tpl.documentType === 'contract') {
-        if (String(tpl.fileType || '').toLowerCase() !== 'application/pdf') { alert('The complete contract must be uploaded as one PDF.'); return; }
-        if (tplRenderedPages.length !== 5) { alert('The complete contract must contain exactly 5 pages: Production Agreement, 1A Shingle Roofing, 2B Gutters, 3B Siding, and 5 Misc.'); return; }
-        tpl.contractPackageMode = 'single_pdf_v1';
-        tpl.contractPageCount = 5;
-        tpl.contractSections = CONTRACT_PAGE_TYPES.map(function (section) { return { key:section.key, label:section.label, pageIndex:section.pageIndex, required:!!section.required }; });
-        for (var contractPageIndex = 0; contractPageIndex < 5; contractPageIndex++) {
-          var pageLabel = CONTRACT_PAGE_TYPES[contractPageIndex].label;
-          var hasHomeownerSignature = tpl.fields.some(function (field) { return Number(field.pageIndex || 0) === contractPageIndex && String(field.key || '') === 'homeowner_signature'; });
-          var hasRepSignature = tpl.fields.some(function (field) { return Number(field.pageIndex || 0) === contractPageIndex && String(field.key || '') === 'rep_signature'; });
-          if (!hasHomeownerSignature || !hasRepSignature) { alert('Add both Homeowner Signature and Rep Signature fields to ' + pageLabel + ' before saving the contract.'); return; }
-        }
+        if (String(tpl.fileType || '').toLowerCase() !== 'application/pdf') { alert('Contracts must be uploaded as PDF files.'); return; }
+        if (!tpl.fields.some(function (field) { return String(field && field.key || '') === 'homeowner_signature'; })) { alert('Add a Homeowner Signature field before saving this contract.'); return; }
+        tpl.contractPackageMode = 'individual_pdf_v1';
+        tpl.activeDefault = false;
       } else if (tpl.documentType === 'contingency' && !tpl.fields.some(function (field) { return String(field && field.key || '') === 'homeowner_signature'; })) {
         alert('Add a Homeowner Signature field before saving this contingency for signing.');
         return;
@@ -55437,7 +55624,7 @@ function mapsGoogleReady() {
       tpl.version = sourceTpl ? Number(sourceTpl.version || 1) + 1 : 1;
       tpl.previousTemplateId = sourceTpl ? String(sourceTpl.id || '') : '';
       // Editing always creates a separate reusable copy. Never modify or deactivate the source template.
-      if (tpl.activeDefault && tpl.region && tpl.state) savedFormTemplates.forEach(function (existing) {
+      if (tpl.documentType !== 'contract' && tpl.activeDefault && tpl.region && tpl.state) savedFormTemplates.forEach(function (existing) {
         if (String(existing.documentType || 'contingency') === tpl.documentType && String(existing.region || '') === tpl.region && String(existing.state || '').toUpperCase() === tpl.state) {
           existing.activeDefault = false;
         }
@@ -55475,7 +55662,7 @@ function mapsGoogleReady() {
       var html = '';
       savedFormTemplates.forEach(function (tpl, i) {
         html += '<div class="tpl-saved-item">';
-        html += '<div><strong>' + tpl.name + '</strong><br><span style="font-size:11px;color:var(--muted,#888);">' + ((tpl.fields || []).length) + ' fields' + (String(tpl.documentType || '') === 'contract' && String(tpl.contractPackageMode || '') === 'single_pdf_v1' ? ' &middot; Complete 5-page contract' : '') + ' &middot; ' + (tpl.fileName || 'unknown') + (tpl.region ? ' &middot; ' + tpl.region + ' / ' + (tpl.state || '') : '') + (tpl.effectiveDate ? ' &middot; Effective ' + tpl.effectiveDate : '') + ' &middot; v' + Number(tpl.version || 1) + ' &middot; ' + (String(tpl.status || 'active') === 'active' ? 'Active' : 'Inactive') + (tpl.activeDefault ? ' Default' : '') + '</span></div>';
+        html += '<div><strong>' + tpl.name + '</strong><br><span style="font-size:11px;color:var(--muted,#888);">' + ((tpl.fields || []).length) + ' fields' + (String(tpl.documentType || '') === 'contract' && String(tpl.contractPackageMode || '') === 'individual_pdf_v1' ? ' &middot; Individual contract' : '') + ' &middot; ' + (tpl.fileName || 'unknown') + (tpl.region ? ' &middot; ' + tpl.region + ' / ' + (tpl.state || '') : '') + (tpl.effectiveDate ? ' &middot; Effective ' + tpl.effectiveDate : '') + ' &middot; v' + Number(tpl.version || 1) + ' &middot; ' + (String(tpl.status || 'active') === 'active' ? 'Active' : 'Inactive') + (tpl.activeDefault ? ' Default' : '') + '</span></div>';
         html += '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">';
         html += '<button class="btn" type="button" data-tpl-fields="' + i + '" style="font-size:12px;padding:4px 10px;">' + (tpl.fields && tpl.fields.length ? 'Edit Fillable Fields' : 'Add Fillable Fields') + '</button>';
         if (String(tpl.documentType || 'contingency') !== 'contingency' && String(tpl.documentType || '') !== 'contract') html += '<button class="btn" type="button" data-tpl-new-document="' + i + '" style="font-size:12px;padding:4px 10px;">Upload New Document</button>';
@@ -55563,7 +55750,13 @@ function mapsGoogleReady() {
     }
 
     document.getElementById('back-from-tpl-builder').addEventListener('click', function () {
-      showPage('page-main-menu');
+      if (currentTplContractBatchMode && !window.confirm('Discard this contract setup batch? Nothing in this batch has been saved yet.')) return;
+      var returnToCompanyDocuments = currentTplContractBatchMode || !!currentTplDocumentLock;
+      currentTplContractBatchMode = false;
+      currentTplContractBatch = [];
+      currentTplContractBatchIndex = -1;
+      crmRenderContractBatchTabs();
+      showPage(returnToCompanyDocuments ? 'page-company-docs' : 'page-main-menu');
     });
 
     var INSPECTION_PHOTO_CATEGORIES = [
@@ -86559,7 +86752,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 </script>
 <script src="./vendor-jspdf.umd.min.js?v=2.5.1"></script>
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
-<script src="./contingency-locked-pdf.js?v=20261008-single-contract-1"></script>
+<script src="./contingency-locked-pdf.js?v=20261008-individual-contracts-1"></script>
 <script src="./assets/crm-cross-links.js?v=20261007-password-firebase"></script>
 <script src="./assets/photo-reports.js?v=20261006-photo-recovery-lock"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
@@ -86615,26 +86808,26 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   function regionRows(){try{var rows=JSON.parse(localStorage.getItem('hmm_document_regions_v1')||'[]');if(Array.isArray(rows)&&rows.length)return rows}catch(_){}return[{id:'region_1',name:'Region 1',states:[]},{id:'region_2',name:'Region 2',states:[]},{id:'region_3',name:'Region 3',states:[]},{id:'region_4',name:'Region 4',states:[]}]}
   function stateLabel(code){code=String(code||'').toUpperCase();var option=document.querySelector('#fl-state option[value="'+code+'"]');var name=option?String(option.textContent||'').trim():'';return name&&name!==code?code+' – '+name:code}
   function routeForDoc(d){var region=String(d&&d.region||'').trim(),state=String(d&&d.state||'').trim().toUpperCase();if(region&&state)return{region:region,state:state};var linked=templates.find(function(t){return String(t&&t.sourceCompanyDocumentId||'')===String(d&&d.id||'')});return linked?{region:String(linked.region||'').trim(),state:String(linked.state||'').trim().toUpperCase()}:{region:'',state:''}}
-  function templateForDoc(d){var docType=currentCategory==='contracts'?'contract':'contingency';return templates.filter(function(t){var packageMatch=docType!=='contract'||String(t&&t.contractPackageMode||'')==='single_pdf_v1';return packageMatch&&String(t&&t.sourceCompanyDocumentId||'')===String(d&&d.id||'')&&String(t&&t.documentType||'contingency')===docType&&String(t&&t.region||'')===currentRegion&&String(t&&t.state||'').toUpperCase()===currentState}).sort(function(a,b){return Number(b&&b.activeDefault===true)-Number(a&&a.activeDefault===true)||String(b&&b.effectiveDate||'').localeCompare(String(a&&a.effectiveDate||''))||Number(b&&b.version||1)-Number(a&&a.version||1)})[0]||null}
+  function templateForDoc(d){var docType=currentCategory==='contracts'?'contract':'contingency';return templates.filter(function(t){var packageMatch=docType!=='contract'||String(t&&t.contractPackageMode||'')==='individual_pdf_v1';return packageMatch&&String(t&&t.sourceCompanyDocumentId||'')===String(d&&d.id||'')&&String(t&&t.documentType||'contingency')===docType&&String(t&&t.region||'')===currentRegion&&String(t&&t.state||'').toUpperCase()===currentState}).sort(function(a,b){return String(b&&b.effectiveDate||'').localeCompare(String(a&&a.effectiveDate||''))||Number(b&&b.version||1)-Number(a&&a.version||1)})[0]||null}
   function setStep(name){var r=document.getElementById('crm-company-docs-region-step'),s=document.getElementById('crm-company-docs-state-step'),f=document.getElementById('crm-company-docs-file-step');if(r)r.hidden=name!=='region';if(s)s.hidden=name!=='state';if(f)f.hidden=name!=='file'}
   function updateBrowserPath(){var p=document.getElementById('crm-company-docs-browser-path');if(!p)return;var a=[categoryLabel(currentCategory)];if(isRoutedCategory()&&currentRegion)a.push(currentRegion);if(isRoutedCategory()&&currentState)a.push(stateLabel(currentState));p.textContent=a.join(' / ')}
   function showHome(){currentCategory='';currentRegion='';currentState='';window.hmCompanyDocumentsCurrentCategory='';window.hmCompanyDocumentsCurrentRegion='';window.hmCompanyDocumentsCurrentState='';window.hmCompanyDocumentsCurrentFileId='';var h=document.getElementById('crm-company-docs-home'),b=document.getElementById('crm-company-docs-browser'),s=document.getElementById('crm-company-docs-subtitle');if(h)h.hidden=false;if(b)b.hidden=true;if(s)s.textContent='Choose a document section.'}
   function renderRegions(){setStep('region');updateBrowserPath();var host=document.getElementById('crm-company-docs-region-buttons');if(!host)return;host.innerHTML='';regionRows().forEach(function(row){var btn=document.createElement('button');btn.className='crm-company-docs-choice-button';btn.type='button';btn.textContent=String(row&&row.name||'Region');btn.onclick=function(){currentRegion=String(row&&row.name||'').trim();currentState='';renderStates()};host.appendChild(btn)})}
   function renderStates(){setStep('state');updateBrowserPath();var host=document.getElementById('crm-company-docs-state-buttons');if(!host)return;host.innerHTML='';var row=regionRows().find(function(r){return String(r&&r.name||'')===currentRegion}),states=row&&Array.isArray(row.states)?row.states:[];if(!states.length){var e=document.createElement('div');e.className='crm-company-docs-empty';e.textContent='No states are assigned to '+currentRegion+'. Add states in Settings → Regions.';host.appendChild(e);return}states.forEach(function(code){var btn=document.createElement('button');btn.className='crm-company-docs-choice-button';btn.type='button';btn.textContent=stateLabel(code);btn.onclick=function(){currentState=String(code||'').toUpperCase();showFileStep()};host.appendChild(btn)})}
   function renderFiles(){var host=document.getElementById('crm-company-docs-file-list');if(!host)return;host.innerHTML='';var items=docs.filter(function(d){if(String(d&&d.category||'')!==currentCategory)return false;if(!isRoutedCategory())return true;var route=routeForDoc(d);return route.region===currentRegion&&route.state===currentState}).sort(function(a,b){return String(b&&b.uploadedAt||'').localeCompare(String(a&&a.uploadedAt||''))});if(!items.length){var e=document.createElement('div');e.className='crm-company-docs-empty';e.textContent='No files uploaded here yet.';host.appendChild(e);return}items.forEach(function(d){var row=document.createElement('div');row.className='crm-company-docs-file-row';var open=document.createElement('button');open.className='crm-company-docs-file-button';open.type='button';var strong=document.createElement('strong');strong.textContent=String(d.name||'Document');var meta=document.createElement('span'),when=d.uploadedAt?new Date(d.uploadedAt).toLocaleDateString():'',ready=isRoutedCategory()?templateForDoc(d):null;meta.textContent=[fmt(d.size),d.uploadedBy||'',when,ready?(String(ready.status||'active')==='active'?'DocuSign ready':'Template inactive'):''].filter(Boolean).join(' • ');open.append(strong,meta);open.onclick=function(){window.hmCompanyDocumentsCurrentFileId=d.id;openDoc(d.id)};var tools=document.createElement('div');tools.className='crm-company-docs-file-tools';if(canManage()&&isRoutedCategory()){var setup=document.createElement('button');setup.className='btn';setup.type='button';setup.textContent=ready?'Edit DocuSign Fields':'Set Up DocuSign Fields';setup.onclick=function(){window.hmCompanyDocumentsCurrentFileId=d.id;if(typeof openTemplateBuilder==='function')openTemplateBuilder(currentRegion,currentState,d.id,currentCategory==='contracts'?'contract':'contingency')};tools.appendChild(setup)}if(canManage()){var del=document.createElement('button');del.className='btn';del.type='button';del.textContent='Delete';del.onclick=function(){deleteDoc(d.id)};tools.appendChild(del)}row.append(open,tools);host.appendChild(row)})}
-  function showFileStep(){setStep('file');updateBrowserPath();window.hmCompanyDocumentsCurrentCategory=currentCategory;window.hmCompanyDocumentsCurrentRegion=currentRegion;window.hmCompanyDocumentsCurrentState=currentState;window.hmCompanyDocumentsCurrentFileId='';var u=document.getElementById('crm-company-doc-upload-btn');if(u){u.style.display=canManage()?'inline-flex':'none';u.textContent=currentCategory==='contingencies'?'Add Contingency':(currentCategory==='contracts'?'Upload Contract':'Upload File')}var e=document.getElementById('crm-company-doc-template-editor');if(e){e.textContent='Set Up DocuSign Fields';e.style.display='none'}renderFiles()}
+  function showFileStep(){setStep('file');updateBrowserPath();window.hmCompanyDocumentsCurrentCategory=currentCategory;window.hmCompanyDocumentsCurrentRegion=currentRegion;window.hmCompanyDocumentsCurrentState=currentState;window.hmCompanyDocumentsCurrentFileId='';var u=document.getElementById('crm-company-doc-upload-btn');if(u){u.style.display=canManage()?'inline-flex':'none';u.textContent=currentCategory==='contingencies'?'Add Contingency':(currentCategory==='contracts'?'Upload Contracts':'Upload File')}var e=document.getElementById('crm-company-doc-template-editor');if(e){e.textContent='Set Up DocuSign Fields';e.style.display='none'}renderFiles()}
   function openCategory(cat){currentCategory=String(cat||'other');currentRegion='';currentState='';window.hmCompanyDocumentsCurrentCategory=currentCategory;var h=document.getElementById('crm-company-docs-home'),b=document.getElementById('crm-company-docs-browser'),s=document.getElementById('crm-company-docs-subtitle'),t=document.getElementById('crm-company-docs-browser-title');if(h)h.hidden=true;if(b)b.hidden=false;if(s)s.textContent=isRoutedCategory()?'Choose the region, then the state.':'Open an uploaded file or add a new one.';if(t)t.textContent='Uploads';if(isRoutedCategory())renderRegions();else showFileStep()}
   function render(){if(!currentCategory){showHome();return}if(isRoutedCategory()&&!currentRegion){renderRegions();return}if(isRoutedCategory()&&!currentState){renderStates();return}showFileStep()}
   async function load(){try{status('Loading company documents…');if(typeof window.hmCloudWhenReady==='function')await window.hmCloudWhenReady();docs=parse(DOCS_KEY);templates=parse(TEMPLATES_KEY);window.savedFormTemplates=templates.slice();try{savedFormTemplates=templates.slice()}catch(_){}render();status(canManage()?'Choose a section to manage company files.':'Choose a section to open company files.')}catch(e){docs=[];templates=[];render();status(e&&e.message?e.message:'Company documents could not be loaded.',true)}}
-  function choose(cat,region,state){if(!canManage())return;var i=document.getElementById('crm-company-doc-file-input');if(!i)return;i.setAttribute('data-category',String(cat||'other'));i.setAttribute('data-region',String(region||''));i.setAttribute('data-state',String(state||'').toUpperCase());i.value='';i.click()}
-  async function upload(input){var file=input&&input.files&&input.files[0],cat=String(input&&input.getAttribute('data-category')||'other'),region=String(input&&input.getAttribute('data-region')||'').trim(),state=String(input&&input.getAttribute('data-state')||'').trim().toUpperCase();if(!file)return;try{if(file.size>MAX_BYTES)throw new Error('Documents must be 25 MB or smaller.');if(isRoutedCategory(cat)&&(!region||!state))throw new Error('Choose the region and state before uploading.');if(cat==='contracts'&&!(String(file.type||'').toLowerCase()==='application/pdf'||/\.pdf$/i.test(String(file.name||''))))throw new Error('The complete contract must be uploaded as one PDF.');if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can upload company documents.');if(typeof window.hmCloudUploadLeadFile!=='function')throw new Error('Hail Money cloud storage is not ready.');status('Uploading '+file.name+'…');var packageMode=cat==='contracts'?'single_pdf_v1':'';var meta=await window.hmCloudUploadLeadFile('', 'company_document', file,{category:cat,uploadedBy:(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'',metadata:{region:region,state:state,companyCategory:cat,contractPackageMode:packageMode}});var doc={id:meta.id,category:cat,region:region,state:state,contractPackageMode:packageMode,name:meta.fileName||file.name,size:Number(meta.size||file.size||0),contentType:meta.mimeType||file.type||'application/octet-stream',storageProvider:'neon',storagePath:meta.storagePath||meta.objectKey||'',uploadedAt:meta.uploadedAt||new Date().toISOString(),uploadedBy:meta.uploadedBy||''};docs=docs.filter(function(d){return String(d&&d.id||'')!==String(doc.id)});docs.push(doc);saveDocs();renderFiles();status(file.name+' uploaded to '+(isRoutedCategory(cat)?region+' / '+state:categoryLabel(cat))+'.');if(isRoutedCategory(cat)&&typeof openTemplateBuilder==='function'){window.hmCompanyDocumentsCurrentFileId=doc.id;setTimeout(function(){openTemplateBuilder(region,state,doc.id,cat==='contracts'?'contract':'contingency')},0)}}catch(e){status(e&&e.message?e.message:'Document upload failed.',true)}finally{if(input)input.value=''}}
+  function choose(cat,region,state){if(!canManage())return;var i=document.getElementById('crm-company-doc-file-input');if(!i)return;i.setAttribute('data-category',String(cat||'other'));i.setAttribute('data-region',String(region||''));i.setAttribute('data-state',String(state||'').toUpperCase());if(String(cat||'')==='contracts'){i.setAttribute('multiple','multiple');i.setAttribute('accept','.pdf,application/pdf')}else{i.removeAttribute('multiple');i.setAttribute('accept','.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp')}i.value='';i.click()}
+  async function upload(input){var files=Array.prototype.slice.call(input&&input.files||[]),cat=String(input&&input.getAttribute('data-category')||'other'),region=String(input&&input.getAttribute('data-region')||'').trim(),state=String(input&&input.getAttribute('data-state')||'').trim().toUpperCase();if(!files.length)return;try{if(isRoutedCategory(cat)&&(!region||!state))throw new Error('Choose the region and state before uploading.');if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can upload company documents.');if(cat==='contracts'){for(var c=0;c<files.length;c++){var contractFile=files[c];if(contractFile.size>MAX_BYTES)throw new Error(contractFile.name+' is larger than 25 MB.');if(!(String(contractFile.type||'').toLowerCase()==='application/pdf'||/\.pdf$/i.test(String(contractFile.name||''))))throw new Error('Every contract in the batch must be a PDF.');}if(typeof window.hmOpenContractBatchTemplateBuilder!=='function')throw new Error('Contract field setup is not ready.');status('Opening '+files.length+(files.length===1?' contract':' contracts')+' for field setup…');await window.hmOpenContractBatchTemplateBuilder(region,state,files);status('Set up each contract, then click Save All Contracts.');return;}var file=files[0];if(file.size>MAX_BYTES)throw new Error('Documents must be 25 MB or smaller.');if(typeof window.hmCloudUploadLeadFile!=='function')throw new Error('Hail Money cloud storage is not ready.');status('Uploading '+file.name+'…');var meta=await window.hmCloudUploadLeadFile('', 'company_document', file,{category:cat,uploadedBy:(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'',metadata:{region:region,state:state,companyCategory:cat}});var doc={id:meta.id,category:cat,region:region,state:state,name:meta.fileName||file.name,size:Number(meta.size||file.size||0),contentType:meta.mimeType||file.type||'application/octet-stream',storageProvider:'neon',storagePath:meta.storagePath||meta.objectKey||'',uploadedAt:meta.uploadedAt||new Date().toISOString(),uploadedBy:meta.uploadedBy||''};docs=docs.filter(function(d){return String(d&&d.id||'')!==String(doc.id)});docs.push(doc);saveDocs();renderFiles();status(file.name+' uploaded to '+(isRoutedCategory(cat)?region+' / '+state:categoryLabel(cat))+'.');if(isRoutedCategory(cat)&&typeof openTemplateBuilder==='function'){window.hmCompanyDocumentsCurrentFileId=doc.id;setTimeout(function(){openTemplateBuilder(region,state,doc.id,'contingency')},0)}}catch(e){status(e&&e.message?e.message:'Document upload failed.',true)}finally{if(input)input.value=''}}
   window.hmListCompanyDocuments=async function(category){await load();return docs.filter(function(d){return !category||String(d&&d.category||'')===String(category)}).map(function(d){var route=routeForDoc(d);return{id:d.id,name:d.name,category:d.category,region:route.region,state:route.state,contractPackageMode:String(d&&d.contractPackageMode||''),contentType:d.contentType,size:d.size,uploadedAt:d.uploadedAt,uploadedBy:d.uploadedBy||'',storageProvider:'neon',storagePath:d.storagePath||''}})};
   window.hmLoadCompanyDocumentForTemplate=async function(id){var d=find(id);if(!d){await load();d=find(id)}if(!d)throw new Error('That uploaded document could not be found.');var type=String(d.contentType||'').toLowerCase();if(type&&type!=='application/pdf'&&type.indexOf('image/')!==0)throw new Error('Fillable fields can be added to PDF or image documents.');if(typeof window.hmCloudGetFileBlobById!=='function')throw new Error('Hail Money cloud storage is not ready.');var blob=await window.hmCloudGetFileBlobById(d.id);var dataUrl=await new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(){resolve(r.result)};r.onerror=function(){reject(r.error||new Error('Could not read the uploaded document.'))};r.readAsDataURL(blob)});return{id:d.id,name:d.name||'Document',category:d.category||'',contractPackageMode:String(d.contractPackageMode||''),contentType:d.contentType||blob.type||'application/pdf',size:d.size||blob.size||0,dataUrl:dataUrl}};
   function sourceDocForTemplate(tpl,documents){var rows=documents||[],explicit=String(tpl&&tpl.sourceCompanyDocumentId||'').trim();if(explicit&&rows.some(function(d){return String(d&&d.id||'')===explicit}))return explicit;var name=String(tpl&&tpl.fileName||'').trim().toLowerCase();if(!name)return'';var category=String(tpl&&tpl.documentType||'contingency')==='contract'?'contracts':'contingencies',wr=String(tpl&&tpl.region||'').trim(),ws=String(tpl&&tpl.state||'').trim().toUpperCase(),match=rows.find(function(d){var route=routeForDoc(d);return String(d&&d.category||'')===category&&String(d&&d.name||'').trim().toLowerCase()===name&&(!wr||route.region===wr)&&(!ws||route.state===ws)});return match?String(match.id||''):''}
-  async function ensureTemplateSource(tpl,documents){var existing=sourceDocForTemplate(tpl,documents);if(existing)return existing;if(!tpl||!tpl.fileDataUrl)return'';var category=String(tpl&&tpl.documentType||'contingency')==='contract'?'contracts':'contingencies',packageMode=category==='contracts'?'single_pdf_v1':'',blob=await fetch(tpl.fileDataUrl).then(function(r){if(!r.ok)throw new Error('The document source could not be read.');return r.blob()});if(!blob||!blob.size||blob.size>MAX_BYTES)return'';var name=tpl.fileName||tpl.name||(category==='contracts'?'Contract.pdf':'Contingency.pdf'),region=String(tpl.region||'').trim(),state=String(tpl.state||'').trim().toUpperCase(),stale=(documents||[]).find(function(d){var route=routeForDoc(d);return String(d&&d.category||'')===category&&String(d&&d.name||'').trim().toLowerCase()===String(name).trim().toLowerCase()&&(!region||route.region===region)&&(!state||route.state===state)}),id=String(stale&&stale.id||'').trim()||('company_doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9));var file=new File([blob],name,{type:tpl.fileType||blob.type||'application/pdf'});var meta=await window.hmCloudUploadLeadFile('', 'company_document', file,{id:id,category:category,uploadedBy:(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'',metadata:{region:region,state:state,companyCategory:category,contractPackageMode:packageMode}});var doc={id:meta.id,category:category,region:region,state:state,contractPackageMode:packageMode,name:name,size:Number(meta.size||blob.size||0),contentType:meta.mimeType||file.type,storageProvider:'neon',storagePath:meta.storagePath||meta.objectKey||'',uploadedAt:meta.uploadedAt||new Date().toISOString(),uploadedBy:meta.uploadedBy||''},idx=(documents||[]).findIndex(function(d){return String(d&&d.id||'')===String(doc.id)});if(idx>=0)documents[idx]=doc;else documents.push(doc);return doc.id}
-  function cleanTemplateMeta(tpl,sourceId){var copy=JSON.parse(JSON.stringify(tpl||{}));delete copy.fileDataUrl;copy.sourceCompanyDocumentId=String(sourceId||copy.sourceCompanyDocumentId||'');return copy}
+  async function ensureTemplateSource(tpl,documents){var existing=tpl&&tpl.forceNewCompanyDocument===true?'':sourceDocForTemplate(tpl,documents);if(existing)return existing;if(!tpl||!tpl.fileDataUrl)return'';var category=String(tpl&&tpl.documentType||'contingency')==='contract'?'contracts':'contingencies',packageMode=category==='contracts'?'individual_pdf_v1':'',blob=await fetch(tpl.fileDataUrl).then(function(r){if(!r.ok)throw new Error('The document source could not be read.');return r.blob()});if(!blob||!blob.size||blob.size>MAX_BYTES)return'';var name=tpl.fileName||tpl.name||(category==='contracts'?'Contract.pdf':'Contingency.pdf'),region=String(tpl.region||'').trim(),state=String(tpl.state||'').trim().toUpperCase(),stale=tpl&&tpl.forceNewCompanyDocument===true?null:(documents||[]).find(function(d){var route=routeForDoc(d);return String(d&&d.category||'')===category&&String(d&&d.name||'').trim().toLowerCase()===String(name).trim().toLowerCase()&&(!region||route.region===region)&&(!state||route.state===state)}),id=String(stale&&stale.id||'').trim()||('company_doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9));var file=new File([blob],name,{type:tpl.fileType||blob.type||'application/pdf'});var meta=await window.hmCloudUploadLeadFile('', 'company_document', file,{id:id,category:category,uploadedBy:(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'',metadata:{region:region,state:state,companyCategory:category,contractPackageMode:packageMode}});var doc={id:meta.id,category:category,region:region,state:state,contractPackageMode:packageMode,name:name,size:Number(meta.size||blob.size||0),contentType:meta.mimeType||file.type,storageProvider:'neon',storagePath:meta.storagePath||meta.objectKey||'',uploadedAt:meta.uploadedAt||new Date().toISOString(),uploadedBy:meta.uploadedBy||''},idx=(documents||[]).findIndex(function(d){return String(d&&d.id||'')===String(doc.id)});if(idx>=0)documents[idx]=doc;else documents.push(doc);return doc.id}
+  function cleanTemplateMeta(tpl,sourceId){var copy=JSON.parse(JSON.stringify(tpl||{}));delete copy.fileDataUrl;delete copy.forceNewCompanyDocument;copy.sourceCompanyDocumentId=String(sourceId||copy.sourceCompanyDocumentId||'');return copy}
   window.hmGetCompanyFormTemplates=async function(){if(typeof window.hmCloudWhenReady==='function')await window.hmCloudWhenReady();docs=parse(DOCS_KEY);templates=parse(TEMPLATES_KEY);window.savedFormTemplates=templates.slice();try{savedFormTemplates=templates.slice()}catch(_){}return templates.map(function(t){return JSON.parse(JSON.stringify(t))})};
-  window.hmSaveCompanyFormTemplate=async function(tpl){if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can save company templates.');if(typeof window.hmCloudWhenReady==='function')await window.hmCloudWhenReady();docs=parse(DOCS_KEY);templates=parse(TEMPLATES_KEY);var source=await ensureTemplateSource(tpl,docs);if(!source)throw new Error('This document could not be linked to company storage.');var si=docs.findIndex(function(d){return String(d&&d.id||'')===String(source)}),docType=String(tpl&&tpl.documentType||'contingency'),category=docType==='contract'?'contracts':'contingencies';if(si>=0&&(docType==='contingency'||docType==='contract')){docs[si].category=category;docs[si].region=String(tpl.region||'').trim();docs[si].state=String(tpl.state||'').trim().toUpperCase();docs[si].contractPackageMode=docType==='contract'?'single_pdf_v1':''}var meta=cleanTemplateMeta(tpl,source),idx=templates.findIndex(function(x){return String(x&&x.id||'')===String(meta.id||'')});if(idx>=0)templates[idx]=meta;else templates.push(meta);saveDocs();saveTemplates();if(isRoutedCategory()&&currentRegion&&currentState)renderFiles();return meta};
+  window.hmSaveCompanyFormTemplate=async function(tpl){if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can save company templates.');if(typeof window.hmCloudWhenReady==='function')await window.hmCloudWhenReady();docs=parse(DOCS_KEY);templates=parse(TEMPLATES_KEY);var source=await ensureTemplateSource(tpl,docs);if(!source)throw new Error('This document could not be linked to company storage.');var si=docs.findIndex(function(d){return String(d&&d.id||'')===String(source)}),docType=String(tpl&&tpl.documentType||'contingency'),category=docType==='contract'?'contracts':'contingencies';if(si>=0&&(docType==='contingency'||docType==='contract')){docs[si].category=category;docs[si].region=String(tpl.region||'').trim();docs[si].state=String(tpl.state||'').trim().toUpperCase();docs[si].contractPackageMode=docType==='contract'?'individual_pdf_v1':''}var meta=cleanTemplateMeta(tpl,source),idx=templates.findIndex(function(x){return String(x&&x.id||'')===String(meta.id||'')});if(idx>=0)templates[idx]=meta;else templates.push(meta);saveDocs();saveTemplates();if(isRoutedCategory()&&currentRegion&&currentState)renderFiles();return meta};
   window.hmUploadLeadDocumentToCloud=async function(leadId,type,file,metaOptions){metaOptions=metaOptions||{};if(!leadId||!file)throw new Error('Lead document information is incomplete.');if(typeof window.hmCloudUploadLeadFile!=='function')throw new Error('Hail Money cloud storage is not ready.');var category=String(metaOptions.category||((type==='signed_contingency')?'Contingency':(type==='signed_contract'?'Contract':''))).trim(),meta=await window.hmCloudUploadLeadFile(leadId,type||'document',file,{category:category,docCategory:category,note:String(metaOptions.note||''),uploadedBy:String(metaOptions.uploadedBy||(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'')});meta.docCategory=category;meta.category=category;meta.storageProvider='neon';meta.storageKey='neon:'+meta.id;try{var all=crmGetLeadFiles();all=all.filter(function(x){return String(x&&x.id||'')!==String(meta.id)});all.push(crmNormalizeLeadFileMeta(meta));crmSaveLeadFiles(all)}catch(e){console.error('[Lead Document] metadata registration failed',e);throw e}return meta};
   async function openDoc(id){var d=find(id);if(!d)return;var pop=window.open('about:blank','_blank');try{status('Opening '+(d.name||'document')+'…');var blob=await window.hmCloudGetFileBlobById(d.id);if(!blob)throw new Error('This document could not be opened.');var url=URL.createObjectURL(blob);if(pop)pop.location.href=url;else window.location.href=url;setTimeout(function(){try{URL.revokeObjectURL(url)}catch(_){}},60000);status('Company documents are ready.')}catch(e){if(pop)pop.close();status(e&&e.message?e.message:'This document could not be opened.',true)}}
   async function deleteDoc(id){var d=find(id);if(!d||!window.confirm('Delete "'+String(d.name||'this document')+'" for the entire company?'))return;try{if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can delete company documents.');status('Deleting '+(d.name||'document')+'…');await window.hmCloudApi('/files/'+encodeURIComponent(d.id),{method:'DELETE'});docs=docs.filter(function(x){return String(x&&x.id||'')!==String(id)});templates=templates.filter(function(t){return String(t&&t.sourceCompanyDocumentId||'')!==String(id)});saveDocs();saveTemplates();render();status('Document deleted.')}catch(e){status(e&&e.message?e.message:'Document could not be deleted.',true)}}
