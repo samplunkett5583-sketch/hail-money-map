@@ -84937,11 +84937,17 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         html += '<div class="crm-job-file-empty">No files in ' + crmEscapeHtml(cat.key) + ' yet.</div>';
       } else {
         html += '<div class="crm-job-file-file-links">';
-        catFiles.forEach(function(entry) {
+        catFiles.forEach(function(file) {
           if (typeof crmRenderJobFileDocumentEntry === 'function') {
-            html += crmRenderJobFileDocumentEntry(entry);
+            html += crmRenderJobFileDocumentEntry({
+              fileId: file.id,
+              file: file,
+              note: file.note || '',
+              uploadedBy: file.uploadedBy || '',
+              uploadedAt: file.uploadedAt || file.createdAt || ''
+            });
           } else {
-            html += '<div class="crm-job-file-file-link"><strong>' + crmEscapeHtml(entry.fileName || 'File') + '</strong></div>';
+            html += '<div class="crm-job-file-file-link"><strong>' + crmEscapeHtml(file.fileName || file.name || 'File') + '</strong></div>';
           }
         });
         html += '</div>';
