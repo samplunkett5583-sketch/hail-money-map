@@ -12813,12 +12813,27 @@
     }
     .crm-doc-file-link:hover { color: var(--text); }
     /* CRM file viewer page */
-    .cfv-wrap { width: 100%; max-width: 760px; margin: 0 auto; }
+    .cfv-wrap {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0 12px 12px;
+      box-sizing: border-box;
+    }
+    #page-crm-file-viewer .crm-detail-card {
+      width: 100%;
+      max-width: none;
+      box-sizing: border-box;
+      padding: 12px;
+    }
     #cfv-content img {
-      max-width: 100%; border-radius: 8px; display: block; margin: 0 auto;
+      width: auto; max-width: 100%; max-height: calc(100vh - 245px);
+      border-radius: 8px; display: block; margin: 0 auto;
     }
     #cfv-content iframe {
-      width: 100%; min-height: 70vh;
+      width: 100%;
+      height: calc(100vh - 245px);
+      min-height: 70vh;
       border: 1px solid var(--border); border-radius: 8px; background: #fff;
       display: block;
     }
