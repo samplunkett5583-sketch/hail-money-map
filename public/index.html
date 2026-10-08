@@ -24101,6 +24101,20 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
             </div>
           </div>
         </div>
+        <!-- Contract Customizer Modal -->
+        <div id="contract-customizer-modal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.58);align-items:center;justify-content:center;padding:18px;">
+          <div style="background:#fff;border-radius:14px;padding:20px;max-width:560px;width:100%;box-shadow:0 12px 36px rgba(0,0,0,.32);max-height:88vh;overflow:auto;">
+            <h3 style="margin:0 0 6px;font-size:20px;font-weight:800;">Customize Your Contract</h3>
+            <div id="contract-customizer-route" style="font-size:12px;color:var(--muted,#777);margin-bottom:14px;"></div>
+            <p style="margin:0 0 12px;font-size:13px;color:#333;">Choose the pages needed for this contract. Production Agreement is required.</p>
+            <div id="contract-customizer-pages" style="display:grid;gap:9px;"></div>
+            <div id="contract-customizer-msg" style="display:none;margin-top:10px;padding:9px 10px;border-radius:8px;background:#fff1f1;color:#a11;font-size:12px;"></div>
+            <div style="display:flex;gap:10px;margin-top:16px;">
+              <button class="btn" type="button" id="contract-customizer-cancel" style="flex:1;">Cancel</button>
+              <button class="btn btn-primary" type="button" id="contract-customizer-continue" style="flex:1;">Continue to Sign</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- ── Saved Docs Viewer ── -->
@@ -24126,7 +24140,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       <section id="page-template-builder" class="page" data-crm-header-title="Document Editor">
         <div class="tpl-builder-wrap">
           <h1 class="page-title">DocuSign Field Setup</h1>
-          <p class="page-subtitle">Place the signing and customer-data fields on this contingency before it can be used for signing.</p>
+          <p class="page-subtitle">Place the signing, auto-fill, and manual-entry fields on this document before it can be used for signing.</p>
           <div id="tpl-company-doc-help" class="tpl-company-doc-help"><strong>Add DocuSign fields:</strong> choose Homeowner Signature, Rep Signature, Homeowner Name, Address, Email, Phone Number, Claim Number, Policy Number, Insurance Company, Date of Loss, Date, or another field below. Tap and drag on the document to size it. On a phone, choose a field and tap the document to place it.</div>
 
           <div class="page-actions" style="margin-bottom:14px;">
@@ -24136,8 +24150,9 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           <div class="tpl-builder-row">
             <input type="text" id="tpl-doc-name" class="field-input" placeholder="Template name, e.g. Contingency Agreement v2" />
           </div>
-          <div class="tpl-builder-row" id="tpl-routing-row" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;">
+          <div class="tpl-builder-row" id="tpl-routing-row" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;">
             <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Document Type<select id="tpl-doc-type" class="field-input" aria-label="Document type"><option value="contingency">Contingency</option><option value="contract">Contract</option><option value="other">Other</option></select></label>
+            <label id="tpl-contract-page-type-wrap" style="display:none;gap:5px;font-size:12px;font-weight:700;">Contract Page *<select id="tpl-contract-page-type" class="field-input" aria-label="Contract page type"><option value="">Select contract page</option><option value="production_agreement">Production Agreement</option><option value="shingle_1a">1A Shingle Roofing</option><option value="gutters_2b">2B Gutters</option><option value="siding_3b">3B Siding</option><option value="misc_5">5 Misc</option></select></label>
             <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Region *<select id="tpl-region" class="field-input" aria-label="Region" required><option value="">Select region</option></select></label>
             <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">State *<select id="tpl-state" class="field-input" aria-label="State" required disabled><option value="">Select a region first</option></select></label>
           </div>
@@ -24147,8 +24162,8 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           </div>
           <label id="tpl-active-default-wrap" style="margin:0 0 12px;display:flex;gap:8px;align-items:center;"><input type="checkbox" id="tpl-active-default" checked /><span>Use as the active default for this region and state</span></label>
           <div class="tpl-builder-row" id="tpl-existing-document-row" style="display:grid;grid-template-columns:minmax(260px,1fr) auto;gap:10px;align-items:end;">
-            <label style="display:grid;gap:5px;font-size:12px;font-weight:700;">Use Existing Contingency
-              <select id="tpl-existing-contingency" class="field-input" aria-label="Choose existing contingency"><option value="">Choose an uploaded contingency</option></select>
+            <label style="display:grid;gap:5px;font-size:12px;font-weight:700;"><span id="tpl-existing-document-label">Use Existing Document</span>
+              <select id="tpl-existing-contingency" class="field-input" aria-label="Choose existing document"><option value="">Choose an uploaded document</option></select>
             </label>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span style="font-size:12px;color:var(--muted,#888);">or</span><button class="btn" type="button" id="tpl-upload-btn">Upload New Document</button></div>
             <input type="file" id="tpl-file-input" accept="image/*,application/pdf" style="display:none;" />
@@ -26552,6 +26567,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
 
                 <div id="crm-company-docs-file-step" hidden>
                   <div class="crm-company-docs-file-actions">
+                    <select id="crm-company-doc-contract-page-type" class="field-input" style="display:none;max-width:230px;" aria-label="Contract page type"><option value="">Select contract page</option><option value="production_agreement">Production Agreement</option><option value="shingle_1a">1A Shingle Roofing</option><option value="gutters_2b">2B Gutters</option><option value="siding_3b">3B Siding</option><option value="misc_5">5 Misc</option></select>
                     <button class="btn btn-primary crm-company-doc-upload" type="button" id="crm-company-doc-upload-btn">Upload File</button>
                     <button class="btn" type="button" id="crm-company-doc-template-editor" style="display:none;">Set Up for DocuSign</button>
                   </div>
@@ -53703,10 +53719,10 @@ function mapsGoogleReady() {
     }
 
     async function crmEnsureTemplateDocumentLoaded(tpl) {
-      if(!tpl)throw new Error('The contingency template could not be found.');
+      if(!tpl)throw new Error('The document template could not be found.');
       if(tpl.fileDataUrl)return tpl;
       var sourceId=String(tpl.sourceCompanyDocumentId||'').trim();
-      if(!sourceId||typeof window.hmLoadCompanyDocumentForTemplate!=='function')throw new Error('The contingency PDF is not attached to this template.');
+      if(!sourceId||typeof window.hmLoadCompanyDocumentForTemplate!=='function')throw new Error('The document PDF is not attached to this template.');
       var cloudFile=await window.hmLoadCompanyDocumentForTemplate(sourceId);
       tpl.fileDataUrl=cloudFile.dataUrl;
       tpl.fileName=tpl.fileName||cloudFile.name;
@@ -53736,19 +53752,91 @@ function mapsGoogleReady() {
 
     var _crmSavedContractReturnLeadId = '';
 
+    var _contractSigningSession = null;
+
+    function crmGetContractTemplatesForLead(lead) {
+      var state=String(lead&&(lead.regionState||lead.state)||'').trim().toUpperCase();
+      var region=String(lead&&lead.region||'').trim();
+      if(!region&&typeof hmResolveRegionForState==='function')region=String(hmResolveRegionForState(state)||'').trim();
+      var today=new Date().toISOString().slice(0,10);
+      var matches=savedFormTemplates.map(function(t,i){return{template:t,index:i}}).filter(function(row){
+        var t=row.template||{};
+        return String(t.documentType||'')==='contract' &&
+          String(t.region||'')===region &&
+          String(t.state||'').toUpperCase()===state &&
+          String(t.status||'active')==='active' &&
+          (!t.effectiveDate||String(t.effectiveDate)<=today) &&
+          !!String(t.contractPageType||'');
+      });
+      return CONTRACT_PAGE_TYPES.map(function(def){
+        var options=matches.filter(function(row){return String(row.template.contractPageType||'')===def.key;}).sort(function(a,b){
+          return Number(b.template.activeDefault===true)-Number(a.template.activeDefault===true) ||
+            String(b.template.effectiveDate||'').localeCompare(String(a.template.effectiveDate||'')) ||
+            Number(b.template.version||1)-Number(a.template.version||1);
+        });
+        return options.length?{key:def.key,label:def.label,required:!!def.required,index:options[0].index,template:options[0].template}:null;
+      }).filter(Boolean);
+    }
+
     async function crmOpenLeadContractFromDocuments(leadId) {
       leadId=String(leadId||'').trim();
       var lead=crmGetLeads().find(function(item){return String(item&&item.id||'')===leadId;});
       if(!lead){showUploadToast('Lead not found.');return;}
-      var idx=typeof hmFindTemplateForLead==='function'?hmFindTemplateForLead(lead,'contract'):-1;
-      var hasRouted=savedFormTemplates.some(function(tpl){return !!String(tpl&&tpl.region||'').trim()&&!!String(tpl&&tpl.state||'').trim();});
-      if(idx<0&&!hasRouted) idx=savedFormTemplates.findIndex(function(tpl){var name=String(tpl&&tpl.name||'');return /contract/i.test(name)&&!/conting/i.test(name);});
-      if(idx<0){showUploadToast('No Contract template is configured yet.');return;}
-      try{await crmEnsureTemplateDocumentLoaded(savedFormTemplates[idx]);}
-      catch(err){console.error('[Contract Documents] load failed',err);showUploadToast(err&&err.message?err.message:'The contract PDF could not be loaded.');return;}
-      _crmPostLeadContingencyContext={leadId:leadId,returnMode:'documents',documentType:'contract'};
-      openDocuSign(leadId); createAndOpenFormInstance(leadId,idx);
+      var pages=crmGetContractTemplatesForLead(lead);
+      var production=pages.find(function(row){return row.key==='production_agreement';});
+      if(!production){showUploadToast('No active Production Agreement is configured for '+String(lead.region||'this region')+' / '+String(lead.regionState||lead.state||'this state')+'.');return;}
+      var modal=document.getElementById('contract-customizer-modal');
+      var host=document.getElementById('contract-customizer-pages');
+      var route=document.getElementById('contract-customizer-route');
+      var msg=document.getElementById('contract-customizer-msg');
+      route.textContent=[String(lead.region||''),String(lead.regionState||lead.state||'').toUpperCase()].filter(Boolean).join(' / ');
+      if(msg){msg.style.display='none';msg.textContent='';}
+      host.innerHTML=CONTRACT_PAGE_TYPES.map(function(def){
+        var row=pages.find(function(item){return item.key===def.key;});
+        var disabled=!row||def.required;
+        var checked=!!row;
+        return '<label style="display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid #d8d8d8;border-radius:9px;background:'+(row?'#fff':'#f5f5f5')+';">'+
+          '<input type="checkbox" data-contract-page="'+def.key+'" '+(checked?'checked ':'')+(disabled?'disabled ':'')+'/>'+
+          '<span style="flex:1;"><strong>'+def.label+'</strong>'+(row?'':'<span style="display:block;color:#b42318;font-size:11px;margin-top:2px;">Not configured for this region/state</span>')+'</span>'+
+          (def.required?'<span style="font-size:10px;font-weight:800;color:#8a6500;">REQUIRED</span>':'')+
+          '</label>';
+      }).join('');
+      modal.dataset.leadId=leadId;
+      modal._contractPages=pages;
+      modal.style.display='flex';
     }
+
+    document.getElementById('contract-customizer-cancel').addEventListener('click',function(){
+      document.getElementById('contract-customizer-modal').style.display='none';
+    });
+    document.getElementById('contract-customizer-continue').addEventListener('click',async function(){
+      var modal=document.getElementById('contract-customizer-modal');
+      var leadId=String(modal.dataset.leadId||'');
+      var pages=Array.isArray(modal._contractPages)?modal._contractPages:[];
+      var selected=[];
+      modal.querySelectorAll('[data-contract-page]').forEach(function(cb){
+        if(!cb.checked)return;
+        var row=pages.find(function(item){return item.key===cb.getAttribute('data-contract-page');});
+        if(row)selected.push(row);
+      });
+      selected.sort(function(a,b){return CONTRACT_PAGE_TYPES.findIndex(function(x){return x.key===a.key;})-CONTRACT_PAGE_TYPES.findIndex(function(x){return x.key===b.key;});});
+      var msg=document.getElementById('contract-customizer-msg');
+      if(!selected.length||!selected.some(function(row){return row.key==='production_agreement';})){
+        msg.textContent='Production Agreement is required.';msg.style.display='block';return;
+      }
+      try{
+        this.disabled=true;this.textContent='Loading contract...';
+        for(var i=0;i<selected.length;i++)await crmEnsureTemplateDocumentLoaded(savedFormTemplates[selected[i].index]);
+        _contractSigningSession={leadId:leadId,bundleId:'contract_bundle_'+Date.now(),pages:selected,position:0,instances:[],startedAt:new Date().toISOString()};
+        _crmPostLeadContingencyContext={leadId:leadId,returnMode:'documents',documentType:'contract',contractBundleId:_contractSigningSession.bundleId};
+        modal.style.display='none';
+        openDocuSign(leadId);
+        createAndOpenFormInstance(leadId,selected[0].index);
+      }catch(err){
+        console.error('[Contract Documents] load failed',err);
+        msg.textContent=err&&err.message?err.message:'The contract pages could not be loaded.';msg.style.display='block';
+      }finally{this.disabled=false;this.textContent='Continue to Sign';}
+    });
 
     function crmOpenSavedLeadContract(leadId,idx) {
       var lead=crmGetLeads().find(function(item){return String(item&&item.id||'')===String(leadId||'');});
@@ -53793,6 +53881,8 @@ function mapsGoogleReady() {
         id: 'inst_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
         templateId: tpl.id,
         templateName: tpl.name,
+        documentType: String(tpl.documentType || 'other'),
+        contractPageType: String(tpl.contractPageType || ''),
         fileName: tpl.fileName,
         fileType: tpl.fileType,
         fileDataUrl: tpl.fileDataUrl,
@@ -53925,8 +54015,18 @@ function mapsGoogleReady() {
             }
           });
           box.appendChild(insuranceFieldInput);
+        } else if (f.key === 'manual_text' || !String(f.value || '').trim()) {
+          box.style.border = '1px solid #d4a017';
+          box.style.background = '#fffdf4';
+          var manualFieldInput = document.createElement('input');
+          manualFieldInput.type = 'text';
+          manualFieldInput.value = f.value || '';
+          manualFieldInput.placeholder = f.label && f.label !== 'Manual Entry' ? String(f.label) : 'Enter information';
+          manualFieldInput.style.cssText = 'width:100%;height:100%;border:0;background:transparent;padding:1px 3px;box-sizing:border-box;font:inherit;';
+          manualFieldInput.addEventListener('input', function () { f.value = manualFieldInput.value; });
+          box.appendChild(manualFieldInput);
         } else {
-          // Text field — render value only, no label
+          // Auto-filled text field — render value only, no label
           box.style.border = 'none';
           box.style.background = 'transparent';
           box.style.color = '#111';
@@ -54053,10 +54153,12 @@ function mapsGoogleReady() {
 
       // --- Actions ---
       var isDraftLeadForm = !!(_crmPostLeadContingencyContext && _crmPostLeadContingencyContext.returnMode === 'draft_lead' && String(_crmPostLeadContingencyContext.leadId || '') === String(jobId || ''));
-      var completeFormLabel = isDraftLeadForm ? 'Finish Signature' : 'Complete & Save to Saved Docs';
+      var isContractBundle = !!(_contractSigningSession && String(_contractSigningSession.leadId || '') === String(jobId || ''));
+      var contractLastPage = isContractBundle && Number(_contractSigningSession.position || 0) >= _contractSigningSession.pages.length - 1;
+      var completeFormLabel = isDraftLeadForm ? 'Finish Signature' : (isContractBundle ? (contractLastPage ? 'Complete & Save Contract' : 'Save Page & Continue') : 'Complete & Save to Saved Docs');
       var actionsHtml = '';
       actionsHtml += '<button class="btn btn-primary" type="button" id="docusign-complete-form" style="width:100%;">' + completeFormLabel + '</button>';
-      actionsHtml += '<div style="margin-top:8px;padding:10px;background:var(--surface,#f5f5f5);border-radius:6px;font-size:12px;color:var(--muted,#888);text-align:center;">' + (isDraftLeadForm ? 'This remains a draft until you return to New Lead and click Save Lead.' : 'Sign all signature fields and check all checkmarks, then complete.') + '</div>';
+      actionsHtml += '<div style="margin-top:8px;padding:10px;background:var(--surface,#f5f5f5);border-radius:6px;font-size:12px;color:var(--muted,#888);text-align:center;">' + (isDraftLeadForm ? 'This remains a draft until you return to New Lead and click Save Lead.' : (isContractBundle ? ('Contract page ' + (Number(_contractSigningSession.position || 0) + 1) + ' of ' + _contractSigningSession.pages.length + '. Fill any highlighted fields and sign every signature field on this page.') : 'Sign all signature fields and check all checkmarks, then complete.')) + '</div>';
       document.getElementById('docusign-form-actions').innerHTML = actionsHtml;
 
       // Wire complete button
@@ -54135,17 +54237,62 @@ function mapsGoogleReady() {
             var signedLead = leadRows.find(function (lead) { return String(lead && lead.id || '') === String(jobId || ''); });
             if (!signedLead) return;
             if (String(_crmPostLeadContingencyContext.documentType || 'contingency') === 'contract') {
-              signedLead.contractSigned = true; signedLead.contractSignedAt = inst.signedAt; signedLead.contractStatus = 'signed_form';
-              signedLead.contractFormInstances = Array.isArray(signedLead.contractFormInstances) ? signedLead.contractFormInstances : [];
-              signedLead.contractFormInstances.push(inst);
-              signedLead.jobFile = signedLead.jobFile && typeof signedLead.jobFile === 'object' ? signedLead.jobFile : {};
-              signedLead.jobFile.contract = signedLead.jobFile.contract && typeof signedLead.jobFile.contract === 'object' ? signedLead.jobFile.contract : {};
-              signedLead.jobFile.contract.status = 'Signed'; signedLead.jobFile.contract.signedAt = inst.signedAt;
-              signedLead.updatedAt = new Date().toISOString();
-              crmPushLeadActivity(signedLead, 'Signed contract completed', 'document', crmGetCurrentUserName() || currentRep || '', inst.signedAt);
-              crmSaveLeads(leadRows); _activeFormInstance = null;
-              _jfDocSelectedCategory = 'Contract'; _crmCurrentJobFileLeadId = signedLead.id;
-              _crmPostLeadContingencyContext = null; crmOpenJobFileSection(signedLead.id, 'documents'); showUploadToast('Signed contract saved.');
+              if (!_contractSigningSession || String(_contractSigningSession.leadId || '') !== String(jobId || '')) {
+                showUploadToast('The contract signing session expired. Reopen Sign Contract.'); return;
+              }
+              inst.contractBundleId = _contractSigningSession.bundleId;
+              inst.contractPageType = String(inst.contractPageType || (_contractSigningSession.pages[_contractSigningSession.position] || {}).key || '');
+              _contractSigningSession.instances.push(JSON.parse(JSON.stringify(inst)));
+              if (_contractSigningSession.position < _contractSigningSession.pages.length - 1) {
+                _contractSigningSession.position += 1;
+                var nextPage = _contractSigningSession.pages[_contractSigningSession.position];
+                _activeFormInstance = null;
+                createAndOpenFormInstance(jobId, nextPage.index);
+                showUploadToast(crmContractPageLabel(inst.contractPageType) + ' signed. Continue to ' + crmContractPageLabel(nextPage.key) + '.');
+                return;
+              }
+              try {
+                if (typeof window.hmCreateAndUploadLockedContractPdf !== 'function') throw new Error('Signed contract PDF creation is not ready.');
+                completeBtn.disabled = true;
+                completeBtn.textContent = 'Creating signed contract PDF...';
+                var templateRows = _contractSigningSession.pages.map(function(row){return savedFormTemplates[row.index];});
+                var contractResult = await window.hmCreateAndUploadLockedContractPdf(signedLead.id, _contractSigningSession.instances, signedLead, templateRows);
+                var contractMeta = contractResult && contractResult.meta ? contractResult.meta : null;
+                if (!contractMeta || !contractMeta.id) throw new Error('The signed contract was not saved to cloud storage.');
+                signedLead.contractSigned = true;
+                signedLead.contractSignedAt = contractResult.signedAt || inst.signedAt;
+                signedLead.contractStatus = 'signed_locked_pdf_uploaded';
+                signedLead.contractDocumentId = String(contractMeta.id || '');
+                signedLead.contractStorageProvider = String(contractMeta.storageProvider || 'neon');
+                signedLead.contractStoragePath = String(contractMeta.storagePath || contractMeta.objectKey || '');
+                signedLead.contractFileName = String(contractMeta.fileName || 'Signed Contract.pdf');
+                signedLead.contractBundleId = String(_contractSigningSession.bundleId || '');
+                signedLead.contractPages = _contractSigningSession.instances.map(function(page){return String(page.contractPageType || '');});
+                signedLead.jobFile = signedLead.jobFile && typeof signedLead.jobFile === 'object' ? signedLead.jobFile : {};
+                signedLead.jobFile.contract = signedLead.jobFile.contract && typeof signedLead.jobFile.contract === 'object' ? signedLead.jobFile.contract : {};
+                signedLead.jobFile.contract.status = 'Signed';
+                signedLead.jobFile.contract.signedAt = signedLead.contractSignedAt;
+                signedLead.jobFile.contract.documentId = signedLead.contractDocumentId;
+                signedLead.jobFile.documents = Array.isArray(signedLead.jobFile.documents) ? signedLead.jobFile.documents : [];
+                signedLead.jobFile.documents = signedLead.jobFile.documents.filter(function(entry){return String(entry && (entry.fileId || entry.id) || '') !== signedLead.contractDocumentId;});
+                signedLead.jobFile.documents.push(crmNormalizeJobFileDocumentMeta({
+                  id:signedLead.contractDocumentId,fileId:signedLead.contractDocumentId,category:'Contract',
+                  note:'Signed contract',uploadedBy:crmGetCurrentUserName() || currentRep || '',uploadedAt:signedLead.contractSignedAt
+                }));
+                signedLead.updatedAt = new Date().toISOString();
+                crmPushLeadActivity(signedLead, 'Signed contract completed and uploaded', 'document', crmGetCurrentUserName() || currentRep || '', signedLead.contractSignedAt);
+                crmSaveLeads(leadRows);
+                _activeFormInstance = null;
+                _contractSigningSession = null;
+                _jfDocSelectedCategory = 'Contract'; _crmCurrentJobFileLeadId = signedLead.id;
+                _crmPostLeadContingencyContext = null;
+                crmOpenJobFileSection(signedLead.id, 'documents');
+                showUploadToast('Signed contract saved to the cloud.');
+              } catch(contractError) {
+                completeBtn.disabled = false;
+                completeBtn.textContent = completeFormLabel;
+                showUploadToast(contractError && contractError.message ? contractError.message : 'The signed contract could not be saved.');
+              }
               return;
             }
             var templateMeta = savedFormTemplates.find(function (tpl) { return String(tpl && tpl.id || '') === String(inst.templateId || ''); }) || null;
@@ -54511,7 +54658,7 @@ function mapsGoogleReady() {
           showUploadToast('Returned to the lead draft. Nothing has been saved yet.');
           return;
         }
-        if (String(_crmPostLeadContingencyContext.documentType || '') === 'contract' && _crmPostLeadContingencyContext.returnMode === 'documents') { var contractLeadId=_crmPostLeadContingencyContext.leadId; _crmPostLeadContingencyContext=null; _jfDocSelectedCategory='Contract'; crmOpenJobFileSection(contractLeadId,'documents'); return; }
+        if (String(_crmPostLeadContingencyContext.documentType || '') === 'contract' && _crmPostLeadContingencyContext.returnMode === 'documents') { var contractLeadId=_crmPostLeadContingencyContext.leadId; _activeFormInstance=null; _contractSigningSession=null; _crmPostLeadContingencyContext=null; _jfDocSelectedCategory='Contract'; crmOpenJobFileSection(contractLeadId,'documents'); showUploadToast('Contract signing canceled. Nothing was saved.'); return; }
         if (_crmPostLeadContingencyContext.returnMode === 'documents') { var leadId=_crmPostLeadContingencyContext.leadId; _crmPostLeadContingencyContext=null; _jfDocSelectedCategory='Contingency'; crmOpenJobFileSection(leadId,'documents'); return; }
         crmOpenLeadContingencyActions(_crmPostLeadContingencyContext.leadId); return;
       }
@@ -54524,7 +54671,16 @@ function mapsGoogleReady() {
 
     /* ---------- Template Builder (Admin) ---------- */
 
-    var canManageFormTemplates = (currentRole === 'admin');
+    var canManageFormTemplates = ['owner','admin','manager'].indexOf(String(currentRole || '').trim().toLowerCase()) !== -1;
+
+    var CONTRACT_PAGE_TYPES = [
+      { key:'production_agreement', label:'Production Agreement', order:0, required:true },
+      { key:'shingle_1a', label:'1A Shingle Roofing', order:1 },
+      { key:'gutters_2b', label:'2B Gutters', order:2 },
+      { key:'siding_3b', label:'3B Siding', order:3 },
+      { key:'misc_5', label:'5 Misc', order:4 }
+    ];
+    function crmContractPageLabel(key){ var row=CONTRACT_PAGE_TYPES.find(function(item){return item.key===String(key||'');}); return row?row.label:String(key||'Contract Page'); }
 
     var TEMPLATE_FIELD_PALETTE = [
       { key: 'homeowner_signature', label: 'Homeowner Signature', w: 160, h: 40 },
@@ -54539,6 +54695,7 @@ function mapsGoogleReady() {
       { key: 'insurance_company',   label: 'Insurance Company',   w: 160, h: 24 },
       { key: 'dol',                 label: 'Date of Loss',        w: 120, h: 24 },
       { key: 'rep_name',            label: 'Rep Name',            w: 120, h: 24 },
+      { key: 'manual_text',         label: 'Manual Entry',        w: 150, h: 24 },
       { key: 'date',                label: 'Date',                w: 100, h: 24 },
       { key: 'job_number',          label: 'Job Number',          w: 100, h: 24 }
     ];
@@ -54552,72 +54709,99 @@ function mapsGoogleReady() {
     var tplSelectedFieldKey = null;
     var tplRenderedPages = []; // { wrapper, width, height, offsetTop } per page from last PDF render
 
-    async function refreshExistingContingencyPicker(selectedId, region, state) {
+    function setTemplateBuilderTypeUI(documentType, contractPageType) {
+      documentType = String(documentType || 'contingency');
+      var typeSelect = document.getElementById('tpl-doc-type');
+      var pageWrap = document.getElementById('tpl-contract-page-type-wrap');
+      var pageSelect = document.getElementById('tpl-contract-page-type');
+      var existingLabel = document.getElementById('tpl-existing-document-label');
+      if (typeSelect) typeSelect.value = documentType;
+      if (pageWrap) pageWrap.style.display = documentType === 'contract' ? 'grid' : 'none';
+      if (pageSelect) pageSelect.value = documentType === 'contract' ? String(contractPageType || '') : '';
+      if (existingLabel) existingLabel.textContent = documentType === 'contract' ? 'Use Existing Contract Page' : (documentType === 'contingency' ? 'Use Existing Contingency' : 'Use Existing Document');
+    }
+
+    async function refreshExistingDocumentPicker(selectedId, region, state, documentType, contractPageType) {
       var select = document.getElementById('tpl-existing-contingency');
       if (!select) return;
+      documentType = String(documentType || (document.getElementById('tpl-doc-type') || {}).value || 'contingency');
+      contractPageType = String(contractPageType || (document.getElementById('tpl-contract-page-type') || {}).value || '');
+      var category = documentType === 'contract' ? 'contracts' : 'contingencies';
+      var noun = documentType === 'contract' ? 'contract pages' : 'contingencies';
       select.disabled = true;
-      select.innerHTML = '<option value="">Loading uploaded contingencies...</option>';
+      select.innerHTML = '<option value="">Loading uploaded ' + noun + '...</option>';
       try {
         if (typeof window.hmListCompanyDocuments !== 'function') throw new Error('Company documents are still loading.');
-        var items = await window.hmListCompanyDocuments('contingencies');
+        var items = await window.hmListCompanyDocuments(category);
         region = String(region || '').trim();
         state = String(state || '').trim().toUpperCase();
         if (region) items = items.filter(function (d) { return String(d.region || '') === region; });
         if (state) items = items.filter(function (d) { return String(d.state || '').toUpperCase() === state; });
+        if (documentType === 'contract' && contractPageType) items = items.filter(function (d) { return String(d.contractPageType || '') === contractPageType; });
         if (!items.length) {
-          select.innerHTML = '<option value="">No uploaded contingencies found</option>';
+          select.innerHTML = '<option value="">No uploaded ' + noun + ' found</option>';
           return;
         }
-        select.innerHTML = '<option value="">Choose an uploaded contingency</option>' + items.map(function (d) {
-          var name = String(d.name || 'Contingency').replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+        select.innerHTML = '<option value="">Choose an uploaded ' + (documentType === 'contract' ? 'contract page' : 'contingency') + '</option>' + items.map(function (d) {
+          var label = (documentType === 'contract' && d.contractPageType ? crmContractPageLabel(d.contractPageType) + ' — ' : '') + String(d.name || 'Document');
+          var name = label.replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
           return '<option value="' + String(d.id || '') + '">' + name + '</option>';
         }).join('');
         if (selectedId) select.value = String(selectedId);
       } catch (err) {
-        select.innerHTML = '<option value="">Could not load uploaded contingencies</option>';
+        select.innerHTML = '<option value="">Could not load uploaded documents</option>';
         console.error('[TPL-EXISTING] list failed', err);
       } finally { select.disabled = false; }
     }
 
-    async function loadExistingContingencyIntoEditor(id) {
+    async function loadExistingDocumentIntoEditor(id, forcedType, forcedPageType) {
       if (!id || typeof window.hmLoadCompanyDocumentForTemplate !== 'function') return;
       var select = document.getElementById('tpl-existing-contingency');
       var label = document.getElementById('tpl-file-label');
       if (select) select.disabled = true;
-      if (label) label.textContent = 'Loading selected contingency...';
+      if (label) label.textContent = 'Loading selected document...';
       try {
+        var metaRows = typeof window.hmListCompanyDocuments === 'function' ? await window.hmListCompanyDocuments() : [];
+        var meta = metaRows.find(function (row) { return String(row && row.id || '') === String(id); }) || {};
+        var documentType = String(forcedType || (meta.category === 'contracts' ? 'contract' : 'contingency'));
+        var contractPageType = String(forcedPageType || meta.contractPageType || '');
         var file = await window.hmLoadCompanyDocumentForTemplate(id);
-        currentTplFileName = file.name || 'Contingency';
+        currentTplFileName = file.name || 'Document';
         currentTplFileType = file.contentType || 'application/pdf';
         currentTplFileDataUrl = file.dataUrl;
         currentTplFields = [];
         tplRenderedPages = [];
-        document.getElementById('tpl-doc-type').value = 'contingency';
-        if (!document.getElementById('tpl-doc-name').value.trim()) document.getElementById('tpl-doc-name').value = String(file.name || 'Contingency').replace(/\.[^.]+$/, '');
-        if (label) label.textContent = 'Using existing contingency: ' + currentTplFileName;
+        setTemplateBuilderTypeUI(documentType, contractPageType);
+        if (!document.getElementById('tpl-doc-name').value.trim()) {
+          document.getElementById('tpl-doc-name').value = documentType === 'contract' && contractPageType ? crmContractPageLabel(contractPageType) : String(file.name || 'Document').replace(/\.[^.]+$/, '');
+        }
+        if (label) label.textContent = 'Using existing document: ' + currentTplFileName;
         renderTplPreview();
       } catch (err) {
-        if (label) label.textContent = 'Could not load that contingency. Try again.';
+        if (label) label.textContent = 'Could not load that document. Try again.';
         console.error('[TPL-EXISTING] load failed', err);
       } finally { if (select) select.disabled = false; }
     }
 
-    function openTemplateBuilder(region, state, selectedId) {
+    function openTemplateBuilder(region, state, selectedId, documentType, contractPageType) {
       region = String(region || '').trim();
       state = String(state || '').trim().toUpperCase();
       selectedId = String(selectedId || '').trim();
+      documentType = String(documentType || 'contingency');
+      contractPageType = String(contractPageType || '');
       currentTplFields = [];
       currentTplFileDataUrl = null;
       currentTplFileName = null;
       currentTplFileType = null;
       tplSelectedFieldKey = null;
       tplRenderedPages = [];
-      document.getElementById('tpl-doc-name').value = '';
+      document.getElementById('tpl-doc-name').value = documentType === 'contract' && contractPageType ? crmContractPageLabel(contractPageType) : '';
       document.getElementById('tpl-save-btn').textContent = 'Save Template';
       document.getElementById('tpl-file-label').textContent = 'No document selected';
+      setTemplateBuilderTypeUI(documentType, contractPageType);
       if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting(region, state);
-      refreshExistingContingencyPicker(selectedId, region, state).then(function () {
-        if (selectedId) loadExistingContingencyIntoEditor(selectedId);
+      refreshExistingDocumentPicker(selectedId, region, state, documentType, contractPageType).then(function () {
+        if (selectedId) loadExistingDocumentIntoEditor(selectedId, documentType, contractPageType);
       });
       renderTemplateFieldPalette();
       renderTplPreview();
@@ -55112,7 +55296,18 @@ function mapsGoogleReady() {
 
     document.getElementById('tpl-existing-contingency').addEventListener('change', function () {
       var id = String(this.value || '');
-      if (id) loadExistingContingencyIntoEditor(id);
+      if (id) loadExistingDocumentIntoEditor(id, String((document.getElementById('tpl-doc-type') || {}).value || 'contingency'), String((document.getElementById('tpl-contract-page-type') || {}).value || ''));
+    });
+    document.getElementById('tpl-doc-type').addEventListener('change', function () {
+      var type = String(this.value || 'contingency');
+      var pageType = String((document.getElementById('tpl-contract-page-type') || {}).value || '');
+      setTemplateBuilderTypeUI(type, pageType);
+      refreshExistingDocumentPicker('', String((document.getElementById('tpl-region') || {}).value || ''), String((document.getElementById('tpl-state') || {}).value || ''), type, pageType);
+    });
+    document.getElementById('tpl-contract-page-type').addEventListener('change', function () {
+      var pageType = String(this.value || '');
+      if (pageType && !document.getElementById('tpl-doc-name').value.trim()) document.getElementById('tpl-doc-name').value = crmContractPageLabel(pageType);
+      refreshExistingDocumentPicker('', String((document.getElementById('tpl-region') || {}).value || ''), String((document.getElementById('tpl-state') || {}).value || ''), 'contract', pageType);
     });
 
     // File upload
@@ -55177,6 +55372,7 @@ function mapsGoogleReady() {
           return entry;
         }),
         documentType: String((document.getElementById('tpl-doc-type') || {}).value || 'contingency'),
+        contractPageType: String((document.getElementById('tpl-contract-page-type') || {}).value || ''),
         region: String((document.getElementById('tpl-region') || {}).value || ''),
         state: String((document.getElementById('tpl-state') || {}).value || '').toUpperCase(),
         effectiveDate: String((document.getElementById('tpl-effective-date') || {}).value || ''),
@@ -55184,10 +55380,15 @@ function mapsGoogleReady() {
         activeDefault: !!((document.getElementById('tpl-active-default') || {}).checked),
         createdAt: new Date().toISOString()
       };
-      if (tpl.documentType === 'contingency' && (!tpl.region || !tpl.state)) { alert('Select a region and state for this contingency.'); return; }
-      if (tpl.documentType === 'contingency' && !tpl.effectiveDate) { alert('Select an effective date for this contingency.'); return; }
-      if (tpl.documentType === 'contingency' && !tpl.fields.some(function (field) { return String(field && field.key || '') === 'homeowner_signature'; })) {
-        alert('Add a Homeowner Signature field before saving this contingency for DocuSign.');
+      if ((tpl.documentType === 'contingency' || tpl.documentType === 'contract') && (!tpl.region || !tpl.state)) { alert('Select a region and state for this document.'); return; }
+      if ((tpl.documentType === 'contingency' || tpl.documentType === 'contract') && !tpl.effectiveDate) { alert('Select an effective date for this document.'); return; }
+      if (tpl.documentType === 'contract' && !tpl.contractPageType) { alert('Select which contract page this document is.'); return; }
+      if ((tpl.documentType === 'contingency' || tpl.documentType === 'contract') && !tpl.fields.some(function (field) { return String(field && field.key || '') === 'homeowner_signature'; })) {
+        alert('Add a Homeowner Signature field before saving this document for signing.');
+        return;
+      }
+      if (tpl.documentType === 'contract' && !tpl.fields.some(function (field) { return String(field && field.key || '') === 'rep_signature'; })) {
+        alert('Add a Rep Signature field before saving this contract page for signing.');
         return;
       }
       if (tpl.status === 'inactive') tpl.activeDefault = false;
@@ -55197,7 +55398,8 @@ function mapsGoogleReady() {
       tpl.previousTemplateId = sourceTpl ? String(sourceTpl.id || '') : '';
       // Editing always creates a separate reusable copy. Never modify or deactivate the source template.
       if (tpl.activeDefault && tpl.region && tpl.state) savedFormTemplates.forEach(function (existing) {
-        if (String(existing.documentType || 'contingency') === tpl.documentType && String(existing.region || '') === tpl.region && String(existing.state || '').toUpperCase() === tpl.state) {
+        var samePageType = tpl.documentType !== 'contract' || String(existing.contractPageType || '') === String(tpl.contractPageType || '');
+        if (samePageType && String(existing.documentType || 'contingency') === tpl.documentType && String(existing.region || '') === tpl.region && String(existing.state || '').toUpperCase() === tpl.state) {
           existing.activeDefault = false;
         }
       });
@@ -55213,7 +55415,7 @@ function mapsGoogleReady() {
       currentTplFileName = null;
       currentTplFileType = null;
       document.getElementById('tpl-doc-name').value = '';
-      document.getElementById('tpl-doc-type').value = 'contingency';
+      setTemplateBuilderTypeUI('contingency', '');
       document.getElementById('tpl-region').value = '';
       document.getElementById('tpl-state').value = '';
       document.getElementById('tpl-effective-date').value = '';
@@ -55233,7 +55435,7 @@ function mapsGoogleReady() {
       var html = '';
       savedFormTemplates.forEach(function (tpl, i) {
         html += '<div class="tpl-saved-item">';
-        html += '<div><strong>' + tpl.name + '</strong><br><span style="font-size:11px;color:var(--muted,#888);">' + tpl.fields.length + ' fields &middot; ' + (tpl.fileName || 'unknown') + (tpl.region ? ' &middot; ' + tpl.region + ' / ' + (tpl.state || '') : '') + (tpl.effectiveDate ? ' &middot; Effective ' + tpl.effectiveDate : '') + ' &middot; v' + Number(tpl.version || 1) + ' &middot; ' + (String(tpl.status || 'active') === 'active' ? 'Active' : 'Inactive') + (tpl.activeDefault ? ' Default' : '') + '</span></div>';
+        html += '<div><strong>' + tpl.name + '</strong><br><span style="font-size:11px;color:var(--muted,#888);">' + ((tpl.fields || []).length) + ' fields' + (String(tpl.documentType || '') === 'contract' && tpl.contractPageType ? ' &middot; ' + crmContractPageLabel(tpl.contractPageType) : '') + ' &middot; ' + (tpl.fileName || 'unknown') + (tpl.region ? ' &middot; ' + tpl.region + ' / ' + (tpl.state || '') : '') + (tpl.effectiveDate ? ' &middot; Effective ' + tpl.effectiveDate : '') + ' &middot; v' + Number(tpl.version || 1) + ' &middot; ' + (String(tpl.status || 'active') === 'active' ? 'Active' : 'Inactive') + (tpl.activeDefault ? ' Default' : '') + '</span></div>';
         html += '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">';
         html += '<button class="btn" type="button" data-tpl-fields="' + i + '" style="font-size:12px;padding:4px 10px;">' + (tpl.fields && tpl.fields.length ? 'Edit Fillable Fields' : 'Add Fillable Fields') + '</button>';
         html += '<button class="btn" type="button" data-tpl-new-document="' + i + '" style="font-size:12px;padding:4px 10px;">Upload New Document</button>';
@@ -55269,7 +55471,7 @@ function mapsGoogleReady() {
       var tpl = savedFormTemplates[idx];
       if (!tpl) return;
       document.getElementById('tpl-doc-name').value = tpl.name || '';
-      document.getElementById('tpl-doc-type').value = tpl.documentType || 'contingency';
+      setTemplateBuilderTypeUI(tpl.documentType || 'contingency', tpl.contractPageType || '');
       if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting(tpl.region || '', tpl.state || '');
       document.getElementById('tpl-effective-date').value = tpl.effectiveDate || '';
       document.getElementById('tpl-status').value = 'active';
@@ -55291,7 +55493,7 @@ function mapsGoogleReady() {
       var tpl = savedFormTemplates[idx];
       if (!tpl) return;
       document.getElementById('tpl-doc-name').value = tpl.name;
-      document.getElementById('tpl-doc-type').value = tpl.documentType || 'contingency';
+      setTemplateBuilderTypeUI(tpl.documentType || 'contingency', tpl.contractPageType || '');
       if (typeof hmPopulateTemplateRouting === 'function') hmPopulateTemplateRouting(tpl.region || '', tpl.state || '');
       document.getElementById('tpl-effective-date').value = tpl.effectiveDate || '';
       document.getElementById('tpl-status').value = tpl.status || (tpl.activeDefault === false ? 'inactive' : 'active');
@@ -86312,7 +86514,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 </script>
 <script src="./vendor-jspdf.umd.min.js?v=2.5.1"></script>
 <script src="./vendor-jspdf-autotable.min.js?v=3.8.2"></script>
-<script src="./contingency-locked-pdf.js?v=20261006-transactional-save-1"></script>
+<script src="./contingency-locked-pdf.js?v=20261008-contract-bundle-1"></script>
 <script src="./assets/crm-cross-links.js?v=20261007-password-firebase"></script>
 <script src="./assets/photo-reports.js?v=20261006-photo-recovery-lock"></script>
 <script src="./estimate-ai-flow.js?v=20260909-professional-pdf"></script>
@@ -86335,9 +86537,9 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   window.hmRenderRegionSettings=render;
   function collect(){var used={},rows=[];document.querySelectorAll('[data-region-row]').forEach(function(card,idx){var name=String((card.querySelector('[data-region-name]')||{}).value||'').trim()||('Region '+(idx+1)),states=[];card.querySelectorAll('[data-region-state]:checked').forEach(function(cb){var st=cb.getAttribute('data-region-state');if(used[st])throw new Error(st+' is already assigned to '+used[st]+'.');used[st]=name;states.push(st)});rows.push({id:'region_'+(idx+1),name:name,states:states})});return rows}
   function syncLead(){var select=document.getElementById('fl-workType'),state=document.getElementById('fl-state');if(select){var current=select.value;select.innerHTML='<option value="" disabled>Select Region</option>'+get().map(function(r){return'<option value="'+esc(r.name)+'">'+esc(r.name)+'</option>'}).join('');var inferred=resolve(state&&state.value);select.value=inferred||current||''}}
-  document.addEventListener('change',function(e){if(e.target&&e.target.id==='tpl-region'){var ss=document.getElementById('tpl-state');if(ss){if(!e.target.value){ss.innerHTML='<option value="">Select a region first</option>';ss.disabled=true}else{ss.disabled=false;ss.innerHTML=stateOptions(e.target.value,'')}}}if(e.target&&e.target.id==='fl-state')syncLead()});
-  document.addEventListener('click',function(e){var readOnly=String(typeof crmGetRole==='function'?crmGetRole():'')==='Manager';var add=e.target.closest&&e.target.closest('#settings-region-add');if(add){if(readOnly)return;var rows=get();rows.push({id:'region_'+(rows.length+1),name:'Region '+(rows.length+1),states:[]});localStorage.setItem(KEY,JSON.stringify(rows));render();return}var rem=e.target.closest&&e.target.closest('[data-region-remove]');if(rem){if(readOnly)return;var rows2=get();rows2.splice(Number(rem.getAttribute('data-region-remove')),1);localStorage.setItem(KEY,JSON.stringify(rows2));render();return}var saveBtn=e.target.closest&&e.target.closest('#settings-regions-save');if(saveBtn){if(readOnly)return;var msg=document.getElementById('settings-regions-msg');try{save(collect());msg.textContent='Regions saved.';msg.style.display='block'}catch(err){msg.textContent=err.message;msg.style.display='block'}return}var editor=e.target.closest&&e.target.closest('#crm-company-doc-template-editor');if(editor&&typeof openTemplateBuilder==='function')openTemplateBuilder(String(window.hmCompanyDocumentsCurrentRegion||''),String(window.hmCompanyDocumentsCurrentState||''),String(window.hmCompanyDocumentsCurrentFileId||''))});
-  function bind(){populate('','');syncLead();var r=String(typeof crmGetRole==='function'?crmGetRole():'');var editor=document.getElementById('crm-company-doc-template-editor');if(editor)editor.style.display=['Owner','Admin','Manager'].indexOf(r)!==-1?'inline-flex':'none'}
+  document.addEventListener('change',function(e){if(e.target&&e.target.id==='tpl-region'){var ss=document.getElementById('tpl-state');if(ss){if(!e.target.value){ss.innerHTML='<option value="">Select a region first</option>';ss.disabled=true}else{ss.disabled=false;ss.innerHTML=stateOptions(e.target.value,'')}}}if(e.target&&(e.target.id==='tpl-region'||e.target.id==='tpl-state')&&typeof refreshExistingDocumentPicker==='function'){setTimeout(function(){refreshExistingDocumentPicker('',String((document.getElementById('tpl-region')||{}).value||''),String((document.getElementById('tpl-state')||{}).value||''),String((document.getElementById('tpl-doc-type')||{}).value||'contingency'),String((document.getElementById('tpl-contract-page-type')||{}).value||''))},0)}if(e.target&&e.target.id==='fl-state')syncLead()});
+  document.addEventListener('click',function(e){var readOnly=String(typeof crmGetRole==='function'?crmGetRole():'')==='Manager';var add=e.target.closest&&e.target.closest('#settings-region-add');if(add){if(readOnly)return;var rows=get();rows.push({id:'region_'+(rows.length+1),name:'Region '+(rows.length+1),states:[]});localStorage.setItem(KEY,JSON.stringify(rows));render();return}var rem=e.target.closest&&e.target.closest('[data-region-remove]');if(rem){if(readOnly)return;var rows2=get();rows2.splice(Number(rem.getAttribute('data-region-remove')),1);localStorage.setItem(KEY,JSON.stringify(rows2));render();return}var saveBtn=e.target.closest&&e.target.closest('#settings-regions-save');if(saveBtn){if(readOnly)return;var msg=document.getElementById('settings-regions-msg');try{save(collect());msg.textContent='Regions saved.';msg.style.display='block'}catch(err){msg.textContent=err.message;msg.style.display='block'}return}var editor=e.target.closest&&e.target.closest('#crm-company-doc-template-editor');if(editor&&typeof openTemplateBuilder==='function')openTemplateBuilder(String(window.hmCompanyDocumentsCurrentRegion||''),String(window.hmCompanyDocumentsCurrentState||''),String(window.hmCompanyDocumentsCurrentFileId||''),String(window.hmCompanyDocumentsCurrentCategory||'')==='contracts'?'contract':'contingency',String(window.hmCompanyDocumentsCurrentContractPageType||''))});
+  function bind(){populate('','');syncLead();var editor=document.getElementById('crm-company-doc-template-editor');if(editor)editor.style.display='none'}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 </script>
@@ -86364,33 +86566,35 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
   function fmt(n){n=Number(n||0);return n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB'}
   function find(id){return docs.find(function(d){return String(d&&d.id||'')===String(id||'')})||null}
   function categoryLabel(cat){return({contingencies:'Contingencies',contracts:'Contracts',specifications:'Shingle & Manufacturer Specifications',insurance:'Company Insurance Documents',licenses:'Roofing Licenses',other:'Other Company Documents'})[String(cat||'')]||'Documents'}
+  function isRoutedCategory(cat){cat=String(cat||currentCategory||'');return cat==='contingencies'||cat==='contracts'}
+  function contractPageLabel(key){return({production_agreement:'Production Agreement',shingle_1a:'1A Shingle Roofing',gutters_2b:'2B Gutters',siding_3b:'3B Siding',misc_5:'5 Misc'})[String(key||'')]||String(key||'Contract Page')}
   function regionRows(){try{var rows=JSON.parse(localStorage.getItem('hmm_document_regions_v1')||'[]');if(Array.isArray(rows)&&rows.length)return rows}catch(_){}return[{id:'region_1',name:'Region 1',states:[]},{id:'region_2',name:'Region 2',states:[]},{id:'region_3',name:'Region 3',states:[]},{id:'region_4',name:'Region 4',states:[]}]}
   function stateLabel(code){code=String(code||'').toUpperCase();var option=document.querySelector('#fl-state option[value="'+code+'"]');var name=option?String(option.textContent||'').trim():'';return name&&name!==code?code+' – '+name:code}
   function routeForDoc(d){var region=String(d&&d.region||'').trim(),state=String(d&&d.state||'').trim().toUpperCase();if(region&&state)return{region:region,state:state};var linked=templates.find(function(t){return String(t&&t.sourceCompanyDocumentId||'')===String(d&&d.id||'')});return linked?{region:String(linked.region||'').trim(),state:String(linked.state||'').trim().toUpperCase()}:{region:'',state:''}}
-  function templateForDoc(d){return templates.filter(function(t){return String(t&&t.sourceCompanyDocumentId||'')===String(d&&d.id||'')&&String(t&&t.documentType||'contingency')==='contingency'&&String(t&&t.region||'')===currentRegion&&String(t&&t.state||'').toUpperCase()===currentState}).sort(function(a,b){return Number(b&&b.activeDefault===true)-Number(a&&a.activeDefault===true)||String(b&&b.effectiveDate||'').localeCompare(String(a&&a.effectiveDate||''))||Number(b&&b.version||1)-Number(a&&a.version||1)})[0]||null}
+  function templateForDoc(d){var docType=currentCategory==='contracts'?'contract':'contingency';return templates.filter(function(t){var pageMatch=docType!=='contract'||String(t&&t.contractPageType||'')===String(d&&d.contractPageType||'');return pageMatch&&String(t&&t.sourceCompanyDocumentId||'')===String(d&&d.id||'')&&String(t&&t.documentType||'contingency')===docType&&String(t&&t.region||'')===currentRegion&&String(t&&t.state||'').toUpperCase()===currentState}).sort(function(a,b){return Number(b&&b.activeDefault===true)-Number(a&&a.activeDefault===true)||String(b&&b.effectiveDate||'').localeCompare(String(a&&a.effectiveDate||''))||Number(b&&b.version||1)-Number(a&&a.version||1)})[0]||null}
   function setStep(name){var r=document.getElementById('crm-company-docs-region-step'),s=document.getElementById('crm-company-docs-state-step'),f=document.getElementById('crm-company-docs-file-step');if(r)r.hidden=name!=='region';if(s)s.hidden=name!=='state';if(f)f.hidden=name!=='file'}
-  function updateBrowserPath(){var p=document.getElementById('crm-company-docs-browser-path');if(!p)return;var a=[categoryLabel(currentCategory)];if(currentCategory==='contingencies'&&currentRegion)a.push(currentRegion);if(currentCategory==='contingencies'&&currentState)a.push(stateLabel(currentState));p.textContent=a.join(' / ')}
-  function showHome(){currentCategory='';currentRegion='';currentState='';window.hmCompanyDocumentsCurrentRegion='';window.hmCompanyDocumentsCurrentState='';window.hmCompanyDocumentsCurrentFileId='';var h=document.getElementById('crm-company-docs-home'),b=document.getElementById('crm-company-docs-browser'),s=document.getElementById('crm-company-docs-subtitle');if(h)h.hidden=false;if(b)b.hidden=true;if(s)s.textContent='Choose a document section.'}
+  function updateBrowserPath(){var p=document.getElementById('crm-company-docs-browser-path');if(!p)return;var a=[categoryLabel(currentCategory)];if(isRoutedCategory()&&currentRegion)a.push(currentRegion);if(isRoutedCategory()&&currentState)a.push(stateLabel(currentState));p.textContent=a.join(' / ')}
+  function showHome(){currentCategory='';currentRegion='';currentState='';window.hmCompanyDocumentsCurrentCategory='';window.hmCompanyDocumentsCurrentRegion='';window.hmCompanyDocumentsCurrentState='';window.hmCompanyDocumentsCurrentFileId='';window.hmCompanyDocumentsCurrentContractPageType='';var h=document.getElementById('crm-company-docs-home'),b=document.getElementById('crm-company-docs-browser'),s=document.getElementById('crm-company-docs-subtitle');if(h)h.hidden=false;if(b)b.hidden=true;if(s)s.textContent='Choose a document section.'}
   function renderRegions(){setStep('region');updateBrowserPath();var host=document.getElementById('crm-company-docs-region-buttons');if(!host)return;host.innerHTML='';regionRows().forEach(function(row){var btn=document.createElement('button');btn.className='crm-company-docs-choice-button';btn.type='button';btn.textContent=String(row&&row.name||'Region');btn.onclick=function(){currentRegion=String(row&&row.name||'').trim();currentState='';renderStates()};host.appendChild(btn)})}
   function renderStates(){setStep('state');updateBrowserPath();var host=document.getElementById('crm-company-docs-state-buttons');if(!host)return;host.innerHTML='';var row=regionRows().find(function(r){return String(r&&r.name||'')===currentRegion}),states=row&&Array.isArray(row.states)?row.states:[];if(!states.length){var e=document.createElement('div');e.className='crm-company-docs-empty';e.textContent='No states are assigned to '+currentRegion+'. Add states in Settings → Regions.';host.appendChild(e);return}states.forEach(function(code){var btn=document.createElement('button');btn.className='crm-company-docs-choice-button';btn.type='button';btn.textContent=stateLabel(code);btn.onclick=function(){currentState=String(code||'').toUpperCase();showFileStep()};host.appendChild(btn)})}
-  function renderFiles(){var host=document.getElementById('crm-company-docs-file-list');if(!host)return;host.innerHTML='';var items=docs.filter(function(d){if(String(d&&d.category||'')!==currentCategory)return false;if(currentCategory!=='contingencies')return true;var route=routeForDoc(d);return route.region===currentRegion&&route.state===currentState}).sort(function(a,b){return String(b&&b.uploadedAt||'').localeCompare(String(a&&a.uploadedAt||''))});if(!items.length){var e=document.createElement('div');e.className='crm-company-docs-empty';e.textContent='No files uploaded here yet.';host.appendChild(e);return}items.forEach(function(d){var row=document.createElement('div');row.className='crm-company-docs-file-row';var open=document.createElement('button');open.className='crm-company-docs-file-button';open.type='button';var strong=document.createElement('strong');strong.textContent=String(d.name||'Document');var meta=document.createElement('span'),when=d.uploadedAt?new Date(d.uploadedAt).toLocaleDateString():'',ready=currentCategory==='contingencies'?templateForDoc(d):null;meta.textContent=[fmt(d.size),d.uploadedBy||'',when,ready?(String(ready.status||'active')==='active'?'DocuSign ready':'Template inactive'):''].filter(Boolean).join(' • ');open.append(strong,meta);open.onclick=function(){window.hmCompanyDocumentsCurrentFileId=d.id;openDoc(d.id)};var tools=document.createElement('div');tools.className='crm-company-docs-file-tools';if(canManage()){var del=document.createElement('button');del.className='btn';del.type='button';del.textContent='Delete';del.onclick=function(){deleteDoc(d.id)};tools.appendChild(del)}row.append(open,tools);host.appendChild(row)})}
-  function showFileStep(){setStep('file');updateBrowserPath();window.hmCompanyDocumentsCurrentRegion=currentRegion;window.hmCompanyDocumentsCurrentState=currentState;window.hmCompanyDocumentsCurrentFileId='';var u=document.getElementById('crm-company-doc-upload-btn');if(u){u.style.display=canManage()?'inline-flex':'none';u.textContent=currentCategory==='contingencies'?'Add Contingency':'Upload File'}var e=document.getElementById('crm-company-doc-template-editor');if(e){e.textContent='Set Up DocuSign Fields';e.style.display=canManage()&&currentCategory==='contingencies'&&currentRegion&&currentState?'inline-flex':'none'}renderFiles()}
-  function openCategory(cat){currentCategory=String(cat||'other');currentRegion='';currentState='';var h=document.getElementById('crm-company-docs-home'),b=document.getElementById('crm-company-docs-browser'),s=document.getElementById('crm-company-docs-subtitle'),t=document.getElementById('crm-company-docs-browser-title');if(h)h.hidden=true;if(b)b.hidden=false;if(s)s.textContent=currentCategory==='contingencies'?'Choose the region, then the state.':'Open an uploaded file or add a new one.';if(t)t.textContent='Uploads';if(currentCategory==='contingencies')renderRegions();else showFileStep()}
-  function render(){if(!currentCategory){showHome();return}if(currentCategory==='contingencies'&&!currentRegion){renderRegions();return}if(currentCategory==='contingencies'&&!currentState){renderStates();return}showFileStep()}
+  function renderFiles(){var host=document.getElementById('crm-company-docs-file-list');if(!host)return;host.innerHTML='';var items=docs.filter(function(d){if(String(d&&d.category||'')!==currentCategory)return false;if(!isRoutedCategory())return true;var route=routeForDoc(d);return route.region===currentRegion&&route.state===currentState}).sort(function(a,b){var ao=currentCategory==='contracts'?['production_agreement','shingle_1a','gutters_2b','siding_3b','misc_5'].indexOf(String(a&&a.contractPageType||'')):0,bo=currentCategory==='contracts'?['production_agreement','shingle_1a','gutters_2b','siding_3b','misc_5'].indexOf(String(b&&b.contractPageType||'')):0;return ao-bo||String(b&&b.uploadedAt||'').localeCompare(String(a&&a.uploadedAt||''))});if(!items.length){var e=document.createElement('div');e.className='crm-company-docs-empty';e.textContent='No files uploaded here yet.';host.appendChild(e);return}items.forEach(function(d){var row=document.createElement('div');row.className='crm-company-docs-file-row';var open=document.createElement('button');open.className='crm-company-docs-file-button';open.type='button';var strong=document.createElement('strong');strong.textContent=(currentCategory==='contracts'&&d.contractPageType?contractPageLabel(d.contractPageType)+' — ':'')+String(d.name||'Document');var meta=document.createElement('span'),when=d.uploadedAt?new Date(d.uploadedAt).toLocaleDateString():'',ready=isRoutedCategory()?templateForDoc(d):null;meta.textContent=[fmt(d.size),d.uploadedBy||'',when,ready?(String(ready.status||'active')==='active'?'DocuSign ready':'Template inactive'):''].filter(Boolean).join(' • ');open.append(strong,meta);open.onclick=function(){window.hmCompanyDocumentsCurrentFileId=d.id;window.hmCompanyDocumentsCurrentContractPageType=String(d.contractPageType||'');openDoc(d.id)};var tools=document.createElement('div');tools.className='crm-company-docs-file-tools';if(canManage()&&isRoutedCategory()){var setup=document.createElement('button');setup.className='btn';setup.type='button';setup.textContent=ready?'Edit DocuSign Fields':'Set Up DocuSign Fields';setup.onclick=function(){window.hmCompanyDocumentsCurrentFileId=d.id;window.hmCompanyDocumentsCurrentContractPageType=String(d.contractPageType||'');if(typeof openTemplateBuilder==='function')openTemplateBuilder(currentRegion,currentState,d.id,currentCategory==='contracts'?'contract':'contingency',d.contractPageType||'')};tools.appendChild(setup)}if(canManage()){var del=document.createElement('button');del.className='btn';del.type='button';del.textContent='Delete';del.onclick=function(){deleteDoc(d.id)};tools.appendChild(del)}row.append(open,tools);host.appendChild(row)})}
+  function showFileStep(){setStep('file');updateBrowserPath();window.hmCompanyDocumentsCurrentCategory=currentCategory;window.hmCompanyDocumentsCurrentRegion=currentRegion;window.hmCompanyDocumentsCurrentState=currentState;window.hmCompanyDocumentsCurrentFileId='';window.hmCompanyDocumentsCurrentContractPageType='';var pageType=document.getElementById('crm-company-doc-contract-page-type');if(pageType){pageType.style.display=canManage()&&currentCategory==='contracts'?'inline-flex':'none';if(currentCategory!=='contracts')pageType.value=''}var u=document.getElementById('crm-company-doc-upload-btn');if(u){u.style.display=canManage()?'inline-flex':'none';u.textContent=currentCategory==='contingencies'?'Add Contingency':(currentCategory==='contracts'?'Upload Contract Page':'Upload File')}var e=document.getElementById('crm-company-doc-template-editor');if(e){e.textContent='Set Up DocuSign Fields';e.style.display='none'}renderFiles()}
+  function openCategory(cat){currentCategory=String(cat||'other');currentRegion='';currentState='';window.hmCompanyDocumentsCurrentCategory=currentCategory;var h=document.getElementById('crm-company-docs-home'),b=document.getElementById('crm-company-docs-browser'),s=document.getElementById('crm-company-docs-subtitle'),t=document.getElementById('crm-company-docs-browser-title');if(h)h.hidden=true;if(b)b.hidden=false;if(s)s.textContent=isRoutedCategory()?'Choose the region, then the state.':'Open an uploaded file or add a new one.';if(t)t.textContent='Uploads';if(isRoutedCategory())renderRegions();else showFileStep()}
+  function render(){if(!currentCategory){showHome();return}if(isRoutedCategory()&&!currentRegion){renderRegions();return}if(isRoutedCategory()&&!currentState){renderStates();return}showFileStep()}
   async function load(){try{status('Loading company documents…');if(typeof window.hmCloudWhenReady==='function')await window.hmCloudWhenReady();docs=parse(DOCS_KEY);templates=parse(TEMPLATES_KEY);window.savedFormTemplates=templates.slice();try{savedFormTemplates=templates.slice()}catch(_){}render();status(canManage()?'Choose a section to manage company files.':'Choose a section to open company files.')}catch(e){docs=[];templates=[];render();status(e&&e.message?e.message:'Company documents could not be loaded.',true)}}
-  function choose(cat,region,state){if(!canManage())return;var i=document.getElementById('crm-company-doc-file-input');if(!i)return;i.setAttribute('data-category',String(cat||'other'));i.setAttribute('data-region',String(region||''));i.setAttribute('data-state',String(state||'').toUpperCase());i.value='';i.click()}
-  async function upload(input){var file=input&&input.files&&input.files[0],cat=String(input&&input.getAttribute('data-category')||'other'),region=String(input&&input.getAttribute('data-region')||'').trim(),state=String(input&&input.getAttribute('data-state')||'').trim().toUpperCase();if(!file)return;try{if(file.size>MAX_BYTES)throw new Error('Documents must be 25 MB or smaller.');if(cat==='contingencies'&&(!region||!state))throw new Error('Choose the contingency region and state before uploading.');if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can upload company documents.');if(typeof window.hmCloudUploadLeadFile!=='function')throw new Error('Hail Money cloud storage is not ready.');status('Uploading '+file.name+'…');var meta=await window.hmCloudUploadLeadFile('', 'company_document', file,{category:cat,uploadedBy:(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'',metadata:{region:region,state:state,companyCategory:cat}});var doc={id:meta.id,category:cat,region:region,state:state,name:meta.fileName||file.name,size:Number(meta.size||file.size||0),contentType:meta.mimeType||file.type||'application/octet-stream',storageProvider:'neon',storagePath:meta.storagePath||meta.objectKey||'',uploadedAt:meta.uploadedAt||new Date().toISOString(),uploadedBy:meta.uploadedBy||''};docs=docs.filter(function(d){return String(d&&d.id||'')!==String(doc.id)});docs.push(doc);saveDocs();renderFiles();status(file.name+' uploaded to '+(cat==='contingencies'?region+' / '+state:categoryLabel(cat))+'.');if(cat==='contingencies'&&typeof openTemplateBuilder==='function'){window.hmCompanyDocumentsCurrentFileId=doc.id;setTimeout(function(){openTemplateBuilder(region,state,doc.id)},0)}}catch(e){status(e&&e.message?e.message:'Document upload failed.',true)}finally{if(input)input.value=''}}
-  window.hmListCompanyDocuments=async function(category){await load();return docs.filter(function(d){return !category||String(d&&d.category||'')===String(category)}).map(function(d){var route=routeForDoc(d);return{id:d.id,name:d.name,category:d.category,region:route.region,state:route.state,contentType:d.contentType,size:d.size,uploadedAt:d.uploadedAt,uploadedBy:d.uploadedBy||'',storageProvider:'neon',storagePath:d.storagePath||''}})};
-  window.hmLoadCompanyDocumentForTemplate=async function(id){var d=find(id);if(!d){await load();d=find(id)}if(!d)throw new Error('That uploaded contingency could not be found.');var type=String(d.contentType||'').toLowerCase();if(type&&type!=='application/pdf'&&type.indexOf('image/')!==0)throw new Error('Fillable fields can be added to PDF or image contingencies.');if(typeof window.hmCloudGetFileBlobById!=='function')throw new Error('Hail Money cloud storage is not ready.');var blob=await window.hmCloudGetFileBlobById(d.id);var dataUrl=await new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(){resolve(r.result)};r.onerror=function(){reject(r.error||new Error('Could not read the uploaded contingency.'))};r.readAsDataURL(blob)});return{id:d.id,name:d.name||'Contingency',category:d.category||'contingencies',contentType:d.contentType||blob.type||'application/pdf',size:d.size||blob.size||0,dataUrl:dataUrl}};
-  function sourceDocForTemplate(tpl,documents){var rows=documents||[],explicit=String(tpl&&tpl.sourceCompanyDocumentId||'').trim();if(explicit&&rows.some(function(d){return String(d&&d.id||'')===explicit}))return explicit;var name=String(tpl&&tpl.fileName||'').trim().toLowerCase();if(!name)return'';var wr=String(tpl&&tpl.region||'').trim(),ws=String(tpl&&tpl.state||'').trim().toUpperCase(),match=rows.find(function(d){var route=routeForDoc(d);return String(d&&d.category||'')==='contingencies'&&String(d&&d.name||'').trim().toLowerCase()===name&&(!wr||route.region===wr)&&(!ws||route.state===ws)});return match?String(match.id||''):''}
-  async function ensureTemplateSource(tpl,documents){var existing=sourceDocForTemplate(tpl,documents);if(existing)return existing;if(!tpl||!tpl.fileDataUrl)return'';var blob=await fetch(tpl.fileDataUrl).then(function(r){if(!r.ok)throw new Error('The contingency source could not be read.');return r.blob()});if(!blob||!blob.size||blob.size>MAX_BYTES)return'';var name=tpl.fileName||tpl.name||'Contingency.pdf',region=String(tpl.region||'').trim(),state=String(tpl.state||'').trim().toUpperCase(),stale=(documents||[]).find(function(d){var route=routeForDoc(d);return String(d&&d.category||'')==='contingencies'&&String(d&&d.name||'').trim().toLowerCase()===String(name).trim().toLowerCase()&&(!region||route.region===region)&&(!state||route.state===state)}),id=String(stale&&stale.id||'').trim()||('company_doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9));var file=new File([blob],name,{type:tpl.fileType||blob.type||'application/pdf'});var meta=await window.hmCloudUploadLeadFile('', 'company_document', file,{id:id,category:'contingencies',uploadedBy:(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'',metadata:{region:region,state:state,companyCategory:'contingencies'}});var doc={id:meta.id,category:'contingencies',region:region,state:state,name:name,size:Number(meta.size||blob.size||0),contentType:meta.mimeType||file.type,storageProvider:'neon',storagePath:meta.storagePath||meta.objectKey||'',uploadedAt:meta.uploadedAt||new Date().toISOString(),uploadedBy:meta.uploadedBy||''},idx=(documents||[]).findIndex(function(d){return String(d&&d.id||'')===String(doc.id)});if(idx>=0)documents[idx]=doc;else documents.push(doc);return doc.id}
+  function choose(cat,region,state){if(!canManage())return;var i=document.getElementById('crm-company-doc-file-input');if(!i)return;var pageType=cat==='contracts'?String((document.getElementById('crm-company-doc-contract-page-type')||{}).value||''):'';if(cat==='contracts'&&!pageType){status('Select which contract page you are uploading.',true);return}i.setAttribute('data-category',String(cat||'other'));i.setAttribute('data-region',String(region||''));i.setAttribute('data-state',String(state||'').toUpperCase());i.setAttribute('data-contract-page-type',pageType);i.value='';i.click()}
+  async function upload(input){var file=input&&input.files&&input.files[0],cat=String(input&&input.getAttribute('data-category')||'other'),region=String(input&&input.getAttribute('data-region')||'').trim(),state=String(input&&input.getAttribute('data-state')||'').trim().toUpperCase(),contractPageType=String(input&&input.getAttribute('data-contract-page-type')||'');if(!file)return;try{if(file.size>MAX_BYTES)throw new Error('Documents must be 25 MB or smaller.');if(isRoutedCategory(cat)&&(!region||!state))throw new Error('Choose the region and state before uploading.');if(cat==='contracts'&&!contractPageType)throw new Error('Choose which contract page you are uploading.');if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can upload company documents.');if(typeof window.hmCloudUploadLeadFile!=='function')throw new Error('Hail Money cloud storage is not ready.');status('Uploading '+file.name+'…');var meta=await window.hmCloudUploadLeadFile('', 'company_document', file,{category:cat,uploadedBy:(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'',metadata:{region:region,state:state,companyCategory:cat,contractPageType:contractPageType}});var doc={id:meta.id,category:cat,region:region,state:state,contractPageType:contractPageType,name:meta.fileName||file.name,size:Number(meta.size||file.size||0),contentType:meta.mimeType||file.type||'application/octet-stream',storageProvider:'neon',storagePath:meta.storagePath||meta.objectKey||'',uploadedAt:meta.uploadedAt||new Date().toISOString(),uploadedBy:meta.uploadedBy||''};docs=docs.filter(function(d){return String(d&&d.id||'')!==String(doc.id)});docs.push(doc);saveDocs();renderFiles();status(file.name+' uploaded to '+(isRoutedCategory(cat)?region+' / '+state:categoryLabel(cat))+'.');if(isRoutedCategory(cat)&&typeof openTemplateBuilder==='function'){window.hmCompanyDocumentsCurrentFileId=doc.id;window.hmCompanyDocumentsCurrentContractPageType=contractPageType;setTimeout(function(){openTemplateBuilder(region,state,doc.id,cat==='contracts'?'contract':'contingency',contractPageType)},0)}}catch(e){status(e&&e.message?e.message:'Document upload failed.',true)}finally{if(input)input.value=''}}
+  window.hmListCompanyDocuments=async function(category){await load();return docs.filter(function(d){return !category||String(d&&d.category||'')===String(category)}).map(function(d){var route=routeForDoc(d);return{id:d.id,name:d.name,category:d.category,region:route.region,state:route.state,contractPageType:String(d&&d.contractPageType||''),contentType:d.contentType,size:d.size,uploadedAt:d.uploadedAt,uploadedBy:d.uploadedBy||'',storageProvider:'neon',storagePath:d.storagePath||''}})};
+  window.hmLoadCompanyDocumentForTemplate=async function(id){var d=find(id);if(!d){await load();d=find(id)}if(!d)throw new Error('That uploaded document could not be found.');var type=String(d.contentType||'').toLowerCase();if(type&&type!=='application/pdf'&&type.indexOf('image/')!==0)throw new Error('Fillable fields can be added to PDF or image documents.');if(typeof window.hmCloudGetFileBlobById!=='function')throw new Error('Hail Money cloud storage is not ready.');var blob=await window.hmCloudGetFileBlobById(d.id);var dataUrl=await new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(){resolve(r.result)};r.onerror=function(){reject(r.error||new Error('Could not read the uploaded document.'))};r.readAsDataURL(blob)});return{id:d.id,name:d.name||'Document',category:d.category||'',contractPageType:String(d.contractPageType||''),contentType:d.contentType||blob.type||'application/pdf',size:d.size||blob.size||0,dataUrl:dataUrl}};
+  function sourceDocForTemplate(tpl,documents){var rows=documents||[],explicit=String(tpl&&tpl.sourceCompanyDocumentId||'').trim();if(explicit&&rows.some(function(d){return String(d&&d.id||'')===explicit}))return explicit;var name=String(tpl&&tpl.fileName||'').trim().toLowerCase();if(!name)return'';var category=String(tpl&&tpl.documentType||'contingency')==='contract'?'contracts':'contingencies',pageType=String(tpl&&tpl.contractPageType||''),wr=String(tpl&&tpl.region||'').trim(),ws=String(tpl&&tpl.state||'').trim().toUpperCase(),match=rows.find(function(d){var route=routeForDoc(d),pageMatch=category!=='contracts'||String(d&&d.contractPageType||'')===pageType;return pageMatch&&String(d&&d.category||'')===category&&String(d&&d.name||'').trim().toLowerCase()===name&&(!wr||route.region===wr)&&(!ws||route.state===ws)});return match?String(match.id||''):''}
+  async function ensureTemplateSource(tpl,documents){var existing=sourceDocForTemplate(tpl,documents);if(existing)return existing;if(!tpl||!tpl.fileDataUrl)return'';var category=String(tpl&&tpl.documentType||'contingency')==='contract'?'contracts':'contingencies',pageType=String(tpl&&tpl.contractPageType||''),blob=await fetch(tpl.fileDataUrl).then(function(r){if(!r.ok)throw new Error('The document source could not be read.');return r.blob()});if(!blob||!blob.size||blob.size>MAX_BYTES)return'';var name=tpl.fileName||tpl.name||(category==='contracts'?'Contract.pdf':'Contingency.pdf'),region=String(tpl.region||'').trim(),state=String(tpl.state||'').trim().toUpperCase(),stale=(documents||[]).find(function(d){var route=routeForDoc(d),pageMatch=category!=='contracts'||String(d&&d.contractPageType||'')===pageType;return pageMatch&&String(d&&d.category||'')===category&&String(d&&d.name||'').trim().toLowerCase()===String(name).trim().toLowerCase()&&(!region||route.region===region)&&(!state||route.state===state)}),id=String(stale&&stale.id||'').trim()||('company_doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,9));var file=new File([blob],name,{type:tpl.fileType||blob.type||'application/pdf'});var meta=await window.hmCloudUploadLeadFile('', 'company_document', file,{id:id,category:category,uploadedBy:(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'',metadata:{region:region,state:state,companyCategory:category,contractPageType:pageType}});var doc={id:meta.id,category:category,region:region,state:state,contractPageType:pageType,name:name,size:Number(meta.size||blob.size||0),contentType:meta.mimeType||file.type,storageProvider:'neon',storagePath:meta.storagePath||meta.objectKey||'',uploadedAt:meta.uploadedAt||new Date().toISOString(),uploadedBy:meta.uploadedBy||''},idx=(documents||[]).findIndex(function(d){return String(d&&d.id||'')===String(doc.id)});if(idx>=0)documents[idx]=doc;else documents.push(doc);return doc.id}
   function cleanTemplateMeta(tpl,sourceId){var copy=JSON.parse(JSON.stringify(tpl||{}));delete copy.fileDataUrl;copy.sourceCompanyDocumentId=String(sourceId||copy.sourceCompanyDocumentId||'');return copy}
   window.hmGetCompanyFormTemplates=async function(){if(typeof window.hmCloudWhenReady==='function')await window.hmCloudWhenReady();docs=parse(DOCS_KEY);templates=parse(TEMPLATES_KEY);window.savedFormTemplates=templates.slice();try{savedFormTemplates=templates.slice()}catch(_){}return templates.map(function(t){return JSON.parse(JSON.stringify(t))})};
-  window.hmSaveCompanyFormTemplate=async function(tpl){if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can save company templates.');if(typeof window.hmCloudWhenReady==='function')await window.hmCloudWhenReady();docs=parse(DOCS_KEY);templates=parse(TEMPLATES_KEY);var source=await ensureTemplateSource(tpl,docs);if(!source)throw new Error('This contingency could not be linked to company storage.');var si=docs.findIndex(function(d){return String(d&&d.id||'')===String(source)});if(si>=0&&String(tpl&&tpl.documentType||'contingency')==='contingency'){docs[si].category='contingencies';docs[si].region=String(tpl.region||'').trim();docs[si].state=String(tpl.state||'').trim().toUpperCase()}var meta=cleanTemplateMeta(tpl,source),idx=templates.findIndex(function(x){return String(x&&x.id||'')===String(meta.id||'')});if(idx>=0)templates[idx]=meta;else templates.push(meta);saveDocs();saveTemplates();if(currentCategory==='contingencies'&&currentRegion&&currentState)renderFiles();return meta};
+  window.hmSaveCompanyFormTemplate=async function(tpl){if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can save company templates.');if(typeof window.hmCloudWhenReady==='function')await window.hmCloudWhenReady();docs=parse(DOCS_KEY);templates=parse(TEMPLATES_KEY);var source=await ensureTemplateSource(tpl,docs);if(!source)throw new Error('This document could not be linked to company storage.');var si=docs.findIndex(function(d){return String(d&&d.id||'')===String(source)}),docType=String(tpl&&tpl.documentType||'contingency'),category=docType==='contract'?'contracts':'contingencies';if(si>=0&&(docType==='contingency'||docType==='contract')){docs[si].category=category;docs[si].region=String(tpl.region||'').trim();docs[si].state=String(tpl.state||'').trim().toUpperCase();docs[si].contractPageType=docType==='contract'?String(tpl.contractPageType||''):''}var meta=cleanTemplateMeta(tpl,source),idx=templates.findIndex(function(x){return String(x&&x.id||'')===String(meta.id||'')});if(idx>=0)templates[idx]=meta;else templates.push(meta);saveDocs();saveTemplates();if(isRoutedCategory()&&currentRegion&&currentState)renderFiles();return meta};
   window.hmUploadLeadDocumentToCloud=async function(leadId,type,file,metaOptions){metaOptions=metaOptions||{};if(!leadId||!file)throw new Error('Lead document information is incomplete.');if(typeof window.hmCloudUploadLeadFile!=='function')throw new Error('Hail Money cloud storage is not ready.');var category=String(metaOptions.category||((type==='signed_contingency')?'Contingency':(type==='signed_contract'?'Contract':''))).trim(),meta=await window.hmCloudUploadLeadFile(leadId,type||'document',file,{category:category,docCategory:category,note:String(metaOptions.note||''),uploadedBy:String(metaOptions.uploadedBy||(typeof crmGetCurrentUserName==='function'?crmGetCurrentUserName():'')||'')});meta.docCategory=category;meta.category=category;meta.storageProvider='neon';meta.storageKey='neon:'+meta.id;try{var all=crmGetLeadFiles();all=all.filter(function(x){return String(x&&x.id||'')!==String(meta.id)});all.push(crmNormalizeLeadFileMeta(meta));crmSaveLeadFiles(all)}catch(e){console.error('[Lead Document] metadata registration failed',e);throw e}return meta};
   async function openDoc(id){var d=find(id);if(!d)return;var pop=window.open('about:blank','_blank');try{status('Opening '+(d.name||'document')+'…');var blob=await window.hmCloudGetFileBlobById(d.id);if(!blob)throw new Error('This document could not be opened.');var url=URL.createObjectURL(blob);if(pop)pop.location.href=url;else window.location.href=url;setTimeout(function(){try{URL.revokeObjectURL(url)}catch(_){}},60000);status('Company documents are ready.')}catch(e){if(pop)pop.close();status(e&&e.message?e.message:'This document could not be opened.',true)}}
   async function deleteDoc(id){var d=find(id);if(!d||!window.confirm('Delete "'+String(d.name||'this document')+'" for the entire company?'))return;try{if(!(await tokenCanManage()))throw new Error('Only an Owner, Admin, or Manager can delete company documents.');status('Deleting '+(d.name||'document')+'…');await window.hmCloudApi('/files/'+encodeURIComponent(d.id),{method:'DELETE'});docs=docs.filter(function(x){return String(x&&x.id||'')!==String(id)});templates=templates.filter(function(t){return String(t&&t.sourceCompanyDocumentId||'')!==String(id)});saveDocs();saveTemplates();render();status('Document deleted.')}catch(e){status(e&&e.message?e.message:'Document could not be deleted.',true)}}
-  function bind(){document.querySelectorAll('[data-company-doc-open-category]').forEach(function(b){if(b.dataset.companyDocBound)return;b.dataset.companyDocBound='1';b.addEventListener('click',function(){openCategory(b.getAttribute('data-company-doc-open-category'))})});var back=document.getElementById('crm-company-docs-back');if(back&&!back.dataset.companyDocBound){back.dataset.companyDocBound='1';back.addEventListener('click',showHome)}var stateBack=document.getElementById('crm-company-docs-state-back');if(stateBack&&!stateBack.dataset.companyDocBound){stateBack.dataset.companyDocBound='1';stateBack.addEventListener('click',function(){currentRegion='';currentState='';renderRegions()})}var uploadBtn=document.getElementById('crm-company-doc-upload-btn');if(uploadBtn&&!uploadBtn.dataset.companyDocBound){uploadBtn.dataset.companyDocBound='1';uploadBtn.addEventListener('click',function(){choose(currentCategory,currentRegion,currentState)})}var i=document.getElementById('crm-company-doc-file-input');if(i&&!i.dataset.companyDocBound){i.dataset.companyDocBound='1';i.addEventListener('change',function(){upload(i)})}showHome();document.addEventListener('hm:document-regions-updated',function(){if(currentCategory==='contingencies'){if(currentRegion&&!regionRows().some(function(row){return String(row&&row.name||'')===currentRegion})){currentRegion='';currentState=''}render()}});var page=document.getElementById('page-company-docs');if(page){var obs=new MutationObserver(function(){if(page.classList.contains('active')){showHome();load()}});obs.observe(page,{attributes:true,attributeFilter:['class']});if(page.classList.contains('active'))load()}}
+  function bind(){document.querySelectorAll('[data-company-doc-open-category]').forEach(function(b){if(b.dataset.companyDocBound)return;b.dataset.companyDocBound='1';b.addEventListener('click',function(){openCategory(b.getAttribute('data-company-doc-open-category'))})});var back=document.getElementById('crm-company-docs-back');if(back&&!back.dataset.companyDocBound){back.dataset.companyDocBound='1';back.addEventListener('click',showHome)}var stateBack=document.getElementById('crm-company-docs-state-back');if(stateBack&&!stateBack.dataset.companyDocBound){stateBack.dataset.companyDocBound='1';stateBack.addEventListener('click',function(){currentRegion='';currentState='';renderRegions()})}var uploadBtn=document.getElementById('crm-company-doc-upload-btn');if(uploadBtn&&!uploadBtn.dataset.companyDocBound){uploadBtn.dataset.companyDocBound='1';uploadBtn.addEventListener('click',function(){choose(currentCategory,currentRegion,currentState)})}var i=document.getElementById('crm-company-doc-file-input');if(i&&!i.dataset.companyDocBound){i.dataset.companyDocBound='1';i.addEventListener('change',function(){upload(i)})}showHome();document.addEventListener('hm:document-regions-updated',function(){if(isRoutedCategory()){if(currentRegion&&!regionRows().some(function(row){return String(row&&row.name||'')===currentRegion})){currentRegion='';currentState=''}render()}});var page=document.getElementById('page-company-docs');if(page){var obs=new MutationObserver(function(){if(page.classList.contains('active')){showHome();load()}});obs.observe(page,{attributes:true,attributeFilter:['class']});if(page.classList.contains('active'))load()}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 </script>

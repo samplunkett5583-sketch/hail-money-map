@@ -95,4 +95,62 @@
     result.meta = await saveFile(leadId, result.file, 'Locked signed contingency agreement');
     return result;
   };
+
+  async function buildContractBundlePdf(instances) {
+    var api = window.jspdf && window.jspdf.jsPDF;
+    if (!api) throw new Error('PDF generator is not available.');
+    if (!Array.isArray(instances) || !instances.length) throw new Error('No signed contract pages are available.');
+    var doc = null;
+    for (var i = 0; i < instances.length; i++) {
+      var instance = instances[i] || {};
+      var src = String(instance.fileDataUrl || '');
+      if (!src) throw new Error('A selected contract page is missing its source document.');
+      var isPdf = String(instance.fileType || '').toLowerCase() === 'application/pdf' || src.indexOf('data:application/pdf') === 0;
+      if (isPdf) {
+        if (!window.pdfjsLib) throw new Error('PDF rendering is not available.');
+        var bytes = await fetch(src).then(function (r) { return r.arrayBuffer(); });
+        var pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
+        for (var p = 1; p <= pdf.numPages; p++) {
+          var page = await pdf.getPage(p), viewport = page.getViewport({ scale: 1.5 });
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+          await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+          var w = viewport.width, h = viewport.height;
+          if (!doc) doc = new api({ unit:'pt', format:[w,h], orientation:w>h?'landscape':'portrait', compress:true });
+          else doc.addPage([w,h], w>h?'landscape':'portrait');
+          doc.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,w,h,undefined,'FAST');
+          await addFields(doc, instance.fields, p - 1, w, h);
+        }
+      } else {
+        var img = await loadImage(src), w2 = img.naturalWidth || img.width, h2 = img.naturalHeight || img.height;
+        if (!doc) doc = new api({ unit:'pt', format:[w2,h2], orientation:w2>h2?'landscape':'portrait', compress:true });
+        else doc.addPage([w2,h2], w2>h2?'landscape':'portrait');
+        doc.addImage(src, src.indexOf('data:image/jpeg')===0?'JPEG':'PNG',0,0,w2,h2,undefined,'FAST');
+        await addFields(doc, instance.fields, 0, w2, h2);
+      }
+    }
+    return doc.output('blob');
+  }
+
+  window.hmCreateAndUploadLockedContractPdf = async function (leadId, instances, lead, templates) {
+    var blob = await buildContractBundlePdf(instances);
+    var stamp = new Date().toISOString().replace(/[:.]/g,'-');
+    var file = new File([blob], 'signed-contract-' + stamp + '.pdf', { type:'application/pdf' });
+    var metaOptions = { category:'Contract', note:'Locked signed contract' };
+    var meta;
+    if (typeof window.hmUploadLeadDocumentToCloud === 'function') {
+      meta = await window.hmUploadLeadDocumentToCloud(leadId, 'signed_contract', file, metaOptions);
+    } else {
+      throw new Error('Hail Money cloud document storage is not available.');
+    }
+    return {
+      file:file,
+      meta:meta,
+      signedAt:new Date().toISOString(),
+      pageTypes:instances.map(function(inst){return String(inst && inst.contractPageType || '');}),
+      templateIds:(templates || []).map(function(t){return String(t && t.id || '');}),
+      region:String(lead && lead.region || ''),
+      state:String(lead && (lead.regionState || lead.state) || '').toUpperCase()
+    };
+  };
 })();
