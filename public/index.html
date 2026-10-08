@@ -58537,6 +58537,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       file = file || {};
       var name = String(file.name || file.fileName || file.label || file.type || 'file').trim();
       var id = String(file.id || ('doc_' + crmSettingsSlug(name + '_' + (file.leadId || '')))).trim();
+      var storageKey = String(file.storageKey || '').trim();
+      var storageProvider = String(file.storageProvider || '').trim().toLowerCase();
+      if (!storageKey && id && (storageProvider === 'neon' || file.objectKey || file.storagePath)) storageKey = 'neon:' + id;
       return Object.assign({}, file, {
         id: id,
         leadId: String(file.leadId || '').trim(),
@@ -58552,6 +58555,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
         photoPhase: String(file.photoPhase || '').trim(),
         mimeType: String(file.mimeType || '').trim(),
         size: file.size || 0,
+        storageKey: storageKey,
         uploadedAt: String(file.uploadedAt || file.createdAt || file.ts || new Date().toISOString()),
         createdAt: String(file.createdAt || file.ts || new Date().toISOString()),
         updatedAt: String(file.updatedAt || file.createdAt || file.ts || new Date().toISOString())
@@ -65294,25 +65298,37 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
       showPage('page-crm-file-viewer');
 
-      if (!meta.storageKey) {
+      var viewerStorageKey = String(meta.storageKey || '').trim();
+      if (!viewerStorageKey && meta.id && typeof window.hmCloudGetFileBlobById === 'function') viewerStorageKey = 'neon:' + meta.id;
+      if (!viewerStorageKey) {
         contentEl.innerHTML =
           '<div style="padding:40px;text-align:center;color:var(--muted);">' +
           '<div style="font-size:40px;margin-bottom:12px;">📄</div>' +
           '<div>' + (meta.fileName || 'File') + '</div>' +
-          '<div style="margin-top:8px;font-size:12px;">No preview available (file was not saved to device storage).</div>' +
+          '<div style="margin-top:8px;font-size:12px;">Cloud file reference is missing.</div>' +
           '</div>';
         return;
       }
 
-      crmOpenFilesDb(function (dbErr, db) {
-        if (dbErr || !db) {
-          contentEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">Storage unavailable.</div>';
+      function loadViewerBlob(callback) {
+        if (viewerStorageKey.indexOf('neon:') === 0 && typeof window.hmCloudGetFileBlobById === 'function') {
+          window.hmCloudGetFileBlobById(viewerStorageKey).then(function (blob) { callback(null, blob); }).catch(function (error) { callback(error, null); });
           return;
         }
-        crmDbGetBlob(db, meta.storageKey, function (blobErr, blob) {
+        crmOpenFilesDb(function (dbErr, db) {
+          if (dbErr || !db) { callback(dbErr || new Error('Storage unavailable.'), null); return; }
+          crmDbGetBlob(db, viewerStorageKey, callback);
+        });
+      }
+
+      loadViewerBlob(function (blobErr, blob) {
           if (blobErr || !blob) {
-            contentEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">File not found in device storage.</div>';
+            contentEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">File not found in cloud storage.</div>';
             return;
+          }
+          if (!meta.storageKey && viewerStorageKey.indexOf('neon:') === 0) {
+            meta.storageKey = viewerStorageKey;
+            crmSaveLeadFiles(allFiles);
           }
           var url = URL.createObjectURL(blob);
           _crmViewerObjectUrl = url;
@@ -65346,7 +65362,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
               '<p style="font-size:13px;color:var(--muted);">Use the Download button above to open this file.</p>' +
               '</div>';
           }
-        });
       });
     }
 

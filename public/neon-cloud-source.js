@@ -574,7 +574,11 @@
   window.hmCloudListFiles = async function (leadId, type) {
     if (SHARED_TEST_CLOUD) {
       var rows = await testRequest('/fileMeta', { method: 'GET' }) || {};
-      return Object.keys(rows).map(function (id) { return rows[id]; }).filter(function (item) {
+      return Object.keys(rows).map(function (id) {
+        var item = rows[id];
+        if (item && !item.storageKey) item.storageKey = 'neon:' + String(item.id || id);
+        return item;
+      }).filter(function (item) {
         if (!item) return false;
         if (leadId && String(item.leadId || '') !== String(leadId)) return false;
         if (type && String(item.type || '') !== String(type)) return false;
@@ -585,7 +589,10 @@
     if (leadId) q.push('leadId=' + encodeURIComponent(leadId));
     if (type) q.push('type=' + encodeURIComponent(type));
     var result = await neonApi('/files' + (q.length ? '?' + q.join('&') : ''), { method: 'GET' });
-    return result.files || [];
+    return (result.files || []).map(function (item) {
+      if (item && item.id && !item.storageKey) item.storageKey = 'neon:' + item.id;
+      return item;
+    });
   };
 
   window.hmCloudPurgeTestCrmFiles = async function () {
