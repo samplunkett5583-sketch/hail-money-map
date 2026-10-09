@@ -50627,6 +50627,20 @@ function mapsGoogleReady() {
       backBtn.addEventListener('click', function (event) {
         if (
           typeof _appCurrentPageId !== 'undefined' &&
+          _appCurrentPageId === 'page-crm-job-file' &&
+          _crmJobFileActiveTab === 'documents' &&
+          _jfDocSelectedCategory
+        ) {
+          if (event) event.preventDefault();
+          _jfDocSelectedCategory = null;
+          if (typeof crmRenderJobFile === 'function') crmRenderJobFile();
+          if (typeof renderTopBrand === 'function') renderTopBrand();
+          if (typeof crmSyncMobilePageChrome === 'function') crmSyncMobilePageChrome('page-crm-job-file');
+          updateGlobalHeaderBackButton();
+          return;
+        }
+        if (
+          typeof _appCurrentPageId !== 'undefined' &&
           _appCurrentPageId === 'page-photo-files' &&
           window.hmProjectsCurrentView &&
           window.hmProjectsCurrentView !== 'home' &&
@@ -82042,10 +82056,13 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmGetJobFileHeaderContext(pageId) {
+      var jobFilesDocumentTitle = !_jfDocSelectedCategory
+        ? 'Job Files'
+        : (_jfDocSelectedCategory === 'Contract' ? 'Contracts' : String(_jfDocSelectedCategory));
       var sectionTitles = {
         overview: 'Job Folder',
         contacts: 'Contacts',
-        documents: 'Documents',
+        documents: jobFilesDocumentTitle,
         photos: 'Photos',
         reports: 'Reports',
         notes: 'Notes',
@@ -85009,13 +85026,8 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       if (hubCard) {
         _jfDocSelectedCategory = hubCard.getAttribute('data-jf-doc-hub') || null;
         crmRenderJobFile && crmRenderJobFile();
-        return;
-      }
-      /* Back button */
-      var backBtn = e.target.closest('[data-jf-doc-hub-back]');
-      if (backBtn) {
-        _jfDocSelectedCategory = null;
-        crmRenderJobFile && crmRenderJobFile();
+        renderTopBrand && renderTopBrand();
+        if (typeof crmSyncMobilePageChrome === 'function') crmSyncMobilePageChrome('page-crm-job-file');
         return;
       }
       var addContingencyBtn=e.target.closest('[data-jf-add-contingency]');
@@ -85357,7 +85369,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var signedForms = Array.isArray(lead.contingencyFormInstances) ? lead.contingencyFormInstances : [];
       var canEdit = typeof crmCanEditJobFileLead === 'function' ? crmCanEditJobFileLead(lead) : true;
       var html = '<div class="crm-job-file-panel-block">';
-      html += '<div class="jf-doc-cat-header"><button class="jf-doc-cat-back" type="button" data-jf-doc-hub-back="1">← Back</button><span class="jf-doc-cat-title">&#128221; Contingency</span></div>';
+      html += '<div class="jf-doc-cat-header"><span class="jf-doc-cat-title">&#128221; Contingency</span></div>';
       if (canEdit) html += '<div class="crm-job-file-inline-actions" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-primary" type="button" data-jf-add-contingency="1">Add Contingency</button><button class="btn" type="button" data-jf-upload-doc-hub="signed_contingency" data-jf-doc-hub-cat="Contingency">Upload Signed Contingency</button></div>';
       if (!files.length && !signedForms.length) html += '<div class="crm-job-file-empty">No signed contingency saved yet.</div>';
       if (signedForms.length) { html += '<div class="crm-job-file-file-links">'; signedForms.forEach(function(doc,idx){ var date=doc.signedAt?crmFormatDateTimeLabel(doc.signedAt):''; html += '<button class="crm-job-file-file-link" type="button" data-jf-open-contingency-form="'+idx+'"><strong>'+crmEscapeHtml(doc.templateName||'Signed Contingency')+'</strong><span style="display:block;font-size:11px;color:var(--muted);margin-top:4px;">Signed'+(date?' · '+crmEscapeHtml(date):'')+' · View / Print</span></button>'; }); html += '</div>'; }
@@ -85370,7 +85382,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var signedForms = Array.isArray(lead.contractFormInstances) ? lead.contractFormInstances : [];
       var canEdit = typeof crmCanEditJobFileLead === 'function' ? crmCanEditJobFileLead(lead) : true;
       var html = '<div class="crm-job-file-panel-block">';
-      html += '<div class="jf-doc-cat-header"><button class="jf-doc-cat-back" type="button" data-jf-doc-hub-back="1">← Back</button><span class="jf-doc-cat-title">&#9997;&#65039; Contract</span></div>';
+      html += '<div class="jf-doc-cat-header"><span class="jf-doc-cat-title">&#9997;&#65039; Contracts</span></div>';
       if (canEdit) html += '<div class="crm-job-file-inline-actions" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-primary" type="button" data-jf-add-contract="1">Add Contract</button><button class="btn" type="button" data-jf-upload-doc-hub="signed_contract" data-jf-doc-hub-cat="Contract">Upload Signed Contract</button></div>';
       if (!files.length && !signedForms.length) html += '<div class="crm-job-file-empty">No signed contract saved yet.</div>';
       if (signedForms.length) { html += '<div class="crm-job-file-file-links">'; signedForms.forEach(function(doc,idx){ var date=doc.signedAt?crmFormatDateTimeLabel(doc.signedAt):''; html += '<button class="crm-job-file-file-link" type="button" data-jf-open-contract-form="'+idx+'"><strong>'+crmEscapeHtml(doc.templateName||'Signed Contract')+'</strong><span style="display:block;font-size:11px;color:var(--muted);margin-top:4px;">Signed'+(date?' · '+crmEscapeHtml(date):'')+' · View / Print</span></button>'; }); html += '</div>'; }
@@ -85387,7 +85399,6 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       var catFiles = files.filter(function(f) { return cat.types.indexOf(f.type) !== -1 || cat.types.indexOf(f.docCategory) !== -1; });
       var html = '<div class="crm-job-file-panel-block">';
       html += '<div class="jf-doc-cat-header">';
-      html += '<button class="jf-doc-cat-back" type="button" data-jf-doc-hub-back="1">← Back</button>';
       html += '<span class="jf-doc-cat-title">' + cat.icon + ' ' + crmEscapeHtml(cat.key) + '</span>';
       html += '</div>';
       /* Upload button */
