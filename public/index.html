@@ -54014,6 +54014,8 @@ function mapsGoogleReady() {
       try{
         this.disabled=true;this.textContent='Creating secure link...';
         var contracts=[];
+        var deliveryPdfBase64='';
+        var deliveryPdfName='Contract.pdf';
         for(var i=0;i<selected.length;i++){
           var row=selected[i],tpl=savedFormTemplates[row.index];
           if(!tpl)throw new Error('A selected contract template could not be found.');
@@ -54022,6 +54024,10 @@ function mapsGoogleReady() {
           if(!prepared)throw new Error('A selected contract could not be prepared.');
           var sourceFileId=String(tpl.sourceCompanyDocumentId||'').trim();
           if(!sourceFileId)throw new Error(String(tpl.name||'A contract')+' is not connected to its stored PDF.');
+          if(!deliveryPdfBase64&&String(tpl.fileDataUrl||'').indexOf(',')>=0){
+            deliveryPdfBase64=String(tpl.fileDataUrl||'').split(',').pop();
+            deliveryPdfName=String(tpl.fileName||tpl.name||'Contract.pdf');
+          }
           contracts.push({
             templateId:String(tpl.id||''),
             name:String(tpl.name||tpl.fileName||'Contract'),
@@ -54038,24 +54044,37 @@ function mapsGoogleReady() {
           contracts:contracts
         });
         if(!result||!result.signingUrl)throw new Error('The secure signing link was not created.');
+        if(!deliveryPdfBase64)throw new Error('The contract PDF could not be prepared for email delivery.');
+        if(!window.HailMoneyDocuSign||typeof window.HailMoneyDocuSign.sendCompletedCopy!=='function')throw new Error('The Hail Money email sender is not available.');
+        this.textContent='Sending signing email...';
+        var homeownerName=crmGetLeadDisplayName(lead);
+        var subject='Contracts ready for signature - '+homeownerName;
+        var body='Please review and sign your Hail Money contract documents using this secure link:\n\n'+result.signingUrl+'\n\nThis link expires in 14 days.';
+        var delivery=await window.HailMoneyDocuSign.sendCompletedCopy({
+          documentBase64:deliveryPdfBase64,
+          documentName:deliveryPdfName,
+          emailSubject:subject,
+          emailBlurb:body,
+          recipient:{name:homeownerName,email:email}
+        });
         var leadRows=crmGetLeads();
         var savedLead=leadRows.find(function(item){return String(item&&item.id||'')===leadId;});
         if(savedLead){
-          savedLead.contractSigningStatus='signing_link_created';
+          savedLead.contractSigningStatus='signing_email_sent';
           savedLead.contractSigningSessionId=String(result.sessionId||'');
           savedLead.contractSigningSentAt=new Date().toISOString();
           savedLead.contractSigningExpiresAt=String(result.expiresAt||'');
+          savedLead.contractSigningEmailedTo=email;
+          savedLead.contractSigningEmailEnvelopeId=String(delivery&&delivery.envelopeId||'');
           savedLead.updatedAt=new Date().toISOString();
+          crmPushLeadActivity(savedLead,'Contract signing request emailed to '+email,'document',crmGetCurrentUserName()||currentRep||'',savedLead.contractSigningSentAt);
           crmSaveLeads(leadRows);
         }
         modal.style.display='none';
-        var subject='Contracts ready for signature - '+crmGetLeadDisplayName(lead);
-        var body='Hello '+crmGetLeadDisplayName(lead)+',\n\nPlease review and sign your Hail Money contract documents using this secure link:\n\n'+result.signingUrl+'\n\nThis link expires in 14 days.';
-        window.location.href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-        showUploadToast('Secure signing link created. Your email app is opening with the link ready to send.');
+        showUploadToast('Signing email sent directly to '+email+'.');
       }catch(err){
         console.error('[Contract Documents] remote signing request failed',err);
-        if(msg){msg.textContent=err&&err.message?err.message:'The secure signing link could not be created.';msg.style.display='block';}
+        if(msg){msg.textContent=err&&err.message?err.message:'The signing email could not be sent.';msg.style.display='block';}
         modal.style.display='flex';
       }finally{this.disabled=false;this.textContent='Email Homeowner to Sign';}
     });
