@@ -571,6 +571,22 @@
     return result.url;
   };
 
+  window.hmCloudCreateContractSigningSession = async function (payload) {
+    if (SHARED_TEST_CLOUD) throw new Error('Remote contract signing is not available in shared test mode.');
+    return neonApi('/signing-sessions', { method:'POST', body:JSON.stringify(payload || {}) });
+  };
+
+  window.hmCloudListContractSigningSessions = async function (leadId) {
+    if (SHARED_TEST_CLOUD) return [];
+    var result = await neonApi('/signing-sessions' + (leadId ? '?leadId=' + encodeURIComponent(leadId) : ''), { method:'GET' });
+    return Array.isArray(result.sessions) ? result.sessions : [];
+  };
+
+  window.hmCloudRefreshNow = async function () {
+    lastCloudVersion = '';
+    return loadCloud();
+  };
+
   window.hmCloudListFiles = async function (leadId, type) {
     if (SHARED_TEST_CLOUD) {
       var rows = await testRequest('/fileMeta', { method: 'GET' }) || {};

@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Hail Money — Sign Contracts</title>
+  <style>
+    :root{--navy:#18182c;--gold:#d7aa3a;--bg:#f4f6f8;--ink:#171717;--muted:#6b7280;--line:#d8dde4}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+    header{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;min-height:78px;display:flex;align-items:center;justify-content:center;padding:10px 18px;border-bottom:4px solid var(--gold)}
+    header img{width:54px;height:54px;object-fit:contain;margin-right:12px}
+    header strong{font-size:20px}
+    main{max-width:920px;margin:0 auto;padding:22px 14px 60px}
+    .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+    .status{font-size:13px;color:var(--muted);margin-top:4px}
+    .progress{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0}
+    .chip{border:1px solid var(--line);border-radius:999px;padding:6px 9px;font-size:11px;background:#fff}
+    .chip.active{border-color:var(--gold);font-weight:800}
+    .chip.done{background:#edf9f0;border-color:#a7d8b0}
+    #document{margin-top:16px}
+    .pdf-page{position:relative;margin:0 auto 18px;background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.15);max-width:100%;overflow:hidden}
+    .pdf-page canvas{width:100%;height:auto;display:block}
+    .field{position:absolute;z-index:5;overflow:hidden;font-size:11px}
+    .field.text{padding:1px 2px;color:#111;white-space:nowrap;text-overflow:ellipsis}
+    .field.check{display:flex;align-items:center;justify-content:center;font-weight:900}
+    .field.signature{border:2px dashed #d33;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;color:#a11;font-weight:800;cursor:pointer;text-align:center;padding:2px}
+    .field.signature.signed{border:0;background:transparent}
+    .field.signature img{width:100%;height:100%;object-fit:contain}
+    .field.rep-signature{border:1px dashed #2f6db5;background:rgba(255,255,255,.7);color:#2f6db5;display:flex;align-items:center;justify-content:center;text-align:center}
+    .actions{position:sticky;bottom:0;background:rgba(244,246,248,.96);padding:12px 0 2px;margin-top:12px}
+    button{appearance:none;border:1px solid #c9ced6;border-radius:9px;background:#fff;padding:12px 14px;font-weight:700;font-size:14px;cursor:pointer}
+    button.primary{background:var(--gold);border-color:#b8891f;color:#111;width:100%}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .message{padding:14px;border-radius:10px;background:#fff6d8;border:1px solid #e7c762;font-size:13px;margin:12px 0}
+    .error{background:#fff0f0;border-color:#e9a7a7;color:#8f1d1d}
+    .complete{text-align:center;padding:44px 20px}
+    .complete h1{font-size:25px}
+    #sig-modal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.65);align-items:center;justify-content:center;padding:16px}
+    #sig-dialog{background:#fff;border-radius:14px;padding:18px;width:min(620px,100%)}
+    #sig-canvas{width:100%;height:220px;border:2px solid #bbb;border-radius:8px;touch-action:none;background:#fff}
+    .sig-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+    @media(max-width:600px){main{padding:14px 8px 50px}.card{padding:12px}.sig-actions{grid-template-columns:1fr}.field{font-size:9px}}
+  </style>
+</head>
+<body>
+<header>
+  <img src="./assets/hailmoney-logo.png?v=2" alt="" />
+  <div><strong>Hail Money</strong><div style="font-size:12px;opacity:.8;margin-top:2px;">Secure Contract Signing</div></div>
+</header>
+<main>
+  <div class="card">
+    <h1 id="title" style="margin:0;font-size:22px;">Loading your contracts…</h1>
+    <div id="subtitle" class="status"></div>
+    <div id="message"></div>
+    <div id="progress" class="progress"></div>
+    <h2 id="contract-name" style="font-size:17px;margin:12px 0 0;"></h2>
+    <div id="document"></div>
+    <div id="actions" class="actions" style="display:none;">
+      <button id="complete-contract" class="primary" type="button">Sign &amp; Continue</button>
+    </div>
+  </div>
+</main>
+
+<div id="sig-modal">
+  <div id="sig-dialog">
+    <h2 style="margin:0 0 5px;font-size:18px;">Homeowner Signature</h2>
+    <p style="margin:0 0 10px;font-size:12px;color:#666;">Sign inside the box, then tap Apply Signature.</p>
+    <canvas id="sig-canvas" width="900" height="320"></canvas>
+    <div class="sig-actions">
+      <button id="sig-clear" type="button">Clear</button>
+      <button id="sig-cancel" type="button">Cancel</button>
+      <button id="sig-apply" class="primary" type="button">Apply Signature</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
+<script src="./vendor-jspdf.umd.min.js"></script>
+<script src="./contingency-locked-pdf.js?v=20261008-remote-signing-1"></script>
+<script>
+(function(){
+  'use strict';
+  var API_BASE='https://br-autumn-dew-b4hm4p90-cloudapi.compute.c-6.us-east-2.aws.neon.tech';
+  var token=new URLSearchParams(location.search).get('t')||'';
+  var session=null, currentIndex=-1, currentInstance=null, signatureTarget=null;
+  var docEl=document.getElementById('document'), msgEl=document.getElementById('message');
+  var completeBtn=document.getElementById('complete-contract');
+
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function message(text,isError){msgEl.innerHTML=text?'<div class="message'+(isError?' error':'')+'">'+esc(text)+'</div>':'';}
+  async function api(path,options){
+    var response=await fetch(API_BASE+path,Object.assign({cache:'no-store'},options||{}));
+    var type=String(response.headers.get('content-type')||'');
+    if(type.indexOf('application/json')!==-1){
+      var data=await response.json();
+      if(!response.ok)throw new Error(data.error||'Signing request failed.');
+      return data;
+    }
+    if(!response.ok)throw new Error('Signing request failed ('+response.status+').');
+    return response;
+  }
+  function blobToDataUrl(blob){return new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(){resolve(String(r.result||''));};r.onerror=function(){reject(r.error||new Error('Could not read contract.'));};r.readAsDataURL(blob);});}
+
+  function renderProgress(){
+    var host=document.getElementById('progress');
+    host.innerHTML=(session.contracts||[]).map(function(c,i){
+      return '<span class="chip '+(c.completed?'done':(i===currentIndex?'active':''))+'">'+(i+1)+'. '+esc(c.name)+'</span>';
+    }).join('');
+  }
+  function fieldBox(field,w,h){
+    var hasPct=field.xPct!=null&&field.yPct!=null&&field.wPct!=null&&field.hPct!=null;
+    return {
+      left:hasPct?Number(field.xPct||0)*w:Number(field.x||0),
+      top:hasPct?Number(field.yPct||0)*h:Number(field.y||0),
+      width:Math.max(24,hasPct?Number(field.wPct||0)*w:Number(field.width||60)),
+      height:Math.max(18,hasPct?Number(field.hPct||0)*h:Number(field.height||22))
+    };
+  }
+  function addFieldOverlay(wrapper,field,index,w,h){
+    var box=fieldBox(field,w,h), el=document.createElement('div');
+    el.className='field';
+    el.style.left=box.left+'px';el.style.top=box.top+'px';el.style.width=box.width+'px';el.style.height=box.height+'px';
+    if(field.key==='homeowner_signature'){
+      el.className+=' signature';
+      el.dataset.signatureField=String(index);
+      if(field.value&&String(field.value).indexOf('data:image/')===0){
+        el.classList.add('signed');el.innerHTML='<img src="'+field.value+'" alt="Signature" />';
+      }else{
+        el.textContent='CLICK TO SIGN';
+      }
+      el.addEventListener('click',function(){openSignature(index,el);});
+    }else if(field.key==='rep_signature'){
+      el.className+=' rep-signature';
+      if(field.value&&String(field.value).indexOf('data:image/')===0)el.innerHTML='<img src="'+field.value+'" alt="Representative signature" style="width:100%;height:100%;object-fit:contain" />';
+      else el.textContent='Representative signature';
+    }else if(field.key==='checkmark'){
+      el.className+=' check';
+      el.textContent=field.value===true?'✓':'';
+    }else{
+      el.className+=' text';
+      el.textContent=field.value==null?'':String(field.value);
+    }
+    wrapper.appendChild(el);
+  }
+  async function renderContract(contract){
+    message('');
+    docEl.innerHTML='<div class="message">Loading contract…</div>';
+    var response=await fetch(contract.sourceUrl,{cache:'no-store'});
+    if(!response.ok){var d={};try{d=await response.json();}catch(_){ }throw new Error(d.error||'The contract PDF could not be loaded.');}
+    var blob=await response.blob(), dataUrl=await blobToDataUrl(blob);
+    currentInstance={
+      templateId:contract.templateId,
+      templateName:contract.name,
+      contractTemplateId:contract.templateId,
+      contractTemplateName:contract.name,
+      fileName:contract.fileName,
+      fileType:'application/pdf',
+      fileDataUrl:dataUrl,
+      fields:JSON.parse(JSON.stringify(contract.fields||[])),
+      status:'draft',
+      createdAt:new Date().toISOString()
+    };
+    document.getElementById('contract-name').textContent=contract.name;
+    docEl.innerHTML='';
+    var bytes=await blob.arrayBuffer();
+    var pdf=await pdfjsLib.getDocument({data:bytes}).promise;
+    for(var p=1;p<=pdf.numPages;p++){
+      var page=await pdf.getPage(p), base=page.getViewport({scale:1});
+      var containerWidth=Math.min(860,Math.max(300,docEl.clientWidth||800));
+      var scale=containerWidth/base.width;
+      var viewport=page.getViewport({scale:scale});
+      var wrapper=document.createElement('div');
+      wrapper.className='pdf-page';
+      wrapper.style.width=viewport.width+'px';wrapper.style.height=viewport.height+'px';
+      var canvas=document.createElement('canvas');
+      var pixelRatio=Math.min(2,window.devicePixelRatio||1);
+      canvas.width=Math.ceil(viewport.width*pixelRatio);canvas.height=Math.ceil(viewport.height*pixelRatio);
+      canvas.style.width=viewport.width+'px';canvas.style.height=viewport.height+'px';
+      wrapper.appendChild(canvas);docEl.appendChild(wrapper);
+      var ctx=canvas.getContext('2d');ctx.setTransform(pixelRatio,0,0,pixelRatio,0,0);
+      await page.render({canvasContext:ctx,viewport:viewport}).promise;
+      currentInstance.fields.forEach(function(field,index){
+        if(Number(field.pageIndex||0)===p-1)addFieldOverlay(wrapper,field,index,viewport.width,viewport.height);
+      });
+    }
+    document.getElementById('actions').style.display='block';
+    completeBtn.textContent=currentIndex>=session.contracts.length-1?'Sign & Finish':'Sign & Continue';
+  }
+
+  function firstIncomplete(){
+    for(var i=0;i<session.contracts.length;i++)if(!session.contracts[i].completed)return i;
+    return -1;
+  }
+  async function openIndex(index){
+    currentIndex=index;renderProgress();
+    if(index<0){showComplete();return;}
+    await renderContract(session.contracts[index]);
+  }
+  function showComplete(){
+    document.getElementById('title').textContent='Signing complete';
+    document.getElementById('subtitle').textContent='Thank you. Your signed contracts have been returned securely.';
+    document.getElementById('contract-name').textContent='';
+    docEl.innerHTML='<div class="complete"><h1>✓ All contracts signed</h1><p>You may close this page.</p></div>';
+    document.getElementById('actions').style.display='none';
+    renderProgress();
+  }
+
+  var sigModal=document.getElementById('sig-modal'),sigCanvas=document.getElementById('sig-canvas'),sigCtx=sigCanvas.getContext('2d');
+  var drawing=false,lastX=0,lastY=0,signatureHasInk=false;
+  function canvasPoint(e){var r=sigCanvas.getBoundingClientRect(),t=e.touches&&e.touches[0]?e.touches[0]:e;return{x:(t.clientX-r.left)*(sigCanvas.width/r.width),y:(t.clientY-r.top)*(sigCanvas.height/r.height)};}
+  function startDraw(e){e.preventDefault();drawing=true;var p=canvasPoint(e);lastX=p.x;lastY=p.y;}
+  function draw(e){if(!drawing)return;e.preventDefault();var p=canvasPoint(e);signatureHasInk=true;sigCtx.strokeStyle='#111';sigCtx.lineWidth=4;sigCtx.lineCap='round';sigCtx.beginPath();sigCtx.moveTo(lastX,lastY);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();lastX=p.x;lastY=p.y;}
+  function endDraw(){drawing=false;}
+  ['mousedown','touchstart'].forEach(function(n){sigCanvas.addEventListener(n,startDraw,{passive:false});});
+  ['mousemove','touchmove'].forEach(function(n){sigCanvas.addEventListener(n,draw,{passive:false});});
+  ['mouseup','mouseleave','touchend','touchcancel'].forEach(function(n){sigCanvas.addEventListener(n,endDraw);});
+  function clearSignature(){signatureHasInk=false;sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);}
+  function openSignature(index,el){signatureTarget={index:index,el:el};clearSignature();sigModal.style.display='flex';}
+  document.getElementById('sig-clear').onclick=clearSignature;
+  document.getElementById('sig-cancel').onclick=function(){sigModal.style.display='none';signatureTarget=null;};
+  document.getElementById('sig-apply').onclick=function(){
+    if(!signatureTarget)return;
+    if(!signatureHasInk){alert('Please draw your signature first.');return;}
+    var data=sigCanvas.toDataURL('image/png');
+    currentInstance.fields[signatureTarget.index].value=data;
+    signatureTarget.el.classList.add('signed');
+    signatureTarget.el.innerHTML='<img src="'+data+'" alt="Signature" />';
+    sigModal.style.display='none';signatureTarget=null;
+  };
+
+  completeBtn.addEventListener('click',async function(){
+    if(!currentInstance)return;
+    var required=[];
+    currentInstance.fields.forEach(function(f,i){if(f.key==='homeowner_signature')required.push(i);});
+    var missing=required.filter(function(i){var v=currentInstance.fields[i]&&currentInstance.fields[i].value;return !(typeof v==='string'&&v.indexOf('data:image/')===0);});
+    if(!required.length){message('This contract does not contain a homeowner signature field. Please contact your representative.',true);return;}
+    if(missing.length){message('Please click each homeowner signature field and sign before continuing.',true);return;}
+    try{
+      completeBtn.disabled=true;completeBtn.textContent='Saving signed contract…';message('');
+      currentInstance.status='signed';currentInstance.signedAt=new Date().toISOString();currentInstance.completedBy=session.homeownerName||'Homeowner';
+      if(typeof window.hmBuildLockedContractBlob!=='function')throw new Error('The PDF signer is still loading. Please try again.');
+      var signedBlob=await window.hmBuildLockedContractBlob(currentInstance);
+      var result=await api('/public/signing/'+encodeURIComponent(token)+'/contracts/'+currentIndex,{
+        method:'POST',
+        headers:{'Content-Type':'application/pdf'},
+        body:signedBlob
+      });
+      session.contracts[currentIndex].completed=true;
+      session.contracts[currentIndex].signedAt=new Date().toISOString();
+      if(result.complete){session.status='completed';showComplete();return;}
+      await openIndex(firstIncomplete());
+    }catch(err){message(err&&err.message?err.message:'The signed contract could not be saved.',true);}
+    finally{completeBtn.disabled=false;if(session&&session.status!=='completed')completeBtn.textContent=currentIndex>=session.contracts.length-1?'Sign & Finish':'Sign & Continue';}
+  });
+
+  async function boot(){
+    if(!token){message('This signing link is missing or invalid.',true);document.getElementById('title').textContent='Unable to open contracts';return;}
+    try{
+      var result=await api('/public/signing/'+encodeURIComponent(token),{method:'GET'});
+      session=result.session;
+      document.getElementById('title').textContent='Contracts for '+(session.homeownerName||'Homeowner');
+      document.getElementById('subtitle').textContent='Review and sign each contract below. This secure link expires '+new Date(session.expiresAt).toLocaleDateString()+'.';
+      if(session.status==='completed'){showComplete();return;}
+      await openIndex(firstIncomplete());
+    }catch(err){document.getElementById('title').textContent='Unable to open contracts';message(err&&err.message?err.message:'This signing request is unavailable.',true);}
+  }
+  boot();
+}());
+</script>
+</body>
+</html>

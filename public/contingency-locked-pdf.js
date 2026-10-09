@@ -132,6 +132,10 @@
     return doc.output('blob');
   }
 
+  window.hmBuildLockedContractBlob = async function (instance) {
+    return buildContractBundlePdf([instance]);
+  };
+
   window.hmCreateAndUploadLockedContractPdf = async function (leadId, instances, lead, templates) {
     var blob = await buildContractBundlePdf(instances);
     var stamp = new Date().toISOString().replace(/[:.]/g,'-');

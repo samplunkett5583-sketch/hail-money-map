@@ -24106,12 +24106,17 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
           <div style="background:#fff;border-radius:14px;padding:20px;max-width:560px;width:100%;box-shadow:0 12px 36px rgba(0,0,0,.32);max-height:88vh;overflow:auto;">
             <h3 style="margin:0 0 6px;font-size:20px;font-weight:800;">Customize Your Contract</h3>
             <div id="contract-customizer-route" style="font-size:12px;color:var(--muted,#777);margin-bottom:14px;"></div>
-            <p style="margin:0 0 12px;font-size:13px;color:#333;">Choose the individual contracts needed for this job. The homeowner will complete and sign them one after another.</p>
+            <p style="margin:0 0 12px;font-size:13px;color:#333;">Choose the contracts needed for this job. Fill in any job-specific fields below, then have the homeowner sign now or email them a secure signing link.</p>
             <div id="contract-customizer-pages" style="display:grid;gap:9px;"></div>
+            <div id="contract-customizer-fields-wrap" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid #ddd;">
+              <div style="font-size:13px;font-weight:800;margin-bottom:9px;">Fillable Fields</div>
+              <div id="contract-customizer-fields" style="display:grid;gap:12px;"></div>
+            </div>
             <div id="contract-customizer-msg" style="display:none;margin-top:10px;padding:9px 10px;border-radius:8px;background:#fff1f1;color:#a11;font-size:12px;"></div>
-            <div style="display:flex;gap:10px;margin-top:16px;">
-              <button class="btn" type="button" id="contract-customizer-cancel" style="flex:1;">Cancel</button>
-              <button class="btn btn-primary" type="button" id="contract-customizer-continue" style="flex:1;">Continue to Sign</button>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;">
+              <button class="btn btn-primary" type="button" id="contract-customizer-sign-now">Homeowner Click to Sign</button>
+              <button class="btn" type="button" id="contract-customizer-email">Email Homeowner to Sign</button>
+              <button class="btn" type="button" id="contract-customizer-cancel" style="grid-column:1 / -1;">Cancel</button>
             </div>
           </div>
         </div>
@@ -27726,7 +27731,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./neon-cloud-source.js?v=20261006-clean-neon-test-1"></script>
+  <script src="./neon-cloud-source.js?v=20261008-remote-contract-signing-1"></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfpwfazoWqQxdlkdsZ9XPxgcE68wxNd1I&libraries=places,geometry,drawing&v=weekly&loading=async&callback=mapsGoogleReady" defer></script>
   <script src="demo_swaths.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
@@ -53799,6 +53804,92 @@ function mapsGoogleReady() {
       }).sort(function(a,b){return String(a.template.name||'').localeCompare(String(b.template.name||''));});
     }
 
+    function crmCloneContractInstance(instance) {
+      return JSON.parse(JSON.stringify(instance || {}));
+    }
+
+    function crmGetContractCustomizerSelectedRows(modal) {
+      var available=Array.isArray(modal&&modal._contractTemplateRows)?modal._contractTemplateRows:[];
+      var selected=[];
+      if(!modal)return selected;
+      modal.querySelectorAll('[data-contract-template-index]').forEach(function(cb){
+        if(!cb.checked)return;
+        var idx=Number(cb.getAttribute('data-contract-template-index'));
+        var row=available.find(function(item){return Number(item.index)===idx;});
+        if(row)selected.push(row);
+      });
+      return selected;
+    }
+
+    function crmEnsurePreparedContractInstance(modal, lead, row) {
+      if(!modal||!row||!savedFormTemplates[row.index])return null;
+      modal._preparedContractInstances=modal._preparedContractInstances||{};
+      var key=String(row.index);
+      if(!modal._preparedContractInstances[key]) {
+        modal._preparedContractInstances[key]=createFormInstance(savedFormTemplates[row.index],lead);
+      }
+      return modal._preparedContractInstances[key];
+    }
+
+    function crmRenderContractCustomizerFields(modal, lead) {
+      var wrap=document.getElementById('contract-customizer-fields-wrap');
+      var host=document.getElementById('contract-customizer-fields');
+      if(!wrap||!host||!modal)return;
+      var selected=crmGetContractCustomizerSelectedRows(modal);
+      if(!selected.length){wrap.style.display='none';host.innerHTML='';return;}
+      wrap.style.display='block';
+      var html='';
+      selected.forEach(function(row){
+        var tpl=savedFormTemplates[row.index]||{};
+        var inst=crmEnsurePreparedContractInstance(modal,lead,row);
+        if(!inst)return;
+        var editable=(inst.fields||[]).map(function(field,index){return{field:field,index:index};}).filter(function(item){
+          return item.field.key!=='homeowner_signature';
+        });
+        var safeName=crmEscapeHtml(String(tpl.name||tpl.fileName||'Contract'));
+        html+='<div style="border:1px solid #ddd;border-radius:9px;padding:11px;background:#fafafa;">';
+        html+='<div style="font-size:12px;font-weight:800;margin-bottom:8px;">'+safeName+'</div>';
+        if(!editable.length){
+          html+='<div style="font-size:12px;color:#777;">All fields on this contract are already filled automatically.</div>';
+        } else {
+          editable.forEach(function(item){
+            var field=item.field;
+            var label=crmEscapeHtml(String(field.label||field.key||'Field'));
+            var value=field.value==null?'':String(field.value);
+            if(field.key==='checkmark'){
+              html+='<label style="display:flex;align-items:center;gap:8px;font-size:12px;margin:7px 0;"><input type="checkbox" data-contract-prefill-template="'+row.index+'" data-contract-prefill-field="'+item.index+'" '+(field.value===true?'checked':'')+'/> '+label+'</label>';
+            }else if(field.key==='rep_signature'){
+              html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:7px 0;"><span style="font-size:11px;font-weight:700;">'+label+'</span><button class="btn" type="button" data-contract-prefill-rep-signature="'+row.index+'" data-contract-prefill-field="'+item.index+'">'+(String(field.value||'').indexOf('data:image/')===0?'Representative Signed':'Representative Click to Sign')+'</button></div>';
+            }else{
+              html+='<label style="display:grid;gap:4px;font-size:11px;font-weight:700;margin:7px 0;">'+label+
+                '<input class="field-input" type="text" data-contract-prefill-template="'+row.index+'" data-contract-prefill-field="'+item.index+'" value="'+crmEscapeHtml(value)+'" style="font-weight:400;" /></label>';
+            }
+          });
+        }
+        html+='</div>';
+      });
+      host.innerHTML=html;
+      host.querySelectorAll('[data-contract-prefill-template]').forEach(function(input){
+        var update=function(){
+          var templateIndex=String(input.getAttribute('data-contract-prefill-template')||'');
+          var fieldIndex=Number(input.getAttribute('data-contract-prefill-field'));
+          var inst=modal._preparedContractInstances&&modal._preparedContractInstances[templateIndex];
+          if(!inst||!inst.fields||!inst.fields[fieldIndex])return;
+          inst.fields[fieldIndex].value=input.type==='checkbox'?!!input.checked:input.value;
+        };
+        input.addEventListener(input.type==='checkbox'?'change':'input',update);
+      });
+      host.querySelectorAll('[data-contract-prefill-rep-signature]').forEach(function(button){
+        button.addEventListener('click',function(){
+          var templateIndex=String(button.getAttribute('data-contract-prefill-rep-signature')||'');
+          var fieldIndex=Number(button.getAttribute('data-contract-prefill-field'));
+          var inst=modal._preparedContractInstances&&modal._preparedContractInstances[templateIndex];
+          if(!inst||!inst.fields||!inst.fields[fieldIndex])return;
+          openSignaturePad(function(dataUrl){inst.fields[fieldIndex].value=dataUrl;crmRenderContractCustomizerFields(modal,lead);});
+        });
+      });
+    }
+
     async function crmOpenCurrentContractSigningDocument() {
       if(!_contractSigningSession)return;
       var row=_contractSigningSession.contracts[_contractSigningSession.position];
@@ -53807,7 +53898,13 @@ function mapsGoogleReady() {
       await crmEnsureTemplateDocumentLoaded(tpl);
       var job=crmGetDocuSignSourceRecord(_contractSigningSession.leadId);
       if(!job)throw new Error('Lead not found.');
-      var inst=createFormInstance(tpl,job);
+      var prepared=_contractSigningSession.preparedInstances&&_contractSigningSession.preparedInstances[String(row.index)];
+      var inst=prepared?crmCloneContractInstance(prepared):createFormInstance(tpl,job);
+      inst.fileDataUrl=tpl.fileDataUrl;
+      inst.fileType=tpl.fileType;
+      inst.fileName=tpl.fileName;
+      inst.templateId=tpl.id;
+      inst.templateName=tpl.name;
       inst.contractTemplateId=String(tpl.id||'');
       inst.contractTemplateName=String(tpl.name||tpl.fileName||'Contract');
       inst.contractSequencePosition=_contractSigningSession.position;
@@ -53840,28 +53937,55 @@ function mapsGoogleReady() {
       }).join('');
       modal.dataset.leadId=leadId;
       modal._contractTemplateRows=contractRows;
+      modal._preparedContractInstances={};
+      modal._contractLead=lead;
+      host.querySelectorAll('[data-contract-template-index]').forEach(function(cb){
+        cb.addEventListener('change',function(){
+          if(msg){msg.style.display='none';msg.textContent='';}
+          crmRenderContractCustomizerFields(modal,lead);
+        });
+      });
+      crmRenderContractCustomizerFields(modal,lead);
+      var emailButton=document.getElementById('contract-customizer-email');
+      if(emailButton){
+        emailButton.disabled=!String(lead.email||'').trim();
+        emailButton.title=emailButton.disabled?'Add a homeowner email address to the lead first.':'Email a secure Hail Money signing link to '+String(lead.email||'');
+      }
       modal.style.display='flex';
+    }
+
+    function crmPrepareSelectedContractRows(modal) {
+      var selected=crmGetContractCustomizerSelectedRows(modal);
+      var msg=document.getElementById('contract-customizer-msg');
+      if(!selected.length){
+        if(msg){msg.textContent='Choose at least one contract.';msg.style.display='block';}
+        return null;
+      }
+      return selected;
     }
 
     document.getElementById('contract-customizer-cancel').addEventListener('click',function(){
       document.getElementById('contract-customizer-modal').style.display='none';
     });
-    document.getElementById('contract-customizer-continue').addEventListener('click',async function(){
+
+    document.getElementById('contract-customizer-sign-now').addEventListener('click',async function(){
       var modal=document.getElementById('contract-customizer-modal');
       var leadId=String(modal.dataset.leadId||'');
-      var available=Array.isArray(modal._contractTemplateRows)?modal._contractTemplateRows:[];
-      var selected=[];
-      modal.querySelectorAll('[data-contract-template-index]').forEach(function(cb){
-        if(!cb.checked)return;
-        var idx=Number(cb.getAttribute('data-contract-template-index'));
-        var row=available.find(function(item){return Number(item.index)===idx;});
-        if(row)selected.push(row);
-      });
+      var selected=crmPrepareSelectedContractRows(modal);
+      if(!selected)return;
       var msg=document.getElementById('contract-customizer-msg');
-      if(!selected.length){msg.textContent='Choose at least one contract.';msg.style.display='block';return;}
       try{
         this.disabled=true;this.textContent='Preparing contracts...';
-        _contractSigningSession={leadId:leadId,bundleId:'contract_batch_'+Date.now(),contracts:selected,position:0,instance:null,savedDocuments:[],startedAt:new Date().toISOString()};
+        _contractSigningSession={
+          leadId:leadId,
+          bundleId:'contract_batch_'+Date.now(),
+          contracts:selected,
+          preparedInstances:modal._preparedContractInstances||{},
+          position:0,
+          instance:null,
+          savedDocuments:[],
+          startedAt:new Date().toISOString()
+        };
         _crmPostLeadContingencyContext={leadId:leadId,returnMode:'documents',documentType:'contract',contractBundleId:_contractSigningSession.bundleId};
         modal.style.display='none';
         openDocuSign(leadId);
@@ -53869,10 +53993,71 @@ function mapsGoogleReady() {
       }catch(err){
         _contractSigningSession=null;
         _crmPostLeadContingencyContext=null;
-        console.error('[Contract Documents] load failed',err);
-        msg.textContent=err&&err.message?err.message:'The selected contracts could not be prepared.';msg.style.display='block';
+        console.error('[Contract Documents] local signing failed',err);
+        if(msg){msg.textContent=err&&err.message?err.message:'The selected contracts could not be prepared.';msg.style.display='block';}
         modal.style.display='flex';
-      }finally{this.disabled=false;this.textContent='Continue to Sign';}
+      }finally{this.disabled=false;this.textContent='Homeowner Click to Sign';}
+    });
+
+    document.getElementById('contract-customizer-email').addEventListener('click',async function(){
+      var modal=document.getElementById('contract-customizer-modal');
+      var leadId=String(modal.dataset.leadId||'');
+      var lead=modal._contractLead||crmGetLeads().find(function(item){return String(item&&item.id||'')===leadId;});
+      var selected=crmPrepareSelectedContractRows(modal);
+      var msg=document.getElementById('contract-customizer-msg');
+      if(!selected||!lead)return;
+      var email=String(lead.email||'').trim();
+      if(!email){if(msg){msg.textContent='Add the homeowner email address to the lead first.';msg.style.display='block';}return;}
+      if(typeof window.hmCloudCreateContractSigningSession!=='function'){
+        if(msg){msg.textContent='Secure signing links are not available yet.';msg.style.display='block';}return;
+      }
+      try{
+        this.disabled=true;this.textContent='Creating secure link...';
+        var contracts=[];
+        for(var i=0;i<selected.length;i++){
+          var row=selected[i],tpl=savedFormTemplates[row.index];
+          if(!tpl)throw new Error('A selected contract template could not be found.');
+          await crmEnsureTemplateDocumentLoaded(tpl);
+          var prepared=crmEnsurePreparedContractInstance(modal,lead,row);
+          if(!prepared)throw new Error('A selected contract could not be prepared.');
+          var sourceFileId=String(tpl.sourceCompanyDocumentId||'').trim();
+          if(!sourceFileId)throw new Error(String(tpl.name||'A contract')+' is not connected to its stored PDF.');
+          contracts.push({
+            templateId:String(tpl.id||''),
+            name:String(tpl.name||tpl.fileName||'Contract'),
+            fileName:String(tpl.fileName||'Contract.pdf'),
+            fileType:String(tpl.fileType||'application/pdf'),
+            sourceFileId:sourceFileId,
+            fields:crmCloneContractInstance(prepared.fields||[])
+          });
+        }
+        var result=await window.hmCloudCreateContractSigningSession({
+          leadId:leadId,
+          homeownerName:crmGetLeadDisplayName(lead),
+          homeownerEmail:email,
+          contracts:contracts
+        });
+        if(!result||!result.signingUrl)throw new Error('The secure signing link was not created.');
+        var leadRows=crmGetLeads();
+        var savedLead=leadRows.find(function(item){return String(item&&item.id||'')===leadId;});
+        if(savedLead){
+          savedLead.contractSigningStatus='signing_link_created';
+          savedLead.contractSigningSessionId=String(result.sessionId||'');
+          savedLead.contractSigningSentAt=new Date().toISOString();
+          savedLead.contractSigningExpiresAt=String(result.expiresAt||'');
+          savedLead.updatedAt=new Date().toISOString();
+          crmSaveLeads(leadRows);
+        }
+        modal.style.display='none';
+        var subject='Contracts ready for signature - '+crmGetLeadDisplayName(lead);
+        var body='Hello '+crmGetLeadDisplayName(lead)+',\n\nPlease review and sign your Hail Money contract documents using this secure link:\n\n'+result.signingUrl+'\n\nThis link expires in 14 days.';
+        window.location.href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+        showUploadToast('Secure signing link created. Your email app is opening with the link ready to send.');
+      }catch(err){
+        console.error('[Contract Documents] remote signing request failed',err);
+        if(msg){msg.textContent=err&&err.message?err.message:'The secure signing link could not be created.';msg.style.display='block';}
+        modal.style.display='flex';
+      }finally{this.disabled=false;this.textContent='Email Homeowner to Sign';}
     });
 
     function crmOpenSavedLeadContract(leadId,idx) {
@@ -53964,9 +54149,10 @@ function mapsGoogleReady() {
       var formCheckmarks = {};
       var formSigDataUrls = {};
 
-      // Pre-populate checkmarks from instance
+      // Pre-populate checkmarks and any representative signature captured before signing.
       inst.fields.forEach(function (f, idx) {
         if (f.key === 'checkmark') formCheckmarks[idx] = !!f.value;
+        if ((f.key === 'homeowner_signature' || f.key === 'rep_signature') && typeof f.value === 'string' && f.value.indexOf('data:image/') === 0) formSigDataUrls[idx] = f.value;
       });
 
       document.getElementById('docusign-form-title').textContent = inst.templateName;
@@ -53996,6 +54182,14 @@ function mapsGoogleReady() {
           box.style.background = 'rgba(255,255,255,.6)';
           box.style.cursor = 'pointer';
           box.title = 'Tap to sign';
+          if (formSigDataUrls[fIdx]) {
+            box.style.border = 'none';
+            box.style.background = 'transparent';
+            var existingSigImg = document.createElement('img');
+            existingSigImg.src = formSigDataUrls[fIdx];
+            existingSigImg.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;';
+            box.appendChild(existingSigImg);
+          }
           box.addEventListener('click', (function (capturedIdx, capturedBox) {
             return function () {
               openSignaturePad(function (dataUrl) {
@@ -85379,11 +85573,28 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function jfRenderContractCategoryHtml(lead) {
       var files = crmGetLeadFilesFor ? crmGetLeadFilesFor(lead.id).filter(function(f){ return f.type === 'signed_contract' || f.docCategory === 'Contract'; }) : [];
+      var completedRemote = files.find(function(file){ return file && file.metadata && file.metadata.remoteSigningComplete === true; });
+      if (completedRemote && lead && String(lead.contractStatus || '') !== 'signed_remote_contracts_uploaded') {
+        var remoteSessionId = String(completedRemote.metadata && completedRemote.metadata.remoteSigningSessionId || '');
+        var remoteDocs = files.filter(function(file){ return file && file.metadata && String(file.metadata.remoteSigningSessionId || '') === remoteSessionId; });
+        lead.contractSigned = true;
+        lead.contractSignedAt = String(completedRemote.uploadedAt || completedRemote.createdAt || new Date().toISOString());
+        lead.contractStatus = 'signed_remote_contracts_uploaded';
+        lead.contractDocumentId = String(completedRemote.id || '');
+        lead.contractDocuments = remoteDocs.map(function(file){ return { documentId:String(file.id || ''), templateId:String(file.metadata && file.metadata.templateId || ''), name:String(file.fileName || file.name || 'Signed Contract'), fileName:String(file.fileName || file.name || 'Signed Contract'), storageProvider:String(file.storageProvider || 'neon'), storagePath:String(file.storagePath || file.objectKey || ''), signedAt:String(file.uploadedAt || file.createdAt || '') }; });
+        lead.jobFile = lead.jobFile && typeof lead.jobFile === 'object' ? lead.jobFile : {};
+        lead.jobFile.contract = lead.jobFile.contract && typeof lead.jobFile.contract === 'object' ? lead.jobFile.contract : {};
+        lead.jobFile.contract.status = 'Signed';
+        lead.jobFile.contract.signedAt = lead.contractSignedAt;
+        lead.jobFile.contract.documentIds = remoteDocs.map(function(file){ return String(file.id || ''); });
+        lead.updatedAt = new Date().toISOString();
+        try { var remoteLeadRows=crmGetLeads(); var remoteSavedLead=remoteLeadRows.find(function(item){return String(item&&item.id||'')===String(lead.id||'');}); if(remoteSavedLead){Object.assign(remoteSavedLead,JSON.parse(JSON.stringify(lead)));crmSaveLeads(remoteLeadRows);} } catch (_) {}
+      }
       var signedForms = Array.isArray(lead.contractFormInstances) ? lead.contractFormInstances : [];
       var canEdit = typeof crmCanEditJobFileLead === 'function' ? crmCanEditJobFileLead(lead) : true;
       var html = '<div class="crm-job-file-panel-block">';
       html += '<div class="jf-doc-cat-header"><span class="jf-doc-cat-title">&#9997;&#65039; Contracts</span></div>';
-      if (canEdit) html += '<div class="crm-job-file-inline-actions" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-primary" type="button" data-jf-add-contract="1">Add Contract</button><button class="btn" type="button" data-jf-upload-doc-hub="signed_contract" data-jf-doc-hub-cat="Contract">Upload Signed Contract</button></div>';
+      if (canEdit) html += '<div class="crm-job-file-inline-actions" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-primary" type="button" data-jf-add-contract="1">Click to Sign</button><button class="btn" type="button" data-jf-upload-doc-hub="signed_contract" data-jf-doc-hub-cat="Contract">Upload Signed Contract</button></div>';
       if (!files.length && !signedForms.length) html += '<div class="crm-job-file-empty">No signed contract saved yet.</div>';
       if (signedForms.length) { html += '<div class="crm-job-file-file-links">'; signedForms.forEach(function(doc,idx){ var date=doc.signedAt?crmFormatDateTimeLabel(doc.signedAt):''; html += '<button class="crm-job-file-file-link" type="button" data-jf-open-contract-form="'+idx+'"><strong>'+crmEscapeHtml(doc.templateName||'Signed Contract')+'</strong><span style="display:block;font-size:11px;color:var(--muted);margin-top:4px;">Signed'+(date?' · '+crmEscapeHtml(date):'')+' · View / Print</span></button>'; }); html += '</div>'; }
       if (files.length) { html += '<div class="crm-job-file-file-links">'; files.forEach(function(file){ var entry={fileId:file.id,file:file,note:'Signed contract',uploadedBy:file.uploadedBy||'',uploadedAt:file.uploadedAt||file.createdAt||''}; html += crmRenderJobFileDocumentEntry(entry); }); html += '</div>'; }
