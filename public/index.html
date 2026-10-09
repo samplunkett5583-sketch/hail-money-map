@@ -84916,33 +84916,41 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     /* ══ QUICK ACTION BUTTON HANDLERS ══ */
+    function crmGetLeadDetailQuickActionLead() {
+      var leadId = String(_crmCurrentLeadId || _afCurrentLeadId || '').trim();
+      if (!leadId) return null;
+      return crmGetLeads().find(function (lead) {
+        return String(lead && lead.id || '') === leadId;
+      }) || null;
+    }
+
     document.getElementById('ld-call-btn').addEventListener('click', function() {
-      var lead = _afCurrentLeadId ? (crmGetLeads().find(function(l){return l.id===_afCurrentLeadId;})||null) : null;
-      var phone = lead && lead.phone;
+      var lead = crmGetLeadDetailQuickActionLead();
+      var phone = String(lead && lead.phone || '').trim();
       var name  = lead ? ((lead.firstName||'')+' '+(lead.lastName||'')).trim() : 'customer';
       if (!phone) { showUploadToast('No phone number on file.'); return; }
       window.open('tel:' + phone.replace(/[^+\d]/g,''));
-      actLog(_afCurrentLeadId, 'call_started', 'Call started to ' + name + ' (' + phone + ').');
+      actLog(lead.id, 'call_started', 'Call started to ' + name + ' (' + phone + ').');
       if (lead) actRenderFeed(lead);
     });
 
     document.getElementById('ld-text-btn').addEventListener('click', function() {
-      var lead = _afCurrentLeadId ? (crmGetLeads().find(function(l){return l.id===_afCurrentLeadId;})||null) : null;
-      var phone = lead && lead.phone;
+      var lead = crmGetLeadDetailQuickActionLead();
+      var phone = String(lead && lead.phone || '').trim();
       var name  = lead ? ((lead.firstName||'')+' '+(lead.lastName||'')).trim() : 'customer';
       if (!phone) { showUploadToast('No phone number on file.'); return; }
       window.open('sms:' + phone.replace(/[^+\d]/g,''));
-      actLog(_afCurrentLeadId, 'text_started', 'Text started to ' + name + ' (' + phone + ').');
+      actLog(lead.id, 'text_started', 'Text started to ' + name + ' (' + phone + ').');
       if (lead) actRenderFeed(lead);
     });
 
     document.getElementById('ld-email-btn').addEventListener('click', function() {
-      var lead = _afCurrentLeadId ? (crmGetLeads().find(function(l){return l.id===_afCurrentLeadId;})||null) : null;
-      var email = lead && lead.email;
+      var lead = crmGetLeadDetailQuickActionLead();
+      var email = String(lead && lead.email || '').trim();
       var name  = lead ? ((lead.firstName||'')+' '+(lead.lastName||'')).trim() : 'customer';
       if (!email) { showUploadToast('No email address on file.'); return; }
       window.open('mailto:' + email);
-      actLog(_afCurrentLeadId, 'email_started', 'Email started to ' + name + ' (' + email + ').');
+      actLog(lead.id, 'email_started', 'Email started to ' + name + ' (' + email + ').');
       if (lead) actRenderFeed(lead);
     });
 
