@@ -16508,7 +16508,7 @@
       width: 100%;
       max-width: none;
       min-height: calc(100vh - 118px);
-      padding: 120px 36px 28px 143px;
+      padding: 8px 36px 28px 143px;
       box-sizing: border-box;
     }
     #page-lead-detail .jf-folder-sidebar {
@@ -16650,10 +16650,84 @@
       box-shadow: 0 8px 22px rgba(15,23,42,0.09);
     }
     #page-lead-detail #ld-name { display: none; }
-    #page-lead-detail .jf-stage-action-row { margin-bottom: 8px; }
-    #page-lead-detail .ld-quick-bar { margin-top: 0; padding-top: 8px; }
-    #page-lead-detail .ld-qa-btn { flex: 0 1 auto; min-width: 76px; justify-content: center; }
+    #page-lead-detail .ld-job-details-heading {
+      position: relative;
+      min-height: 46px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      margin: -2px 0 4px;
+    }
+    #page-lead-detail .ld-job-details-title {
+      display: inline-block;
+      padding: 0 0 3px;
+      border-bottom: 3px solid #d4a44a;
+      color: #d4a44a;
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      text-align: center;
+    }
+    #page-lead-detail #ld-delete-job-btn {
+      position: absolute;
+      top: -1px;
+      right: 0;
+      min-height: 36px;
+      padding: 7px 14px;
+      border: 1px solid #a91212;
+      border-radius: 5px;
+      background: #ff1f1f;
+      color: #111;
+      font-size: 12px;
+      font-weight: 900;
+      box-shadow: none;
+    }
+    #page-lead-detail .ld-primary-action-row {
+      width: 100%;
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      flex-wrap: nowrap;
+      margin: 0 0 10px;
+    }
+    #page-lead-detail .ld-layout-action-btn {
+      appearance: none;
+      flex: 0 1 auto;
+      min-width: 0;
+      min-height: 34px;
+      padding: 7px 11px;
+      border: 1px solid #c6922a;
+      border-radius: 5px;
+      background: #d9ad4e;
+      color: #545966;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: none;
+    }
+    #page-lead-detail .ld-layout-action-btn:hover,
+    #page-lead-detail .ld-layout-action-btn:focus-visible {
+      background: #e7bd60;
+      border-color: #a87516;
+      color: #292929;
+      outline: none;
+    }
+    #page-lead-detail .ld-job-files-action {
+      flex: 1 1 170px;
+      min-width: 150px;
+    }
+    #page-lead-detail .ld-log-action { flex: 0 1 150px; }
+    #page-lead-detail .ld-hidden-action-controls { display: none !important; }
     #page-lead-detail .crm-detail-section-header { margin-top: 8px; }
+    @media (max-width: 1180px) {
+      #page-lead-detail .ld-primary-action-row { flex-wrap: wrap; }
+      #page-lead-detail .ld-job-files-action { flex: 1 1 100%; }
+    }
     #page-lead-detail .crm-detail-grid { gap: 8px 34px; }
     #page-lead-detail .crm-detail-field { padding: 0; border: 0; background: transparent; }
     #page-lead-detail #ld-next-step-card { padding: 18px; }
@@ -25104,9 +25178,6 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       <!-- ═══════════════════ CRM: LEAD DETAIL ═══════════════════ -->
       <section id="page-lead-detail" class="page">
         <div class="jf-folder-wrap">
-          <div class="jf-tab-bar" role="tablist" aria-label="Job files">
-            <button class="jf-tab-btn active" type="button" data-jf-tab="documents">📁 Job Files</button>
-          </div>
           <div class="crm-wrap">
           <div class="page-actions" style="margin-bottom:14px;display:none;">
             <button class="btn" type="button" id="ld-back-btn">Back</button>
@@ -25114,29 +25185,32 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
 
           <!-- Info card -->
           <div class="crm-detail-card" id="ld-info-card">
+            <div class="ld-job-details-heading">
+              <div class="ld-job-details-title">JOB DETAILS</div>
+              <button class="btn" type="button" id="ld-delete-job-btn" style="display:none;">Delete Job</button>
+            </div>
             <div id="ld-name" class="page-title" style="font-size:22px;font-weight:700;"></div>
-            <div class="jf-stage-action-row">
+
+            <div class="ld-primary-action-row" aria-label="Job actions">
+              <button class="ld-layout-action-btn ld-job-files-action" type="button" data-jf-tab="documents">📁 Job Files</button>
+              <button class="ld-layout-action-btn call" type="button" id="ld-call-btn">📞 Call</button>
+              <button class="ld-layout-action-btn text" type="button" id="ld-text-btn">💬 Text</button>
+              <button class="ld-layout-action-btn email" type="button" id="ld-email-btn">✉️ Email</button>
+              <button class="ld-layout-action-btn" type="button" id="ld-add-note-btn">📝 Add Note</button>
+              <button class="ld-layout-action-btn" type="button" id="ld-add-task-btn">✅ Add Task</button>
+              <button class="ld-layout-action-btn ld-log-action" type="button" id="ld-log-comm-btn">📋 Log Communication</button>
+              <button class="ld-layout-action-btn" type="button" id="ld-add-appointment-btn">Add Appointment</button>
+              <button class="ld-layout-action-btn" type="button" id="ld-move-stage-btn">Manual Stage</button>
+            </div>
+
+            <div class="ld-hidden-action-controls" aria-hidden="true">
               <div id="ld-stage-wrap"></div>
-              <div class="jf-action-btns">
-                <button class="btn ld-pencil-btn" type="button" id="ld-edit-lead-btn" title="Edit lead info" aria-label="Edit lead info">✏️</button>
-                <button class="btn btn-primary" type="button" id="ld-move-stage-btn">Manual Stage</button>
-                <button class="btn" type="button" id="ld-add-appointment-btn">Add Appointment</button>
-                <button class="btn" type="button" id="ld-open-job-file-btn" style="display:none;">Open Job File</button>
-                <button class="btn" type="button" id="ld-convert-job-btn">Convert to Job</button>
-                <button class="btn" type="button" id="ld-delete-job-btn" style="display:none;border-color:#b42318;color:#b42318;font-weight:800;">Delete Job</button>
-                <button class="btn" type="button" id="ld-offer-rotation-btn" style="display:none;">Offer via Rotation</button>
-                <div id="ld-rotation-offer-banner" style="display:none;"></div>
-              </div>
+              <button class="btn ld-pencil-btn" type="button" id="ld-edit-lead-btn" title="Edit lead info" aria-label="Edit lead info">✏️</button>
+              <button class="btn" type="button" id="ld-open-job-file-btn" style="display:none;">Open Job File</button>
+              <button class="btn" type="button" id="ld-convert-job-btn">Convert to Job</button>
+              <button class="btn" type="button" id="ld-offer-rotation-btn" style="display:none;">Offer via Rotation</button>
             </div>
-            <!-- Quick communication actions -->
-            <div class="ld-quick-bar">
-              <button class="ld-qa-btn call" type="button" id="ld-call-btn">📞 Call</button>
-              <button class="ld-qa-btn text" type="button" id="ld-text-btn">💬 Text</button>
-              <button class="ld-qa-btn email" type="button" id="ld-email-btn">✉️ Email</button>
-              <button class="ld-qa-btn" type="button" id="ld-add-note-btn">📝 Add Note</button>
-              <button class="ld-qa-btn" type="button" id="ld-add-task-btn">✅ Add Task</button>
-              <button class="ld-qa-btn" type="button" id="ld-log-comm-btn">📋 Log Communication</button>
-            </div>
+            <div id="ld-rotation-offer-banner" style="display:none;"></div>
 
             <div class="crm-detail-section-header">CONTACT</div>
             <div class="crm-detail-grid">
