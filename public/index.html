@@ -17175,7 +17175,8 @@
       min-height: calc(100vh - 132px);
       margin: 0;
       padding: 0;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
       border: 0;
       border-radius: 0;
       background: transparent;
@@ -17190,10 +17191,44 @@
       position: sticky;
       top: 14px;
     }
+    .jf-job-file-shortcuts {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      padding: 14px 18px 12px;
+      background: #e7bf55;
+    }
+    .jf-job-file-shortcut {
+      min-height: 72px;
+      border: 4px solid #050505;
+      border-radius: 0;
+      background: #e7bf55;
+      color: #111;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 8px 10px;
+      font: inherit;
+      font-weight: 900;
+      text-align: center;
+    }
+    .jf-job-file-shortcut:hover,
+    .jf-job-file-shortcut:focus-visible {
+      background: #f0cf70;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+      transform: translateY(-1px);
+      outline: none;
+    }
+    .jf-job-file-shortcut-icon { font-size: 19px; line-height: 1; }
+    .jf-job-file-shortcut-label { font-size: 13px; line-height: 1.1; }
     .jf-doc-hub-shell {
       position: relative;
       isolation: isolate;
-      min-height: calc(100vh - 132px);
+      min-height: calc(100vh - 230px);
       overflow: hidden;
       background: #e7bf55;
     }
@@ -17210,9 +17245,9 @@
       position: relative;
       z-index: 1;
       width: 100%;
-      min-height: calc(100vh - 132px);
+      min-height: calc(100vh - 230px);
       margin: 0;
-      padding: 24px 18px;
+      padding: 18px 18px;
       display: grid;
       grid-template-columns: repeat(3, 145px);
       grid-template-rows: repeat(4, 100px);
@@ -17269,6 +17304,40 @@
     .jf-doc-hub-shell .jf-doc-hub-card:nth-child(7) { grid-column: 1; grid-row: 4; }
     .jf-doc-hub-shell .jf-doc-hub-card:nth-child(8) { grid-column: 2; grid-row: 4; }
     .jf-doc-hub-shell .jf-doc-hub-card:nth-child(9) { grid-column: 3; grid-row: 4; }
+
+    @media (max-width: 1100px) {
+      .jf-job-file-shortcuts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .jf-doc-hub-shell,
+      .jf-doc-hub-shell .jf-doc-hub { min-height: 680px; }
+      .jf-doc-hub-shell .jf-doc-hub {
+        grid-template-columns: repeat(3, 132px);
+        column-gap: clamp(34px, 6vw, 90px);
+      }
+      .jf-doc-hub-shell .jf-doc-hub-card { width: 132px; }
+    }
+    @media (max-width: 700px) {
+      .jf-job-file-shortcuts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: 10px;
+      }
+      .jf-job-file-shortcut { min-height: 60px; }
+      .jf-doc-hub-shell { min-height: 0; overflow: visible; }
+      .jf-doc-hub-shell .jf-doc-hub {
+        min-height: 0;
+        padding: 14px 10px 24px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: none;
+        gap: 10px;
+        align-content: start;
+      }
+      .jf-doc-hub-shell .jf-doc-hub-card {
+        width: 100%;
+        min-height: 88px;
+        border-width: 4px;
+        grid-column: auto !important;
+        grid-row: auto !important;
+      }
+    }
 
     /* Production scheduler */
     body.production-scheduler-page-active .production-scheduler-body {
@@ -25035,17 +25104,8 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
       <!-- ═══════════════════ CRM: LEAD DETAIL ═══════════════════ -->
       <section id="page-lead-detail" class="page">
         <div class="jf-folder-wrap">
-          <div class="jf-tab-bar" role="tablist" aria-label="Job folder sections">
-            <button class="jf-tab-btn" type="button" data-jf-tab="photos">📷 Photos</button>
-            <button class="jf-tab-btn" type="button" data-jf-tab="documents">📁 Job Files</button>
-            <button class="jf-tab-btn" type="button" data-jf-tab="reports">📊 Reports</button>
-            <button class="jf-tab-btn active" type="button" data-jf-tab="production">📅 Production</button>
-            <button class="jf-tab-btn" type="button" data-jf-tab="financial">📋 Financial Worksheet</button>
-            <button class="jf-tab-btn" type="button" data-jf-tab="invoice">🧾 Invoice</button>
-            <button class="jf-tab-btn" type="button" data-jf-tab="estimates">📐 Estimates</button>
-            <button class="jf-tab-btn" type="button" data-jf-tab="messages">💬 Messages</button>
-            <button class="jf-tab-btn" type="button" data-jf-tab="history" data-manager-tool="1" style="display:none;">🕘 History</button>
-            <button class="jf-tab-btn" type="button" data-jf-tab="profit-loss" data-manager-tool="1" style="display:none;">💰 Profit &amp; Loss</button>
+          <div class="jf-tab-bar" role="tablist" aria-label="Job files">
+            <button class="jf-tab-btn active" type="button" data-jf-tab="documents">📁 Job Files</button>
           </div>
           <div class="crm-wrap">
           <div class="page-actions" style="margin-bottom:14px;display:none;">
@@ -50646,6 +50706,19 @@ function mapsGoogleReady() {
         }
         if (
           typeof _appCurrentPageId !== 'undefined' &&
+          _appCurrentPageId === 'page-crm-job-file' &&
+          _crmJobFileReturnToHub &&
+          _crmJobFileActiveTab !== 'documents'
+        ) {
+          if (event) event.preventDefault();
+          _crmJobFileReturnToHub = false;
+          _jfDocSelectedCategory = null;
+          if (typeof crmSwitchJobFileTab === 'function') crmSwitchJobFileTab('documents');
+          updateGlobalHeaderBackButton();
+          return;
+        }
+        if (
+          typeof _appCurrentPageId !== 'undefined' &&
           _appCurrentPageId === 'page-photo-files' &&
           window.hmProjectsCurrentView &&
           window.hmProjectsCurrentView !== 'home' &&
@@ -73319,9 +73392,21 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       { key: 'Insurance',     icon: '&#127970;', types: ['summary_of_loss', 'insurance_paperwork'] },
       { key: 'Cap Sheet',     icon: '&#128196;', types: ['supplement_document'] },
       { key: 'Other',         icon: '&#128193;', types: ['other'] },
-      { key: 'Invoice',       icon: '&#129534;', types: ['invoice_document', 'final_invoice_paid'] }
+      { key: 'Invoice',       icon: '&#129534;', types: ['invoice_document', 'final_invoice_paid'], jobSection: 'payments' }
+    ];
+    var JF_JOB_FILE_HUB_ACTIONS = [
+      { key: 'Photos',              icon: '&#128247;', section: 'photos' },
+      { key: 'Reports',             icon: '&#128202;', section: 'reports' },
+      { key: 'Production',          icon: '&#128197;', section: 'production' },
+      { key: 'Financial Worksheet', icon: '&#128203;', section: 'financial' },
+      { key: 'Estimates',           icon: '&#128208;', section: 'estimate' },
+      { key: 'Messages',            icon: '&#128172;', section: 'messages' },
+      { key: 'History',             icon: '&#128336;', section: 'activity', managerOnly: true },
+      { key: 'Profit & Loss',       icon: '&#128176;', section: 'profit-loss', managerOnly: true }
     ];
     var _jfDocSelectedCategory = null;
+    var _crmJobFileReturnToHub = false;
+    var _crmFinanceReturnToJobFilesHub = false;
     var _crmSavedDocsReturnLeadId = '';
 
     function crmEscapeHtmlWithBreaks(str) {
@@ -75366,25 +75451,37 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmReturnToJobFileFromFinancePage() {
-      if (_crmCurrentJobFileLeadId) crmOpenLeadDetail(_crmCurrentJobFileLeadId, _crmJobFileBackPageId || 'page-crm-pipeline');
-    }
-
-    function crmOpenFinancialWorksheetPage(leadId) {
-      var lead = crmGetJobFileLeadById(leadId || _crmCurrentJobFileLeadId);
-      if (!crmCanViewFinancialWorksheet(lead)) {
+      if (!_crmCurrentJobFileLeadId) return;
+      if (_crmFinanceReturnToJobFilesHub) {
+        _crmFinanceReturnToJobFilesHub = false;
+        _crmJobFileReturnToHub = false;
+        _jfDocSelectedCategory = null;
+        crmOpenJobFileSection(_crmCurrentJobFileLeadId, 'documents');
         return;
       }
+      crmOpenLeadDetail(_crmCurrentJobFileLeadId, _crmJobFileBackPageId || 'page-crm-pipeline');
+    }
+
+    function crmOpenFinancialWorksheetPage(leadId, returnToJobFilesHub) {
+      var lead = crmGetJobFileLeadById(leadId || _crmCurrentJobFileLeadId);
+      if (!crmCanViewFinancialWorksheet(lead)) {
+        _crmFinanceReturnToJobFilesHub = false;
+        return;
+      }
+      _crmFinanceReturnToJobFilesHub = returnToJobFilesHub === true;
       _crmCurrentJobFileLeadId = lead.id;
       _crmFinancialWorksheetDraft = crmCloneObject(crmGetLeadJobFileData(lead).financialWorksheet);
       if (crmRenderFinancialWorksheetPage()) showPage('page-crm-financial-worksheet');
     }
 
-    function crmOpenJobProfitabilityPage(leadId) {
+    function crmOpenJobProfitabilityPage(leadId, returnToJobFilesHub) {
       var lead = crmGetJobFileLeadById(leadId || _crmCurrentJobFileLeadId);
       if (!crmCanViewLeadManagerTools() || !crmCanAccessJobFinancialPages(lead)) {
+        _crmFinanceReturnToJobFilesHub = false;
         showUploadToast('Manager access or higher is required for Profit & Loss.');
         return;
       }
+      _crmFinanceReturnToJobFilesHub = returnToJobFilesHub === true;
       _crmCurrentJobFileLeadId = lead.id;
       _crmJobProfitabilityDraft = crmCloneObject(crmBuildProfitLossData(lead));
       if (crmRenderJobProfitabilityPage()) showPage('page-crm-job-profitability');
@@ -76747,6 +76844,11 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       _crmInvoiceBuilderSelectedBlockId = '';
       _crmInvoiceBuilderPreviewMode = false;
       _crmJobFileActiveTab = CRM_JOB_FILE_TABS.indexOf(initialTab) === -1 ? 'overview' : initialTab;
+      if (_crmJobFileActiveTab === 'documents') {
+        _crmJobFileReturnToHub = false;
+        _crmFinanceReturnToJobFilesHub = false;
+        _jfDocSelectedCategory = null;
+      }
       _crmJobFileBackMode = 'lead';
       _crmJobFileBackPageId = 'page-lead-detail';
       if (crmRenderJobFile()) showPage('page-crm-job-file');
@@ -85234,9 +85336,29 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     /* ── Documents Hub navigation ── */
     document.addEventListener('click', function (e) {
-      /* Open a category */
+      /* Open one of the full Job Files sections from the hub. */
+      var jobSectionCard = e.target.closest('[data-jf-job-section]');
+      if (jobSectionCard) {
+        var jobSection = String(jobSectionCard.getAttribute('data-jf-job-section') || '').trim();
+        if (!jobSection) return;
+        _jfDocSelectedCategory = null;
+        if (jobSection === 'financial') {
+          crmOpenFinancialWorksheetPage(_crmCurrentJobFileLeadId, true);
+          return;
+        }
+        if (jobSection === 'profit-loss') {
+          crmOpenJobProfitabilityPage(_crmCurrentJobFileLeadId, true);
+          return;
+        }
+        _crmFinanceReturnToJobFilesHub = false;
+        _crmJobFileReturnToHub = true;
+        crmSwitchJobFileTab(jobSection);
+        return;
+      }
+      /* Open a document category. */
       var hubCard = e.target.closest('[data-jf-doc-hub]');
       if (hubCard) {
+        _crmJobFileReturnToHub = false;
         _jfDocSelectedCategory = hubCard.getAttribute('data-jf-doc-hub') || null;
         crmRenderJobFile && crmRenderJobFile();
         renderTopBrand && renderTopBrand();
@@ -85560,14 +85682,27 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
     }
 
     function crmRenderJobFileDocumentsHubHtml(lead, jobFile) {
-      /* If a category is selected, show category view; else show hub */
+      /* If a category is selected, show category view; else show the Job Files hub. */
       if (_jfDocSelectedCategory) {
         return jfRenderDocCategoryHtml(lead, _jfDocSelectedCategory);
       }
-      var html = '<div class="jf-doc-hub-shell"><div class="jf-doc-hub" aria-label="Document folders">';
+      var html = '<div class="jf-job-file-shortcuts" aria-label="Job file sections">';
+      var hubRole = String(crmGetRole ? crmGetRole() : '').trim();
+      JF_JOB_FILE_HUB_ACTIONS.forEach(function(action) {
+        if (action.managerOnly && ['Manager','Admin','Owner'].indexOf(hubRole) === -1) return;
+        html += '<button class="jf-job-file-shortcut" type="button" data-jf-job-section="' + crmEscapeHtml(action.section) + '">';
+        html += '<span class="jf-job-file-shortcut-icon">' + action.icon + '</span>';
+        html += '<span class="jf-job-file-shortcut-label">' + crmEscapeHtml(action.key) + '</span>';
+        html += '</button>';
+      });
+      html += '</div>';
+      html += '<div class="jf-doc-hub-shell"><div class="jf-doc-hub" aria-label="Document folders">';
       JF_DOC_HUB_CATEGORIES.forEach(function(cat) {
         var count = jfGetDocHubCategoryCount(lead, cat.types);
-        html += '<button class="jf-doc-hub-card" type="button" data-jf-doc-hub="' + crmEscapeHtml(cat.key) + '">';
+        var navAttr = cat.jobSection
+          ? ' data-jf-job-section="' + crmEscapeHtml(cat.jobSection) + '"'
+          : ' data-jf-doc-hub="' + crmEscapeHtml(cat.key) + '"';
+        html += '<button class="jf-doc-hub-card" type="button"' + navAttr + '>';
         html += '<div class="jf-doc-hub-card-icon">' + cat.icon + '</div>';
         html += '<div class="jf-doc-hub-card-label">' + crmEscapeHtml(cat.key) + '</div>';
         html += '<div class="jf-doc-hub-card-count">' + count + ' file' + (count === 1 ? '' : 's') + '</div>';
