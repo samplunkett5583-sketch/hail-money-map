@@ -155,7 +155,10 @@ function fail(res, error, fallback) {
   logger.error(fallback, {
     status:status,
     code:code.slice(0,80),
-    message:String(error && error.message || "unknown").slice(0,300)
+    detail:String(error && error.message || "unknown").slice(0,500),
+    smtpResponse:String(error && error.response || "").slice(0,500),
+    smtpResponseCode:Number(error && error.responseCode || 0),
+    smtpCommand:String(error && error.command || "").slice(0,80)
   });
   return res.status(status).json({ error: status >= 500 ? fallback : message });
 }
