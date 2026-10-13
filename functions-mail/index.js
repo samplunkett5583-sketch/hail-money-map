@@ -150,7 +150,12 @@ function fail(res, error, fallback) {
   var message = String(error && error.message || fallback);
   if (code === "EAUTH") {
     status = 409;
-    message = "The company mailbox login was rejected. Reconnect the mailbox in Settings > Company Info using the current mailbox password or app password.";
+    var smtpText = String(error && (error.response || error.message) || "");
+    if (/WebLoginRequired|Please log in with your web browser/i.test(smtpText)) {
+      message = "Google blocked this new mail connection until the company account is verified in a browser. Complete Google's account-access verification for this mailbox, then click Connect Google Workspace again.";
+    } else {
+      message = "The company mailbox login was rejected. Reconnect the mailbox in Settings > Company Info using the current mailbox password or app password.";
+    }
   }
   logger.error(fallback, {
     status:status,
