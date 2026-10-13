@@ -452,8 +452,18 @@
         closeComposer();
         if (typeof window.showUploadToast === 'function') window.showUploadToast('Email sent to ' + email + '.');
       } catch (error) {
-        if (typeof window.showUploadToast === 'function') {
-          window.showUploadToast(error && error.message ? error.message : 'The email could not be sent.');
+        // If company SMTP fails, offer Gmail compose without falsely recording a sent email.
+        var gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1' +
+          '&to=' + encodeURIComponent(email) +
+          '&su=' + encodeURIComponent(subject) +
+          '&body=' + encodeURIComponent(message);
+        var gmailTab = window.open(gmailUrl, '_blank');
+        if (gmailTab) {
+          gmailTab.opener = null;
+          closeComposer();
+          if (typeof window.showUploadToast === 'function') window.showUploadToast('Gmail draft opened. Click Send in Gmail.');
+        } else if (typeof window.showUploadToast === 'function') {
+          window.showUploadToast('Email not sent. Allow pop-ups to open a Gmail draft.');
         }
       } finally {
         sendButton.disabled = false;
