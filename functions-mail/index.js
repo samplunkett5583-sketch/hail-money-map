@@ -116,28 +116,17 @@ async function loadRecord(orgId) {
 async function bootstrapYoPro(user, record) {
   if (record || user.orgId !== "yopro") return record;
   const smtpUser = String(BOOTSTRAP_USER.value() || "").trim();
-  const credential = String(BOOTSTRAP_CREDENTIAL.value() || "");
-  if (!EMAIL_RE.test(smtpUser) || !credential) return null;
-
-  const settings = normalize({
-    provider:"gmail",
-    fromEmail:smtpUser,
-    fromName:"YoPro Construction",
-    smtpUser:smtpUser
-  }, {});
-
-  await mailer(settings, credential).verify();
-  const now = new Date().toISOString();
-  const next = {
-    ...settings,
-    credential,
-    configured:true,
-    configuredAt:now,
-    updatedAt:now,
-    updatedBy:user.email || user.uid
+  if (!EMAIL_RE.test(smtpUser)) return null;
+  return {
+    ...normalize({
+      provider:"gmail",
+      fromEmail:smtpUser,
+      fromName:"YoPro Construction",
+      smtpUser:smtpUser
+    }, {}),
+    configured:false,
+    setupRequired:true
   };
-  await docRef(user.orgId).set(next, { merge:false });
-  return next;
 }
 
 function publicStatus(record) {

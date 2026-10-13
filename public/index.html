@@ -26799,8 +26799,9 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                       <input id="co-mail-user" type="email" placeholder="Usually the company email" autocomplete="username" />
                     </div>
                     <div class="field full">
-                      <label>Mailbox Password / App Password</label>
+                      <label id="co-mail-credential-label">Mailbox Password / App Password</label>
                       <input id="co-mail-credential" type="password" placeholder="Leave blank to keep the current connection" autocomplete="new-password" />
+                      <div id="co-mail-credential-help" style="font-size:12px;color:var(--muted);margin-top:5px;"></div>
                     </div>
                     <div class="field" id="co-mail-host-wrap" style="display:none;">
                       <label>Outgoing Mail Server</label>
@@ -26820,6 +26821,7 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                   </div>
                   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;">
                     <button class="btn" type="button" id="co-mail-connect-btn">Connect Company Email</button>
+                    <a class="btn" id="co-mail-google-app-password-link" href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" style="display:none;text-decoration:none;">Create Google App Password</a>
                     <span id="co-mail-status" style="font-size:12px;color:var(--muted);">Not connected</span>
                   </div>
                 </div>
@@ -82755,11 +82757,36 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
 
     function crmRenderCompanyMailCustomFields() {
       var providerEl = document.getElementById('co-mail-provider');
-      var custom = providerEl && providerEl.value === 'custom';
+      var provider = providerEl ? String(providerEl.value || '') : '';
+      var custom = provider === 'custom';
       ['co-mail-host-wrap', 'co-mail-port-wrap', 'co-mail-security-wrap'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.style.display = custom ? '' : 'none';
       });
+
+      var credentialLabel = document.getElementById('co-mail-credential-label');
+      var credentialHelp = document.getElementById('co-mail-credential-help');
+      var googleLink = document.getElementById('co-mail-google-app-password-link');
+      var connectBtn = document.getElementById('co-mail-connect-btn');
+
+      if (googleLink) googleLink.style.display = provider === 'gmail' ? '' : 'none';
+      if (provider === 'gmail') {
+        if (credentialLabel) credentialLabel.textContent = 'Google App Password';
+        if (credentialHelp) credentialHelp.textContent = 'Google Workspace requires a 16-digit App Password for SMTP. Your normal Google account password will not work.';
+        if (connectBtn && !connectBtn.disabled) connectBtn.textContent = 'Connect Google Workspace';
+      } else if (provider === 'spacemail') {
+        if (credentialLabel) credentialLabel.textContent = 'SpaceMail Mailbox Password';
+        if (credentialHelp) credentialHelp.textContent = 'Use the password that signs into this exact SpaceMail mailbox.';
+        if (connectBtn && !connectBtn.disabled) connectBtn.textContent = 'Connect SpaceMail';
+      } else if (provider === 'microsoft') {
+        if (credentialLabel) credentialLabel.textContent = 'Microsoft SMTP Credential';
+        if (credentialHelp) credentialHelp.textContent = 'Your Microsoft 365 tenant must allow authenticated SMTP for this mailbox.';
+        if (connectBtn && !connectBtn.disabled) connectBtn.textContent = 'Connect Microsoft 365';
+      } else {
+        if (credentialLabel) credentialLabel.textContent = 'Mailbox Password / SMTP Credential';
+        if (credentialHelp) credentialHelp.textContent = '';
+        if (connectBtn && !connectBtn.disabled) connectBtn.textContent = 'Connect Company Email';
+      }
     }
 
     async function crmRefreshCompanyEmailStatus() {
@@ -82787,7 +82814,9 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           statusEl.textContent = 'Connected — sending from ' + String(status.fromEmail || '');
           statusEl.style.color = '#18794e';
         } else {
-          statusEl.textContent = 'Not connected';
+          statusEl.textContent = status.provider === 'gmail'
+            ? 'Not connected — Google App Password required'
+            : 'Not connected';
           statusEl.style.color = 'var(--muted)';
         }
       } catch (error) {
@@ -82904,7 +82933,7 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
           }
         } finally {
           mailConnectBtn.disabled = false;
-          mailConnectBtn.textContent = 'Connect Company Email';
+          crmRenderCompanyMailCustomFields();
         }
       });
     }
