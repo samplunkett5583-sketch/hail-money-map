@@ -194,7 +194,8 @@ exports.hmConfigureCompanyEmail = onRequest(options, async (req, res) => {
 
     const existing = await loadRecord(user.orgId);
     const settings = normalize(req.body || {}, existing || {});
-    const credential = String((req.body && req.body.credential) || (existing && existing.credential) || "");
+    let credential = String((req.body && req.body.credential) || (existing && existing.credential) || "");
+    if (settings.provider === "gmail") credential = credential.replace(/\s+/g, "");
     if (!credential) return res.status(400).json({ error:"Enter the mailbox password or app password." });
 
     await mailer(settings, credential).verify();
