@@ -32,6 +32,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Company mailbox credentials are server-only. Cloud Functions use the
+    // Admin SDK, so signed-in browser clients never read or write them.
+    match /hmCompanyMail/{document=**} {
+      allow read, write: if false;
+    }
+
     // CRM source-of-truth data (Admin/team member accounts, leads) is scoped
     // per organization. Only a signed-in, verified employee whose own
     // hmOrganizationId custom claim matches this path's {orgId} may read or
@@ -57,6 +63,7 @@ service cloud.firestore {
         && collection != 'hailMoneyUserOnboarding'
         && collection != 'aiEstimatorUsage'
         && collection != 'hmEmployees'
+        && collection != 'hmCompanyMail'
         && collection != 'organizations';
     }
   }

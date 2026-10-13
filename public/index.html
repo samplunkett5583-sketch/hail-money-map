@@ -26780,6 +26780,49 @@ Screenshot attached: Yes / No</div><button class="tester-training-open" type="bu
                   <label>Email</label>
                   <input id="co-email" type="email" placeholder="Company email" />
                 </div>
+                <div class="field full" id="co-mail-settings" style="border:1px solid #d7dce5;border-radius:10px;padding:14px;margin-top:4px;">
+                  <div style="font-weight:800;margin-bottom:4px;">Outgoing Email</div>
+                  <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Connect this company mailbox once. Emails sent by employees will come from the Company Email above.</div>
+                  <div class="field-grid">
+                    <div class="field">
+                      <label>Email Provider</label>
+                      <select id="co-mail-provider">
+                        <option value="">Select provider</option>
+                        <option value="spacemail">SpaceMail</option>
+                        <option value="gmail">Gmail / Google Workspace</option>
+                        <option value="microsoft">Microsoft 365 / Outlook</option>
+                        <option value="custom">Other / Custom SMTP</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label>Mailbox Login</label>
+                      <input id="co-mail-user" type="email" placeholder="Usually the company email" autocomplete="username" />
+                    </div>
+                    <div class="field full">
+                      <label>Mailbox Password / App Password</label>
+                      <input id="co-mail-credential" type="password" placeholder="Leave blank to keep the current connection" autocomplete="new-password" />
+                    </div>
+                    <div class="field" id="co-mail-host-wrap" style="display:none;">
+                      <label>Outgoing Mail Server</label>
+                      <input id="co-mail-host" type="text" placeholder="smtp.example.com" autocomplete="off" />
+                    </div>
+                    <div class="field" id="co-mail-port-wrap" style="display:none;">
+                      <label>Port</label>
+                      <input id="co-mail-port" type="number" min="1" max="65535" placeholder="465" />
+                    </div>
+                    <div class="field" id="co-mail-security-wrap" style="display:none;">
+                      <label>Security</label>
+                      <select id="co-mail-security">
+                        <option value="ssl">SSL/TLS</option>
+                        <option value="starttls">STARTTLS</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                    <button class="btn" type="button" id="co-mail-connect-btn">Connect Company Email</button>
+                    <span id="co-mail-status" style="font-size:12px;color:var(--muted);">Not connected</span>
+                  </div>
+                </div>
                 <div class="field full">
                   <label>Website</label>
                   <input id="co-website" type="text" placeholder="https://yourcompany.com" autocomplete="off" />
@@ -82710,6 +82753,49 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       reader.readAsDataURL(file);
     }
 
+    function crmRenderCompanyMailCustomFields() {
+      var providerEl = document.getElementById('co-mail-provider');
+      var custom = providerEl && providerEl.value === 'custom';
+      ['co-mail-host-wrap', 'co-mail-port-wrap', 'co-mail-security-wrap'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = custom ? '' : 'none';
+      });
+    }
+
+    async function crmRefreshCompanyEmailStatus() {
+      var statusEl = document.getElementById('co-mail-status');
+      if (!statusEl) return;
+      if (!window.HailMoneyDocuSign || typeof window.HailMoneyDocuSign.companyEmailStatus !== 'function') {
+        setTimeout(crmRefreshCompanyEmailStatus, 250);
+        return;
+      }
+      statusEl.textContent = 'Checking connection…';
+      try {
+        var status = await window.HailMoneyDocuSign.companyEmailStatus();
+        var providerEl = document.getElementById('co-mail-provider');
+        var userEl = document.getElementById('co-mail-user');
+        var hostEl = document.getElementById('co-mail-host');
+        var portEl = document.getElementById('co-mail-port');
+        var securityEl = document.getElementById('co-mail-security');
+        if (providerEl && status.provider) providerEl.value = status.provider;
+        if (userEl && status.smtpUser) userEl.value = status.smtpUser;
+        if (hostEl && status.host) hostEl.value = status.host;
+        if (portEl && status.port) portEl.value = String(status.port);
+        if (securityEl && status.security) securityEl.value = status.security;
+        crmRenderCompanyMailCustomFields();
+        if (status.configured) {
+          statusEl.textContent = 'Connected — sending from ' + String(status.fromEmail || '');
+          statusEl.style.color = '#18794e';
+        } else {
+          statusEl.textContent = 'Not connected';
+          statusEl.style.color = 'var(--muted)';
+        }
+      } catch (error) {
+        statusEl.textContent = error && error.message ? error.message : 'Email connection could not be checked.';
+        statusEl.style.color = '#b42318';
+      }
+    }
+
     /* ── Populate company profile form from saved data ── */
     function crmRenderCompanyProfileForm() {
       var p = crmGetCompanyProfile();
@@ -82739,6 +82825,88 @@ var CRM_DATA_MODEL_KEY      = 'app.crmData';
       }
       if (nameEl) nameEl.textContent = p.logoName || '';
 
+      var mailUser = document.getElementById('co-mail-user');
+      if (mailUser && !mailUser.value && p.email) mailUser.value = p.email;
+      crmRenderCompanyMailCustomFields();
+      setTimeout(crmRefreshCompanyEmailStatus, 0);
+    }
+
+    var mailProviderEl = document.getElementById('co-mail-provider');
+    if (mailProviderEl) {
+      mailProviderEl.addEventListener('change', function () {
+        crmRenderCompanyMailCustomFields();
+        var userEl = document.getElementById('co-mail-user');
+        var companyEmailEl = document.getElementById('co-email');
+        if (userEl && !String(userEl.value || '').trim() && companyEmailEl) {
+          userEl.value = String(companyEmailEl.value || '').trim();
+        }
+      });
+    }
+
+    var companyEmailEl = document.getElementById('co-email');
+    if (companyEmailEl) {
+      companyEmailEl.addEventListener('change', function () {
+        var userEl = document.getElementById('co-mail-user');
+        if (userEl && !String(userEl.value || '').trim()) userEl.value = String(this.value || '').trim();
+      });
+    }
+
+    var mailConnectBtn = document.getElementById('co-mail-connect-btn');
+    if (mailConnectBtn) {
+      mailConnectBtn.addEventListener('click', async function () {
+        var statusEl = document.getElementById('co-mail-status');
+        function v(id) { var el = document.getElementById(id); return el ? String(el.value || '').trim() : ''; }
+        var fromEmail = v('co-email');
+        var provider = v('co-mail-provider');
+        if (!fromEmail) {
+          if (statusEl) { statusEl.textContent = 'Enter the Company Email first.'; statusEl.style.color = '#b42318'; }
+          return;
+        }
+        if (!provider) {
+          if (statusEl) { statusEl.textContent = 'Choose an email provider.'; statusEl.style.color = '#b42318'; }
+          return;
+        }
+        if (!window.HailMoneyDocuSign || typeof window.HailMoneyDocuSign.configureCompanyEmail !== 'function') {
+          if (statusEl) { statusEl.textContent = 'Email setup is still loading. Try again.'; statusEl.style.color = '#b42318'; }
+          return;
+        }
+
+        mailConnectBtn.disabled = true;
+        mailConnectBtn.textContent = 'Connecting…';
+        if (statusEl) { statusEl.textContent = 'Checking mailbox connection…'; statusEl.style.color = 'var(--muted)'; }
+
+        try {
+          var saveBtn = document.getElementById('co-profile-save-btn');
+          if (saveBtn) saveBtn.click();
+          if (typeof window.hmCloudFlush === 'function') await window.hmCloudFlush();
+
+          var result = await window.HailMoneyDocuSign.configureCompanyEmail({
+            provider: provider,
+            fromEmail: fromEmail,
+            fromName: v('co-name') || 'Hail Money',
+            smtpUser: v('co-mail-user') || fromEmail,
+            credential: v('co-mail-credential'),
+            host: v('co-mail-host'),
+            port: v('co-mail-port'),
+            security: v('co-mail-security') || 'ssl'
+          });
+
+          var credentialEl = document.getElementById('co-mail-credential');
+          if (credentialEl) credentialEl.value = '';
+          if (statusEl) {
+            statusEl.textContent = 'Connected — sending from ' + String(result.fromEmail || fromEmail);
+            statusEl.style.color = '#18794e';
+          }
+        } catch (error) {
+          if (statusEl) {
+            statusEl.textContent = error && error.message ? error.message : 'Company email could not be connected.';
+            statusEl.style.color = '#b42318';
+          }
+        } finally {
+          mailConnectBtn.disabled = false;
+          mailConnectBtn.textContent = 'Connect Company Email';
+        }
+      });
     }
 
     /* Logo file input → compress → preview */
@@ -88495,7 +88663,7 @@ document.addEventListener('keydown',function(e){if(active&&e.key==='Enter'&&e.ta
 }());
 </script>
 
-  <script src="assets/docusign-integration.js?v=20261013-direct-compose-email-1"></script>
+  <script src="assets/docusign-integration.js?v=20261013-tenant-company-email-1"></script>
 
 
 </body>

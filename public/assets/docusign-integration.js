@@ -30,12 +30,41 @@
     });
     var data = {};
     try { data = await response.json(); } catch (_) {}
-    if (!response.ok) throw new Error(data.error || ('DocuSign request failed (' + response.status + ').'));
+    if (!response.ok) throw new Error(data.error || ('Hail Money request failed (' + response.status + ').'));
     return data;
   }
 
   function returnUrl() {
     return window.location.href.split('#')[0];
+  }
+
+  async function sendLeadEmail(options) {
+    options = options || {};
+    return call('hmSendLeadEmail', {
+      to: options.to || '',
+      recipientName: options.recipientName || '',
+      subject: options.subject || '',
+      message: options.message || '',
+      leadId: options.leadId || ''
+    });
+  }
+
+  async function companyEmailStatus() {
+    return call('hmCompanyEmailStatus', {});
+  }
+
+  async function configureCompanyEmail(options) {
+    options = options || {};
+    return call('hmConfigureCompanyEmail', {
+      provider: options.provider || '',
+      fromEmail: options.fromEmail || '',
+      fromName: options.fromName || '',
+      smtpUser: options.smtpUser || '',
+      credential: options.credential || '',
+      host: options.host || '',
+      port: options.port || '',
+      security: options.security || ''
+    });
   }
 
   async function connect(options) {
@@ -373,28 +402,6 @@
       if (event.key === 'Escape' && modal.classList.contains('is-open')) closeComposer();
     });
 
-    function composeEmailPdfBase64(email, subject, message) {
-      var api = window.jspdf && window.jspdf.jsPDF;
-      if (!api) throw new Error('Email delivery is not ready. Refresh Hail Money and try again.');
-      var doc = new api({ unit:'pt', format:'letter', orientation:'portrait' });
-      var margin = 48;
-      var width = 612 - (margin * 2);
-      var y = 54;
-      doc.setFontSize(16);
-      doc.text('Hail Money Message', margin, y);
-      y += 28;
-      doc.setFontSize(10);
-      doc.text('To: ' + email, margin, y);
-      y += 18;
-      doc.text('Subject: ' + (subject || '(No subject)'), margin, y);
-      y += 28;
-      doc.setFontSize(11);
-      var lines = doc.splitTextToSize(message || '', width);
-      doc.text(lines.length ? lines : [''], margin, y);
-      var dataUri = String(doc.output('datauristring') || '');
-      return dataUri.indexOf(',') >= 0 ? dataUri.split(',').pop() : dataUri;
-    }
-
     modal.querySelector('.hm-email-compose-send').addEventListener('click', async function () {
       var lead = modal._lead || leadDetailRecord();
       var email = String(modal.querySelector('#hm-lead-email-to').value || '').trim();
@@ -425,13 +432,12 @@
 
       try {
         var recipientName = leadDisplayName(lead);
-        var pdfBase64 = composeEmailPdfBase64(email, subject, message);
-        var delivery = await sendCompletedCopy({
-          documentBase64: pdfBase64,
-          documentName: 'Hail Money Message.pdf',
-          emailSubject: subject,
-          emailBlurb: message,
-          recipient: { name: recipientName, email: email }
+        var delivery = await sendLeadEmail({
+          to: email,
+          recipientName: recipientName,
+          subject: subject,
+          message: message,
+          leadId: lead && lead.id ? String(lead.id) : ''
         });
         try {
           if (lead && typeof window.actLog === 'function') {
@@ -439,7 +445,7 @@
               String(lead.id || ''),
               'email_sent',
               'Email sent to ' + recipientName + ' (' + email + ')' +
-                (delivery && delivery.envelopeId ? ' · Envelope ' + String(delivery.envelopeId) : '') + '.'
+                (delivery && delivery.messageId ? ' · Message ' + String(delivery.messageId) : '') + '.'
             );
           }
         } catch (_) {}
@@ -494,6 +500,9 @@
     disconnect: disconnect,
     sendPdf: sendPdf,
     sendCompletedCopy: sendCompletedCopy,
+    sendLeadEmail: sendLeadEmail,
+    companyEmailStatus: companyEmailStatus,
+    configureCompanyEmail: configureCompanyEmail,
     envelopeStatus: envelopeStatus,
     recipientView: recipientView,
     fileToBase64: fileToBase64,

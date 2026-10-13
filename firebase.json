@@ -11,8 +11,15 @@
     {
       "source": "functions-ai",
       "codebase": "ai"
+    },
+    {
+      "source": "functions-mail",
+      "codebase": "mail"
     }
   ],
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "hosting": {
     "public": "public",
     "ignore": [
