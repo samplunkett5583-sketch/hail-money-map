@@ -383,7 +383,7 @@
         '<div class="hm-email-compose-field"><label for="hm-lead-email-message">Message</label><textarea class="hm-email-compose-textarea" id="hm-lead-email-message"></textarea></div>' +
         '<div class="hm-email-compose-actions">' +
           '<button type="button" class="hm-email-compose-cancel">Cancel</button>' +
-          '<button type="button" class="hm-email-compose-send">Send Email</button>' +
+          '<button type="button" class="hm-email-compose-send">Continue in Gmail</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(modal);
@@ -422,54 +422,19 @@
         return;
       }
 
-      var sendButton = modal.querySelector('.hm-email-compose-send');
-      var cancelButton = modal.querySelector('.hm-email-compose-cancel');
-      var closeButton = modal.querySelector('.hm-email-compose-close');
-      sendButton.disabled = true;
-      cancelButton.disabled = true;
-      closeButton.disabled = true;
-      sendButton.textContent = 'Sending...';
-
-      try {
-        var recipientName = leadDisplayName(lead);
-        var delivery = await sendLeadEmail({
-          to: email,
-          recipientName: recipientName,
-          subject: subject,
-          message: message,
-          leadId: lead && lead.id ? String(lead.id) : ''
-        });
-        try {
-          if (lead && typeof window.actLog === 'function') {
-            window.actLog(
-              String(lead.id || ''),
-              'email_sent',
-              'Email sent to ' + recipientName + ' (' + email + ')' +
-                (delivery && delivery.messageId ? ' · Message ' + String(delivery.messageId) : '') + '.'
-            );
-          }
-        } catch (_) {}
+      // Gmail compose is used directly; company SMTP credentials are not required.
+      // The user must press Send in Gmail; do not log delivery here.
+      var gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1' +
+        '&to=' + encodeURIComponent(email) +
+        '&su=' + encodeURIComponent(subject) +
+        '&body=' + encodeURIComponent(message);
+      var gmailTab = window.open(gmailUrl, '_blank');
+      if (gmailTab) {
+        gmailTab.opener = null;
         closeComposer();
-        if (typeof window.showUploadToast === 'function') window.showUploadToast('Email sent to ' + email + '.');
-      } catch (error) {
-        // If company SMTP fails, offer Gmail compose without falsely recording a sent email.
-        var gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1' +
-          '&to=' + encodeURIComponent(email) +
-          '&su=' + encodeURIComponent(subject) +
-          '&body=' + encodeURIComponent(message);
-        var gmailTab = window.open(gmailUrl, '_blank');
-        if (gmailTab) {
-          gmailTab.opener = null;
-          closeComposer();
-          if (typeof window.showUploadToast === 'function') window.showUploadToast('Gmail draft opened. Click Send in Gmail.');
-        } else if (typeof window.showUploadToast === 'function') {
-          window.showUploadToast('Email not sent. Allow pop-ups to open a Gmail draft.');
-        }
-      } finally {
-        sendButton.disabled = false;
-        cancelButton.disabled = false;
-        closeButton.disabled = false;
-        sendButton.textContent = 'Send Email';
+        if (typeof window.showUploadToast === 'function') window.showUploadToast('Gmail draft opened. Click Send in Gmail.');
+      } else if (typeof window.showUploadToast === 'function') {
+        window.showUploadToast('Allow pop-ups for Hail Money to open the Gmail draft.');
       }
     });
 
