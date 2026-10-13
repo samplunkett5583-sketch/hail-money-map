@@ -120,7 +120,7 @@ async function bootstrapYoPro(user, record) {
   if (!EMAIL_RE.test(smtpUser) || !credential) return null;
 
   const settings = normalize({
-    provider:"spacemail",
+    provider:"gmail",
     fromEmail:smtpUser,
     fromName:"YoPro Construction",
     smtpUser:smtpUser
@@ -156,15 +156,19 @@ function publicStatus(record) {
 }
 
 function fail(res, error, fallback) {
-  const status = Number(error && error.statusCode) || 500;
+  var code = String(error && error.code || "").toUpperCase();
+  var status = Number(error && error.statusCode) || 500;
+  var message = String(error && error.message || fallback);
+  if (code === "EAUTH") {
+    status = 409;
+    message = "The company mailbox login was rejected. Reconnect the mailbox in Settings > Company Info using the current mailbox password or app password.";
+  }
   logger.error(fallback, {
-    status,
-    code:String(error && error.code || "").slice(0,80),
+    status:status,
+    code:code.slice(0,80),
     message:String(error && error.message || "unknown").slice(0,300)
   });
-  return res.status(status).json({
-    error: status >= 500 ? fallback : String(error && error.message || fallback)
-  });
+  return res.status(status).json({ error: status >= 500 ? fallback : message });
 }
 
 const options = {
