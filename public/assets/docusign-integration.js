@@ -354,7 +354,7 @@
         '<div class="hm-email-compose-field"><label for="hm-lead-email-message">Message</label><textarea class="hm-email-compose-textarea" id="hm-lead-email-message"></textarea></div>' +
         '<div class="hm-email-compose-actions">' +
           '<button type="button" class="hm-email-compose-cancel">Cancel</button>' +
-          '<button type="button" class="hm-email-compose-send">Continue to Email</button>' +
+          '<button type="button" class="hm-email-compose-send">Send Email</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(modal);
@@ -373,24 +373,88 @@
       if (event.key === 'Escape' && modal.classList.contains('is-open')) closeComposer();
     });
 
-    modal.querySelector('.hm-email-compose-send').addEventListener('click', function () {
+    function composeEmailPdfBase64(email, subject, message) {
+      var api = window.jspdf && window.jspdf.jsPDF;
+      if (!api) throw new Error('Email delivery is not ready. Refresh Hail Money and try again.');
+      var doc = new api({ unit:'pt', format:'letter', orientation:'portrait' });
+      var margin = 48;
+      var width = 612 - (margin * 2);
+      var y = 54;
+      doc.setFontSize(16);
+      doc.text('Hail Money Message', margin, y);
+      y += 28;
+      doc.setFontSize(10);
+      doc.text('To: ' + email, margin, y);
+      y += 18;
+      doc.text('Subject: ' + (subject || '(No subject)'), margin, y);
+      y += 28;
+      doc.setFontSize(11);
+      var lines = doc.splitTextToSize(message || '', width);
+      doc.text(lines.length ? lines : [''], margin, y);
+      var dataUri = String(doc.output('datauristring') || '');
+      return dataUri.indexOf(',') >= 0 ? dataUri.split(',').pop() : dataUri;
+    }
+
+    modal.querySelector('.hm-email-compose-send').addEventListener('click', async function () {
       var lead = modal._lead || leadDetailRecord();
       var email = String(modal.querySelector('#hm-lead-email-to').value || '').trim();
       var subject = String(modal.querySelector('#hm-lead-email-subject').value || '').trim();
-      var message = String(modal.querySelector('#hm-lead-email-message').value || '');
+      var message = String(modal.querySelector('#hm-lead-email-message').value || '').trim();
       if (!email) {
         if (typeof window.showUploadToast === 'function') window.showUploadToast('No email address on file.');
         return;
       }
+      if (!subject) {
+        if (typeof window.showUploadToast === 'function') window.showUploadToast('Enter an email subject.');
+        modal.querySelector('#hm-lead-email-subject').focus();
+        return;
+      }
+      if (!message) {
+        if (typeof window.showUploadToast === 'function') window.showUploadToast('Enter an email message.');
+        modal.querySelector('#hm-lead-email-message').focus();
+        return;
+      }
+
+      var sendButton = modal.querySelector('.hm-email-compose-send');
+      var cancelButton = modal.querySelector('.hm-email-compose-cancel');
+      var closeButton = modal.querySelector('.hm-email-compose-close');
+      sendButton.disabled = true;
+      cancelButton.disabled = true;
+      closeButton.disabled = true;
+      sendButton.textContent = 'Sending...';
+
       try {
-        if (lead && typeof window.actLog === 'function') {
-          window.actLog(String(lead.id || ''), 'email_started', 'Email started to ' + leadDisplayName(lead) + ' (' + email + ').');
+        var recipientName = leadDisplayName(lead);
+        var pdfBase64 = composeEmailPdfBase64(email, subject, message);
+        var delivery = await sendCompletedCopy({
+          documentBase64: pdfBase64,
+          documentName: 'Hail Money Message.pdf',
+          emailSubject: subject,
+          emailBlurb: message,
+          recipient: { name: recipientName, email: email }
+        });
+        try {
+          if (lead && typeof window.actLog === 'function') {
+            window.actLog(
+              String(lead.id || ''),
+              'email_sent',
+              'Email sent to ' + recipientName + ' (' + email + ')' +
+                (delivery && delivery.envelopeId ? ' · Envelope ' + String(delivery.envelopeId) : '') + '.'
+            );
+          }
+        } catch (_) {}
+        closeComposer();
+        if (typeof window.showUploadToast === 'function') window.showUploadToast('Email sent to ' + email + '.');
+      } catch (error) {
+        if (typeof window.showUploadToast === 'function') {
+          window.showUploadToast(error && error.message ? error.message : 'The email could not be sent.');
         }
-      } catch (_) {}
-      closeComposer();
-      window.location.href = 'mailto:' + encodeURIComponent(email) +
-        '?subject=' + encodeURIComponent(subject) +
-        '&body=' + encodeURIComponent(message);
+      } finally {
+        sendButton.disabled = false;
+        cancelButton.disabled = false;
+        closeButton.disabled = false;
+        sendButton.textContent = 'Send Email';
+      }
     });
 
     return modal;
